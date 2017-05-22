@@ -4,30 +4,23 @@ _Job_t_
 
 Unit tests for the WMBS job class.
 """
+from __future__ import absolute_import
 
-import unittest
-import logging
-import os
 import threading
-import random
-import time
+import unittest
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset as Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Mask     import Mask
-from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Mask import Mask
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMFactory import WMFactory
-
-from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUIDLib import makeUUID
-
+from WMCore.WMBS.Workflow import Workflow
 from WMQuality.TestInit import TestInit
+
 
 class JobTest(unittest.TestCase):
     def setUp(self):
@@ -40,17 +33,17 @@ class JobTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        locationNew = self.daoFactory(classname = "Locations.New")
-        locationNew.execute(siteName = "test.site.ch", pnn = "T2_CH_CERN")
-        locationNew.execute(siteName = "test2.site.ch", pnn = "T2_CH_CERN")
+        locationNew = self.daoFactory(classname="Locations.New")
+        locationNew.execute(siteName="test.site.ch", pnn="T2_CH_CERN")
+        locationNew.execute(siteName="test2.site.ch", pnn="T2_CH_CERN")
 
         return
 
@@ -62,39 +55,39 @@ class JobTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-    def createTestJob(self, subscriptionType = "Merge"):
+    def createTestJob(self, subscriptionType="Merge"):
         """
         _createTestJob_
 
         Create a test job with two files as input.  This will also create the
         appropriate workflow, jobgroup and subscription.
         """
-        testWorkflow = Workflow(spec = makeUUID(), owner = "Simon",
-                                name = makeUUID(), task="Test")
+        testWorkflow = Workflow(spec=makeUUID(), owner="Simon",
+                                name=makeUUID(), task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow,
-                                        type = subscriptionType)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow,
+                                        type=subscriptionType)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
         testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10)
         testFileB.addRun(Run(1, *[46]))
         testFileA.create()
         testFileB.create()
 
-        testJob = Job(name = makeUUID(), files = [testFileA, testFileB])
+        testJob = Job(name=makeUUID(), files=[testFileA, testFileB])
         testJob["couch_record"] = "somecouchrecord"
         testJob["location"] = "test.site.ch"
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
         testJob.associateFiles()
 
         return testJob
@@ -107,39 +100,39 @@ class JobTest(unittest.TestCase):
         determine if the job has been written to the database before it is
         created, after it has been created and after it has been deleted.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10)
         testFileA.create()
         testFileB.create()
 
-        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJob = Job(name="TestJob", files=[testFileA, testFileB])
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists before it was created"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists before it was created"
 
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
         assert testJob.exists() >= 0, \
-               "ERROR: Job does not exist after it was created"
+            "ERROR: Job does not exist after it was created"
 
         testJob.delete()
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists after it was delete"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists after it was delete"
 
         return
 
@@ -150,42 +143,42 @@ class JobTest(unittest.TestCase):
         Create a job and save it to the database.  Roll back the database
         transaction and verify that the job is no longer in the database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10)
         testFileA.create()
         testFileB.create()
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJob = Job(name="TestJob", files=[testFileA, testFileB])
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists before it was created"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists before it was created"
 
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
         assert testJob.exists() >= 0, \
-               "ERROR: Job does not exist after it was created"
+            "ERROR: Job does not exist after it was created"
 
         myThread.transaction.rollback()
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists after transaction was rolled back."
+        assert testJob.exists() is False, \
+            "ERROR: Job exists after transaction was rolled back."
 
         return
 
@@ -198,47 +191,47 @@ class JobTest(unittest.TestCase):
         deleted.  After that, roll back the transaction and verify that the
         job is once again in the database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10)
         testFileA.create()
         testFileB.create()
 
-        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJob = Job(name="TestJob", files=[testFileA, testFileB])
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists before it was created"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists before it was created"
 
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
         assert testJob.exists() >= 0, \
-               "ERROR: Job does not exist after it was created"
+            "ERROR: Job does not exist after it was created"
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testJob.delete()
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists after it was delete"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists after it was delete"
 
         myThread.transaction.rollback()
 
         assert testJob.exists() >= 0, \
-               "ERROR: Job does not exist after transaction was rolled back."
+            "ERROR: Job does not exist after transaction was rolled back."
 
         return
 
@@ -251,34 +244,34 @@ class JobTest(unittest.TestCase):
         written to the database before it is created, after it has been created
         and after it has been deleted.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testJob = Job(name = "TestJob")
+        testJob = Job(name="TestJob")
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists before it was created"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists before it was created"
 
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
         assert testJob.exists() >= 0, \
-               "ERROR: Job does not exist after it was created"
+            "ERROR: Job does not exist after it was created"
 
         testJob.delete()
 
-        assert testJob.exists() == False, \
-               "ERROR: Job exists after it was delete"
+        assert testJob.exists() is False, \
+            "ERROR: Job exists after it was delete"
 
         return
 
@@ -291,8 +284,8 @@ class JobTest(unittest.TestCase):
         was loaded correctly.
         """
         testJobA = self.createTestJob()
-        testJobB = Job(id = testJobA["id"])
-        testJobC = Job(name = testJobA["name"])
+        testJobB = Job(id=testJobA["id"])
+        testJobC = Job(name=testJobA["name"])
         testJobB.load()
         testJobC.load()
 
@@ -301,14 +294,14 @@ class JobTest(unittest.TestCase):
                (testJobA["jobgroup"] == testJobB["jobgroup"]) and \
                (testJobA["couch_record"] == testJobB["couch_record"]) and \
                (testJobA["location"] == testJobB["location"]), \
-               "ERROR: Load from ID didn't load everything correctly"
+            "ERROR: Load from ID didn't load everything correctly"
 
         assert (testJobA["id"] == testJobC["id"]) and \
                (testJobA["name"] == testJobC["name"]) and \
                (testJobA["jobgroup"] == testJobC["jobgroup"]) and \
                (testJobA["couch_record"] == testJobC["couch_record"]) and \
                (testJobA["location"] == testJobC["location"]), \
-               "ERROR: Load from name didn't load everything correctly"
+            "ERROR: Load from name didn't load everything correctly"
 
         self.assertEqual(testJobB['outcome'], 'failure')
         self.assertEqual(testJobC['outcome'], 'failure')
@@ -336,8 +329,8 @@ class JobTest(unittest.TestCase):
 
         testJobA.save()
 
-        testJobB = Job(id = testJobA["id"])
-        testJobC = Job(name = testJobA["name"])
+        testJobB = Job(id=testJobA["id"])
+        testJobC = Job(name=testJobA["name"])
         testJobB.loadData()
         testJobC.loadData()
 
@@ -346,38 +339,36 @@ class JobTest(unittest.TestCase):
                (testJobA["jobgroup"] == testJobB["jobgroup"]) and \
                (testJobA["couch_record"] == testJobB["couch_record"]) and \
                (testJobA["location"] == testJobB["location"]), \
-               "ERROR: Load from ID didn't load everything correctly"
+            "ERROR: Load from ID didn't load everything correctly"
 
         assert (testJobA["id"] == testJobC["id"]) and \
                (testJobA["name"] == testJobC["name"]) and \
                (testJobA["jobgroup"] == testJobC["jobgroup"]) and \
                (testJobA["couch_record"] == testJobC["couch_record"]) and \
                (testJobA["location"] == testJobC["location"]), \
-               "ERROR: Load from name didn't load everything correctly"
+            "ERROR: Load from name didn't load everything correctly"
 
         assert testJobA["mask"] == testJobB["mask"], \
-               "ERROR: Job mask did not load properly"
+            "ERROR: Job mask did not load properly"
 
         assert testJobA["mask"] == testJobC["mask"], \
-               "ERROR: Job mask did not load properly"
+            "ERROR: Job mask did not load properly"
 
         goldenFiles = testJobA.getFiles()
         for testFile in testJobB.getFiles():
             assert testFile in goldenFiles, \
-                   "ERROR: Job loaded an unknown file"
+                "ERROR: Job loaded an unknown file"
             goldenFiles.remove(testFile)
 
-        assert len(goldenFiles) == 0, \
-               "ERROR: Job didn't load all files"
+        assert not goldenFiles, "ERROR: Job didn't load all files"
 
         goldenFiles = testJobA.getFiles()
         for testFile in testJobC.getFiles():
             assert testFile in goldenFiles, \
-                   "ERROR: Job loaded an unknown file"
+                "ERROR: Job loaded an unknown file"
             goldenFiles.remove(testFile)
 
-        assert len(goldenFiles) == 0, \
-               "ERROR: Job didn't load all files"
+        assert not goldenFiles, "ERROR: Job didn't load all files"
 
         return
 
@@ -390,17 +381,16 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob()
 
-        testJobB = Job(id = testJobA["id"])
+        testJobB = Job(id=testJobA["id"])
         testJobB.loadData()
 
         goldenFiles = testJobA.getFiles()
         for testFile in testJobB.getFiles():
             assert testFile in goldenFiles, \
-                   "ERROR: Job loaded an unknown file: %s" % testFile
+                "ERROR: Job loaded an unknown file: %s" % testFile
             goldenFiles.remove(testFile)
 
-        assert len(goldenFiles) == 0, \
-               "ERROR: Job didn't load all files"
+        assert not goldenFiles, "ERROR: Job didn't load all files"
 
         return
 
@@ -426,11 +416,11 @@ class JobTest(unittest.TestCase):
 
         testJobA.save()
 
-        testJobB = Job(id = testJobA["id"])
+        testJobB = Job(id=testJobA["id"])
         testJobB.loadData()
 
         assert testJobA["mask"] == testJobB["mask"], \
-               "ERROR: Job mask did not load properly"
+            "ERROR: Job mask did not load properly"
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -446,7 +436,7 @@ class JobTest(unittest.TestCase):
         testJobA["location"] = "test2.site.ch"
 
         testJobA.save()
-        testJobC = Job(id = testJobA["id"])
+        testJobC = Job(id=testJobA["id"])
         testJobC.loadData()
 
         assert testJobA["mask"] == testJobC["mask"], \
@@ -463,14 +453,13 @@ class JobTest(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        testJobD = Job(id = testJobA["id"])
+        testJobD = Job(id=testJobA["id"])
         testJobD.loadData()
 
         assert testJobB["mask"] == testJobD["mask"], \
-               "ERROR: Job mask did not load properly"
+            "ERROR: Job mask did not load properly"
 
         return
-
 
     def testJobState(self):
         """
@@ -512,32 +501,32 @@ class JobTest(unittest.TestCase):
         Verify that the getOutputDBSParentLFNs() method returns the correct
         parent LFNs.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         merged = True)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         merged = True)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                         merged = False)
-        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                         merged = False)
-        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                         merged = True)
-        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                         merged = True)
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10,
+                         merged=True)
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10,
+                         merged=True)
+        testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=10,
+                         merged=False)
+        testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=10,
+                         merged=False)
+        testFileE = File(lfn="/this/is/a/lfnE", size=1024, events=10,
+                         merged=True)
+        testFileF = File(lfn="/this/is/a/lfnF", size=1024, events=10,
+                         merged=True)
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -548,16 +537,16 @@ class JobTest(unittest.TestCase):
         testFileE.addChild(testFileC["lfn"])
         testFileF.addChild(testFileD["lfn"])
 
-        testJobA = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJobA = Job(name="TestJob", files=[testFileA, testFileB])
         testJobA["couch_record"] = "somecouchrecord"
         testJobA["location"] = "test.site.ch"
-        testJobA.create(group = testJobGroup)
+        testJobA.create(group=testJobGroup)
         testJobA.associateFiles()
 
-        testJobB = Job(name = "TestJobB", files = [testFileC, testFileD])
+        testJobB = Job(name="TestJobB", files=[testFileC, testFileD])
         testJobB["couch_record"] = "somecouchrecord"
         testJobB["location"] = "test.site.ch"
-        testJobB.create(group = testJobGroup)
+        testJobB.create(group=testJobGroup)
         testJobB.associateFiles()
 
         goldenLFNs = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
@@ -568,8 +557,7 @@ class JobTest(unittest.TestCase):
                 "ERROR: Unknown lfn: %s" % parentLFN
             goldenLFNs.remove(parentLFN)
 
-        assert len(goldenLFNs) == 0, \
-            "ERROR: LFNs are missing: %s" % goldenLFNs
+        assert not goldenLFNs, "ERROR: LFNs are missing: %s" % goldenLFNs
 
         goldenLFNs = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
 
@@ -579,8 +567,7 @@ class JobTest(unittest.TestCase):
                 "ERROR: Unknown lfn: %s" % parentLFN
             goldenLFNs.remove(parentLFN)
 
-        assert len(goldenLFNs) == 0, \
-            "ERROR: LFNs are missing..."
+        assert not goldenLFNs, "ERROR: LFNs are missing..."
 
         return
 
@@ -599,43 +586,42 @@ class JobTest(unittest.TestCase):
         testJobC["state"] = "complete"
 
         myThread = threading.currentThread()
-        setFWJRAction = self.daoFactory(classname = "Jobs.SetFWJRPath")
-        setFWJRAction.execute(jobID = testJobA["id"], fwjrPath = "NonsenseA",
-                              conn = myThread.transaction.conn,
-                              transaction = True)
-        setFWJRAction.execute(jobID = testJobB["id"], fwjrPath = "NonsenseB",
-                              conn = myThread.transaction.conn,
-                              transaction = True)
-        setFWJRAction.execute(jobID = testJobC["id"], fwjrPath = "NonsenseC",
-                              conn = myThread.transaction.conn,
-                              transaction = True)
+        setFWJRAction = self.daoFactory(classname="Jobs.SetFWJRPath")
+        setFWJRAction.execute(jobID=testJobA["id"], fwjrPath="NonsenseA",
+                              conn=myThread.transaction.conn,
+                              transaction=True)
+        setFWJRAction.execute(jobID=testJobB["id"], fwjrPath="NonsenseB",
+                              conn=myThread.transaction.conn,
+                              transaction=True)
+        setFWJRAction.execute(jobID=testJobC["id"], fwjrPath="NonsenseC",
+                              conn=myThread.transaction.conn,
+                              transaction=True)
 
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
-        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC],
-                                  conn = myThread.transaction.conn,
-                                  transaction = True)
+        changeStateAction = self.daoFactory(classname="Jobs.ChangeState")
+        changeStateAction.execute(jobs=[testJobA, testJobB, testJobC],
+                                  conn=myThread.transaction.conn,
+                                  transaction=True)
 
-        getJobsAction = self.daoFactory(classname = "Jobs.GetFWJRByState")
-        jobs = getJobsAction.execute(state = "complete",
-                                     conn = myThread.transaction.conn,
-                                     transaction = True)
+        getJobsAction = self.daoFactory(classname="Jobs.GetFWJRByState")
+        jobs = getJobsAction.execute(state="complete",
+                                     conn=myThread.transaction.conn,
+                                     transaction=True)
 
         goldenIDs = [testJobA["id"], testJobC["id"]]
         for job in jobs:
             assert job["id"] in goldenIDs, \
-                   "Error: Unknown job: %s" % job["id"]
+                "Error: Unknown job: %s" % job["id"]
 
             goldenIDs.remove(job["id"])
 
             if job["id"] == testJobA["id"]:
                 assert job["fwjr_path"] == "NonsenseA", \
-                       "Error: Wrong fwjr path: %s" % job["fwjr_path"]
+                    "Error: Wrong fwjr path: %s" % job["fwjr_path"]
             else:
                 assert job["fwjr_path"] == "NonsenseC", \
-                       "Error: Wrong fwjr path: %s" % job["fwjr_path"]
+                    "Error: Wrong fwjr path: %s" % job["fwjr_path"]
 
-        assert len(goldenIDs) == 0, \
-               "Error: Jobs missing: %s" % len(goldenIDs)
+        assert not goldenIDs, "Error: Jobs missing: %s" % len(goldenIDs)
 
         return
 
@@ -646,28 +632,28 @@ class JobTest(unittest.TestCase):
         Test the Jobs.FailInput DAO and verify that it doesn't affect other
         jobs/subscriptions that run over the same files.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task="Test")
-        bogusWorkflow = Workflow(spec = "spec1.xml", owner = "Steve",
-                                name = "wf002", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
+        bogusWorkflow = Workflow(spec="spec1.xml", owner="Steve",
+                                 name="wf002", task="Test")
         testWorkflow.create()
         bogusWorkflow.create()
 
-        testFileset = Fileset(name = "TestFileset")
-        bogusFileset = Fileset(name = "BogusFileset")
+        testFileset = Fileset(name="TestFileset")
+        bogusFileset = Fileset(name="BogusFileset")
         testFileset.create()
         bogusFileset.create()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        bogusSubscription = Subscription(fileset = bogusFileset,
-                                         workflow = bogusWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
+        bogusSubscription = Subscription(fileset=bogusFileset,
+                                         workflow=bogusWorkflow)
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "T2_CH_CERN")
-        testFileB = File(lfn = makeUUID(), locations = "T2_CH_CERN")
-        testFileC = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileA = File(lfn=makeUUID(), locations="T2_CH_CERN")
+        testFileB = File(lfn=makeUUID(), locations="T2_CH_CERN")
+        testFileC = File(lfn=makeUUID(), locations="T2_CH_CERN")
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -680,20 +666,20 @@ class JobTest(unittest.TestCase):
         testSubscription.completeFiles([testFileA, testFileB, testFileC])
         bogusSubscription.acquireFiles([testFileA, testFileB, testFileC])
 
-        testJobGroup = JobGroup(subscription = testSubscription)
-        bogusJobGroup = JobGroup(subscription = bogusSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
+        bogusJobGroup = JobGroup(subscription=bogusSubscription)
         testJobGroup.create()
         bogusJobGroup.create()
 
-        testJobA = Job(name = "TestJobA", files = [testFileA, testFileB, testFileC])
-        testJobB = Job(name = "TestJobB", files = [testFileA, testFileB, testFileC])
+        testJobA = Job(name="TestJobA", files=[testFileA, testFileB, testFileC])
+        testJobB = Job(name="TestJobB", files=[testFileA, testFileB, testFileC])
 
-        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
+        bogusJob = Job(name="BogusJob", files=[testFileA, testFileB, testFileC])
 
-        testJobA.create(group = testJobGroup)
-        testJobB.create(group = testJobGroup)
+        testJobA.create(group=testJobGroup)
+        testJobB.create(group=testJobGroup)
 
-        bogusJob.create(group = bogusJobGroup)
+        bogusJob.create(group=bogusJobGroup)
 
         testJobA.failInputFiles()
         testJobB.failInputFiles()
@@ -703,7 +689,7 @@ class JobTest(unittest.TestCase):
         self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 3)
         self.assertEqual(len(testSubscription.filesOfStatus("Completed")), 0)
 
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateAction = self.daoFactory(classname="Jobs.ChangeState")
         testJobB["state"] = "cleanout"
         changeStateAction.execute([testJobB])
 
@@ -723,7 +709,6 @@ class JobTest(unittest.TestCase):
         self.assertEqual(len(bogusSubscription.filesOfStatus("Failed")), 0)
         self.assertEqual(len(bogusSubscription.filesOfStatus("Completed")), 0)
 
-
         return
 
     def testCompleteJobInput(self):
@@ -734,28 +719,28 @@ class JobTest(unittest.TestCase):
         the input for a job as complete once all the jobs that run over a
         particular file have complete successfully.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task="Test")
-        bogusWorkflow = Workflow(spec = "spec1.xml", owner = "Steve",
-                                name = "wf002", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
+        bogusWorkflow = Workflow(spec="spec1.xml", owner="Steve",
+                                 name="wf002", task="Test")
         testWorkflow.create()
         bogusWorkflow.create()
 
-        testFileset = Fileset(name = "TestFileset")
-        bogusFileset = Fileset(name = "BogusFileset")
+        testFileset = Fileset(name="TestFileset")
+        bogusFileset = Fileset(name="BogusFileset")
         testFileset.create()
         bogusFileset.create()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        bogusSubscription = Subscription(fileset = bogusFileset,
-                                         workflow = bogusWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
+        bogusSubscription = Subscription(fileset=bogusFileset,
+                                         workflow=bogusWorkflow)
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "T2_CH_CERN")
-        testFileB = File(lfn = makeUUID(), locations = "T2_CH_CERN")
-        testFileC = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileA = File(lfn=makeUUID(), locations="T2_CH_CERN")
+        testFileB = File(lfn=makeUUID(), locations="T2_CH_CERN")
+        testFileC = File(lfn=makeUUID(), locations="T2_CH_CERN")
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -768,19 +753,19 @@ class JobTest(unittest.TestCase):
         testSubscription.acquireFiles([testFileA, testFileB, testFileC])
         bogusSubscription.acquireFiles([testFileA, testFileB, testFileC])
 
-        testJobGroup = JobGroup(subscription = testSubscription)
-        bogusJobGroup = JobGroup(subscription = bogusSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
+        bogusJobGroup = JobGroup(subscription=bogusSubscription)
         testJobGroup.create()
         bogusJobGroup.create()
 
-        testJobA = Job(name = "TestJobA", files = [testFileA])
-        testJobB = Job(name = "TestJobB", files = [testFileA, testFileB])
-        testJobC = Job(name = "TestJobC", files = [testFileC])
-        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
-        testJobA.create(group = testJobGroup)
-        testJobB.create(group = testJobGroup)
-        testJobC.create(group = testJobGroup)
-        bogusJob.create(group = bogusJobGroup)
+        testJobA = Job(name="TestJobA", files=[testFileA])
+        testJobB = Job(name="TestJobB", files=[testFileA, testFileB])
+        testJobC = Job(name="TestJobC", files=[testFileC])
+        bogusJob = Job(name="BogusJob", files=[testFileA, testFileB, testFileC])
+        testJobA.create(group=testJobGroup)
+        testJobB.create(group=testJobGroup)
+        testJobC.create(group=testJobGroup)
+        bogusJob.create(group=bogusJobGroup)
 
         testJobA["outcome"] = "success"
         testJobB["outcome"] = "failure"
@@ -793,44 +778,44 @@ class JobTest(unittest.TestCase):
 
         compFiles = len(testSubscription.filesOfStatus("Completed"))
         assert compFiles == 0, \
-               "Error: test sub has wrong number of complete files: %s" % compFiles
+            "Error: test sub has wrong number of complete files: %s" % compFiles
 
         testJobB["outcome"] = "success"
         testJobB.save()
 
-        testJobB.completeInputFiles(skipFiles = [testFileB["lfn"]])
+        testJobB.completeInputFiles(skipFiles=[testFileB["lfn"]])
 
         availFiles = len(testSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \
-               "Error: test sub has wrong number of available files: %s" % availFiles
+            "Error: test sub has wrong number of available files: %s" % availFiles
 
         acqFiles = len(testSubscription.filesOfStatus("Acquired"))
         assert acqFiles == 1, \
-               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+            "Error: test sub has wrong number of acquired files: %s" % acqFiles
 
         compFiles = len(testSubscription.filesOfStatus("Completed"))
         assert compFiles == 1, \
-               "Error: test sub has wrong number of complete files: %s" % compFiles
+            "Error: test sub has wrong number of complete files: %s" % compFiles
 
         failFiles = len(testSubscription.filesOfStatus("Failed"))
         assert failFiles == 1, \
-               "Error: test sub has wrong number of failed files: %s" % failFiles
+            "Error: test sub has wrong number of failed files: %s" % failFiles
 
         availFiles = len(bogusSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \
-               "Error: test sub has wrong number of available files: %s" % availFiles
+            "Error: test sub has wrong number of available files: %s" % availFiles
 
         acqFiles = len(bogusSubscription.filesOfStatus("Acquired"))
         assert acqFiles == 3, \
-               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+            "Error: test sub has wrong number of acquired files: %s" % acqFiles
 
         compFiles = len(bogusSubscription.filesOfStatus("Completed"))
         assert compFiles == 0, \
-               "Error: test sub has wrong number of complete files: %s" % compFiles
+            "Error: test sub has wrong number of complete files: %s" % compFiles
 
         failFiles = len(bogusSubscription.filesOfStatus("Failed"))
         assert failFiles == 0, \
-               "Error: test sub has wrong number of failed files: %s" % failFiles
+            "Error: test sub has wrong number of failed files: %s" % failFiles
 
         return
 
@@ -844,11 +829,11 @@ class JobTest(unittest.TestCase):
         """
         testJob = self.createTestJob()
 
-        jobTypeAction = self.daoFactory(classname = "Jobs.GetType")
-        jobType = jobTypeAction.execute(jobID = testJob["id"])
+        jobTypeAction = self.daoFactory(classname="Jobs.GetType")
+        jobType = jobTypeAction.execute(jobID=testJob["id"])
 
         assert jobType == "Merge", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
 
         return
 
@@ -860,11 +845,11 @@ class JobTest(unittest.TestCase):
         job type is retrieved from the subscription type. When a list of jobs
         ids is passed.
         """
-        testJobA = self.createTestJob(subscriptionType = "Merge")
-        testJobB = self.createTestJob(subscriptionType = "Processing")
-        testJobC = self.createTestJob(subscriptionType = "Production")
-        testJobD = self.createTestJob(subscriptionType = "Merge")
-        testJobE = self.createTestJob(subscriptionType = "Skim")
+        testJobA = self.createTestJob(subscriptionType="Merge")
+        testJobB = self.createTestJob(subscriptionType="Processing")
+        testJobC = self.createTestJob(subscriptionType="Production")
+        testJobD = self.createTestJob(subscriptionType="Merge")
+        testJobE = self.createTestJob(subscriptionType="Skim")
 
         jobIds = []
         jobIds.append(testJobA["id"])
@@ -873,23 +858,23 @@ class JobTest(unittest.TestCase):
         jobIds.append(testJobD["id"])
         jobIds.append(testJobE["id"])
 
-        jobTypeAction = self.daoFactory(classname = "Jobs.GetType")
-        jobTypes = jobTypeAction.execute(jobID = jobIds)
+        jobTypeAction = self.daoFactory(classname="Jobs.GetType")
+        jobTypes = jobTypeAction.execute(jobID=jobIds)
 
         entryMap = {}
         for entry in jobTypes:
             entryMap[entry["id"]] = entry["type"]
 
         assert entryMap[testJobA["id"]] == "Merge", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobB["id"]] == "Processing", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobC["id"]] == "Production", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobD["id"]] == "Merge", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobE["id"]] == "Skim", \
-               "Error: GetJobType DAO returned the wrong job type."
+            "Error: GetJobType DAO returned the wrong job type."
 
         return
 
@@ -900,23 +885,23 @@ class JobTest(unittest.TestCase):
         Verify the proper behavior of the GetOutputMapDAO for a variety of
         different processing chains.
         """
-        recoOutputFileset = Fileset(name = "RECO")
+        recoOutputFileset = Fileset(name="RECO")
         recoOutputFileset.create()
-        mergedRecoOutputFileset = Fileset(name = "MergedRECO")
+        mergedRecoOutputFileset = Fileset(name="MergedRECO")
         mergedRecoOutputFileset.create()
-        alcaOutputFileset = Fileset(name = "ALCA")
+        alcaOutputFileset = Fileset(name="ALCA")
         alcaOutputFileset.create()
-        mergedAlcaOutputFileset = Fileset(name = "MergedALCA")
+        mergedAlcaOutputFileset = Fileset(name="MergedALCA")
         mergedAlcaOutputFileset.create()
-        dqmOutputFileset = Fileset(name = "DQM")
+        dqmOutputFileset = Fileset(name="DQM")
         dqmOutputFileset.create()
-        mergedDqmOutputFileset = Fileset(name = "MergedDQM")
+        mergedDqmOutputFileset = Fileset(name="MergedDQM")
         mergedDqmOutputFileset.create()
-        cleanupFileset = Fileset(name = "Cleanup")
+        cleanupFileset = Fileset(name="Cleanup")
         cleanupFileset.create()
 
-        testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                name = "TestWF", task = "None")
+        testWorkflow = Workflow(spec="wf001.xml", owner="Steve",
+                                name="TestWF", task="None")
         testWorkflow.create()
         testWorkflow.addOutput("output", recoOutputFileset,
                                mergedRecoOutputFileset)
@@ -928,66 +913,66 @@ class JobTest(unittest.TestCase):
         testWorkflow.addOutput("ALCARECOStreamCombined", cleanupFileset)
         testWorkflow.addOutput("DQM", cleanupFileset)
 
-        testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
-                                         name = "TestRecoMergeWF", task = "None")
+        testRecoMergeWorkflow = Workflow(spec="wf002.xml", owner="Steve",
+                                         name="TestRecoMergeWF", task="None")
         testRecoMergeWorkflow.create()
         testRecoMergeWorkflow.addOutput("anything", mergedRecoOutputFileset,
                                         mergedRecoOutputFileset)
 
-        testRecoProcWorkflow = Workflow(spec = "wf004.xml", owner = "Steve",
-                                         name = "TestRecoProcWF", task = "None")
+        testRecoProcWorkflow = Workflow(spec="wf004.xml", owner="Steve",
+                                        name="TestRecoProcWF", task="None")
         testRecoProcWorkflow.create()
 
-        testAlcaChildWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
-                                         name = "TestAlcaChildWF", task = "None")
+        testAlcaChildWorkflow = Workflow(spec="wf003.xml", owner="Steve",
+                                         name="TestAlcaChildWF", task="None")
         testAlcaChildWorkflow.create()
 
-        inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov")
+        inputFile = File(lfn="/path/to/some/lfn", size=600000, events=60000,
+                         locations="cmssrm.fnal.gov")
         inputFile.create()
 
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
         testFileset.addFile(inputFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "EventBased",
-                                        type = "Processing")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="EventBased",
+                                        type="Processing")
 
-        testMergeRecoSubscription = Subscription(fileset = recoOutputFileset,
-                                                 workflow = testRecoMergeWorkflow,
-                                                 split_algo = "WMBSMergeBySize",
-                                                 type = "Merge")
-        testProcRecoSubscription = Subscription(fileset = recoOutputFileset,
-                                                workflow = testRecoProcWorkflow,
-                                                split_algo = "FileBased",
-                                                type = "Processing")
+        testMergeRecoSubscription = Subscription(fileset=recoOutputFileset,
+                                                 workflow=testRecoMergeWorkflow,
+                                                 split_algo="WMBSMergeBySize",
+                                                 type="Merge")
+        testProcRecoSubscription = Subscription(fileset=recoOutputFileset,
+                                                workflow=testRecoProcWorkflow,
+                                                split_algo="FileBased",
+                                                type="Processing")
 
-        testChildAlcaSubscription = Subscription(fileset = alcaOutputFileset,
-                                                 workflow = testAlcaChildWorkflow,
-                                                 split_algo = "FileBased",
-                                                 type = "Processing")
+        testChildAlcaSubscription = Subscription(fileset=alcaOutputFileset,
+                                                 workflow=testAlcaChildWorkflow,
+                                                 split_algo="FileBased",
+                                                 type="Processing")
         testSubscription.create()
         testMergeRecoSubscription.create()
         testProcRecoSubscription.create()
         testChildAlcaSubscription.create()
         testSubscription.acquireFiles()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testJob = Job(name = "SplitJobA", files = [inputFile])
-        testJob.create(group = testJobGroup)
+        testJob = Job(name="SplitJobA", files=[inputFile])
+        testJob.create(group=testJobGroup)
         testJob["state"] = "complete"
         testJob.save()
 
-        outputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
-        outputMap = outputMapAction.execute(jobID = testJob["id"])
+        outputMapAction = self.daoFactory(classname="Jobs.GetOutputMap")
+        outputMap = outputMapAction.execute(jobID=testJob["id"])
 
         assert len(outputMap.keys()) == 3, \
-               "Error: Wrong number of outputs for primary workflow."
+            "Error: Wrong number of outputs for primary workflow."
 
         goldenMap = {"output": (recoOutputFileset.id,
                                 mergedRecoOutputFileset.id),
@@ -998,7 +983,7 @@ class JobTest(unittest.TestCase):
 
         for outputID in outputMap.keys():
             for outputFilesets in outputMap[outputID]:
-                if outputFilesets["merged_output_fileset"] == None:
+                if outputFilesets["merged_output_fileset"] is None:
                     self.assertEqual(outputFilesets["output_fileset"],
                                      cleanupFileset.id,
                                      "Error: Cleanup fileset is wrong.")
@@ -1027,28 +1012,26 @@ class JobTest(unittest.TestCase):
         """
         testJob = self.createTestJob()
 
-        jobGetLocation = self.daoFactory(classname = "Jobs.GetLocation")
-        jobSetLocation = self.daoFactory(classname = "Jobs.SetLocation")
+        jobGetLocation = self.daoFactory(classname="Jobs.GetLocation")
+        jobSetLocation = self.daoFactory(classname="Jobs.SetLocation")
 
-        result = jobGetLocation.execute(jobid = testJob['id'])
+        result = jobGetLocation.execute(jobid=testJob['id'])
         self.assertEqual(result, [['test.site.ch']])
-        jobSetLocation.execute(jobid = testJob['id'], location = "test2.site.ch")
-        result = jobGetLocation.execute(jobid = testJob['id'])
+        jobSetLocation.execute(jobid=testJob['id'], location="test2.site.ch")
+        result = jobGetLocation.execute(jobid=testJob['id'])
         self.assertEqual(result, [['test2.site.ch']])
-
 
         testJob2 = self.createTestJob()
         testJob3 = self.createTestJob()
 
         binds = [{'jobid': testJob['id']}, {'jobid': testJob2['id']}, {'jobid': testJob3['id']}]
-        result = jobGetLocation.execute(jobid = binds)
-        self.assertEqual(result, \
-                         [{'site_name': 'test2.site.ch', 'id': 1}, \
-                          {'site_name': 'test.site.ch', 'id': 2}, \
+        result = jobGetLocation.execute(jobid=binds)
+        self.assertEqual(result,
+                         [{'site_name': 'test2.site.ch', 'id': 1},
+                          {'site_name': 'test.site.ch', 'id': 2},
                           {'site_name': 'test.site.ch', 'id': 3}])
 
         return
-
 
     def testGetDataStructsJob(self):
         """
@@ -1056,7 +1039,7 @@ class JobTest(unittest.TestCase):
 
         Test the ability to 'cast' as a DataStructs job type
         """
-        testJob  = self.createTestJob()
+        testJob = self.createTestJob()
         testJob['test'] = 'ThisIsATest'
         testJob.baggage.section_('TestSection')
         testJob.baggage.TestSection.test = 100
@@ -1064,8 +1047,8 @@ class JobTest(unittest.TestCase):
 
         for key in finalJob.keys():
             if key == 'input_files':
-                for file in testJob['input_files']:
-                    self.assertEqual(file.returnDataStructsFile() in finalJob['input_files'], True)
+                for inputFile in testJob['input_files']:
+                    self.assertEqual(inputFile.returnDataStructsFile() in finalJob['input_files'], True)
                 continue
             self.assertEqual(testJob[key], finalJob[key])
 
@@ -1079,7 +1062,6 @@ class JobTest(unittest.TestCase):
         self.assertEqual(finalJob.baggage.TestSection.test, 100)
         return
 
-
     def testLoadOutputID(self):
         """
         _testLoadOutputID_
@@ -1087,22 +1069,21 @@ class JobTest(unittest.TestCase):
         Test whether we can load an output ID for a job
         """
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
 
         testWorkflow.create()
 
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
 
         testSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA = File(lfn=makeUUID(), locations="test.site.ch")
+        testFileB = File(lfn=makeUUID(), locations="test.site.ch")
         testFileA.create()
         testFileB.create()
 
@@ -1111,14 +1092,13 @@ class JobTest(unittest.TestCase):
 
         testSubscription.acquireFiles([testFileA, testFileB])
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
         testJob = Job()
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
         self.assertEqual(testJob.loadOutputID(), testJobGroup.output.id)
-
 
         return
 
@@ -1128,21 +1108,21 @@ class JobTest(unittest.TestCase):
 
         Tests the return of the DAO for the TaskArchiver
         """
-        #Create 2 jobs
+        # Create 2 jobs
         jobA = self.createTestJob()
         jobB = self.createTestJob()
 
-        #Put a mask in one
+        # Put a mask in one
         mask = Mask()
         mask.addRunAndLumis(1, [45])
         mask.save(jobA['id'])
 
-        #Execute the DAO
-        taskArchiverDAO = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
+        # Execute the DAO
+        taskArchiverDAO = self.daoFactory(classname="Jobs.LoadForTaskArchiver")
         jobs = taskArchiverDAO.execute([jobA['id'], jobB['id']])
 
-        #Sort the jobs and check the results, we care about id, input files and mask
-        jobs.sort(key = lambda x: x['id'])
+        # Sort the jobs and check the results, we care about id, input files and mask
+        jobs.sort(key=lambda x: x['id'])
 
         jobAprime = jobs[0]
         lfns = [x['lfn'] for x in jobAprime['input_files']]
@@ -1160,7 +1140,7 @@ class JobTest(unittest.TestCase):
                 self.assertEqual(run.lumis, [46], 'The lumis are wrong')
 
         mask = jobAprime['mask']
-        self.assertEqual(mask['runAndLumis'], {1 : [[45, 45]]}, "Wrong run and lumis in mask")
+        self.assertEqual(mask['runAndLumis'], {1: [[45, 45]]}, "Wrong run and lumis in mask")
 
         jobBprime = jobs[1]
         for inFile in jobBprime['input_files']:
@@ -1175,7 +1155,7 @@ class JobTest(unittest.TestCase):
         runs = []
         for inputFile in jobBprime['input_files']:
             runs.extend(inputFile.getRuns())
-        self.assertEqual(jobBprime['mask'].filterRunLumisByMask(runs = runs), runs, "Wrong mask in jobB")
+        self.assertEqual(jobBprime['mask'].filterRunLumisByMask(runs=runs), runs, "Wrong mask in jobB")
 
         return
 
@@ -1186,23 +1166,21 @@ class JobTest(unittest.TestCase):
         Test the new mask setup
         """
 
-
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
 
         testWorkflow.create()
 
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
 
         testSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA = File(lfn=makeUUID(), locations="test.site.ch")
+        testFileB = File(lfn=makeUUID(), locations="test.site.ch")
         testFileA.create()
         testFileB.create()
 
@@ -1211,16 +1189,15 @@ class JobTest(unittest.TestCase):
 
         testSubscription.acquireFiles([testFileA, testFileB])
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
         testJob = Job()
-        testJob['mask'].addRunAndLumis(run = 100, lumis = [101, 102])
-        testJob['mask'].addRunAndLumis(run = 200, lumis = [201, 202])
-        testJob.create(group = testJobGroup)
+        testJob['mask'].addRunAndLumis(run=100, lumis=[101, 102])
+        testJob['mask'].addRunAndLumis(run=200, lumis=[201, 202])
+        testJob.create(group=testJobGroup)
 
-
-        loadJob = Job(id = testJob.exists())
+        loadJob = Job(id=testJob.exists())
         loadJob.loadData()
 
         runs = loadJob['mask'].getRunAndLumis()
@@ -1243,8 +1220,7 @@ class JobTest(unittest.TestCase):
 
         return
 
-
-    def test_AutoIncrementCheck(self):
+    def testAutoIncrementCheck(self):
         """
         _AutoIncrementCheck_
 
@@ -1254,22 +1230,21 @@ class JobTest(unittest.TestCase):
         if not myThread.dialect.lower() == 'mysql':
             return
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
 
         testWorkflow.create()
 
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
 
         testSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA = File(lfn=makeUUID(), locations="test.site.ch")
+        testFileB = File(lfn=makeUUID(), locations="test.site.ch")
         testFileA.create()
         testFileB.create()
 
@@ -1278,37 +1253,35 @@ class JobTest(unittest.TestCase):
 
         testSubscription.acquireFiles([testFileA, testFileB])
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        incrementDAO = self.daoFactory(classname = "Jobs.AutoIncrementCheck")
+        incrementDAO = self.daoFactory(classname="Jobs.AutoIncrementCheck")
         incrementDAO.execute()
 
         testJob = Job()
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
         self.assertEqual(testJob.exists(), 1)
 
         incrementDAO.execute()
 
-
         testJob = Job()
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
         self.assertEqual(testJob.exists(), 2)
 
-        incrementDAO.execute(input = 10)
+        incrementDAO.execute(input=10)
 
         testJob = Job()
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
         self.assertEqual(testJob.exists(), 11)
 
-        incrementDAO.execute(input = 5)
+        incrementDAO.execute(input=5)
 
         testJob = Job()
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
         self.assertEqual(testJob.exists(), 12)
 
         return
-
 
 
 if __name__ == "__main__":

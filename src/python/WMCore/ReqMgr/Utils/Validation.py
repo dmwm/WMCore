@@ -3,21 +3,22 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
-import json
-import time
-import logging
 
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
+import json
+import logging
+import time
+
+from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
-from WMCore.WMFactory import WMFactory
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
-from WMCore.Lexicon import procdataset
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
+from WMCore.WMFactory import WMFactory
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
 
 
 def loadRequestSchema(workload, requestSchema):
@@ -138,7 +139,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
         setArgumentsWithDefault(request_args, specClass.getWorkloadCreateArgs())
         spec = specClass()
         workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
-                                                request_args)
+                                                    request_args)
 
     return workload, request_args
 

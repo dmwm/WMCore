@@ -471,7 +471,8 @@ class StdBase(object):
             taskName = taskConf["StepName"]
         acqEra = taskConf.get('AcquisitionEra') or self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = taskConf.get('ProcessingString') or self._getDictionaryParams(self.processingString, taskName)
-        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion, taskName,1)
+        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion,
+                                                                                     taskName, 1)
 
         processedDataset = "%s-" % acqEra
         if haveFilterName:

@@ -16,9 +16,12 @@ TODO/NOTE:
 
 """
 from __future__ import print_function, division
-import time
+
 import re
+import time
+
 import cherrypy
+
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
 # TODO: I wish we can, one day, remove this stuff and have a decent resubmission handling... :)

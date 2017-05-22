@@ -58,21 +58,21 @@ class ResubmissionWorkloadFactory(StdBase):
 
     @staticmethod
     def getWorkloadCreateArgs():
-        specArgs = {"RequestType" : {"default" : "Resubmission"},
+        specArgs = {"RequestType": {"default": "Resubmission"},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
-                    "InitialTaskPath" : {"default" : "/SomeRequest/Task1", "optional": False,
-                                         "validate": lambda x: len(x.split('/')) > 2},
-                    "ACDCServer" : {"default" : "https://cmsweb.cern.ch/couchdb", "validate" : couchurl,
-                                    "attr" : "acdcServer"},
-                    "ACDCDatabase" : {"default" : "acdcserver", "validate" : identifier,
-                                      "attr" : "acdcDatabase"},
-                    "CollectionName": {"default" : None, "null" : True},
+                    "InitialTaskPath": {"default": "/SomeRequest/Task1", "optional": False,
+                                        "validate": lambda x: len(x.split('/')) > 2},
+                    "ACDCServer": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl,
+                                   "attr": "acdcServer"},
+                    "ACDCDatabase": {"default": "acdcserver", "validate": identifier,
+                                     "attr": "acdcDatabase"},
+                    "CollectionName": {"default": None, "null": True},
                     "IgnoredOutputModules": {"default": [], "type": makeList},
                     "SiteWhitelist": {"default": [], "type": makeList,
                                       "validate": lambda x: all([cmsname(y) for y in x])},
                     # it can be Chained or MC requests, so lets make it optional
-                    "InputDataset" : {"optional": True, "validate" : dataset, "null" : True}}
+                    "InputDataset": {"optional": True, "validate": dataset, "null": True}}
 
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

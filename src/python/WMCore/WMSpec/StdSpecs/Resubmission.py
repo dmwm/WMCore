@@ -61,7 +61,7 @@ class ResubmissionWorkloadFactory(StdBase):
         specArgs = {"RequestType": {"default": "Resubmission"},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
-                    "InitialTaskPath": {"default": "/SomeRequest/Task1", "optional": False,
+                    "InitialTaskPath": {"optional": False,
                                         "validate": lambda x: len(x.split('/')) > 2},
                     "ACDCServer": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl,
                                    "attr": "acdcServer"},

@@ -1166,7 +1166,7 @@ class StdBase(object):
                      'PrimaryDataset': {'null': True, 'validate': primdataset, 'attr': 'inputPrimaryDataset'},
                      'ProcessingString': {'optional': True, 'validate': procstring},
                      'ProcessingVersion': {'default': 0, 'type': int, 'validate': procversion},
-                     'RequestNumEvents': {'default': 1000, 'null': False, 'optional': not generator, 'type': int,
+                     'RequestNumEvents': {'null': False, 'optional': not generator, 'type': int,
                                           'validate': lambda x: x > 0},
                      'RunBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
                                       'validate': lambda x: all([int(y) > 0 for y in x])},

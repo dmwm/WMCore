@@ -106,7 +106,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
     def getWorkloadCreateArgs():
         baseArgs = DataProcessing.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "MonteCarloFromGEN", "optional": False},
-                    "PrimaryDataset": {"default": None, "optional": True, "validate": primdataset,
+                    "PrimaryDataset": {"optional": True, "validate": primdataset,
                                        "attr": "inputPrimaryDataset", "null": True},
                     "MCPileup": {"validate": dataset, "attr": "mcPileup", "null": True},
                     "DataPileup": {"validate": dataset, "null": True},

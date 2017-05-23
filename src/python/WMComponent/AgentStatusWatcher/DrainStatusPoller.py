@@ -3,6 +3,8 @@ Thread used to monitor the agent draining process. Should
 eventually report no issues meaning that the agent is ready
 to be shutdown and a new version be put in place.
 """
+from __future__ import division
+
 __all__ = []
 
 import logging
@@ -54,5 +56,8 @@ class DrainStatusPoller(BaseWorkerThread):
 
     @classmethod
     def getDrainInfo(cls):
+        """
+        Return drainStats class variable
+        """
         return cls.drainStats
 

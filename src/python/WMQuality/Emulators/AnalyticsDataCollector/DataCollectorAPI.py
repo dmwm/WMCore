@@ -7,11 +7,8 @@ import logging
 
 from WMCore.Lexicon import splitCouchServiceURL
 
-"""
-JobInfoByID
-
-Retrieve information about a job from couch and format it nicely.
-"""
+# JobInfoByID
+# Retrieve information about a job from couch and format it nicely.
 
 REQUEST_NAME_PREFIX="test-request-"
 SITE_NAME_PREFIX="T1_test-site-"
@@ -35,7 +32,7 @@ class LocalCouchDBData():
         self.couchURLBase, self.dbName=splitCouchServiceURL(couchURL)
         self.summaryLevel=summaryLevel
         self.summaryStatsDB=statSummaryDB
-        logging.info("connect couch %s:  %s"%(self.couchURLBase, self.dbName))
+        logging.info("connect couch %s:  %s", self.couchURLBase, self.dbName)
 
     def getJobSummaryByWorkflowAndSite(self):
         """

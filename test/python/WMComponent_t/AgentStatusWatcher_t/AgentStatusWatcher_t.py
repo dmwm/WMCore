@@ -43,8 +43,6 @@ class AgentStatusWatcherTest(unittest.TestCase):
 
     def tearDown(self):
 
-        myThread = threading.currentThread()
-
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorHelper.resetEmulators()
@@ -127,7 +125,6 @@ class AgentStatusWatcherTest(unittest.TestCase):
 
     def testAgentStatusPoller(self):
         # test agent status thread
-        myThread = threading.currentThread()
         config = self.getConfig()
         agentStats = AgentStatusPoller(config)
         agentStats.setup(None)
@@ -136,7 +133,6 @@ class AgentStatusWatcherTest(unittest.TestCase):
 
     def testDrainStatusPoller(self):
         # test drain status thread
-        myThread = threading.currentThread()
         config = self.getConfig()
         drainStats = DrainStatusPoller(config)
         drainStats.setup(None)
@@ -144,7 +140,6 @@ class AgentStatusWatcherTest(unittest.TestCase):
         return
 
     def testResourceControlUpdater(self):
-        myThread = threading.currentThread()
         config = self.getConfig()
         resourceUpdater = ResourceControlUpdater(config)
         resourceUpdater.setup(None)

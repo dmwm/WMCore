@@ -4,17 +4,12 @@
 WorkQueuManager test
 """
 
-import os
 import logging
 import threading
 import unittest
-import time
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators.AnalyticsDataCollector.DataCollectorAPI import REQUEST_NAME_PREFIX, NUM_REQUESTS
 
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.DAOFactory import DAOFactory
-from WMComponent.AnalyticsDataCollector.AnalyticsDataCollector import AnalyticsDataCollector
 from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import EmulatorHelper
 
@@ -64,8 +59,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorHelper.resetEmulators()
@@ -117,7 +110,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         Tests the components, as in sees if they load.
         Otherwise does nothing.
         """
-        myThread = threading.currentThread()
         config = self.getConfig()
         analytics = AnalyticsPoller(config)
 

@@ -1,11 +1,6 @@
 """
 Use this for only unit test
 """
-import os
-import sys
-import logging
-
-from WMCore.Configuration import Configuration, saveConfigurationFile
 
 class EmulatorHelper(object):
     """
@@ -61,7 +56,7 @@ class EmulatorHelper(object):
         elif emFlag == None:
             try:
                 from WMQuality.Emulators import emulatorSwitch
-            except:
+            except Exception:
                 # if emulatorSwitch class is not imported don't use
                 # emulator
                 setattr(EmulatorHelper, cls.__name__, False)

@@ -62,6 +62,7 @@ class XRDCPImpl(StageOutImpl):
         parser = argparse.ArgumentParser()
         parser.add_argument('--cerncastor', action='store_true')
         parser.add_argument('--old', action='store_true')
+        parser.add_argument('--disablewriterecovery', action='store_true')
         args, unknown = parser.parse_known_args(options.split())
 
         copyCommandOptions = ' '.join(unknown)
@@ -110,6 +111,9 @@ class XRDCPImpl(StageOutImpl):
                 if all(os.path.isfile(initFile) for initFile in initFiles):
                     for initFile in initFiles:
                         copyCommand += "source %s\n" % initFile
+
+        if args.disablewriterecovery and not args.cerncastor:
+            copyCommand += "env XRD_WRITERECOVERY=0 "
 
         copyCommand += "%s --force --nopbar " % xrdcpExec
 

@@ -8,11 +8,9 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import unittest
-import os
 
-from WMQuality.TestInitCouchApp import TestInitCouchApp
 import WMCore.Database.CouchUtils as CouchUtils
-
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class CouchUtils_t(unittest.TestCase):
@@ -23,12 +21,12 @@ class CouchUtils_t(unittest.TestCase):
     def tearDown(self):
         self.testInit.tearDownCouch()
 
-
     def testA(self):
         """object driven connection via initialiseCouch method"""
 
         class Thingy(object):
             """misc object with couch access attrs"""
+
             def __init__(self):
                 self.couchdb = None
                 self.database = None
@@ -52,12 +50,12 @@ class CouchUtils_t(unittest.TestCase):
             msg = "Error initialising couch client for test object:\n %s " % str(ex)
             self.fail(msg)
 
-        self.assertTrue(couchThingy.couchdb != None)
+        self.assertIsNotNone(couchThingy.couchdb)
         # test decorator on already connected object
         try:
             couchThingy()
         except Exception as ex:
-            msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
+            msg = "Error invoking connectToCouch decorator:\n %s" % str(ex)
             self.fail(msg)
 
         newCouchThingy = Thingy()
@@ -67,17 +65,18 @@ class CouchUtils_t(unittest.TestCase):
         try:
             newCouchThingy()
         except Exception as ex:
-            msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
+            msg = "Error invoking connectToCouch decorator:\n %s" % str(ex)
             self.fail(msg)
-        self.assertTrue(newCouchThingy != None)
-
+        self.assertIsNotNone(newCouchThingy)
 
     def testB(self):
         """check requirement tests"""
 
         class Thingy(dict):
             """test object with required attrs"""
+
             def __init__(self):
+                super(Thingy, self).__init__()
                 self.collection = "NotNone"
                 self.owner = "NotNone"
                 self['fileset_id'] = "NotNone"
@@ -91,8 +90,6 @@ class CouchUtils_t(unittest.TestCase):
             def call4(self):
                 return True
 
-
-
         thingy = Thingy()
 
         try:
@@ -102,10 +99,9 @@ class CouchUtils_t(unittest.TestCase):
             self.fail(msg)
         try:
             thingy.call4()
-        except Execption as ex:
+        except Exception as ex:
             msg = "Failure in requireOwner decorator: %s" % str(ex)
             self.fail(msg)
-
 
         # now screw it up
         thingy.collection = None

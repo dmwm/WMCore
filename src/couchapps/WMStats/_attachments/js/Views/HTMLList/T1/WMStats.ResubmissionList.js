@@ -6,8 +6,8 @@ WMStats.namespace('ResubmissionList');
         htmlstr = '<div class="closingButton">X</div>';
         htmlstr += "<div class='requestDetailBox'>";
         htmlstr += "<ul>";
-        htmlstr += "<li><b>Request String: :</b><input type='text' name='RequestString' size=30 value='" + summary.RequestString + "'/></li>";
-        htmlstr += "<li><b>Original Request Name: :</b>" + summary.OriginalRequestName + "</li>";
+        htmlstr += "<li><b>Request String: </b><input type='text' name='RequestString' size=70 value='" + summary.RequestString + "'/></li>";
+        htmlstr += "<li><b>Original Request Name:</b> " + summary.OriginalRequestName + "</li>";
         htmlstr += "<li><b>Campaign:</b> " + summary.Campaign + "</li>";
         htmlstr += "<li><b>Initial Task Path:</b> " + summary.InitialTaskPath + "</li>";
 
@@ -18,15 +18,7 @@ WMStats.namespace('ResubmissionList');
             htmlstr += "<li><b>ACDC Server URL:</b><input type='text' name='ACDCServer' size=30 /></li>";
             htmlstr += "<li><b>ACDC DB Name:</b><input type='text' name='ACDCDatabase' size=30  value='wmagent_acdc'/></li>";
         }
-        //htmlstr += "<li><b>Requestor:</b><input type='text' name='Requestor' size=30  value='" + summary.Requestor + "'/></li>";
-        htmlstr += "<li><b>Group:</b> " + summary.Group + "</li>";
-        htmlstr += "<li><b>PrepID:</b> " + JSON.stringify(summary.PrepID) + "</li>";
         htmlstr += "<li><b>RequestPriority:</b> " + summary.RequestPriority + "</li>";
-        htmlstr += "<li><b>DBSURL:</b> " + summary.DbsUrl + "</li>";
-        htmlstr += "<li><b>Memory:</b> " + JSON.stringify(summary.Memory) + "</li>";
-        htmlstr += "<li><b>SizePerEven:</b> " + summary.SizePerEvent + "</li>";
-        htmlstr += "<li><b>TimePerEvent:</b> " + summary.TimePerEvent + "</li>";
-        htmlstr += "<li><b>RequestType:</b> " + summary.RequestType + "</li>";
         /*
         htmlstr += "<li><b>Ignored Output Modules:</b> <input type='text' name='ACDCDatabase' size=30/>";
         htmlstr += "<li><b>Alternative Collection Name:</b><input type='text' name='CollectionName' size=40/>";

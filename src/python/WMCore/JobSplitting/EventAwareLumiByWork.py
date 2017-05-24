@@ -16,7 +16,6 @@ class to simplify the code
 from __future__ import (division, print_function)
 
 import logging
-import traceback
 from collections import defaultdict
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService
@@ -67,8 +66,7 @@ class EventAwareLumiByWork(JobFactory):
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
         lumiEventLimit = int(kwargs.get('max_events_per_lumi', 20000))
         totalEventLimit = int(kwargs.get('total_events', 0))
-        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
-        ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
+        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
@@ -82,8 +80,7 @@ class EventAwareLumiByWork(JobFactory):
         lumiMask = LumiList()
         if collectionName:
             lumiMask = self.lumiListFromACDC(couchURL=kwargs.get('couchURL'), couchDB=kwargs.get('couchDB'),
-                                             filesetName=kwargs.get('filesetName'), collectionName=collectionName,
-                                             ignoreACDC=ignoreACDC)
+                                             filesetName=kwargs.get('filesetName'), collectionName=collectionName)
         elif runs and lumis and runWhitelist:
             lumiMask = LumiList(wmagentFormat=(runs, lumis)) & LumiList(runs=runWhitelist)
         elif runs and lumis:
@@ -253,26 +250,20 @@ class EventAwareLumiByWork(JobFactory):
         return count
 
     @staticmethod
-    def lumiListFromACDC(couchURL=None, couchDB=None, filesetName=None, collectionName=None, ignoreACDC=False):
+    def lumiListFromACDC(couchURL=None, couchDB=None, filesetName=None, collectionName=None):
         """
         This is not implemented yet
         :return:
         """
-
+        goodRunList = None
         try:
             logging.info('Creating jobs for ACDC fileset %s', filesetName)
             dcs = DataCollectionService(couchURL, couchDB)
             goodRunList = dcs.getLumilistWhitelist(collectionName, filesetName)
         except Exception as ex:
-            msg = "Exception while trying to load goodRunList\n"
-            if ignoreACDC:  # Logic can go in main function?
-                msg += "Ditching goodRunList\n" + str(ex) + str(traceback.format_exc())
-                logging.error(msg)
-                goodRunList = {}
-            else:
-                msg += "Refusing to create any jobs.\n" + str(ex) + str(traceback.format_exc())
-                logging.error(msg)
-                return None  # An error condtion - check
+            msg = "Exception while trying to load goodRunList. "
+            msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
+            logging.exception(msg)
 
         return goodRunList
 

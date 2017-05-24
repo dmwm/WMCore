@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# pylint: disable=W0613
 """
 _LumiBased_
 
@@ -13,7 +12,6 @@ a set of jobs based on lumi sections
 import operator
 import logging
 import threading
-import traceback
 
 from WMCore.DataStructs.Run import Run
 
@@ -150,8 +148,7 @@ class LumiBased(JobFactory):
 
         lumisPerJob = int(kwargs.get('lumis_per_job', 1))
         totalLumis = int(kwargs.get('total_lumis', 0))
-        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
-        ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
+        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
@@ -187,19 +184,10 @@ class LumiBased(JobFactory):
                 dcs = DataCollectionService(couchURL, couchDB)
                 goodRunList = dcs.getLumiWhitelist(collectionName, filesetName)
             except Exception as ex:
-                msg = "Exception while trying to load goodRunList\n"
-                if ignoreACDC:
-                    msg += "Ditching goodRunList\n"
-                    msg += str(ex)
-                    msg += str(traceback.format_exc())
-                    logging.error(msg)
-                    goodRunList = {}
-                else:
-                    msg += "Refusing to create any jobs.\n"
-                    msg += str(ex)
-                    msg += str(traceback.format_exc())
-                    logging.error(msg)
-                    return
+                msg = "Exception while trying to load goodRunList. "
+                msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
+                logging.exception(msg)
+                return
 
         lDict = self.sortByLocation()
         locationDict = {}

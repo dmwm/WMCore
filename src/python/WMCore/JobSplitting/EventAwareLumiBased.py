@@ -14,7 +14,6 @@ Created on Sep 25, 2012
 
 import logging
 import operator
-import traceback
 import math
 
 from WMCore.DataStructs.Run         import Run
@@ -43,8 +42,7 @@ class EventAwareLumiBased(JobFactory):
         jobLimit        = int(kwargs.get('job_limit', 0))
         eventLimit      = int(kwargs.get('max_events_per_lumi', 20000))
         totalEvents     = int(kwargs.get('total_events', 0))
-        splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
-        ignoreACDC      = bool(kwargs.get('ignore_acdc_except', False))
+        splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', False))
         collectionName  = kwargs.get('collectionName', None)
         splitOnRun      = kwargs.get('splitOnRun', True)
         getParents      = kwargs.get('include_parents', False)
@@ -76,23 +74,14 @@ class EventAwareLumiBased(JobFactory):
                 filesetName    = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
 
-                logging.info('Creating jobs for ACDC fileset %s' % filesetName)
+                logging.info('Creating jobs for ACDC fileset %s', filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
                 goodRunList = dcs.getLumiWhitelist(collectionName, filesetName)
             except Exception as ex:
-                msg =  "Exception while trying to load goodRunList\n"
-                if ignoreACDC:
-                    msg +=  "Ditching goodRunList\n"
-                    msg += str(ex)
-                    msg += str(traceback.format_exc())
-                    logging.error(msg)
-                    goodRunList = {}
-                else:
-                    msg +=  "Refusing to create any jobs.\n"
-                    msg += str(ex)
-                    msg += str(traceback.format_exc())
-                    logging.error(msg)
-                    return
+                msg = "Exception while trying to load goodRunList. "
+                msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
+                logging.exception(msg)
+                return
 
         lDict = self.sortByLocation()
         locationDict = {}

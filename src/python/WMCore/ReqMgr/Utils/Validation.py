@@ -126,7 +126,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
-        workload, request_args = validate_clone_create_args(request_args, config, reqmgr_db_service)
+        workload, request_args = validate_resubmission_create_args(request_args, config, reqmgr_db_service)
     else:
         initialize_request_args(request_args, config)
         # check the permission for creating the request
@@ -144,45 +144,72 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     return workload, request_args
 
 
-def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
+def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
     """
-    Load the spec arguments definition (and chain definition, if needed) and inherit
-    all arguments defined in the specs.
-    Special handle if a Resubmission request is being cloned or resubmitted, since we
-    cannot validate such request because we don't know its real origin
+    Handle resubmission workflows, loading the spec arguments definition (and chain
+    definition, if needed) and inheriting all arguments defined in the spec.
+    User can also override arguments, since it uses the same mechanism as a clone.
     *arg and **kwargs are only for the interface
     """
-    response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
+    response = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
     originalArgs = response.values()[0]
 
     chainArgs = None
-    createArgs = {}
-    # load arguments definition from the proper/original spec factory
-    parentClass = loadSpecClassByType(originalArgs["RequestType"])
     if originalArgs["RequestType"] == 'Resubmission':
-        # then we are cloning/resubmitting an ACDC. We cannot validate it,
-        # simply copy the whole original dictionary over and we accept all args
-        request_args['OriginalRequestType'] = originalArgs["RequestType"]
+        # ACDC of ACDC, we can't validate this case
+        # simply copy the whole original dictionary over and accept all args
         createArgs = originalArgs
     else:
-        # are we cloning or resubmitting another request type?
-        if request_args.get('RequestType') == 'Resubmission':
-            request_args['OriginalRequestType'] = originalArgs["RequestType"]
-            # then load assignment arguments as well
-            createArgs = parentClass.getWorkloadAssignArgs()
+        # load arguments definition from the proper/original spec factory
+        parentClass = loadSpecClassByType(originalArgs["RequestType"])
+        createArgs = parentClass.getWorkloadAssignArgs()
         if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
             chainArgs = parentClass.getChainCreateArgs()
         createArgs.update(parentClass.getWorkloadCreateArgs())
 
-    cloned_args = initialize_clone(request_args, originalArgs,
-                                   createArgs, chainArgs)
-
+    request_args['OriginalRequestType'] = originalArgs["RequestType"]
+    cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
 
     permission = getWritePermission(cloned_args)
     authz_match(permission['role'], permission['group'])
 
     specClass = loadSpecClassByType(request_args["RequestType"])
+    spec = specClass()
+    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
+
+    return workload, cloned_args
+
+
+def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
+    """
+    Handle clone workflows through the clone API, by loading the spec arguments
+    definition (and chain definition, if needed) and inheriting all arguments defined
+    in the spec.
+    *arg and **kwargs are only for the interface
+    """
+    response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
+    originalArgs = response.values()[0]
+
+    chainArgs = None
+    specClass = loadSpecClassByType(originalArgs["RequestType"])
+    if originalArgs["RequestType"] == 'Resubmission':
+        # cloning an ACDC, nothing that we can validate
+        # simply copy the whole original dictionary over and accept all args
+        request_args['OriginalRequestType'] = originalArgs["RequestType"]
+        createArgs = originalArgs
+    else:
+        # load arguments definition from the proper/original spec factory
+        createArgs = specClass.getWorkloadCreateArgs()
+        if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
+            chainArgs = specClass.getChainCreateArgs()
+
+    cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
+    initialize_request_args(cloned_args, config)
+
+    permission = getWritePermission(cloned_args)
+    authz_match(permission['role'], permission['group'])
+
     spec = specClass()
     workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
 

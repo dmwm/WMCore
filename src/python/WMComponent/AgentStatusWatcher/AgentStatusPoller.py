@@ -23,7 +23,7 @@ from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
     diskUse, numberCouchProcess
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
-
+from WMCore.Configuration import loadConfigurationFile, saveConfigurationFile
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -107,6 +107,10 @@ class AgentStatusPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
+            config_path = os.path.join(os.environ.get('config', ''), 'config.py')
+            if not os.path.exists(config_path):
+                config_path = '/data/srv/wmagent/current/config/wmagent/config.py'
+            self.config = loadConfigurationFile(config_path)
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
 
@@ -127,6 +131,7 @@ class AgentStatusPoller(BaseWorkerThread):
             with open(self.jsonFile, 'w') as outFile:
                 json.dump(agentInfo, outFile, indent=2)
 
+            saveConfigurationFile(self.config, config_path)
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
 
@@ -202,8 +207,7 @@ class AgentStatusPoller(BaseWorkerThread):
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
                 agentInfo['drain_mode'] = True
-                self.config.WorkQueueManager.queueParams['DrainMode'] = True
-                os.system("$manage execute-agent wmcoreD --restart --components=WorkQueueManager,AnalyticsDataCollector,AgentStatusWatcher")
+                self.config.WorkQueueManager.queueParams['drain_mode'] = True
 
         # Couch process warning
         couchProc = numberCouchProcess()

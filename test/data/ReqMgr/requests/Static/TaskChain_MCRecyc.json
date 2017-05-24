@@ -34,7 +34,7 @@
         "Memory": 2500, 
         "Multicore": 4,
         "PrepID": "TEST-H125GGgluonfusion_13",
-        "ProcessingString": "MainDict_WMCore_TEST", 
+        "ProcessingString": "MainDict_Static_WMCore_TEST", 
         "ProcessingVersion": 19, 
         "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
@@ -49,7 +49,7 @@
             "TimePerEvent": 1,
             "SizePerEvent": 12, 
             "LumisPerJob": 20, 
-            "ProcessingString": "Task1_WMCore_TEST", 
+            "ProcessingString": "Static1_WMCore_TEST", 
             "SplittingAlgo": "LumiBased", 
             "TaskName": "DigiFull_2017"
         }, 
@@ -61,7 +61,7 @@
             "SizePerEvent": 13, 
             "LumisPerJob": 10, 
             "Memory": 6000, 
-            "ProcessingString": "Task2_WMCore_TEST", 
+            "ProcessingString": "Static2_WMCore_TEST", 
             "SplittingAlgo": "LumiBased", 
             "TaskName": "RecoFull_2017"
         }, 
@@ -74,7 +74,7 @@
             "LumisPerJob": 30, 
             "Memory": 1500, 
             "Multicore": 1, 
-            "ProcessingString": "Task3_WMCore_TEST", 
+            "ProcessingString": "Static3_WMCore_TEST", 
             "SplittingAlgo": "LumiBased", 
             "TaskName": "ALCAFull_2017"
         }, 

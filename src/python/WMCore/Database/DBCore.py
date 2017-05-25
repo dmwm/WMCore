@@ -122,7 +122,7 @@ class DBInterface(WMObject):
 
 
     def processData(self, sqlstmt, binds={}, conn=None,
-                    transaction=False, returnCursor=False):
+                    transaction=True, returnCursor=False):
         """
         set conn if you already have an active connection to reuse
         set transaction = True if you already have an active transaction
@@ -141,7 +141,7 @@ class DBInterface(WMObject):
             binds = self.makelist(binds)
             if len(sqlstmt) > 0 and (len(binds) == 0 or (binds[0] == {} or binds[0] == None)):
                 # Should only be run by create statements
-                if not transaction:
+                if transaction:
                     #WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                     trans = connection.begin()
 
@@ -150,11 +150,11 @@ class DBInterface(WMObject):
                                           returnCursor=returnCursor)
                     result.append(r)
 
-                if not transaction:
+                if transaction:
                     trans.commit()
             elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
                 #Run single SQL statement for a list of binds - use execute_many()
-                if not transaction:
+                if transaction:
                     trans = connection.begin()
                 while(len(binds) > self.maxBindsPerQuery):
                     result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
@@ -165,11 +165,11 @@ class DBInterface(WMObject):
                 for i in sqlstmt:
                     result.extend(self.executemanybinds(i, binds, connection=connection,
                                                         returnCursor=returnCursor))
-                if not transaction:
+                if transaction:
                     trans.commit()
             elif len(binds) == len(sqlstmt):
                 # Run a list of SQL for a list of binds
-                if not transaction:
+                if transaction:
                     trans = connection.begin()
 
                 for i, s in enumerate(sqlstmt):
@@ -179,7 +179,7 @@ class DBInterface(WMObject):
                                           returnCursor=returnCursor)
                     result.append(r)
 
-                if not transaction:
+                if transaction:
                     trans.commit()
             else:
                 self.logger.exception(

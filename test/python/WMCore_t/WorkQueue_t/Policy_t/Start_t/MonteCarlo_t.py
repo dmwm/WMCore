@@ -3,22 +3,21 @@
     WorkQueue.Policy.Start.MonteCarlo tests
 """
 from __future__ import division
-import unittest
-from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
-from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
-    import monteCarloWorkload, getMCArgs
 
-from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload \
-    import workload as MultiMergeProductionWorkload
-from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
-    import workload as MultiTaskProductionWorkload
-from WMCore.WorkQueue.WorkQueueExceptions import *
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
-from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 import math
+import unittest
+
+from WMCore_t.WMSpec_t.samples.MultiMergeProductionWorkload import workload as MultiMergeProductionWorkload
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+
+from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload import getMCArgs, monteCarloWorkload
 
 mcArgs = getMCArgs()
+
 
 class MonteCarloTestCase(EmulatedUnitTestCase):
     """Test case MonteCarlo Workload"""
@@ -39,7 +38,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             units, _ = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
             SliceSize = BasicProductionWorkload.startPolicyParameters()['SliceSize']
-            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
+            self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
             first_event = 1
             first_lumi = 1
             first_run = 1
@@ -60,7 +59,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
                 self.assertEqual(last_lumi - first_lumi + 1, unit['NumberOfLumis'])
                 self.assertEqual(last_event - first_event + 1, unit['NumberOfEvents'])
                 first_event = last_event + 1
-                first_lumi += unit['Jobs'] # one lumi per job
+                first_lumi += unit['Jobs']  # one lumi per job
             self.assertEqual(unit['Mask']['LastEvent'], totalevents)
 
     def testLHEProductionWorkload(self):
@@ -71,7 +70,8 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
 
         """
         totalevents = 542674
-        splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi', SubSliceSize=13)
+        splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi',
+                         SubSliceSize=13)
 
         LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(
@@ -86,12 +86,11 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
-            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
-                             len(units))
+            self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
             first_event = 1
             first_lumi = 1
             first_run = 1
-            lumis_per_job = int(math.ceil(float(SliceSize) / splitArgs['SubSliceSize']))
+            lumis_per_job = int(math.ceil(SliceSize / splitArgs['SubSliceSize']))
             for unit in units:
                 self.assertTrue(unit['Jobs'] <= splitArgs['MaxJobsPerElement'])
                 self.assertEqual(unit['WMSpec'], LHEProductionWorkload)
@@ -120,8 +119,8 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         Make sure that the protection to avoid going over 2^32 works
 
         """
-        totalevents = 2**34
-        splitArgs = dict(SliceType='NumEvents', SliceSize=2**30, MaxJobsPerElement=7)
+        totalevents = 2 ** 34
+        splitArgs = dict(SliceType='NumEvents', SliceSize=2 ** 30, MaxJobsPerElement=7)
 
         LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(
@@ -136,24 +135,22 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
-            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])),
-                             len(units))
+            self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
             self.assertEqual(len(units), 3, "Should produce 3 units")
 
             unit1 = units[0]
             unit2 = units[1]
             unit3 = units[2]
 
-            self.assertEqual(unit1['Jobs'],
-                             7, 'First unit produced more jobs than expected')
+            self.assertEqual(unit1['Jobs'], 7, 'First unit produced more jobs than expected')
             self.assertEqual(unit1['Mask']['FirstEvent'], 1, 'First unit has a wrong first event')
-            self.assertEqual(unit1['Mask']['LastEvent'], 7*(2**30), 'First unit has a wrong last event')
+            self.assertEqual(unit1['Mask']['LastEvent'], 7 * (2 ** 30), 'First unit has a wrong last event')
             self.assertEqual(unit2['Jobs'], 7, 'Second unit produced more jobs than expected')
-            self.assertEqual(unit2['Mask']['FirstEvent'], 2**30 + 1, 'Second unit has a wrong first event')
-            self.assertEqual(unit2['Mask']['LastEvent'], 8*(2**30), 'Second unit has a wrong last event')
+            self.assertEqual(unit2['Mask']['FirstEvent'], 2 ** 30 + 1, 'Second unit has a wrong first event')
+            self.assertEqual(unit2['Mask']['LastEvent'], 8 * (2 ** 30), 'Second unit has a wrong last event')
             self.assertEqual(unit3['Jobs'], 2, 'Third unit produced more jobs than expected')
-            self.assertEqual(unit3['Mask']['FirstEvent'], 2*(2**30) + 1, 'Third unit has a wrong first event')
-            self.assertEqual(unit3['Mask']['LastEvent'], 4*(2**30), 'First unit has a wrong last event')
+            self.assertEqual(unit3['Mask']['FirstEvent'], 2 * (2 ** 30) + 1, 'Third unit has a wrong first event')
+            self.assertEqual(unit3['Mask']['LastEvent'], 4 * (2 ** 30), 'First unit has a wrong last event')
 
     def testShiftedStartSplitting(self):
         """
@@ -164,10 +161,13 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
 
         """
         totalevents = 542674
-        splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi', SubSliceSize=13)
+        splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi',
+                         SubSliceSize=13)
 
         LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
-        LHEProductionWorkload.setJobSplittingParameters(getFirstTask(LHEProductionWorkload).getPathName(), 'EventBased', {'events_per_job': splitArgs['SliceSize'], 'events_per_lumi': splitArgs['SubSliceSize']})
+        LHEProductionWorkload.setJobSplittingParameters(getFirstTask(LHEProductionWorkload).getPathName(), 'EventBased',
+                                                        {'events_per_job': splitArgs['SliceSize'],
+                                                         'events_per_lumi': splitArgs['SubSliceSize']})
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(LHEProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(LHEProductionWorkload).setFirstEventAndLumi(50, 100)
@@ -176,11 +176,11 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
-            self.assertEqual(math.ceil(float(totalevents) / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
+            self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
             first_event = 50
             first_lumi = 100
             first_run = 1
-            lumis_per_job = int(math.ceil(float(SliceSize) / splitArgs['SubSliceSize']))
+            lumis_per_job = int(math.ceil(SliceSize / splitArgs['SubSliceSize']))
             for unit in units:
                 self.assertTrue(unit['Jobs'] <= splitArgs['MaxJobsPerElement'])
                 self.assertEqual(unit['WMSpec'], LHEProductionWorkload)
@@ -202,7 +202,6 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
                 first_lumi = last_lumi + 1
             self.assertEqual(unit['Mask']['LastEvent'], totalevents + 50 - 1)
 
-
     def testMultiMergeProductionWorkload(self):
         """Multi merge production workload"""
         getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
@@ -216,11 +215,9 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
                 self.assertEqual(unit['WMSpec'], MultiMergeProductionWorkload)
                 self.assertEqual(unit['Task'], task)
 
-
     def testMultiTaskProcessingWorkload(self):
         """Multi Task Processing Workflow"""
         count = 0
-        tasks = []
         getFirstTask(MultiTaskProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
@@ -252,10 +249,12 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
     def testContinuousSplittingSupport(self):
         """Doesn't support continuous splitting"""
         policyInstance = MonteCarlo(**self.splitArgs)
-        self.assertFalse(policyInstance.supportsWorkAddition(), "MonteCarlo instance should not support continuous splitting")
+        self.assertFalse(policyInstance.supportsWorkAddition(),
+                         "MonteCarlo instance should not support continuous splitting")
         self.assertRaises(NotImplementedError, policyInstance.newDataAvailable, *[None, None])
         self.assertRaises(NotImplementedError, policyInstance.modifyPolicyForWorkAddition, *[None])
         return
+
 
 if __name__ == '__main__':
     unittest.main()

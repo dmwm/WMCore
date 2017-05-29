@@ -577,5 +577,5 @@ class TempDirectory(object):
         try:
             # it'll likely fail, but give it a try
             shutil.rmtree(self.dir, ignore_errors=True)
-        except (IOError, OSError):
+        except Exception:
             pass

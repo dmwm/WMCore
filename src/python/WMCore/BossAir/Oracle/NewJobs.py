@@ -5,8 +5,8 @@ _NewJobs_
 Oracle implementation for creating a new job
 """
 
-
 from WMCore.BossAir.MySQL.NewJobs import NewJobs as MySQLNewJobs
+
 
 class NewJobs(MySQLNewJobs):
     """
@@ -14,7 +14,6 @@ class NewJobs(MySQLNewJobs):
 
     Insert new jobs into bl_runjob
     """
-
 
     sql = """INSERT INTO bl_runjob (id, wmbs_id, grid_id, bulk_id, sched_status,
                  retry_count, user_id, location, status_time)

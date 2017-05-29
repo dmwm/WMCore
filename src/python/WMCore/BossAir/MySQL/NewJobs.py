@@ -6,7 +6,9 @@ MySQL implementation for creating a new job
 """
 
 import time
+
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class NewJobs(DBFormatter):
     """

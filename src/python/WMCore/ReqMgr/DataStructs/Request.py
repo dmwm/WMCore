@@ -24,16 +24,6 @@ import cherrypy
 
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
-# TODO: I wish we can, one day, remove this stuff and have a decent resubmission handling... :)
-ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
-    ['DN', 'Dashboard', 'DeleteFromSource', 'EnableNewStageout', 'GracePeriod',
-     'HardTimeout', 'IgnoredOutputModules', 'InitialPriority', 'MaxRSS', 'MaxVSize',
-     'MaxWaitTime', 'OutputDatasets', 'OutputModulesLFNBases', 'ReqMgr2Only',
-     'RequestStatus', 'RequestTransition', 'RequestWorkflow', 'Requestor', 'RequestorDN',
-     'SiteBlacklist', 'SiteWhitelist', 'SoftTimeout', 'SoftwareVersions', 'Team',
-     'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
-     'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
-
 
 def initialize_request_args(request, config):
     """
@@ -110,9 +100,29 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
             cloneArgs[topKey] = topValue
 
     # apply user override arguments at the end, such that it's validated at spec level
+    incrementProcVer(cloneArgs, requestArgs)
     _replace_cloned_args(cloneArgs, requestArgs)
 
     return cloneArgs
+
+def incrementProcVer(cloneArgs, requestArgs):
+    """
+    Increment the ProcessingVersion value for any requests cloned via
+    clone API, except if it's a Resubmission request.
+    TODO: ProcVer can be a dict at top level, until this #6881 gets fixed
+    """
+    if cloneArgs.get('RequestType') == 'Resubmission':
+        return
+    for key in cloneArgs:
+        if key == 'ProcessingVersion':
+            if isinstance(cloneArgs[key], int):
+                cloneArgs[key] += 1
+            elif isinstance(cloneArgs[key], dict):
+                for taskname in cloneArgs[key]:
+                    cloneArgs[key][taskname] += 1
+        elif isinstance(cloneArgs[key], dict) and 'ProcessingVersion' in cloneArgs[key]:
+            cloneArgs[key]['ProcessingVersion'] += 1
+    return
 
 
 def generateRequestName(request):

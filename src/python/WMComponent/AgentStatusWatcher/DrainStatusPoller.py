@@ -8,7 +8,6 @@ from __future__ import division
 __all__ = []
 
 import logging
-import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import isDrainMode
 
@@ -41,7 +40,6 @@ class DrainStatusPoller(BaseWorkerThread):
             except Exception as ex:
                 msg = "Error occurred, will retry later:\n"
                 msg += str(ex)
-                msg += "Trace back: \n%s" % traceback.format_exc()
                 logging.exception(msg)
         else:
             logging.info("Agent not in drain mode. Skipping drain check...")

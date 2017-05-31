@@ -36,26 +36,26 @@ class XRDCPImplTest(unittest.TestCase):
     def testCreateStageOutCommand_optionsNoStageInNoChecksum(self, mock_splitPFN):
         mock_splitPFN.return_value = (None, "host", "path", None)
         self.XRDCPImpl.stageIn = False
-        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--cerncastor")
+        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--wma-cerncastor")
         expectedResults = self.createStageOutCommandResults(False, "sourcePFN", "targetPFN", "sourcePFN",
-                                                            "--cerncastor", False, False, "host", "path")
+                                                            "--wma-cerncastor", False, False, "host", "path")
         self.assertEqual(expectedResults, results)
 
     @mock.patch('WMCore.Storage.Backends.XRDCPImpl.XRDCPImpl.splitPFN')
     def testCreateStageOutCommand_optionsUnknowsNoStageInNoChecksum(self, mock_splitPFN):
         mock_splitPFN.return_value = (None, "host", "path", None)
         self.XRDCPImpl.stageIn = False
-        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--cerncastor --test")
+        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--wma-cerncastor --test")
         expectedResults = self.createStageOutCommandResults(False, "sourcePFN", "targetPFN", "sourcePFN",
-                                                            "--cerncastor", "--test", False, "host", "path")
+                                                            "--wma-cerncastor", "--test", False, "host", "path")
         self.assertEqual(expectedResults, results)
 
     @mock.patch('WMCore.Storage.Backends.XRDCPImpl.XRDCPImpl.splitPFN')
     def testCreateStageOutCommand_optionsUnknowsStageInNoChecksum(self, mock_splitPFN):
         mock_splitPFN.return_value = (None, "host", "path", None)
         self.XRDCPImpl.stageIn = True
-        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--cerncastor --test")
-        expectedResults = self.createStageOutCommandResults(True, "sourcePFN", "targetPFN", "targetPFN", "--cerncastor",
+        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--wma-cerncastor --test")
+        expectedResults = self.createStageOutCommandResults(True, "sourcePFN", "targetPFN", "targetPFN", "--wma-cerncastor",
                                                             "--test", False, "host", "path")
         self.assertEqual(expectedResults, results)
 
@@ -63,9 +63,9 @@ class XRDCPImplTest(unittest.TestCase):
     def testCreateStageOutCommand_optionsUnknowsStageInChecksum(self, mock_splitPFN):
         mock_splitPFN.return_value = (None, "host", "path", None)
         self.XRDCPImpl.stageIn = True
-        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--cerncastor --test",
+        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--wma-cerncastor --test",
                                                        checksums=["adler32"])
-        expectedResults = self.createStageOutCommandResults(True, "sourcePFN", "targetPFN", "targetPFN", "--cerncastor",
+        expectedResults = self.createStageOutCommandResults(True, "sourcePFN", "targetPFN", "targetPFN", "--wma-cerncastor",
                                                             "--test", False, "host", "path")
         self.assertEqual(expectedResults, results)
 
@@ -73,10 +73,10 @@ class XRDCPImplTest(unittest.TestCase):
     def testCreateStageOutCommand_optionsNoStageInChecksum(self, mock_splitPFN):
         mock_splitPFN.return_value = (None, "host", "path", None)
         self.XRDCPImpl.stageIn = False
-        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--cerncastor --test",
+        results = self.XRDCPImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--wma-cerncastor --test",
                                                        checksums={'adler32': "32"})
         expectedResults = self.createStageOutCommandResults(False, "sourcePFN", "targetPFN", "sourcePFN",
-                                                            "--cerncastor", "--test", "00000032", "host", "path")
+                                                            "--wma-cerncastor", "--test", "00000032", "host", "path")
         self.assertEqual(expectedResults, results)
 
     def createStageOutCommandResults(self, stageIn, sourcePFN, targetPFN, localPFN, copyCommandOptions, unknow,

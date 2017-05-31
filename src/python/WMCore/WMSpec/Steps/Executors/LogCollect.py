@@ -72,14 +72,14 @@ class LogCollect(Executor):
         # hardcode CERN Castor T0_CH_CERN_MSS stageout parameters
         castorStageOutParams = {}
         castorStageOutParams['command'] = overrides.get('command', "xrdcp")
-        castorStageOutParams['option'] = overrides.get('option', "--cerncastor")
+        castorStageOutParams['option'] = overrides.get('option', "--wma-cerncastor")
         castorStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
         castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://castorcms.cern.ch//castor/cern.ch/cms")
 
         # hardcode CERN EOS T2_CH_CERN stageout parameters
         eosStageOutParams = {}
         eosStageOutParams['command'] = overrides.get('command', "xrdcp")
-        eosStageOutParams['option'] = overrides.get('option', "")
+        eosStageOutParams['option'] = overrides.get('option', "--wma-disablewriterecovery")
         eosStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
         eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://eoscms.cern.ch//eos/cms")
 

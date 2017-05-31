@@ -62,8 +62,14 @@ class XRDCPImpl(StageOutImpl):
         parser = argparse.ArgumentParser()
         parser.add_argument('--cerncastor', action='store_true')
         parser.add_argument('--old', action='store_true')
+        parser.add_argument('--wma-cerncastor', action='store_true')
+        parser.add_argument('--wma-old', action='store_true')
+        parser.add_argument('--wma-disablewriterecovery', action='store_true')
         args, unknown = parser.parse_known_args(options.split())
 
+        # strip out WMAgent specific options
+        unknown = [option for option in unknown if not option.startswith('--wma-')]
+        unknown = set(unknown) - {'--cerncastor', '--old'}
         copyCommandOptions = ' '.join(unknown)
 
         copyCommand = ""
@@ -74,16 +80,16 @@ class XRDCPImpl(StageOutImpl):
             remotePFN, localPFN = targetPFN, sourcePFN
             copyCommand += "LOCAL_SIZE=`stat -c%%s \"%s\"`\n" % localPFN
             copyCommand += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
-            if args.cerncastor:
+            if args.wma_cerncastor or args.cerncastor:
                 targetPFN += "?svcClass=t0cms"
 
         useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
 
         xrdcpExec = "xrdcp"
-        if args.old:
+        if args.wma_old or args.old:
             xrdcpExec = "xrdcp-old"
 
-        # check if xrdcp(-old) and xrdfs are in path
+        # check if xrdcp and xrdfs are in path
         # fallback to xrootd 4.0.4 from COMP externals if not
         xrootdInPath = False
         if any(os.access(os.path.join(path, xrdcpExec), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
@@ -110,6 +116,9 @@ class XRDCPImpl(StageOutImpl):
                 if all(os.path.isfile(initFile) for initFile in initFiles):
                     for initFile in initFiles:
                         copyCommand += "source %s\n" % initFile
+
+        if args.wma_disablewriterecovery:
+            copyCommand += "env XRD_WRITERECOVERY=0 "
 
         copyCommand += "%s --force --nopbar " % xrdcpExec
 

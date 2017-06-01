@@ -206,8 +206,7 @@ class AgentStatusPoller(BaseWorkerThread):
             if float(disk['percent'].strip('%')) >= diskUseThreshold and \
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
-                agentInfo['drain_mode'] = True
-                self.config.WorkQueueManager.queueParams['drain_mode'] = True
+                self.config.WorkQueueManager.queueParams['DrainMode'] = True
 
         # Couch process warning
         couchProc = numberCouchProcess()

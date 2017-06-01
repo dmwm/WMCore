@@ -110,7 +110,9 @@ class AgentStatusPoller(BaseWorkerThread):
             config_path = os.path.join(os.environ.get('config', ''), 'config.py')
             if not os.path.exists(config_path):
                 config_path = '/data/srv/wmagent/current/config/wmagent/config.py'
-            self.config = loadConfigurationFile(config_path)
+            if os.path.exists(config_path):
+                self.config = loadConfigurationFile(config_path)
+                self.config.path = config_path
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
 
@@ -131,7 +133,6 @@ class AgentStatusPoller(BaseWorkerThread):
             with open(self.jsonFile, 'w') as outFile:
                 json.dump(agentInfo, outFile, indent=2)
 
-            saveConfigurationFile(self.config, config_path)
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
 
@@ -207,6 +208,8 @@ class AgentStatusPoller(BaseWorkerThread):
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
                 self.config.WorkQueueManager.queueParams['DrainMode'] = True
+                if hasattr(self.config, 'path'):
+                    saveConfigurationFile(self.config, self.config.path)
 
         # Couch process warning
         couchProc = numberCouchProcess()

@@ -85,16 +85,20 @@ class WorkQueue(object):
          3. minimum number of expected Jobs in an element
          4. maximum number of expected Jobs in an element
          5. sum of the squares of the expected Job in each element
+
+        Also reformat the output such that it's MONIT IT friendly and easier to aggregate.
         """
         options = {'reduce': True, 'group_level': 2}
         if stale:
             options['stale'] = 'update_after'
 
         data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndStatus', options)
-        result = {}
+        result = []
         for x in data.get('rows', []):
-            result.setdefault(x['key'][0], {})
-            result[x['key'][0]][x['key'][1]] = x['value']
+            item = {'agent_name': self._getShortName(x['key'][0]),
+                    'status': x['key'][1]}
+            item.update(x['value'])
+            result.append(item)
 
         return result
 
@@ -107,12 +111,26 @@ class WorkQueue(object):
             options['stale'] = 'update_after'
 
         data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndPriority', options)
-        result = {}
+        result = []
         for x in data.get('rows', []):
-            result.setdefault(x['key'][0], {})
-            result[x['key'][0]][x['key'][1]] = x['value']
+            item = {'agent_name': self._getShortName(x['key'][0]),
+                    'priority': int(x['key'][1])}
+            item.update(x['value'])
+            result.append(item)
 
         return result
+
+    def _getShortName(self, longQueueName):
+        """
+        Get a full workqueue queue name (full hostname + port) and return its short name,
+        otherwise it fails to get injected into elastic search. E.g.:
+            from "http://cmssrv217.fnal.gov:5984" to "cmssrv217"
+        """
+        if longQueueName is None:
+            return "AgentNotDefined"
+        shortName = longQueueName.split('//')[-1]
+        shortName = shortName.split('.')[0]
+        return shortName
 
     def getWMBSUrl(self):
         """Get data items we have work in the queue for"""
@@ -308,9 +326,11 @@ class WorkQueue(object):
         options = {'reduce': True, 'group': group, 'stale': 'update_after'}
 
         data = db.loadView('WorkQueue', 'jobsByStatus', options)
-        result = {}
+        result = []
         for x in data.get('rows', []):
-            result[x['key']] = x['value']
+            item = {'status': x['key']}
+            item.update(x['value'])
+            result.append(item)
 
         return result
 
@@ -330,9 +350,12 @@ class WorkQueue(object):
             options['stale'] = 'update_after'
 
         data = self.db.loadView('WorkQueue', 'jobsByStatusAndPriority', options)
-        result = {}
+        result = []
         for x in data.get('rows', []):
-            result[x['key'][0]] = {x['key'][1]: x['value']}
+            item = {'status': x['key'][0],
+                    'priority': int(x['key'][1])}
+            item.update(x['value'])
+            result.append(item)
 
         return result
 

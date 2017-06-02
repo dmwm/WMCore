@@ -93,7 +93,8 @@ class WorkQueue(object):
         data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndStatus', options)
         result = {}
         for x in data.get('rows', []):
-            result[x['key'][0]] = {x['key'][1]: x['value']}
+            result.setdefault(x['key'][0], {})
+            result[x['key'][0]][x['key'][1]] = x['value']
 
         return result
 
@@ -108,7 +109,8 @@ class WorkQueue(object):
         data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndPriority', options)
         result = {}
         for x in data.get('rows', []):
-            result[x['key'][0]] = {x['key'][1]: x['value']}
+            result.setdefault(x['key'][0], {})
+            result[x['key'][0]][x['key'][1]] = x['value']
 
         return result
 

@@ -1165,7 +1165,7 @@ class StdBase(object):
                      'PrepID': {'default': None, 'null': True, 'optional': True, 'type': str},
                      'PrimaryDataset': {'null': True, 'validate': primdataset, 'attr': 'inputPrimaryDataset'},
                      'ProcessingString': {'optional': True, 'validate': procstring},
-                     'ProcessingVersion': {'default': 0, 'type': int, 'validate': procversion},
+                     'ProcessingVersion': {'type': int, 'validate': procversion},
                      'RequestNumEvents': {'null': False, 'optional': not generator, 'type': int,
                                           'validate': lambda x: x > 0},
                      'RunBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,

@@ -14,7 +14,7 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Integ_Test", 
+        "AcquisitionEra": "Static_Test", 
         "CMSSWVersion": "CMSSW_7_1_25_patch2", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": "MCFromGEN + DeterministicPU; Automatic splitting at 2LpJ; Processed dataset defined at creation; PD not set",

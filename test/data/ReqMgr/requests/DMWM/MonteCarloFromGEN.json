@@ -42,6 +42,6 @@
         "ScramArch": "slc6_amd64_gcc481", 
         "SizePerEvent": 747, 
         "SplittingAlgo": "EventAwareLumiBased", 
-        "TimePerEvent": 160.8
+        "TimePerEvent": 56.8
     }
 }

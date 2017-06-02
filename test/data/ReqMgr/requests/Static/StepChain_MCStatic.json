@@ -15,27 +15,24 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "DMWM_Test",
+        "AcquisitionEra": "Static_Test",
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": ["No input data; PU in Step2 (from DBS prod); Step1 using diff 7_1_25_patch2/gcc481; Step2&3 using 8_0_21/gcc530; TrustPU flag enabled",
-                     "Automatic splitting 200 EpJ, 2 LpJ; Explicitly set multicore/streams to 1; Output datasets defined during creation"],
+                     "Automatic splitting 200 EpJ, 2 LpJ; Explicitly set multicore/streams to 1; ProcVer override in each Step; Output datasets defined during creation"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
-        "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 
         "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6",
-        "Group": "DATAOPS",
         "Memory": 2300, 
         "Multicore": 1, 
         "EventStreams": 1, 
-        "PrepID": "TEST-TEST-HIG-RunIISummer15wmLHEGS-00744", 
+        "PrepID": "TEST-StepChain_MCStatic-00744", 
         "PrimaryDataset": "DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8", 
         "ProcessingString": "StepChain_MCStatic_TEST_WMCore",
-        "ProcessingVersion": 20, 
+        "ProcessingVersion": 30, 
         "RequestPriority": 316000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "StepChain", 
-        "Requestor": "amaltaro", 
         "ScramArch": "slc6_amd64_gcc530", 
         "SizePerEvent": 250, 
         "Step1": {
@@ -48,6 +45,7 @@
             "ScramArch": "slc6_amd64_gcc481", 
             "Seeding": "AutomaticSeeding", 
             "SplittingAlgo": "EventBased", 
+            "ProcessingVersion": 31, 
             "StepName": "GENSIM"
         }, 
         "Step2": {
@@ -60,6 +58,7 @@
             "PrepID": "TEST-Step2-RunIISummer15wmLHEGS-00744", 
             "ScramArch": "slc6_amd64_gcc530", 
             "SplittingAlgo": "EventAwareLumiBased", 
+            "ProcessingVersion": 32, 
             "StepName": "DIGI"
         }, 
         "Step3": {
@@ -72,6 +71,7 @@
             "PrepID": "TEST-Step3-RunIISummer15wmLHEGS-00744", 
             "ScramArch": "slc6_amd64_gcc530", 
             "SplittingAlgo": "EventAwareLumiBased", 
+            "ProcessingVersion": 33, 
             "StepName": "RECO"
         }, 
         "StepChain": 3, 

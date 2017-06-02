@@ -69,7 +69,7 @@ def parseArgs():
     parser.add_argument('-r', '--reqStr', required=True,
                         help='Request string appended to the request name')
     parser.add_argument('-m', '--mode', default='DMWM',
-                        help='Uses either the DMWM or the Integration mode/templates')
+                    help='Base directory for the templates. Options are: DMWM, Integration or Static')
     parser.add_argument('-f', '--filename',
                         help='Specifies a single file for injection (extesion must be included)')
     parser.add_argument('-u', '--url', default='https://cmsweb-testbed.cern.ch',

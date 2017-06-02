@@ -4,6 +4,7 @@ WorkQueueElementsSummary
 """
 from __future__ import (print_function, division)
 from collections import defaultdict
+from math import ceil
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
@@ -41,8 +42,10 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     possibleJobsSummary = {}
 
     for st in activeStatus:
-        uniqueJobsSummary.setdefault(st, {})
-        possibleJobsSummary.setdefault(st, {})
+        uniqueJobsSummary.setdefault(st, [])
+        possibleJobsSummary.setdefault(st, [])
+        uniqueJobs = {}
+        possibleJobs = {}
         for elem in elements.get(st, []):
             elem = elem['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']
             if dataLocality:
@@ -57,13 +60,18 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
                 jobsPerSite = elem['Jobs']
 
             for site in commonSites:
-                uniqueJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
-                possibleJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
+                uniqueJobs.setdefault(site, {'Jobs': 0, 'NumElems': 0, 'site_name': site})
+                possibleJobs.setdefault(site, {'Jobs': 0, 'NumElems': 0, 'site_name': site})
 
-                uniqueJobsSummary[st][site]['Jobs'] += jobsPerSite
-                uniqueJobsSummary[st][site]['NumElems'] += 1
-                possibleJobsSummary[st][site]['Jobs'] += elem['Jobs']
-                possibleJobsSummary[st][site]['NumElems'] += 1
+                uniqueJobs[site]['Jobs'] += ceil(jobsPerSite)
+                uniqueJobs[site]['NumElems'] += 1
+                possibleJobs[site]['Jobs'] += ceil(elem['Jobs'])
+                possibleJobs[site]['NumElems'] += 1
+        # now make it a list of dicts to be elastic search friendly
+        for site in uniqueJobs:
+            uniqueJobsSummary[st].append(uniqueJobs[site])
+        for site in possibleJobs:
+            possibleJobsSummary[st].append(possibleJobs[site])
 
     return uniqueJobsSummary, possibleJobsSummary
 

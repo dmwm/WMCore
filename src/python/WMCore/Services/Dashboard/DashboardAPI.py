@@ -49,7 +49,7 @@ class DashboardAPI(object):
         Private method that returns an instance of ApMon
         """
         self.logger.debug("Creating ApMon with static configuration")
-        apMonConf = {self.server: self.defaultParams}
+        apMonConf = {self.server: self.defaultParams,  'monalisa.cern.ch:8885': {'sys_monitoring': 1, 'general_info': 1, 'job_monitoring': 1}}
         try:
             return apmon.ApMon(apMonConf, self.logger)
         except Exception as ex:

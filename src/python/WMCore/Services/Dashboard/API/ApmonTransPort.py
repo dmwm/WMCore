@@ -26,7 +26,7 @@ class ApmonTransPort:
     """ _ApmonTransPort_ """
 
     def __init__(self, clusterName, nodeName, instanceId = None):
-        self.apmonConf = {}
+        self.apmonConf = {'monalisa.cern.ch:8885': {'sys_monitoring': 1, 'general_info': 1, 'job_monitoring': 1}}
         self.clusterName = clusterName
         self.nodeName = nodeName
         self.instanceId = instanceId

@@ -1,3 +1,80 @@
+1.1.3 to 1.1.4.pre5:
+  - Merge pull request #7889 from hufnagel/repack-express-spec
+  - Merge pull request #7896 from ericvaandering/remove_apmonlite
+  - Merge pull request #7883 from mmascher/wmarchive-dep
+  - Merge pull request #7895 from ericvaandering/remove_old_test
+  - Remove ApMonLite, not used
+  - Remove elements of old test suite, unused DatBlockGenerator3
+  - Merge pull request #7870 from amaltaro/templates-EpL
+  - Merge pull request #7887 from amaltaro/xrdcp-recovery
+  - Merge pull request #7878 from amaltaro/pending-bossAir
+  - move Repack and Express Spec from T0
+  - LumisPerJob doesnt belong to this template
+  - fix unit tests
+  - Add option to disable xrdcp write recovery; remove xrdcp-old
+  - Add dependency for WMArchive
+  - pylint fixes
+  - Set status_time when jobs get submitted in BossAir
+  - 1.1.4.pre4
+  - Merge pull request #7875 from hufnagel/tempdirectory-exception-again
+  - Merge pull request #7873 from amaltaro/procver-clone-inc
+  - Merge pull request #7871 from amaltaro/resub-js-reformat
+  - fix unit tests
+  - Increment ProcessingVersion of clone requests
+  - prevent exceptions printout in TempDirectory
+  - Merge pull request #7874 from ericvaandering/mock_div
+  - No need to promote to float with future division and other cleanups
+  - No longer fetch/feed Resubmission args in WMStats to ReqMgr
+  - Merge pull request #7867 from ericvaandering/fix_spelling
+  - Fix up some typos
+  - 1.1.4.pre3
+  - Merge pull request #7863 from amaltaro/specs-default
+  - Remove some default values for required spec arguments
+  - Merge pull request #7858 from amaltaro/resub-validate
+  - Merge pull request #7859 from ericvaandering/fix_lumi_range
+  - Pylint fixes
+  - Inherit only valid arguments for Resubmission and validate them in the end
+  - Merge pull request #7857 from ericvaandering/fixup_job
+  - Fix pylint/pep-8
+  - Update range() to list(range)
+  - Fix pylint and PEP8 errors for Job_t.py
+  - Stop worrying about where line breaks occur with operators.
+  - Merge pull request #7814 from amaltaro/bogusFiles-inPhedex
+  - Merge pull request #7826 from amaltaro/phedex-proxyError
+  - Merge pull request #7852 from amaltaro/task1-step1
+  - 1.1.4.pre2
+  - Merge pull request #7853 from amaltaro/specArgsDict
+  - Merge pull request #7850 from amaltaro/fetch-assignment
+  - Define Task1/Step1 in the getWorkloadCreateArgs
+  - Dictionary with all the create arguments for each request type
+  - Load default assignment values in the Gui
+  - Merge pull request #7823 from amaltaro/clone-creation
+  - Merge pull request #7844 from amaltaro/harvest-proxy
+  - pep8 fixes
+  - Pylint fixes
+  - Clone only creation arguments and validate them
+  - Fix certificate verification issue during harvesting
+  - 1.1.4.pre1
+  - Merge pull request #7663 from ericvaandering/bywork_dao
+  - Merge pull request #7787 from ticoann/run_lumi_event_support
+  - Add three more tables for doing work by lumi or sub-lumi Add primary key on a runlumi_map table
+  - Merge pull request #7836 from amaltaro/resub-novalidation
+  - Pylint
+  - Don't validate Resubmission specs
+  - Merge pull request #7833 from amaltaro/deploy-112patch3
+  - Update deployment command example
+  - Merge pull request #7831 from ticoann/campaign_length
+  - Merge pull request #7832 from mmascher/TagCollector_log
+  - Allow TagCollector to set the logger
+  - unittest fix
+  - campaign length - increase to 80
+  - Skip Proxy Error exception in PhEDExInjector
+  - add ACDC events per lumi handle
+  - Record and propagate events information per lumi to DBS
+  - pylint fixes
+  - Always set in_phedex for DBSBufferFile objets and properly add it to the db
+  - Insert input files into dbsbuffer with in_phedex=1
+
 1.1.3 to 1.1.4.pre4:
   - Merge pull request #7875 from hufnagel/tempdirectory-exception-again
   - Merge pull request #7873 from amaltaro/procver-clone-inc

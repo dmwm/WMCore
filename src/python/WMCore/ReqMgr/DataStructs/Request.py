@@ -111,7 +111,8 @@ def incrementProcVer(cloneArgs, requestArgs):
     clone API, except if it's a Resubmission request.
     TODO: ProcVer can be a dict at top level, until this #6881 gets fixed
     """
-    if cloneArgs.get('RequestType') == 'Resubmission':
+    # if either the parent or the new workflow is a Resubmission, we shall not increment ProcVer
+    if cloneArgs['RequestType'] == 'Resubmission' or requestArgs.get('RequestType') == 'Resubmission':
         return
     for key in cloneArgs:
         if key == 'ProcessingVersion':

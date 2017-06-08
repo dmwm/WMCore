@@ -85,19 +85,22 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
     :return: dictionary with original args filtered out, as per the spec definition. And on
      top of that, user arguments added/replaced in the dictionary.
     """
+    chainDefinition = chainDefinition or {}
     chainPattern = r'(Task|Step)\d{1,2}'
+
     cloneArgs = {}
     for topKey, topValue in originalArgs.iteritems():
-        if topKey in argsDefinition:
+        # order of this if-else matters because Step1/Task1 is a known argument
+        if re.match(chainPattern, topKey):
+            cloneArgs.setdefault(topKey, {})
+            # remove unsupported keys from inner Step/Task dict
+            for innerKey in topValue:
+                if innerKey in chainDefinition:
+                    cloneArgs[topKey][innerKey] = topValue[innerKey]
+        # accepts floating Skim args for ReReco
+        elif topKey in argsDefinition or topKey.startswith('Skim'):
             cloneArgs[topKey] = topValue
-        elif topKey.startswith(("Skim", "Step", "Task")):
-            # accept floating args from ReReco, StepChain and TaskChain
-            if re.match(chainPattern, topKey):
-                for innerKey in topValue:
-                    if innerKey not in chainDefinition:
-                        # remove internal keys that are not in the spec
-                        topValue.pop(innerKey, None)
-            cloneArgs[topKey] = topValue
+
 
     # apply user override arguments at the end, such that it's validated at spec level
     incrementProcVer(cloneArgs, requestArgs)

@@ -1,50 +1,37 @@
 #!/bin/env python
-#pylint: disable=E1101, W0201, W0142, E1103
+# pylint: disable=E1101, W0201, E1103
 # E1101: reference config file variables
 # W0142: ** magic
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 
-
-
-
 from __future__ import print_function
-import unittest
+
+import cProfile
+import os
+import pickle
+import pstats
 import random
 import threading
 import time
-import os
-import cProfile
-import pstats
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-from WMQuality.Emulators import EmulatorSetup
-from WMCore.DAOFactory import DAOFactory
-
-
-from WMCore.WMBS.File         import File
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.DataStructs.Run   import Run
-
-from WMCore.Agent.Configuration              import Configuration
-from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
-
-from WMCore.Services.UUIDLib import makeUUID
-
-from WMCore.ResourceControl.ResourceControl  import ResourceControl
-from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI
-
-#Workload stuff
-from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore_t.WMSpec_t.TestSpec     import testWorkload
+import unittest
 
 from nose.plugins.attrib import attr
+
+from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMQuality.Emulators import EmulatorSetup
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
 class JobCreatorTest(unittest.TestCase):
@@ -63,37 +50,32 @@ class JobCreatorTest(unittest.TestCase):
         WMBS tables.  Also, create some dummy locations.
         """
 
-        myThread = threading.currentThread()
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.tearDown()
-        self.testInit.setSchema(customModules = ['WMCore.WMBS',
-                                                 'WMCore.ResourceControl',
-                                                 'WMCore.Agent.Database'], useDefault = False)
+
+        self.testInit.setSchema(customModules=['WMCore.WMBS', 'WMCore.ResourceControl', 'WMCore.Agent.Database'],
+                                useDefault=False)
         self.couchdbname = "jobcreator_t"
         self.testInit.setupCouch("%s/jobs" % self.couchdbname, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % self.couchdbname, "FWJRDump")
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
-
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction = self.daoFactory(classname="Locations.New")
         for site in self.sites:
-            locationAction.execute(siteName = site, pnn = site)
+            locationAction.execute(siteName=site, pnn=site)
 
-        #Create sites in resourceControl
+        # Create sites in resourceControl
 
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, pnn = site, ceName = site)
-            resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000, pendingSlots = 10000)
+            resourceControl.insertSite(siteName=site, pnn=site, ceName=site)
+            resourceControl.insertThreshold(siteName=site, taskType='Processing', maxSlots=10000, pendingSlots=10000)
 
         self.resourceControl = resourceControl
 
@@ -105,7 +87,7 @@ class JobCreatorTest(unittest.TestCase):
 
         # Set heartbeat
         self.componentName = 'JobCreator'
-        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
 
         return
@@ -117,10 +99,7 @@ class JobCreatorTest(unittest.TestCase):
         Drop all the WMBS tables.
         """
 
-        myThread = threading.currentThread()
-
-        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.ResourceControl',
-                                               'WMCore.Agent.Database'])
+        self.testInit.clearDatabase(modules=['WMCore.WMBS', 'WMCore.ResourceControl', 'WMCore.Agent.Database'])
 
         self.testInit.delWorkDir()
 
@@ -129,12 +108,9 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)
 
-
         return
 
-
-
-    def createJobCollection(self, name, nSubs, nFiles, workflowURL = 'test'):
+    def createJobCollection(self, name, nSubs, nFiles, workflowURL='test'):
         """
         _createJobCollection_
 
@@ -143,8 +119,8 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        testWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
-                                name = name, task="/TestWorkload/ReReco")
+        testWorkflow = Workflow(spec=workflowURL, owner="mnorman",
+                                name=name, task="/TestWorkload/ReReco")
         testWorkflow.create()
 
         for sub in range(nSubs):
@@ -153,30 +129,29 @@ class JobCreatorTest(unittest.TestCase):
 
             myThread.transaction.begin()
 
-            testFileset = Fileset(name = nameStr)
+            testFileset = Fileset(name=nameStr)
             testFileset.create()
 
             for f in range(nFiles):
                 # pick a random site
                 site = random.choice(self.sites)
-                testFile = File(lfn = "/lfn/%s/%i" % (nameStr, f), size = 1024, events = 10)
+                testFile = File(lfn="/lfn/%s/%i" % (nameStr, f), size=1024, events=10)
                 testFile.setLocation(site)
                 testFile.create()
                 testFileset.addFile(testFile)
 
             testFileset.commit()
-            testSubscription = Subscription(fileset = testFileset,
-                                            workflow = testWorkflow,
-                                            type = "Processing",
-                                            split_algo = "FileBased")
+            testSubscription = Subscription(fileset=testFileset,
+                                            workflow=testWorkflow,
+                                            type="Processing",
+                                            split_algo="FileBased")
             testSubscription.create()
 
             myThread.transaction.commit()
 
-
         return
 
-    def createWorkload(self, workloadName = 'Test', emulator = True, priority = 1):
+    def createWorkload(self, workloadName='Test', emulator=True, priority=1):
         """
         _createTestWorkload_
 
@@ -187,7 +162,6 @@ class JobCreatorTest(unittest.TestCase):
         rereco = workload.getTask("ReReco")
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         rereco.addGenerator("PresetSeeder", **seederDict)
-
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -202,93 +176,90 @@ class JobCreatorTest(unittest.TestCase):
         Creates a common config.
         """
 
-        myThread = threading.currentThread()
-
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
 
-        #First the general stuff
+        # First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", os.getcwd())
 
         config.section_("Agent")
-        config.Agent.componentName   = self.componentName
+        config.Agent.componentName = self.componentName
 
-        #Now the CoreDatabase information
-        #This should be the dialect, dburl, etc
+        # Now the CoreDatabase information
+        # This should be the dialect, dburl, etc
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
 
         config.component_("JobCreator")
         config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'
-        #The log level of the component.
-        #config.JobCreator.logLevel = 'SQLDEBUG'
+        # The log level of the component.
+        # config.JobCreator.logLevel = 'SQLDEBUG'
         config.JobCreator.logLevel = 'INFO'
 
         # maximum number of threads we want to deal
         # with messages per pool.
-        config.JobCreator.maxThreads                = 1
+        config.JobCreator.maxThreads = 1
         config.JobCreator.UpdateFromResourceControl = True
-        config.JobCreator.pollInterval              = 10
-        #config.JobCreator.jobCacheDir               = self.testDir
-        config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
-        config.JobCreator.workerThreads             = 4
-        config.JobCreator.componentDir              = self.testDir
-        config.JobCreator.useWorkQueue              = True
-        config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
+        config.JobCreator.pollInterval = 10
+        # config.JobCreator.jobCacheDir               = self.testDir
+        config.JobCreator.defaultJobType = 'processing'  # Type of jobs that we run, used for resource control
+        config.JobCreator.workerThreads = 4
+        config.JobCreator.componentDir = self.testDir
+        config.JobCreator.useWorkQueue = True
+        config.JobCreator.WorkQueueParams = {'emulateDBSReader': True}
 
         # We now call the JobMaker from here
         config.component_('JobMaker')
-        config.JobMaker.logLevel        = 'INFO'
-        config.JobMaker.namespace       = 'WMCore.WMSpec.Makers.JobMaker'
-        config.JobMaker.maxThreads      = 1
+        config.JobMaker.logLevel = 'INFO'
+        config.JobMaker.namespace = 'WMCore.WMSpec.Makers.JobMaker'
+        config.JobMaker.maxThreads = 1
         config.JobMaker.makeJobsHandler = 'WMCore.WMSpec.Makers.Handlers.MakeJobs'
 
-        #JobStateMachine
+        # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
-        config.JobStateMachine.couchDBName     = self.couchdbname
+        config.JobStateMachine.couchurl = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.couchDBName = self.couchdbname
 
         return config
 
-    def testA_VerySimpleTest(self):
+    def testVerySimpleTest(self):
         """
         _VerySimpleTest_
 
         Just test that everything works...more or less
         """
 
-        #return
+        # return
 
         myThread = threading.currentThread()
 
         config = self.getConfig()
 
-        name         = makeUUID()
-        nSubs        = 5
-        nFiles       = 10
+        name = makeUUID()
+        nSubs = 5
+        nFiles = 10
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
+        dummyWorkload = self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
+        self.createJobCollection(name=name, nSubs=nSubs, nFiles=nFiles, workflowURL=workloadPath)
 
-        testJobCreator = JobCreatorPoller(config = config)
+        testJobCreator = JobCreatorPoller(config=config)
 
         # First, can we run once without everything crashing?
         testJobCreator.algorithm()
 
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        getJobsAction = self.daoFactory(classname="Jobs.GetAllJobs")
+        result = getJobsAction.execute(state='Created', jobType="Processing")
 
-        self.assertEqual(len(result), nSubs*nFiles)
+        self.assertEqual(len(result), nSubs * nFiles)
 
         # Count database objects
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
         self.assertEqual(len(result), nSubs * nFiles)
-
 
         # Find the test directory
         testDirectory = os.path.join(self.testDir, 'jobCacheDir', 'TestWorkload', 'ReReco')
@@ -316,48 +287,43 @@ class JobCreatorTest(unittest.TestCase):
         self.assertEqual(job.baggage.PresetSeeder.generator.initialSeed, 1001)
         self.assertEqual(job.baggage.PresetSeeder.evtgenproducer.initialSeed, 1001)
 
-
         self.assertEqual(job['workflow'], name)
         self.assertEqual(len(job['input_files']), 1)
         self.assertEqual(os.path.basename(job['sandbox']), 'TestWorkload-Sandbox.tar.bz2')
 
         return
 
-    @attr('performance')
-    def testB_ProfilePoller(self):
+    @attr('performance', 'integration')
+    def testProfilePoller(self):
         """
         Profile your performance
         You shouldn't be running this normally because it doesn't do anything
 
         """
 
-        return
-
         myThread = threading.currentThread()
 
-        name         = makeUUID()
-        nSubs        = 5
-        nFiles       = 1500
+        name = makeUUID()
+        nSubs = 5
+        nFiles = 1500
         workloadName = 'TestWorkload'
 
-
-        workload = self.createWorkload(workloadName = workloadName)
+        workload = self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
+        self.createJobCollection(name=name, nSubs=nSubs, nFiles=nFiles, workflowURL=workloadPath)
 
         config = self.getConfig()
 
-        testJobCreator = JobCreatorPoller(config = config)
-        cProfile.runctx("testJobCreator.algorithm()", globals(), locals(), filename = "testStats.stat")
+        testJobCreator = JobCreatorPoller(config=config)
+        cProfile.runctx("testJobCreator.algorithm()", globals(), locals(), filename="testStats.stat")
 
-
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        getJobsAction = self.daoFactory(classname="Jobs.GetAllJobs")
+        result = getJobsAction.execute(state='Created', jobType="Processing")
 
         time.sleep(10)
 
-        self.assertEqual(len(result), nSubs*nFiles)
+        self.assertEqual(len(result), nSubs * nFiles)
 
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
@@ -365,27 +331,24 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-
-    def testC_ProfileWorker(self):
+    @attr('integration')
+    def testProfileWorker(self):
         """
         Profile where the work actually gets done
         You shouldn't be running this one either, since it doesn't test anything.
         """
 
-        return
-
         myThread = threading.currentThread()
 
-        name         = makeUUID()
-        nSubs        = 5
-        nFiles       = 500
+        name = makeUUID()
+        nSubs = 5
+        nFiles = 500
         workloadName = 'TestWorkload'
 
-
-        workload = self.createWorkload(workloadName = workloadName)
+        workload = self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
+        self.createJobCollection(name=name, nSubs=nSubs, nFiles=nFiles, workflowURL=workloadPath)
 
         config = self.getConfig()
 
@@ -394,11 +357,11 @@ class JobCreatorTest(unittest.TestCase):
                       'jobCacheDir': config.JobCreator.jobCacheDir,
                       'defaultJobType': config.JobCreator.defaultJobType}
 
-        input = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4}, {"subscription": 5}]
+        subs = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4},
+                {"subscription": 5}]
 
         testJobCreator = JobCreatorPoller(**configDict)
-        cProfile.runctx("testJobCreator.algorithm(parameters = input)", globals(), locals(), filename = "workStats.stat")
-
+        cProfile.runctx("testJobCreator.algorithm(parameters = input)", globals(), locals(), filename="workStats.stat")
 
         p = pstats.Stats('workStats.stat')
         p.sort_stats('cumulative')
@@ -406,56 +369,46 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-
-    def testD_HugeTest(self):
+    @attr('integration')
+    def testHugeTest(self):
         """
         Don't run this one either
 
         """
 
-        return
-
-
         myThread = threading.currentThread()
 
         config = self.getConfig()
 
-        name         = makeUUID()
-        nSubs        = 10
-        nFiles       = 5000
+        name = makeUUID()
+        nSubs = 10
+        nFiles = 5000
         workloadName = 'Tier1ReReco'
 
-        workload = self.createWorkload(workloadName = workloadName)
+        dummyWorkload = self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
+        self.createJobCollection(name=name, nSubs=nSubs, nFiles=nFiles, workflowURL=workloadPath)
 
-
-
-
-        testJobCreator = JobCreatorPoller(config = config)
-
+        testJobCreator = JobCreatorPoller(config=config)
 
         # First, can we run once without everything crashing?
         startTime = time.time()
         testJobCreator.algorithm()
-        stopTime  = time.time()
+        stopTime = time.time()
 
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        getJobsAction = self.daoFactory(classname="Jobs.GetAllJobs")
+        result = getJobsAction.execute(state='Created', jobType="Processing")
 
-        self.assertEqual(len(result), nSubs*nFiles)
+        self.assertEqual(len(result), nSubs * nFiles)
 
-
-        print("Job took %f seconds to run" %(stopTime - startTime))
-
+        print("Job took %f seconds to run" % (stopTime - startTime))
 
         # Count database objects
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
         self.assertEqual(len(result), nSubs * nFiles)
 
         return
-
 
     def stuffWMBS(self, workflowURL, name):
         """
@@ -467,124 +420,105 @@ class JobCreatorTest(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s1", pnn = "somese.cern.ch")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="s1", pnn="somese.cern.ch")
 
-        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
-
-        mergeFileset = Fileset(name = "mergeFileset")
+        mergeFileset = Fileset(name="mergeFileset")
         mergeFileset.create()
-        bogusFileset = Fileset(name = "bogusFileset")
+        bogusFileset = Fileset(name="bogusFileset")
         bogusFileset.create()
 
-        mergeWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
-                                 name = name, task="/TestWorkload/ReReco")
+        mergeWorkflow = Workflow(spec=workflowURL, owner="mnorman",
+                                 name=name, task="/TestWorkload/ReReco")
         mergeWorkflow.create()
 
-        mergeSubscription = Subscription(fileset = mergeFileset,
-                                         workflow = mergeWorkflow,
-                                         split_algo = "ParentlessMergeBySize")
+        mergeSubscription = Subscription(fileset=mergeFileset,
+                                         workflow=mergeWorkflow,
+                                         split_algo="ParentlessMergeBySize")
         mergeSubscription.create()
-        bogusSubscription = Subscription(fileset = bogusFileset,
-                                         workflow = mergeWorkflow,
-                                         split_algo = "ParentlessMergeBySize")
+        dummySubscription = Subscription(fileset=bogusFileset,
+                                         workflow=mergeWorkflow,
+                                         split_algo="ParentlessMergeBySize")
 
-        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+        file1 = File(lfn="file1", size=1024, events=1024, first_event=0,
+                     locations={"somese.cern.ch"})
         file1.addRun(Run(1, *[45]))
         file1.create()
-        file2 = File(lfn = "file2", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        file2 = File(lfn="file2", size=1024, events=1024, first_event=1024, locations={"somese.cern.ch"})
         file2.addRun(Run(1, *[45]))
         file2.create()
-        file3 = File(lfn = "file3", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        file3 = File(lfn="file3", size=1024, events=1024, first_event=2048, locations={"somese.cern.ch"})
         file3.addRun(Run(1, *[45]))
         file3.create()
-        file4 = File(lfn = "file4", size = 1024, events = 1024,
-                     first_event = 3072, locations = set(["somese.cern.ch"]))
+        file4 = File(lfn="file4", size=1024, events=1024, first_event=3072, locations={"somese.cern.ch"})
         file4.addRun(Run(1, *[45]))
         file4.create()
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileA = File(lfn="fileA", size=1024, events=1024, first_event=0, locations={"somese.cern.ch"})
         fileA.addRun(Run(1, *[46]))
         fileA.create()
-        fileB = File(lfn = "fileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileB = File(lfn="fileB", size=1024, events=1024, first_event=1024, locations={"somese.cern.ch"})
         fileB.addRun(Run(1, *[46]))
         fileB.create()
-        fileC = File(lfn = "fileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileC = File(lfn="fileC", size=1024, events=1024, first_event=2048, locations={"somese.cern.ch"})
         fileC.addRun(Run(1, *[46]))
         fileC.create()
 
-        fileI = File(lfn = "fileI", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileI = File(lfn="fileI", size=1024, events=1024, first_event=0, locations={"somese.cern.ch"})
         fileI.addRun(Run(2, *[46]))
         fileI.create()
-        fileII = File(lfn = "fileII", size = 1024, events = 1024,
-                      first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileII = File(lfn="fileII", size=1024, events=1024, first_event=1024, locations={"somese.cern.ch"})
         fileII.addRun(Run(2, *[46]))
         fileII.create()
-        fileIII = File(lfn = "fileIII", size = 1024, events = 1024,
-                       first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileIII = File(lfn="fileIII", size=1024, events=1024, first_event=2048, locations={"somese.cern.ch"})
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
-        fileIV = File(lfn = "fileIV", size = 1024 * 1000 * 1000, events = 1024,
-                      first_event = 3072, locations = set(["somese.cern.ch"]))
+        fileIV = File(lfn="fileIV", size=1024 * 1000000, events=1024, first_event=3072, locations={"somese.cern.ch"})
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
 
-        for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
-                     fileII, fileIII, fileIV]:
-            mergeFileset.addFile(file)
-            bogusFileset.addFile(file)
+        for fileObj in [file1, file2, file3, file4, fileA, fileB, fileC, fileI, fileII, fileIII, fileIV]:
+            mergeFileset.addFile(fileObj)
+            bogusFileset.addFile(fileObj)
 
         mergeFileset.commit()
         bogusFileset.commit()
 
         return
 
-
-
-    def testE_TestNonProxySplitting(self):
+    def testTestNonProxySplitting(self):
         """
         _TestNonProxySplitting_
 
         Test and see if we can split things without a proxy.
         """
 
-        myThread = threading.currentThread()
-
         config = self.getConfig()
         config.JobCreator.workerThreads = 1
 
-        name         = makeUUID()
+        name = makeUUID()
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
+        workload = self.createWorkload(workloadName=workloadName)
 
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-        self.stuffWMBS(workflowURL = workloadPath, name = name)
+        self.stuffWMBS(workflowURL=workloadPath, name=name)
 
-        testJobCreator = JobCreatorPoller(config = config)
+        testJobCreator = JobCreatorPoller(config=config)
 
         testJobCreator.algorithm()
 
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        getJobsAction = self.daoFactory(classname="Jobs.GetAllJobs")
+        result = getJobsAction.execute(state='Created', jobType="Processing")
 
         self.assertEqual(len(result), 1)
 
-        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        result = getJobsAction.execute(state='Created', jobType="Merge")
         self.assertEqual(len(result), 0)
 
         return
 
 
 if __name__ == "__main__":
-
     unittest.main()
-    deleteConfig(ConfigFile)

@@ -38,6 +38,12 @@ class AgentStatusPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
+        self.config_path = os.path.join(os.environ.get('config', ''), 'config.py')
+        if not os.path.exists(config_path):
+            self.config_path = '/data/srv/wmagent/current/config/wmagent/config.py'
+            if not os.path.exists(config_path):
+                self.config_path = None
+
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
@@ -107,12 +113,9 @@ class AgentStatusPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
-            config_path = os.path.join(os.environ.get('config', ''), 'config.py')
-            if not os.path.exists(config_path):
-                config_path = '/data/srv/wmagent/current/config/wmagent/config.py'
-            if os.path.exists(config_path):
-                self.config = loadConfigurationFile(config_path)
-                self.config.path = config_path
+            if self.config_path is not None:
+                self.config = loadConfigurationFile(self.config_path)
+
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
 
@@ -208,8 +211,8 @@ class AgentStatusPoller(BaseWorkerThread):
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
                 self.config.WorkQueueManager.queueParams['DrainMode'] = True
-                if hasattr(self.config, 'path'):
-                    saveConfigurationFile(self.config, self.config.path)
+                if self.config_path is not None and not isDrainMode(self.config):
+                    saveConfigurationFile(self.config, self.config_path)
 
         # Couch process warning
         couchProc = numberCouchProcess()

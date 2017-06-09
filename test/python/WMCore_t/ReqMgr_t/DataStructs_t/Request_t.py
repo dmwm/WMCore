@@ -4,17 +4,19 @@ Unittests for IteratorTools functions
 """
 
 from __future__ import division, print_function
-
+from pprint import pprint
 import unittest
 from copy import deepcopy
 from WMCore.ReqMgr.DataStructs.Request import initialize_clone
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 ### Spec arguments definition with only key and its default value
 MC_ARGS = MonteCarloWorkloadFactory.getWorkloadCreateArgs()
+RERECO_ARGS = ReRecoWorkloadFactory.getWorkloadCreateArgs()
 STEPCHAIN_ARGS = StepChainWorkloadFactory.getWorkloadCreateArgs()
 TASKCHAIN_ARGS = TaskChainWorkloadFactory.getWorkloadCreateArgs()
 # inner Task/Step definition
@@ -26,6 +28,8 @@ mcOriginalArgs = {'Memory': 1234, 'TimePerEvent': 1.2, 'RequestType': 'MonteCarl
                   "ScramArch": ["slc6_amd64_gcc481"], "RequestName": "test_mc"}
 resubOriginalArgs = {'Memory': 1234, 'TimePerEvent': 1.2, 'RequestType': 'Resubmission', "ProcessingVersion": 7,
                      "ScramArch": ["slc6_amd64_gcc481"], "RequestName": "test_resub"}
+rerecoOriginalArgs = {'Memory': 234, 'SkimName1': 'skim_2017', 'SkimInput1': 'RECOoutput', 'Skim1ConfigCacheID': 'abcdef',
+                      'TimePerEvent': 1.2, 'RequestType': 'ReReco', 'RequestName': 'test_rereco'}
 stepChainOriginalArgs = {'Memory': 1234, 'TimePerEvent': 1.2, 'RequestType': 'StepChain',
                          "ScramArch": ["slc6_amd64_gcc481"], "RequestName": "test_stepchain",
                          "Step1": {"ConfigCacheID": "blah", "GlobalTag": "PHYS18", "BlockWhitelist": ["A", "B"]},
@@ -80,9 +84,20 @@ class RequestTests(unittest.TestCase):
         with self.assertRaises(WMSpecFactoryException):
             TaskChainWorkloadFactory().factoryWorkloadConstruction(cloneArgs["RequestName"], cloneArgs)
 
+        # make sure unsupported keys are remove from both top and inner dicts
+        requestArgs = {}
+        originalArgs = deepcopy(taskChainOriginalArgs)
+        originalArgs['BAD'] = 'KEY'
+        originalArgs['Task1']['SiteWhitelist'] = ['This_key_should_not_be_here']
+        originalArgs['Task1']['Alan'] = False
+        cloneArgs = initialize_clone(requestArgs, originalArgs, TASKCHAIN_ARGS, TASK_ARGS)
+        self.assertFalse('BAD' in cloneArgs)
+        self.assertFalse('SiteWhitelist' in cloneArgs['Task1'])
+        self.assertFalse('Alan' in cloneArgs['Task1'])
+
     def testMC_initialize_clone(self):
         """
-        Test the basics of initialize_clone. 
+        Test the basics of initialize_clone for MC requests
         """
         # test overwrite of original values
         requestArgs = {'Multicore': 1, 'ScramArch': 'slc6_amd64_gcc481', 'LheInputFiles': False}
@@ -105,6 +120,32 @@ class RequestTests(unittest.TestCase):
         cloneArgs = initialize_clone(requestArgs, originalArgs, MC_ARGS)
         mcArgs = deepcopy(mcOriginalArgs)
         self.assertDictEqual(cloneArgs, updateDict(mcArgs, requestArgs))
+
+    def testReReco_initialize_clone(self):
+        """
+        Test the basics of initialize_clone for a ReReco request. 
+        """
+        # test overwrite of original values
+        requestArgs = {'TimePerEvent': 21, 'Multicore': 1, 'SkimName1': 'new_skim_name'}
+        originalArgs = deepcopy(rerecoOriginalArgs)
+        cloneArgs = initialize_clone(requestArgs, originalArgs, RERECO_ARGS)
+        rerecoArgs = deepcopy(rerecoOriginalArgs)
+        self.assertDictEqual(cloneArgs, updateDict(rerecoArgs, requestArgs))
+
+        # test overwrite of values that are not in the original request
+        requestArgs = {'DQMUploadProxy': 'test_file', 'RequestNumEvents': 1, 'DQMSequences': ['a', 'b']}
+        originalArgs = deepcopy(rerecoOriginalArgs)
+        cloneArgs = initialize_clone(requestArgs, originalArgs, RERECO_ARGS)
+        rerecoArgs = deepcopy(rerecoOriginalArgs)
+        self.assertDictEqual(cloneArgs, updateDict(rerecoArgs, requestArgs))
+
+        # check whether invalid keys in the original request are dumped
+        requestArgs = {'RequestNumEvents': 1, 'DQMSequences': []}
+        originalArgs = deepcopy(rerecoOriginalArgs)
+        originalArgs.update(badJob='whatever', WMCore={'YouFool': True})
+        cloneArgs = initialize_clone(requestArgs, originalArgs, RERECO_ARGS)
+        rerecoArgs = deepcopy(rerecoOriginalArgs)
+        self.assertDictEqual(cloneArgs, updateDict(rerecoArgs, requestArgs))
 
     def testSC_initialize_clone(self):
         """

@@ -11,7 +11,7 @@ repacking -> RAW -> optional merge
 from __future__ import division
 
 from Utils.Utilities import makeList
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, activity
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
@@ -205,6 +205,7 @@ class RepackWorkloadFactory(StdBase):
                     "MaxInputSize": {"type": int, "optional": False},
                     "MaxEdmSize": {"type": int, "optional": False},
                     "MaxOverSize": {"type": int, "optional": False},
+                    "Dashboard": {"default": "tier0", "type": str, "validate": activity}
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

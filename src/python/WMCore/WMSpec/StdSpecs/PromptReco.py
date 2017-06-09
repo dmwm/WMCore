@@ -6,7 +6,7 @@ Standard PromptReco workflow.
 """
 
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, activity
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 
 
@@ -192,7 +192,8 @@ class PromptRecoWorkloadFactory(DataProcessing):
                     "SkimFilesPerJob" : {"default" : 1, "type" : int, "validate" : lambda x : x > 0,
                                          "null" : False},
                     "BlockCloseDelay" : {"default" : 86400, "type" : int, "validate" : lambda x : x > 0,
-                                         "null" : False}
+                                         "null" : False},
+                    "Dashboard": {"default": "tier0", "type": str, "validate": activity}
                     }
 
         baseArgs.update(specArgs)

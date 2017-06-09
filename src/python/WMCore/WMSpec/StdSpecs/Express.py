@@ -16,7 +16,7 @@ from __future__ import division
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 from Utils.Utilities import makeList, makeNonEmptyList
-from WMCore.Lexicon import procstringT0
+from WMCore.Lexicon import procstringT0, activity
 
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
@@ -493,7 +493,7 @@ class ExpressWorkloadFactory(StdBase):
                     "MaxInputSize": {"type": int, "optional": False},
                     "MaxInputFiles": {"type": int, "optional": False},
                     "MaxLatency": {"type": int, "optional": False},
-
+                    "Dashboard": {"default": "tier0", "type": str, "validate": activity}
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

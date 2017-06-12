@@ -117,7 +117,7 @@ class AlcaHarvest(Executor):
                 targetLFN = os.path.join(self.step.condition.dir, file2copy)
                 targetPFN = "root://eoscms//eos/cms%s" % targetLFN
 
-                command = "xrdcp -s -f %s %s" % (file2copy, targetPFN)
+                command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
 
                 p = subprocess.Popen(command, shell = True,
                                      stdout=subprocess.PIPE,

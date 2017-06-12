@@ -461,6 +461,10 @@ class SimpleCondorPlugin(BasePlugin):
 
         ad['JobLeaseDuration'] = classad.ExprTree('isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0')
 
+        ad['PeriodicRemove'] = classad.ExprTree('( JobStatus =?= 5 ) && ( time() - EnteredCurrentStatus > 10 * 60 )')
+        removeReasonExpr = 'PeriodicRemove ? "Job automatically removed for being in Held status" : ""'
+        ad['PeriodicRemoveReason'] = classad.ExprTree(removeReasonExpr)
+
         # Required for global pool accounting
         ad['AcctGroup'] = self.acctGroup
         ad['AcctGroupUser'] = self.acctGroupUser

@@ -43,7 +43,7 @@ class RepackWorkloadFactory(StdBase):
 
         """
         workload = self.createWorkload()
-        workload.setDashboardActivity("tier0")
+        workload.setDashboardActivity("t0")
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         cmsswStepType = "CMSSW"

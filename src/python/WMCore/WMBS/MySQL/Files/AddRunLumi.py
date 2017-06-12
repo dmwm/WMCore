@@ -10,8 +10,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 
 class AddRunLumi(DBFormatter):
-    sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi)
-            select id, :run, :lumi from wmbs_file_details
+    sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi, num_events)
+            select id, :run, :lumi, :num_events from wmbs_file_details
             where lfn = :lfn"""
 
     def getBinds(self, filename=None, runs=None):
@@ -36,7 +36,8 @@ class AddRunLumi(DBFormatter):
                 for lumi in run:
                     binds.append({'lfn': lfn,
                                   'run': run.run,
-                                  'lumi': lumi})
+                                  'lumi': lumi,
+                                  'num_events': run.getEventsByLumi(lumi)})
         else:
             raise Exception("Type of runs argument is not allowed: %s" \
                             % type(runs))

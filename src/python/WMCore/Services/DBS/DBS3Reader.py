@@ -92,7 +92,10 @@ class DBS3Reader(object):
             item = {}
             item["RunNumber"] = lumisItem['run_num']
             item['LumiSectionNumber'] = lumisItem['lumi_section_num']
+            if lumisItem.get('event_count', None) is not None:
+                item['EventCount'] = lumisItem['event_count']
             lumiDict[lumisItem['logical_file_name']].append(item)
+            # TODO: add key for lumi and event pair.
         return lumiDict
 
     def checkDBSServer(self):

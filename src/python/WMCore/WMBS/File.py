@@ -9,7 +9,6 @@ A simple object representing a file in WMBS.
 
 
 import threading
-import time
 import logging
 
 from WMCore.DataStructs.File import File as WMFile

@@ -10,15 +10,127 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 import json
 import os
 import unittest
-from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from copy import deepcopy
+
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
+REQUEST = {
+    "AcquisitionEra": "AcqEra_TopLevel",
+    "CMSSWVersion": "CMSSW_8_0_20",
+    "Campaign": "UnitTestTaskForce",
+    "ConfigCacheUrl": os.environ["COUCHURL"],
+    "CouchDBName": "taskchain_t",
+    "DQMConfigCacheID": "Harvest",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev;https://cmsweb.cern.ch/dqm/relval-test",
+    "EnableHarvesting": True,
+    "GlobalTag": "GlobalTag-TopLevel",
+    "Memory": 5000,
+    "PrepID": "PREPID-TopLevel",
+    "ProcessingString": "ProcStr_TopLevel",
+    "ProcessingVersion": 20,
+    "RequestPriority": 180000,
+    "RequestType": "TaskChain",
+    "Requestor": "amaltaro",
+    "ScramArch": "slc6_amd64_gcc491",
+    "SizePerEvent": 60,
+    "SubRequestType": "ReDigi",
+    "Task1": {
+        "AcquisitionEra": "AcqEra_Task1",
+        "CMSSWVersion": "CMSSW_8_0_21",
+        "ConfigCacheID": "Scratch",
+        "EventsPerLumi": 100,
+        "GlobalTag": "GlobalTag-Task1",
+        "KeepOutput": True,
+        "Memory": 5001,
+        "Multicore": 1,
+        "EventStreams": 1,
+        "PrepID": "PREPID-Task1",
+        "PrimaryDataset": "MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph",
+        "ProcessingString": "ProcStr_Task1",
+        "ProcessingVersion": 21,
+        "RequestNumEvents": 50000,
+        "ScramArch": "slc6_amd64_gcc493",
+        "Seeding": "AutomaticSeeding",
+        "SizePerEvent": 100,
+        "SplittingAlgo": "EventBased",
+        "TaskName": "myTask1",
+        "TimePerEvent": 100.0
+    },
+    "Task2": {
+        "AcquisitionEra": "AcqEra_Task2",
+        "CMSSWVersion": "CMSSW_8_0_22",
+        "ConfigCacheID": "Digi",
+        "GlobalTag": "GlobalTag-Task2",
+        "InputFromOutputModule": "RAWSIMoutput",
+        "InputTask": "myTask1",
+        "MCPileup": "/HighPileUp/Run2011A-v1/RAW",  # mocked data
+        "Memory": 5002,
+        "Multicore": 2,
+        "EventStreams": 2,
+        "PrepID": "PREPID-Task2",
+        "PrimaryDataset": "MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph",
+        "ProcessingString": "ProcStr_Task2",
+        "ProcessingVersion": 22,
+        "ScramArch": ["slc6_amd64_gcc530", "slc6_amd64_gcc493"],
+        "SizePerEvent": 90,
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TaskName": "myTask2",
+        "TimePerEvent": 90.0
+    },
+    "Task3": {
+        "AcquisitionEra": "AcqEra_Task3",
+        "CMSSWVersion": "CMSSW_8_0_23",
+        "ConfigCacheID": "Aod",
+        "GlobalTag": "GlobalTag-Task3",
+        "InputFromOutputModule": "PREMIXRAWoutput",
+        "InputTask": "myTask2",
+        "KeepOutput": True,
+        "MCPileup": "/HighPileUp/Run2011A-v1/RAW",  # mocked data
+        "Memory": 5003,
+        "Multicore": 3,
+        "EventStreams": 3,
+        "PrepID": "PREPID-Task3",
+        "PrimaryDataset": "MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph",
+        "ProcessingString": "ProcStr_Task3",
+        "ProcessingVersion": 23,
+        "ScramArch": "slc6_amd64_gcc600",
+        "SizePerEvent": 80,
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TaskName": "myTask3",
+        "TimePerEvent": 80.
+    },
+    "Task4": {
+        "AcquisitionEra": "AcqEra_Task4",
+        "CMSSWVersion": "CMSSW_8_0_24",
+        "ConfigCacheID": "MiniAod",
+        "GlobalTag": "GlobalTag-Task4",
+        "InputFromOutputModule": "AODSIMoutput",
+        "InputTask": "myTask3",
+        "KeepOutput": True,
+        "Memory": 5004,
+        "Multicore": 4,
+        "EventStreams": 4,
+        "PrepID": "PREPID-Task4",
+        "PrimaryDataset": "MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph",
+        "ProcessingString": "ProcStr_Task4",
+        "ProcessingVersion": 24,
+        "ScramArch": "slc6_amd64_gcc630",
+        "SizePerEvent": 70,
+        "SplittingAlgo": "EventAwareLumiBased",
+        "TaskName": "myTask4",
+        "TimePerEvent": 70.0
+    },
+    "TaskChain": 4,
+    "TimePerEvent": 0.5
+}
 
 
 def getTestFile(partialPath):
@@ -48,6 +160,68 @@ def makeGeneratorConfig(couchDatabase):
                                                                                "dataTier": "GEN-SIM"}}}}
     result = couchDatabase.commitOne(newConfig)
     return result[0]["id"]
+
+
+def makeRealConfigs(couchDatabase):
+    """
+    _makeRealConfigs_
+    Create configs to be used by the joker 4 tasks request, just as tjey
+    are used in testbed.
+    Scratch - GEN-SIM - DIGI - RECO
+
+    returns a map of config names to IDs
+    """
+    scratchConfig = Document()
+    scratchConfig["owner"] = {"user": "amaltaro", "group": "DATAOPS"}
+    scratchConfig["pset_tweak_details"] = {"process": {"outputModules_": ["RAWSIMoutput", "LHEoutput"],
+                                                       "LHEoutput": {"dataset": {"filterName": "",
+                                                                                 "dataTier": "LHE"}},
+                                                       "RAWSIMoutput": {"dataset": {"filterName": "",
+                                                                                    "dataTier": "GEN-SIM"}}}}
+    digiConfig = Document()
+    digiConfig["owner"] = {"user": "amaltaro", "group": "DATAOPS"}
+    digiConfig["pset_tweak_details"] = {
+        "process": {"outputModules_": ["PREMIXRAWoutput"],
+                    "PREMIXRAWoutput": {"dataset": {"filterName": "", "dataTier": "GEN-SIM-RAW"}},
+                    }
+    }
+    aodConfig = Document()
+    aodConfig["owner"] = {"user": "amaltaro", "group": "DATAOPS"}
+    aodConfig["pset_tweak_details"] = {
+        "process": {"outputModules_": ["AODSIMoutput"],
+                    "AODSIMoutput": {"dataset": {"filterName": "", "dataTier": "AODSIM"}},
+                    }
+    }
+
+    miniaodConfig = Document()
+    miniaodConfig["owner"] = {"user": "amaltaro", "group": "DATAOPS"}
+    miniaodConfig["pset_tweak_details"] = {
+        "process": {"outputModules_": ["MINIAODSIMoutput"],
+                    "MINIAODSIMoutput": {"dataset": {"filterName": "", "dataTier": "MINIAODSIM"}},
+                    }
+    }
+
+    harvestConfig = Document()
+    harvestConfig["owner"] = {"user": "amaltaro", "group": "DATAOPS"}
+    harvestConfig["pset_tweak_details"] = {
+        "process": {"outputModules_": []}
+    }
+
+    couchDatabase.queue(scratchConfig)
+    couchDatabase.queue(digiConfig)
+    couchDatabase.queue(aodConfig)
+    couchDatabase.queue(miniaodConfig)
+    couchDatabase.queue(harvestConfig)
+    result = couchDatabase.commit()
+
+    docMap = {
+        "Scratch": result[0][u'id'],
+        "Digi": result[1][u'id'],
+        "Aod": result[2][u'id'],
+        "MiniAod": result[3][u'id'],
+        "Harvest": result[4][u'id'],
+    }
+    return docMap
 
 
 def makeProcessingConfigs(couchDatabase):
@@ -83,7 +257,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeRECO": {"dataset": {"dataTier": "RECO", "filterName": "reco"}},
                     "writeAOD": {"dataset": {"dataTier": "AOD", "filterName": "AOD"}},
                     "writeALCA": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca"}},
-                   }
+                    }
     }
     alcaConfig = Document()
     alcaConfig["info"] = None
@@ -97,7 +271,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeALCA2": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca2"}},
                     "writeALCA3": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca3"}},
                     "writeALCA4": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca4"}},
-                   }
+                    }
     }
 
     skimsConfig = Document()
@@ -113,7 +287,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeSkim3": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
                     "writeSkim4": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
                     "writeSkim5": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},
-                   }
+                    }
     }
     couchDatabase.queue(rawConfig)
     couchDatabase.queue(recoConfig)
@@ -152,11 +326,14 @@ def createMultiGTArgs():
         "AcquisitionEra": "ReleaseValidation",
         "Requestor": "sfoulkes@fnal.gov",
         "CMSSWVersion": "CMSSW_8_0_17",
+        "ConfigCacheUrl": os.environ["COUCHURL"],
+        "CouchDBName": "taskchain_t",
         "ScramArch": "slc6_amd64_gcc530",
         "ProcessingVersion": 1,
         "GlobalTag": "DefaultGlobalTag",
         "DashboardHost": "127.0.0.1",
         "DashboardPort": 8884,
+        "PrepID": "PREPID-TopLevel",
         "TaskChain": 4,
         "Task1": {
             "TaskName": "DigiHLT",
@@ -171,6 +348,7 @@ def createMultiGTArgs():
             "CMSSWVersion": "CMSSW_8_0_18",
             "ScramArch": "slc6_amd64_gcc530",
             "PrimaryDataset": "ZeroBias",
+            "PrepID": "PREPID-Task2",
             "SplittingAlgo": "EventAwareLumiBased",
         },
         "Task3": {
@@ -186,10 +364,36 @@ def createMultiGTArgs():
             "TaskName": "Skims",
             "InputTask": "Reco",
             "InputFromOutputModule": "writeRECO",
+            "PrepID": "PREPID-Task4",
             "SplittingAlgo": "EventAwareLumiBased",
         }
     }
     return arguments
+
+
+def buildComplexTaskChain(couchdb):
+    """
+    Build a TaskChain workflow with different settings (AcqEra/ProcStr/ProcVer/
+    CMSSWVersion/ScramArch/GlobalTag/PrepId/TpE/SpE for each task.
+    
+    Return a TaskChain workload object.
+    """
+    testArguments = TaskChainWorkloadFactory.getTestArguments()
+    testArguments.update(deepcopy(REQUEST))
+    complexDocs = makeRealConfigs(couchdb)
+
+    # additional request override
+    del testArguments['ConfigCacheID']
+    testArguments['DQMConfigCacheID'] = complexDocs['Harvest']
+    testArguments['Task1']['ConfigCacheID'] = complexDocs['Scratch']
+    testArguments['Task2']['ConfigCacheID'] = complexDocs['Digi']
+    testArguments['Task3']['ConfigCacheID'] = complexDocs['Aod']
+    testArguments['Task4']['ConfigCacheID'] = complexDocs['MiniAod']
+
+    factory = TaskChainWorkloadFactory()
+    testWorkload = factory.factoryWorkloadConstruction("ComplexChain", testArguments)
+
+    return testWorkload
 
 
 class TaskChainTests(EmulatedUnitTestCase):
@@ -497,8 +701,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         testArguments.update(createMultiGTArgs())
-        testArguments["ConfigCacheUrl"] = self.testInit.couchUrl
-        testArguments["CouchDBName"] = self.testInit.couchDbName
         testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
         testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
         testArguments["Task3"]["ConfigCacheID"] = processorDocs['ALCAReco']
@@ -544,8 +746,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         testArguments.update(createMultiGTArgs())
         lumiDict = {"1": [[2, 4], [8, 50]], "2": [[100, 200], [210, 210]]}
-        testArguments["ConfigCacheUrl"] = self.testInit.couchUrl
-        testArguments["CouchDBName"] = self.testInit.couchDbName
         testArguments["Task1"]["LumiList"] = lumiDict
         testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
         testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
@@ -566,10 +766,10 @@ class TaskChainTests(EmulatedUnitTestCase):
                         arguments)
         self._checkTask(self.workload.getTaskByPath(
             "/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco"),
-                        arguments['Task3'], arguments)
+            arguments['Task3'], arguments)
         self._checkTask(self.workload.getTaskByPath(
             "/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims"),
-                        arguments['Task4'], arguments)
+            arguments['Task4'], arguments)
 
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
         self.assertEqual(lumiDict, digi.getLumiMask().getCompactList())
@@ -602,15 +802,19 @@ class TaskChainTests(EmulatedUnitTestCase):
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 14, "Number of output datasets doesn't match")
-        self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDigiFilter-FAKE-v1/RAW-DIGI" in outputDatasets)
-        self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDebugDigiFilter-FAKE-v1/RAW-DEBUG-DIGI" in outputDatasets)
+        self.assertTrue(
+            "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDigiFilter-FAKE-v1/RAW-DIGI" in outputDatasets)
+        self.assertTrue(
+            "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDebugDigiFilter-FAKE-v1/RAW-DEBUG-DIGI" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-reco-FAKE-v1/RECO" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-AOD-FAKE-v1/AOD" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-alca-FAKE-v1/ALCARECO" in outputDatasets)
         for i in range(1, 5):
-            self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-alca%d-FAKE-v1/ALCARECO" % i in outputDatasets)
+            self.assertTrue(
+                "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-alca%d-FAKE-v1/ALCARECO" % i in outputDatasets)
         for i in range(1, 6):
-            self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-skim%d-FAKE-v1/RECO-AOD" % i in outputDatasets)
+            self.assertTrue(
+                "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-skim%d-FAKE-v1/RECO-AOD" % i in outputDatasets)
 
         return
 
@@ -841,10 +1045,8 @@ class TaskChainTests(EmulatedUnitTestCase):
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
-            "Requestor": "alan.malta@cern.ch",
             "CMSSWVersion": "CMSSW_8_0_17",
             "ScramArch": "slc6_amd64_gcc530",
-            "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "ConfigCacheUrl": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
@@ -855,28 +1057,15 @@ class TaskChainTests(EmulatedUnitTestCase):
                 "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
                 "TaskName": "DIGI",
                 "ConfigCacheID": processorDocs['DigiHLT'],
-                "SplittingAlgo": "LumiBased",
-                "LumisPerJob": 4,
                 "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
-                "DeterministicPileup": True,
-                "CMSSWVersion": "CMSSW_8_0_1",
-                "ScramArch": "slc6_amd64_gcc493",
-                "GlobalTag": "GR_39_P_V5:All",
-                "PrimaryDataset": "PURelValTTBar",
-                "AcquisitionEra": "CMSSW_5_2_6",
-                "ProcessingString": "ProcStr_Task1"
+                "DeterministicPileup": True
             },
             "Task2": {
                 "TaskName": "RECO",
                 "InputTask": "DIGI",
                 "InputFromOutputModule": "writeRAWDIGI",
                 "ConfigCacheID": processorDocs['Reco'],
-                "DataPileup": "/some/minbias-data-v1/GEN-SIM",
-                "SplittingAlgo": "LumiBased",
-                "LumisPerJob": 2,
-                "GlobalTag": "GR_R_62_V3::All",
-                "AcquisitionEra": "CMSSW_5_2_7",
-                "ProcessingString": "ProcStr_Task2"
+                "DataPileup": "/some/minbias-data-v1/GEN-SIM"
             },
         }
 
@@ -943,6 +1132,499 @@ class TaskChainTests(EmulatedUnitTestCase):
         arguments['Task3']['ConfigCacheID'] = processorDocs['ALCAReco']
         arguments['Task3']['InputFromOutputModule'] = 'writeALCA'
         return arguments
+
+    def testWorkloadJobSplitting(self):
+        """
+        Test a many-tasks TaskChain workload with specific settings for every
+        single task. Checks are done mainly at workload level. It validates:
+         * input data settings
+         * job splitting and performance settings
+        """
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+
+        # test workload properties
+        self.assertEqual(testWorkload.getRequestType(), REQUEST['RequestType'])
+        self.assertEqual(testWorkload.getDashboardActivity(), "relval")
+        self.assertEqual(testWorkload.getCampaign(), REQUEST['Campaign'])
+        self.assertEqual(testWorkload.getAcquisitionEra(), REQUEST['AcquisitionEra'])
+        self.assertEqual(testWorkload.getProcessingString(), REQUEST['ProcessingString'])
+        self.assertEqual(testWorkload.getProcessingVersion(), REQUEST['ProcessingVersion'])
+        self.assertEqual(testWorkload.getPrepID(), REQUEST['PrepID'])
+        self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_21', 'CMSSW_8_0_22',
+                                                                'CMSSW_8_0_23', 'CMSSW_8_0_24'])
+        self.assertEqual(testWorkload.getLumiList(), {})
+        self.assertFalse(testWorkload.getAllowOpportunistic())
+        self.assertEqual(testWorkload.getUnmergedLFNBase(), '/store/unmerged')
+        self.assertEqual(testWorkload.getMergedLFNBase(), '/store/data')
+        self.assertEqual(testWorkload.listInputDatasets(), [])
+
+        tasksProducingOutput = [
+            '/ComplexChain/myTask1',
+            '/ComplexChain/myTask1/myTask1MergeLHEoutput',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput/myTask4',
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput/myTask4/myTask4MergeMINIAODSIMoutput'
+        ]
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), tasksProducingOutput)
+
+        # workqueue start policy checks
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
+        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 288, 'SliceType': 'NumberOfEvents',
+                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
+                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
+                                                                    'blowupFactor': 3.4, 'policyName': 'MonteCarlo'})
+
+        # nasty splitting settings check
+        splitArgs = testWorkload.listJobSplittingParametersByTask()
+        task1Splitting = splitArgs['/ComplexChain/myTask1']
+        self.assertEqual(task1Splitting['type'], 'Production')
+        self.assertEqual(task1Splitting['algorithm'], 'EventBased')
+        self.assertEqual(task1Splitting['events_per_job'], 288)
+        self.assertEqual(task1Splitting['events_per_lumi'], 100)
+        self.assertFalse(task1Splitting['deterministicPileup'])
+        self.assertFalse(task1Splitting['lheInputFiles'])
+        self.assertFalse(task1Splitting['trustSitelists'])
+        self.assertFalse(task1Splitting['trustPUSitelists'])
+        self.assertDictEqual(task1Splitting['performance'], {'memoryRequirement': 5001.0,
+                                                             'sizePerEvent': 100.0,
+                                                             'timePerEvent': 100.0})
+        task2Splitting = splitArgs['/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2']
+        self.assertEqual(task2Splitting['type'], 'Processing')
+        self.assertEqual(task2Splitting['algorithm'], 'EventAwareLumiBased')
+        self.assertEqual(task2Splitting['events_per_job'], 320)
+        self.assertEqual(task2Splitting['max_events_per_lumi'], 20000)
+        self.assertFalse(task2Splitting['deterministicPileup'])
+        self.assertFalse(task2Splitting['lheInputFiles'])
+        self.assertFalse(task2Splitting['trustSitelists'])
+        self.assertFalse(task2Splitting['trustPUSitelists'])
+        self.assertDictEqual(task2Splitting['performance'], {'memoryRequirement': 5002.0,
+                                                             'sizePerEvent': 90.0,
+                                                             'timePerEvent': 90.0})
+        task3Splitting = splitArgs[
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3']
+        self.assertEqual(task3Splitting['type'], 'Processing')
+        self.assertEqual(task3Splitting['algorithm'], 'EventAwareLumiBased')
+        self.assertEqual(task3Splitting['events_per_job'], 360)
+        self.assertEqual(task3Splitting['max_events_per_lumi'], 20000)
+        self.assertFalse(task3Splitting['deterministicPileup'])
+        self.assertFalse(task3Splitting['lheInputFiles'])
+        self.assertFalse(task3Splitting['trustSitelists'])
+        self.assertFalse(task3Splitting['trustPUSitelists'])
+        self.assertDictEqual(task3Splitting['performance'], {'memoryRequirement': 5003.0,
+                                                             'sizePerEvent': 80.0,
+                                                             'timePerEvent': 80.0})
+        task4Splitting = splitArgs[
+            '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput/myTask4']
+        self.assertEqual(task4Splitting['type'], 'Processing')
+        self.assertEqual(task4Splitting['algorithm'], 'EventAwareLumiBased')
+        self.assertEqual(task4Splitting['events_per_job'], 411)
+        self.assertEqual(task4Splitting['max_events_per_lumi'], 20000)
+        self.assertFalse(task4Splitting['deterministicPileup'])
+        self.assertFalse(task4Splitting['lheInputFiles'])
+        self.assertFalse(task4Splitting['trustSitelists'])
+        self.assertFalse(task4Splitting['trustPUSitelists'])
+        self.assertDictEqual(task4Splitting['performance'], {'memoryRequirement': 5004.0,
+                                                             'sizePerEvent': 70.0,
+                                                             'timePerEvent': 70.0})
+
+        return
+
+    def testCMSSWSettings(self):
+        """
+        Test CMSSW/ScramArchs settings at workload/task/step level
+        """
+
+        def _checkCMSSWScram(workload):
+            "Validate CMSSW and ScramArch for the 4-tasks request and their merge tasks"
+            for t in ["Task1", "Task2", "Task3", "Task4"]:
+                task = workload.getTaskByName(REQUEST[t]['TaskName'])
+                self.assertEqual(task.getSwVersion(), REQUEST[t]['CMSSWVersion'])
+                if isinstance(REQUEST[t]['ScramArch'], basestring):
+                    scramArchs = [REQUEST[t]['ScramArch']]
+                else:
+                    scramArchs = REQUEST[t]['ScramArch']
+                self.assertEqual(task.getScramArch(), scramArchs)
+
+                for childName in task.listChildNames():
+                    child = workload.getTaskByName(childName)
+                    if child.taskType() in ["Merge", "Production", "Processing"]:
+                        self.assertEqual(child.getSwVersion(), REQUEST[t]['CMSSWVersion'])
+                        self.assertEqual(child.getScramArch(), scramArchs)
+
+                step = task.getStepHelper(task.getTopStepName())
+                self.assertEqual(step.getCMSSWVersion(), REQUEST[t]['CMSSWVersion'])
+                self.assertItemsEqual(step.getScramArch(), scramArchs)
+            return
+
+        # Case 1: workflow creation only
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_21', 'CMSSW_8_0_22',
+                                                                'CMSSW_8_0_23', 'CMSSW_8_0_24'])
+        _checkCMSSWScram(testWorkload)
+
+        # Case 2: now we assign it just to make sure no changes will happen to the release values
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+
+        self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_21', 'CMSSW_8_0_22',
+                                                                'CMSSW_8_0_23', 'CMSSW_8_0_24'])
+        _checkCMSSWScram(testWorkload)
+
+        return
+
+    def testPrepIDSettings(self):
+        """
+        Test the prepid settings for the workload and tasks
+        """
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+
+        self.assertEqual(testWorkload.getPrepID(), REQUEST['PrepID'])
+        for t in ["myTask1", "myTask1MergeLHEoutput", "myTask1MergeRAWSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task1']['PrepID'])
+        for t in ["myTask2", "myTask2MergePREMIXRAWoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task2']['PrepID'])
+        for t in ["myTask3", "myTask3MergeAODSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task3']['PrepID'])
+        for t in ["myTask4", "myTask4MergeMINIAODSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task4']['PrepID'])
+
+        # Now we assign it just to make sure no changes will happen to the prepid
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+
+        self.assertEqual(testWorkload.getPrepID(), REQUEST['PrepID'])
+        for t in ["myTask1", "myTask1MergeLHEoutput", "myTask1MergeRAWSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task1']['PrepID'])
+        for t in ["myTask2", "myTask2MergePREMIXRAWoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task2']['PrepID'])
+        for t in ["myTask3", "myTask3MergeAODSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task3']['PrepID'])
+        for t in ["myTask4", "myTask4MergeMINIAODSIMoutput"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(), REQUEST['Task4']['PrepID'])
+
+
+        ### Now test it with top level inheritance, creation only
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(createMultiGTArgs())
+        testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
+        testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
+        testArguments["Task3"]["ConfigCacheID"] = processorDocs['ALCAReco']
+        testArguments["Task4"]["ConfigCacheID"] = processorDocs['Skims']
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("YankingTheChain", testArguments)
+
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        for t in ["DigiHLT", "DigiHLTMergewriteRAWDIGI", "DigiHLTMergewriteRAWDEBUGDIGI"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task1'].get('PrepID', testArguments['PrepID']))
+        for t in ["Reco", "RecoMergewriteRECO", "RecoMergewriteALCA", "RecoMergewriteAOD"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task2'].get('PrepID', testArguments['PrepID']))
+        for t in ["ALCAReco", "ALCARecoMergewriteALCA1", "ALCARecoMergewriteALCA2",
+                  "ALCARecoMergewriteALCA3", "ALCARecoMergewriteALCA4"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task3'].get('PrepID', testArguments['PrepID']))
+        for t in ["Skims", "SkimsMergewriteSkim1", "SkimsMergewriteSkim2",
+                  "SkimsMergewriteSkim3", "SkimsMergewriteSkim4"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task4'].get('PrepID', testArguments['PrepID']))
+
+        # Now we assign it just to make sure no changes will happen to the prepid
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        for t in ["DigiHLT", "DigiHLTMergewriteRAWDIGI", "DigiHLTMergewriteRAWDEBUGDIGI"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task1'].get('PrepID', testArguments['PrepID']))
+        for t in ["Reco", "RecoMergewriteRECO", "RecoMergewriteALCA", "RecoMergewriteAOD"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task2'].get('PrepID', testArguments['PrepID']))
+        for t in ["ALCAReco", "ALCARecoMergewriteALCA1", "ALCARecoMergewriteALCA2",
+                  "ALCARecoMergewriteALCA3", "ALCARecoMergewriteALCA4"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task3'].get('PrepID', testArguments['PrepID']))
+        for t in ["Skims", "SkimsMergewriteSkim1", "SkimsMergewriteSkim2",
+                  "SkimsMergewriteSkim3", "SkimsMergewriteSkim4"]:
+            self.assertEqual(testWorkload.getTaskByName(t).getPrepID(),
+                             testArguments['Task4'].get('PrepID', testArguments['PrepID']))
+
+        return
+
+    def testInputDataSettings(self):
+        """
+        Test input data settings for a many-tasks TaskChain workload with specific
+        settings for every single task.
+        """
+        inputSteps = {'Task1':None,
+                      'Task2': '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/cmsRun1',
+                      'Task3': '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/cmsRun1',
+                      'Task4': '/ComplexChain/myTask1/myTask1MergeRAWSIMoutput/myTask2/myTask2MergePREMIXRAWoutput/myTask3/myTask3MergeAODSIMoutput/cmsRun1'}
+        childNames = {
+            'Task1': ["myTask1MergeRAWSIMoutput", "myTask1MergeLHEoutput", "LogCollectFormyTask1",
+                      "myTask1CleanupUnmergedLHEoutput", "myTask1CleanupUnmergedRAWSIMoutput"],
+            'Task2': ["myTask2MergePREMIXRAWoutput", "LogCollectFormyTask2", "myTask2CleanupUnmergedPREMIXRAWoutput"],
+            'Task3': ["myTask3MergeAODSIMoutput", "LogCollectFormyTask3", "myTask3CleanupUnmergedAODSIMoutput"],
+            'Task4': ["myTask4MergeMINIAODSIMoutput", "LogCollectFormyTask4", "myTask4CleanupUnmergedMINIAODSIMoutput"]
+        }
+
+        def _checkInputData(workload, sitewhitelist=None):
+            "Validate input data/block/run/step/PU for the 4-tasks request"
+            sitewhitelist = sitewhitelist or []
+            self.assertEqual(workload.listPileupDatasets().values(), [{REQUEST['Task2']['MCPileup']}])
+
+            for t in ["Task1", "Task2", "Task3", "Task4"]:
+                task = workload.getTaskByName(REQUEST[t]['TaskName'])
+                taskType = 'Production' if t == 'Task1' else 'Processing'
+                sitewhitelist = sitewhitelist if t == 'Task1' else []
+
+                self.assertEqual(task.taskType(), taskType)
+                if 'RequestNumEvents' in REQUEST[t]:
+                    self.assertEqual(task.totalEvents(), REQUEST[t]['RequestNumEvents'])
+                self.assertItemsEqual(task.listChildNames(), childNames[t])
+                self.assertEqual(task.getInputStep(), inputSteps[t])
+                self.assertDictEqual(task.getLumiMask(), {})
+                self.assertEqual(task.getFirstEvent(), REQUEST['Task1'].get('FirstEvent', 1))
+                self.assertEqual(task.getFirstLumi(), REQUEST['Task1'].get('FirstLumi', 1))
+                self.assertEqual(task.parentProcessingFlag(), REQUEST[t].get('IncludeParents', False))
+                self.assertEqual(task.inputDataset(), REQUEST['Task1'].get('InputDataset'))
+                self.assertEqual(task.dbsUrl(), REQUEST.get('DbsUrl'))
+                self.assertEqual(task.inputBlockWhitelist(), REQUEST[t].get('inputBlockWhitelist'))
+                self.assertEqual(task.inputBlockBlacklist(), REQUEST[t].get('inputBlockBlacklist'))
+                self.assertEqual(task.inputRunWhitelist(), REQUEST[t].get('inputRunWhitelist'))
+                self.assertEqual(task.inputRunBlacklist(), REQUEST[t].get('inputRunBlacklist'))
+                self.assertItemsEqual(task.siteWhitelist(), sitewhitelist)
+                self.assertItemsEqual(task.siteBlacklist(), REQUEST[t].get('siteBlacklist', []))
+                self.assertDictEqual(task.getTrustSitelists(), {'trustPUlists': False, 'trustlists': False})
+                self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), REQUEST[t].get('IgnoredOutputModules', []))
+
+            return
+
+        # Case 1: only workload creation
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        _checkInputData(testWorkload)
+
+        # Case 2: workload assignment. Only the site whitelist is supposed to change
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        _checkInputData(testWorkload, sitewhitelist=["T2_US_Nebraska", "T2_IT_Rome"])
+
+        return
+
+    def testOutputDataSettings(self):
+        """
+        Test output datasets, output modules and subscriptions for the workload
+        and each task. Tests are done against basic workload creation and then
+        against a workload assigned (mimic'ing Ops assignment)
+        """
+        outputLFNBases = [
+            '/store/unmerged/AcqEra_Task1/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/LHE/ProcStr_Task1-v21',
+            '/store/unmerged/AcqEra_Task1/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/GEN-SIM/ProcStr_Task1-v21',
+            '/store/unmerged/AcqEra_Task2/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/GEN-SIM-RAW/ProcStr_Task2-v22',
+            '/store/unmerged/AcqEra_Task3/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AODSIM/ProcStr_Task3-v23',
+            '/store/unmerged/AcqEra_Task4/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/MINIAODSIM/ProcStr_Task4-v24',
+            '/store/data/AcqEra_Task1/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/LHE/ProcStr_Task1-v21',
+            '/store/data/AcqEra_Task1/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/GEN-SIM/ProcStr_Task1-v21',
+            '/store/data/AcqEra_Task2/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/GEN-SIM-RAW/ProcStr_Task2-v22',
+            '/store/data/AcqEra_Task3/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AODSIM/ProcStr_Task3-v23',
+            '/store/data/AcqEra_Task4/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/MINIAODSIM/ProcStr_Task4-v24']
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task2-ProcStr_Task2-v22/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task3-ProcStr_Task3-v23/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+            }
+
+        outMods = {"Task1": {'LHEoutput': dict(dataTier='LHE', filterName='', transient=True,
+                                               primaryDataset=REQUEST['Task1']['PrimaryDataset'],
+                                               processedDataset="AcqEra_Task1-ProcStr_Task1-v21",
+                                               lfnBase=outputLFNBases[0],
+                                               mergedLFNBase=outputLFNBases[0+5]),
+                             'RAWSIMoutput': dict(dataTier='GEN-SIM', filterName='', transient=True,
+                                                  primaryDataset=REQUEST['Task1']['PrimaryDataset'],
+                                                  processedDataset="AcqEra_Task1-ProcStr_Task1-v21",
+                                                  lfnBase=outputLFNBases[1],
+                                                  mergedLFNBase=outputLFNBases[1+5])},
+                   "Task2": {'PREMIXRAWoutput': dict(dataTier='GEN-SIM-RAW', filterName='', transient=True,
+                                                     primaryDataset=REQUEST['Task2']['PrimaryDataset'],
+                                                     processedDataset="AcqEra_Task2-ProcStr_Task2-v22",
+                                                     lfnBase=outputLFNBases[2],
+                                                     mergedLFNBase=outputLFNBases[2+5])},
+                   "Task3": {'AODSIMoutput': dict(dataTier='AODSIM', filterName='', transient=True,
+                                                  primaryDataset=REQUEST['Task3']['PrimaryDataset'],
+                                                  processedDataset="AcqEra_Task3-ProcStr_Task3-v23",
+                                                  lfnBase=outputLFNBases[3],
+                                                  mergedLFNBase=outputLFNBases[3+5])},
+                   "Task4": {'MINIAODSIMoutput': dict(dataTier='MINIAODSIM', filterName='', transient=True,
+                                                      primaryDataset=REQUEST['Task4']['PrimaryDataset'],
+                                                      processedDataset="AcqEra_Task4-ProcStr_Task4-v24",
+                                                      lfnBase=outputLFNBases[4],
+                                                      mergedLFNBase=outputLFNBases[4+5])}
+                   }
+        mergedMods = deepcopy(outMods)
+        mergedMods['Task1']['LHEoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0+5]})
+        mergedMods['Task1']['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[1+5]})
+        mergedMods['Task2']['PREMIXRAWoutput'].update({'transient': False, 'lfnBase': outputLFNBases[2+5]})
+        mergedMods['Task3']['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3+5]})
+        mergedMods['Task4']['MINIAODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4+5]})
+
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+
+        # Case 1: only workload creation
+        lfnBases = ("/store/unmerged", "/store/data")
+        outputDsets = [dset for k, dsets in outDsets.iteritems() for dset in dsets]
+        self.assertItemsEqual(testWorkload.listOutputDatasets(), outputDsets)
+        self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
+            # then test the merge tasks
+            for modName in mergedMods[t]:
+                mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
+                task = testWorkload.getTaskByName(mergeName)
+                step = task.getStepHelper("cmsRun1")
+                self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[t][modName])
+
+        # Case 2: workload creation and assignment, with no output dataset override
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        self.assertItemsEqual(testWorkload.listOutputDatasets(), outputDsets)
+        self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            # then test the merge tasks
+            for modName, value in mergedMods[t].iteritems():
+                mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
+                task = testWorkload.getTaskByName(mergeName)
+                step = task.getStepHelper("cmsRun1")
+                self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[t][modName])
+
+        # Case 3: workload creation and assignment, output dataset overriden with the same values
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEra_Task1", "myTask2": "AcqEra_Task2",
+                                         "myTask3": "AcqEra_Task3", "myTask4": "AcqEra_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStr_Task1", "myTask2": "ProcStr_Task2",
+                                           "myTask3": "ProcStr_Task3", "myTask4": "ProcStr_Task4"},
+                      "ProcessingVersion": {"myTask1": 21, "myTask2": 22, "myTask3": 23, "myTask4": 24},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            # then test the merge tasks
+            for modName, value in mergedMods[t].iteritems():
+                mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
+                task = testWorkload.getTaskByName(mergeName)
+                step = task.getStepHelper("cmsRun1")
+                self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[t][modName])
+
+        # Case 4: workload creation and assignment, output dataset overriden with new values
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEra_TaskA", "myTask2": "AcqEra_TaskB",
+                                         "myTask3": "AcqEra_TaskC", "myTask4": "AcqEra_TaskD"},
+                      "ProcessingString": {"myTask1": "ProcStr_TaskA", "myTask2": "ProcStr_TaskB",
+                                           "myTask3": "ProcStr_TaskC", "myTask4": "ProcStr_TaskD"},
+                      "ProcessingVersion": {"myTask1": 11, "myTask2": 12, "myTask3": 13, "myTask4": 14},
+                      "MergedLFNBase": "/store/mc",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+
+
+        for tp in [("Task1", "TaskA"), ("Task2", "TaskB"), ("Task3", "TaskC"), ("Task4", "TaskD")]:
+            outDsets[tp[0]] = [dset.replace(tp[0], tp[1]) for dset in outDsets[tp[0]]]
+            outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
+            for mod in outMods[tp[0]]:
+                outMods[tp[0]][mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                       for k, v in outMods[tp[0]][mod].items()}
+            for tpp in [("v21", "v11"), ("v22", "v12"), ("v23", "v13"), ("v24", "v14"),("/store/data", "/store/mc")]:
+                outDsets[tp[0]] = [dset.replace(tpp[0], tpp[1]) for dset in outDsets[tp[0]]]
+                outputLFNBases = [lfn.replace(tpp[0], tpp[1]) for lfn in outputLFNBases]
+                for mod in outMods[tp[0]]:
+                    outMods[tp[0]][mod] = {k: (v.replace(tpp[0], tpp[1]) if isinstance(v, basestring) else v)
+                                           for k, v in outMods[tp[0]][mod].items()}
+        mergedMods = deepcopy(outMods)
+        mergedMods['Task1']['LHEoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0+5]})
+        mergedMods['Task1']['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[1+5]})
+        mergedMods['Task2']['PREMIXRAWoutput'].update({'transient': False, 'lfnBase': outputLFNBases[2+5]})
+        mergedMods['Task3']['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3+5]})
+        mergedMods['Task4']['MINIAODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4+5]})
+
+        lfnBases = ("/store/unmerged", "/store/mc")
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            # then test the merge tasks
+            for modName, value in mergedMods[t].iteritems():
+                mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
+                task = testWorkload.getTaskByName(mergeName)
+                step = task.getStepHelper("cmsRun1")
+                self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[t][modName])
+
+        return
+
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, assigned=False):
+        """
+        Validate data related to output dataset, output modules and subscriptions
+        :param task: task object
+        :param outMods: dictionary with the output module info for this task
+        :param outDsets: dictionary with the output datasets info for this task
+        :param assigned: flag saying whether the workload was assigned or not
+        """
+        self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), [])
+
+        self.assertItemsEqual(task._getLFNBase(), lfnBases)
+        outputDsets = [x['outputDataset'] for x in task.listOutputDatasetsAndModules()]
+        self.assertItemsEqual(outputDsets, outDsets)
+        outModDict = task.getOutputModulesForTask(cmsRunOnly=True)[0].dictionary_()  # only 1 cmsRun process
+        self.assertItemsEqual(outModDict.keys(), outMods.keys())
+        for modName, outMod in outModDict.iteritems():
+            self._validateOutputModule(modName, outModDict[modName], outMods[modName])
+
+        if assigned:
+            defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
+                           'DeleteFromSource': False, 'NonCustodialGroup': 'DataOps', 'CustodialSites': [],
+                           'CustodialSubType': 'Replica', 'CustodialGroup': 'DataOps', 'NonCustodialSubType': 'Replica'}
+            subscription = {dset: defaultSubs for dset in outputDsets}
+        else:
+            subscription = {}
+        self.assertDictEqual(task.getSubscriptionInformation(), subscription)
+
+        # step level checks
+        self.assertEqual(task.getTopStepName(), 'cmsRun1')
+        step = task.getStepHelper(task.getTopStepName())
+        self.assertItemsEqual(step.listOutputModules(), outMods.keys())
+        for modName in outMods:
+            self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName])
+
+    def _validateOutputModule(self, outModName, outModObj, dictExp):
+        """
+        Make sure the task/step provided output module object contains
+        the same values as the expected from the request json settings.
+        :param outModObj: an output module object containing a ConfigSection object
+        :param dictExp: dict with the same key/values as in the output module object
+        """
+        self.assertEqual(outModObj.dataTier, dictExp['dataTier'])
+        self.assertEqual(outModObj.filterName, dictExp['filterName'])
+        self.assertEqual(outModObj.mergedLFNBase, dictExp['mergedLFNBase'])
+        self.assertEqual(outModObj.transient, dictExp['transient'])
+        self.assertEqual(outModObj.processedDataset, dictExp['processedDataset'])
+        self.assertEqual(outModObj.primaryDataset, dictExp['primaryDataset'])
+        self.assertEqual(outModObj.lfnBase, dictExp['lfnBase'])
 
 
 if __name__ == '__main__':

@@ -7,9 +7,10 @@ Unit tests for the WMTask class.
 
 import unittest
 
-from WMCore.WMSpec.WMTask import WMTask, makeWMTask
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
+from WMCore.WMSpec.WMTask import WMTask, makeWMTask
+
 
 class WMTaskTest(unittest.TestCase):
     def setUp(self):
@@ -44,12 +45,12 @@ class WMTaskTest(unittest.TestCase):
         goldenTasks = ["task2a", "task2b", "task2c"]
         for childTask in task1.childTaskIterator():
             assert childTask.name() in goldenTasks, \
-                   "Error: Unknown child task: %s" % childTask.name()
+                "Error: Unknown child task: %s" % childTask.name()
 
             goldenTasks.remove(childTask.name())
 
         assert len(goldenTasks) == 0, \
-               "Error: Missing tasks."
+            "Error: Missing tasks."
         return
 
     def testAddingSteps(self):
@@ -117,22 +118,22 @@ class WMTaskTest(unittest.TestCase):
         taskWhitelist = testTask.siteWhitelist()
 
         assert len(taskWhitelist) == 2, \
-               "Error: Wrong number of sites in white list."
+            "Error: Wrong number of sites in white list."
         assert "T1_US_FNAL" in taskWhitelist, \
-               "Error: Site missing from white list."
+            "Error: Site missing from white list."
         assert "T1_DE_KIT" in taskWhitelist, \
-               "Error: Site missing from white list."
+            "Error: Site missing from white list."
 
         taskBlacklist = testTask.siteBlacklist()
 
         assert len(taskBlacklist) == 3, \
-               "Error: Wrong number if sites in black list."
+            "Error: Wrong number if sites in black list."
         assert "T1_IT_IN2P3" in taskBlacklist, \
-               "Error: Site missing from black list."
+            "Error: Site missing from black list."
         assert "T1_CH_CERN" in taskBlacklist, \
-               "Error: Site missing from black list."
+            "Error: Site missing from black list."
         assert "T2_US_NEBRASKA" in taskBlacklist, \
-               "Error: Site missing from black list."
+            "Error: Site missing from black list."
 
         return
 
@@ -151,30 +152,31 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.taskType(), "Processing",
                          "Error: Wrong task type.")
 
-        testTask.setJobResourceInformation(timePerEvent = 12, memoryReq = 2300000,
-                                           sizePerEvent = 512)
-        testTask.setSplittingAlgorithm("MadeUpAlgo", events_per_job = 100,
-                                       max_job_size = 24,
-                                       one_more_param = "Hello")
+        testTask.setJobResourceInformation(timePerEvent=12, memoryReq=2300000,
+                                           sizePerEvent=512)
+        testTask.setSplittingAlgorithm("MadeUpAlgo", events_per_job=100,
+                                       max_job_size=24,
+                                       one_more_param="Hello")
         testTask.setSiteWhitelist(["T1_US_FNAL", "T1_CH_CERN"])
         testTask.setSiteBlacklist(["T2_US_PERDUE", "T2_US_UCSD", "T1_TW_ASGC"])
 
-        testTask.addInputDataset(primary = "PrimaryDataset",
-                                 processed = "ProcessedDataset",
-                                 tier = "DataTier",
-                                 dbsurl = "DBSURL",
-                                 block_whitelist = ["Block1", "Block2"],
-                                 block_blacklist = ["Block3", "Block4", "Block5"],
-                                 run_whitelist = [1, 2, 3],
-                                 run_blacklist = [4, 5])
+        testTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DataTier",
+                                 primary="PrimaryDataset",
+                                 processed="ProcessedDataset",
+                                 tier="DataTier",
+                                 dbsurl="DBSURL",
+                                 block_whitelist=["Block1", "Block2"],
+                                 block_blacklist=["Block3", "Block4", "Block5"],
+                                 run_whitelist=[1, 2, 3],
+                                 run_blacklist=[4, 5])
 
         # Make sure we can set individual performance parameters without affecting the others
-        testTask.setJobResourceInformation(timePerEvent = 14)
+        testTask.setJobResourceInformation(timePerEvent=14)
 
-        self.assertEqual(testTask.jobSplittingAlgorithm(),"MadeUpAlgo",
-               "Error: Wrong job splitting algorithm name.")
+        self.assertEqual(testTask.jobSplittingAlgorithm(), "MadeUpAlgo",
+                         "Error: Wrong job splitting algorithm name.")
 
-        algoParams = testTask.jobSplittingParameters(performance = False)
+        algoParams = testTask.jobSplittingParameters(performance=False)
         self.assertEqual(len(algoParams), 10,
                          "Error: Wrong number of algo parameters.")
         algoParams = testTask.jobSplittingParameters()
@@ -259,95 +261,96 @@ class WMTaskTest(unittest.TestCase):
         testTask = makeWMTask("TestTask")
 
         assert testTask.getInputDatasetPath() == None, \
-               "Error: Input dataset path should be None."
-        assert testTask.inputDatasetDBSURL() == None, \
-               "Error: Input DBS URL should be None."
+            "Error: Input dataset path should be None."
+        assert testTask.dbsUrl() == None, \
+            "Error: Input DBS URL should be None."
         assert testTask.inputBlockWhitelist() == None, \
-               "Error: Input block white list should be None."
+            "Error: Input block white list should be None."
         assert testTask.inputBlockBlacklist() == None, \
-               "Error: Input block black list should be None."
+            "Error: Input block black list should be None."
         assert testTask.inputRunWhitelist() == None, \
-               "Error: Input run white list should be None."
+            "Error: Input run white list should be None."
         assert testTask.inputRunBlacklist() == None, \
-               "Error: Input run black list should be None."
+            "Error: Input run black list should be None."
 
-        testTask.addInputDataset(primary = "PrimaryDataset",
-                                 processed = "ProcessedDataset",
-                                 tier = "DataTier",
-                                 dbsurl = "DBSURL",
-                                 block_whitelist = ["Block1", "Block2"],
-                                 block_blacklist = ["Block3", "Block4", "Block5"],
-                                 run_whitelist = [1, 2, 3],
-                                 run_blacklist = [4, 5])
+        testTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DataTier",
+                                 primary="PrimaryDataset",
+                                 processed="ProcessedDataset",
+                                 tier="DataTier",
+                                 dbsurl="DBSURL",
+                                 block_whitelist=["Block1", "Block2"],
+                                 block_blacklist=["Block3", "Block4", "Block5"],
+                                 run_whitelist=[1, 2, 3],
+                                 run_blacklist=[4, 5])
 
         assert testTask.getInputDatasetPath() == "/PrimaryDataset/ProcessedDataset/DataTier", \
-               "Error: Input dataset path is wrong."
-        assert testTask.inputDatasetDBSURL() == "DBSURL", \
-               "Error: Input DBS URL is wrong."
+            "Error: Input dataset path is wrong."
+        assert testTask.dbsUrl() == "DBSURL", \
+            "Error: Input DBS URL is wrong."
 
         assert len(testTask.inputBlockWhitelist()) == 2, \
-               "Error: Wrong number of blocks in white list."
+            "Error: Wrong number of blocks in white list."
         assert "Block1" in testTask.inputBlockWhitelist(), \
-               "Error: Block missing from white list."
+            "Error: Block missing from white list."
         assert "Block2" in testTask.inputBlockWhitelist(), \
-               "Error: Block missing from white list."
+            "Error: Block missing from white list."
 
         assert len(testTask.inputBlockBlacklist()) == 3, \
-               "Error: Wrong number of blocks in black list."
+            "Error: Wrong number of blocks in black list."
         assert "Block3" in testTask.inputBlockBlacklist(), \
-               "Error: Block missing from black list."
+            "Error: Block missing from black list."
         assert "Block4" in testTask.inputBlockBlacklist(), \
-               "Error: Block missing from black list."
+            "Error: Block missing from black list."
         assert "Block5" in testTask.inputBlockBlacklist(), \
-               "Error: Block missing from black list."
+            "Error: Block missing from black list."
 
         assert len(testTask.inputRunWhitelist()) == 3, \
-               "Error: Wrong number of runs in white list."
+            "Error: Wrong number of runs in white list."
         assert 1 in testTask.inputRunWhitelist(), \
-               "Error: Run is missing from white list."
+            "Error: Run is missing from white list."
         assert 2 in testTask.inputRunWhitelist(), \
-               "Error: Run is missing from white list."
+            "Error: Run is missing from white list."
         assert 3 in testTask.inputRunWhitelist(), \
-               "Error: Run is missing from white list."
+            "Error: Run is missing from white list."
 
         assert len(testTask.inputRunBlacklist()) == 2, \
-               "Error: Wrong number of runs in black list."
+            "Error: Wrong number of runs in black list."
         assert 4 in testTask.inputRunBlacklist(), \
-               "Error: Run is missing from black list."
+            "Error: Run is missing from black list."
         assert 5 in testTask.inputRunBlacklist(), \
-               "Error: Run is missing from black list."
+            "Error: Run is missing from black list."
 
         testTask.setInputBlockWhitelist(["Block6"])
 
         assert len(testTask.inputBlockWhitelist()) == 1, \
-               "Error: Wrong number of blocks in white list."
+            "Error: Wrong number of blocks in white list."
         assert "Block6" in testTask.inputBlockWhitelist(), \
-               "Error: Block missing from white list."
+            "Error: Block missing from white list."
 
         testTask.setInputBlockBlacklist(["Block7", "Block8"])
 
         assert len(testTask.inputBlockBlacklist()) == 2, \
-               "Error: Wrong number of blocks in black list."
+            "Error: Wrong number of blocks in black list."
         assert "Block7" in testTask.inputBlockBlacklist(), \
-               "Error: Block missing from black list."
+            "Error: Block missing from black list."
         assert "Block8" in testTask.inputBlockBlacklist(), \
-               "Error: Block missing from black list."
+            "Error: Block missing from black list."
 
         testTask.setInputRunWhitelist([6])
 
         assert len(testTask.inputRunWhitelist()) == 1, \
-               "Error: Wrong number of runs in white list."
+            "Error: Wrong number of runs in white list."
         assert 6 in testTask.inputRunWhitelist(), \
-               "Error: Run missing from white list."
+            "Error: Run missing from white list."
 
         testTask.setInputRunBlacklist([7, 8])
 
         assert len(testTask.inputRunBlacklist()) == 2, \
-               "Error: Wrong number of runs in black list."
+            "Error: Wrong number of runs in black list."
         assert 7 in testTask.inputRunBlacklist(), \
-               "Error: Run missing from black list."
+            "Error: Run missing from black list."
         assert 8 in testTask.inputRunBlacklist(), \
-               "Error: Run missing from black list."
+            "Error: Run missing from black list."
 
         return
 
@@ -366,7 +369,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.getNotifications(), [])
 
         for x in targetList:
-            testTask.addNotification(target = x)
+            testTask.addNotification(target=x)
 
         self.assertEqual(testTask.getNotifications(), targetList)
 
@@ -380,8 +383,8 @@ class WMTaskTest(unittest.TestCase):
 
         testTask = makeWMTask("TestTask")
 
-        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101, softTimeout = 100,
-                                       gracePeriod = 1)
+        testTask.setPerformanceMonitor(maxRSS=100, maxVSize=101, softTimeout=100,
+                                       gracePeriod=1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 100)
@@ -431,27 +434,27 @@ class WMTaskTest(unittest.TestCase):
         testTask.setTaskType("SillyTask")
         self.assertEqual(testTask.getPrimarySubType(), "SillyTask")
 
-        testTask.setPrimarySubType(subType = "subType")
+        testTask.setPrimarySubType(subType="subType")
         self.assertEqual(testTask.getPrimarySubType(), "subType")
         return
 
     def testBuildLumiMask(self):
         from WMCore.WMSpec.WMTask import buildLumiMask
-        runs=['3','4']
-        lumis=['1,4,23,45', '5,84,234,445']
-        expected = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+        runs = ['3', '4']
+        lumis = ['1,4,23,45', '5,84,234,445']
+        expected = {'3': [[1, 4], [23, 45]], '4': [[5, 84], [234, 445]]}
 
-        #working
+        # working
         self.assertEqual(buildLumiMask(runs, lumis), expected, "buildLumiMask")
 
-        #number of runs different than number of lumis
-        runs=['3']
-        lumis=['1,4,23,45', '5,84,234,445']
+        # number of runs different than number of lumis
+        runs = ['3']
+        lumis = ['1,4,23,45', '5,84,234,445']
         self.assertRaises(ValueError, buildLumiMask, runs, lumis)
 
-        #wrong format of the number of lumis
-        runs=['3', '4']
-        lumis=['1,4,23,45', '5,84,234']
+        # wrong format of the number of lumis
+        runs = ['3', '4']
+        lumis = ['1,4,23,45', '5,84,234']
         self.assertRaises(ValueError, buildLumiMask, runs, lumis)
 
     def testAddLumiMask(self):
@@ -463,18 +466,17 @@ class WMTaskTest(unittest.TestCase):
         """
         testTask = makeWMTask("TestTask")
 
-        lumiMask = LumiList(compactList = {
-                '1': [[1, 33], [35, 35], [37, 47], [49, 75], [77, 130], [133, 136]],
-                '2':[[1,45]],
-                '3':[[1,45],[50,80]],
-            })
+        lumiMask = LumiList(compactList={
+            '1': [[1, 33], [35, 35], [37, 47], [49, 75], [77, 130], [133, 136]],
+            '2': [[1, 45]],
+            '3': [[1, 45], [50, 80]],
+        })
 
-        testTask.setLumiMask(lumiMask = lumiMask.getCompactList())
+        testTask.setLumiMask(lumiMask=lumiMask.getCompactList())
         outMask = testTask.getLumiMask()
         self.assertEqual(lumiMask.getCMSSWString(), outMask.getCMSSWString())
 
         return
-
 
     def testSubscriptionInformation(self):
         """
@@ -490,44 +492,44 @@ class WMTaskTest(unittest.TestCase):
         cmsswStep.setStepType("CMSSW")
         testTask.applyTemplates()
         cmsswHelper = cmsswStep.getTypeHelper()
-        cmsswHelper.addOutputModule("outputRECO", primaryDataset = "OneParticle",
-                                    processedDataset = "DawnOfAnEra-v1", dataTier = "RECO")
-        cmsswHelper.addOutputModule("outputDQM", primaryDataset = "TwoParticles",
-                                    processedDataset = "DawnOfAnEra-v1", dataTier = "DQM")
-        cmsswHelper.addOutputModule("outputAOD", primaryDataset = "OneParticle",
-                                    processedDataset = "DawnOfAnEra-v1", dataTier = "AOD")
+        cmsswHelper.addOutputModule("outputRECO", primaryDataset="OneParticle",
+                                    processedDataset="DawnOfAnEra-v1", dataTier="RECO")
+        cmsswHelper.addOutputModule("outputDQM", primaryDataset="TwoParticles",
+                                    processedDataset="DawnOfAnEra-v1", dataTier="DQM")
+        cmsswHelper.addOutputModule("outputAOD", primaryDataset="OneParticle",
+                                    processedDataset="DawnOfAnEra-v1", dataTier="AOD")
 
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
-        testTask.setSubscriptionInformation(custodialSites = ["mercury"],
-                                            nonCustodialSites = ["mars", "earth"],
-                                            autoApproveSites = ["earth"],
-                                            custodialSubType = "Replica",
-                                            nonCustodialSubType = "Move",
-                                            custodialGroup = "DataOps",
-                                            nonCustodialGroup = "AnalysisOps",
-                                            priority = "Normal",
-                                            deleteFromSource = True,
-                                            primaryDataset = "OneParticle")
+        testTask.setSubscriptionInformation(custodialSites=["mercury"],
+                                            nonCustodialSites=["mars", "earth"],
+                                            autoApproveSites=["earth"],
+                                            custodialSubType="Replica",
+                                            nonCustodialSubType="Move",
+                                            custodialGroup="DataOps",
+                                            nonCustodialGroup="AnalysisOps",
+                                            priority="Normal",
+                                            deleteFromSource=True,
+                                            primaryDataset="OneParticle")
         subInfo = testTask.getSubscriptionInformation()
 
-        outputRecoSubInfo = {"CustodialSites" : ["mercury"],
-                             "NonCustodialSites" : ["mars", "earth"],
-                             "AutoApproveSites" : ["earth"],
-                             "CustodialSubType" : "Replica",
-                             "NonCustodialSubType" : "Move",
-                             "CustodialGroup" : "DataOps",
-                             "NonCustodialGroup" : "AnalysisOps",
-                             "Priority" : "Normal",
-                             "DeleteFromSource" : True}
+        outputRecoSubInfo = {"CustodialSites": ["mercury"],
+                             "NonCustodialSites": ["mars", "earth"],
+                             "AutoApproveSites": ["earth"],
+                             "CustodialSubType": "Replica",
+                             "NonCustodialSubType": "Move",
+                             "CustodialGroup": "DataOps",
+                             "NonCustodialGroup": "AnalysisOps",
+                             "Priority": "Normal",
+                             "DeleteFromSource": True}
 
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
         self.assertFalse("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
 
-        testTask.setSubscriptionInformation(custodialSites = ["jupiter"],
-                                            primaryDataset = "TwoParticles")
+        testTask.setSubscriptionInformation(custodialSites=["jupiter"],
+                                            primaryDataset="TwoParticles")
 
         subInfo = testTask.getSubscriptionInformation()
 
@@ -543,7 +545,7 @@ class WMTaskTest(unittest.TestCase):
 
         subInfo = testTask.getSubscriptionInformation()
         self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
-                        outputRecoSubInfo, "The RECO subscription information is wrong")
+                         outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertFalse("/OneParticle/DawnOfAnEra-v1/RECO" in subInfo, "The RECO subscription information is wrong")
 
     def testDeleteChild(self):
@@ -569,6 +571,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

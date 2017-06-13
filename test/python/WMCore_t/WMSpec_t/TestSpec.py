@@ -46,7 +46,8 @@ class TestWorkloadFactory(object):
         procTask.setSplittingAlgorithm("FileBased", **splitArgs)
         procTask.setTaskType("Processing")
 
-        procTask.addInputDataset(primary="MinimumBias", processed="Comissioning10-v4", tier="RAW",
+        procTask.addInputDataset(name="/MinimumBias/Comissioning10-v4/RAW",
+                                 primary="MinimumBias", processed="Comissioning10-v4", tier="RAW",
                                  dbsurl="https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
                                  block_blacklist=[], block_whitelist=[],
                                  run_blacklist=[], run_whitelist=[])
@@ -87,8 +88,7 @@ class TestWorkloadFactory(object):
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return
 
-    def addOutputModule(self, parentTask, outputModuleName, dataTier,
-                        filterName):
+    def addOutputModule(self, parentTask, outputModuleName, dataTier, filterName):
         """
         _addOutputModule_
 
@@ -97,16 +97,6 @@ class TestWorkloadFactory(object):
         A handle to the merge task is returned to make it easy to use the merged
         output of the output module as input to another task.
         """
-        if filterName != None and filterName != "":
-            processedDatasetName = "%s-%s-%s" % ("WMAgentCommissioning10", filterName,
-                                                 "v1")
-        else:
-            processedDatasetName = "WMAgentCommissioning10-v1"
-
-        unmergedLFN = "%s/%s/%s" % ("/store/temp/WMAgent/unmerged", dataTier,
-                                    processedDatasetName)
-        mergedLFN = "%s/%s/%s" % ("/store/temp/WMAgent/merged", dataTier,
-                                  processedDatasetName)
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,

@@ -8,10 +8,11 @@ Unittest for WMWorkload class
 import os
 import unittest
 
-from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
+
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 
 
 class WMWorkloadTest(unittest.TestCase):
@@ -250,7 +251,8 @@ class WMWorkloadTest(unittest.TestCase):
         procTestTaskCMSSW = procTestTask.makeStep("cmsRun1")
         procTestTaskCMSSW.setStepType("CMSSW")
 
-        procTestTask.addInputDataset(primary="PrimaryDataset",
+        procTestTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DATATIER",
+                                     primary="PrimaryDataset",
                                      processed="ProcessedDataset",
                                      tier="DATATIER",
                                      block_whitelist=["Block1", "Block2"],
@@ -262,7 +264,8 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTestTask.setInputReference(procTestTaskCMSSW, outputModule="output")
 
         weirdTestTask = mergeTestTask.addTask("WeirdTask")
-        weirdTestTask.addInputDataset(primary="PrimaryDatasetB",
+        weirdTestTask.addInputDataset(name="/PrimaryDatasetB/ProcessedDatasetB/DATATIERB",
+                                      primary="PrimaryDatasetB",
                                       processed="ProcessedDatasetB",
                                       tier="DATATIERB",
                                       block_whitelist=["BlockA", "BlockB"],
@@ -1500,7 +1503,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.applyTemplates()
 
         testWorkload.setCMSSWVersions(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
-                                    scramArch="SomeSCRAMArch")
+                                      scramArch="SomeSCRAMArch")
 
         def verifyParams(initialTask=None):
             """
@@ -1559,7 +1562,8 @@ class WMWorkloadTest(unittest.TestCase):
                                                    '/TestWorkload/ProcessingTask/MergeTask': {}},
                                    'owner': {}})
 
-        procTask.addInputDataset(primary="PrimaryDatasetB",
+        procTask.addInputDataset(name="/PrimaryDatasetB/ProcessedDatasetB/DataTierB",
+                                 primary="PrimaryDatasetB",
                                  processed="ProcessedDatasetB",
                                  tier="DataTierB",
                                  block_whitelist=["BlockA", "BlockB"],
@@ -1624,7 +1628,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTask.applyTemplates()
 
         testWorkload.setCMSSWVersions(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
-                                    scramArch="SomeSCRAMArch")
+                                      scramArch="SomeSCRAMArch")
 
         self.assertEqual(testWorkload.getCMSSWVersions(), ["CMSSW_1_1_1"])
         return

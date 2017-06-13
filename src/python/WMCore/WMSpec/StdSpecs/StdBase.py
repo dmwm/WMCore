@@ -393,10 +393,12 @@ class StdBase(object):
 
         if forceMerged:
             procTaskStageHelper.setMinMergeSize(0, 0)
-        elif forceUnmerged:
+        elif forceUnmerged and not isinstance(forceUnmerged, list):
             procTaskStageHelper.disableStraightToMerge()
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+            if forceUnmerged and isinstance(forceUnmerged, list):
+                procTaskStageHelper.disableStraightToMergeForOutputModules(forceUnmerged)
 
         procTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                        softwareEnvironment="",

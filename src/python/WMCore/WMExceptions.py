@@ -165,8 +165,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       60322: "User is not authorized to write to destination site.", # (To be used in CRAB3/ASO)
                       60323: "User quota exceeded.", # (To be used in CRAB3/ASO)
                       60324: "Other stageout exception.", # (To be used in CRAB3/ASO)
-                      60401: "Failure to assemble LFN in direct-to-merge by size (WMAgent).", # (WMA)
-                      60402: "Failure to assemble LFN in direct-to-merge by event (WMAgent).", # (WMA)
+                      60401: "Failure to assemble LFN in direct-to-merge (WMAgent).", # (WMA)
                       60403: "Timeout during files stage out.", # (WMA, CRAB3)
                       60404: "Timeout during staging of log archives- status unknown (WMAgent).", # (WMA)
                       60405: "General failure to stage out log archives (WMAgent).", # (WMA)
@@ -235,6 +234,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
 # 60313: "Failed to delete the output from the previous run via lcg-del command.", # Mh.. only lcg-del? Not used
 # 60314: "Failed to invoke ProdAgent StageOut Script.", Not used
 # 60316: "Failed to create a directory on the SE.", Not used
+# 60402: "Failure to assemble LFN in direct-to-merge by event (WMAgent).", # (WMA)
 # 60406: "Failure in staging in log files during log collection (WMAgent).", Not used
 # 60410: "Failure in deleting log files in log collection (WMAgent).", # Not used
 # 60411: "Timeout in deleting log files in log collection (WMAgent).", # Not used

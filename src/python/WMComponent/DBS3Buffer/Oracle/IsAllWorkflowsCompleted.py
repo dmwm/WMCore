@@ -14,3 +14,5 @@ from WMComponent.DBS3Buffer.MySQL.IsAllWorkflowsCompleted \
 class IsAllWorkflowsCompleted(MySQLIsAllWorkflowsCompleted):
     """
     Oracle version
+    """
+    pass

@@ -246,5 +246,5 @@ class DBSBufferUtil(WMConnectionBase):
         check whether all the workflows are completed status in give agent (not globaly in reqmgr)
         This should be used as preconditon for checking draining status
         """
-        completeFWFlag = self.daoFactory(classname="isAllWorkflowsCompleted")
+        completeFWFlag = self.daoFactory(classname="IsAllWorkflowsCompleted")
         return completeFWFlag.execute(transaction=False)

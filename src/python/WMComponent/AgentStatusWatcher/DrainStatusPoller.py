@@ -8,9 +8,10 @@ from __future__ import division
 __all__ = []
 
 import logging
+import threading
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import isDrainMode
-
+from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
 
 class DrainStatusPoller(BaseWorkerThread):
     """
@@ -25,6 +26,12 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
+
+    def setup(self, parameters):
+        """
+        """
+        myThread = threading.currentThread()
+        self.dbsUtil = DBSBufferUtil()
 
     def algorithm(self, parameters):
         """
@@ -48,8 +55,9 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         Call methods to check the drain status
         """
-        # return empty dict until real stats are queried
         results = {}
+        results['workflows_completed'] = self.dbsUtil.isAllWorkflowCompleted()
+        logging.info("Drain stats - workflows completed: " + str(results['workflows_completed']))
         return results
 
     @classmethod

@@ -103,7 +103,6 @@ def runCommandWithOutput(command):
     errfd = errfile.fileno()
     makeNonBlocking(outfd)  # don't deadlock!
     makeNonBlocking(errfd)
-    outdata = errdata = ''
     outeof = erreof = 0
     output = ''
     while True:
@@ -150,17 +149,15 @@ def execute(command):
 
     """
     try:
-        exitCode = runCommand(command)
-        msg = "Command exited with status: %s" % (exitCode)
+        exitCode, output = runCommandWithOutput(command)
+        msg = "Command exited with status: %s, Output" % (exitCode, output)
         print(msg)
     except Exception as ex:
-        msg = "Command threw exception"
-        print("ERROR: Exception During Stage Out:\n")
-        print(msg)
+        msg = "Command threw exception %s" % str(ex)
+        print("ERROR: Exception During Stage Out:\nCommand threw exception %s" % str(ex))
         raise StageOutError(msg, Command=command, ExitCode=60311)
     if exitCode:
-        msg = "Command exited non-zero"
-        print("ERROR: Exception During Stage Out:\n")
-        print(msg)
+        msg = "Command exited non-zero: Output %s" % output
+        print("ERROR: Exception During Stage Out:\n, %s" % msg)
         raise StageOutError(msg, Command=command, ExitCode=exitCode)
     return

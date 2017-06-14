@@ -129,102 +129,97 @@ class StageOut(Executor):
             if not stepReport.stepSuccessful(step):
                 continue
 
-            # Okay, time to start using stuff
-            # Now I'm a bit confused about this; each report should ONLY
-            # Have the results of that particular step in it,
-            # So getting all the files should get ONLY the files
-            # for that step; or so I hope
-            files = stepReport.getAllFileRefsFromStep(step = step)
-            for fileName in files:
-                if not hasattr(fileName, 'lfn') and hasattr(fileName, 'pfn'):
-                    # Then we're truly hosed on this file; ignore it
-                    msg = "Not a file: %s" % fileName
-                    logging.error(msg)
-                    continue
-                # Support direct-to-merge
-                # This requires pulling a bunch of stuff from everywhere
-                # First check if it's needed
-                if hasattr(self.step.output, 'minMergeSize') and hasattr(fileName, 'size') \
-                    and not getattr(fileName, 'merged', False):
+            # Get all files produced by this step, will return a dict
+            # with the output module as key (straight to merge or not
+            # can be output module specific, so we need to know...
+            fileDict = stepReport.getAllFileRefsFromStep(step = step)
+            for outputName in fileDict:
+                for fileName in fileDict[outputName]:
 
-                    # We need both of those to continue, and we don't
-                    # direct-to-merge
-                    if getattr(self.step.output, 'doNotDirectMerge', False):
-                        # Then we've been told explicitly not to do direct-to-merge
+                    if not hasattr(fileName, 'lfn') and hasattr(fileName, 'pfn'):
+                        # Then we're truly hosed on this file; ignore it
+                        msg = "Not a file: %s" % fileName
+                        logging.error(msg)
                         continue
-                    if fileName.size >= self.step.output.minMergeSize:
-                        # Then this goes direct to merge
+
+                    # Figuring out if we should do straight to merge
+                    # First check if we should do straight to merge at all,
+                    # then check if we are over the size threshold, then check
+                    # if we are over the event threshold
+                    straightToMerge = False
+                    if hasattr(self.step.output, 'minMergeSize'):
+                        if outputName not in getattr(self.step.output, 'forceUnmergedOutputs', []):
+                            if not getattr(fileName, 'merged', False):
+                                if hasattr(fileName, 'size'):
+                                    if fileName.size >= self.step.output.minMergeSize:
+                                        straightToMerge = True
+                                if hasattr(self.step.output, 'maxMergeEvents'):
+                                    if hasattr(fileName, 'events'):
+                                        if fileName.events >= self.step.output.maxMergeEvents:
+                                            straightToMerge = True
+
+
+                    if straightToMerge:
+
                         try:
-                            fileName = self.handleLFNForMerge(mergefile = fileName, step = step)
+                            fileName = self.handleLFNForMerge(mergefile = fileName,
+                                                              step = step,
+                                                              outputName = outputName)
                         except Exception as ex:
-                            logging.error("Encountered error while handling LFN for merge due to size.\n")
+                            logging.info("minMergeSize: %s" % getattr(self.step.output, 'minMergeSize', None))
+                            logging.info("maxMergeEvents: %s" % getattr(self.step.output, 'maxMergeEvents', None))
+                            logging.error("Encountered error while handling LFN for merge %s", fileName)
                             logging.error(str(ex))
-                            logging.debug(fileName)
-                            logging.debug("minMergeSize: %s" % self.step.output.minMergeSize)
                             manager.cleanSuccessfulStageOuts()
                             stepReport.addError(self.stepName, 60401, "DirectToMergeFailure", str(ex))
-                    elif getattr(self.step.output, 'maxMergeEvents', None) != None \
-                        and getattr(fileName, 'events', None) != None and not getattr(fileName, 'merged', False):
-                        # Then direct-to-merge due to events if
-                        # the file is large enough:
-                        if fileName.events >= self.step.output.maxMergeEvents:
-                            # straight to merge
-                            try:
-                                fileName = self.handleLFNForMerge(mergefile = fileName, step = step)
-                            except Exception as ex:
-                                logging.error("Encountered error while handling LFN for merge due to events.\n")
-                                logging.error(str(ex))
-                                logging.debug(fileName)
-                                logging.debug("maxMergeEvents: %s" % self.step.output.maxMergeEvents)
-                                manager.cleanSuccessfulStageOuts()
-                                stepReport.addError(self.stepName, 60402, "DirectToMergeFailure", str(ex))
 
-                # Save the input PFN in case we need it
-                # Undecided whether to move fileName.pfn to the output PFN
-                fileName.InputPFN = fileName.pfn
-                lfn = getattr(fileName, 'lfn')
-                fileSource = getattr(fileName, 'Source', None)
-                if fileSource in ['TFileService', 'UserDefined']:
-                    userLfnRegEx(lfn)
-                else:
-                    lfnRegEx(lfn)
-                fileForTransfer = {'LFN': lfn,
-                                   'PFN': getattr(fileName, 'pfn'),
-                                   'PNN' : None,
-                                   'StageOutCommand': None,
-                                   'Checksums' : getattr(fileName, 'checksums', None)}
+                    # Save the input PFN in case we need it
+                    # Undecided whether to move fileName.pfn to the output PFN
+                    fileName.InputPFN = fileName.pfn
+                    lfn = getattr(fileName, 'lfn')
+                    fileSource = getattr(fileName, 'Source', None)
+                    if fileSource in ['TFileService', 'UserDefined']:
+                        userLfnRegEx(lfn)
+                    else:
+                        lfnRegEx(lfn)
 
-                signal.signal(signal.SIGALRM, alarmHandler)
-                signal.alarm(waitTime)
-                try:
-                    manager(fileForTransfer)
-                    #Afterwards, the file should have updated info.
-                    filesTransferred.append(fileForTransfer)
-                    fileName.StageOutCommand = fileForTransfer['StageOutCommand']
-                    fileName.location        = fileForTransfer['PNN']
-                    fileName.OutputPFN       = fileForTransfer['PFN']
-                except Alarm:
-                    msg = "Indefinite hang during stageOut of logArchive"
-                    logging.error(msg)
-                    manager.cleanSuccessfulStageOuts()
-                    stepReport.addError(self.stepName, 60403, "StageOutTimeout", msg)
-                    stepReport.setStepStatus(self.stepName, 1)
-                    # well, if it fails for one file, it fails for the whole job...
-                    break
-                except Exception as ex:
-                    manager.cleanSuccessfulStageOuts()
-                    stepReport.addError(self.stepName, 60307, "StageOutFailure", str(ex))
-                    stepReport.setStepStatus(self.stepName, 1)
-                    stepReport.persist(reportLocation)
-                    raise
+                    fileForTransfer = {'LFN': lfn,
+                                       'PFN': getattr(fileName, 'pfn'),
+                                       'PNN' : None,
+                                       'StageOutCommand': None,
+                                       'Checksums' : getattr(fileName, 'checksums', None)}
 
-                signal.alarm(0)
+                    signal.signal(signal.SIGALRM, alarmHandler)
+                    signal.alarm(waitTime)
+                    try:
+                        manager(fileForTransfer)
+                        # Afterwards, the file should have updated info.
+                        filesTransferred.append(fileForTransfer)
+                        fileName.StageOutCommand = fileForTransfer['StageOutCommand']
+                        fileName.location        = fileForTransfer['PNN']
+                        fileName.OutputPFN       = fileForTransfer['PFN']
+                    except Alarm:
+                        msg = "Indefinite hang during stageOut of logArchive"
+                        logging.error(msg)
+                        manager.cleanSuccessfulStageOuts()
+                        stepReport.addError(self.stepName, 60403, "StageOutTimeout", msg)
+                        stepReport.setStepStatus(self.stepName, 1)
+                        # well, if it fails for one file, it fails for the whole job...
+                        break
+                    except Exception as ex:
+                        manager.cleanSuccessfulStageOuts()
+                        stepReport.addError(self.stepName, 60307, "StageOutFailure", str(ex))
+                        stepReport.setStepStatus(self.stepName, 1)
+                        stepReport.persist(reportLocation)
+                        raise
+
+                    signal.alarm(0)
 
             # Am DONE with report. Persist it
             stepReport.persist(reportLocation)
 
-        #Done with all steps, and should have a list of
-        #stagedOut files in fileForTransfer
+        # Done with all steps, and should have a list of
+        # stagedOut files in fileForTransfer
         logging.info("Transferred %i files" %(len(filesTransferred)))
         return
 
@@ -263,17 +258,19 @@ class StageOut(Executor):
             if not stepReport.stepSuccessful(step):
                 continue
 
-            files = stepReport.getAllFileRefsFromStep(step = step)
-            for file in files:
+            fileDict = stepReport.getAllFileRefsFromStep(step = step)
+            for outputName in fileDict:
+                for fileInfo in fileDict[outputName]:
 
-                if not hasattr(file, 'lfn') or not hasattr(file, 'location') or \
-                       not hasattr(file, 'guid'):
-                    continue
+                    if not hasattr(fileInfo, 'lfn') or \
+                            not hasattr(fileInfo, 'location') or \
+                            not hasattr(fileInfo, 'guid'):
+                        continue
 
-                file.user_dn = getattr(self.step, "userDN", None)
-                file.async_dest = getattr(self.step, "asyncDest", None)
-                file.user_vogroup = getattr(self.step, "owner_vogroup", '')
-                file.user_vorole = getattr(self.step, "owner_vorole", '')
+                    fileInfo.user_dn = getattr(self.step, "userDN", None)
+                    fileInfo.async_dest = getattr(self.step, "asyncDest", None)
+                    fileInfo.user_vogroup = getattr(self.step, "owner_vogroup", '')
+                    fileInfo.user_vorole = getattr(self.step, "owner_vorole", '')
 
             stepReport.persist(reportLocation)
 
@@ -282,7 +279,7 @@ class StageOut(Executor):
 
 
     # Accessory methods
-    def handleLFNForMerge(self, mergefile, step):
+    def handleLFNForMerge(self, mergefile, step, outputName):
         """
         _handleLFNForMerge_
 
@@ -291,17 +288,11 @@ class StageOut(Executor):
         Requires a mergedLFNBase in the WMSpec output module
         """
 
-        # First get the output module
-        # Do this by finding the name in the step report
-        # And then finding that module in the WMStep Helper
-
-        outputName = getattr(mergefile, 'module_label', None)
-        if not outputName:
-            logging.error("Attempt to merge directly failed due to " \
-                          + "No module_label in file.")
+        # Don't skip merge for merged files !
         if outputName.lower() == "merged":
-            # Don't skip merge for merged files!
             return mergefile
+
+        # Find the output module in the WMStep Helper
         stepHelper = self.task.getStep(stepName = step)
         outputMod  = stepHelper.getOutputModule(moduleName = outputName)
 

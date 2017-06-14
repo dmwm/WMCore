@@ -299,9 +299,10 @@ class ReportIntegrationTest(unittest.TestCase):
         myReport.parse(self.procPath)
 
         # Fake some metadata that should be added by the stageout scripts.
-        for fileRef in myReport.getAllFileRefsFromStep("cmsRun1"):
-            fileRef.size = 1024
-            fileRef.location = "cmssrm.fnal.gov"
+        for fileRefs in myReport.getAllFileRefsFromStep("cmsRun1").values():
+            for fileRef in fileRefs:
+                fileRef.size = 1024
+                fileRef.location = "cmssrm.fnal.gov"
 
         fwjrPath = os.path.join(self.tempDir, "ProcReport.pkl")
         cmsRunStep = myReport.retrieveStep("cmsRun1")
@@ -341,12 +342,13 @@ class ReportIntegrationTest(unittest.TestCase):
         myReport.parse(self.mergePath)
 
         # Fake some metadata that should be added by the stageout scripts.
-        for fileRef in myReport.getAllFileRefsFromStep("mergeReco"):
-            fileRef.size = 1024
-            fileRef.location = "cmssrm.fnal.gov"
-            fileRef.dataset = {"applicationName": "cmsRun", "applicationVersion": "CMSSW_3_4_2_patch1",
-                               "primaryDataset": "MinimumBias", "processedDataset": "Rereco-v1",
-                               "dataTier": "RECO"}
+        for fileRefs in myReport.getAllFileRefsFromStep("mergeReco").values():
+            for fileRef in fileRefs:
+                fileRef.size = 1024
+                fileRef.location = "cmssrm.fnal.gov"
+                fileRef.dataset = {"applicationName": "cmsRun", "applicationVersion": "CMSSW_3_4_2_patch1",
+                                   "primaryDataset": "MinimumBias", "processedDataset": "Rereco-v1",
+                                   "dataTier": "RECO"}
 
         fwjrPath = os.path.join(self.tempDir, "MergeReport.pkl")
         myReport.setTaskName('/MergeWF/None')

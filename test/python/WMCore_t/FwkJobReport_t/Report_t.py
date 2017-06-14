@@ -631,18 +631,19 @@ cms::Exception caught in EventProcessor and rethrown
         # Now see what happens if the adler32 is set to None
         myReport2 = Report("cmsRun1")
         myReport2.parse(self.xmlPath)
-        fRefs = myReport2.getAllFileRefsFromStep(step="cmsRun1")
-        for fRef in fRefs:
-            fRef.checksums = {'adler32': None}
+        for fRefs in myReport2.getAllFileRefsFromStep(step="cmsRun1").values():
+            for fRef in fRefs:
+                fRef.checksums = {'adler32': None}
+
         myReport2.checkForAdlerChecksum(stepName="cmsRun1")
         self.assertFalse(myReport2.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(myReport2.getExitCode(), 60451)
 
         myReport3 = Report("cmsRun1")
         myReport3.parse(self.xmlPath)
-        fRefs = myReport3.getAllFileRefsFromStep(step="cmsRun1")
-        for fRef in fRefs:
-            fRef.checksums = {'adler32': 100}
+        for fRefs in myReport3.getAllFileRefsFromStep(step="cmsRun1").values():
+            for fRef in fRefs:
+                fRef.checksums = {'adler32': 100}
 
         myReport3.checkForAdlerChecksum(stepName="cmsRun1")
         self.assertTrue(myReport3.getExitCode() != 60451)
@@ -667,9 +668,9 @@ cms::Exception caught in EventProcessor and rethrown
         # Remove the lumi information on purpose
         myReport2 = Report("cmsRun1")
         myReport2.parse(self.xmlPath)
-        fRefs = myReport2.getAllFileRefsFromStep(step="cmsRun1")
-        for fRef in fRefs:
-            fRef.runs = ConfigSection()
+        for fRefs in myReport2.getAllFileRefsFromStep(step="cmsRun1").values():
+            for fRef in fRefs:
+                fRef.runs = ConfigSection()
         myReport2.checkForRunLumiInformation(stepName="cmsRun1")
         self.assertFalse(myReport2.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(myReport2.getExitCode(), 70452)

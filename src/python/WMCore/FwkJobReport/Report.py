@@ -1067,24 +1067,29 @@ class Report:
         """
         _getAllFileRefsFromStep_
 
-        Retrieve a list of all files produced in a step.  The files will be in
-        the form of references to the ConfigSection objects in the acutal
-        report.
+        Retrieve all files produced in a step.  Return it as a dictionary keyed
+        of the output module since the stageout code has some output module
+        specific settings (force unmerged output).
+
+        The files will be in the form of references to the ConfigSection
+        objects in the acutal report.
         """
         stepReport = self.retrieveStep(step=step)
         if not stepReport:
-            return []
+            return {}
 
         outputModules = getattr(stepReport, "outputModules", [])
-        fileRefs = []
+        fileRefs = {}
         for outputModule in outputModules:
+
+            fileRefs.setdefault(outputModule, [])
+
             outputModuleRef = self.getOutputModule(step=step, outputModule=outputModule)
 
             for i in range(outputModuleRef.files.fileCount):
-                fileRefs.append(getattr(outputModuleRef.files, "file%i" % i))
+                fileRefs[outputModule].append(getattr(outputModuleRef.files, "file%i" % i))
 
-        analysisFiles = self.getAnalysisFilesFromStep(step)
-        fileRefs.extend(analysisFiles)
+        fileRefs['analysis'] = self.getAnalysisFilesFromStep(step)
 
         return fileRefs
 
@@ -1244,9 +1249,10 @@ class Report:
 
         fileRefs = []
         for step in self.data.steps:
-            tmpRefs = self.getAllFileRefsFromStep(step=step)
-            if len(tmpRefs) > 0:
-                fileRefs.extend(tmpRefs)
+            fileDict = self.getAllFileRefsFromStep(step=step)
+            for tmpRefs in fileDict.values():
+                if len(tmpRefs) > 0:
+                    fileRefs.extend(tmpRefs)
 
         return fileRefs
 

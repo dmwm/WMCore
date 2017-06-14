@@ -45,7 +45,15 @@ class StageOutStepHelper(CoreHelper):
         """
         if hasattr(self.data.output, "minMergeSize"):
             delattr(self.data.output, "minMergeSize")
+        return
 
+    def disableStraightToMergeForOutputModules(self, outputModules):
+        """
+        _disableStraightToMergeForOutputModules_
+
+        Disable straight to merge only for these output modules.
+        """
+        self.data.output.forceUnmergedOutputs = outputModules
         return
 
     def setMinMergeSize(self, minMergeSize, maxMergeEvents):

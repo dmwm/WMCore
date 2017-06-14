@@ -61,7 +61,8 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
                                                stepType = cmsswStepType,
-                                               forceUnmerged = True)
+                                               forceUnmerged = ["write_ALCARECO"] if 'ALCARECO' in self.writeTiers else False)
+
         if self.doLogCollect:
             self.addLogCollectTask(recoTask)
 

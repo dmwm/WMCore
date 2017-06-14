@@ -13,19 +13,19 @@ from WMCore.WMBase import getTestBase
 class ExecuteTest(unittest.TestCase):
     base = os.path.join(getTestBase(), "WMCore_t/Storage_t/ExecutableCommands.py")
 
-    @mock.patch('WMCore.Storage.Execute.runCommand')
+    @mock.patch('WMCore.Storage.Execute.runCommandWithOutput')
     def testExecute_exception(self, execute_runCommand):
         execute_runCommand.return_value = Exception("Im in test, yay!")
         self.assertRaises(StageOutError, execute, "test")
 
-    @mock.patch('WMCore.Storage.Execute.runCommand')
+    @mock.patch('WMCore.Storage.Execute.runCommandWithOutput')
     def testExecute_exitCode(self, execute_runCommand):
-        execute_runCommand.return_value = "Im exitCode"
+        execute_runCommand.return_value = "Im exitCode", "test output"
         self.assertRaises(StageOutError, execute, "test")
 
-    @mock.patch('WMCore.Storage.Execute.runCommand')
+    @mock.patch('WMCore.Storage.Execute.runCommandWithOutput')
     def testExecute_executed(self, execute_runCommand):
-        execute_runCommand.return_value = None
+        execute_runCommand.return_value = 0, "test output"
         self.assertIsNone(execute("test"))
         execute_runCommand.assert_called_with("test")
 

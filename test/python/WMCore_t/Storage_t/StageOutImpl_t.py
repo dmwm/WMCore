@@ -38,7 +38,7 @@ class StageOutImplTest(unittest.TestCase):
         self.assertEqual(('root', 'eoscms', 'cms', "?path=default&default2"),
                          StageOutImpl.splitPFN("root://eoscms//eos/cms/store?path=cms&path=default&default2"))
 
-    @mock.patch('WMCore.Storage.StageOutImpl.runCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_stageOutError(self, mock_runCommand):
         mock_runCommand.side_effect = Exception('BOOM!')
         with self.assertRaises(Exception) as context:
@@ -46,17 +46,17 @@ class StageOutImplTest(unittest.TestCase):
             self.assertTrue('ErrorCode : 60311' in context.exception)
         mock_runCommand.assert_called_with("command")
 
-    @mock.patch('WMCore.Storage.StageOutImpl.runCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_exitCode(self, mock_runCommand):
-        mock_runCommand.return_value = 1
+        mock_runCommand.return_value = 1, "Test Fake Error"
         with self.assertRaises(Exception) as context:
             self.StageOutImpl.executeCommand("command")
             self.assertTrue('ErrorCode : 1' in context.exception)
         mock_runCommand.assert_called_with("command")
 
-    @mock.patch('WMCore.Storage.StageOutImpl.runCommand')
+    @mock.patch('WMCore.Storage.StageOutImpl.runCommandWithOutput')
     def testExecuteCommand_valid(self, mock_runCommand):
-        mock_runCommand.return_value = 0
+        mock_runCommand.return_value = 0, "Test Success"
         self.StageOutImpl.executeCommand("command")
         mock_runCommand.assert_called_with("command")
 

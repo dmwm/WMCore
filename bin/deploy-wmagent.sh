@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.2.patch3 -c HG1705e -t production -p "7824" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.2.patch3 -c HG1705e -t testbed-cmssrv214 -p "7824" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.4.patch2 -c HG1706e -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.4.patch1 -c HG1706e -t testbed-cmssrv214 -p "7926" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -317,8 +317,7 @@ echo "Done!" && echo
 ###
 echo "*** Downloading utilitarian scripts ***"
 cd /data/admin/wmagent
-rm -f rmOldJobs.sh checkProxy.py restartComponent.sh
-wget -q --no-check-certificate https://raw.githubusercontent.com/CMSCompOps/WmAgentScripts/master/rmOldJobs.sh
+rm -f checkProxy.py restartComponent.sh
 wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py
 wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/ProductionTools/master/restartComponent.sh
 echo "Done!" && echo
@@ -327,14 +326,10 @@ echo "Done!" && echo
 echo "*** Creating cronjobs for them ***"
 if [[ "$TEAMNAME" == *testbed* || "$TEAMNAME" == *dev* ]]; then
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "#remove old jobs script"
-  echo "10 */4 * * * source /data/admin/wmagent/rmOldJobs.sh &> /tmp/rmJobs.log"
   echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
   ) | crontab -
 else
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "#remove old jobs script"
-  echo "10 */4 * * * source /data/admin/wmagent/rmOldJobs.sh &> /tmp/rmJobs.log"
   echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
   echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 120 --send-mail True --mail alan.malta@cern.ch"
   echo "#workaround for the ErrorHandler silence issue"

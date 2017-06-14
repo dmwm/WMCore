@@ -87,7 +87,8 @@ class EventAwareLumiByWork(JobFactory):
             lumiMask = LumiList(wmagentFormat=(runs, lumis))
         elif runWhitelist:
             lumiMask = LumiList(runs=runWhitelist)
-        logging.debug('%s splitting with lumiMask%s%s', self.__class__.__name__, '\n' if bool(lumiMask) else ' ', lumiMask)
+        logging.debug('%s splitting with lumiMask%s%s', self.__class__.__name__, '\n' if bool(lumiMask) else ' ',
+                      lumiMask)
 
         if self.deterministicPU and self.package == 'WMCore.WMBS':
             getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
@@ -112,7 +113,8 @@ class EventAwareLumiByWork(JobFactory):
             self.lumisProcessed = set()
             if self.package == 'WMCore.WMBS':
                 self.populateFilesFromWMBS(filesByLocation)
-            lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents, lumiMask=lumiMask)
+            lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents,
+                                                          lumiMask=lumiMask)
             for f in filesAtLocation:
                 lfn = f['lfn']
                 if lfn not in lumisByFile:
@@ -134,7 +136,8 @@ class EventAwareLumiByWork(JobFactory):
                                      (self.eventsInLumi, run, lumi)
                         self.stopAndMakeJob(reason='Lumi too big', runLumi=(run, lumi),
                                             failNextJob=True, failReason=failReason)
-                    elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(self.eventsInJob - avgEventsPerJob) \
+                    elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(
+                                    self.eventsInJob - avgEventsPerJob) \
                             and self.eventsInLumi > 0 and self.eventsInJob > 0:
                         # This lumi doesn't fit in this job (logic is to get as close as possible to avgEventsPerJob)
                         self.stopAndMakeJob(reason='Event limit', runLumi=(run, lumi))

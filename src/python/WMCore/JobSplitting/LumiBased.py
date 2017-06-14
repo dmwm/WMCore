@@ -6,18 +6,15 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-
-
-
-import operator
 import logging
+import operator
 import threading
 
 from WMCore.DataStructs.Run import Run
-
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.WMBS.File               import File
-from WMCore.WMSpec.WMTask           import buildLumiMask
+from WMCore.WMBS.File import File
+from WMCore.WMSpec.WMTask import buildLumiMask
+
 
 def isGoodLumi(goodRunList, run, lumi):
     """
@@ -26,10 +23,10 @@ def isGoodLumi(goodRunList, run, lumi):
     Checks to see if runs match a run-lumi combination in the goodRunList
     This is a pain in the ass.
     """
-    if goodRunList == None or goodRunList == {}:
+    if goodRunList is None or goodRunList == {}:
         return True
 
-    if not isGoodRun(goodRunList = goodRunList, run = run):
+    if not isGoodRun(goodRunList=goodRunList, run=run):
         return False
 
     for runRange in goodRunList.get(str(run), [[]]):
@@ -42,13 +39,14 @@ def isGoodLumi(goodRunList, run, lumi):
             return True
     return False
 
+
 def isGoodRun(goodRunList, run):
     """
     _isGoodRun_
 
     Tell if this is a good run
     """
-    if goodRunList == None or goodRunList == {}:
+    if goodRunList is None or goodRunList == {}:
         return True
 
     if str(run) in goodRunList.keys():
@@ -57,12 +55,14 @@ def isGoodRun(goodRunList, run):
 
     return False
 
-class LumiChecker:
-    """ Simple utility class that helps correcting dataset that have lumis split across jobs:
 
-        Due to error in processing (in particular, the Run I Tier-0), some
-        lumi sections may be spread across multiple jobs. This class helps keep tracking of these
-        lumis.
+class LumiChecker(object):
+    """ 
+    Simple utility class that helps correcting dataset that have lumis split across jobs:
+
+    Due to error in processing (in particular, the Run I Tier-0), some
+    lumi sections may be spread across multiple jobs. This class helps keep tracking of these
+    lumis.
     """
 
     def __init__(self, applyLumiCorrection):
@@ -84,7 +84,7 @@ class LumiChecker:
             switch to a new job.
             If a split lumi is encountered we add its input file to the self.splitLumiFiles dict
         """
-        if not self.applyLumiCorrection: # if we don't have to apply the correction simply exit
+        if not self.applyLumiCorrection:  # if we don't have to apply the correction simply exit
             return False
 
         # This means the lumi has already been processed and the job has changed
@@ -93,8 +93,8 @@ class LumiChecker:
         if isSplit:
             self.splitLumiFiles.setdefault((run, lumi), []).append(file_)
             logging.warning("Skipping runlumi pair (%s, %s) as it was already been processed."
-                            "Will add %s to the input files of the job processing the lumi"
-                                    % (run, lumi, file_['lfn']))
+                            "Will add %s to the input files of the job processing the lumi", run,
+                            lumi, file_['lfn'])
         else:
             self.lumiJobs[(run, lumi)] = None
 
@@ -109,7 +109,7 @@ class LumiChecker:
         """
         if not self.applyLumiCorrection:
             return
-        if job: # the first time you call "newJob" in the splitting algorithm currentJob is None
+        if job:  # the first time you call "newJob" in the splitting algorithm currentJob is None
             for run, lumiIntervals in job['mask']['runAndLumis'].iteritems():
                 for startLumi, endLumi in lumiIntervals:
                     for lumi in xrange(startLumi, endLumi + 1):
@@ -126,7 +126,6 @@ class LumiChecker:
         for (run, lumi), files in self.splitLumiFiles.iteritems():
             for file_ in files:
                 self.lumiJobs[(run, lumi)].addFile(file_)
-
 
 
 class LumiBased(JobFactory):
@@ -160,12 +159,12 @@ class LumiBased(JobFactory):
         eventsPerLumiInDataset = 0
 
         if deterministicPileup and self.package == 'WMCore.WMBS':
-            getJobNumber = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
-            jobNumber = getJobNumber.execute(workflow = self.subscription.getWorkflow().id)
+            getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
+            jobNumber = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
             self.nJobs = jobNumber
 
         timePerEvent, sizePerEvent, memoryRequirement = \
-                    self.getPerformanceParameters(kwargs.get('performance', {}))
+            self.getPerformanceParameters(kwargs.get('performance', {}))
 
         goodRunList = {}
         if runs and lumis:
@@ -194,17 +193,17 @@ class LumiBased(JobFactory):
 
         # First we need to load the data
         if self.package == 'WMCore.WMBS':
-            loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
+            loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
 
         for key in lDict.keys():
             newlist = []
             # First we need to load the data
             if self.package == 'WMCore.WMBS':
-                fileLumis = loadRunLumi.execute(files = lDict[key])
+                fileLumis = loadRunLumi.execute(files=lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
                     for run in lumiDict.keys():
-                        f.addRun(run = Run(run, *lumiDict[run]))
+                        f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
                 # if hasattr(f, 'loadData'):
@@ -227,7 +226,7 @@ class LumiBased(JobFactory):
                     # No lumis in the file, ignore it
                     continue
                 newlist.append(f)
-            locationDict[key] = sorted(newlist, key = operator.itemgetter('lowestRun'))
+            locationDict[key] = sorted(newlist, key=operator.itemgetter('lowestRun'))
 
         # Split files into jobs with each job containing
         # EXACTLY lumisPerJob number of lumis (except for maybe the last one)
@@ -248,9 +247,9 @@ class LumiBased(JobFactory):
             stopJob = True
             for f in locationDict[location]:
                 if getParents:
-                    parentLFNs = self.findParent(lfn = f['lfn'])
+                    parentLFNs = self.findParent(lfn=f['lfn'])
                     for lfn in parentLFNs:
-                        parent = File(lfn = lfn)
+                        parent = File(lfn=lfn)
                         f['parents'].add(parent)
 
                 if splitOnFile:
@@ -258,7 +257,7 @@ class LumiBased(JobFactory):
                     stopJob = True
 
                 for run in f['runs']:
-                    if not isGoodRun(goodRunList = goodRunList, run = run.run):
+                    if not isGoodRun(goodRunList=goodRunList, run=run.run):
                         # Then skip this one
                         continue
                     if len(runWhitelist) > 0 and not run.run in runWhitelist:
@@ -272,35 +271,36 @@ class LumiBased(JobFactory):
 
                     # Now loop over the lumis
                     for lumi in run:
-                        if (not isGoodLumi(goodRunList, run = run.run, lumi = lumi)
-                                or self.lumiChecker.isSplitLumi(run.run, lumi, f)): # splitLumi checks if the lumi is split across jobs
+                        # splitLumi checks if the lumi is split across jobs
+                        if (not isGoodLumi(goodRunList, run=run.run, lumi=lumi)
+                            or self.lumiChecker.isSplitLumi(run.run, lumi, f)):
                             # Kill the chain of good lumis
                             # Skip this lumi
                             if firstLumi != None and firstLumi != lumi:
-                                self.currentJob['mask'].addRunAndLumis(run = run.run,
-                                                                       lumis = [firstLumi, lastLumi])
+                                self.currentJob['mask'].addRunAndLumis(run=run.run,
+                                                                       lumis=[firstLumi, lastLumi])
                                 addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
                                 runAddedTime = addedEvents * timePerEvent
                                 runAddedSize = addedEvents * sizePerEvent
-                                self.currentJob.addResourceEstimates(jobTime = runAddedTime,
-                                                                     disk = runAddedSize)
+                                self.currentJob.addResourceEstimates(jobTime=runAddedTime,
+                                                                     disk=runAddedSize)
                                 firstLumi = None
                                 lastLumi = None
                             continue
 
                         # You have to kill the lumi chain if they're not continuous
                         if lastLumi and not lumi == lastLumi + 1:
-                            self.currentJob['mask'].addRunAndLumis(run = run.run,
-                                                                   lumis = [firstLumi, lastLumi])
+                            self.currentJob['mask'].addRunAndLumis(run=run.run,
+                                                                   lumis=[firstLumi, lastLumi])
                             addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
                             runAddedTime = addedEvents * timePerEvent
                             runAddedSize = addedEvents * sizePerEvent
-                            self.currentJob.addResourceEstimates(jobTime = runAddedTime,
-                                                                 disk = runAddedSize)
+                            self.currentJob.addResourceEstimates(jobTime=runAddedTime,
+                                                                 disk=runAddedSize)
                             firstLumi = None
                             lastLumi = None
 
-                        if firstLumi == None:
+                        if firstLumi is None:
                             # Set the first lumi in the run
                             firstLumi = lumi
 
@@ -310,18 +310,20 @@ class LumiBased(JobFactory):
                         # Actually do the new job creation
                         if stopJob:
                             if firstLumi != None and lastLumi != None and lastRun != None:
-                                self.currentJob['mask'].addRunAndLumis(run = lastRun,
-                                                                       lumis = [firstLumi, lastLumi])
+                                self.currentJob['mask'].addRunAndLumis(run=lastRun,
+                                                                       lumis=[firstLumi, lastLumi])
                                 addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
                                 runAddedTime = addedEvents * timePerEvent
                                 runAddedSize = addedEvents * sizePerEvent
-                                self.currentJob.addResourceEstimates(jobTime = runAddedTime,
-                                                                     disk = runAddedSize)
-                            self.lumiChecker.closeJob(self.currentJob) # before creating a new job add the lumis of the current one to the checker
-                            self.newJob(name = self.getJobName())
-                            self.currentJob.addResourceEstimates(memory = memoryRequirement)
+                                self.currentJob.addResourceEstimates(jobTime=runAddedTime,
+                                                                     disk=runAddedSize)
+                            # before creating a new job add the lumis of the current one to the checker
+                            self.lumiChecker.closeJob(self.currentJob)
+                            self.newJob(name=self.getJobName())
+                            self.currentJob.addResourceEstimates(memory=memoryRequirement)
                             if deterministicPileup:
-                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset)
+                                skipEvents = (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset
+                                self.currentJob.addBaggageParameter("skipPileupEvents", skipEvents)
                             firstLumi = lumi
                             lumisInJob = 0
                             totalJobs += 1
@@ -344,12 +346,12 @@ class LumiBased(JobFactory):
 
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask
-                        self.currentJob['mask'].addRunAndLumis(run = run.run,
-                                                               lumis = [firstLumi, lastLumi])
+                        self.currentJob['mask'].addRunAndLumis(run=run.run,
+                                                               lumis=[firstLumi, lastLumi])
                         addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])
                         runAddedTime = addedEvents * timePerEvent
                         runAddedSize = addedEvents * sizePerEvent
-                        self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
+                        self.currentJob.addResourceEstimates(jobTime=runAddedTime, disk=runAddedSize)
                         firstLumi = None
                         lastLumi = None
 

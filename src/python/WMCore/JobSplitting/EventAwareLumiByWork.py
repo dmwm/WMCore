@@ -16,7 +16,6 @@ class to simplify the code
 from __future__ import (division, print_function)
 
 import logging
-import traceback
 from collections import defaultdict
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService
@@ -67,8 +66,7 @@ class EventAwareLumiByWork(JobFactory):
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
         lumiEventLimit = int(kwargs.get('max_events_per_lumi', 20000))
         totalEventLimit = int(kwargs.get('total_events', 0))
-        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', True))
-        ignoreACDC = bool(kwargs.get('ignore_acdc_except', False))
+        splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
@@ -82,15 +80,15 @@ class EventAwareLumiByWork(JobFactory):
         lumiMask = LumiList()
         if collectionName:
             lumiMask = self.lumiListFromACDC(couchURL=kwargs.get('couchURL'), couchDB=kwargs.get('couchDB'),
-                                             filesetName=kwargs.get('filesetName'), collectionName=collectionName,
-                                             ignoreACDC=ignoreACDC)
+                                             filesetName=kwargs.get('filesetName'), collectionName=collectionName)
         elif runs and lumis and runWhitelist:
             lumiMask = LumiList(wmagentFormat=(runs, lumis)) & LumiList(runs=runWhitelist)
         elif runs and lumis:
             lumiMask = LumiList(wmagentFormat=(runs, lumis))
         elif runWhitelist:
             lumiMask = LumiList(runs=runWhitelist)
-        logging.debug('%s splitting with lumiMask%s%s', self.__class__.__name__, '\n' if bool(lumiMask) else ' ', lumiMask)
+        logging.debug('%s splitting with lumiMask%s%s', self.__class__.__name__, '\n' if bool(lumiMask) else ' ',
+                      lumiMask)
 
         if self.deterministicPU and self.package == 'WMCore.WMBS':
             getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
@@ -115,7 +113,8 @@ class EventAwareLumiByWork(JobFactory):
             self.lumisProcessed = set()
             if self.package == 'WMCore.WMBS':
                 self.populateFilesFromWMBS(filesByLocation)
-            lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents, lumiMask=lumiMask)
+            lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents,
+                                                          lumiMask=lumiMask)
             for f in filesAtLocation:
                 lfn = f['lfn']
                 if lfn not in lumisByFile:
@@ -137,7 +136,8 @@ class EventAwareLumiByWork(JobFactory):
                                      (self.eventsInLumi, run, lumi)
                         self.stopAndMakeJob(reason='Lumi too big', runLumi=(run, lumi),
                                             failNextJob=True, failReason=failReason)
-                    elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(self.eventsInJob - avgEventsPerJob) \
+                    elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(
+                                    self.eventsInJob - avgEventsPerJob) \
                             and self.eventsInLumi > 0 and self.eventsInJob > 0:
                         # This lumi doesn't fit in this job (logic is to get as close as possible to avgEventsPerJob)
                         self.stopAndMakeJob(reason='Event limit', runLumi=(run, lumi))
@@ -253,26 +253,20 @@ class EventAwareLumiByWork(JobFactory):
         return count
 
     @staticmethod
-    def lumiListFromACDC(couchURL=None, couchDB=None, filesetName=None, collectionName=None, ignoreACDC=False):
+    def lumiListFromACDC(couchURL=None, couchDB=None, filesetName=None, collectionName=None):
         """
         This is not implemented yet
         :return:
         """
-
+        goodRunList = None
         try:
             logging.info('Creating jobs for ACDC fileset %s', filesetName)
             dcs = DataCollectionService(couchURL, couchDB)
             goodRunList = dcs.getLumilistWhitelist(collectionName, filesetName)
         except Exception as ex:
-            msg = "Exception while trying to load goodRunList\n"
-            if ignoreACDC:  # Logic can go in main function?
-                msg += "Ditching goodRunList\n" + str(ex) + str(traceback.format_exc())
-                logging.error(msg)
-                goodRunList = {}
-            else:
-                msg += "Refusing to create any jobs.\n" + str(ex) + str(traceback.format_exc())
-                logging.error(msg)
-                return None  # An error condtion - check
+            msg = "Exception while trying to load goodRunList. "
+            msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
+            logging.exception(msg)
 
         return goodRunList
 

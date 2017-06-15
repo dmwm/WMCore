@@ -31,7 +31,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
-        workload.setDashboardActivity("tier0")
+        workload.setDashboardActivity("t0")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs)
 

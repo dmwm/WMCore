@@ -157,13 +157,21 @@ class Run(WMObject):
         Method to replace myRun.lumis.extend() which does not work with the property
         """
         for lumi in lumiList:
-            if isinstance(lumi, (list, tuple)) and lumi[0] in self.eventsPerLumi and self.eventsPerLumi[lumi[0]]:
-                self.eventsPerLumi[lumi[0]] += lumi[1]  # Already exists, add events
-            elif isinstance(lumi, (list, tuple)):  # Doesn't exist or is 0 or None
-                self.eventsPerLumi[lumi[0]] = lumi[1]
-            else:  # Just given lumis, not events
-                if lumi not in self.eventsPerLumi:  # Don't overwrite existing events
-                    self.eventsPerLumi[lumi] = None
+            if not isinstance(lumi, (list, tuple)):  # comma separated lumi numbers
+                self.eventsPerLumi[lumi] = None
+            else:
+                if isinstance(lumi, list) and not isinstance(lumi[0], tuple):  # then it's a plain list
+                    for l in lumi:
+                        self.eventsPerLumi[l] = None
+                else:
+                    if isinstance(lumi, tuple):  # it's an unpacked list of tuples
+                        lumi = [(lumi)]
+                    # it's a list/tuple of tuples
+                    for tp in lumi:
+                        if tp[0] in self.eventsPerLumi and self.eventsPerLumi[tp[0]]:
+                            self.eventsPerLumi[tp[0]] += tp[1]  # Already exists, add events
+                        else:  # Doesn't exist or is 0 or None
+                            self.eventsPerLumi[tp[0]] = tp[1]
 
     def appendLumi(self, lumi):
         """
@@ -176,7 +184,7 @@ class Run(WMObject):
         else:  # Just given lumis, not events
             if lumi not in self.eventsPerLumi:  # Don't overwrite existing events
                 self.eventsPerLumi[lumi] = None
-    
+
     def getEventsByLumi(self, lumi):
         """
         getter to select event counts by given lumi

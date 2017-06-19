@@ -35,6 +35,14 @@ try:
 except ImportError:
     pass
 
+try:
+    from httplib2 import ServerNotFoundError
+except ImportError:
+    #Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
+    class ServerNotFoundError(Exception):
+        pass
+
+
 # Python3 compatibility
 if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
     basestring = str
@@ -238,6 +246,13 @@ class Requests(dict):
             response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
+        except ServerNotFoundError as ex:
+            # DNS cannot resolve this domain name, let's call it 'Service Unavailable'
+            e = HTTPException()
+            setattr(e, 'url', uri)
+            setattr(e, 'status', 503)
+            setattr(e, 'reason', str(ex))
+            raise e
         except (socket.error, AttributeError):
             self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close

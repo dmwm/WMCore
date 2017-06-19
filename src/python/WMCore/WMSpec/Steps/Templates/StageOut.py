@@ -48,6 +48,16 @@ class StageOutStepHelper(CoreHelper):
 
         return
 
+    def disableStraightToMergeForOutputModules(self, outputModules):
+        """
+        _disableStraightToMergeForOutputModules_
+
+        Disable straight to merge only for these output modules.
+        """
+        self.data.output.forceUnmergedOutputs = outputModules
+
+        return
+
     def setMinMergeSize(self, minMergeSize, maxMergeEvents):
         """
         _setMinMergeSize_
@@ -76,7 +86,6 @@ class StageOut(Template):
     """
 
     def install(self, step):
-        stepname = nodeName(step)
         step.stepType = "StageOut"
         step.section_("files")
         step.filecount = 0

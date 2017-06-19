@@ -8,11 +8,10 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 from __future__ import print_function
 
-import sys
-import os
-import unittest
 import functools
+from httplib import HTTPException
 import WMCore.Database.CMSCouch as CMSCouch
+
 
 class CouchConnectionError(Exception):
     """docstring for CouchConnectionError"""
@@ -34,6 +33,11 @@ def initialiseCouch(objectRef):
     try:
         objectRef.server = CMSCouch.CouchServer(objectRef.url)
         objectRef.couchdb = objectRef.server.connectDatabase(objectRef.database)
+    except HTTPException as e:
+        msg = "%s with status: %s and reason: %s" % (repr(e),
+                                                     getattr(e, 'status', ""),
+                                                     getattr(e, 'reason', ""))
+        raise CouchConnectionError(msg)
     except Exception as e:
         msg = "Exception instantiating couch services for :\n"
         msg += " url = %s\n database = %s\n" % (objectRef.url, objectRef.database)

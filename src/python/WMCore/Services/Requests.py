@@ -255,6 +255,13 @@ class Requests(dict):
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}
                 raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
+        except Exception as ex:
+            if "Unable to find the server at" in str(ex):
+                e = HTTPException()
+                setattr(e, 'url', uri)
+                setattr(e, 'status', 404)
+                setattr(e, 'reason', str(ex))
+                raise e
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)

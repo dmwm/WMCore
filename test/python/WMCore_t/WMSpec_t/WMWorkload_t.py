@@ -1499,7 +1499,7 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setSplittingAlgorithm("FileBased", files_per_job=1)
         skimTask.applyTemplates()
 
-        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
+        testWorkload.setCMSSWVersions(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
                                     scramArch="SomeSCRAMArch")
 
         def verifyParams(initialTask=None):
@@ -1623,7 +1623,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCmssw.setStepType("CMSSW")
         procTask.applyTemplates()
 
-        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
+        testWorkload.setCMSSWVersions(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
                                     scramArch="SomeSCRAMArch")
 
         self.assertEqual(testWorkload.getCMSSWVersions(), ["CMSSW_1_1_1"])

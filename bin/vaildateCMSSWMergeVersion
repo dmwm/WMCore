@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+from __future__ import (division, print_function)
+
+from pprint import pprint
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+
+reqmgrurl = "https://cmsweb.cern.ch/reqmgr2"
+reqdb_url = "https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache"
+
+count = 0
+reqmgrSvc = ReqMgr(reqmgrurl)
+cmsswversionQuery = {"status": "ACTIVE", "request_type": "TaskChain",
+                     "mask": ["CMSSWVersion", "TaskChain", "RequestStatus",
+                              "Task1", "Task2", "Task3", "Task4", "Task5", "Task6", "Task7"]}
+r = reqmgrSvc.getGenericRequestInfo(cmsswversionQuery)
+helper = WMWorkloadHelper()
+
+print("List of tasks which merge task has different cmssw versions than processing/production task")
+print("NOVERSION could mean it is defined in workflow level not task level. so not necessary error case")
+print("Request Name | status | task name | correct cmssw vereion | current merge cmssw version")
+for item in r:
+    for req, reqInfo in item.iteritems():
+        cmssw = reqInfo.get("CMSSWVersion", [])
+        status = reqInfo.get("RequestStatus", [])
+        if not isinstance(cmssw, basestring) and len(cmssw) > 1:
+            # print req
+            # pprint(reqInfo)
+            helper.loadSpecFromCouch(reqdb_url, req)
+            for i in range(reqInfo['TaskChain']):
+                try:
+                    taskName = reqInfo['Task%s' % (i + 1)]["TaskName"]
+                    cmssw = reqInfo['Task%s' % (i + 1)].get("CMSSWVersion", "NOVERSION")
+                except KeyError:
+                    pprint(req)
+                    pprint(reqInfo)
+                    continue
+                # print taskName
+                # print helper.listAllTaskPathNames()
+                # print helper.listAllTaskNames()
+                taskHelper = helper.getTaskByName(taskName)
+                if taskHelper is not None:
+                    cmssw2 = taskHelper.getCMSSWVersionsWithMergeTask()
+                    if len(cmssw2) != 1 or set([cmssw]) != cmssw2:
+                        print(req, status, taskName, cmssw, cmssw2)
+                else:
+                    print("Error no task, request: %s status: %s task: %s cmssw: %s" % (
+                                                            req, status, taskName, cmssw))
+            count += 1
+
+print("check %s active TaskChain with muliple cmssw versions" % count)

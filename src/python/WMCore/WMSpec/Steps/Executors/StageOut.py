@@ -153,7 +153,7 @@ class StageOut(Executor):
                     if fileName.module_label not in getattr(self.step.output, 'forceUnmergedOutputs', []):
                         if getattr(fileName, 'size', 0) >= self.step.output.minMergeSize:
                             straightToMerge = True
-                        if getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxint):
+                        if getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxsize):
                             straightToMerge = True
 
                 if straightToMerge:

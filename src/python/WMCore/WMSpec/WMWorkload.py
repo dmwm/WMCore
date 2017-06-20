@@ -324,6 +324,20 @@ class WMWorkloadHelper(PersistencyHelper):
             return None
         return WMTaskHelper(task)
 
+    def getTaskByName(self, taskName):
+        """
+        _getTaskByName_
+
+        Retrieve a task with the given name in the whole workflow tree.
+        """
+        for t in self.taskIterator():
+            if t.name() == taskName:
+                return t
+            for x in t.taskIterator():
+                if x.name() == taskName:
+                    return x
+        return None
+
     def getTaskByPath(self, taskPath):
         """
         _getTask_
@@ -1488,10 +1502,10 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setCMSSWParams(self, cmsswVersion=None, globalTag=None,
+    def setCMSSWVersions(self, cmsswVersion=None, globalTag=None,
                        scramArch=None, initialTask=None):
         """
-        _setCMSSWVersion_
+        _setCMSSWVersions_
 
         Set the CMSSW version and the global tag for all CMSSW steps in the
         workload.
@@ -1516,7 +1530,7 @@ class WMWorkloadHelper(PersistencyHelper):
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
 
-            self.setCMSSWParams(cmsswVersion, globalTag, scramArch, task)
+            self.setCMSSWVersions(cmsswVersion, globalTag, scramArch, task)
 
         return
 

@@ -322,7 +322,8 @@ class TaskChainWorkloadFactory(StdBase):
         keepOutput = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
-
+        cmsswVersion = taskConf.get('CMSSWVersion', self.frameworkVersion)
+        scramArch = taskConf.get('ScramArch', self.scramArch)
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production", couchDBName=self.couchDBName,
                                               configDoc=configCacheID, configCacheUrl=self.configCacheUrl,
@@ -333,13 +334,15 @@ class TaskChainWorkloadFactory(StdBase):
                                               timePerEvent=taskConf.get('TimePerEvent', None),
                                               sizePerEvent=taskConf.get('SizePerEvent', None),
                                               memoryReq=taskConf.get('Memory', None),
+                                              cmsswVersion=cmsswVersion,
+                                              scramArch=scramArch,
                                               taskConf=taskConf)
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
+        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name(), cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         # Do the output module merged/unmerged association
-        self.setUpMergeTasks(task, outputMods, splitAlgorithm,
-                             keepOutput, transientModules)
+        self.setUpMergeTasks(task, outputMods, splitAlgorithm, keepOutput, transientModules,
+                             cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         # this need to be called after setpuProcessingTask since it will overwrite some values
         self._updateCommonParams(task, taskConf)
@@ -362,6 +365,8 @@ class TaskChainWorkloadFactory(StdBase):
         keepOutput = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
+        cmsswVersion = taskConf.get('CMSSWVersion', self.frameworkVersion)
+        scramArch = taskConf.get('ScramArch', self.scramArch)
 
         # in case the initial task is a processing task, we have an input dataset, otherwise
         # we look up the parent task and step
@@ -409,11 +414,13 @@ class TaskChainWorkloadFactory(StdBase):
                                               timePerEvent=taskConf.get('TimePerEvent', None),
                                               sizePerEvent=taskConf.get('SizePerEvent', None),
                                               memoryReq=taskConf.get("Memory", None),
+                                              cmsswVersion=cmsswVersion,
+                                              scramArch=scramArch,
                                               taskConf=taskConf)
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
-        self.setUpMergeTasks(task, outputMods, splitAlgorithm,
-                             keepOutput, transientModules)
+        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name(), cmsswVersion=cmsswVersion, scramArch=scramArch)
+        self.setUpMergeTasks(task, outputMods, splitAlgorithm, keepOutput, transientModules,
+                             cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         self.inputPrimaryDataset = currentPrimaryDataset
 
@@ -423,7 +430,7 @@ class TaskChainWorkloadFactory(StdBase):
         return
 
     def setUpMergeTasks(self, parentTask, outputModules, splittingAlgo,
-                        keepOutput, transientOutputModules):
+                        keepOutput, transientOutputModules, cmsswVersion=None, scramArch=None):
         """
         _setUpMergeTasks_
 
@@ -441,7 +448,7 @@ class TaskChainWorkloadFactory(StdBase):
         procMergeTasks = {}
         for outputModuleName in modulesToMerge:
             mergeTask = self.addMergeTask(parentTask, splittingAlgo,
-                                          outputModuleName)
+                                          outputModuleName, cmsswVersion=cmsswVersion, scramArch=scramArch)
             procMergeTasks[str(outputModuleName)] = mergeTask
         self.mergeMapping[parentTask.name()] = procMergeTasks
 

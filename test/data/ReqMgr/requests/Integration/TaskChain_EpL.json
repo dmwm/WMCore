@@ -1,120 +1,93 @@
 {
-    "assignRequest": {
-        "AcquisitionEra": {
-            "HIN_00073_0": "AcquisitionEra-OVERRIDE-ME", 
-            "HIN_00075_0": "AcquisitionEra-OVERRIDE-ME", 
-            "HIN_00075_1": "AcquisitionEra-OVERRIDE-ME"
-        }, 
-        "Dashboard": "Dashboard-OVERRIDE-ME", 
-        "GracePeriod": 300, 
-        "MaxRSS": {
-            "HIN_00073_0": 2355200, 
-            "HIN_00075_0": 4096000, 
-            "HIN_00075_1": 4096000
-        }, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
-        "ProcessingString": {
-            "HIN_00073_0": "ProcessingString-OVERRIDE-ME", 
-            "HIN_00075_0": "ProcessingString-OVERRIDE-ME", 
-            "HIN_00075_1": "ProcessingString-OVERRIDE-ME"
-        }, 
-        "ProcessingVersion": 19, 
-        "SiteBlacklist": [], 
-        "SiteWhitelist": [
-            "SiteWhitelist-OVERRIDE-ME"
-        ], 
-        "SoftTimeout": 129600, 
-        "Team": "Team-OVERRIDE-ME", 
-        "UnmergedLFNBase": "/store/unmerged"
-    }, 
-    "createRequest": {
-        "AcquisitionEra": "AcqEra_NotGonnaUseYou",
-        "CMSSWVersion": "CMSSW_8_0_27", 
-        "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Template used for the events per lumi validation in WMCore and DBS: pdmvserv_task_HIN-pPb816Spring16GS-00073__v1_T_170420_201658_1674", 
-        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
-        "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
-        "GlobalTag": "80X_mcRun2_pA_v4", 
-        "Memory": 4000, 
-        "PrepID": "TEST-task_HIN-pPb816Spring16GS-00073", 
-        "ProcessingString": "ProcStr_NotGoonaBeUsedToo",
-        "ProcessingVersion": 20, 
-        "RequestPriority": 185000, 
-        "RequestString": "RequestString-OVERRIDE-ME", 
-        "RequestType": "TaskChain", 
-        "ScramArch": ["slc6_amd64_gcc530"], 
-        "SizePerEvent": 900, 
-        "SubRequestType": "ReDigi", 
-        "Task1": {
-            "AcquisitionEra": "pPb816Spring16GS", 
-            "CMSSWVersion": "CMSSW_8_0_27", 
-            "Campaign": "pPb816Spring16GS", 
-            "ConfigCacheID": "4726f33d3e7800bab4d246c00b6b17db", 
-            "EventsPerLumi": 100, 
-            "FilterEfficiency": 1, 
-            "GlobalTag": "80X_mcRun2_pA_v4", 
-            "KeepOutput": true, 
-            "Memory": 2300, 
-            "Multicore": 1, 
-            "PrepID": "HIN-pPb816Spring16GS-00073", 
-            "PrimaryDataset": "Dijet_pThat-540_PbP-Bst_8p16_Pythia8", 
-            "ProcessingString": "Task1_WMCore_TEST", 
-            "RequestNumEvents": 10000, 
-            "ScramArch": "slc6_amd64_gcc530",
-            "Seeding": "AutomaticSeeding", 
-            "SizePerEvent": 1000, 
-            "SplittingAlgo": "EventBased", 
-            "TaskName": "HIN_00073_0", 
-            "TimePerEvent": 200.5476
-        }, 
-        "Task2": {
-            "AcquisitionEra": "pPb816Summer16DR", 
-            "CMSSWVersion": "CMSSW_8_0_27", 
-            "Campaign": "pPb816Summer16DR", 
-            "ConfigCacheID": "b2a4cb4736732c4dfedbb031ddf172bf", 
-            "FilterEfficiency": 1, 
-            "GlobalTag": "80X_mcRun2_pA_v4", 
-            "InputFromOutputModule": "RAWSIMoutput", 
-            "InputTask": "HIN_00073_0", 
-            "Memory": 4000, 
-            "Multicore": 1, 
-            "PrepID": "HIN-pPb816Summer16DR-00075", 
-            "PrimaryDataset": "Dijet_pThat-540_PbP-Bst_8p16_Pythia8", 
-            "ProcessingString": "Task2_WMCore_TEST", 
-            "ScramArch": [
-                "slc6_amd64_gcc530"
-            ], 
-            "SizePerEvent": 900, 
-            "SplittingAlgo": "EventAwareLumiBased", 
-            "TaskName": "HIN_00075_0", 
-            "TimePerEvent": 60
-        }, 
-        "Task3": {
-            "AcquisitionEra": "pPb816Summer16DR", 
-            "CMSSWVersion": "CMSSW_8_0_27", 
-            "Campaign": "pPb816Summer16DR", 
-            "ConfigCacheID": "b2a4cb4736732c4dfedbb031ddf2ff19", 
-            "FilterEfficiency": 1, 
-            "GlobalTag": "80X_mcRun2_pA_v4", 
-            "InputFromOutputModule": "RAWSIMoutput", 
-            "InputTask": "HIN_00075_0", 
-            "KeepOutput": true, 
-            "Memory": 4000, 
-            "Multicore": 1, 
-            "PrepID": "HIN-pPb816Summer16DR-00075", 
-            "PrimaryDataset": "Dijet_pThat-540_PbP-Bst_8p16_Pythia8", 
-            "ProcessingString": "Task3_WMCore_TEST", 
-            "ScramArch": [
-                "slc6_amd64_gcc530"
-            ], 
-            "SizePerEvent": 900, 
-            "SplittingAlgo": "EventAwareLumiBased", 
-            "TaskName": "HIN_00075_1", 
-            "TimePerEvent": 70
-        }, 
-        "TaskChain": 3, 
-        "TimePerEvent": 35
-    }
+  "assignRequest": {
+    "AcquisitionEra": {
+      "HIN_00075_0": "AcquisitionEra-OVERRIDE-ME",
+      "HIN_00075_1": "AcquisitionEra-OVERRIDE-ME"
+    },
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MaxRSS": {
+      "HIN_00075_0": 4083000,
+      "HIN_00075_1": 4096000
+    },
+    "MaxVSize": 40000000,
+    "MergedLFNBase": "/store/backfill/1",
+    "ProcessingString": {
+      "HIN_00075_0": "ProcessingString-OVERRIDE-ME",
+      "HIN_00075_1": "ProcessingString-OVERRIDE-ME"
+    },
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "AcquisitionEra": "AcqEra_NotGonnaUseYou",
+    "CMSSWVersion": "CMSSW_8_0_27",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": "Read input data with events per lumi info",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "CouchDBName": "reqmgr_config_cache",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "GlobalTag": "80X_mcRun2_pA_v4",
+    "Memory": 4000,
+    "PrepID": "TEST-task_HIN-pPb816Spring16GS-00073",
+    "ProcessingString": "ProcStr_NotGoonaBeUsedToo",
+    "ProcessingVersion": 20,
+    "RequestPriority": 185000,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "TaskChain",
+    "ScramArch": [
+      "slc6_amd64_gcc530"
+    ],
+    "SizePerEvent": 900,
+    "SubRequestType": "ReDigi",
+    "Task1": {
+      "AcquisitionEra": "pPb816Summer16DR",
+      "CMSSWVersion": "CMSSW_8_0_27",
+      "Campaign": "pPb816Summer16DR",
+      "ConfigCacheID": "b2a4cb4736732c4dfedbb031ddf172bf",
+      "InputDataset": "/Dijet_pThat-540_PbP-Bst_8p16_Pythia8/Integ_Test-TaskChain_GENSIM_WMCore_Validation_DoNotDelete-v11/GEN-SIM",
+      "GlobalTag": "80X_mcRun2_pA_v4",
+      "Memory": 4000,
+      "Multicore": 1,
+      "PrepID": "HIN-pPb816Summer16DR-00075",
+      "ProcessingString": "Task2_WMCore_TEST",
+      "ScramArch": [
+        "slc6_amd64_gcc530"
+      ],
+      "SizePerEvent": 900,
+      "TaskName": "HIN_00075_0",
+      "TimePerEvent": 60
+    },
+    "Task2": {
+      "AcquisitionEra": "pPb816Summer16DR",
+      "CMSSWVersion": "CMSSW_8_0_27",
+      "Campaign": "pPb816Summer16DR",
+      "ConfigCacheID": "b2a4cb4736732c4dfedbb031ddf2ff19",
+      "FilterEfficiency": 1,
+      "GlobalTag": "80X_mcRun2_pA_v4",
+      "InputFromOutputModule": "RAWSIMoutput",
+      "InputTask": "HIN_00075_0",
+      "KeepOutput": true,
+      "Memory": 4000,
+      "Multicore": 1,
+      "PrepID": "HIN-pPb816Summer16DR-00075",
+      "PrimaryDataset": "Dijet_pThat-540_PbP-Bst_8p16_Pythia8",
+      "ProcessingString": "Task3_WMCore_TEST",
+      "ScramArch": [
+        "slc6_amd64_gcc530"
+      ],
+      "SizePerEvent": 900,
+      "SplittingAlgo": "EventAwareLumiBased",
+      "TaskName": "HIN_00075_1",
+      "TimePerEvent": 70
+    },
+    "TaskChain": 2,
+    "TimePerEvent": 35
+  }
 }

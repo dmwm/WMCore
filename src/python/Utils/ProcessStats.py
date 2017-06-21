@@ -47,7 +47,7 @@ def processStatus(pid=None):
     "Return status of the process in a dictionary format"
     if not pid:
         pid = os.getpid()
-    ttime = time.localtime(time0) if time0 else time.localtime()
+    ttime = time.localtime()
     tstamp = time.strftime('%d/%b/%Y:%H:%M:%S', ttime)
     pdict = {'pid': pid, 'timestamp': tstamp, 'time': time.time()}
     if 'psutil' not in sys.modules:

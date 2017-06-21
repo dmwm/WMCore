@@ -375,7 +375,7 @@ class WorkQueue(WorkQueueBase):
                     self.logdb.delete(wmspec.name(), "error", this_thread=True)
                 except Exception as ex:
                     msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
-                    self.logger.error(msg)
+                    self.logger.exception(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
                     continue
 

@@ -35,6 +35,14 @@ try:
 except ImportError:
     pass
 
+try:
+    from httplib2 import ServerNotFoundError
+except ImportError:
+    #Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
+    class ServerNotFoundError(Exception):
+        pass
+
+
 # Python3 compatibility
 if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
     basestring = str
@@ -238,7 +246,7 @@ class Requests(dict):
             response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
-        except (socket.error, AttributeError):
+        except (socket.error, AttributeError, ServerNotFoundError):
             self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
             # & retry. httplib2 doesn't clear httplib state before next request
@@ -250,18 +258,11 @@ class Requests(dict):
             # ... try again... if this fails propagate error to client
             try:
                 response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
-            except AttributeError:
+            except (AttributeError, ServerNotFoundError):
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}
                 raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
-        except Exception as ex:
-            if "Unable to find the server at" in str(ex):
-                e = HTTPException()
-                setattr(e, 'url', uri)
-                setattr(e, 'status', 404)
-                setattr(e, 'reason', str(ex))
-                raise e
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)

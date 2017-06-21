@@ -111,5 +111,5 @@ class FWJRDBAPI():
 
     def getFWJRWithSkippedFiles(self):
         options = {"reduce": True, "group": True, "include_docs": False}
-        return self._getCouchView("skippedFileInfoByTask", options)
+        return self._getCouchView("skippedFileInfoByTaskAndSite", options)
 

@@ -134,9 +134,9 @@ class LocalCouchDBData(object):
     def getSkippedFilesSummaryByWorkflow(self):
         """
         get skipped file summary
-        gets the data with following format and convert to
-        {u'rows': [{u'value': {u'events': 2468, u'lumis': 5}, u'key':
-        [u'sryu_TaskChain_Data_wq_testt_160204_061048_5587', u'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD']}]}
+        gets the data with following format
+        {u'rows': [{u'value': {u'skippedFile': 5}, u'key':
+        ["sryu_StepChain_MC_reqmgr2_170609_180852_5295", "/sryu_StepChain_MC_reqmgr2_170609_180852_5295/GENSIM/GENSIMMergeRAWSIMoutput", "T1_US_FNAL_Disk"]}]}
 
         and covert to
         {'sryu_TaskChain_Data_wq_testt_160204_061048_5587':
@@ -149,7 +149,8 @@ class LocalCouchDBData(object):
         for x in results.get('rows', []):
             data.setdefault(x['key'][0], {})
             data[x['key'][0]].setdefault('tasks', {})
-            data[x['key'][0]]['tasks'][x['key'][1]] = x['value']
+            data[x['key'][0]]['tasks'].setdefault(x['key'][1], {})
+            data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]] = x['value']
             data[x['key'][0]]['skipped'] =  True
 
         return data

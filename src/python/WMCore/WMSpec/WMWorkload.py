@@ -641,17 +641,55 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setNumberOfCores(cores, nStreams)
         return
 
-    def setMemory(self, memory):
+    def setMemory(self, memory, initialTask=None):
         """
         _setMemory_
 
-        Update memory requirements for each task in the spec
+        Update memory requirements for each task in the spec, thus it
+        can be either an integer or a dictionary key'ed by the task name.
         """
         if not memory:
             return
 
-        for task in self.taskIterator():
-            task.setJobResourceInformation(memoryReq=memory)
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            if isinstance(memory, dict):
+                mem = memory.get(task.name())
+            else:
+                mem = memory
+            task.setJobResourceInformation(memoryReq=mem)
+            self.setMemory(memory, task)
+
+        return
+
+    def setTimePerEvent(self, timePerEvent, initialTask=None):
+        """
+        _setTimePerEvent_
+
+        Update TimePerEvent requirements for each task in the spec, thus it
+        can be either an integer or a dictionary key'ed by the task name.
+        """
+        # don't set it for utilitarian/merge tasks
+        if not timePerEvent:
+            return
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            if isinstance(timePerEvent, dict):
+                timePE = timePerEvent.get(task.name())
+            else:
+                timePE = timePerEvent
+            task.setJobResourceInformation(timePerEvent=timePE)
+            self.setTimePerEvent(timePerEvent, task)
+
         return
 
     def setAcquisitionEra(self, acquisitionEras):

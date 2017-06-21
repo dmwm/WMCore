@@ -532,26 +532,22 @@ class WMTaskHelper(TreeHelper):
         the three key values are main memory usage, time per processing unit (e.g. time per event) and
         disk usage per processing unit (e.g. size per event).
         """
+        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            # don't touch job requirements for these task types
+            return
+
         performanceParams = getattr(self.data.input.splitting, "performance")
+
+        timePerEvent = timePerEvent.get(self.name()) if isinstance(timePerEvent, dict) else timePerEvent
+        sizePerEvent = sizePerEvent.get(self.name()) if isinstance(sizePerEvent, dict) else sizePerEvent
+        memoryReq = memoryReq.get(self.name()) if isinstance(memoryReq, dict) else memoryReq
+
         if timePerEvent or getattr(performanceParams, "timePerEvent", None):
             performanceParams.timePerEvent = timePerEvent or getattr(performanceParams, "timePerEvent")
         if sizePerEvent or getattr(performanceParams, "sizePerEvent", None):
             performanceParams.sizePerEvent = sizePerEvent or getattr(performanceParams, "sizePerEvent")
-
-        # special handling for memory overwrite during assignment
-        if isinstance(memoryReq, dict):
-            taskMemory = memoryReq.get(self.name())
-        else:
-            taskMemory = memoryReq
-
-        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
-            # we don't want to touch memory for these task types
-            pass
-        elif taskMemory or getattr(performanceParams, "memoryRequirement", None):
-            performanceParams.memoryRequirement = taskMemory or getattr(performanceParams, "memoryRequirement")
-
-        for task in self.childTaskIterator():
-            task.setJobResourceInformation(memoryReq=memoryReq)
+        if memoryReq or getattr(performanceParams, "memoryRequirement", None):
+            performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
 
         return
 

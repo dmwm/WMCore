@@ -246,7 +246,14 @@ class Requests(dict):
             response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
-        except (socket.error, AttributeError, ServerNotFoundError):
+        except ServerNotFoundError as ex:
+            # DNS cannot resolve this domain name, let's call it 'Service Unavailable'
+            e = HTTPException()
+            setattr(e, 'url', uri)
+            setattr(e, 'status', 503)
+            setattr(e, 'reason', str(ex))
+            raise e
+        except (socket.error, AttributeError):
             self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
             # & retry. httplib2 doesn't clear httplib state before next request
@@ -258,7 +265,7 @@ class Requests(dict):
             # ... try again... if this fails propagate error to client
             try:
                 response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
-            except (AttributeError, ServerNotFoundError):
+            except AttributeError:
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}

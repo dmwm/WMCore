@@ -213,8 +213,8 @@ class DBSBufferUtil(WMConnectionBase):
         _getPhEDxDBSStatuForCompletedWorkflows_
         Check the PhEDEx and DBS upload status for the completed workflow
         """
-        wfCompletedStatusDAO = self.daoFactory(classname = "CheckStatusForCompletedWorkflows")
-        result = wfCompletedStatusDAO.execute(transaction = False)
+        wfCompletedStatusDAO = self.daoFactory(classname="CheckStatusForCompletedWorkflows")
+        result = wfCompletedStatusDAO.execute(transaction=False)
         if summary:
             result = self.summaryPhEDExDBSStatus(result)
 
@@ -240,3 +240,11 @@ class DBSBufferUtil(WMConnectionBase):
             else:
                 summary[workflow]["DBSUploaded"] = False
         return summary
+
+    def isAllWorkflowCompleted(self):
+        """
+        check whether all the workflows are completed status in give agent (not globaly in reqmgr)
+        This should be used as preconditon for checking draining status
+        """
+        completeFWFlag = self.daoFactory(classname="IsAllWorkflowsCompleted")
+        return completeFWFlag.execute(transaction=False)

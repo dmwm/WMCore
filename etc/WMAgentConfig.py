@@ -491,6 +491,7 @@ config.AgentStatusWatcher.forceSiteDown = []  # List of sites to be forced to Do
 config.AgentStatusWatcher.onlySSB = False  # Set thresholds for sites only in SSB (Force all other to zero/down)
 config.AgentStatusWatcher.enabled = True  # switch to enable or not this component
 config.AgentStatusWatcher.agentPollInterval = 300
+config.AgentStatusWatcher.drainStatusPollInterval = 43200
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
 config.AgentStatusWatcher.jsonFile = config.AgentStatusWatcher.componentDir + "/WMA_monitoring.json"
 

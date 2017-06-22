@@ -60,11 +60,6 @@ class RunTest(unittest.TestCase):
         self.assertEqual(len(run8), 3)
         self.assertDictEqual(run8.eventsPerLumi, {1: None, 2: None, 3: None})
 
-        run9 = Run(666, [(1L, None), (2L, None), (3L, None), (2L, None)])
-        self.assertEqual(run9.run, 666)
-        self.assertEqual(len(run9), 3)
-        self.assertDictEqual(run9.eventsPerLumi, {1: None, 2: None, 3: None})
-
         run10 = Run(555, *[1, 2, 3])
         self.assertEqual(run10.run, 555)
         self.assertEqual(len(run10), 3)
@@ -75,21 +70,10 @@ class RunTest(unittest.TestCase):
         self.assertDictEqual(run11.eventsPerLumi, {1: None, 2: None, 3: None})
         self.assertEqual(len(run11), 3)
 
-        run12 = Run(666, *[(1L, None), (2L, None), (3L, None), (2L, None)])
-        self.assertEqual(run12.run, 666)
-        self.assertEqual(len(run12), 3)
-        self.assertDictEqual(run12.eventsPerLumi, {1: None, 2: None, 3: None})
-
         run13 = Run(666, *[(1, 11), (2, 22), (3, 33), (1, 4), (3, 2)])
         self.assertEqual(run13.run, 666)
         self.assertEqual(len(run13), 3)
         self.assertDictEqual(run13.eventsPerLumi, {1: 15, 2: 22, 3: 35})
-
-        run20 = Run(1L, *[1L, 2L, 3L, 4L, 5L])
-        self.assertEqual(run20.run, 1L)
-        self.assertEqual(len(run20), 5)
-        self.assertDictEqual(run20.eventsPerLumi, {1L: None, 2L: None, 3L: None, 4L: None, 5L: None})
-        self.assertItemsEqual(run20.lumis, [1, 2, 3, 4, 5])
 
     def test2(self):
         """

@@ -9,7 +9,7 @@ inherit this object and implement the methods accordingly
 from __future__ import print_function
 import time
 import os
-from WMCore.Storage.Execute import runCommand
+from WMCore.Storage.Execute import runCommandWithOutput
 from WMCore.Storage.StageOutError import StageOutError
 
 
@@ -79,15 +79,15 @@ class StageOutImpl(object):
 
         """
         try:
-            exitCode = runCommand(command)
-            msg = "%s : Command exited with status: %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%S"), exitCode)
+            exitCode, output = runCommandWithOutput(command)
+            msg = "%s : Command exited with status: %s\n Output message: %s" % (
+                            time.strftime("%Y-%m-%dT%H:%M:%S"), exitCode, output)
             print(msg)
         except Exception as ex:
             raise StageOutError(str(ex), Command=command, ExitCode=60311)
         if exitCode:
-            msg = "%s : Command exited non-zero" % time.strftime("%Y-%m-%dT%H:%M:%S")
-            print("ERROR: Exception During Stage Out:\n")
-            print(msg)
+            msg = "%s : Command exited non-zero: (%s) " % (time.strftime("%Y-%m-%dT%H:%M:%S"), output)
+            print("ERROR: Exception During Stage Out:\n%s" % msg)
             raise StageOutError(msg, Command=command, ExitCode=exitCode)
         return
 

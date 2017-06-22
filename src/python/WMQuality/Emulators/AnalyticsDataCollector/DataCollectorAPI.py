@@ -7,34 +7,32 @@ import logging
 
 from WMCore.Lexicon import splitCouchServiceURL
 
-"""
-JobInfoByID
+# JobInfoByID
+# Retrieve information about a job from couch and format it nicely.
 
-Retrieve information about a job from couch and format it nicely.
-"""
-
-REQUEST_NAME_PREFIX = "test-request-"
-SITE_NAME_PREFIX = "T1_test-site-"
-NUM_REQUESTS = 2
-NUM_SITES = 3
-NUM_JOBS_EACH = 1
-JOB_SLOTS = 1000
-COUCH_JOB_STATUS = ['queued_first', 'queued_retry', 'cooloff', 'submitted_first',
+REQUEST_NAME_PREFIX="test-request-"
+SITE_NAME_PREFIX="T1_test-site-"
+NUM_REQUESTS=2
+NUM_SITES=3
+NUM_JOBS_EACH=1
+JOB_SLOTS=1000
+COUCH_JOB_STATUS=['queued_first', 'queued_retry', 'cooloff', 'submitted_first',
                     'submitted_retry', 'success',
                     'failure_exception', 'failure_submit',
                     'failure_create', 'failure_cancel']
-QUEUE_JOB_STATUS = ['inQueue', 'inWMBS']
-BATCH_JOB_STATUS = ['submitted_pending', 'submitted_running']
+QUEUE_JOB_STATUS=['inQueue', 'inWMBS']
+BATCH_JOB_STATUS=['submitted_pending', 'submitted_running']
 
 class LocalCouchDBData():
 
-    def __init__(self, couchURL, summaryLevel):
+    def __init__(self, couchURL, statSummaryDB, summaryLevel):
         # set the connection for local couchDB call
         print("Using LocalCouchDBData Emulator")
-        self.couchURL = couchURL
-        self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
-        self.summaryLevel = summaryLevel
-        logging.info("connect couch %s:  %s" % (self.couchURLBase, self.dbName))
+        self.couchURL=couchURL
+        self.couchURLBase, self.dbName=splitCouchServiceURL(couchURL)
+        self.summaryLevel=summaryLevel
+        self.summaryStatsDB=statSummaryDB
+        logging.info("connect couch %s:  %s", self.couchURLBase, self.dbName)
 
     def getJobSummaryByWorkflowAndSite(self):
         """
@@ -53,13 +51,13 @@ class LocalCouchDBData():
           'request_name1': {'queue_first'; { 'siteB': 100}}
          }
         """
-        doc = {}
+        doc={}
         for i in range(NUM_REQUESTS):
-            request = doc['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = {}
+            request=doc['%s%s'%(REQUEST_NAME_PREFIX, i+1)]={}
             for status in COUCH_JOB_STATUS:
-                request[status] = {}
+                request[status]={}
                 for j in range(NUM_SITES):
-                    request[status]['%s%s' % (SITE_NAME_PREFIX, j+1)] = NUM_JOBS_EACH
+                    request[status]['%s%s'%(SITE_NAME_PREFIX, j+1)]=NUM_JOBS_EACH
 
         return doc
 
@@ -72,11 +70,24 @@ class LocalCouchDBData():
         """
         return {}
 
+    def getJobPerformanceByTaskAndSiteFromSummaryDB(self):
+        """
+        TODO: need to fill with fake data
+        """
+        return {}
+
+    def getSkippedFilesSummaryByWorkflow(self):
+        """
+        TODO: need to fill with fake data
+        """
+        return {}
+
+
 class ReqMonDBData():
 
     def __init__(self, couchURL):
         # set the connection for local couchDB call
-        self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
+        self.couchURL, self.dbName=splitCouchServiceURL(couchURL)
 
     def uploadData(self, doc):
         """
@@ -89,34 +100,61 @@ class WMAgentDBData():
     def __init__(self, summaryLevel, dbi, logger):
 
         # interface to WMBS/BossAir db
-        print("Using %s Emulator" % self.__class__)
+        print("Using %s Emulator"%self.__class__)
 
     def getHeartBeatWarning(self):
 
-        agentInfo = {}
-        agentInfo['status'] = 'ok'
+        agentInfo={}
+        agentInfo['status']='ok'
         return agentInfo
 
     def getBatchJobInfo(self):
         """
         TODO: need to sync the job number (num of running job should match)
         """
-        doc = {}
+        doc={}
         for i in range(NUM_REQUESTS):
-            request = doc['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = {}
+            request=doc['%s%s'%(REQUEST_NAME_PREFIX, i+1)]={}
             for status in BATCH_JOB_STATUS:
-                request[status] = {}
+                request[status]={}
                 for j in range(NUM_SITES):
-                    request[status]['%s%s' % (SITE_NAME_PREFIX, j+1)] = NUM_JOBS_EACH
+                    request[status]['%s%s'%(SITE_NAME_PREFIX, j+1)]=NUM_JOBS_EACH
 
         return doc
 
     def getJobSlotInfo(self):
 
-        results = []
+        results=[]
         for i in range(NUM_SITES):
-            doc = {}
-            doc['cms_name'] = '%s%s' % (SITE_NAME_PREFIX, i+1)
-            doc['job_slots'] = JOB_SLOTS
+            doc={}
+            doc['cms_name']='%s%s'%(SITE_NAME_PREFIX, i+1)
+            doc['job_slots']=JOB_SLOTS
             results.append(doc)
         return results
+
+    def getFinishedSubscriptionByTask(self):
+        """
+        TODO: need to fill with fake data
+        """
+        return {}
+
+    def getComponentStatus(self, config):
+        agentInfo = {}
+        agentInfo['down_components'] = set()
+        agentInfo['down_component_detail'] = []
+        agentInfo['status'] = 'ok'
+        agentInfo['down_components'] = list(agentInfo['down_components'])
+        return agentInfo
+
+    def getAgentMonitoring(self):
+
+        monitoring = {}
+        monitoring['wmbsCreatedTypeCount'] = 0
+        monitoring['wmbsExecutingTypeCount'] = 0
+        monitoring['wmbsCountByState'] = 0
+        monitoring['activeRunJobByStatus'] = 0
+        monitoring['completeRunJobByStatus'] = 0
+        monitoring['thresholdsGQ2LQ'] = 0
+        monitoring['sitePendCountByPrio'] = 0
+
+        return monitoring

@@ -22,6 +22,7 @@ from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
+from WMCore.WMException import listWMExceptionStr
 
 
 class SimpleCondorPlugin(BasePlugin):
@@ -283,8 +284,11 @@ class SimpleCondorPlugin(BasePlugin):
                         condorFilePath = os.path.join(job['cache_dir'], condorFile)
                         if os.path.isfile(condorFilePath):
                             logTail = BasicAlgos.tail(condorFilePath, 50)
-                            logOutput += 'Adding end of %s to error message:\n' % condorFile
-                            logOutput += '\n'.join(logTail)
+                            logOutput += 'Adding end of %s to error message:\n\n' % condorFile
+                            logOutput += logTail
+                            logOutput += '\n\n'
+                            for exMsg in listWMExceptionStr(condorFilePath):
+                                logOutput += "%s\n" % exMsg
                     condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
                 else:
                     msg = "Serious Error in Completing condor job with id %s!\n" % job['id']

@@ -6,7 +6,10 @@ function(doc) {
     }
     var specName = doc['fwjr'].task.split('/')[1];
     var task = doc['fwjr'].task;
-    
-    emit([specName, task], {"skippedFiles": doc['fwjr'].skippedFiles.length});
+    var site = "None";
+    if (doc['fwjr'].steps.cmsRun1 && doc['fwjr'].steps.cmsRun1.site) {
+        site = doc['fwjr'].steps.cmsRun1.site;
+    }
+    emit([specName, task, site], {"skippedFiles": doc['fwjr'].skippedFiles.length});
    }
 }

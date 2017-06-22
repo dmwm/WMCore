@@ -28,7 +28,6 @@ Note that failureExitCodes has precedence over passExitCodes.
 import os.path
 import threading
 import logging
-import traceback
 from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -367,15 +366,19 @@ class ErrorHandlerPoller(BaseWorkerThread):
         """
         logging.debug("Running error handling algorithm")
         try:
+            myThread = threading.currentThread()
             self.handleErrors()
         except (CouchConnectionError, HTTPException) as ex:
-            msg = "Caught CouchConnectionError/HTTPException exception in ErrorHandler\n"
-            msg += "transactions postponed until the next polling cycle\n"
+            if getattr(myThread, 'transaction', None) is not None:
+                myThread.transaction.rollback()
+            msg = "Caught CouchConnectionError/HTTPException exception in ErrorHandler. "
+            msg += "Transactions postponed until the next polling cycle\n"
             msg += str(ex)
-            logging.exception(msg)
+            logging.error(msg)
         except Exception as ex:
-            msg = "Caught unexpected exception in ErrorHandler\n"
+            if getattr(myThread, 'transaction', None) is not None:
+                myThread.transaction.rollback()
+            msg = "Caught unexpected exception in ErrorHandler:\n"
             msg += str(ex)
-            msg += str(traceback.format_exc())
             logging.exception(msg)
             raise ErrorHandlerException(msg)

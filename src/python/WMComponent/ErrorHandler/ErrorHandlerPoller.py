@@ -25,21 +25,19 @@ immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
 Note that failureExitCodes has precedence over passExitCodes.
 """
+import logging
 import os.path
 import threading
-import logging
 from httplib import HTTPException
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
-from WMCore.WMBS.Job          import Job
-from WMCore.DAOFactory        import DAOFactory
-
-from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.ACDC.DataCollectionService  import DataCollectionService
-from WMCore.WMException                 import WMException
-from WMCore.FwkJobReport.Report         import Report
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CouchUtils import CouchConnectionError
+from WMCore.FwkJobReport.Report import Report
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.WMBS.Job import Job
+from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class ErrorHandlerException(WMException):
@@ -54,6 +52,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
     """
     Polls for Error Conditions, handles them
     """
+
     def __init__(self, config):
         """
         Initialise class members
@@ -63,33 +62,33 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
         self.changeState = ChangeState(self.config)
 
-        self.maxRetries     = self.config.ErrorHandler.maxRetries
+        self.maxRetries = self.config.ErrorHandler.maxRetries
         if not isinstance(self.maxRetries, dict):
-            self.maxRetries = {'default' : self.maxRetries}
+            self.maxRetries = {'default': self.maxRetries}
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
 
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
-        self.exitCodes      = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
-        self.maxFailTime    = getattr(self.config.ErrorHandler, 'maxFailTime', 32 * 3600)
-        self.readFWJR       = getattr(self.config.ErrorHandler, 'readFWJR', False)
-        self.passCodes      = getattr(self.config.ErrorHandler, 'passExitCodes', [])
+        self.exitCodes = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
+        self.maxFailTime = getattr(self.config.ErrorHandler, 'maxFailTime', 32 * 3600)
+        self.readFWJR = getattr(self.config.ErrorHandler, 'readFWJR', False)
+        self.passCodes = getattr(self.config.ErrorHandler, 'passExitCodes', [])
 
-        self.getJobs    = self.daoFactory(classname = "Jobs.GetAllJobs")
-        self.idLoad     = self.daoFactory(classname = "Jobs.LoadFromIDWithType")
-        self.loadAction = self.daoFactory(classname = "Jobs.LoadForErrorHandler")
+        self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
+        self.idLoad = self.daoFactory(classname="Jobs.LoadFromIDWithType")
+        self.loadAction = self.daoFactory(classname="Jobs.LoadForErrorHandler")
 
-        self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
-                                                    database = config.ACDC.database)
+        self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
+                                                    database=config.ACDC.database)
 
         return
 
-    def setup(self, parameters = None):
+    def setup(self, parameters=None):
         """
         Load DB objects required for queries
         """
@@ -120,7 +119,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
             job.failInputFiles()
 
         # Do not build ACDC for utilitarian job types
-        jobList = [ job for job in jobList if job['type'] not in ['LogCollect','Cleanup'] ]
+        jobList = [job for job in jobList if job['type'] not in ['LogCollect', 'Cleanup']]
 
         self.handleACDC(jobList)
 
@@ -132,10 +131,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         Actually do the retries
         """
-        logging.info("Processing retries for %d failed jobs of type %sfailed" % (len(jobList), state))
+        logging.info("Processing retries for %d failed jobs of type %sfailed", len(jobList), state)
         retrydoneJobs = []
         cooloffJobs = []
-        passJobs    = []
+        passJobs = []
 
         # Retries < max retry count
         for job in jobList:
@@ -148,7 +147,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 retrydoneJobs.append(job)
                 msg = "Stopping retries for job %d" % job['id']
                 logging.debug(msg)
-                logging.debug("JobInfo: %s" % job)
+                logging.debug("JobInfo: %s", job)
 
         if self.readFWJR:
             # Then we have to check each FWJR for exit status
@@ -159,10 +158,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("About to propagate jobs")
         if len(retrydoneJobs) > 0:
             self.changeState.propagate(retrydoneJobs, 'retrydone',
-                                       '%sfailed' % state, updatesummary = True)
+                                       '%sfailed' % state, updatesummary=True)
         if len(cooloffJobs) > 0:
             self.changeState.propagate(cooloffJobs, '%scooloff' % state,
-                                       '%sfailed' % state, updatesummary = True)
+                                       '%sfailed' % state, updatesummary=True)
         if len(passJobs) > 0:
             # Overwrite the transition states and move directly to created
             self.changeState.propagate(passJobs, 'created', 'new')
@@ -176,7 +175,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Do the ACDC creation and hope it works
         """
         idList = [x['id'] for x in jobList]
-        logging.info("Starting to build ACDC with %i jobs" % len(idList))
+        logging.info("Starting to build ACDC with %i jobs", len(idList))
         logging.info("This operation will take some time...")
         loadList = self.loadJobsFromListFull(idList)
         for job in loadList:
@@ -197,14 +196,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
         passJobs = []
         exhaustJobs = []
         for job in jobList:
-            report     = Report()
+            report = Report()
             reportPath = job['fwjr_path']
             if reportPath is None:
-                logging.error("No FWJR in job %i, ErrorHandler can't process it.\n Passing it to cooloff." % job['id'])
+                logging.error("No FWJR in job %i, ErrorHandler can't process it.\n Passing it to cooloff.", job['id'])
                 cooloffJobs.append(job)
                 continue
             if not os.path.isfile(reportPath):
-                logging.error("Failed to find FWJR for job %i in location %s.\n Passing it to cooloff." % (job['id'], reportPath))
+                logging.error(
+                    "Failed to find FWJR for job %i in location %s.\n Passing it to cooloff.", job['id'], reportPath)
                 cooloffJobs.append(job)
                 continue
             try:
@@ -227,7 +227,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
                 if startTime is None or stopTime is None:
                     # We have no information to make a decision, keep going.
-                    logging.debug("No start, stop times for steps for job %i" % job['id'])
+                    logging.debug("No start, stop times for steps for job %i", job['id'])
                 elif stopTime - startTime > self.maxFailTime:
                     msg = "Job %i exhausted after running on node for %i seconds" % (job['id'], stopTime - startTime)
                     logging.debug(msg)
@@ -241,7 +241,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     continue
 
                 if len([x for x in report.getExitCodes() if x in self.passCodes]):
-                    msg = "Job %i restarted immediately due to an exit code (%s)" % (job['id'], str(report.getExitCodes()))
+                    msg = "Job %i restarted immediately due to an exit code (%s)" % (job['id'],
+                                                                                     str(report.getExitCodes()))
+                    logging.debug(msg)
                     passJobs.append(job)
                     continue
 
@@ -261,7 +263,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         """
         myThread = threading.currentThread()
-        logging.info("About to process %d retry done jobs" % len(jobList))
+        logging.info("About to process %d retry done jobs", len(jobList))
         myThread.transaction.begin()
         self.exhaustJobs(jobList)
         myThread.transaction.commit()
@@ -274,7 +276,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         """
         myThread = threading.currentThread()
-        logging.info("About to process %d failures" % len(jobList))
+        logging.info("About to process %d failures", len(jobList))
         myThread.transaction.begin()
         self.processRetries(jobList, state)
         myThread.transaction.commit()
@@ -289,8 +291,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         # Run over created, submitted and executed job failures
         failure_states = ['create', 'submit', 'job']
         for state in failure_states:
-            idList = self.getJobs.execute(state = "%sfailed" % state)
-            logging.info("Found %d failed jobs in state %sfailed" % (len(idList), state))
+            idList = self.getJobs.execute(state="%sfailed" % state)
+            logging.info("Found %d failed jobs in state %sfailed", len(idList), state)
             while len(idList) > 0:
                 tmpList = idList[:self.maxProcessSize]
                 idList = idList[self.maxProcessSize:]
@@ -298,8 +300,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 self.handleFailedJobs(jobList, state)
 
         # Run over jobs done with retries
-        idList = self.getJobs.execute(state = 'retrydone')
-        logging.info("Found %d jobs done with all retries" % len(idList))
+        idList = self.getJobs.execute(state='retrydone')
+        logging.info("Found %d jobs done with all retries", len(idList))
         while len(idList) > 0:
             tmpList = idList[:self.maxProcessSize]
             idList = idList[self.maxProcessSize:]
@@ -317,7 +319,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
-        results = self.idLoad.execute(jobID = binds)
+        results = self.idLoad.execute(jobID=binds)
 
         # You have to have a list
         if isinstance(results, dict):
@@ -326,7 +328,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         listOfJobs = []
         for entry in results:
             # One job per entry
-            tmpJob = Job(id = entry['id'])
+            tmpJob = Job(id=entry['id'])
             tmpJob.update(entry)
             listOfJobs.append(tmpJob)
 
@@ -344,7 +346,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         for jobID in idList:
             binds.append({"jobid": jobID})
 
-        results = self.loadAction.execute(jobID = binds)
+        results = self.loadAction.execute(jobID=binds)
 
         # You have to have a list
         if isinstance(results, dict):
@@ -353,13 +355,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
         listOfJobs = []
         for entry in results:
             # One job per entry
-            tmpJob = Job(id = entry['id'])
+            tmpJob = Job(id=entry['id'])
             tmpJob.update(entry)
             listOfJobs.append(tmpJob)
 
         return listOfJobs
 
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         Performs the handleErrors method, looking for each type of failure
         And deal with it as desired.

@@ -1,3 +1,27 @@
+1.1.4 to 1.1.5.pre1:
+  - Merge pull request #7937 from amaltaro/run-EpL
+  - Merge pull request #7912 from ericvaandering/set_literal
+  - improved unit tests for new events per lumi dbs info
+  - Accept plain list of lumis in the Run object
+  - Merge pull request #7951 from vkuznet/status-fix
+  - Bug fix
+  - Merge pull request #7913 from vkuznet/procstats
+  - Merge pull request #7948 from amaltaro/eventsPerLumi-template
+  - TaskChain template reading input dataset with events per lumi info
+  - Merge pull request #7945 from hufnagel/fix-maxint-bug
+  - New module to return status and trhead stack of the given process
+  - seems like python3 doesn't know maxint
+  - Merge pull request #7934 from hufnagel/promptreco-alca-unmerged
+  - more fine-grained options to force unmerged and use them in PromptReco
+  - Cleanup JobCreator_t.py
+  - Merge pull request #7932 from amaltaro/exitCodesFail
+  - Merge pull request #7924 from hufnagel/tier0-dashboard
+  - Merge pull request #7928 from amaltaro/file-boundaries
+  - Fail jobs with exit code 87 or 8026
+  - pylint fixes
+  - Allow jobs to cross file boundaries - wmagent version
+  - report the correct dashboard activity from Tier0, fixes #7256
+
 1.1.3 to 1.1.4:
   - Merge pull request #7882 from amaltaro/periodicRemove
   - Merge pull request #7898 from hufnagel/alcaharvest-disable-writerecovery

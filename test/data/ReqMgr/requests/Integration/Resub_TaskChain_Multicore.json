@@ -1,0 +1,49 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": {
+      "HLTD": "AcquisitionEra-OVERRIDE-ME",
+      "RECODreHLT": "AcquisitionEra-OVERRIDE-ME",
+      "MINIAODDreHLT": "AcquisitionEra-OVERRIDE-ME"
+    },
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MaxRSS": 6000000,
+    "MaxVSize": 40000000,
+    "MergedLFNBase": "/store/backfill/1",
+    "ProcessingString": {
+      "HLTD": "ProcessingString-OVERRIDE-ME",
+      "RECODreHLT": "ProcessingString-OVERRIDE-ME",
+      "MINIAODDreHLT": "ProcessingString-OVERRIDE-ME"
+    },
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "ACDCDatabase": "acdcserver",
+    "ACDCServer": "https://alan-cloud1.cern.ch/couchdb",
+    "InitialTaskPath": "/amaltaro_TaskChain_RelVal_Multicore_June_Validation_170621_124806_5085/HLTD",
+    "Memory": {
+      "HLTD": 1950,
+      "RECODreHLT": 5950.0,
+      "MINIAODDreHLT": 1550
+    },
+    "OriginalRequestName": "amaltaro_TaskChain_RelVal_Multicore_June_Validation_170621_124806_5085",
+    "RequestPriority": 500000,
+    "RequestString": "ACDCRECO2_TaskChain_RelVal_Multicore_June_Validation",
+    "RequestType": "Resubmission",
+    "Team": "alan-devvm",
+    "TimePerEvent": {
+      "HLTD": 0.5,
+      "RECODreHLT": 2.0,
+      "MINIAODDreHLT": 1.1
+    },
+    "TrustPUSitelists": false,
+    "TrustSitelists": true
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MaxRSS": 1000000,
+    "MaxVSize": 10000000,
+    "MergedLFNBase": "/store/backfill/1",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 89600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "ACDCDatabase": "acdcserver",
+    "ACDCServer": "https://alan-cloud1.cern.ch/couchdb",
+    "InitialTaskPath": "/amaltaro_MonteCarlo_eff_June_Validation_170622_222215_8655/Production",
+    "Memory": 975,
+    "OriginalRequestName": "amaltaro_MonteCarlo_eff_June_Validation_170622_222215_8655",
+    "RequestPriority": 500000,
+    "RequestString": "ACDC_MonteCarlo_eff_June_Validation",
+    "RequestType": "Resubmission",
+    "Team": "alan-devvm",
+    "TimePerEvent": 180,
+    "SizePerEvent": 1000.0
+  }
+}

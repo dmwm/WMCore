@@ -342,6 +342,30 @@ class LumiListTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             w = LumiList(wmagentFormat=([1], ['1,2,3']))  # Need twice as many lumis as runs
 
+    def testLumisWithEvents(self):
+        """Make sure that runs and lumis with event counts as used in CRAB3 works
+        """
+        clumis = {'1': range(2, 20) + range(31, 39) + range(45, 49),
+                  '2': range(6, 20) + range(30, 40),
+                  '3': range(10, 20) + range(30, 40) + range(50, 60),
+                  '4': range(1, 100),
+                  }
+        # create a lumilist like {'21' : {'2':None ...} ...}
+        lumis = {}
+        for run, ls in clumis.items():
+            newrun = str(int(run) + 20)
+            lumis[newrun] = {str(l): None for l in ls}
+
+        c1 = LumiList(runsAndLumis=clumis)
+        w1 = LumiList(runsAndLumis=lumis)
+        c1 += w1
+
+        c2 = LumiList(runsAndLumis=clumis)
+        w2 = LumiList(runsAndLumis=lumis)
+        w2 += c2
+
+        self.assertEqual(c1.getCMSSWString(), w2.getCMSSWString())
+
 
 if __name__ == '__main__':
     unittest.main()

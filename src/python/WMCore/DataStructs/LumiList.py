@@ -85,7 +85,7 @@ class LumiList(object):
                 if lumiList:
                     self.compactList[runString] = []
                     self.duplicates[runString] = []
-                    for lumi in sorted(lumiList):
+                    for lumi in sorted(int(l) for l in lumiList):
                         if lumi == lastLumi:
                             self.duplicates[runString].append(lumi)
                         elif lumi != lastLumi + 1: # Break in lumi sequence

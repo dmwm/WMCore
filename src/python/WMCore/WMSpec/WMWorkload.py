@@ -628,17 +628,31 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setCoresAndStreams(self, cores, nStreams):
+    def setCoresAndStreams(self, cores, nStreams, initialTask=None):
         """
-        _setCores_
+        _setCoresAndStreams_
 
-        Update number of cores and event streams for each task in the spec
+        Update the number of cores and event streams for each task in the spec.
+
+        One can update only the number of cores, which will set the number of streams to 0 (default).
+        However, updating only the number of streams is not allowed, it's coupled to # of cores.
+
+        :param cores: number of cores. Can be either an integer or a dict key'ed by taskname
+        :param nStreams: number of streams. Can be either an integer or a dict key'ed by taskname
+        :param initialTask: parent task object
         """
         if not cores:
             return
 
-        for task in self.taskIterator():
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
             task.setNumberOfCores(cores, nStreams)
+            self.setCoresAndStreams(cores, nStreams, task)
+
         return
 
     def setMemory(self, memory):

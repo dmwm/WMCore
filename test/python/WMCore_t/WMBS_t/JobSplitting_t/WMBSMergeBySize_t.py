@@ -5,21 +5,20 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-import unittest
 import threading
+import unittest
 
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
-from WMCore.DataStructs.Run import Run
-
-from WMCore.DAOFactory import DAOFactory
-from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMQuality.TestInit import TestInit
+
 
 class WMBSMergeBySize(unittest.TestCase):
     def setUp(self):
@@ -31,13 +30,13 @@ class WMBSMergeBySize(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
         return
 
     def tearDown(self):
@@ -49,7 +48,7 @@ class WMBSMergeBySize(unittest.TestCase):
         self.testInit.clearDatabase()
         return
 
-    def stuffWMBS(self, injected = True):
+    def stuffWMBS(self, injected=True):
         """
         _stuffWMBS_
 
@@ -59,73 +58,73 @@ class WMBSMergeBySize(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "T2_CH_CERN", pnn = "T2_CH_CERN")
-        locationAction.execute(siteName = "T1_US_FNAL", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="T2_CH_CERN", pnn="T2_CH_CERN")
+        locationAction.execute(siteName="T1_US_FNAL", pnn="T2_CH_CERN")
 
-        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 
-        self.mergeFileset = Fileset(name = "mergeFileset")
+        self.mergeFileset = Fileset(name="mergeFileset")
         self.mergeFileset.create()
-        self.bogusFileset = Fileset(name = "bogusFileset")
+        self.bogusFileset = Fileset(name="bogusFileset")
         self.bogusFileset.create()
 
-        self.mergeMergedFileset = Fileset(name = "mergeMergedFileset")
+        self.mergeMergedFileset = Fileset(name="mergeMergedFileset")
         self.mergeMergedFileset.create()
-        self.bogusMergedFileset = Fileset(name = "bogusMergedFileset")
+        self.bogusMergedFileset = Fileset(name="bogusMergedFileset")
         self.bogusMergedFileset.create()
 
-        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve", task="Test")
+        mergeWorkflow = Workflow(name="mergeWorkflow", spec="bunk2",
+                                 owner="Steve", task="Test")
         mergeWorkflow.create()
-        markWorkflow = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
-        markWorkflow.execute(names = [mergeWorkflow.name], injected = injected)
+        markWorkflow = self.daoFactory(classname="Workflow.MarkInjectedWorkflows")
+        markWorkflow.execute(names=[mergeWorkflow.name], injected=injected)
 
-        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "WMBSMergeBySize")
+        self.mergeSubscription = Subscription(fileset=self.mergeFileset,
+                                              workflow=mergeWorkflow,
+                                              split_algo="WMBSMergeBySize")
         self.mergeSubscription.create()
-        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "WMBSMergeBySize")
+        self.bogusSubscription = Subscription(fileset=self.bogusFileset,
+                                              workflow=mergeWorkflow,
+                                              split_algo="WMBSMergeBySize")
 
-        inputFileset = Fileset(name = "inputFileset")
+        inputFileset = Fileset(name="inputFileset")
         inputFileset.create()
 
-        inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
-                                owner = "Steve", task = "Test")
+        inputWorkflow = Workflow(name="inputWorkflow", spec="input",
+                                 owner="Steve", task="Test")
         inputWorkflow.create()
         inputWorkflow.addOutput("output", self.mergeFileset,
                                 self.mergeMergedFileset)
         inputWorkflow.addOutput("output2", self.bogusFileset,
                                 self.bogusMergedFileset)
-        bogusInputWorkflow = Workflow(name = "bogusInputWorkflow", spec = "input",
-                                owner = "Steve", task = "Test")
+        bogusInputWorkflow = Workflow(name="bogusInputWorkflow", spec="input",
+                                      owner="Steve", task="Test")
         bogusInputWorkflow.create()
 
-        inputSubscription = Subscription(fileset = inputFileset,
-                                        workflow = inputWorkflow)
+        inputSubscription = Subscription(fileset=inputFileset,
+                                         workflow=inputWorkflow)
         inputSubscription.create()
-        bogusInputSubscription = Subscription(fileset = inputFileset,
-                                              workflow = bogusInputWorkflow)
+        bogusInputSubscription = Subscription(fileset=inputFileset,
+                                              workflow=bogusInputWorkflow)
         bogusInputSubscription.create()
 
-        parentFile1 = File(lfn = "parentFile1")
+        parentFile1 = File(lfn="parentFile1")
         parentFile1.create()
-        parentFile2 = File(lfn = "parentFile2")
+        parentFile2 = File(lfn="parentFile2")
         parentFile2.create()
-        parentFile3 = File(lfn = "parentFile3")
+        parentFile3 = File(lfn="parentFile3")
         parentFile3.create()
-        parentFile4 = File(lfn = "parentFile4")
+        parentFile4 = File(lfn="parentFile4")
         parentFile4.create()
-        self.parentFileSite2 = File(lfn = "parentFileSite2")
+        self.parentFileSite2 = File(lfn="parentFileSite2")
         self.parentFileSite2.create()
 
-        jobGroup1 = JobGroup(subscription = inputSubscription)
+        jobGroup1 = JobGroup(subscription=inputSubscription)
         jobGroup1.create()
-        jobGroup2 = JobGroup(subscription = inputSubscription)
+        jobGroup2 = JobGroup(subscription=inputSubscription)
         jobGroup2.create()
-        jobGroup3 = JobGroup(subscription = bogusInputSubscription)
+        jobGroup3 = JobGroup(subscription=bogusInputSubscription)
         jobGroup3.create()
 
         testJob1 = Job()
@@ -185,7 +184,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         # We'll simulate a failed split by event job that the merger should
         # ignore.
-        parentFile5 = File(lfn = "parentFile5")
+        parentFile5 = File(lfn="parentFile5")
         parentFile5.create()
 
         testJob5 = Job()
@@ -221,82 +220,82 @@ class WMBSMergeBySize(unittest.TestCase):
         testJob7.save()
         changeStateDAO.execute([testJob7])
 
-        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024,
-                        first_event = 0, locations = set(["T2_CH_CERN"]))
+        badFile1 = File(lfn="badFile1", size=10241024, events=10241024,
+                        first_event=0, locations={"T2_CH_CERN"})
         badFile1.addRun(Run(1, *[45]))
         badFile1.create()
         badFile1.addParent(parentFile5["lfn"])
 
-        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        file1 = File(lfn="file1", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         file1.addRun(Run(1, *[45]))
         file1.create()
         file1.addParent(parentFile1["lfn"])
-        file2 = File(lfn = "file2", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["T2_CH_CERN"]))
+        file2 = File(lfn="file2", size=1024, events=1024,
+                     first_event=1024, locations={"T2_CH_CERN"})
         file2.addRun(Run(1, *[45]))
         file2.create()
         file2.addParent(parentFile1["lfn"])
-        file3 = File(lfn = "file3", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["T2_CH_CERN"]))
+        file3 = File(lfn="file3", size=1024, events=1024,
+                     first_event=2048, locations={"T2_CH_CERN"})
         file3.addRun(Run(1, *[45]))
         file3.create()
         file3.addParent(parentFile1["lfn"])
-        file4 = File(lfn = "file4", size = 1024, events = 1024,
-                     first_event = 3072, locations = set(["T2_CH_CERN"]))
+        file4 = File(lfn="file4", size=1024, events=1024,
+                     first_event=3072, locations={"T2_CH_CERN"})
         file4.addRun(Run(1, *[45]))
         file4.create()
         file4.addParent(parentFile1["lfn"])
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["T2_CH_CERN"]))
+        fileA = File(lfn="fileA", size=1024, events=1024,
+                     first_event=0, locations={"T2_CH_CERN"})
         fileA.addRun(Run(1, *[46]))
         fileA.create()
         fileA.addParent(parentFile2["lfn"])
-        fileB = File(lfn = "fileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["T2_CH_CERN"]))
+        fileB = File(lfn="fileB", size=1024, events=1024,
+                     first_event=1024, locations={"T2_CH_CERN"})
         fileB.addRun(Run(1, *[46]))
         fileB.create()
         fileB.addParent(parentFile2["lfn"])
-        fileC = File(lfn = "fileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["T2_CH_CERN"]))
+        fileC = File(lfn="fileC", size=1024, events=1024,
+                     first_event=2048, locations={"T2_CH_CERN"})
         fileC.addRun(Run(1, *[46]))
         fileC.create()
         fileC.addParent(parentFile2["lfn"])
 
-        fileI = File(lfn = "fileI", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["T2_CH_CERN"]))
+        fileI = File(lfn="fileI", size=1024, events=1024,
+                     first_event=0, locations={"T2_CH_CERN"})
         fileI.addRun(Run(2, *[46]))
         fileI.create()
         fileI.addParent(parentFile3["lfn"])
-        fileII = File(lfn = "fileII", size = 1024, events = 1024,
-                      first_event = 1024, locations = set(["T2_CH_CERN"]))
+        fileII = File(lfn="fileII", size=1024, events=1024,
+                      first_event=1024, locations={"T2_CH_CERN"})
         fileII.addRun(Run(2, *[46]))
         fileII.create()
         fileII.addParent(parentFile3["lfn"])
-        fileIII = File(lfn = "fileIII", size = 1024, events = 1024,
-                       first_event = 2048, locations = set(["T2_CH_CERN"]))
+        fileIII = File(lfn="fileIII", size=1024, events=1024,
+                       first_event=2048, locations={"T2_CH_CERN"})
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
         fileIII.addParent(parentFile3["lfn"])
-        fileIV = File(lfn = "fileIV", size = 1024, events = 1024,
-                      first_event = 3072, locations = set(["T2_CH_CERN"]))
+        fileIV = File(lfn="fileIV", size=1024, events=1024,
+                      first_event=3072, locations={"T2_CH_CERN"})
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
         fileIV.addParent(parentFile3["lfn"])
 
-        fileX = File(lfn = "badFileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["T2_CH_CERN"]))
+        fileX = File(lfn="badFileA", size=1024, events=1024,
+                     first_event=0, locations={"T2_CH_CERN"})
         fileX.addRun(Run(1, *[47]))
         fileX.create()
         fileX.addParent(parentFile4["lfn"])
-        fileY = File(lfn = "badFileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["T2_CH_CERN"]))
+        fileY = File(lfn="badFileB", size=1024, events=1024,
+                     first_event=1024, locations={"T2_CH_CERN"})
         fileY.addRun(Run(1, *[47]))
         fileY.create()
         fileY.addParent(parentFile4["lfn"])
-        fileZ = File(lfn = "badFileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["T2_CH_CERN"]))
+        fileZ = File(lfn="badFileC", size=1024, events=1024,
+                     first_event=2048, locations={"T2_CH_CERN"})
         fileZ.addRun(Run(1, *[47]))
         fileZ.create()
         fileZ.addParent(parentFile4["lfn"])
@@ -320,10 +319,10 @@ class WMBSMergeBySize(unittest.TestCase):
         jobGroup2.output.addFile(badFile1)
         jobGroup2.output.commit()
 
-        for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
-                     fileII, fileIII, fileIV, fileX, fileY, fileZ, badFile1]:
-            self.mergeFileset.addFile(file)
-            self.bogusFileset.addFile(file)
+        for fileObj in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
+                        fileII, fileIII, fileIV, fileX, fileY, fileZ, badFile1]:
+            self.mergeFileset.addFile(fileObj)
+            self.bogusFileset.addFile(fileObj)
 
         self.mergeFileset.commit()
         self.bogusFileset.commit()
@@ -341,14 +340,14 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 20000, max_merge_size = 2000000000,
-                            max_merge_events = 200000000)
+        result = jobFactory(min_merge_size=20000, max_merge_size=2000000000,
+                            max_merge_events=200000000)
 
         assert len(result) == 0, \
-               "ERROR: No job groups should be returned."
+            "ERROR: No job groups should be returned."
 
         return
 
@@ -364,25 +363,25 @@ class WMBSMergeBySize(unittest.TestCase):
         self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size=20000, max_merge_size=200000,
+                            max_merge_events=20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % len(result)
+            "ERROR: More than one JobGroup returned: %s" % len(result)
 
         assert len(result[0].jobs) == 2, \
-               "Error: Two jobs should have been returned."
+            "Error: Two jobs should have been returned."
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                       "fileC"]
+                        "fileC"]
         goldenFilesB = ["fileI", "fileII", "fileIII", "fileIV"]
 
         for job in result[0].jobs:
 
-            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+            self.assertEqual(job["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
             jobFiles = job.getFiles()
 
@@ -396,15 +395,15 @@ class WMBSMergeBySize(unittest.TestCase):
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                file.loadData()
-                assert file["lfn"] in goldenFiles, \
-                       "Error: Unknown file: %s" % file["lfn"]
-                goldenFiles.remove(file["lfn"])
+            for fileObj in jobFiles:
+                fileObj.loadData()
+                assert fileObj["lfn"] in goldenFiles, \
+                    "Error: Unknown file: %s" % fileObj["lfn"]
+                goldenFiles.remove(fileObj["lfn"])
 
-                fileRun = list(file["runs"])[0].run
-                fileLumi = min(list(file["runs"])[0])
-                fileEvent = file["first_event"]
+                fileRun = list(fileObj["runs"])[0].run
+                fileLumi = min(list(fileObj["runs"])[0])
+                fileEvent = fileObj["first_event"]
 
                 if currentRun == 0:
                     currentRun = fileRun
@@ -413,15 +412,15 @@ class WMBSMergeBySize(unittest.TestCase):
                     continue
 
                 assert fileRun >= currentRun, \
-                       "ERROR: Files not sorted by run."
+                    "ERROR: Files not sorted by run."
 
                 if fileRun == currentRun:
                     assert fileLumi >= currentLumi, \
-                           "ERROR: Files not ordered by lumi"
+                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
                 currentRun = fileRun
                 currentLumi = fileLumi
@@ -441,21 +440,21 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 7167, max_merge_size = 20000,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size=7167, max_merge_size=20000,
+                            max_merge_events=20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %d" % len(result)
+            "ERROR: More than one JobGroup returned: %d" % len(result)
 
         assert len(result[0].jobs) == 1, \
-               "ERROR: One job should have been returned."
+            "ERROR: One job should have been returned."
 
         self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
-        self.assertEqual(result[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+        self.assertEqual(result[0].jobs[0]["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
         jobFiles = list(result[0].jobs)[0].getFiles()
 
@@ -463,19 +462,19 @@ class WMBSMergeBySize(unittest.TestCase):
                        "fileC"]
 
         assert len(jobFiles) == len(goldenFiles), \
-               "ERROR: Merge job should contain %d files." % len(goldenFiles)
+            "ERROR: Merge job should contain %d files." % len(goldenFiles)
 
         currentRun = 0
         currentLumi = 0
         currentEvent = 0
-        for file in jobFiles:
-            assert file["lfn"] in goldenFiles, \
-                   "Error: Unknown file: %s" % file["lfn"]
-            goldenFiles.remove(file["lfn"])
+        for fileObj in jobFiles:
+            assert fileObj["lfn"] in goldenFiles, \
+                "Error: Unknown file: %s" % fileObj["lfn"]
+            goldenFiles.remove(fileObj["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(fileObj["runs"])[0].run
+            fileLumi = min(list(fileObj["runs"])[0])
+            fileEvent = fileObj["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -484,15 +483,15 @@ class WMBSMergeBySize(unittest.TestCase):
                 continue
 
             assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                "ERROR: Files not sorted by run."
 
             if fileRun == currentRun:
                 assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                    "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
             currentLumi = fileLumi
@@ -511,19 +510,19 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 2,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size=1, max_merge_size=2,
+                            max_merge_events=20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % result
+            "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 3, \
-               "ERROR: Three jobs should have been returned."
+            "ERROR: Three jobs should have been returned."
 
-        self.assertEqual(result[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+        self.assertEqual(result[0].jobs[0]["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]
@@ -545,39 +544,32 @@ class WMBSMergeBySize(unittest.TestCase):
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                assert file["lfn"] in goldenFiles, \
-                       "Error: Unknown file in merge jobs."
-                goldenFiles.remove(file["lfn"])
+            for fileObj in jobFiles:
+                assert fileObj["lfn"] in goldenFiles, \
+                    "Error: Unknown file in merge jobs."
+                goldenFiles.remove(fileObj["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+                fileRun = list(fileObj["runs"])[0].run
+                fileLumi = min(list(fileObj["runs"])[0])
+                fileEvent = fileObj["first_event"]
 
-            if currentRun == 0:
-                currentRun = fileRun
-                currentLumi = fileLumi
-                currentEvent = fileEvent
-                continue
+                if currentRun == 0:
+                    continue
 
-            assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                assert fileRun >= currentRun, \
+                    "ERROR: Files not sorted by run."
 
-            if fileRun == currentRun:
-                assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                if fileRun == currentRun:
+                    assert fileLumi >= currentLumi, \
+                        "ERROR: Files not ordered by lumi"
 
-                if fileLumi == currentLumi:
-                    assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
-
-            currentRun = fileRun
-            currentLumi = fileLumi
-            currentEvent = fileEvent
+                    if fileLumi == currentLumi:
+                        assert fileEvent >= currentEvent, \
+                            "ERROR: Files not ordered by first event"
 
         assert len(goldenFilesA) == 0 and len(goldenFilesB) == 0 and \
                len(goldenFilesC) == 0, \
-               "ERROR: Files missing from merge jobs."
+            "ERROR: Files missing from merge jobs."
 
         return
 
@@ -593,17 +585,17 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 4097, max_merge_size = 7169,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size=4097, max_merge_size=7169,
+                            max_merge_events=20000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+            "ERROR: More than one JobGroup returned."
 
         assert len(result[0].jobs) == 1, \
-               "ERROR: One job should have been returned."
+            "ERROR: One job should have been returned."
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]
@@ -611,25 +603,25 @@ class WMBSMergeBySize(unittest.TestCase):
 
         self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
-        self.assertEqual(result[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+        self.assertEqual(result[0].jobs[0]["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
         jobFiles = list(result[0].jobs)[0].getFiles()
 
         currentRun = 0
         currentLumi = 0
         currentEvent = 0
-        for file in jobFiles:
+        for fileObj in jobFiles:
 
-            if file["lfn"] in goldenFilesA:
-                goldenFilesA.remove(file["lfn"])
-            elif file["lfn"] in goldenFilesB:
-                goldenFilesB.remove(file["lfn"])
-            elif file["lfn"] in goldenFilesC:
-                goldenFilesC.remove(file["lfn"])
+            if fileObj["lfn"] in goldenFilesA:
+                goldenFilesA.remove(fileObj["lfn"])
+            elif fileObj["lfn"] in goldenFilesB:
+                goldenFilesB.remove(fileObj["lfn"])
+            elif fileObj["lfn"] in goldenFilesC:
+                goldenFilesC.remove(fileObj["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(fileObj["runs"])[0].run
+            fileLumi = min(list(fileObj["runs"])[0])
+            fileEvent = fileObj["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -638,15 +630,15 @@ class WMBSMergeBySize(unittest.TestCase):
                 continue
 
             assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                "ERROR: Files not sorted by run."
 
             if fileRun == currentRun:
                 assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                    "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
             currentLumi = fileLumi
@@ -654,7 +646,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         assert len(goldenFilesB) == 0 and \
                (len(goldenFilesA) == 0 or len(goldenFilesC) == 0), \
-               "ERROR: Files not allocated to jobs correctly."
+            "ERROR: Files not allocated to jobs correctly."
 
         return
 
@@ -667,17 +659,17 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 20000,
-                            max_merge_events = 1)
+        result = jobFactory(min_merge_size=1, max_merge_size=20000,
+                            max_merge_events=1)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % result
+            "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 3, \
-               "ERROR: Three jobs should have been returned: %s" % len(result[0].jobs)
+            "ERROR: Three jobs should have been returned: %s" % len(result[0].jobs)
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]
@@ -685,7 +677,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         for job in result[0].jobs:
 
-            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+            self.assertEqual(job["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
             jobFiles = job.getFiles()
 
@@ -702,14 +694,14 @@ class WMBSMergeBySize(unittest.TestCase):
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                assert file["lfn"] in goldenFiles, \
-                       "Error: Unknown file in merge jobs."
-                goldenFiles.remove(file["lfn"])
+            for fileObj in jobFiles:
+                assert fileObj["lfn"] in goldenFiles, \
+                    "Error: Unknown file in merge jobs."
+                goldenFiles.remove(fileObj["lfn"])
 
-                fileRun = list(file["runs"])[0].run
-                fileLumi = min(list(file["runs"])[0])
-                fileEvent = file["first_event"]
+                fileRun = list(fileObj["runs"])[0].run
+                fileLumi = min(list(fileObj["runs"])[0])
+                fileEvent = fileObj["first_event"]
 
                 if currentRun == 0:
                     currentRun = fileRun
@@ -718,15 +710,15 @@ class WMBSMergeBySize(unittest.TestCase):
                     continue
 
                 assert fileRun >= currentRun, \
-                       "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun)
+                    "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun)
 
                 if fileRun == currentRun:
                     assert fileLumi >= currentLumi, \
-                           "ERROR: Files not ordered by lumi"
+                        "ERROR: Files not ordered by lumi"
 
                     if fileLumi == currentLumi:
                         assert fileEvent >= currentEvent, \
-                               "ERROR: Files not ordered by first event"
+                            "ERROR: Files not ordered by first event"
 
                 currentRun = fileRun
                 currentLumi = fileLumi
@@ -734,7 +726,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         assert len(goldenFilesA) == 0 and len(goldenFilesB) == 0 and \
                len(goldenFilesC) == 0, \
-               "ERROR: Files missing from merge jobs."
+            "ERROR: Files missing from merge jobs."
 
         return
 
@@ -750,21 +742,21 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 4097, max_merge_size = 20000,
-                            max_merge_events = 7169)
+        result = jobFactory(min_merge_size=4097, max_merge_size=20000,
+                            max_merge_events=7169)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+            "ERROR: More than one JobGroup returned."
 
         assert len(result[0].jobs) == 1, \
-               "ERROR: One job should have been returned."
+            "ERROR: One job should have been returned."
 
         self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 7)
 
-        self.assertEqual(result[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL", "T2_CH_CERN"]))
+        self.assertEqual(result[0].jobs[0]["possiblePSN"], {"T1_US_FNAL", "T2_CH_CERN"})
 
         goldenFilesA = ["file1", "file2", "file3", "file4"]
         goldenFilesB = ["fileA", "fileB", "fileC"]
@@ -775,18 +767,18 @@ class WMBSMergeBySize(unittest.TestCase):
         currentRun = 0
         currentLumi = 0
         currentEvent = 0
-        for file in jobFiles:
+        for fileObj in jobFiles:
 
-            if file["lfn"] in goldenFilesA:
-                goldenFilesA.remove(file["lfn"])
-            elif file["lfn"] in goldenFilesB:
-                goldenFilesB.remove(file["lfn"])
-            elif file["lfn"] in goldenFilesC:
-                goldenFilesC.remove(file["lfn"])
+            if fileObj["lfn"] in goldenFilesA:
+                goldenFilesA.remove(fileObj["lfn"])
+            elif fileObj["lfn"] in goldenFilesB:
+                goldenFilesB.remove(fileObj["lfn"])
+            elif fileObj["lfn"] in goldenFilesC:
+                goldenFilesC.remove(fileObj["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(fileObj["runs"])[0].run
+            fileLumi = min(list(fileObj["runs"])[0])
+            fileEvent = fileObj["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -795,15 +787,15 @@ class WMBSMergeBySize(unittest.TestCase):
                 continue
 
             assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                "ERROR: Files not sorted by run."
 
             if fileRun == currentRun:
                 assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                    "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
             currentLumi = fileLumi
@@ -811,7 +803,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         assert len(goldenFilesB) == 0 and \
                (len(goldenFilesA) == 0 or len(goldenFilesC) == 0), \
-               "ERROR: Files not allocated to jobs correctly."
+            "ERROR: Files not allocated to jobs correctly."
 
         return
 
@@ -824,66 +816,65 @@ class WMBSMergeBySize(unittest.TestCase):
         should ignore processing jobs that feed into different merge
         subscriptions.
         """
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "T2_CH_CERN", pnn = "T2_CH_CERN")
-        locationAction.execute(siteName = "T1_US_FNAL", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="T2_CH_CERN", pnn="T2_CH_CERN")
+        locationAction.execute(siteName="T1_US_FNAL", pnn="T2_CH_CERN")
 
-
-        mergeFilesetA = Fileset(name = "mergeFilesetA")
-        mergeFilesetB = Fileset(name = "mergeFilesetB")
+        mergeFilesetA = Fileset(name="mergeFilesetA")
+        mergeFilesetB = Fileset(name="mergeFilesetB")
         mergeFilesetA.create()
         mergeFilesetB.create()
 
-        mergeMergedFilesetA = Fileset(name = "mergeMergedFilesetA")
-        mergeMergedFilesetB = Fileset(name = "mergeMergedFilesetB")
+        mergeMergedFilesetA = Fileset(name="mergeMergedFilesetA")
+        mergeMergedFilesetB = Fileset(name="mergeMergedFilesetB")
         mergeMergedFilesetA.create()
         mergeMergedFilesetB.create()
 
-        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bogus",
-                                 owner = "Steve", task = "Test")
+        mergeWorkflow = Workflow(name="mergeWorkflow", spec="bogus",
+                                 owner="Steve", task="Test")
         mergeWorkflow.create()
 
-        mergeSubscriptionA = Subscription(fileset = mergeFilesetA,
-                                          workflow = mergeWorkflow,
-                                          split_algo = "WMBSMergeBySize")
-        mergeSubscriptionB = Subscription(fileset = mergeFilesetB,
-                                          workflow = mergeWorkflow,
-                                          split_algo = "WMBSMergeBySize")
+        mergeSubscriptionA = Subscription(fileset=mergeFilesetA,
+                                          workflow=mergeWorkflow,
+                                          split_algo="WMBSMergeBySize")
+        mergeSubscriptionB = Subscription(fileset=mergeFilesetB,
+                                          workflow=mergeWorkflow,
+                                          split_algo="WMBSMergeBySize")
         mergeSubscriptionA.create()
         mergeSubscriptionB.create()
 
-        inputFileset = Fileset(name = "inputFileset")
+        inputFileset = Fileset(name="inputFileset")
         inputFileset.create()
 
-        inputFileA = File(lfn = "inputLFNA")
-        inputFileB = File(lfn = "inputLFNB")
+        inputFileA = File(lfn="inputLFNA")
+        inputFileB = File(lfn="inputLFNB")
         inputFileA.create()
         inputFileB.create()
 
-        procWorkflowA = Workflow(name = "procWorkflowA", spec = "bunk2",
-                                 owner = "Steve", task = "Test")
+        procWorkflowA = Workflow(name="procWorkflowA", spec="bunk2",
+                                 owner="Steve", task="Test")
         procWorkflowA.create()
         procWorkflowA.addOutput("output", mergeFilesetA, mergeMergedFilesetA)
-        procWorkflowB = Workflow(name = "procWorkflowB", spec = "bunk3",
-                                 owner = "Steve", task = "Test2")
+        procWorkflowB = Workflow(name="procWorkflowB", spec="bunk3",
+                                 owner="Steve", task="Test2")
         procWorkflowB.create()
         procWorkflowB.addOutput("output", mergeFilesetB, mergeMergedFilesetB)
 
-        procSubscriptionA = Subscription(fileset = inputFileset,
-                                         workflow = procWorkflowA,
-                                         split_algo = "EventBased")
+        procSubscriptionA = Subscription(fileset=inputFileset,
+                                         workflow=procWorkflowA,
+                                         split_algo="EventBased")
         procSubscriptionA.create()
-        procSubscriptionB = Subscription(fileset = inputFileset,
-                                         workflow = procWorkflowB,
-                                         split_algo = "EventBased")
+        procSubscriptionB = Subscription(fileset=inputFileset,
+                                         workflow=procWorkflowB,
+                                         split_algo="EventBased")
         procSubscriptionB.create()
 
-        jobGroupA = JobGroup(subscription = procSubscriptionA)
+        jobGroupA = JobGroup(subscription=procSubscriptionA)
         jobGroupA.create()
-        jobGroupB = JobGroup(subscription = procSubscriptionB)
+        jobGroupB = JobGroup(subscription=procSubscriptionB)
         jobGroupB.create()
 
-        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 
         testJobA = Job()
         testJobA.addFile(inputFileA)
@@ -948,13 +939,13 @@ class WMBSMergeBySize(unittest.TestCase):
         changeStateDAO.execute([testJobA, testJobB, testJobC, testJobD,
                                 testJobE, testJobF])
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileA = File(lfn="fileA", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileA.addRun(Run(1, *[45]))
         fileA.create()
         fileA.addParent(inputFileA["lfn"])
-        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileB = File(lfn="fileB", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileB.addRun(Run(1, *[45]))
         fileB.create()
         fileB.addParent(inputFileB["lfn"])
@@ -967,13 +958,13 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeFilesetA.addFile(fileB)
         mergeFilesetA.commit()
 
-        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileC = File(lfn="fileC", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileC.addRun(Run(1, *[45]))
         fileC.create()
         fileC.addParent(inputFileA["lfn"])
-        fileD = File(lfn = "fileD", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileD = File(lfn="fileD", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileD.addRun(Run(1, *[45]))
         fileD.create()
         fileD.addParent(inputFileB["lfn"])
@@ -986,22 +977,22 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeFilesetB.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = mergeSubscriptionB)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=mergeSubscriptionB)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 20000,
-                            max_merge_events = 7169)
+        result = jobFactory(min_merge_size=1, max_merge_size=20000,
+                            max_merge_events=7169)
 
         assert len(result) == 0, \
-               "Error: No merge jobs should have been created."
+            "Error: No merge jobs should have been created."
 
-        fileE = File(lfn = "fileE", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileE = File(lfn="fileE", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileE.addRun(Run(1, *[45]))
         fileE.create()
         fileE.addParent(inputFileA["lfn"])
-        fileF = File(lfn = "fileF", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["T2_CH_CERN"]))
+        fileF = File(lfn="fileF", size=1024, events=1024, first_event=0,
+                     locations={"T2_CH_CERN"})
         fileF.addRun(Run(1, *[45]))
         fileF.create()
         fileF.addParent(inputFileB["lfn"])
@@ -1020,11 +1011,11 @@ class WMBSMergeBySize(unittest.TestCase):
 
         changeStateDAO.execute([testJobD, testJobF])
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 20000,
-                            max_merge_events = 7169)
+        result = jobFactory(min_merge_size=1, max_merge_size=20000,
+                            max_merge_events=7169)
 
         assert len(result) == 1, \
-               "Error: One merge job should have been created: %s" % len(result)
+            "Error: One merge job should have been created: %s" % len(result)
 
         return
 
@@ -1037,11 +1028,11 @@ class WMBSMergeBySize(unittest.TestCase):
         """
         self.stuffWMBS()
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "T1_UK_RAL", pnn = "T1_UK_RAL_Disk")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="T1_UK_RAL", pnn="T1_UK_RAL_Disk")
 
-        fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
-                         first_event = 0, locations = set(["T1_UK_RAL_Disk"]))
+        fileSite2 = File(lfn="fileSite2", size=4098, events=1024,
+                         first_event=0, locations={"T1_UK_RAL_Disk"})
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
         fileSite2.addParent(self.parentFileSite2["lfn"])
@@ -1050,24 +1041,24 @@ class WMBSMergeBySize(unittest.TestCase):
         self.mergeFileset.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
-                            max_merge_events = 999999999)
+        result = jobFactory(min_merge_size=4097, max_merge_size=99999999,
+                            max_merge_events=999999999)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+            "ERROR: More than one JobGroup returned."
 
         assert len(result[0].jobs) == 2, \
-               "ERROR: Two jobs should have been returned."
+            "ERROR: Two jobs should have been returned."
 
         ralJobs = 0
         fnalcernJobs = 0
         for job in result[0].jobs:
-            if job["possiblePSN"] == set(["T1_UK_RAL"]):
+            if job["possiblePSN"] == {"T1_UK_RAL"}:
                 ralJobs += 1
-            elif job["possiblePSN"] == set(["T1_US_FNAL", "T2_CH_CERN"]):
+            elif job["possiblePSN"] == {"T1_US_FNAL", "T2_CH_CERN"}:
                 fnalcernJobs += 1
 
         self.assertEqual(ralJobs, 1)
@@ -1089,46 +1080,46 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
         # Get out all the good merge jobs out of the way.
-        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
-                            max_merge_events = 999999999)
+        result = jobFactory(min_merge_size=1, max_merge_size=999999999999,
+                            max_merge_events=999999999)
 
         # Verify that the bad files are the only "available" files
-        availableAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesMeta")
+        availableAction = self.daoFactory(classname="Subscriptions.GetAvailableFilesMeta")
         availFiles = availableAction.execute(self.mergeSubscription["id"])
 
         assert len(availFiles) == 4, \
-               "Error: Wrong number of available files."
+            "Error: Wrong number of available files."
 
         goldenFiles = ["badFile1", "badFileA", "badFileB", "badFileC"]
         for availFile in availFiles:
             assert availFile["lfn"] in goldenFiles, \
-                   "Error: Extra file is available."
+                "Error: Extra file is available."
 
             goldenFiles.remove(availFile["lfn"])
 
         self.mergeFileset.markOpen(False)
-        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
-                            max_merge_events = 999999999)
+        result = jobFactory(min_merge_size=1, max_merge_size=999999999999,
+                            max_merge_events=999999999)
 
         assert len(result) == 0, \
-               "Error: Merging should have returned zero jobs."
+            "Error: Merging should have returned zero jobs."
 
         self.mergeFileset.markOpen(False)
 
         availFiles2 = availableAction.execute(self.mergeSubscription["id"])
 
         assert len(availFiles2) == 0, \
-               "Error: There should be no more available files."
+            "Error: There should be no more available files."
 
-        failedAction = self.daoFactory(classname = "Subscriptions.GetFailedFiles")
+        failedAction = self.daoFactory(classname="Subscriptions.GetFailedFiles")
         failedFiles = failedAction.execute(self.mergeSubscription["id"])
 
         assert len(failedFiles) == 4, \
-               "Error: Wrong number of failed files: %s" % failedFiles
+            "Error: Wrong number of failed files: %s" % failedFiles
 
         goldenIDs = []
         for availFile in availFiles:
@@ -1136,7 +1127,7 @@ class WMBSMergeBySize(unittest.TestCase):
 
         for failedFile in failedFiles:
             assert failedFile["file"] in goldenIDs, \
-                   "Error: Extra failed file."
+                "Error: Extra failed file."
 
         return
 
@@ -1151,17 +1142,17 @@ class WMBSMergeBySize(unittest.TestCase):
         self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
         # Get out all the good merge jobs out of the way.
-        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
-                            max_merge_events = 999999999)
+        result = jobFactory(min_merge_size=1, max_merge_size=999999999999,
+                            max_merge_events=999999999)
 
         self.assertEqual(len(result), 1, "Error: Wrong number of job groups.")
         self.assertEqual(len(result[0].jobs), 2, "Error: Wrong number of jobs.")
 
-        failedAction = self.daoFactory(classname = "Subscriptions.GetFailedFiles")
+        failedAction = self.daoFactory(classname="Subscriptions.GetFailedFiles")
         failedFiles = failedAction.execute(self.mergeSubscription["id"])
 
         self.assertEqual(len(failedFiles), 4,
@@ -1175,19 +1166,20 @@ class WMBSMergeBySize(unittest.TestCase):
         Repeat testMinMergeSize1a, but with non-injected files to assert that
         this causes no jobgroups to be created.
         """
-        self.stuffWMBS(injected = False)
+        self.stuffWMBS(injected=False)
         self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size=20000, max_merge_size=200000,
+                            max_merge_events=20000)
 
         self.assertEqual(len(result), 0)
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -532,7 +532,7 @@ class WMTaskHelper(TreeHelper):
         the three key values are main memory usage, time per processing unit (e.g. time per event) and
         disk usage per processing unit (e.g. size per event).
         """
-        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
             # don't touch job requirements for these task types
             return
 

@@ -126,6 +126,8 @@ class DQMHarvestWorkloadFactory(DataProcessing):
                                           periodic_harvest_sibling=periodic_harvest_sibling,
                                           dqmHarvestUnit=dqmHarvestUnit)
 
+        harvestTask.setJobResourceInformation(memoryReq=self.memory)
+
         if self.dqmConfigCacheID is not None:
             harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(self.inputDataset)

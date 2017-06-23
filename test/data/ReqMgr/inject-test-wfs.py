@@ -177,7 +177,7 @@ def main():
             sys.exit(3)
     else:
         templates = os.listdir(wmcorePath)
-    blacklist = ['StoreResults.json', 'Resubmission_MC.json']
+    blacklist = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
     templates = [item for item in templates if item not in blacklist]
 
     reqMgrCommand = "reqmgr.py" if args.reqmgr1 else "reqmgr2.py"

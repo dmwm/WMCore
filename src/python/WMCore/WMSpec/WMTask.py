@@ -1332,6 +1332,36 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingString', None)
 
+    def getCMSSWVersionsWithMergeTask(self):
+        """
+        _getCMSSWVersionsWithMergeTask_
+
+        Get the all the cmssw versions for this task plus first generation merge task cmssw version.
+        This will be used to validate and check in the script.
+        Merge cmssw version should be the same as processing version
+        """
+        versions = set()
+        for stepName in self.listAllStepNames():
+
+            stepHelper = self.getStepHelper(stepName)
+            if stepHelper.stepType() != "CMSSW":
+                continue
+            version = stepHelper.getCMSSWVersion()
+            versions.add(version)
+
+        for task in self.childTaskIterator():
+            if task.taskType() == "Merge":
+                for stepName in task.listAllStepNames():
+
+                    stepHelper = task.getStepHelper(stepName)
+                    if stepHelper.stepType() != "CMSSW":
+                        continue
+                    version = stepHelper.getCMSSWVersion()
+                    versions.add(version)
+
+        return versions
+
+
     def setNumberOfCores(self, cores, nStreams):
         """
         _setNumberOfCores_

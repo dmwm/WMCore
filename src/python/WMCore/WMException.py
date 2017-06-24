@@ -11,7 +11,19 @@ import inspect
 import logging
 import traceback
 import sys
+import re
 
+WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
+WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
+WMEXCEPTION_REGEXP = re.compile(r"\%s.*?\%s" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR), re.DOTALL)
+
+def listWMExceptionStr(filename):
+
+    with open(filename, 'r') as logfile:
+        # TODO: can we avoid reading the whole file
+        wholefile = logfile.read()
+        for b in WMEXCEPTION_REGEXP.finditer(wholefile):
+            yield b.group()
 
 class WMException(exceptions.Exception):
     """
@@ -135,13 +147,16 @@ class WMException(exceptions.Exception):
 
     def __str__(self):
         """create a string rep of this exception"""
-        strg = "%s\n" % self.name
+        # WARNING: Do not change this string - it is used to extract error from log
+        strg = WMEXCEPTION_START_STR
+        strg += "\nException Class: %s\n" % self.name
         strg += "Message: %s\n" % self._message
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value, )
         strg += "\nTraceback: \n"
         strg += self.traceback
         strg += '\n'
+        strg += WMEXCEPTION_END_STR
         return strg
 
     def message(self):

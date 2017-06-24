@@ -39,15 +39,12 @@ class ResubmissionWorkloadFactory(StdBase):
         helper.ignoreOutputModules(self.ignoredOutputModules)
 
         # override a couple of parameters, if provided by user
-        if 'Memory' in arguments:
-            helper.setMemory(arguments['Memory'])
-        if 'Campaign' in arguments and not helper.getCampaign():
-            helper.setCampaign(arguments["Campaign"])
         if 'RequestPriority' in arguments:
             helper.setPriority(arguments["RequestPriority"])
-        if 'TimePerEvent' in arguments:
-            for task in helper.taskIterator():
-                task.setJobResourceInformation(timePerEvent=arguments["TimePerEvent"])
+        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
+            helper.setMemory(arguments['Memory'])
+        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
+            helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
         return helper
 

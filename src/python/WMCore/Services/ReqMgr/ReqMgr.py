@@ -228,3 +228,14 @@ class ReqMgr(Service):
         params = overwrittenParams or {}
         uri = 'request/clone/%s' % requestName
         return self["requests"].post(uri, params)[0]['result']
+
+    def getGenericRequestInfo(self, queryDict):
+        """
+        _getGenericRequestInfo_
+        :param queryDict: query dictionary which will be converted to url query string.
+        :type queryDict: dict
+        :returns list of dict [{'request': { any info request by mask}]
+        """
+        query = self._createQuery(queryDict)
+        callname = 'request?%s' % query
+        return self._getResult(callname, verb="GET")

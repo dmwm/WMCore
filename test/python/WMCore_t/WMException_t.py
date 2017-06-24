@@ -5,15 +5,13 @@ _WMException_t_
 General test for WMException
 
 """
-
-
-
-
-
+from __future__ import print_function, division
 import logging
 import unittest
+import os
+from WMCore.WMBase import getTestBase
 
-from WMCore.WMException import WMException
+from WMCore.WMException import WMException, listWMExceptionStr
 
 class WMExceptionTest(unittest.TestCase):
     """
@@ -54,6 +52,17 @@ class WMExceptionTest(unittest.TestCase):
         exception.addInfo(**data)
         self.logger.debug("String version of exception: "+ str(exception))
 
+    def testExceptionFilter(self):
+        """
+        Test getWMExceptionStr function.
+        """
+        count = 0
+        logPath = os.path.join(getTestBase(), "WMCore_t/test_condor.log")
+        for result in listWMExceptionStr(logPath):
+            # print(result)
+            count += 1
+
+        self.assertEqual(count, 4)
 
 if __name__ == "__main__":
     unittest.main()

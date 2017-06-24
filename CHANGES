@@ -1,3 +1,23 @@
+1.1.4 to 1.1.4.patch2:
+  - Merge pull request #7965 from ticoann/1.1.4_wmagent
+  - Raise HTTPException instead of ServerNotFoundError
+  - Fix a problem with new lumilist format
+  - pylint fixes
+  - Rollback unfinished transactions if ErrorHandler hits an exception
+  - Add drain thread
+  - add site info for skipped file report
+  - get cmssw value from config directly for taskchain
+  - Accept plain list of lumis in the Run object
+  - filter exceptions on error log for wmstats
+  - 1.1.4.patch1
+  - Merge pull request #7932 from amaltaro/exitCodesFail
+  - Merge pull request #7924 from hufnagel/tier0-dashboard
+  - Merge pull request #7928 from amaltaro/file-boundaries
+  - Fail jobs with exit code 87 or 8026
+  - pylint fixes
+  - Allow jobs to cross file boundaries - wmagent version
+  - report the correct dashboard activity from Tier0, fixes #7256
+
 1.1.4 to 1.1.4.patch1:
   - Merge pull request #7932 from amaltaro/exitCodesFail
   - Merge pull request #7924 from hufnagel/tier0-dashboard

@@ -88,19 +88,22 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
     chainDefinition = chainDefinition or {}
     chainPattern = r'(Task|Step)\d{1,2}'
 
-    cloneArgs = {}
-    for topKey, topValue in originalArgs.iteritems():
-        # order of this if-else matters because Step1/Task1 is a known argument
-        if re.match(chainPattern, topKey):
-            cloneArgs.setdefault(topKey, {})
-            # remove unsupported keys from inner Step/Task dict
-            for innerKey in topValue:
-                if innerKey in chainDefinition:
-                    cloneArgs[topKey][innerKey] = topValue[innerKey]
-        # accepts floating Skim args for ReReco
-        elif topKey in argsDefinition or topKey.startswith('Skim'):
-            cloneArgs[topKey] = topValue
-
+    if originalArgs == argsDefinition:
+        # then it's a clone/ACDC of another ACDC, nothing else to do
+        cloneArgs = originalArgs
+    else:
+        cloneArgs = {}
+        for topKey, topValue in originalArgs.iteritems():
+            # order of this if-else matters because Step1/Task1 is a known argument
+            if re.match(chainPattern, topKey):
+                cloneArgs.setdefault(topKey, {})
+                # remove unsupported keys from inner Step/Task dict
+                for innerKey in topValue:
+                    if innerKey in chainDefinition:
+                        cloneArgs[topKey][innerKey] = topValue[innerKey]
+            # accepts floating Skim args for ReReco
+            elif topKey in argsDefinition or topKey.startswith('Skim'):
+                cloneArgs[topKey] = topValue
 
     # apply user override arguments at the end, such that it's validated at spec level
     incrementProcVer(cloneArgs, requestArgs)

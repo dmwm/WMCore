@@ -15,6 +15,7 @@ class ResultSet:
     def __init__(self):
         self.data = []
         self.keys = []
+        self.insertedID = None
 
     def close(self):
         return
@@ -33,6 +34,7 @@ class ResultSet:
         myThread = threading.currentThread()
 
         if resultproxy.closed:
+            self.insertedID = resultproxy.lastrowid
             return
         elif resultproxy.returns_rows:
             for r in resultproxy:

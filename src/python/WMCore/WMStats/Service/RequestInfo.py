@@ -9,7 +9,7 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
-from WMCore.REST.Format import PrettyJSONFormat, JSONFormat
+from WMCore.REST.Format import PrettyJSONFormat, PrettyJSONHTMLFormat, JSONFormat
 
 class RequestInfo(RESTEntity):
     """
@@ -95,7 +95,7 @@ class JobDetailInfo(RESTEntity):
         return
 
 
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('text/html', PrettyJSONHTMLFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, request_name, sample_size):
 

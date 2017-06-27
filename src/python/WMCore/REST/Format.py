@@ -308,6 +308,67 @@ class PrettyJSONFormat(JSONFormat):
             etag.invalidate()
             report_rest_error(ExecutionError(), format_exc(), False)
 
+class PrettyJSONHTMLFormat(PrettyJSONFormat):
+    """ Format used for human, (web browser) wrap around html tag on json"""
+
+    @staticmethod
+    def format_obj(obj):
+        """Render an object `obj` into HTML."""
+        if isinstance(obj, type(None)):
+            result = ""
+        elif isinstance(obj, (unicode, str)):
+            result = "<pre>%s</pre>" % obj if '\n' in obj else obj
+        elif isinstance(obj, (int, float, bool)):
+            result = "%s" % obj
+        elif isinstance(obj, dict):
+            result = "<ul>"
+            for k, v in obj.iteritems():
+                result += "<li><b>%s</b>: %s</li>" % (k, PrettyJSONHTMLFormat.format_obj(v))
+            result += "</ul>"
+        elif is_iterable(obj):
+            result = "<details><ul>"
+            for v in obj:
+                result += "<li>%s</li>" % PrettyJSONHTMLFormat.format_obj(v)
+            result += "</ul></details>"
+        else:
+            cherrypy.log("cannot represent object of type %s in xml (%s)"
+                         % (type(obj).__class__.__name__, repr(obj)))
+            raise ExecutionError("cannot represent object in xml")
+        return result
+
+    def stream_chunked(self, stream, etag, preamble, trailer):
+        """Generator for actually producing the output."""
+        try:
+            etag.update(preamble)
+            yield preamble
+
+            try:
+                for obj in stream:
+                    chunk = PrettyJSONHTMLFormat.format_obj(obj)
+                    etag.update(chunk)
+                    yield chunk
+            except GeneratorExit:
+                etag.invalidate()
+                trailer = None
+                raise
+            finally:
+                if trailer:
+                    etag.update(trailer)
+                    yield trailer
+
+        except RESTError as e:
+            etag.invalidate()
+            report_rest_error(e, format_exc(), False)
+        except Exception as e:
+            etag.invalidate()
+            report_rest_error(ExecutionError(), format_exc(), False)
+
+    def chunk_args(self, stream):
+        """Return header and trailer needed to wrap `stream` as XML reply."""
+        preamble = "<html><body>"
+        trailer = "</body></html>"
+        return preamble, trailer
+
 class RawFormat(RESTFormat):
     """Format an iterable of objects as raw data.
 

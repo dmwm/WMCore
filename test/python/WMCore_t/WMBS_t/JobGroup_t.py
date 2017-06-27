@@ -172,18 +172,15 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         testJobGroup.delete()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after it was deleted"
+        self.assertFalse(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -210,21 +207,18 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         myThread.transaction.rollback()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after transaction was rolled back."
+        self.assertFalse(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -254,26 +248,22 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testJobGroup.delete()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after it was deleted"
+        self.assertFalse(testJobGroup.exists())
 
         myThread.transaction.rollback()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after transaction was rolled back."
+        self.assertTrue(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -294,23 +284,12 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupC = JobGroup(uid=testJobGroupA.uid)
         testJobGroupC.load()
 
-        assert type(testJobGroupB.id) == int, \
-            "ERROR: Job group id is not an int."
-
-        assert type(testJobGroupC.id) == int, \
-            "ERROR: Job group id is not an int."
-
-        assert type(testJobGroupB.subscription["id"]) == int, \
-            "ERROR: Job group subscription id is not an int."
-
-        assert type(testJobGroupC.subscription["id"]) == int, \
-            "ERROR: Job group subscription id is not an int."
-
-        assert type(testJobGroupB.output.id) == int, \
-            "ERROR: Job group output id is not an int."
-
-        assert type(testJobGroupC.output.id) == int, \
-            "ERROR: Job group output id is not an int."
+        self.assertIsInstance(testJobGroupB.id, int)
+        self.assertIsInstance(testJobGroupC.id, int)
+        self.assertIsInstance(testJobGroupB.subscription["id"], int)
+        self.assertIsInstance(testJobGroupC.subscription["id"], int)
+        self.assertIsInstance(testJobGroupB.output.id, int)
+        self.assertIsInstance(testJobGroupC.output.id, int)
 
         assert testJobGroupB.uid == testJobGroupA.uid, \
             "ERROR: Job group did not load uid correctly."

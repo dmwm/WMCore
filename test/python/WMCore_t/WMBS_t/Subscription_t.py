@@ -73,15 +73,15 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow2.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.addRun(Run(1, *[45]))
 
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB.addRun(Run(1, *[45]))
 
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC.addRun(Run(2, *[48]))
 
         testFileA.create()
@@ -124,19 +124,19 @@ class SubscriptionTest(unittest.TestCase):
         # fileB is a parent of fileC
         # fileD is parent of fileA and doesn't belong to any fileset
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.addRun(Run(1, *[45]))
 
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB.addRun(Run(1, *[45]))
 
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC.addRun(Run(2, *[48]))
 
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD.addRun(Run(2, *[48]))
 
         testFileA.create()
@@ -192,18 +192,15 @@ class SubscriptionTest(unittest.TestCase):
         (testSubscription, testFileset, testWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists before it was created"
+        self.assertFalse(testSubscription.exists(), "Subscription exists before it was created")
 
         testSubscription.create()
 
-        assert testSubscription.exists() >= 0, \
-            "Subscription does not exist after it was created"
+        self.assertTrue(testSubscription.exists() >= 0, "Subscription does not exist after it was created")
 
         testSubscription.delete()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists after it was deleted"
+        self.assertFalse(testSubscription.exists(), "Subscription exists after it was deleted")
 
         testFileset.delete()
         testFileA.delete()
@@ -223,21 +220,18 @@ class SubscriptionTest(unittest.TestCase):
         (testSubscription, testFileset, testWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists before it was created"
+        self.assertFalse(testSubscription.exists(), "Subscription exists before it was created")
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testSubscription.create()
 
-        assert testSubscription.exists() >= 0, \
-            "Subscription does not exist after it was created"
+        self.assertTrue(testSubscription.exists() >= 0, "Subscription does not exist after it was created")
 
         myThread.transaction.rollback()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists after transaction was rolled back."
+        self.assertFalse(testSubscription.exists(), "Subscription exists after transaction was rolled back.")
 
         testFileset.delete()
         testFileA.delete()
@@ -258,26 +252,22 @@ class SubscriptionTest(unittest.TestCase):
         (testSubscription, testFileset, testWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists before it was created"
+        self.assertFalse(testSubscription.exists(), "Subscription exists before it was created")
 
         testSubscription.create()
 
-        assert testSubscription.exists() >= 0, \
-            "Subscription does not exist after it was created"
+        self.assertTrue(testSubscription.exists() >= 0, "Subscription does not exist after it was created")
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testSubscription.delete()
 
-        assert testSubscription.exists() == False, \
-            "Subscription exists after it was deleted"
+        self.assertFalse(testSubscription.exists(), "Subscription exists after it was deleted")
 
         myThread.transaction.rollback()
 
-        assert testSubscription.exists() >= 0, \
-            "Subscription does not exist after roll back."
+        self.assertTrue(testSubscription.exists() >= 0, "Subscription does not exist after roll back.")
 
         testFileset.delete()
         testFileA.delete()
@@ -550,17 +540,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileE = File(lfn="/this/is/a/lfnE", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileF = File(lfn="/this/is/a/lfnF", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -625,21 +615,21 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD.addRun(Run(1, *[45]))
         testFileD.addRun(Run(2, *[45]))
         testFileE = File(lfn="/this/is/a/lfnE", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileE.addRun(Run(1, *[45]))
         testFileE.addRun(Run(2, *[45]))
         testFileF = File(lfn="/this/is/a/lfnF", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileF.addRun(Run(1, *[45]))
         testFileF.addRun(Run(2, *[45]))
         testFileA.create()
@@ -714,17 +704,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileE = File(lfn="/this/is/a/lfnE", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileF = File(lfn="/this/is/a/lfnF", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -797,7 +787,7 @@ class SubscriptionTest(unittest.TestCase):
         load methods to make sure that everything saves/loads.
         """
         (testSubscriptionA, testFileset, testWorkflow,
-         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         dummyTestFileA, dummyTestFileB, dummyTestFileC) = self.createSubscriptionWithFileABC()
 
         testSubscriptionA.create()
 
@@ -923,7 +913,7 @@ class SubscriptionTest(unittest.TestCase):
         testFileA, testFileB is in run 1
         testFileC is in run 2
         """
-        (testSubscription, testFileset, testWorkflow,
+        (testSubscription, dummyTestFileset, dummyTestWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
@@ -946,11 +936,9 @@ class SubscriptionTest(unittest.TestCase):
         files = testSubscription.filesOfStatusByRun("Failed", 2)
         self.assertEqual(len(files), 0, "No files shouldn't be failed for run 2")
 
-        assert testSubscription.isCompleteOnRun(1) == False, \
-            "Run 1 shouldn't be completed."
+        self.assertFalse(testSubscription.isCompleteOnRun(1), "Run 1 shouldn't be completed.")
 
-        assert testSubscription.isCompleteOnRun(2) == False, \
-            "Run 2 shouldn't be completed."
+        self.assertFalse(testSubscription.isCompleteOnRun(2), "Run 2 shouldn't be completed.")
 
         testSubscription.completeFiles([testFileA, testFileB])
 
@@ -972,11 +960,9 @@ class SubscriptionTest(unittest.TestCase):
         files = testSubscription.filesOfStatusByRun("Failed", 2)
         self.assertEqual(len(files), 0, "No files shouldn't be failed for run 2")
 
-        assert testSubscription.isCompleteOnRun(1) == True, \
-            "Run 1 should be completed."
+        self.assertTrue(testSubscription.isCompleteOnRun(1), "Run 1 should be completed.")
 
-        assert testSubscription.isCompleteOnRun(2) == False, \
-            "Run 2 shouldn't be completed."
+        self.assertFalse(testSubscription.isCompleteOnRun(2), "Run 2 shouldn't be completed.")
 
         testSubscription.failFiles([testFileA, testFileC])
 
@@ -999,10 +985,8 @@ class SubscriptionTest(unittest.TestCase):
         files = testSubscription.filesOfStatusByRun("Failed", 2)
         self.assertEqual(len(files), 1, "1 files should be failed for run 2")
 
-        assert testSubscription.isCompleteOnRun(1) == True, \
-            "Run 1 should be completed."
-        assert testSubscription.isCompleteOnRun(2) == True, \
-            "Run 2 should be completed."
+        self.assertTrue(testSubscription.isCompleteOnRun(1), "Run 1 should be completed.")
+        self.assertTrue(testSubscription.isCompleteOnRun(2), "Run 2 should be completed.")
 
     def testGetNumberOfJobsPerSite(self):
         """
@@ -1010,9 +994,8 @@ class SubscriptionTest(unittest.TestCase):
 
         """
 
-        myThread = threading.currentThread()
-
-        testSubscription, testFileset, testWorkflow, testFileA, testFileB, testFileC = self.createSubscriptionWithFileABC()
+        (testSubscription, dummyTestFileset, dummyTestWorkflow,
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         testSubscription.create()
 
@@ -1057,7 +1040,7 @@ class SubscriptionTest(unittest.TestCase):
         Test the Subscription.ListIncomplete DAO object that returns a list of
         the subscriptions that have not completed processing all files.
         """
-        (testSubscription, testFileset, testWorkflow,
+        (testSubscription, dummyTestFileset, dummyTestWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
@@ -1090,8 +1073,8 @@ class SubscriptionTest(unittest.TestCase):
         Verify that the getJobGroups() method will return a list of JobGroups
         that contain jobs that have not been acquired/completed/failed.
         """
-        (testSubscription, testFileset, testWorkflow, testFileA, \
-         testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        (testSubscription, dummyTestFileset, dummyTestWorkflow,
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
         changeJobState = self.daofactory(classname="Jobs.ChangeState")
@@ -1174,27 +1157,27 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.addRun(Run(1, *[45]))
 
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB.addRun(Run(1, *[45]))
 
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC.addRun(Run(2, *[48]))
 
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD.addRun(Run(2, *[48]))
 
         testFile1 = File(lfn="/this/is/a/lfn1", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]), merged=False)
+                         locations={"goodse.cern.ch"}, merged=False)
         testFile1.addRun(Run(2, *[48]))
 
         testFile2 = File(lfn="/this/is/a/lfn2", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]), merged=False)
+                         locations={"goodse.cern.ch"}, merged=False)
         testFile2.addRun(Run(2, *[48]))
 
         testFileA.create()
@@ -1289,17 +1272,12 @@ class SubscriptionTest(unittest.TestCase):
 
         testSubscription.completeFiles([testFileA, testFileC])
 
-        assert testSubscription.isFileCompleted(testFileA) == True, \
-            "file A should be completed"
-        assert testSubscription.isFileCompleted([testFileA, testFileC]) == True, \
-            "file A, C should be completed"
-        assert testSubscription.isFileCompleted([testFileA,
-                                                 testFileB,
-                                                 testFileC]) == False, \
-            "file A, B, C shouldn't be completed"
+        self.assertTrue(testSubscription.isFileCompleted(testFileA), "file A should be completed")
+        self.assertTrue(testSubscription.isFileCompleted([testFileA, testFileC]), "file A, C should be completed")
+        self.assertFalse(testSubscription.isFileCompleted([testFileA, testFileB, testFileC]),
+                         "file A, B, C shouldn't be completed")
 
-        assert testSubscription.isFileCompleted(testFileB) == False, \
-            "file B shouldn't be completed"
+        self.assertFalse(testSubscription.isFileCompleted(testFileB), "file B shouldn't be completed")
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -1336,19 +1314,19 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.addRun(Run(1, *[45]))
 
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB.addRun(Run(1, *[45]))
 
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC.addRun(Run(2, *[48]))
 
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD.addRun(Run(2, *[48]))
 
         testFileA.create()
@@ -1434,17 +1412,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileE = File(lfn="/this/is/a/lfnE", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileF = File(lfn="/this/is/a/lfnF", size=1024, events=20,
-                         locations=set(["goodse.cern.ch"]))
+                         locations={"goodse.cern.ch"})
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -1734,7 +1712,7 @@ class SubscriptionTest(unittest.TestCase):
         Verify that the finished subscriptions timeout works correctly and that
         it only returns subscriptions for workflows that are fully injected.
         """
-        (testSubscription, testFileset, testWorkflow,
+        (testSubscription, testFileset, dummyWorkflow,
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         testFileset.markOpen(False)
@@ -1867,8 +1845,8 @@ class SubscriptionTest(unittest.TestCase):
 
         Verify that the white list and black list code works.
         """
-        (testSubscription, testFileset, testWorkflow,
-         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        (testSubscription, dummyTestFileset, dummyTestWorkflow,
+         dummyTestFileA, dummyTestFileB, dummyTestFileC) = self.createSubscriptionWithFileABC()
 
         testSubscription.create()
         testSubscription.addWhiteBlackList([{"site_name": "site1", "valid": True},

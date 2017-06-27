@@ -17,7 +17,7 @@ class Delete(DBFormatter):
     MySQL implementation of WorkUnit.Delete
     """
 
-    sql = "delete from wmbs_workunit where id = :id"
+    sql = 'DELETE FROM wmbs_workunit WHERE id = :id'
 
     def getBinds(self, name=None):
         return self.dbi.buildbinds(self.dbi.makelist(name), 'id')

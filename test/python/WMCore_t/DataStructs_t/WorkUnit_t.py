@@ -118,7 +118,6 @@ class WorkUnitTest(unittest.TestCase):
 
         self.assertTrue(json.dumps(testWorkUnit.__to_json__()))
 
-
     def testGetInfo(self):
         testRunLumi = Run(TEST_RUN_NUMBER, TEST_LUMI)
         testWorkUnit = WorkUnit(taskID=TEST_TASKID, lastUnitCount=TEST_LAST_UNIT_COUNT, fileid=TEST_FILEID,

@@ -419,9 +419,11 @@ class Request(RESTEntity):
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)
-
-        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        # save the spec first before update the reqmgr request status to prevent race condition
+        # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+
         return report
 
     def _handleOnlyStateTransition(self, workload, request_args, dn):

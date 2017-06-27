@@ -5,11 +5,11 @@ _GetTask_
 MySQL implementation of Jobs.Task
 """
 
-__all__ = []
-
 import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
+
+__all__ = []
 
 
 class GetTask(DBFormatter):
@@ -39,14 +39,14 @@ class GetTask(DBFormatter):
         Should handle bulk and regular attempts to find the task
         """
 
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             if len(jobID) == 0:
                 return {}
             binds = []
-            for id in jobID:
-                binds.append({'jobid': int(id)})
-        elif type(jobID) == int:
-            binds = {'jobid': jobID}
+            for ID in jobID:
+                binds.append({'jobid': int(ID)})
+        elif isinstance(jobID, (int, long)):
+            binds = {'jobid': int(jobID)}
         else:
             logging.error('Incompatible jobid in GetTask')
             return

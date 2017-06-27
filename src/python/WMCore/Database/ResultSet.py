@@ -6,18 +6,17 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-
-
-
 import threading
 
-class ResultSet:
+
+class ResultSet(object):
     def __init__(self):
         self.data = []
         self.keys = []
         self.insertedID = None
 
-    def close(self):
+    @staticmethod
+    def close():
         return
 
     def fetchone(self):

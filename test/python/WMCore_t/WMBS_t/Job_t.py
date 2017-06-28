@@ -9,7 +9,6 @@ from __future__ import absolute_import
 import threading
 import unittest
 
-from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
@@ -18,80 +17,12 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Mask import Mask
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.WorkUnit import WorkUnit
 from WMCore.WMBS.Workflow import Workflow
-from WMQuality.TestInit import TestInit
+from WMCore_t.WMBS_t.JobTestBase import JobTestBase
 
 
-class JobTest(unittest.TestCase):
-    def setUp(self):
-        """
-        _setUp_
-
-        Setup the database and logging connection.  Try to create all of the
-        WMBS tables.
-        """
-        self.testInit = TestInit(__file__)
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules=["WMCore.WMBS"],
-                                useDefault=False)
-
-        myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package="WMCore.WMBS",
-                                     logger=myThread.logger,
-                                     dbinterface=myThread.dbi)
-
-        locationNew = self.daoFactory(classname="Locations.New")
-        locationNew.execute(siteName="test.site.ch", pnn="T2_CH_CERN")
-        locationNew.execute(siteName="test2.site.ch", pnn="T2_CH_CERN")
-
-        return
-
-    def tearDown(self):
-        """
-        _tearDown_
-
-        Drop all the WMBS tables.
-        """
-        self.testInit.clearDatabase()
-
-    def createTestJob(self, subscriptionType="Merge"):
-        """
-        _createTestJob_
-
-        Create a test job with two files as input.  This will also create the
-        appropriate workflow, jobgroup and subscription.
-        """
-        testWorkflow = Workflow(spec=makeUUID(), owner="Simon",
-                                name=makeUUID(), task="Test")
-        testWorkflow.create()
-
-        testWMBSFileset = Fileset(name="TestFileset")
-        testWMBSFileset.create()
-
-        testSubscription = Subscription(fileset=testWMBSFileset,
-                                        workflow=testWorkflow,
-                                        type=subscriptionType)
-        testSubscription.create()
-
-        testJobGroup = JobGroup(subscription=testSubscription)
-        testJobGroup.create()
-
-        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=10)
-        testFileB.addRun(Run(1, *[46]))
-        testFileA.create()
-        testFileB.create()
-
-        testJob = Job(name=makeUUID(), files=[testFileA, testFileB])
-        testJob["couch_record"] = "somecouchrecord"
-        testJob["location"] = "test.site.ch"
-        testJob.create(group=testJobGroup)
-        testJob.associateFiles()
-
-        return testJob
-
+class JobTest(JobTestBase):
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -120,19 +51,25 @@ class JobTest(unittest.TestCase):
         testFileB.create()
 
         testJob = Job(name="TestJob", files=[testFileA, testFileB])
+        testWU = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=Run(1, *[44]))
 
-        assert testJob.exists() is False, \
-            "ERROR: Job exists before it was created"
+        self.assertFalse(testJob.exists(), "Job exists before it was created")
+        self.assertFalse(testWU.exists(), "WorkUnit exists before it was created")
 
         testJob.create(group=testJobGroup)
 
-        assert testJob.exists() >= 0, \
-            "ERROR: Job does not exist after it was created"
+        self.assertTrue(testJob.exists(), "Job does not exist after it was created")
+        self.assertFalse(testWU.exists(), "WorkUnit exists when there is no work")
+
+        # Test the getWorkflow method
+        workflow = testJob.getWorkflow()
+        self.assertEqual(workflow['task'], 'Test')
+        self.assertEqual(workflow['name'], 'wf001')
 
         testJob.delete()
 
-        assert testJob.exists() is False, \
-            "ERROR: Job exists after it was delete"
+        self.assertFalse(testJob.exists(), "Job exists after it was deleted")
+        self.assertFalse(testWU.exists(), "WorkUnit exists after job is deleted")
 
         return
 

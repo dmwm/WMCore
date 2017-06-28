@@ -11,6 +11,7 @@ associated to a single fileset and a single workflow.
 from __future__ import print_function
 
 import logging
+from collections import Counter
 
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
@@ -565,6 +566,8 @@ class Subscription(WMBSBase, WMSubscription):
         jobGroupList = []
         nameList = []
 
+        wfid = self['workflow'].id
+
         # You have to do things in this order:
         # 1) First create Filesets, then jobGroups
         # 2) Second, create jobs pointing to jobGroups
@@ -630,11 +633,18 @@ class Subscription(WMBSBase, WMSubscription):
 
         # Use the results of the bulk commit to get the jobIDs
         fileDict = {}
+        jobFileRunLumis = []
         for job in jobList:
             job['id'] = result[job['name']]
             fileDict[job['id']] = []
             for f in job['input_files']:
                 fileDict[job['id']].append(f['id'])
+                fileMask = job['mask'].filterRunLumisByMask(runs=f['runs'])
+                for runObj in fileMask:
+                    run = runObj.run
+                    lumis = runObj.lumis
+                    for lumi in lumis:
+                        jobFileRunLumis.append((job['id'], f['id'], run, lumi))
 
         # Create a list of mask binds
         maskList = []
@@ -655,6 +665,19 @@ class Subscription(WMBSBase, WMSubscription):
         fileAction = self.daofactory(classname="Jobs.AddFiles")
         fileAction.execute(jobDict=fileDict, conn=self.getDBConn(),
                            transaction=self.existingTransaction())
+
+        # Add work units and associate them
+        wuAction = self.daofactory(classname='WorkUnit.Add')
+        wufAction = self.daofactory(classname='Jobs.AddWorkUnits')
+
+        # Make a count of how many times each job appears in the list of jobFileRunLumis
+        jobUnitCounts = Counter([jid for jid, _, _, _ in jobFileRunLumis])
+
+        for jid, fid, run, lumi in jobFileRunLumis:
+            wuAction.execute(taskid=wfid, fileid=fid, run=run, lumi=lumi, last_unit_count=jobUnitCounts[jid],
+                             conn=self.getDBConn(), transaction=self.existingTransaction())
+        wufAction.execute(jobFileRunLumis=jobFileRunLumis,
+                          conn=self.getDBConn(), transaction=self.existingTransaction())
 
         fileList = []
         for job in jobList:

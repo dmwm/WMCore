@@ -14,6 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
+from __future__ import print_function
+
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Mask import Mask as WMMask
 from WMCore.Services.UUIDLib import makeUUID
@@ -62,7 +64,7 @@ class Job(WMBSBase, WMJob):
 
         self["jobgroup"] = group.id
 
-        if self["name"] == None:
+        if self["name"] is None:
             self["name"] = makeUUID()
 
         jobAction = self.daofactory(classname="Jobs.New")
@@ -78,6 +80,7 @@ class Job(WMBSBase, WMJob):
         self['mask'].save(jobID=self['id'])
 
         self.associateFiles()
+        self.associateWorkUnits()
         self.commitTransaction(existingTransaction)
         return
 
@@ -114,6 +117,7 @@ class Job(WMBSBase, WMJob):
         if MaskAndFiles:
             self['mask'].save(jobID=self['id'])
             self.associateFiles()
+            self.associateWorkUnits()
 
         self.commitTransaction(existingTransaction)
         return
@@ -232,6 +236,18 @@ class Job(WMBSBase, WMJob):
 
         return locations
 
+    def getWorkflow(self):
+        """
+        _getWorkflow_
+
+        Returns the workflow, including TaskID for a job
+        """
+
+        wfAction = self.daofactory(classname='Jobs.GetWorkflowTask')
+        workflow = wfAction.execute([self['id']], conn=self.getDBConn(), transaction=self.existingTransaction())
+
+        return workflow[0]
+
     def associateFiles(self):
         """
         _associateFiles_
@@ -247,6 +263,46 @@ class Job(WMBSBase, WMJob):
                               transaction=self.existingTransaction())
 
         return
+
+    def associateWorkUnits(self):
+        """
+        _associateWorkUnits_
+
+        Add the WorkUnits that this job requires
+
+        Returns: N/A
+        """
+
+        existsAction = self.daofactory(classname='WorkUnit.ExistsByTaskFileLumi')
+        addAction = self.daofactory(classname='WorkUnit.Add')
+        assocAction = self.daofactory(classname='Jobs.AddWorkUnits')
+
+        files = WMJob.getFiles(self)
+        jobMask = self['mask']
+
+        workflow = self.getWorkflow()
+        wfid = workflow['taskid']
+
+        lumisInJob = 0
+        for wmfile in files:
+            fileMask = jobMask.filterRunLumisByMask(runs=wmfile['runs'])
+            for runObj in fileMask:
+                lumisInJob += len(runObj.lumis)
+
+        for wmfile in files:
+            fileid = wmfile['id']
+            fileMask = jobMask.filterRunLumisByMask(runs=wmfile['runs'])
+            for runObj in fileMask:
+                run = runObj.run
+                lumis = runObj.lumis
+                for lumi in lumis:
+                    if not existsAction.execute(taskid=wfid, fileid=fileid, run_lumi=runObj,
+                                                conn=self.getDBConn(), transaction=self.existingTransaction()):
+                        addAction.execute(taskid=wfid, last_unit_count=lumisInJob, fileid=fileid, run=run,
+                                          lumi=lumi,
+                                          conn=self.getDBConn(), transaction=self.existingTransaction())
+                    assocAction.execute(jobid=self["id"], fileid=fileid, run=run, lumi=lumi,
+                                        conn=self.getDBConn(), transaction=self.existingTransaction())
 
     def getState(self):
         """

@@ -21,8 +21,8 @@ class GetByID(DBFormatter):
            ' wu.last_unit_count as last_unit_count, wu.last_submit_time as last_submit_time, wu.status as status,'
            ' assoc.firstevent as firstevent, assoc.lastevent as lastevent,'
            ' assoc.fileid as fileid, assoc.run as run,  assoc.lumi as lumi'
-           ' FROM wmbs_workunit as wu'
-           ' INNER JOIN wmbs_frl_workunit_assoc as assoc'
+           ' FROM wmbs_workunit wu'
+           ' INNER JOIN wmbs_frl_workunit_assoc assoc'
            ' ON wu.id = assoc.workunit'
            ' WHERE wu.id = :wuid')
 

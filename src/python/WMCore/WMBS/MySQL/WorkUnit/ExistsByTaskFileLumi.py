@@ -17,8 +17,8 @@ class ExistsByTaskFileLumi(DBFormatter):
     MySQL implementation of WorkUnit.ExistsByTaskFileLumi
     """
 
-    sql = ('SELECT wu.id as id FROM wmbs_workunit as wu'
-           ' INNER JOIN wmbs_frl_workunit_assoc as assoc ON wu.id = assoc.workunit'
+    sql = ('SELECT wu.id as id FROM wmbs_workunit wu'
+           ' INNER JOIN wmbs_frl_workunit_assoc assoc ON wu.id = assoc.workunit'
            ' WHERE wu.taskid=:taskid AND assoc.fileid=:fileid AND assoc.run=:run AND assoc.lumi=:lumi')
 
     def format(self, result):

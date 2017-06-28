@@ -53,7 +53,6 @@ namespace (package): %s """ % (name, str(namespace))
         """
         if getFromCache:
             if classname in self.objectList:
-                logging.debug("Object in cache")
                 return self.objectList[classname]
 
         if self.namespace == '':

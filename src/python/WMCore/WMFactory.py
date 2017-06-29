@@ -6,24 +6,17 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-
-
-
-
-import logging
 import threading
 
-from WMCore.WMException import WMException
-from WMCore.WMExceptions import WMEXCEPTION
 
-class WMFactory:
+class WMFactory(object):
     """
     A factory Class that is 'not thread safe' but is intended to work in
     threads (no sharing). The class dynamically loads objects from files
     when needed and caches them.
     """
 
-    def __init__(self, name, namespace = ''):
+    def __init__(self, name, namespace=''):
         """
         Initializes the factory, and checks if this thread already
         has an attribute for storing registries. It uses the reserved
@@ -31,17 +24,14 @@ class WMFactory:
         """
         self.namespace = namespace
         self.objectList = {}
-        msg = """
-Creating factory with name: %s associated to
-namespace (package): %s """ % (name, str(namespace))
-        #logging.debug(msg)
+
         myThread = threading.currentThread()
         if not hasattr(myThread, "factory"):
             myThread.factory = {}
         myThread.factory[name] = self
 
-    def loadObject(self, classname, args = None, storeInCache = True,
-                   getFromCache = True, listFlag = False, alteredClassName = None):
+    def loadObject(self, classname, args=None, storeInCache=True,
+                   getFromCache=True, listFlag=False, alteredClassName=None):
         """
         Dynamically loads the object from file.
         For this to work the class name has to
@@ -53,12 +43,11 @@ namespace (package): %s """ % (name, str(namespace))
         """
         if getFromCache:
             if classname in self.objectList:
-                logging.debug("Object in cache")
                 return self.objectList[classname]
 
         if self.namespace == '':
             module = classname
-            #FIXME: hoky way of doing this! Change this please!
+            # FIXME: hoky way of doing this! Change this please!
             errModule = classname
         else:
             module = "%s.%s" % (self.namespace, classname)
@@ -67,18 +56,18 @@ namespace (package): %s """ % (name, str(namespace))
             classname = alteredClassName
         module = __import__(module, globals(), locals(), [classname])
         obj = getattr(module, classname.split('.')[-1])
-        if args == None:
+        if args is None:
             classinstance = obj()
         else:
-            #This handles the passing of list-style arguments instead of dicts
-            #Primarily for setting the schema
-            #Or anywhere you need arguments of the form (a,b,c,...)
-            if type(args) == list and listFlag:
+            # This handles the passing of list-style arguments instead of dicts
+            # Primarily for setting the schema
+            # Or anywhere you need arguments of the form (a,b,c,...)
+            if isinstance(args, list) and listFlag:
                 classinstance = obj(*args)
-            elif type(args) == dict:
+            elif isinstance(args, dict):
                 classinstance = obj(**args)
             else:
-                #But if you actually need to pass a list, better do it the old fashioned way
+                # But if you actually need to pass a list, better do it the old fashioned way
                 classinstance = obj(args)
         if storeInCache:
             self.objectList[classname] = classinstance

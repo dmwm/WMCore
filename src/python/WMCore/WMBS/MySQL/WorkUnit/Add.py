@@ -11,7 +11,7 @@ import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-MAX_EVENT = 2**32 - 1
+MAX_EVENT = 2**31 - 1
 
 
 class Add(DBFormatter):

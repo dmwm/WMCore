@@ -5,9 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import time
 
-from WMCore.WMBS.MySQL.WorkUnit.Add import Add as AddWorkUnitMySQL
-
-MAX_EVENT = 2**32 - 1
+from WMCore.WMBS.MySQL.WorkUnit.Add import Add as AddWorkUnitMySQL, MAX_EVENT
 
 
 class Add(AddWorkUnitMySQL):

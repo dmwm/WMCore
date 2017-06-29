@@ -230,7 +230,8 @@ class WorkQueueReqMgrInterface(object):
            Optionally, take a message to append to the request
         """
         if message:
-            self.logdb.post(request, str(message), 'info')
+            logType = "error" if status == "Failed" else "info"
+            self.logdb.post(request, str(message), logType)
         reqmgrStatus = self._workQueueToReqMgrStatus(status)
 
         if reqmgrStatus:  # only send known states

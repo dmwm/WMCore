@@ -1,3 +1,91 @@
+1.1.4 to 1.1.5.pre4:
+  - Merge pull request #7980 from ticoann/fix_storage_unittest
+  - fix storage unittest
+  - Merge pull request #7975 from ericvaandering/gettask_type
+  - Merge pull request #7970 from ticoann/report_failed
+  - Merge pull request #7974 from amaltaro/wmfactory-debug
+  - Merge pull request #7820 from ericvaandering/workunit_objects
+  - Merge pull request #7971 from ticoann/fix_site_white_list_wq
+  - Fix GetTask - Job ID is long, not int.
+  - Merge pull request #7976 from dmwm/lodge_unstable
+  - Update UnstableTests.txt
+  - Fixes for Oracle found during oracle testing
+  - Preemptive pylint of GetTask.py
+  - pylint fixes
+  - Remove a debug log from WMFactory
+  - Merge pull request #7973 from amaltaro/tc-template-gensim
+  - TaskChain json template no longer needed
+  - Oracle versions of tested MySQL code
+  - Add WMBS WorkUnit object and start adding a minimal DAO which passes create, delete, transaction tests Contains "exists" and "get" by task, file, run, lumi
+  - Add a basic DataStructs WorkUnit and associated tests
+  - fix race condition for site white list update
+  - add failed wf  message to log db
+  - 1.1.5.pre3
+  - Merge pull request #7969 from ticoann/t0_job_detail
+  - human readable jobdetail page
+  - Merge pull request #7966 from amaltaro/resub-resub
+  - Fix for final request dict for ACDC/Clone of ACDC
+  - Merge pull request #7930 from amaltaro/deploy-114
+  - Remove cronjob to remove sick jobs; bump example to 1.1.4
+  - 1.1.5.pre2
+  - Merge pull request #7950 from amaltaro/memory-resub
+  - Merge pull request #7947 from ticoann/script_validate_cmssw_merge
+  - Merge pull request #7961 from amaltaro/cores-assignment
+  - Merge pull request #7933 from ticoann/stageout_log
+  - Merge pull request #7964 from ticoann/errorHandler-notFound
+  - Merge pull request #7959 from mmascher/fixlumilist
+  - Merge pull request #7946 from ticoann/cmssw_merge
+  - Merge pull request #7952 from ticoann/skipped_info
+  - Raise HTTPException instead of ServerNotFoundError
+  - add unittest
+  - filter exceptions on error log for wmstats
+  - Merge pull request #7962 from ticoann/fix_python3_compatibility
+  - Merge pull request #7825 from ticoann/wq_unittest
+  - Merge pull request #7957 from amaltaro/errorHandler-rollback
+  - fix python3 compatibility (sorted)
+  - Merge pull request #7954 from ericvaandering/cleanup_splitting
+  - Use more set literals
+  - Merge pull request #7955 from goughes/just_drain_thread
+  - Allow DQMHarvest to set Memory; allow Harvesting task to get performance settings
+  - Update all tasks during assignment if Multicore is passed
+  - Merge pull request #7960 from amaltaro/resub-new-tmpl
+  - Resubmission templates following the new creation mode
+  - Fix a problem with new lumilist format
+  - Properly override tasks in a Resubmission request
+  - Merge pull request #7956 from amaltaro/run-unittests
+  - pylint fixes
+  - Rollback unfinished transactions if ErrorHandler hits an exception
+  - Remove long data type tests from Run class
+  - add site info for skipped file report
+  - Add drain thread
+  - 1.1.5.pre1
+  - Merge pull request #7937 from amaltaro/run-EpL
+  - Merge pull request #7912 from ericvaandering/set_literal
+  - improved unit tests for new events per lumi dbs info
+  - Accept plain list of lumis in the Run object
+  - Merge pull request #7951 from vkuznet/status-fix
+  - Bug fix
+  - unittest update
+  - get cmssw value from config directly for taskchain
+  - script to check cmssw version match for TaskChain
+  - Merge pull request #7913 from vkuznet/procstats
+  - Merge pull request #7948 from amaltaro/eventsPerLumi-template
+  - TaskChain template reading input dataset with events per lumi info
+  - Merge pull request #7945 from hufnagel/fix-maxint-bug
+  - New module to return status and trhead stack of the given process
+  - seems like python3 doesn't know maxint
+  - Merge pull request #7934 from hufnagel/promptreco-alca-unmerged
+  - more fine-grained options to force unmerged and use them in PromptReco
+  - Cleanup JobCreator_t.py
+  - Merge pull request #7932 from amaltaro/exitCodesFail
+  - Merge pull request #7924 from hufnagel/tier0-dashboard
+  - Merge pull request #7928 from amaltaro/file-boundaries
+  - Fail jobs with exit code 87 or 8026
+  - pylint fixes
+  - Allow jobs to cross file boundaries - wmagent version
+  - report the correct dashboard activity from Tier0, fixes #7256
+  - wq_unittest
+
 1.1.4 to 1.1.5.pre3:
   - Merge pull request #7969 from ticoann/t0_job_detail
   - human readable jobdetail page

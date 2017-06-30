@@ -59,7 +59,8 @@ class ExecuteTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.Execute.sys')
     def testRunCommand_errorAndText(self, mock_sys):
         runCommand("python %s -exception test" % self.base)
-        assert "Exception: test\n" in mock_sys.stderr.write.call_args_list[0][0][0]
+        assert "Exception: test" in mock_sys.stderr.write.call_args_list[0][0][0] or \
+               "Exception: test" in mock_sys.stderr.write.call_args_list[1][0][0]
         mock_sys.stdout.write.assert_any_call("test\n")
 
     @mock.patch('WMCore.Storage.Execute.sys')
@@ -78,5 +79,6 @@ class ExecuteTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.Execute.sys')
     def testRunCommandWithOutput_errorAndText(self, mock_sys):
         runCommand("python %s -exception test" % self.base)
-        assert "Exception: test\n" in mock_sys.stderr.write.call_args_list[0][0][0]
+        assert "Exception: test\n" in mock_sys.stderr.write.call_args_list[0][0][0] or \
+               "Exception: test" in mock_sys.stderr.write.call_args_list[1][0][0]
         mock_sys.stdout.write.assert_any_call("test\n")

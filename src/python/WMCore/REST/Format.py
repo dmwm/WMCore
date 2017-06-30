@@ -326,10 +326,14 @@ class PrettyJSONHTMLFormat(PrettyJSONFormat):
                 result += "<li><b>%s</b>: %s</li>" % (k, PrettyJSONHTMLFormat.format_obj(v))
             result += "</ul>"
         elif is_iterable(obj):
-            result = "<details><ul>"
+            empty = True
+            result = "<details open><ul>"
             for v in obj:
+                empty = False
                 result += "<li>%s</li>" % PrettyJSONHTMLFormat.format_obj(v)
             result += "</ul></details>"
+            if empty:
+                result = ""
         else:
             cherrypy.log("cannot represent object of type %s in xml (%s)"
                          % (type(obj).__class__.__name__, repr(obj)))

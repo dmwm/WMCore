@@ -12,10 +12,13 @@ import re
 import threading
 import time
 import unittest
+
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
 import WMCore.WMBase
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMComponent.TaskArchiver.CleanCouchPoller import CleanCouchPoller
+from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Database.CMSCouch import CouchServer
@@ -32,11 +35,8 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMComponent.TaskArchiver.CleanCouchPoller import CleanCouchPoller
-from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 from WMQuality.Emulators.WMSpecGenerator.ReqMgrDocGenerator import generate_reqmgr_schema
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-
 
 
 class TaskArchiverTest(unittest.TestCase):
@@ -486,9 +486,8 @@ class TaskArchiverTest(unittest.TestCase):
         jobs = jobdb.loadView("JobDump", "jobsByWorkflowName",
                               options={"startkey": [workflowName],
                                        "endkey": [workflowName, {}]})['rows']
-        fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
-                        options={"startkey": [workflowName],
-                                 "endkey": [workflowName, {}]})['rows']
+        fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName", options={"startkey": [workflowName],
+                                                                    "endkey": [workflowName, {}]})['rows']
 
         self.assertEqual(len(jobs), 2 * self.nJobs)
 
@@ -722,7 +721,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset = Fileset(id=1)
         self.assertEqual(testWMBSFileset.exists(), False)
 
-        logging.info("TaskArchiver took %f seconds" % (stopTime - startTime))
+        logging.info("TaskArchiver took %f seconds", (stopTime - startTime))
 
     def testDQMRecoPerformanceToDashBoard(self):
 
@@ -770,7 +769,7 @@ class TaskArchiverTest(unittest.TestCase):
         workload.data.request.section_("schema")
         workload.data.request.schema.RequestType = "ReReco"
         workload.data.request.schema.CMSSWVersion = 'test_compops_CMSSW_5_3_6_patch1'
-        workload.getTask('ReReco').addInputDataset(primary='a', processed='b', tier='c')
+        workload.getTask('ReReco').addInputDataset(name='/a/b/c', primary='a', processed='b', tier='c')
 
         interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets")
         interestingDatasets = []
@@ -805,11 +804,11 @@ class TaskArchiverTest(unittest.TestCase):
         if isReReco:
             release = getattr(workload.data.request.schema, "CMSSWVersion")
             if not release:
-                logging.info("no release for %s, bailing out" % workload.name())
+                logging.info("no release for %s, bailing out", workload.name())
         else:
             release = getattr(workload.tasks.Reco.steps.cmsRun1.application.setup, "cmsswVersion")
             if not release:
-                logging.info("no release for %s, bailing out" % workload.name())
+                logging.info("no release for %s, bailing out", workload.name())
 
         self.assertEqual(release, "test_compops_CMSSW_5_3_6_patch1")
         # If all is true, get the run numbers processed by this worklfow
@@ -827,7 +826,7 @@ class TaskArchiverTest(unittest.TestCase):
 
             # Publish dataset performance to DashBoard.
             if self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints) == False:
-                logging.info("something went wrong when publishing dataset %s to DashBoard" % dataset)
+                logging.info("something went wrong when publishing dataset %s to DashBoard", dataset)
 
         return
 

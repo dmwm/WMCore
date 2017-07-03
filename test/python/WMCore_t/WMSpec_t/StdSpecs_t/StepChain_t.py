@@ -7,12 +7,13 @@ _StepChain_t_
 import os
 import unittest
 from copy import deepcopy
-from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
-from WMQuality.TestInitCouchApp import TestInitCouchApp
+
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 REQUEST = {
     "AcquisitionEra": "AcquisitionEra_StepChain",
@@ -250,46 +251,80 @@ class StepChainTests(EmulatedUnitTestCase):
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "GENSIM", "GravWhatever", cachepath=self.testInit.testDir)
-        testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        outMods = {'MINIAODSIMoutput': dict(dataTier='MINIAODSIM', filterName='', transient=True,
+                                            primaryDataset=testArguments['PrimaryDataset'],
+                                            processedDataset="AcquisitionEra_StepChain-ProcessingString_StepChain-v1",
+                                            lfnBase='/store/unmerged/AcquisitionEra_StepChain/PrimaryDataset-StepChain/MINIAODSIM/ProcessingString_StepChain-v1',
+                                            mergedLFNBase='/store/data/AcquisitionEra_StepChain/PrimaryDataset-StepChain/MINIAODSIM/ProcessingString_StepChain-v1', )}
+        outDsets = ['/PrimaryDataset-StepChain/AcquisitionEra_StepChain-ProcessingString_StepChain-v1/MINIAODSIM']
 
-        # test workload properties
+        # workload level check
+        self.assertEqual(testWorkload.getRequestType(), testArguments['RequestType'])
         self.assertEqual(testWorkload.getDashboardActivity(), "production")
-        self.assertEqual(testWorkload.getCampaign(), "TaskForceUnitTest")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "AcquisitionEra_StepChain")
-        self.assertEqual(testWorkload.getProcessingString(), "ProcessingString_StepChain")
-        self.assertEqual(testWorkload.getProcessingVersion(), 1)
-        self.assertEqual(testWorkload.getPrepID(), "PREP-StepChain")
-        self.assertEqual(sorted(testWorkload.getCMSSWVersions()), ['CMSSW_7_1_25_patch2'])
-        self.assertEqual(testWorkload.data.policies.start.policyName, "MonteCarlo")
-        # test workload tasks and steps
-        tasks = testWorkload.listAllTaskNames()
-        self.assertEqual(len(tasks), 4)
-        self.assertTrue('GENSIMMergeMINIAODSIMoutput' in tasks)
+        self.assertEqual(testWorkload.getCampaign(), testArguments['Campaign'])
+        self.assertEqual(testWorkload.getAcquisitionEra(), testArguments['AcquisitionEra'])
+        self.assertEqual(testWorkload.getProcessingString(), testArguments['ProcessingString'])
+        self.assertEqual(testWorkload.getProcessingVersion(), testArguments.get('ProcessingVersion', 1))
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        self.assertItemsEqual(testWorkload.getCMSSWVersions(), [testArguments['Step1']['CMSSWVersion']])
+        self.assertEqual(testWorkload.getLumiList(), {})
+        self.assertFalse(testWorkload.getAllowOpportunistic())
+        self.assertEqual(testWorkload.getUnmergedLFNBase(), '/store/unmerged')
+        self.assertEqual(testWorkload.getMergedLFNBase(), '/store/data')
+        self.assertEqual(testWorkload.listInputDatasets(), [])
 
-        task = testWorkload.getTask(tasks[0])
-        self.assertEqual(task.taskType(), "Production", "Wrong task type")
-        splitParams = task.jobSplittingParameters()
-        self.assertEqual(splitParams['algorithm'], "EventBased", "Wrong job splitting algo")
-        self.assertEqual(splitParams['events_per_job'], 200)
-        self.assertEqual(splitParams['events_per_lumi'], 100)
-        self.assertTrue(splitParams['performance']['timePerEvent'] >= 144)
-        self.assertTrue(splitParams['performance']['sizePerEvent'] >= 512)
-        self.assertTrue(splitParams['performance']['memoryRequirement'] == 3500)
-        # test workload step stuff
-        self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'logArch1', 'stageOut1'])
+        tasksProducingOutput = ['/TestWorkload/GENSIM', '/TestWorkload/GENSIM/GENSIMMergeMINIAODSIMoutput']
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), tasksProducingOutput)
+
+        # workqueue start policy check
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
+        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 200, 'SliceType': 'NumberOfEvents',
+                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
+                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
+                                                                    'policyName': 'MonteCarlo'})
+        # workload tasks check
+        tasks = ['GENSIM', 'GENSIMMergeMINIAODSIMoutput',
+                 'GENSIMMINIAODSIMoutputMergeLogCollect', 'GENSIMCleanupUnmergedMINIAODSIMoutput']
+        self.assertItemsEqual(testWorkload.listAllTaskNames(), tasks)
+
+        # workload splitting settings check
+        splitArgs = testWorkload.listJobSplittingParametersByTask()
+        step1Splitting = splitArgs['/TestWorkload/GENSIM']
+        self.assertEqual(step1Splitting['type'], 'Production')
+        self.assertEqual(step1Splitting['algorithm'], 'EventBased')
+        self.assertEqual(step1Splitting['events_per_job'], 200)
+        self.assertEqual(step1Splitting['events_per_lumi'], 100)
+        self.assertFalse(step1Splitting['lheInputFiles'])
+        self.assertFalse(step1Splitting['trustSitelists'])
+        self.assertFalse(step1Splitting['trustPUSitelists'])
+        self.assertDictEqual(step1Splitting['performance'], {'memoryRequirement': 3500.0,
+                                                             'sizePerEvent': 512.0,
+                                                             'timePerEvent': 144.0})
+
+        # task level checks
+        task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPrepID(), testArguments['Step1'].get('PrepID', testArguments.get('PrepID')))
+        self.assertEqual(task.getSwVersion(), testArguments['Step1']['CMSSWVersion'])
+        self.assertItemsEqual(task.getScramArch(), testArguments['Step1']['ScramArch'])
+        self.assertItemsEqual(task.listAllStepNames(), ['cmsRun1', 'logArch1', 'stageOut1'])
         self.assertEqual(task.getTopStepName(), 'cmsRun1')
-        self.assertEqual(task.getStep("cmsRun1").stepType(), "CMSSW")
         self.assertFalse(task.getInputStep(), "Wrong input step")
-        outModsAndDsets = task.listOutputDatasetsAndModules()[0]
-        self.assertEqual(outModsAndDsets['outputModule'], 'MINIAODSIMoutput')
-        self.assertEqual(outModsAndDsets['outputDataset'],
-                         '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-ProcessingString_StepChain-v1/MINIAODSIM')
-        self.assertEqual(task.getSwVersion(), 'CMSSW_7_1_25_patch2')
-        self.assertItemsEqual(task.getScramArch(), ['slc6_amd64_gcc481'])
-        step = task.getStep("cmsRun1")
-        self.assertEqual(step.data.application.configuration.arguments.globalTag, 'GT-Step1')
+        # task level checks for output data
+        outModDict = task.getOutputModulesForTask(cmsRunOnly=True)[0].dictionary_()  # only 1 cmsRun process
+        self.assertItemsEqual(outModDict.keys(), outMods.keys())
+        for modName in outModDict:
+            self._validateOutputModule(modName, outModDict[modName], outMods[modName])
+
+        # step level checks
+        step = task.getStepHelper(task.getTopStepName())
+        self.assertEqual(task.getTopStepName(), 'cmsRun1')
+        self.assertEqual(step.stepType(), "CMSSW")
+        self.assertEqual(step.getCMSSWVersion(), testArguments['Step1']['CMSSWVersion'])
+        self.assertItemsEqual(step.getScramArch(), testArguments['Step1']['ScramArch'])
+        self.assertEqual(step.getGlobalTag(), testArguments['Step1'].get('GlobalTag', testArguments.get('GlobalTag')))
+
+        outputDsets = [x['outputDataset'] for x in task.listOutputDatasetsAndModules()]
+        self.assertItemsEqual(outputDsets, outDsets)
 
         return
 
@@ -303,7 +338,6 @@ class StepChainTests(EmulatedUnitTestCase):
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
-            testArguments[s]['KeepOutput'] = True
 
         factory = StepChainWorkloadFactory()
 
@@ -314,29 +348,39 @@ class StepChainTests(EmulatedUnitTestCase):
         testArguments['Step2']['KeepOutput'] = False
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "GENSIM", "MCFakeBlock", cachepath=self.testInit.testDir)
-        testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
-
-        # test workload properties
+        # workload level check
+        self.assertEqual(testWorkload.getRequestType(), testArguments['RequestType'])
         self.assertEqual(testWorkload.getDashboardActivity(), "production")
-        self.assertEqual(testWorkload.getCampaign(), "TaskForceUnitTest")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "AcquisitionEra_StepChain")
-        self.assertEqual(testWorkload.getProcessingString(), "ProcessingString_StepChain")
-        self.assertEqual(testWorkload.getProcessingVersion(), 1)
-        self.assertEqual(testWorkload.getPrepID(), "PREP-StepChain")
+        self.assertEqual(testWorkload.getCampaign(), testArguments['Campaign'])
+        self.assertEqual(testWorkload.getAcquisitionEra(), testArguments['AcquisitionEra'])
+        self.assertEqual(testWorkload.getProcessingString(), testArguments['ProcessingString'])
+        self.assertEqual(testWorkload.getProcessingVersion(), testArguments.get('ProcessingVersion', 1))
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
         self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_1_25_patch2', 'CMSSW_8_0_21'])
-        self.assertFalse(testWorkload.getLumiList(), "Wrong lumiList")
-        self.assertEqual(testWorkload.data.policies.start.policyName, "MonteCarlo")
+        self.assertEqual(testWorkload.getLumiList(), {})
+        self.assertFalse(testWorkload.getAllowOpportunistic())
+        self.assertEqual(testWorkload.getUnmergedLFNBase(), '/store/unmerged')
+        self.assertEqual(testWorkload.getMergedLFNBase(), '/store/data')
+        self.assertEqual(testWorkload.listInputDatasets(), [])
 
-        # test workload tasks and steps
-        tasks = testWorkload.listAllTaskNames()
-        self.assertEqual(len(tasks), 10)
-        for t in ['GENSIM', 'GENSIMMergeRAWSIMoutput', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
-                  'GENSIMRAWSIMoutputMergeLogCollect', 'RECOAODSIMoutputMergeLogCollect',
-                  'RECORECOSIMoutputMergeLogCollect']:
-            self.assertTrue(t in tasks, "Wrong task name")
-        self.assertFalse('ProdMinBiasMergeAODSIMoutput' in tasks, "Wrong task name")
+        tasksProducingOutput = ['/TestWorkload/GENSIM', '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput',
+                                '/TestWorkload/GENSIM/RECOMergeAODSIMoutput',
+                                '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput']
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), tasksProducingOutput)
+
+        # workqueue start policy check
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
+        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 200, 'SliceType': 'NumberOfEvents',
+                                                                    'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
+                                                                    'SubSliceType': 'NumberOfEventsPerLumi',
+                                                                    'policyName': 'MonteCarlo'})
+        # workload tasks check
+        tasks = ['GENSIM', 'GENSIMMergeRAWSIMoutput', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
+                 'GENSIMRAWSIMoutputMergeLogCollect', 'RECOAODSIMoutputMergeLogCollect',
+                 'RECORECOSIMoutputMergeLogCollect', 'GENSIMCleanupUnmergedRAWSIMoutput',
+                 'RECOCleanupUnmergedAODSIMoutput', 'RECOCleanupUnmergedRECOSIMoutput']
+        self.assertItemsEqual(testWorkload.listAllTaskNames(), tasks)
+
 
         task = testWorkload.getTask(tasks[0])
         self.assertEqual(task.name(), "GENSIM")
@@ -363,7 +407,7 @@ class StepChainTests(EmulatedUnitTestCase):
         outModsAndDsets = task.listOutputDatasetsAndModules()
         outMods = set([elem['outputModule'] for elem in outModsAndDsets])
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
-        self.assertEqual(outMods, set(['RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput']), "Wrong output modules")
+        self.assertEqual(outMods, {'RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput'}, "Wrong output modules")
         self.assertTrue(
                 '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterA-ProcessingString_StepChain-v1/GEN-SIM' in outDsets)
         self.assertTrue(
@@ -522,10 +566,72 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertTrue('/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
         return
 
-    def testStepChainOutput(self):
+    def testOutputDataSettings(self):
         """
         Build a StepChain workload defining different processed dataset name among the steps
         """
+
+        def _checkThisOutputStuff(assigned=False):
+            "Performs a bunch of tests for the output settings"
+            self.assertItemsEqual(testWorkload.listOutputDatasets(), outDsets)
+            self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
+
+            task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+            self._checkOutputDsetsAndMods(task, outMods, outDsets, lfnBases, transientMod, assigned=assigned)
+
+            # test merge tasks now
+            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput')
+            step = task.getStepHelper("cmsRun1")
+            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['RAWSIMoutput'])
+
+            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeAODSIMoutput')
+            step = task.getStepHelper("cmsRun1")
+            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['AODSIMoutput'])
+
+            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeRECOSIMoutput')
+            step = task.getStepHelper("cmsRun1")
+            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['RECOSIMoutput'])
+
+            return
+
+        outDsets = ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                    '/PrimaryDataset-StepChain/AcqEra_Step3-FilterD-ProcStr_Step3-v3/AODSIM',
+                    '/PrimaryDataset-StepChain/AcqEra_Step3-FilterC-ProcStr_Step3-v3/GEN-SIM-RECO']
+
+        outputLFNBases = ['/store/unmerged/AcqEra_Step1/PrimaryDataset-StepChain/GEN-SIM/FilterA-ProcStr_Step1-v1',
+                          '/store/data/AcqEra_Step1/PrimaryDataset-StepChain/GEN-SIM/FilterA-ProcStr_Step1-v1',
+                          '/store/unmerged/AcqEra_Step2/PrimaryDataset-StepChain/GEN-SIM-RAW/FilterB-ProcStr_Step2-v2',
+                          '/store/unmerged/AcqEra_Step3/PrimaryDataset-StepChain/GEN-SIM-RECO/FilterC-ProcStr_Step3-v3',
+                          '/store/data/AcqEra_Step3/PrimaryDataset-StepChain/GEN-SIM-RECO/FilterC-ProcStr_Step3-v3',
+                          '/store/unmerged/AcqEra_Step3/PrimaryDataset-StepChain/AODSIM/FilterD-ProcStr_Step3-v3',
+                          '/store/data/AcqEra_Step3/PrimaryDataset-StepChain/AODSIM/FilterD-ProcStr_Step3-v3']
+
+        outMods = {'RAWSIMoutput': dict(dataTier='GEN-SIM', filterName='FilterA', transient=True,
+                                        primaryDataset=REQUEST['PrimaryDataset'],
+                                        processedDataset="AcqEra_Step1-FilterA-ProcStr_Step1-v1",
+                                        lfnBase=outputLFNBases[0],
+                                        mergedLFNBase=outputLFNBases[0 + 1]),
+                   'RECOSIMoutput': dict(dataTier='GEN-SIM-RECO', filterName='FilterC', transient=True,
+                                         primaryDataset=REQUEST['PrimaryDataset'],
+                                         processedDataset="AcqEra_Step3-FilterC-ProcStr_Step3-v3",
+                                         lfnBase=outputLFNBases[3],
+                                         mergedLFNBase=outputLFNBases[3 + 1]),
+                   'AODSIMoutput': dict(dataTier='AODSIM', filterName='FilterD', transient=True,
+                                        primaryDataset=REQUEST['PrimaryDataset'],
+                                        processedDataset="AcqEra_Step3-FilterD-ProcStr_Step3-v3",
+                                        lfnBase=outputLFNBases[5],
+                                        mergedLFNBase=outputLFNBases[5 + 1])}
+        mergedMods = deepcopy(outMods)
+        mergedMods['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
+        mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3 + 1]})
+        mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[5 + 1]})
+
+        transientMod = {'RAWSIMoutput': dict(dataTier='GEN-SIM-RAW', filterName='FilterB', transient=True,
+                                        primaryDataset=REQUEST['PrimaryDataset'],
+                                        processedDataset="AcqEra_Step2-FilterB-ProcStr_Step2-v2",
+                                        lfnBase=outputLFNBases[2],
+                                        mergedLFNBase=outputLFNBases[2].replace('unmerged', 'data'))}
+
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
 
@@ -534,102 +640,133 @@ class StepChainTests(EmulatedUnitTestCase):
             testArguments[s]['ConfigCacheID'] = configDocs[s]
             testArguments[s]['AcquisitionEra'] = 'AcqEra_' + s
             testArguments[s]['ProcessingString'] = 'ProcStr_' + s
+            testArguments[s]['ProcessingVersion'] = int(s.replace('Step', ''))
+
         testArguments['Step2']['KeepOutput'] = False
 
         factory = StepChainWorkloadFactory()
-
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
-        # test workload properties
-        self.assertEqual(testWorkload.getAcquisitionEra(), "AcquisitionEra_StepChain")
-        self.assertEqual(testWorkload.getProcessingString(), "ProcessingString_StepChain")
-        self.assertEqual(testWorkload.getProcessingVersion(), 1)
+        # Case 1: only workload creation
+        lfnBases = ("/store/unmerged", "/store/data")
+        _checkThisOutputStuff()
 
-        # test workload tasks and steps
-        tasks = testWorkload.listAllTaskNames()
-        self.assertEqual(len(tasks), 10)
-        for t in ['GENSIM', 'GENSIMMergeRAWSIMoutput', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
-                  'GENSIMRAWSIMoutputMergeLogCollect', 'RECOAODSIMoutputMergeLogCollect',
-                  'RECORECOSIMoutputMergeLogCollect']:
-            self.assertTrue(t in tasks, "Wrong task name")
-        self.assertFalse('ProdMinBiasMergeAODSIMoutput' in tasks, "Wrong task name")
+        # Case 2: workload creation and assignment, with no output dataset override
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7979
+        # _checkThisOutputStuff(assigned=True)
 
-        task = testWorkload.getTask(tasks[0])
-        self.assertEqual(task.name(), "GENSIM")
-        self.assertEqual(task.getPathName(), "/TestWorkload/GENSIM")
-        self.assertEqual(task.taskType(), "Production", "Wrong task type")
+        # Case 3: workload creation and assignment, output dataset overriden with the same values
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"GENSIM": "AcqEra_Step1", "DIGI": "AcqEra_Step2", "RECO": "AcqEra_Step3"},
+                      "ProcessingString": {"GENSIM": "ProcStr_Step1", "DIGI": "ProcStr_Step2",
+                                           "RECO": "ProcStr_Step3"},
+                      "ProcessingVersion": {"GENSIM": 1, "DIGI": 2, "RECO": 3},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7981
+        # _checkThisOutputStuff(assigned=True)
 
-        # test workload and task output data stuff
-        self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'cmsRun2', 'cmsRun3', 'logArch1', 'stageOut1'])
-        outModsAndDsets = task.listOutputDatasetsAndModules()
-        outMods = [elem['outputModule'] for elem in outModsAndDsets]
-        outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
-        self.assertItemsEqual(outMods, ['RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput'], "Wrong output modules")
-        self.assertTrue('/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM' in outDsets)
-        self.assertTrue('/PrimaryDataset-StepChain/AcqEra_Step3-FilterD-ProcStr_Step3-v1/AODSIM' in outDsets)
-        self.assertTrue('/PrimaryDataset-StepChain/AcqEra_Step3-FilterC-ProcStr_Step3-v1/GEN-SIM-RECO' in outDsets)
+        # Case 4: workload creation and assignment, output dataset overriden with new values
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"GENSIM": "AcqEra_StepA", "DIGI": "AcqEra_StepB", "RECO": "AcqEra_StepC"},
+                      "ProcessingString": {"GENSIM": "ProcStr_StepA", "DIGI": "ProcStr_StepB",
+                                           "RECO": "ProcStr_StepC"},
+                      "ProcessingVersion": {"GENSIM": 41, "DIGI": 42, "RECO": 43},
+                      "MergedLFNBase": "/store/mc",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        for tp in [("Step1", "StepA"), ("Step2", "StepB"), ("Step3", "StepC")]:
+            outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
+            outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
+            for mod in outMods:
+                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                               for k, v in outMods[mod].items()}
+        for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
+            outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
+            outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
+            for mod in outMods:
+                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                for k, v in outMods[mod].items()}
+        mergedMods = deepcopy(outMods)
+        mergedMods['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
+        mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3 + 1]})
+        mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[5 + 1]})
 
-        step = task.getStepHelper("cmsRun1")
-        self.assertEqual(step.listOutputModules(), [u'RAWSIMoutput'])
-        outputData = step.getOutputModule(u'RAWSIMoutput')
-        self.assertEqual(outputData.dataTier, 'GEN-SIM')
-        self.assertTrue(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step1-FilterA-ProcStr_Step1-v1')
-
-        step = task.getStepHelper("cmsRun2")
-        self.assertEqual(step.listOutputModules(), [u'RAWSIMoutput'])
-        outputData = step.getOutputModule(u'RAWSIMoutput')
-        self.assertEqual(outputData.dataTier, 'GEN-SIM-RAW')
-        self.assertTrue(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step2-FilterB-ProcStr_Step2-v1')
-
-        step = task.getStepHelper("cmsRun3")
-        self.assertEqual(step.listOutputModules(), ['AODSIMoutput', 'RECOSIMoutput'])
-        outputData = step.getOutputModule('AODSIMoutput')
-        self.assertEqual(outputData.dataTier, 'AODSIM')
-        self.assertTrue(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step3-FilterD-ProcStr_Step3-v1')
-        outputData = step.getOutputModule('RECOSIMoutput')
-        self.assertEqual(outputData.dataTier, 'GEN-SIM-RECO')
-        self.assertTrue(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step3-FilterC-ProcStr_Step3-v1')
-
-        # test merge tasks now
-        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput')
-        self.assertEqual(task.taskType(), "Merge")
-        step = task.getStepHelper("cmsRun1")
-        self.assertEqual(step.listOutputModules(), ['Merged'])
-        outputData = step.getOutputModule('Merged')
-        self.assertEqual(outputData.dataTier, 'GEN-SIM')
-        self.assertFalse(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/data'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step1-FilterA-ProcStr_Step1-v1')
-
-        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeAODSIMoutput')
-        self.assertEqual(task.taskType(), "Merge")
-        step = task.getStepHelper("cmsRun1")
-        self.assertEqual(step.listOutputModules(), ['Merged'])
-        outputData = step.getOutputModule('Merged')
-        self.assertEqual(outputData.dataTier, 'AODSIM')
-        self.assertFalse(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/data'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step3-FilterD-ProcStr_Step3-v1')
-
-        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeRECOSIMoutput')
-        self.assertEqual(task.taskType(), "Merge")
-        step = task.getStepHelper("cmsRun1")
-        self.assertEqual(step.listOutputModules(), ['Merged'])
-        outputData = step.getOutputModule('Merged')
-        self.assertEqual(outputData.dataTier, 'GEN-SIM-RECO')
-        self.assertFalse(outputData.transient)
-        self.assertTrue(outputData.lfnBase.startswith('/store/data'))
-        self.assertEqual(outputData.processedDataset, 'AcqEra_Step3-FilterC-ProcStr_Step3-v1')
+        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7979
+        # _checkThisOutputStuff(assigned=True)
 
         return
+
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, tranMods, assigned=False):
+        """
+        Validate data related to output dataset, output modules and subscriptions
+        :param task: task object
+        :param outMods: dictionary with the output module info for this task
+        :param outDsets: dictionary with the output datasets info for this task
+        :param assigned: flag saying whether the workload was assigned or not
+        """
+        self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), [])
+
+        self.assertItemsEqual(task._getLFNBase(), lfnBases)
+        outputDsets = [x['outputDataset'] for x in task.listOutputDatasetsAndModules()]
+        self.assertItemsEqual(outputDsets, outDsets)
+
+        # saved output modules
+        outModDict = {}
+        outModDict.update(task.getOutputModulesForStep("cmsRun1").dictionary_())
+        outModDict.update(task.getOutputModulesForStep("cmsRun3").dictionary_())
+        self.assertItemsEqual(outModDict.keys(), outMods.keys())
+        for modName in outModDict:
+            self._validateOutputModule(modName, outModDict[modName], outMods[modName])
+
+        if assigned:
+            defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
+                           'DeleteFromSource': False, 'NonCustodialGroup': 'DataOps', 'CustodialSites': [],
+                           'CustodialSubType': 'Replica', 'CustodialGroup': 'DataOps', 'NonCustodialSubType': 'Replica'}
+            subscription = {dset: defaultSubs for dset in outputDsets}
+        else:
+            subscription = {}
+        self.assertDictEqual(task.getSubscriptionInformation(), subscription)
+
+        # step level checks
+        self.assertEqual(task.getTopStepName(), 'cmsRun1')
+        for run in ['cmsRun1', 'cmsRun3']:
+            step = task.getStepHelper(run)
+            for modName in step.listOutputModules():
+                self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName])
+
+        # transient output module checks
+        outModDict = task.getOutputModulesForStep("cmsRun2").dictionary_()
+        self.assertItemsEqual(outModDict.keys(), tranMods.keys())
+        for modName, outMod in outModDict.iteritems():
+            self._validateOutputModule(modName, outModDict[modName], tranMods[modName])
+        step = task.getStepHelper("cmsRun2")
+        for modName in step.listOutputModules():
+            self._validateOutputModule(modName, step.getOutputModule(modName), tranMods[modName])
+
+
+    def _validateOutputModule(self, outModName, outModObj, dictExp):
+        """
+        Make sure the task/step provided output module object contains
+        the same values as the expected from the request json settings.
+        :param outModName: output module name string
+        :param outModObj: an output module object containing a ConfigSection object
+        :param dictExp: dict with the same key/values as in the output module object
+        """
+        self.assertEqual(outModObj.dataTier, dictExp['dataTier'])
+        self.assertEqual(outModObj.filterName, dictExp['filterName'])
+        self.assertEqual(outModObj.mergedLFNBase, dictExp['mergedLFNBase'])
+        self.assertEqual(outModObj.transient, dictExp['transient'])
+        self.assertEqual(outModObj.processedDataset, dictExp['processedDataset'])
+        self.assertEqual(outModObj.primaryDataset, dictExp['primaryDataset'])
+        self.assertEqual(outModObj.lfnBase, dictExp['lfnBase'])
 
 
     def testStepMapping(self):
@@ -661,10 +798,10 @@ class StepChainTests(EmulatedUnitTestCase):
         testArguments['Step3']['ConfigCacheID'] = configDocs['Step4']
         testArguments['Step4']['ConfigCacheID'] = configDocs['Step3']
 
-        expectedTasks = set(['GENSIM', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
+        expectedTasks = {'GENSIM', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
                              'RECOAODSIMoutputMergeLogCollect', 'RECORECOSIMoutputMergeLogCollect',
-                             'RECOCleanupUnmergedAODSIMoutput', 'RECOCleanupUnmergedRECOSIMoutput'])
-        expectedSteps = set(['cmsRun1', 'cmsRun2', 'cmsRun3', 'cmsRun4', 'stageOut1', 'logArch1'])
+                             'RECOCleanupUnmergedAODSIMoutput', 'RECOCleanupUnmergedRECOSIMoutput'}
+        expectedSteps = {'cmsRun1', 'cmsRun2', 'cmsRun3', 'cmsRun4', 'stageOut1', 'logArch1'}
 
         factory = StepChainWorkloadFactory()
         # Raise exception because the last Step cannot have KeepOutput=False
@@ -852,6 +989,211 @@ class StepChainTests(EmulatedUnitTestCase):
 
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
+
+        return
+
+    def testPrepIDSettings(self):
+        """
+        Check whether each step carries the correct PrepID information
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+        # tricky business, there is only one Production/Processing task (Step1)
+        # then PrepIDs are saved in the merge tasks
+        task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3']['PrepID'])
+
+        # Now we assign it just to make sure no changes will happen to the prepid
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+
+        task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3']['PrepID'])
+
+        ### Test top level PrepID inheritance, creation only
+        testArguments['Step2'].pop('PrepID')
+        testArguments['Step3'].pop('PrepID')
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+
+        task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
+        # TODO: update the fallback PrepId to the workload level. PR issue: #7978
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+
+        # and we assign it too, better safe than sorry
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        self.assertEqual(testWorkload.getPrepID(), testArguments['PrepID'])
+        task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+
+        task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
+        task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+
+        return
+
+    def testCMSSWSettings(self):
+        """
+        Build a StepChain workload starting from scratch
+        """
+
+        def _checkCMSSWScram(workload):
+            "Validate CMSSW and ScramArch for this 3-steps template, including merge tasks"
+            # workload level check
+            self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_1_25_patch2',
+                                                                    'CMSSW_8_0_22', 'CMSSW_8_0_23'])
+            # production/processing task level check
+            task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
+            self.assertEqual(task.getSwVersion(), testArguments['Step1']["CMSSWVersion"])
+            self.assertEqual(task.getScramArch(), testArguments['Step1']["ScramArch"])
+
+            # validate production/processing steps
+            step = task.getStepHelper("cmsRun1")
+            self.assertEqual(step.getCMSSWVersion(), testArguments['Step1']["CMSSWVersion"])
+            self.assertItemsEqual(step.getScramArch(), testArguments['Step1']["ScramArch"])
+            step = task.getStepHelper("cmsRun2")
+            self.assertEqual(step.getCMSSWVersion(), testArguments['Step2']["CMSSWVersion"])
+            self.assertItemsEqual(step.getScramArch(), testArguments['Step2']["ScramArch"])
+            step = task.getStepHelper("cmsRun3")
+            self.assertEqual(step.getCMSSWVersion(), testArguments['Step3']["CMSSWVersion"])
+            self.assertItemsEqual(step.getScramArch(), testArguments['Step3']["ScramArch"])
+
+            # then validate merge tasks
+            task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
+            self.assertEqual(task.getSwVersion(), testArguments['Step1']["CMSSWVersion"])
+            self.assertEqual(task.getScramArch(), testArguments['Step1']["ScramArch"])
+            task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
+            self.assertEqual(task.getSwVersion(), testArguments['Step3']["CMSSWVersion"])
+            self.assertEqual(task.getScramArch(), testArguments['Step3']["ScramArch"])
+            task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
+            self.assertEqual(task.getSwVersion(), testArguments['Step3']["CMSSWVersion"])
+            self.assertEqual(task.getScramArch(), testArguments['Step3']["ScramArch"])
+
+            return
+
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+        testArguments['Step2']['CMSSWVersion'] = "CMSSW_8_0_22"
+        testArguments['Step2']['ScramArch'] = ["slc6_amd64_gcc530", "slc7_amd64_gcc530"]
+        testArguments['Step3']['CMSSWVersion'] = "CMSSW_8_0_23"
+
+        factory = StepChainWorkloadFactory()
+
+        # Case 1: workflow creation only
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        _checkCMSSWScram(testWorkload)
+
+        # Case 2: now we assign it just to make sure no changes will happen to the release values
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        _checkCMSSWScram(testWorkload)
+
+        return
+
+    def testInputDataSettings(self):
+        """
+        Test input data settings for a many-tasks TaskChain workload with specific
+        settings for every single task.
+        """
+        childNames = ['GENSIMMergeRAWSIMoutput', 'RECOMergeAODSIMoutput', 'RECOMergeRECOSIMoutput',
+                      'GENSIMCleanupUnmergedRAWSIMoutput', 'RECOCleanupUnmergedAODSIMoutput', 'RECOCleanupUnmergedRECOSIMoutput']
+
+        def _checkInputData(workload, sitewhitelist=None):
+            "Validate input data/block/run/step/PU for the 4-tasks request"
+            sitewhitelist = sitewhitelist or []
+            self.assertEqual(workload.listPileupDatasets().values(), [{testArguments['Step2']['MCPileup']}])
+
+            task = workload.getTaskByName(testArguments['Step1']['StepName'])
+            self.assertEqual(task.taskType(), "Production")
+            self.assertEqual(task.totalEvents(), testArguments['Step1']['RequestNumEvents'])
+            self.assertItemsEqual(task.listChildNames(), childNames)
+            self.assertEqual(task.getInputStep(), None)
+            self.assertDictEqual(task.getLumiMask(), {})
+            self.assertEqual(task.getFirstEvent(), testArguments['Step1'].get('FirstEvent', 1))
+            self.assertEqual(task.getFirstLumi(), testArguments['Step1'].get('FirstLumi', 1))
+            self.assertEqual(task.parentProcessingFlag(), testArguments['Step1'].get('IncludeParents', False))
+            self.assertEqual(task.inputDataset(), testArguments['Step1'].get('InputDataset'))
+            self.assertEqual(task.dbsUrl(), None)
+            self.assertEqual(task.inputBlockWhitelist(), testArguments['Step1'].get('inputBlockWhitelist'))
+            self.assertEqual(task.inputBlockBlacklist(), testArguments['Step1'].get('inputBlockBlacklist'))
+            self.assertEqual(task.inputRunWhitelist(), testArguments['Step1'].get('inputRunWhitelist'))
+            self.assertEqual(task.inputRunBlacklist(), testArguments['Step1'].get('inputRunBlacklist'))
+            self.assertItemsEqual(task.siteWhitelist(), sitewhitelist)
+            self.assertItemsEqual(task.siteBlacklist(), testArguments['Step1'].get('siteBlacklist', []))
+            self.assertDictEqual(task.getTrustSitelists(), {'trustPUlists': False, 'trustlists': False})
+            self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), testArguments['Step1'].get('IgnoredOutputModules', []))
+
+            # step level checks
+            task = workload.getTaskByName('GENSIMMergeRAWSIMoutput')
+            self.assertEqual(task.getInputStep(), '/TestWorkload/GENSIM/cmsRun1')
+            task = workload.getTaskByName('RECOMergeAODSIMoutput')
+            self.assertEqual(task.getInputStep(), '/TestWorkload/GENSIM/cmsRun3')
+            task = workload.getTaskByName('RECOMergeRECOSIMoutput')
+            self.assertEqual(task.getInputStep(), '/TestWorkload/GENSIM/cmsRun3')
+
+            return
+
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+
+        # Case 1: workflow creation only
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        _checkInputData(testWorkload)
+
+        # Case 2: workload assignment. Only the site whitelist is supposed to change
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
+        testWorkload.updateArguments(assignDict)
+        _checkInputData(testWorkload, sitewhitelist=["T2_US_Nebraska", "T2_IT_Rome"])
 
         return
 

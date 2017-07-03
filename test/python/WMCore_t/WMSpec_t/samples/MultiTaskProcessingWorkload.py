@@ -5,10 +5,7 @@ _Tier1ReRecoWorkload_
 
 
 """
-import os, pickle, sys, shutil
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 DBSURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
@@ -33,6 +30,7 @@ skimLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
 rereco.addInputDataset(
+    name="/Cosmics/ComissioningHI-PromptReco-v1/RECO",
     primary = "Cosmics",
     processed = "ComissioningHI-PromptReco-v1",
     tier = "RECO",
@@ -84,6 +82,7 @@ skimLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
 rereco.addInputDataset(
+    name="/Cosmics/ComissioningHI-PromptReco-v1/RECO",
     primary = "Cosmics",
     processed = "ComissioningHI-PromptReco-v1",
     tier = "RECO",

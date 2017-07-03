@@ -11,7 +11,7 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
-                                           setArgumentsWithDefault, setAssignArgumentsWithDefault)
+                                           setAssignArgumentsWithDefault)
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -317,7 +317,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _getTask_
 
-        Retrieve a task with the given name.
+        Retrieve a - top level task - with the given name.
         """
         task = getattr(self.data.tasks, taskName, None)
         if task is None:
@@ -815,12 +815,13 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Get the Request type (ReReco, ReDigi, etc)
         """
-        if not getattr(self.data, "request", None):
-            return None
-        if not getattr(self.data.request, "schema", None):
-            return None
+        if getattr(self.data, 'requestType', None):
+            return getattr(self.data, "requestType")
 
-        return getattr(self.data.request.schema, "RequestType", None)
+        if hasattr(self.data, "request"):
+            if hasattr(self.data.request, "schema"):
+                return getattr(self.data.request.schema, "RequestType", None)
+        return None
 
     def getProcessingVersion(self, taskName=None):
         """
@@ -1166,13 +1167,17 @@ class WMWorkloadHelper(PersistencyHelper):
         return outputDatasets
 
     def listAllOutputModulesLFNBases(self, initialTask=None, onlyUnmerged=True):
+        """
+        _listAllOutputModulesLFNBases_
 
+        List all output LFN bases defined in this workload object.
+        """
+        listLFNBases = set()
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
 
-        listLFNBases = set()
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
@@ -1180,8 +1185,11 @@ class WMWorkloadHelper(PersistencyHelper):
                     lfnBase = getattr(module, "lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)
-                    elif 'unmerged' in lfnBase:
+                    elif lfnBase.startswith('/store/unmerged'):
                         listLFNBases.add(lfnBase)
+            # recursively go through all the tasks
+            listLFNBases.update(self.listAllOutputModulesLFNBases(task, onlyUnmerged))
+
         return list(listLFNBases)
 
     def listPileupDatasets(self, initialTask=None):
@@ -1586,24 +1594,26 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def getCMSSWVersions(self):
+    def getCMSSWVersions(self, initialTask=None):
         """
         _getCMSSWVersions_
 
-        Pull out any CMSSW Versions we might be looking for.
+        Return a list of all CMSSW releases being used in this workload.
         """
-        versions = []
+        versions = set()
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
 
-        for task in self.taskIterator():
+        for task in taskIterator:
             for stepName in task.listAllStepNames():
-
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() != "CMSSW":
-                    continue
-                version = stepHelper.getCMSSWVersion()
-                if not version in versions:
-                    versions.append(version)
-        return versions
+                if stepHelper.stepType() == "CMSSW":
+                    versions.add(stepHelper.getCMSSWVersion())
+            versions.update(self.getCMSSWVersions(task))
+
+        return list(versions)
 
     def generateWorkloadSummary(self):
         """

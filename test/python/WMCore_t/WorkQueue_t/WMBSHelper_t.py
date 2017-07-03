@@ -949,8 +949,9 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # Swap out the dataset for one that has parents
         task = next(self.wmspec.taskIterator())
         oldDS = task.inputDataset()  # Copy the old dataset, only will use DBS URL from it
-        task.addInputDataset(dbsurl=oldDS.dbsurl, primary='Cosmics', processed='ComissioningHI-PromptReco-v1',
-                             tier='RECO')
+        task.addInputDataset(name="/Cosmics/ComissioningHI-PromptReco-v1/RECO",
+                             primary='Cosmics', processed='ComissioningHI-PromptReco-v1',
+                             tier='RECO', dbsurl=oldDS.dbsurl)
         block = '/Cosmics/ComissioningHI-PromptReco-v1/RECO' + '#5b89ba9c-0dbf-11e1-9b6c-003048caaace'
 
         # File creation without parents

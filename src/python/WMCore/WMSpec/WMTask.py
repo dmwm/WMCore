@@ -147,7 +147,7 @@ class WMTaskHelper(TreeHelper):
 
     def listPathNames(self):
         """
-        _listPathNames
+        _listPathNames_
 
         """
         for t in self.taskIterator():
@@ -155,11 +155,21 @@ class WMTaskHelper(TreeHelper):
 
     def listNames(self):
         """
-        _listPathNames
-
+        _listNames_
+        Returns a generator with the name of all the children tasks
         """
         for t in self.taskIterator():
             yield t.name()
+
+    def listChildNames(self):
+        """
+        _listChildNames_
+        Return a list with the name of the first generation children tasks
+        """
+        names = []
+        for t in self.childTaskIterator():
+            names.append(t.name())
+        return names
 
     def makeWorkflow(self):
         """
@@ -265,14 +275,16 @@ class WMTaskHelper(TreeHelper):
         helper = template.helper(step.data)
         return helper
 
-    def getOutputModulesForTask(self):
+    def getOutputModulesForTask(self, cmsRunOnly=False):
         """
         _getOutputModulesForTask_
 
         Retrieve all the output modules in the given task.
+        If cmsRunOnly is set to True, then return the output modules for
+        cmsRun steps only.
         """
         outputModules = []
-        for stepName in self.listAllStepNames():
+        for stepName in self.listAllStepNames(cmsRunOnly):
             outputModules.append(self.getOutputModulesForStep(stepName))
         return outputModules
 
@@ -679,16 +691,6 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def inputDatasetDBSURL(self):
-        """
-        _inputDatasetDBSURL_
-
-        Retrieve the DBS URL for the input dataset if it exists, none otherwise.
-        """
-        if hasattr(self.data.input, "dataset"):
-            return self.data.input.dataset.dbsurl
-        return None
-
     def setInputBlockWhitelist(self, blockWhitelist):
         """
         _setInputBlockWhitelist_
@@ -810,10 +812,7 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data.input, 'dataset'):
             if hasattr(self.data.input.dataset, 'name') and self.data.input.dataset.name:
                 return self.data.input.dataset.name
-            # TODO: Alan - remove these 3 lines below in ~HG1701
-            else:
-                ds = getattr(self.data.input, 'dataset')
-                return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
+
         return None
 
     def siteWhitelist(self):
@@ -1204,31 +1203,41 @@ class WMTaskHelper(TreeHelper):
                 self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)
         return
 
-    def getSwVersion(self):
+    def getSwVersion(self, allSteps=False):
         """
         _getSwVersion_
 
-        Get the CMSSW version for the first CMSSW step of workload.
+        Get the CMSSW version for the first CMSSW step in this task.
+        :param allSteps: set it to True to retrieve a list of CMSSW releases
+         used in this task
+        :return: a string with the release name or a list of releases if allSteps is True.
         """
-
+        versions = set()
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
-                return stepHelper.getCMSSWVersion()
-        return None
+                if not allSteps:
+                    return stepHelper.getCMSSWVersion()
+                else:
+                    versions.add(stepHelper.getCMSSWVersion(allSteps))
+        return versions
 
-    def getScramArch(self):
+    def getScramArch(self, allSteps=False):
         """
         _getScramArch_
 
         Get the scram architecture for the first CMSSW step of workload.
+        Set allSteps to true to retrieve all the scramArchs used in this task.
         """
-
+        scrams = set()
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
-                return stepHelper.getScramArch()
-        return None
+                if not allSteps:
+                    return stepHelper.getScramArch()
+                else:
+                    scrams.add(stepHelper.getScramArch(allSteps))
+        return scrams
 
     def setPrimarySubType(self, subType):
         """
@@ -1274,7 +1283,7 @@ class WMTaskHelper(TreeHelper):
         Set the task processing version
         """
         if isinstance(procVer, dict) and stepChain:
-            taskProcVer = self._getStepValue(procVer)
+            taskProcVer = self._getStepValue(procVer, parentProcessingVersion)
         elif isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
             if taskProcVer is None:
@@ -1304,7 +1313,7 @@ class WMTaskHelper(TreeHelper):
         Set the task processing string
         """
         if isinstance(procString, dict) and stepChain:
-            taskProcString = self._getStepValue(procString)
+            taskProcString = self._getStepValue(procString, parentProcessingString)
         elif isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
             if taskProcString is None:
@@ -1388,7 +1397,7 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def _getStepValue(self, keyDict):
+    def _getStepValue(self, keyDict, defaultValue):
         """
         __getStepValue_
 
@@ -1404,6 +1413,8 @@ class WMTaskHelper(TreeHelper):
             value = keyDict.get(extractedTaskName)
         elif self.taskType() in ["Production", "Processing"]:
             value = keyDict.get(self.name())
+        else:
+            value = defaultValue
 
         return value
 
@@ -1415,7 +1426,7 @@ class WMTaskHelper(TreeHelper):
         """
 
         if isinstance(era, dict) and stepChain:
-            taskEra = self._getStepValue(era)
+            taskEra = self._getStepValue(era, parentAcquisitionEra)
         elif isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
             if taskEra is None:
@@ -1442,7 +1453,7 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 
-    def setLumiMask(self, lumiMask={}, override=True):
+    def setLumiMask(self, lumiMask=None, override=True):
         """
         Attach the given LumiMask to the task
         At this point the lumi mask is just the compactList dict not the LumiList object

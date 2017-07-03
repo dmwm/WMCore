@@ -75,8 +75,8 @@
                        "exitCode": "8001"
                    },
                    {
-                       "details": "Exit 8001: CMSExeption Exception from cmsRun\n Adding last ten lines of CMSSW stderr:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n\n Adding last ten lines of CMSSW stdout:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n",
-                       "type": "CMSExeption",
+                       "details": "Exit 8001: CMSException Exception from cmsRun\n Adding last ten lines of CMSSW stderr:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n\n Adding last ten lines of CMSSW stdout:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n",
+                       "type": "CMSException",
                        "exitCode": 8001
                    }
                ],

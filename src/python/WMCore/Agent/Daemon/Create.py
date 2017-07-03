@@ -175,11 +175,7 @@ information on that.
         print(mess % pidfile)
         sys.exit(1)
 
-    stdoutLog = os.path.join(workdir, "stdout.log")
-    stderrLog = os.path.join(workdir, "stderr.log")
-
-    return daemonize(stdout = stdoutLog, stderr = stderrLog, workdir = workdir,
-                     startmsg = startmsg, keepParent = keepParent)
+    return daemonize(workdir=workdir, startmsg=startmsg, keepParent=keepParent)
 
 if __name__ == "__main__":
     parent_id = createDaemon('/tmp', keepParent = False)

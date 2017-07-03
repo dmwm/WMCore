@@ -10,6 +10,7 @@ from __future__ import print_function
 
 import functools
 from httplib import HTTPException
+
 import WMCore.Database.CMSCouch as CMSCouch
 
 
@@ -34,9 +35,10 @@ def initialiseCouch(objectRef):
         objectRef.server = CMSCouch.CouchServer(objectRef.url)
         objectRef.couchdb = objectRef.server.connectDatabase(objectRef.database)
     except HTTPException as e:
-        msg = "%s with status: %s and reason: %s" % (repr(e),
-                                                     getattr(e, 'status', ""),
-                                                     getattr(e, 'reason', ""))
+        msg = "%s with status: %s, reason: %s and result: %s" % (repr(e),
+                                                                 getattr(e, 'status', ""),
+                                                                 getattr(e, 'reason', ""),
+                                                                 getattr(e, 'result', ""))
         raise CouchConnectionError(msg)
     except Exception as e:
         msg = "Exception instantiating couch services for :\n"

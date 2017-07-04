@@ -251,7 +251,8 @@ class Requests(dict):
             e = HTTPException()
             setattr(e, 'url', uri)
             setattr(e, 'status', 503)
-            setattr(e, 'reason', str(ex))
+            setattr(e, 'reason', 'Service Unavailable')
+            setattr(e, 'result', str(ex))
             raise e
         except (socket.error, AttributeError):
             self['logger'].warn("Http request failed, retrying once again..")

@@ -1493,6 +1493,167 @@ class StepChainTests(EmulatedUnitTestCase):
         print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
+    def testDupOutputModule(self):
+        """
+        Test a StepChain saving duplicate output module
+        """
+        expOutTasks = ['/TestWorkload/GENSIM',
+                       '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput',
+                       '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput',
+                       '/TestWorkload/GENSIM/RECOMergeAODSIMoutput',
+                       '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput']
+        expWfTasks = ['/TestWorkload/GENSIM',
+                      '/TestWorkload/GENSIM/DIGICleanupUnmergedRAWSIMoutput',
+                      '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput',
+                      '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput/DIGIRAWSIMoutputMergeLogCollect',
+                      '/TestWorkload/GENSIM/GENSIMCleanupUnmergedRAWSIMoutput',
+                      '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput',
+                      '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/GENSIMRAWSIMoutputMergeLogCollect',
+                      '/TestWorkload/GENSIM/RECOCleanupUnmergedAODSIMoutput',
+                      '/TestWorkload/GENSIM/RECOCleanupUnmergedRECOSIMoutput',
+                      '/TestWorkload/GENSIM/RECOMergeAODSIMoutput',
+                      '/TestWorkload/GENSIM/RECOMergeAODSIMoutput/RECOAODSIMoutputMergeLogCollect',
+                      '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput',
+                      '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput/RECORECOSIMoutputMergeLogCollect']
+        expFsets = ['FILESET_DEFINED_DURING_RUNTIME',
+                    '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput/merged-MergedGEN-SIM-RAW',
+                    '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/merged-MergedGEN-SIM',
+                    '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/RECOMergeAODSIMoutput/merged-MergedAODSIM',
+                    '/TestWorkload/GENSIM/RECOMergeAODSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput/merged-MergedGEN-SIM-RECO',
+                    '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/unmerged-AODSIMoutputAODSIM',
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM',
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM-RAW',
+                    '/TestWorkload/GENSIM/unmerged-RECOSIMoutputGEN-SIM-RECO',
+                    '/TestWorkload/GENSIM/unmerged-logArchive']
+        # mapping of subscriptions to fileset and workflow task
+        subMaps = ['FILESET_DEFINED_DURING_RUNTIME',
+                   (6,
+                    '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput/DIGIRAWSIMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (3,
+                    '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/GENSIMRAWSIMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (9,
+                    '/TestWorkload/GENSIM/RECOMergeAODSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/RECOMergeAODSIMoutput/RECOAODSIMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (12,
+                    '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput/merged-logArchive',
+                    '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput/RECORECOSIMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (10,
+                    '/TestWorkload/GENSIM/unmerged-AODSIMoutputAODSIM',
+                    '/TestWorkload/GENSIM/RECOCleanupUnmergedAODSIMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (8,
+                    '/TestWorkload/GENSIM/unmerged-AODSIMoutputAODSIM',
+                    '/TestWorkload/GENSIM/RECOMergeAODSIMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (7,
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM-RAW',
+                    '/TestWorkload/GENSIM/DIGICleanupUnmergedRAWSIMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (5,
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM-RAW',
+                    '/TestWorkload/GENSIM/DIGIMergeRAWSIMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (4,
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM',
+                    '/TestWorkload/GENSIM/GENSIMCleanupUnmergedRAWSIMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/GENSIM/unmerged-RAWSIMoutputGEN-SIM',
+                    '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (13,
+                    '/TestWorkload/GENSIM/unmerged-RECOSIMoutputGEN-SIM-RECO',
+                    '/TestWorkload/GENSIM/RECOCleanupUnmergedRECOSIMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (11,
+                    '/TestWorkload/GENSIM/unmerged-RECOSIMoutputGEN-SIM-RECO',
+                    '/TestWorkload/GENSIM/RECOMergeRECOSIMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge')]
+
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        myMask = Mask(FirstRun=1, FirstLumi=1, FirstEvent=1, LastRun=1, LastLumi=10, LastEvent=1000)
+        testWMBSHelper = WMBSHelper(testWorkload, "GENSIM", mask=myMask,
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # same function as in WMBSHelper, otherwise we cannot know which fileset name is
+        maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
+        expFsets[0] = topFilesetName
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subMaps[0] = (1, topFilesetName, '/TestWorkload/GENSIM', 'EventBased', 'Production')
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
+
+        ### create another top level subscription
+        myMask = Mask(FirstRun=1, FirstLumi=11, FirstEvent=1001, LastRun=1, LastLumi=20, LastEvent=2000)
+        testWMBSHelper = WMBSHelper(testWorkload, "GENSIM", mask=myMask,
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # same function as in WMBSHelper, otherwise we cannot know which fileset name is
+        maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
+        expFsets.append(topFilesetName)
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subMaps.append((14, topFilesetName, '/TestWorkload/GENSIM', 'EventBased', 'Production'))
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
+
 
 if __name__ == '__main__':
     unittest.main()

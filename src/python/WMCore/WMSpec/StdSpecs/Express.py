@@ -210,7 +210,7 @@ class ExpressWorkloadFactory(StdBase):
                 alcaSkimTask.setTaskType("Express")
 
                 self.addLogCollectTask(alcaSkimTask, taskName = "AlcaSkimLogCollect")
-                self.addCleanupTask(expressTask, expressOutLabel)
+                self.addCleanupTask(expressTask, expressOutLabel, dataTier=expressOutInfo['dataTier'])
 
                 for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
 
@@ -268,7 +268,8 @@ class ExpressWorkloadFactory(StdBase):
 
         mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModuleName))
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName, dataTier=dataTier)
 
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
@@ -319,7 +320,7 @@ class ExpressWorkloadFactory(StdBase):
                              filterName = getattr(parentOutputModule, "filterName"),
                              forceMerged = True)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))
 
         return mergeTask
 

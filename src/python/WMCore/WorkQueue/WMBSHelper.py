@@ -233,18 +233,18 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.create()
         return
 
-    def outputFilesetName(self, task, outputModuleName):
+    def outputFilesetName(self, task, outputModuleName, dataTier=''):
         """
         _outputFilesetName_
 
-        Generate an output fileset name for the given task and output module.
+        Generate an output fileset name for the given task, output module and data tier.
         """
         if task.taskType() == "Merge":
-            outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                  outputModuleName)
+            outputFilesetName = "%s/merged-%s%s" % (task.getPathName(),
+                                                    outputModuleName, dataTier)
         else:
-            outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                    outputModuleName)
+            outputFilesetName = "%s/unmerged-%s%s" % (task.getPathName(),
+                                                      outputModuleName, dataTier)
 
         return outputFilesetName
 
@@ -313,29 +313,35 @@ class WMBSHelper(WMConnectionBase):
                 if outputModuleName in ignoredOutputModules:
                     logging.info("IgnoredOutputModule set for %s, skipping fileset creation.", outputModuleName)
                     continue
-                outputFileset = Fileset(self.outputFilesetName(task, outputModuleName))
+                dataTier = getattr(getattr(outputModule, outputModuleName), "dataTier", '')
+                filesetName = self.outputFilesetName(task, outputModuleName, dataTier)
+                outputFileset = Fileset(filesetName)
                 outputFileset.create()
                 outputFileset.markOpen(True)
                 mergedOutputFileset = None
 
                 for childTask in task.childTaskIterator():
                     if childTask.data.input.outputModule == outputModuleName:
-                        if childTask.taskType() == "Merge":
-                            mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
+                        childDatatier = getattr(childTask.data.input, 'dataTier', '')
+                        if childTask.taskType() in ["Cleanup", "Merge"] and childDatatier != dataTier:
+                            continue
+                        elif childTask.taskType() == "Merge" and childDatatier == dataTier:
+                            filesetName = self.outputFilesetName(childTask, "Merged", dataTier)
+                            mergedOutputFileset = Fileset(filesetName)
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
 
                             primaryDataset = getattr(getattr(outputModule, outputModuleName), "primaryDataset", None)
-                            if primaryDataset != None:
+                            if primaryDataset is not None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
                         self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
 
                 if mergedOutputFileset is None:
-                    workflow.addOutput(outputModuleName, outputFileset,
+                    workflow.addOutput(outputModuleName+dataTier, outputFileset,
                                        outputFileset)
                 else:
-                    workflow.addOutput(outputModuleName, outputFileset,
+                    workflow.addOutput(outputModuleName+dataTier, outputFileset,
                                        mergedOutputFileset)
 
         return self.topLevelSubscription

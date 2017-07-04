@@ -95,7 +95,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                                        taskConf=alcaTaskConf)
                 if self.doLogCollect:
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
-                self.addCleanupTask(recoTask, recoOutLabel)
+                self.addCleanupTask(recoTask, recoOutLabel, dataTier=recoOutInfo['dataTier'])
 
                 for alcaOutLabel in alcaOutMods:
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,

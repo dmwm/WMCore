@@ -393,11 +393,22 @@ class StepChainWorkloadFactory(StdBase):
         """
         _validateSchema_
 
-        Go over each step and make sure it matches validation parameters.
+        Settings that are not supported and will cause workflow injection to fail, are:
+         * output from the last step *must* be saved
+         * each step configuration must be a dictionary
+         * StepChain argument must reflect the number of Steps in the request
+         * usual Step arguments validation, as defined in the spec
+         * usual ConfigCacheID validation
+         * trident configuration, where 2 steps have the same output module AND datatier
         """
-        outputMods = []
-        numSteps = schema['StepChain']
-        for i in range(1, numSteps + 1):
+        outputModTier = []
+        lastStep = "Step%s" % schema['StepChain']
+        if not strToBool(schema[lastStep].get('KeepOutput', True)):
+            msg = "Dropping the output of the last step is prohibited.\n"
+            msg += "Set the 'KeepOutput' value to True and try again."
+            self.raiseValidationException(msg=msg)
+
+        for i in range(1, schema['StepChain'] + 1):
             stepNumber = "Step%s" % i
             if stepNumber not in schema:
                 msg = "No Step%s entry present in the request" % i
@@ -419,24 +430,22 @@ class StepChainWorkloadFactory(StdBase):
                                                configCacheUrl=schema['ConfigCacheUrl'],
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=False)
-
-            # keeping different outputs with the same output module is not allowed
+            # we cannot save output of two steps using the same output module and datatier(s)
             if strToBool(step.get("KeepOutput", True)):
                 configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
                                                            configCacheUrl=schema['ConfigCacheUrl'],
                                                            couchDBName=schema["CouchDBName"])
-                for outputModuleName in configOutput.keys():
-                    if outputModuleName in outputMods:
-                        msg = "StepChain does not support KeepOutput sharing the same output module."
-                        msg += "\n%s re-using outputModule: %s" % (stepNumber, outputModuleName)
+                for modName, values in configOutput.items():
+                    thisOutput = (modName, values['dataTier'])
+                    if thisOutput in outputModTier:
+                        msg = "StepChain cannot save output of different steps using "
+                        msg += "the same output module AND datatier(s)."
+                        msg += "\n%s re-using outputModule: %s and datatier: %s" % (stepNumber,
+                                                                                    modName,
+                                                                                    values['dataTier'])
                         self.raiseValidationException(msg=msg)
-                    else:
-                        outputMods.append(outputModuleName)
-
-        if 'KeepOutput' in schema[stepNumber] and not strToBool(schema[stepNumber]['KeepOutput']):
-            msg = "Dropping the output of the last step is prohibited.\n"
-            msg += "Set the 'KeepOutput' value to True and try again."
-            self.raiseValidationException(msg=msg)
+                    outputModTier.append(thisOutput)
+        return
 
     def validateStep(self, taskConf, taskArgumentDefinition):
         """

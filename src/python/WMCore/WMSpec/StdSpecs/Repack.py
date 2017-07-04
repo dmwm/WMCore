@@ -115,8 +115,9 @@ class RepackWorkloadFactory(StdBase):
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
 
@@ -152,7 +153,7 @@ class RepackWorkloadFactory(StdBase):
                              filterName = getattr(parentOutputModule, "filterName"),
                              forceMerged = True)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))
 
         return mergeTask
 

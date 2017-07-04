@@ -312,7 +312,7 @@ class AccountantWorker(WMConnectionBase):
 
         return returnList
 
-    def outputFilesetsForJob(self, outputMap, merged, moduleLabel):
+    def outputFilesetsForJob(self, outputMap, merged, moduleLabel, datatier):
         """
         _outputFilesetsForJob_
 
@@ -320,6 +320,8 @@ class AccountantWorker(WMConnectionBase):
         this will not return the JobGroup output fileset as all jobs will have
         their output placed there.
         """
+        # output map identifier uses output module + datatier
+        moduleLabel += datatier
         if moduleLabel not in outputMap:
             logging.info("Output module label missing from output map.")
             return []
@@ -471,9 +473,10 @@ class AccountantWorker(WMConnectionBase):
 
             # consistency check comparing outputMap to fileList
             # they should match except for some limited special cases
+            # as of #7998, workflow output identifier is made of output module name and datatier
             outputModules = set([])
             for fwjrFile in fileList:
-                outputModules.add(fwjrFile['outputModule'])
+                outputModules.add(fwjrFile['outputModule'] + fwjrFile['dataset'].get('dataTier', ''))
             if set(outputMap.keys()) == outputModules:
                 pass
             elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
@@ -501,7 +504,7 @@ class AccountantWorker(WMConnectionBase):
                     logging.debug("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
                     fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
                 else:
-                    logging.debug("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
+                    logging.warning("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
 
@@ -565,7 +568,8 @@ class AccountantWorker(WMConnectionBase):
                 elif jobType == "Repack" and merged and wmbsFile["size"] > self.maxAllowedRepackOutputSize:
                     pass
                 else:
-                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+                    dataTier = fwjrFile['dataset'].get('dataTier', '')
+                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel, dataTier)
                     for outputFileset in outputFilesets:
                         self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 

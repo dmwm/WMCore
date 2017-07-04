@@ -622,7 +622,6 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
         dataTier = getattr(parentOutputModule, "dataTier")
-        logging.info("ALAN StdBase mergeTask parentOutputModuleName %s and dataTier %s", parentOutputModuleName, dataTier)
         mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()

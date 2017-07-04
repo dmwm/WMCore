@@ -16,6 +16,7 @@ workflow + fileset = subscription
 
 
 
+
 from WMCore.WMBS.File import File, addFilesToWMBSInBulk
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
@@ -96,6 +97,7 @@ class Fileset(WMBSBase, WMFileset):
                                     transaction = self.existingTransaction())
             if result != False:
                 self.id = result
+
         return result
 
     def create(self):
@@ -114,7 +116,7 @@ class Fileset(WMBSBase, WMFileset):
                              transaction = self.existingTransaction())
         self.commit()
         self.loadData()
-        
+
         self.commitTransaction(existingTransaction)
         return
 

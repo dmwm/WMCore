@@ -16,7 +16,6 @@ import threading
 import logging
 import gc
 import collections
-from pprint import pformat
 
 from WMCore.FwkJobReport.Report  import Report
 from WMCore.DAOFactory           import DAOFactory
@@ -560,7 +559,6 @@ class AccountantWorker(WMConnectionBase):
         expected output map for that specific job
         """
         jobSuccess = True
-        logging.info(pformat(fileList))
 
         # there are a few special cases that we just pass as success
         outputModules = set([])

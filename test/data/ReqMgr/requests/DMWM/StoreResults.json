@@ -1,37 +1,29 @@
 {
   "assignRequest": {
-    "AcquisitionEra": "StoreResults",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "GracePeriod": 300,
-    "MaxRSS": 2400000,
-    "MaxVSize": 20000000,
-    "ProcessingString": "RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "ProcessingVersion": 19,
     "SiteBlacklist": [],
     "SiteWhitelist": [
       "SiteWhitelist-OVERRIDE-ME"
     ],
     "SoftTimeout": 129600,
-    "Team": "Team-OVERRIDE-ME",
-    "TrustSitelists": true
+    "Team": "Team-OVERRIDE-ME"
   },
   "createRequest": {
     "AcquisitionEra": "StoreResults",
-    "CMSSWVersion": "CMSSW_7_4_0_patch1",
-    "DataTier": "USER",
+    "CMSSWVersion": "CMSSW_8_0_26_patch1",
     "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
     "GlobalTag": "crab3_tag",
-    "PhysicsGroup": "HIN",
-    "InputDataset": "/HIMinBiasUPC/twang-RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728-e4923d8707beca9ac7717c2aaa486589/USER",
-    "MaxMergeEvents": 200000,
-    "MaxMergeSize": 5000000000,
-    "Memory": 2394,
+    "PhysicsGroup": "TauPOG",
+    "InputDataset": "/EmbeddingRun2016B/MuTauFinalState-imputSep16DoubleMu_mirror_miniAOD-v2/USER",
+    "Memory": 2000,
     "MergedLFNBase": "/store/results",
-    "MinMergeSize": 1500000000,
-    "ProcessingString": "RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728",
-    "ProcessingVersion": "1",
+    "ProcessingString": "imputSep16DoubleMu_mirror_miniAOD",
+    "ProcessingVersion": 1,
     "RequestType": "StoreResults",
-    "ScramArch": "slc6_amd64_gcc491",
+    "ScramArch": "slc6_amd64_gcc530",
     "SizePerEvent": 512.0,
     "TimePerEvent": 1,
     "UnmergedLFNBase": "/store/unmerged"

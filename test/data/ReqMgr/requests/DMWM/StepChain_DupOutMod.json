@@ -5,8 +5,6 @@
         "ProcessingVersion": 21,
         "Dashboard": "Dashboard-OVERRIDE-ME",
         "GracePeriod": 300,
-        "MaxRSS": 2372000,
-        "MaxVSize": 40000000,
         "MergedLFNBase": "/store/backfill/1",
         "SiteBlacklist": [],
         "SiteWhitelist": [

@@ -7,8 +7,6 @@
     },
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "GracePeriod": 300,
-    "MaxRSS": 6000000,
-    "MaxVSize": 40000000,
     "MergedLFNBase": "/store/backfill/1",
     "ProcessingString": {
       "HLTD": "ProcessingString-OVERRIDE-ME",
@@ -26,18 +24,19 @@
   },
   "createRequest": {
     "ACDCDatabase": "acdcserver",
-    "ACDCServer": "https://alan-cloud1.cern.ch/couchdb",
-    "InitialTaskPath": "/amaltaro_TaskChain_RelVal_Multicore_June_Validation_170621_124806_5085/HLTD",
+    "ACDCServer": "https://cmsweb-testbed.cern.ch/couchdb",
+    "Comments": "Overrides: HLTD Memory=1950, TpE=0.5; RECOD Memory=5950, TpE=2.0; MINIAOD Memory=1550, TpE=1.1; TrustSitelists true",
+    "InitialTaskPath": "/amaltaro_TaskChain_RelVal_Multicore_HG1707c_Validation_170705_085031_9346/HLTD/HLTDMergeRAWoutput/RECODreHLT",
     "Memory": {
       "HLTD": 1950,
       "RECODreHLT": 5950.0,
       "MINIAODDreHLT": 1550
     },
-    "OriginalRequestName": "amaltaro_TaskChain_RelVal_Multicore_June_Validation_170621_124806_5085",
+    "OriginalRequestName": "amaltaro_TaskChain_RelVal_Multicore_HG1707c_Validation_170705_085031_9346",
     "RequestPriority": 500000,
-    "RequestString": "ACDCRECO2_TaskChain_RelVal_Multicore_June_Validation",
+    "RequestString": "ACDC_RECOD_TaskChain_RelVal_Multicore_HG1707c_Validation",
     "RequestType": "Resubmission",
-    "Team": "alan-devvm",
+    "Team": "testbed-vocms0230",
     "TimePerEvent": {
       "HLTD": 0.5,
       "RECODreHLT": 2.0,

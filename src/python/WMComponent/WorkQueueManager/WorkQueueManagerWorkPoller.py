@@ -5,14 +5,14 @@ _WorkQueueManagerPoller_
 Pull work out of the work queue.
 """
 
-
-
-
 import time
 import random
 import traceback
+import threading
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.PyCondor.PyCondorAPI import isScheddOverloaded
+
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
@@ -55,17 +55,28 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         """
         _retrieveCondition_
         set true or false for given retrieve condion
-        i.e. thredshod on workqueue
+        TODO: only condition it checks now is schedd limit
+        But we can add other conditions.
+        i.e. user config for enabling schedd limit check or threshold on workqueue, etc
         """
-        return True
+
+        return (not isScheddOverloaded())
 
     def pullWork(self):
         """Get work from parent"""
         self.queue.logger.info("Pulling work from %s" % self.queue.parent_queue.queueUrl)
         work = 0
+
+        myThread = threading.currentThread()
+
         try:
             if self.retrieveCondition():
                 work = self.queue.pullWork()
+                myThread.logdbClient.delete("LocalWorkQueue_pullWork", "warning", this_thread=True)
+            else:
+                msg = "Workqueue didn't pass the retrieve condition: NOT pulling work"
+                self.queue.logger.warning(msg)
+                myThread.logdbClient.post("LocalWorkQueue_pullWork", msg, "warning")
         except IOError as ex:
             self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
                                     (str(ex), traceback.format_exc()))
@@ -81,6 +92,6 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             self.queue.processInboundWork()
         except Exception as ex:
-            self.queue.logger.exception('Error during split')
+            self.queue.logger.exception('Error during split: %s' % str(ex))
         self.logger.info('Splitting finished')
         return

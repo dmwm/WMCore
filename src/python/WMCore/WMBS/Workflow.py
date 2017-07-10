@@ -15,9 +15,10 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.WMBSBase import WMBSBase
+
 
 class Workflow(WMBSBase, WMWorkflow):
     """
@@ -33,16 +34,17 @@ class Workflow(WMBSBase, WMWorkflow):
 
     workflow + fileset = subscription
     """
-    def __init__(self, spec = None, owner = "unknown", dn = "unknown",
-                 group = "unknown", owner_vogroup = "DEFAULT",
-                 owner_vorole = "DEFAULT", name = None, task = None,
-                 wfType = None, id = -1, alternativeFilesetClose = False,
-                 priority = None):
+
+    def __init__(self, spec=None, owner="unknown", dn="unknown",
+                 group="unknown", owner_vogroup="DEFAULT",
+                 owner_vorole="DEFAULT", name=None, task=None,
+                 wfType=None, id=-1, alternativeFilesetClose=False,
+                 priority=None):
         WMBSBase.__init__(self)
-        WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
-                            group = group, owner_vogroup = owner_vogroup,
-                            owner_vorole = owner_vorole, name = name,
-                            task = task, wfType = wfType, priority = priority)
+        WMWorkflow.__init__(self, spec=spec, owner=owner, dn=dn,
+                            group=group, owner_vogroup=owner_vogroup,
+                            owner_vorole=owner_vorole, name=name,
+                            task=task, wfType=wfType, priority=priority)
 
         if self.dn == "unknown":
             self.dn = owner
@@ -58,16 +60,15 @@ class Workflow(WMBSBase, WMWorkflow):
         Determine whether or not a workflow exists with the given spec, owner
         and name.  Return the ID if the workflow exists, False otherwise.
         """
-        action = self.daofactory(classname = "Workflow.Exists")
-        result = action.execute(spec = self.spec, owner = self.dn,
-                                group_name = self.vogroup,
-                                role_name = self.vorole,
-                                name = self.name, task = self.task,
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction())
+        action = self.daofactory(classname="Workflow.Exists")
+        result = action.execute(spec=self.spec, owner=self.dn,
+                                group_name=self.vogroup,
+                                role_name=self.vorole,
+                                name=self.name, task=self.task,
+                                conn=self.getDBConn(),
+                                transaction=self.existingTransaction())
 
         return result
-
 
     def insertUser(self):
         """
@@ -78,20 +79,20 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         existingTransaction = self.beginTransaction()
 
-        userfactory = self.daofactory(classname = "Users.GetUserId")
-        userid = userfactory.execute(dn = self.dn,
-                                     group_name = self.vogroup,
-                                     role_name = self.vorole,
-                                     conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())
+        userfactory = self.daofactory(classname="Users.GetUserId")
+        userid = userfactory.execute(dn=self.dn,
+                                     group_name=self.vogroup,
+                                     role_name=self.vorole,
+                                     conn=self.getDBConn(),
+                                     transaction=self.existingTransaction())
         if not userid:
-            newuser = self.daofactory(classname = "Users.New")
-            userid  = newuser.execute(dn = self.dn, hn = self.owner,
-                                      owner = self.owner, group = self.group,
-                                      group_name = self.vogroup,
-                                      role_name = self.vorole,
-                                      conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
+            newuser = self.daofactory(classname="Users.New")
+            userid = newuser.execute(dn=self.dn, hn=self.owner,
+                                     owner=self.owner, group=self.group,
+                                     group_name=self.vogroup,
+                                     role_name=self.vorole,
+                                     conn=self.getDBConn(),
+                                     transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return userid
@@ -115,13 +116,13 @@ class Workflow(WMBSBase, WMWorkflow):
             self.commitTransaction(existingTransaction)
             return
 
-        action = self.daofactory(classname = "Workflow.New")
-        action.execute(spec = self.spec, owner = userid, name = self.name,
-                       task = self.task, wfType = self.wfType,
-                       alt_fs_close = self.alternativeFilesetClose,
-                       priority = self.priority,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction())
+        action = self.daofactory(classname="Workflow.New")
+        action.execute(spec=self.spec, owner=userid, name=self.name,
+                       task=self.task, wfType=self.wfType,
+                       alt_fs_close=self.alternativeFilesetClose,
+                       priority=self.priority,
+                       conn=self.getDBConn(),
+                       transaction=self.existingTransaction())
 
         self.id = self.exists()
         self.commitTransaction(existingTransaction)
@@ -133,9 +134,9 @@ class Workflow(WMBSBase, WMWorkflow):
 
         Remove this workflow from the database.
         """
-        action = self.daofactory(classname = "Workflow.Delete")
-        action.execute(id = self.id, conn = self.getDBConn(),
-                       transaction = self.existingTransaction())
+        action = self.daofactory(classname="Workflow.Delete")
+        action.execute(id=self.id, conn=self.getDBConn(),
+                       transaction=self.existingTransaction())
 
         return
 
@@ -151,20 +152,20 @@ class Workflow(WMBSBase, WMWorkflow):
         existingTransaction = self.beginTransaction()
 
         if self.id > 0:
-            action = self.daofactory(classname = "Workflow.LoadFromID")
-            result = action.execute(workflow = self.id,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+            action = self.daofactory(classname="Workflow.LoadFromID")
+            result = action.execute(workflow=self.id,
+                                    conn=self.getDBConn(),
+                                    transaction=self.existingTransaction())
         elif self.name != None:
-            action = self.daofactory(classname = "Workflow.LoadFromNameAndTask")
-            result = action.execute(workflow = self.name, task = self.task,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+            action = self.daofactory(classname="Workflow.LoadFromNameAndTask")
+            result = action.execute(workflow=self.name, task=self.task,
+                                    conn=self.getDBConn(),
+                                    transaction=self.existingTransaction())
         else:
-            action = self.daofactory(classname = "Workflow.LoadFromSpecOwner")
-            result = action.execute(spec = self.spec, dn = self.dn,
-                                    task = self.task, conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+            action = self.daofactory(classname="Workflow.LoadFromSpecOwner")
+            result = action.execute(spec=self.spec, dn=self.dn,
+                                    task=self.task, conn=self.getDBConn(),
+                                    transaction=self.existingTransaction())
 
         self.id = result["id"]
         self.spec = result["spec"]
@@ -178,16 +179,16 @@ class Workflow(WMBSBase, WMWorkflow):
         self.wfType = result["type"]
         self.priority = result["priority"]
 
-        action = self.daofactory(classname = "Workflow.LoadOutput")
-        results = action.execute(workflow = self.id, conn = self.getDBConn(),
-                                transaction = self.existingTransaction())
+        action = self.daofactory(classname="Workflow.LoadOutput")
+        results = action.execute(workflow=self.id, conn=self.getDBConn(),
+                                 transaction=self.existingTransaction())
 
         self.outputMap = {}
         for outputID in results.keys():
             for outputMap in results[outputID]:
-                outputFileset = Fileset(id = outputMap["output_fileset"])
+                outputFileset = Fileset(id=outputMap["output_fileset"])
                 if outputMap["merged_output_fileset"] != None:
-                    mergedOutputFileset = Fileset(id = outputMap["merged_output_fileset"])
+                    mergedOutputFileset = Fileset(id=outputMap["merged_output_fileset"])
                 else:
                     mergedOutputFileset = None
 
@@ -201,7 +202,7 @@ class Workflow(WMBSBase, WMWorkflow):
         return
 
     def addOutput(self, outputIdentifier, outputFileset,
-                  mergedOutputFileset = None):
+                  mergedOutputFileset=None):
         """
         _addOutput_
 
@@ -218,16 +219,16 @@ class Workflow(WMBSBase, WMWorkflow):
         self.outputMap[outputIdentifier].append({"output_fileset": outputFileset,
                                                  "merged_output_fileset": mergedOutputFileset})
 
-        action = self.daofactory(classname = "Workflow.InsertOutput")
+        action = self.daofactory(classname="Workflow.InsertOutput")
         if mergedOutputFileset != None:
             mergedFilesetID = mergedOutputFileset.id
         else:
             mergedFilesetID = None
 
-        action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                       filesetID = outputFileset.id, mergedFilesetID = mergedFilesetID,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction())
+        action.execute(workflowID=self.id, outputIdentifier=outputIdentifier,
+                       filesetID=outputFileset.id, mergedFilesetID=mergedFilesetID,
+                       conn=self.getDBConn(),
+                       transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return
@@ -240,8 +241,8 @@ class Workflow(WMBSBase, WMWorkflow):
         """
 
         existingTransaction = self.beginTransaction()
-        action = self.daofactory(classname = "Workflow.CountWorkflowBySpec")
-        result = action.execute(spec = self.spec)
+        action = self.daofactory(classname="Workflow.CountWorkflowBySpec")
+        result = action.execute(spec=self.spec)
         self.commitTransaction(existingTransaction)
 
         return result

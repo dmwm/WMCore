@@ -5,18 +5,17 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-import unittest
 import threading
+import unittest
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
 from WMQuality.TestInit import TestInit
 
-class WorkflowTest(unittest.TestCase):
 
+class WorkflowTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -27,8 +26,8 @@ class WorkflowTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
         return
 
     def tearDown(self):
@@ -48,8 +47,8 @@ class WorkflowTest(unittest.TestCase):
         by creating and deleting a workflow.  The exists() method will be
         called before and after creation and after deletion.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test', wfType="ReReco")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task='Test', wfType="ReReco")
 
         self.assertEqual(testWorkflow.exists(), False,
                          "ERROR: Workflow exists before it was created")
@@ -78,8 +77,8 @@ class WorkflowTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task='Test')
 
         self.assertEqual(testWorkflow.exists(), False,
                          "ERROR: Workflow exists before it was created")
@@ -106,8 +105,8 @@ class WorkflowTest(unittest.TestCase):
         is called, it doesn't exist after delete() is called and it does exist
         after the transaction is rolled back.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task='Test')
 
         self.assertEqual(testWorkflow.exists(), False,
                          "ERROR: Workflow exists before it was created")
@@ -138,16 +137,16 @@ class WorkflowTest(unittest.TestCase):
 
         Create a workflow and then try to load it from the database using the
         following load methods:
-          Workflow.LoadFromName
+          Workflow.LoadFromNameAndTask
           Workflow.LoadFromID
           Workflow.LoadFromSpecOwner
         """
-        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001", task='Test', wfType="ReReco",
-                                 priority = 1000)
+        testWorkflowA = Workflow(spec="spec.xml", owner="Simon",
+                                 name="wf001", task='Test', wfType="ReReco",
+                                 priority=1000)
         testWorkflowA.create()
 
-        testWorkflowB = Workflow(name = "wf001", task='Test')
+        testWorkflowB = Workflow(name="wf001", task='Test')
         testWorkflowB.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowB.id) and
@@ -157,9 +156,9 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.wfType == testWorkflowB.wfType) and
                         (testWorkflowA.owner == testWorkflowB.owner) and
                         (testWorkflowA.priority == testWorkflowB.priority),
-                        "ERROR: Workflow.LoadFromName Failed")
+                        "ERROR: Workflow.LoadFromNameAndTask Failed")
 
-        testWorkflowC = Workflow(id = testWorkflowA.id)
+        testWorkflowC = Workflow(id=testWorkflowA.id)
         testWorkflowC.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowC.id) and
@@ -171,7 +170,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.priority == testWorkflowB.priority),
                         "ERROR: Workflow.LoadFromID Failed")
 
-        testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
+        testWorkflowD = Workflow(spec="spec.xml", owner="Simon", task='Test')
         testWorkflowD.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowD.id) and
@@ -191,17 +190,17 @@ class WorkflowTest(unittest.TestCase):
 
         Create a workflow and then try to load it from the database using the
         following load methods:
-          Workflow.LoadFromName
+          Workflow.LoadFromNameAndTask
           Workflow.LoadFromID
           Workflow.LoadFromSpecOwner
         Test if the Workflow is created correctly.
         """
-        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 owner_vogroup = 'integration', owner_vorole = 'priority',
-                                 name = "wf001", task='Test', wfType="ReReco")
+        testWorkflowA = Workflow(spec="spec.xml", owner="Simon",
+                                 owner_vogroup='integration', owner_vorole='priority',
+                                 name="wf001", task='Test', wfType="ReReco")
         testWorkflowA.create()
 
-        testWorkflowB = Workflow(name = "wf001", task='Test')
+        testWorkflowB = Workflow(name="wf001", task='Test')
         testWorkflowB.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowB.id) and
@@ -210,9 +209,9 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.task == testWorkflowB.task) and
                         (testWorkflowA.wfType == testWorkflowB.wfType) and
                         (testWorkflowA.owner == testWorkflowB.owner),
-                        "ERROR: Workflow.LoadFromName Failed")
+                        "ERROR: Workflow.LoadFromNameAndTask Failed")
 
-        testWorkflowC = Workflow(id = testWorkflowA.id)
+        testWorkflowC = Workflow(id=testWorkflowA.id)
         testWorkflowC.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowC.id) and
@@ -223,7 +222,7 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.owner == testWorkflowC.owner),
                         "ERROR: Workflow.LoadFromID Failed")
 
-        testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
+        testWorkflowD = Workflow(spec="spec.xml", owner="Simon", task='Test')
         testWorkflowD.load()
 
         self.assertTrue((testWorkflowA.id == testWorkflowD.id) and
@@ -234,9 +233,9 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.owner == testWorkflowD.owner),
                         "ERROR: Workflow.LoadFromSpecOwner Failed")
 
-        testWorkflowE = Workflow(spec = "spec_1.xml", owner = "Simon",
-                                 owner_vogroup = 't1access', owner_vorole = 't1access',
-                                 name = "wf002", task='Test_1', wfType="ReReco")
+        testWorkflowE = Workflow(spec="spec_1.xml", owner="Simon",
+                                 owner_vogroup='t1access', owner_vorole='t1access',
+                                 name="wf002", task='Test_1', wfType="ReReco")
         testWorkflowE.create()
 
         self.assertTrue((testWorkflowE.id != testWorkflowA.id) and
@@ -259,12 +258,12 @@ class WorkflowTest(unittest.TestCase):
         Creat a workflow and add some outputs to it.  Verify that these are
         stored to and loaded from the database correctly.
         """
-        testFilesetA = Fileset(name = "testFilesetA")
-        testMergedFilesetA = Fileset(name = "testMergedFilesetA")
-        testFilesetB = Fileset(name = "testFilesetB")
-        testMergedFilesetB = Fileset(name = "testMergedFilesetB")
-        testFilesetC = Fileset(name = "testFilesetC")
-        testMergedFilesetC = Fileset(name = "testMergedFilesetC")
+        testFilesetA = Fileset(name="testFilesetA")
+        testMergedFilesetA = Fileset(name="testMergedFilesetA")
+        testFilesetB = Fileset(name="testFilesetB")
+        testMergedFilesetB = Fileset(name="testMergedFilesetB")
+        testFilesetC = Fileset(name="testFilesetC")
+        testMergedFilesetC = Fileset(name="testMergedFilesetC")
         testFilesetA.create()
         testFilesetB.create()
         testFilesetC.create()
@@ -272,11 +271,11 @@ class WorkflowTest(unittest.TestCase):
         testMergedFilesetB.create()
         testMergedFilesetC.create()
 
-        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001", task='Test')
+        testWorkflowA = Workflow(spec="spec.xml", owner="Simon",
+                                 name="wf001", task='Test')
         testWorkflowA.create()
 
-        testWorkflowB = Workflow(name = "wf001", task='Test')
+        testWorkflowB = Workflow(name="wf001", task='Test')
         testWorkflowB.load()
 
         self.assertEqual(len(testWorkflowB.outputMap.keys()), 0,
@@ -286,7 +285,7 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowA.addOutput("outModOne", testFilesetC, testMergedFilesetC)
         testWorkflowA.addOutput("outModTwo", testFilesetB, testMergedFilesetB)
 
-        testWorkflowC = Workflow(name = "wf001", task='Test')
+        testWorkflowC = Workflow(name="wf001", task='Test')
         testWorkflowC.load()
 
         self.assertEqual(len(testWorkflowC.outputMap.keys()), 2,
@@ -324,19 +323,19 @@ class WorkflowTest(unittest.TestCase):
         Verify that Workflow.LoadFromTask DAO correct loads the workflow by
         task.
         """
-        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
-                                 name = "wf001", task = "sometask")
+        testWorkflow1 = Workflow(spec="spec1.xml", owner="Hassen",
+                                 name="wf001", task="sometask")
         testWorkflow1.create()
 
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        loadFromTaskDAO = daoFactory(classname = "Workflow.LoadFromTask")
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        loadFromTaskDAO = daoFactory(classname="Workflow.LoadFromTask")
 
-        listFromTask = loadFromTaskDAO.execute(task = testWorkflow1.task)
+        listFromTask = loadFromTaskDAO.execute(task=testWorkflow1.task)
 
         self.assertEqual(len(listFromTask), 1,
-                          "ERROR: listFromTask should be 1.")
+                         "ERROR: listFromTask should be 1.")
         self.assertEqual(listFromTask[0]["task"], "sometask",
                          "ERROR: task should be sometask.")
         return
@@ -349,35 +348,34 @@ class WorkflowTest(unittest.TestCase):
         """
 
         owner = "Spiga"
-        testWorkflow1 = Workflow(spec = "spec1.xml", owner = owner,
-                                 name = "wf001", task = "MultiUser-support")
+        testWorkflow1 = Workflow(spec="spec1.xml", owner=owner,
+                                 name="wf001", task="MultiUser-support")
         testWorkflow1.create()
 
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        loadFromOwnerDAO = daoFactory(classname = "Workflow.LoadFromSpecOwner")
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        loadFromOwnerDAO = daoFactory(classname="Workflow.LoadFromSpecOwner")
 
-        listFromOwner1 = loadFromOwnerDAO.execute(task = testWorkflow1.task,
-                                                  dn   = testWorkflow1.owner,
-                                                  spec = testWorkflow1.spec )
+        listFromOwner1 = loadFromOwnerDAO.execute(task=testWorkflow1.task,
+                                                  dn=testWorkflow1.owner,
+                                                  spec=testWorkflow1.spec)
 
-        testWorkflow2 = Workflow(spec = "spec2.xml", owner = owner,
-                                 name = "wf002", task = "MultiUser-support")
+        testWorkflow2 = Workflow(spec="spec2.xml", owner=owner,
+                                 name="wf002", task="MultiUser-support")
         testWorkflow2.create()
 
-        listFromOwner2 = loadFromOwnerDAO.execute(task = testWorkflow2.task,
-                                                  dn   = testWorkflow2.owner,
-                                                  spec = testWorkflow2.spec )
+        listFromOwner2 = loadFromOwnerDAO.execute(task=testWorkflow2.task,
+                                                  dn=testWorkflow2.owner,
+                                                  spec=testWorkflow2.spec)
 
-        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Ciccio",
-                                 name = "wf003", task = "MultiUser-support")
+        testWorkflow3 = Workflow(spec="spec3.xml", owner="Ciccio",
+                                 name="wf003", task="MultiUser-support")
         testWorkflow3.create()
 
-        listFromOwner3 = loadFromOwnerDAO.execute(task = testWorkflow3.task,
-                                                  dn   = testWorkflow3.owner,
-                                                  spec = testWorkflow3.spec )
-
+        listFromOwner3 = loadFromOwnerDAO.execute(task=testWorkflow3.task,
+                                                  dn=testWorkflow3.owner,
+                                                  spec=testWorkflow3.spec)
 
         self.assertEqual(testWorkflow1.owner, owner)
         self.assertEqual(listFromOwner1["owner"], owner)
@@ -392,30 +390,28 @@ class WorkflowTest(unittest.TestCase):
         _testCountWorkflow_
 
         """
-        spec  = "spec.py"
+        spec = "spec.py"
         owner = "moron"
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        countSpecDAO = daoFactory(classname = "Workflow.CountWorkflowBySpec")
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        countSpecDAO = daoFactory(classname="Workflow.CountWorkflowBySpec")
 
         workflows = []
         for i in range(0, 10):
-            testWorkflow = Workflow(spec = spec, owner = owner,
-                                    name = "wf00%i" % i, task = "task%i" % i)
+            testWorkflow = Workflow(spec=spec, owner=owner,
+                                    name="wf00%i" % i, task="task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)
 
-        self.assertEqual(countSpecDAO.execute(spec = spec), 10)
+        self.assertEqual(countSpecDAO.execute(spec=spec), 10)
 
         for i in range(0, 10):
             wf = workflows.pop()
             wf.delete()
-            self.assertEqual(countSpecDAO.execute(spec = spec), 10 - (i + 1))
-
+            self.assertEqual(countSpecDAO.execute(spec=spec), 10 - (i + 1))
 
         return
-
 
     def testWorkflowInjectMarking(self):
         """
@@ -423,36 +419,32 @@ class WorkflowTest(unittest.TestCase):
 
         Test whether or not we can mark a workflow as injected or not.
         """
-
-        spec  = "spec.py"
         owner = "moron"
-
 
         workflows = []
         for i in range(0, 10):
-            testWorkflow = Workflow(spec = "sp00%i" % i, owner = owner,
-                                    name = "wf00%i" % i, task = "task%i" % i)
+            testWorkflow = Workflow(spec="sp00%i" % i, owner=owner,
+                                    name="wf00%i" % i, task="task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)
 
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        getAction = daoFactory(classname = "Workflow.GetInjectedWorkflows")
-        markAction = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        getAction = daoFactory(classname="Workflow.GetInjectedWorkflows")
+        markAction = daoFactory(classname="Workflow.MarkInjectedWorkflows")
 
-        result = getAction.execute(injected = True)
+        result = getAction.execute(injected=True)
         self.assertEqual(len(result), 0)
-        result = getAction.execute(injected = False)
+        result = getAction.execute(injected=False)
         self.assertEqual(len(result), 10)
 
         names = ['wf002', 'wf004', 'wf006', 'wf008']
-        markAction.execute(names = names, injected = True)
+        markAction.execute(names=names, injected=True)
 
-
-        result = getAction.execute(injected = True)
+        result = getAction.execute(injected=True)
         self.assertEqual(result, names)
-        result = getAction.execute(injected = False)
+        result = getAction.execute(injected=False)
         self.assertEqual(len(result), 6)
         return
 
@@ -468,71 +460,71 @@ class WorkflowTest(unittest.TestCase):
 
         owner = "no-one"
 
-        #Create a bunch of worklows with "different" specs and tasks
+        # Create a bunch of worklows with "different" specs and tasks
         workflows = []
         for i in range(0, 100):
             scaledIndex = i % 10
-            testWorkflow = Workflow(spec = "sp00%i" % scaledIndex,
-                                    owner = owner,
-                                    name = "wf00%i" % scaledIndex,
-                                    task = "task%i" % i)
+            testWorkflow = Workflow(spec="sp00%i" % scaledIndex,
+                                    owner=owner,
+                                    name="wf00%i" % scaledIndex,
+                                    task="task%i" % i)
             testWorkflow.create()
             workflows.append(testWorkflow)
 
-        #Everyone will use this fileset
-        testFileset = Fileset(name = "TestFileset")
+        # Everyone will use this fileset
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        #Create subscriptions!
+        # Create subscriptions!
         subscriptions = []
         for workflow in workflows:
-            subscription = Subscription(fileset = testFileset,
-                                        workflow = workflow)
+            subscription = Subscription(fileset=testFileset,
+                                        workflow=workflow)
             subscription.create()
             subscriptions.append(subscription)
 
-        #Check that all workflows are NOT finished
+        # Check that all workflows are NOT finished
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
 
-        getFinishedDAO = daoFactory(classname = "Workflow.GetFinishedWorkflows")
+        getFinishedDAO = daoFactory(classname="Workflow.GetFinishedWorkflows")
         result = getFinishedDAO.execute()
         self.assertEqual(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
-        #Mark the first 50 subscriptions as finished
+        # Mark the first 50 subscriptions as finished
         for idx, sub in enumerate(subscriptions):
             if idx > 49:
                 break
             sub.markFinished()
 
-        #No workflow is finished, none of them has all the subscriptions completed
+        # No workflow is finished, none of them has all the subscriptions completed
         result = getFinishedDAO.execute()
         self.assertEqual(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
-        #Now finish all workflows in wf{000-5}
+        # Now finish all workflows in wf{000-5}
         for idx, sub in enumerate(subscriptions):
             if idx < 50 or idx % 10 > 5:
                 continue
             sub.markFinished()
 
-        #Check the workflows
+        # Check the workflows
         result = getFinishedDAO.execute()
         self.assertEqual(len(result), 6, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
-        #Check the overall structure of the workflows
+        # Check the overall structure of the workflows
         for wf in result:
-            #Sanity checks on the results
+            # Sanity checks on the results
             # These are very specific checks and depends heavily on the names of task, spec and workflow
             self.assertEqual(wf[2:], result[wf]['spec'][2:],
-                            "A workflow has the wrong spec-name combination: %s" % str(wf))
+                             "A workflow has the wrong spec-name combination: %s" % str(wf))
             self.assertTrue(int(wf[2:]) < 6,
                             "A workflow is incorrectly flagged as finished: %s" % str(wf))
             self.assertEqual(len(result[wf]['workflows']), 10,
-                              "A workflow has more tasks than it should: %s" % str(result[wf]))
+                             "A workflow has more tasks than it should: %s" % str(result[wf]))
             for task in result[wf]['workflows']:
                 self.assertEqual(len(result[wf]['workflows'][task]), 1,
-                                  "A workflow has more subscriptions than it should: %s" % str(result[wf]))
+                                 "A workflow has more subscriptions than it should: %s" % str(result[wf]))
 
         return
 

@@ -4,17 +4,20 @@ _ReReco_t_
 
 Unit tests for the ReReco workflow.
 """
+from __future__ import print_function
 
-import unittest
 import os
+import threading
+import unittest
+from pprint import pformat
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
@@ -34,6 +37,15 @@ class ReRecoTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("rereco_t")
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+
         return
 
     def tearDown(self):
@@ -65,6 +77,23 @@ class ReRecoTest(unittest.TestCase):
                                                                                   'dataTier': 'RECO'}},
                                                        "DQMoutput": {'dataset': {'filterName': 'DQMoutputFilter',
                                                                                  'dataTier': 'DQM'}}}}
+        result = self.configDatabase.commitOne(newConfig)
+        return result[0]["id"]
+
+    def injectDQMHarvestConfig(self):
+        """
+        _injectDQMHarvest_
+
+        Create a bogus config cache document for DQMHarvest and
+        inject it into couch.  Return the ID of the document.
+        """
+        newConfig = Document()
+        newConfig["info"] = None
+        newConfig["config"] = None
+        newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e234f"
+        newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10876a7"
+        newConfig["owner"] = {"group": "DATAOPS", "user": "amaltaro"}
+        newConfig["pset_tweak_details"] = {"process": {"outputModules_": []}}
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
 
@@ -107,7 +136,7 @@ class ReRecoTest(unittest.TestCase):
         dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
         dataProcArguments["CouchDBName"] = "rereco_t"
         dataProcArguments["EnableHarvesting"] = True
-        dataProcArguments["DQMConfigCacheID"] = recoConfig
+        dataProcArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
 
         factory = ReRecoWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
@@ -388,7 +417,7 @@ class ReRecoTest(unittest.TestCase):
             skimMergeLogCollect.loadData()
             skimMergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                    task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkim%s/SomeSkimSkim%sMergeLogCollect" % (
-                                                   skimOutput, skimOutput))
+                                                       skimOutput, skimOutput))
             skimMergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset=skimMergeLogCollect, workflow=skimMergeLogCollectWorkflow)
             logCollectSub.loadData()
@@ -462,7 +491,7 @@ class ReRecoTest(unittest.TestCase):
         dataProcArguments["CouchDBName"] = "rereco_t"
         dataProcArguments["TransientOutputModules"] = ["RECOoutput"]
         dataProcArguments["EnableHarvesting"] = True
-        dataProcArguments["DQMConfigCacheID"] = recoConfig
+        dataProcArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
 
         factory = ReRecoWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
@@ -585,7 +614,7 @@ class ReRecoTest(unittest.TestCase):
             skimMergeLogCollect.loadData()
             skimMergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                    task="/TestWorkload/DataProcessing/SomeSkim/SomeSkimMergeSkim%s/SomeSkimSkim%sMergeLogCollect" % (
-                                                   skimOutput, skimOutput))
+                                                       skimOutput, skimOutput))
             skimMergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset=skimMergeLogCollect, workflow=skimMergeLogCollectWorkflow)
             logCollectSub.loadData()
@@ -614,7 +643,7 @@ class ReRecoTest(unittest.TestCase):
         dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
         dataProcArguments["CouchDBName"] = "rereco_t"
         dataProcArguments["EnableHarvesting"] = True
-        dataProcArguments["DQMConfigCacheID"] = recoConfig
+        dataProcArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
 
         factory = ReRecoWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
@@ -664,6 +693,176 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(perfParams['memoryRequirement'], dataProcArguments["Memory"])
 
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/DataProcessing',
+                       '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput',
+                       '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim',
+                       '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA',
+                       '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB',
+                       '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput']
+        expWfTasks = ['/TestWorkload/DataProcessing',
+                      '/TestWorkload/DataProcessing/DataProcessingCleanupUnmergedDQMoutput',
+                      '/TestWorkload/DataProcessing/DataProcessingCleanupUnmergedRECOoutput',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingDQMoutputMergeLogCollect',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/DataProcessingMergeDQMoutputMergedEndOfRunDQMHarvestLogCollect',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/DataProcessingRECOoutputMergeLogCollect',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimCleanupUnmergedSkimA',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimCleanupUnmergedSkimB',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimLogCollect',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA/SomeSkimSkimAMergeLogCollect',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB',
+                      '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB/SomeSkimSkimBMergeLogCollect',
+                      '/TestWorkload/DataProcessing/LogCollect']
+        expFsets = ['TestWorkload-DataProcessing-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/DataProcessing/unmerged-RECOoutput',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimA',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimB',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/unmerged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive',
+                    '/TestWorkload/DataProcessing/unmerged-DQMoutput',
+                    '/TestWorkload/DataProcessing/unmerged-logArchive']
+        subMaps = [(15,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/unmerged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged/DataProcessingMergeDQMoutputMergedEndOfRunDQMHarvestLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (16,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingDQMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (14,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged',
+                    'Harvest',
+                    'Harvesting'),
+                   (11,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/DataProcessingRECOoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (3,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/merged-Merged',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim',
+                    'FileBased',
+                    'Skim'),
+                   (5,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA/SomeSkimSkimAMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (8,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB/merged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB/SomeSkimSkimBMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (10,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (6,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimA',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimCleanupUnmergedSkimA',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (4,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimA',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimA',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (9,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimB',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimCleanupUnmergedSkimB',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (7,
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-SkimB',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMergeSkimB',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (17,
+                    '/TestWorkload/DataProcessing/unmerged-DQMoutput',
+                    '/TestWorkload/DataProcessing/DataProcessingCleanupUnmergedDQMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (13,
+                    '/TestWorkload/DataProcessing/unmerged-DQMoutput',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (18,
+                    '/TestWorkload/DataProcessing/unmerged-logArchive',
+                    '/TestWorkload/DataProcessing/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (12,
+                    '/TestWorkload/DataProcessing/unmerged-RECOoutput',
+                    '/TestWorkload/DataProcessing/DataProcessingCleanupUnmergedRECOoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/DataProcessing/unmerged-RECOoutput',
+                    '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (1,
+                    'TestWorkload-DataProcessing-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/DataProcessing',
+                    'EventAwareLumiBased',
+                    'Processing')]
+
+        testArguments = ReRecoWorkloadFactory.getTestArguments()
+        testArguments["ConfigCacheID"] = self.injectReRecoConfig()
+        testArguments.update({"SkimName1": "SomeSkim",
+                              "SkimInput1": "RECOoutput",
+                              "Skim1ConfigCacheID": self.injectSkimConfig()})
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "rereco_t"
+        testArguments["EnableHarvesting"] = True
+        testArguments["DQMConfigCacheID"] = self.injectDQMHarvestConfig()
+
+        factory = ReRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

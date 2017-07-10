@@ -5,21 +5,48 @@ _Repack_t_
 Unit tests for the Tier0 Repack workflow.
 """
 
-from __future__ import division
+from __future__ import division, print_function
 
+import threading
 import unittest
+from copy import deepcopy
+from pprint import pformat
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.StdSpecs.Repack import RepackWorkloadFactory
-
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
+REQUEST = {
+    'MaxSizeSingleLumi': 12 * 1024 * 1024 * 1024,
+    'MaxSizeMultiLumi': 8 * 1024 * 1024 * 1024,
+    'MinInputSize': 2.1 * 1024 * 1024 * 1024,
+    'MaxInputSize': 4 * 1024 * 1024 * 1024,
+    'MaxEdmSize': 12 * 1024 * 1024 * 1024,
+    'MaxOverSize': 8 * 1024 * 1024 * 1024,
+    'MaxInputEvents': 3 * 1000 * 1000,
+    'MaxInputFiles': 1000,
+    'MaxLatency': 24 * 3600,
+    'MinMergeSize': 2.1 * 1024 * 1024 * 1024,
+    'MaxMergeEvents': 3 * 1000 * 1000,
+    'RunNumber': 123456,
+    'AcquisitionEra': "TestAcquisitionEra",
+    'ValidStatus': "VALID",
+    'Outputs': [{'dataTier': "RAW",
+                 'eventContent': "All",
+                 'selectEvents': ["Path1:HLT,Path2:HLT"],
+                 'primaryDataset': "PrimaryDataset1"},
+                {'dataTier': "RAW",
+                 'eventContent': "All",
+                 'selectEvents': ["Path3:HLT,Path4:HLT"],
+                 'primaryDataset': "PrimaryDataset2"}]
+}
 
-class Repack(unittest.TestCase):
+
+class RepackTests(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -32,6 +59,15 @@ class Repack(unittest.TestCase):
         self.testInit.setSchema(customModules=["WMCore.WMBS"],
                                 useDefault=False)
         self.testDir = self.testInit.generateWorkDir()
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+
         return
 
     def tearDown(self):
@@ -44,7 +80,6 @@ class Repack(unittest.TestCase):
         self.testInit.delWorkDir()
         return
 
-
     def testRepack(self):
         """
         _testRepack_
@@ -53,30 +88,7 @@ class Repack(unittest.TestCase):
         and verify it installs into WMBS correctly.
         """
         testArguments = RepackWorkloadFactory.getTestArguments()
-        testArguments['MaxSizeSingleLumi'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxSizeMultiLumi'] = 8 * 1024 * 1024 * 1024
-        testArguments['MinInputSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxInputSize'] = 4 * 1024 * 1024 * 1024
-        testArguments['MaxEdmSize'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxOverSize'] = 8 * 1024 * 1024 * 1024
-        testArguments['MaxInputEvents'] = 3 * 1000 * 1000
-        testArguments['MaxInputFiles'] = 1000
-        testArguments['MaxLatency'] = 24 * 3600
-        testArguments['MinMergeSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxMergeEvents'] = 3 * 1000 * 1000
-        testArguments['RunNumber'] = 123456
-        testArguments['AcquisitionEra'] = "TestAcquisitionEra"
-        testArguments['ValidStatus'] = "VALID"
-
-        testArguments['Outputs'] = []
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path1:HLT,Path2:HLT"],
-                                           'primaryDataset' : "PrimaryDataset1" } )
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path3:HLT,Path4:HLT"],
-                                           'primaryDataset' : "PrimaryDataset2" } )
+        testArguments.update(deepcopy(REQUEST))
 
         factory = RepackWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -101,7 +113,8 @@ class Repack(unittest.TestCase):
             unmergedOutput.loadData()
 
             if goldenOutputMod != "write_PrimaryDataset1_RAW":
-                self.assertEqual(mergedOutput.name, "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+                self.assertEqual(mergedOutput.name,
+                                 "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
                                  "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
             self.assertEqual(unmergedOutput.name, "/TestWorkload/Repack/unmerged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
@@ -131,9 +144,11 @@ class Repack(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
-            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(mergedMergeOutput.name,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong.")
-            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(unmergedMergeOutput.name,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -141,9 +156,11 @@ class Repack(unittest.TestCase):
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
 
-            self.assertEqual(logArchOutput.name, "/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(logArchOutput.name,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
-            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(unmergedLogArchOutput.name,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name="TestWorkload-Repack")
@@ -190,7 +207,7 @@ class Repack(unittest.TestCase):
         repackLogCollect = Fileset(name="/TestWorkload/Repack/unmerged-logArchive")
         repackLogCollect.loadData()
         repackLogCollectWorkflow = Workflow(name="TestWorkload",
-                                          task="/TestWorkload/Repack/LogCollect")
+                                            task="/TestWorkload/Repack/LogCollect")
         repackLogCollectWorkflow.load()
         logCollectSub = Subscription(fileset=repackLogCollect, workflow=repackLogCollectWorkflow)
         logCollectSub.loadData()
@@ -202,10 +219,12 @@ class Repack(unittest.TestCase):
 
         goldenOutputMods = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
         for goldenOutputMod in goldenOutputMods:
-            repackMergeLogCollect = Fileset(name="/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod)
+            repackMergeLogCollect = Fileset(
+                name="/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod)
             repackMergeLogCollect.loadData()
             repackMergeLogCollectWorkflow = Workflow(name="TestWorkload",
-                                                     task="/TestWorkload/Repack/RepackMerge%s/Repack%sMergeLogCollect" % (goldenOutputMod, goldenOutputMod))
+                                                     task="/TestWorkload/Repack/RepackMerge%s/Repack%sMergeLogCollect" % (
+                                                         goldenOutputMod, goldenOutputMod))
             repackMergeLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=repackMergeLogCollect, workflow=repackMergeLogCollectWorkflow)
             logCollectSubscription.loadData()
@@ -217,7 +236,6 @@ class Repack(unittest.TestCase):
 
         return
 
-
     def testMemCoresSettings(self):
         """
         _testMemCoresSettings_
@@ -226,30 +244,7 @@ class Repack(unittest.TestCase):
         all tasks and steps.
         """
         testArguments = RepackWorkloadFactory.getTestArguments()
-        testArguments['MaxSizeSingleLumi'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxSizeMultiLumi'] = 8 * 1024 * 1024 * 1024
-        testArguments['MinInputSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxInputSize'] = 4 * 1024 * 1024 * 1024
-        testArguments['MaxEdmSize'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxOverSize'] = 8 * 1024 * 1024 * 1024
-        testArguments['MaxInputEvents'] = 3 * 1000 * 1000
-        testArguments['MaxInputFiles'] = 1000
-        testArguments['MaxLatency'] = 24 * 3600
-        testArguments['MinMergeSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxMergeEvents'] = 3 * 1000 * 1000
-        testArguments['RunNumber'] = 123456
-        testArguments['AcquisitionEra'] = "TestAcquisitionEra"
-        testArguments['ValidStatus'] = "VALID"
-
-        testArguments['Outputs'] = []
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path1:HLT,Path2:HLT"],
-                                           'primaryDataset' : "PrimaryDataset1" } )
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path3:HLT,Path4:HLT"],
-                                           'primaryDataset' : "PrimaryDataset2" } )
+        testArguments.update(deepcopy(REQUEST))
 
         factory = RepackWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -267,35 +262,10 @@ class Repack(unittest.TestCase):
             self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         # now test case where args are provided
-        testArguments = RepackWorkloadFactory.getTestArguments()
-        testArguments['MaxSizeSingleLumi'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxSizeMultiLumi'] = 8 * 1024 * 1024 * 1024
-        testArguments['MinInputSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxInputSize'] = 4 * 1024 * 1024 * 1024
-        testArguments['MaxEdmSize'] = 12 * 1024 * 1024 * 1024
-        testArguments['MaxOverSize'] = 8 * 1024 * 1024 * 1024
-        testArguments['MaxInputEvents'] = 3 * 1000 * 1000
-        testArguments['MaxInputFiles'] = 1000
-        testArguments['MaxLatency'] = 24 * 3600
-        testArguments['MinMergeSize'] = 2.1 * 1024 * 1024 * 1024
-        testArguments['MaxMergeEvents'] = 3 * 1000 * 1000
-        testArguments['RunNumber'] = 123456
-        testArguments['AcquisitionEra'] = "TestAcquisitionEra"
-        testArguments['ValidStatus'] = "VALID"
-
-        testArguments['Outputs'] = []
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path1:HLT,Path2:HLT"],
-                                           'primaryDataset' : "PrimaryDataset1" } )
-        testArguments['Outputs'].append( { 'dataTier' : "RAW",
-                                           'eventContent' : "All",
-                                           'selectEvents' : ["Path3:HLT,Path4:HLT"],
-                                           'primaryDataset' : "PrimaryDataset2" } )
-
         testArguments["Multicore"] = 6
         testArguments["Memory"] = 4600.0
         testArguments["EventStreams"] = 3
+        testArguments["Outputs"] = deepcopy(REQUEST['Outputs'])
 
         factory = RepackWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -318,6 +288,100 @@ class Repack(unittest.TestCase):
             self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
 
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/Repack',
+                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
+                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW']
+        expWfTasks = ['/TestWorkload/Repack',
+                      '/TestWorkload/Repack/LogCollect',
+                      '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_RAW',
+                      '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/Repackwrite_PrimaryDataset1_RAWMergeLogCollect',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
+                      '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect']
+        expFsets = ['TestWorkload-Repack-StreamerFiles',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-Merged',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-MergedError',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-Merged',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedError',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/unmerged-logArchive']
+        subMaps = [(3,
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/Repackwrite_PrimaryDataset1_RAWMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (6,
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (8,
+                    '/TestWorkload/Repack/unmerged-logArchive',
+                    '/TestWorkload/Repack/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (4,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
+                    '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_RAW',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
+                    'RepackMerge',
+                    'Merge'),
+                   (7,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (5,
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
+                    'RepackMerge',
+                    'Merge'),
+                   (1,
+                    'TestWorkload-Repack-StreamerFiles',
+                    '/TestWorkload/Repack',
+                    'Repack',
+                    'Repack')]
+
+        testArguments = RepackWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        factory = RepackWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "Repack", blockName='StreamerFiles',
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

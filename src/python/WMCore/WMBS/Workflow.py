@@ -156,7 +156,7 @@ class Workflow(WMBSBase, WMWorkflow):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         elif self.name != None:
-            action = self.daofactory(classname = "Workflow.LoadFromName")
+            action = self.daofactory(classname = "Workflow.LoadFromNameAndTask")
             result = action.execute(workflow = self.name, task = self.task,
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())

@@ -4,10 +4,14 @@ _ReDigi_t_
 
 Unit tests for the ReDigi workflow.
 """
+from __future__ import print_function
 
 import os
+import threading
 import unittest
+from pprint import pformat
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -89,6 +93,14 @@ class ReDigiTest(EmulatedUnitTestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("redigi_t")
 
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+
         return
 
     def tearDown(self):
@@ -137,43 +149,43 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepOneLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepOneLogArchiveFileset.loadData()
         stepOneMergeLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-logArchive")
         stepOneMergeLogArchiveFileset.loadData()
 
         stepTwoUnmergedDQMFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-DQMoutput")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-DQMoutput")
         stepTwoUnmergedDQMFileset.loadData()
         stepTwoUnmergedRECOFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-RECODEBUGoutput")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-RECODEBUGoutput")
         stepTwoUnmergedRECOFileset.loadData()
         stepTwoMergedDQMFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-Merged")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
         stepTwoMergedRECOFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-Merged")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeDQMLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
         stepTwoMergeRECOLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
         stepThreeUnmergedAODFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-aodOutputModule")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-aodOutputModule")
         stepThreeUnmergedAODFileset.loadData()
         stepThreeMergedAODFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-Merged")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-Merged")
         stepThreeMergedAODFileset.loadData()
         stepThreeLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-logArchive")
         stepThreeLogArchiveFileset.loadData()
 
         stepThreeMergeLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-logArchive")
         stepThreeMergeLogArchiveFileset.loadData()
 
         stepOneWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -460,15 +472,15 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepTwoMergedDQMFileset = Fileset(name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
         stepTwoMergedRECOFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeDQMLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
         stepTwoMergeRECOLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
         stepTwoWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -601,12 +613,12 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepTwoUnmergedAODFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-aodOutputModule")
         stepTwoUnmergedAODFileset.loadData()
         stepTwoMergedAODFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged")
         stepTwoMergedAODFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeAODLogArchiveFileset = Fileset(
-                name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive")
+            name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive")
         stepTwoMergeAODLogArchiveFileset.loadData()
 
         stepTwoWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -1111,6 +1123,180 @@ class ReDigiTest(EmulatedUnitTestCase):
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
         return
+
+    def test1StepFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation for a single step ReDigi
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/StepOneProc',
+                       '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule']
+        expWfTasks = ['/TestWorkload/StepOneProc',
+                      '/TestWorkload/StepOneProc/LogCollect',
+                      '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedaodOutputModule',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/StepOneProcaodOutputModuleMergeLogCollect']
+        expFsets = ['TestWorkload-StepOneProc-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged',
+                    '/TestWorkload/StepOneProc/unmerged-aodOutputModule',
+                    '/TestWorkload/StepOneProc/unmerged-logArchive']
+        subMaps = [(3,
+                    '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/StepOneProcaodOutputModuleMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (4,
+                    '/TestWorkload/StepOneProc/unmerged-aodOutputModule',
+                    '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedaodOutputModule',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/StepOneProc/unmerged-aodOutputModule',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (5,
+                    '/TestWorkload/StepOneProc/unmerged-logArchive',
+                    '/TestWorkload/StepOneProc/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (1,
+                    'TestWorkload-StepOneProc-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StepOneProc',
+                    'EventAwareLumiBased',
+                    'Processing')]
+
+        testArguments = ReDigiWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        testArguments["StepOneConfigCacheID"] = configs[2]
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
+
+    def test2StepFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation for a double steps ReDigi
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/StepOneProc',
+                       '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput',
+                       '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput']
+        expWfTasks = ['/TestWorkload/StepOneProc',
+                      '/TestWorkload/StepOneProc/LogCollect',
+                      '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedDQMoutput',
+                      '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedRECODEBUGoutput',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/StepOneProcDQMoutputMergeLogCollect',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput',
+                      '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/StepOneProcRECODEBUGoutputMergeLogCollect']
+        expFsets = ['TestWorkload-StepOneProc-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StepOneProc/unmerged-DQMoutput',
+                    '/TestWorkload/StepOneProc/unmerged-RAWDEBUGoutput',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-Merged',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged',
+                    '/TestWorkload/StepOneProc/unmerged-logArchive',
+                    '/TestWorkload/StepOneProc/unmerged-RECODEBUGoutput']
+        subMaps = [(3,
+                    '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/StepOneProcDQMoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (6,
+                    '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/StepOneProcRECODEBUGoutputMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (4,
+                    '/TestWorkload/StepOneProc/unmerged-DQMoutput',
+                    '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedDQMoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/StepOneProc/unmerged-DQMoutput',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (8,
+                    '/TestWorkload/StepOneProc/unmerged-logArchive',
+                    '/TestWorkload/StepOneProc/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (7,
+                    '/TestWorkload/StepOneProc/unmerged-RECODEBUGoutput',
+                    '/TestWorkload/StepOneProc/StepOneProcCleanupUnmergedRECODEBUGoutput',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (5,
+                    '/TestWorkload/StepOneProc/unmerged-RECODEBUGoutput',
+                    '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (1,
+                    'TestWorkload-StepOneProc-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StepOneProc',
+                    'EventAwareLumiBased',
+                    'Processing')]
+
+        testArguments = ReDigiWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        testArguments["StepOneConfigCacheID"] = configs[0]
+        testArguments["StepTwoConfigCacheID"] = configs[1]
+        testArguments["KeepStepOneOutput"] = False
+        testArguments["KeepStepTwoOutput"] = True
+        testArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        testArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "StepOneProc", blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

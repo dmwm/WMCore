@@ -4,9 +4,13 @@ _StoreResults_t_
 
 Unit tests for the StoreResults workflow.
 """
+from __future__ import print_function
 
+import threading
 import unittest
+from pprint import pformat
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
@@ -28,6 +32,15 @@ class StoreResultsTest(unittest.TestCase):
         self.testInit.setSchema(customModules=["WMCore.WMBS"],
                                 useDefault=False)
         self.testDir = self.testInit.generateWorkDir()
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+
         return
 
     def tearDown(self):
@@ -51,8 +64,7 @@ class StoreResultsTest(unittest.TestCase):
         arguments.update({'CmsPath': "/uscmst1/prod/sw/cms"})
 
         factory = StoreResultsWorkloadFactory()
-        testWorkload = factory.factoryWorkloadConstruction("TestWorkload",
-                                                           arguments)
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
 
         testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath=self.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -100,6 +112,55 @@ class StoreResultsTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/StoreResults']
+        expWfTasks = ['/TestWorkload/StoreResults',
+                      '/TestWorkload/StoreResults/StoreResultsLogCollect']
+        expFsets = ['TestWorkload-StoreResults-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StoreResults/merged-Merged',
+                    '/TestWorkload/StoreResults/merged-logArchive']
+        subMaps = [(2,
+                    '/TestWorkload/StoreResults/merged-logArchive',
+                    '/TestWorkload/StoreResults/StoreResultsLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (1,
+                    'TestWorkload-StoreResults-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/StoreResults',
+                    'ParentlessMergeBySize',
+                    'Merge')]
+
+        testArguments = StoreResultsWorkloadFactory.getTestArguments()
+        testArguments.update({'CmsPath': "/uscmst1/prod/sw/cms"})
+
+        factory = StoreResultsWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

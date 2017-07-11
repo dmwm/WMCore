@@ -4,21 +4,22 @@ _PromptReco_t_
 
 Unit tests for the new Tier1 PromptReconstruction workflow.
 """
+from __future__ import print_function
 
-import unittest
 import os
+import threading
+import unittest
+from pprint import pformat
 
+from WMCore.Configuration import ConfigSection
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.StdSpecs.PromptReco import PromptRecoWorkloadFactory
-
-from WMCore.Configuration import ConfigSection
-
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer
 
 
 class PromptRecoTest(unittest.TestCase):
@@ -37,6 +38,15 @@ class PromptRecoTest(unittest.TestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("promptreco_t")
         self.testDir = self.testInit.generateWorkDir()
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+
         return
 
     def tearDown(self):
@@ -355,7 +365,7 @@ class PromptRecoTest(unittest.TestCase):
             recoMergeLogCollect.loadData()
             recoMergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                    task="/TestWorkload/Reco/RecoMerge%s/Reco%sMergeLogCollect" % (
-                                                   goldenOutputMod, goldenOutputMod))
+                                                       goldenOutputMod, goldenOutputMod))
             recoMergeLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=recoMergeLogCollect, workflow=recoMergeLogCollectWorkflow)
             logCollectSubscription.loadData()
@@ -374,7 +384,7 @@ class PromptRecoTest(unittest.TestCase):
             alcaSkimLogCollect.loadData()
             alcaSkimLogCollectWorkflow = Workflow(name="TestWorkload",
                                                   task="/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/AlcaSkim%sMergeLogCollect" % (
-                                                  goldenOutputMod, goldenOutputMod))
+                                                      goldenOutputMod, goldenOutputMod))
             alcaSkimLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=alcaSkimLogCollect, workflow=alcaSkimLogCollectWorkflow)
             logCollectSubscription.loadData()
@@ -410,7 +420,7 @@ class PromptRecoTest(unittest.TestCase):
         """
         self.setupPromptSkimConfigObject()
         testArguments = PromptRecoWorkloadFactory.getTestArguments()
-        #testArguments["PromptSkims"] = [self.promptSkim]
+        # testArguments["PromptSkims"] = [self.promptSkim]
         testArguments["CouchURL"] = os.environ["COUCHURL"]
         testArguments["CouchDBName"] = "promptreco_t"
         testArguments["EnvPath"] = os.environ.get("EnvPath", None)
@@ -673,7 +683,7 @@ class PromptRecoTest(unittest.TestCase):
             recoMergeLogCollect.loadData()
             recoMergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                    task="/TestWorkload/Reco/RecoMerge%s/Reco%sMergeLogCollect" % (
-                                                   goldenOutputMod, goldenOutputMod))
+                                                       goldenOutputMod, goldenOutputMod))
             recoMergeLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=recoMergeLogCollect, workflow=recoMergeLogCollectWorkflow)
             logCollectSubscription.loadData()
@@ -692,7 +702,7 @@ class PromptRecoTest(unittest.TestCase):
             alcaSkimLogCollect.loadData()
             alcaSkimLogCollectWorkflow = Workflow(name="TestWorkload",
                                                   task="/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/AlcaSkim%sMergeLogCollect" % (
-                                                  goldenOutputMod, goldenOutputMod))
+                                                      goldenOutputMod, goldenOutputMod))
             alcaSkimLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=alcaSkimLogCollect, workflow=alcaSkimLogCollectWorkflow)
             logCollectSubscription.loadData()
@@ -754,6 +764,222 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
 
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/Reco',
+                       '/TestWorkload/Reco/AlcaSkim',
+                       '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics',
+                       '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T',
+                       '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics',
+                       '/TestWorkload/Reco/RecoMergewrite_AOD',
+                       '/TestWorkload/Reco/RecoMergewrite_DQM',
+                       '/TestWorkload/Reco/RecoMergewrite_RECO']
+        expWfTasks = ['/TestWorkload/Reco',
+                      '/TestWorkload/Reco/AlcaSkim',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamHcalCalHOCosmics',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamMuAlGlobalCosmics',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamTkAlCosmics0T',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimLogCollect',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics/AlcaSkimALCARECOStreamHcalCalHOCosmicsMergeLogCollect',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics/AlcaSkimALCARECOStreamMuAlGlobalCosmicsMergeLogCollect',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T',
+                      '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T/AlcaSkimALCARECOStreamTkAlCosmics0TMergeLogCollect',
+                      '/TestWorkload/Reco/LogCollect',
+                      '/TestWorkload/Reco/RecoCleanupUnmergedwrite_ALCARECO',
+                      '/TestWorkload/Reco/RecoCleanupUnmergedwrite_AOD',
+                      '/TestWorkload/Reco/RecoCleanupUnmergedwrite_DQM',
+                      '/TestWorkload/Reco/RecoCleanupUnmergedwrite_RECO',
+                      '/TestWorkload/Reco/RecoMergewrite_AOD',
+                      '/TestWorkload/Reco/RecoMergewrite_AOD/Recowrite_AODMergeLogCollect',
+                      '/TestWorkload/Reco/RecoMergewrite_DQM',
+                      '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged',
+                      '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/RecoMergewrite_DQMMergedEndOfRunDQMHarvestLogCollect',
+                      '/TestWorkload/Reco/RecoMergewrite_DQM/Recowrite_DQMMergeLogCollect',
+                      '/TestWorkload/Reco/RecoMergewrite_RECO',
+                      '/TestWorkload/Reco/RecoMergewrite_RECO/Recowrite_RECOMergeLogCollect']
+        expFsets = ['TestWorkload-Reco-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics/merged-Merged',
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamHcalCalHOCosmics',
+                    '/TestWorkload/Reco/unmerged-write_ALCARECO',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics/merged-Merged',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T/merged-Merged',
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamMuAlGlobalCosmics',
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamTkAlCosmics0T',
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_AOD/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_AOD/merged-Merged',
+                    '/TestWorkload/Reco/unmerged-write_AOD',
+                    '/TestWorkload/Reco/unmerged-write_DQM',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/merged-Merged',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/unmerged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_RECO/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_RECO/merged-Merged',
+                    '/TestWorkload/Reco/unmerged-logArchive',
+                    '/TestWorkload/Reco/unmerged-write_RECO']
+        subMaps = [(4,
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics/AlcaSkimALCARECOStreamHcalCalHOCosmicsMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (10,
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics/AlcaSkimALCARECOStreamMuAlGlobalCosmicsMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (7,
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T/merged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T/AlcaSkimALCARECOStreamTkAlCosmics0TMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (5,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamHcalCalHOCosmics',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamHcalCalHOCosmics',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (3,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamHcalCalHOCosmics',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (11,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamMuAlGlobalCosmics',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamMuAlGlobalCosmics',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (9,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamMuAlGlobalCosmics',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (8,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamTkAlCosmics0T',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimCleanupUnmergedALCARECOStreamTkAlCosmics0T',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (6,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamTkAlCosmics0T',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (12,
+                    '/TestWorkload/Reco/AlcaSkim/unmerged-logArchive',
+                    '/TestWorkload/Reco/AlcaSkim/AlcaSkimLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (15,
+                    '/TestWorkload/Reco/RecoMergewrite_AOD/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_AOD/Recowrite_AODMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (20,
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/Recowrite_DQMMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (18,
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/merged-Merged',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged',
+                    'Harvest',
+                    'Harvesting'),
+                   (19,
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/unmerged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM/RecoMergewrite_DQMEndOfRunDQMHarvestMerged/RecoMergewrite_DQMMergedEndOfRunDQMHarvestLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (23,
+                    '/TestWorkload/Reco/RecoMergewrite_RECO/merged-logArchive',
+                    '/TestWorkload/Reco/RecoMergewrite_RECO/Recowrite_RECOMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (25,
+                    '/TestWorkload/Reco/unmerged-logArchive',
+                    '/TestWorkload/Reco/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (2,
+                    '/TestWorkload/Reco/unmerged-write_ALCARECO',
+                    '/TestWorkload/Reco/AlcaSkim',
+                    'WMBSMergeBySize',
+                    'Processing'),
+                   (13,
+                    '/TestWorkload/Reco/unmerged-write_ALCARECO',
+                    '/TestWorkload/Reco/RecoCleanupUnmergedwrite_ALCARECO',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (16,
+                    '/TestWorkload/Reco/unmerged-write_AOD',
+                    '/TestWorkload/Reco/RecoCleanupUnmergedwrite_AOD',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (14,
+                    '/TestWorkload/Reco/unmerged-write_AOD',
+                    '/TestWorkload/Reco/RecoMergewrite_AOD',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (21,
+                    '/TestWorkload/Reco/unmerged-write_DQM',
+                    '/TestWorkload/Reco/RecoCleanupUnmergedwrite_DQM',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (17,
+                    '/TestWorkload/Reco/unmerged-write_DQM',
+                    '/TestWorkload/Reco/RecoMergewrite_DQM',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (24,
+                    '/TestWorkload/Reco/unmerged-write_RECO',
+                    '/TestWorkload/Reco/RecoCleanupUnmergedwrite_RECO',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (22,
+                    '/TestWorkload/Reco/unmerged-write_RECO',
+                    '/TestWorkload/Reco/RecoMergewrite_RECO',
+                    'WMBSMergeBySize',
+                    'Merge'),
+                   (1,
+                    'TestWorkload-Reco-/MinimumBias/ComissioningHI-v1/RAW',
+                    '/TestWorkload/Reco',
+                    'EventBased',
+                    'Processing')]
+
+        testArguments = PromptRecoWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "promptreco_t"
+        testArguments["EnableHarvesting"] = True
+
+        factory = PromptRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "Reco", blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

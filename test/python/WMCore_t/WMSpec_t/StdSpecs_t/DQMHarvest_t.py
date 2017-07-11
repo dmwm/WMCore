@@ -3,15 +3,20 @@
 """
 _DQMHarvest_t_
 """
+from __future__ import print_function
 
 import os
+import threading
 import unittest
+from pprint import pformat
 
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
-from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 REQUEST = {
     "AcquisitionEra": "Run2016F",
@@ -65,7 +70,14 @@ class DQMHarvestTests(EmulatedUnitTestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("dqmharvest_t")
         self.testInit.generateWorkDir()
-        self.workload = None
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
 
         return
 
@@ -160,6 +172,52 @@ class DQMHarvestTests(EmulatedUnitTestCase):
         with self.assertRaises(WMSpecFactoryException):
             factory.factoryWorkloadConstruction("TestBadWorkload", testArguments)
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = []
+        expWfTasks = ['/TestWorkload/EndOfRunDQMHarvest',
+                      '/TestWorkload/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect']
+        expFsets = ['TestWorkload-EndOfRunDQMHarvest-/NoBPTX/Run2016F-23Sep2016-v1/DQMIO',
+                    '/TestWorkload/EndOfRunDQMHarvest/unmerged-logArchive']
+
+        subMaps = [(2, '/TestWorkload/EndOfRunDQMHarvest/unmerged-logArchive',
+                    '/TestWorkload/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect', 'MinFileBased', 'LogCollect'),
+                   (1, 'TestWorkload-EndOfRunDQMHarvest-/NoBPTX/Run2016F-23Sep2016-v1/DQMIO',
+                    '/TestWorkload/EndOfRunDQMHarvest', 'Harvest', 'Harvesting')]
+
+        testArguments = DQMHarvestWorkloadFactory.getTestArguments()
+        testArguments.update(REQUEST)
+        testArguments['DQMConfigCacheID'] = self.injectDQMHarvestConfig()
+        testArguments.pop("ConfigCacheID", None)
+
+        factory = DQMHarvestWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testWMBSHelper = WMBSHelper(testWorkload, "EndOfRunDQMHarvest",
+                                    blockName=testArguments['InputDataset'],
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflows:\n%s" % pformat(workflows))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat(filesets))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

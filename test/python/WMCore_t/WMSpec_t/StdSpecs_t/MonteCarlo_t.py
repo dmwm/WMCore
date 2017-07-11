@@ -4,9 +4,16 @@ _MonteCarlo_t_
 
 Unit tests for the Monte Carlo workflow.
 """
+from __future__ import print_function
 
 import os
+import threading
 import unittest
+from hashlib import md5
+from pprint import pformat
+
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Mask import Mask
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -39,6 +46,14 @@ class MonteCarloTest(EmulatedUnitTestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase(TEST_DB_NAME)
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
+        self.listFilesets = self.daoFactory(classname="Fileset.List")
+        self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
 
         return
 
@@ -201,7 +216,7 @@ class MonteCarloTest(EmulatedUnitTestCase):
             mergeLogCollect.loadData()
             mergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                task="/TestWorkload/Production/ProductionMerge%s/Production%sMergeLogCollect" % (
-                                               outputName, outputName))
+                                                   outputName, outputName))
             mergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset=mergeLogCollect, workflow=mergeLogCollectWorkflow)
             logCollectSub.loadData()
@@ -390,6 +405,127 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
         return
+
+    def testFilesets(self):
+        """
+        Test workflow tasks, filesets and subscriptions creation
+        """
+        # expected tasks, filesets, subscriptions, etc
+        expOutTasks = ['/TestWorkload/Production',
+                       '/TestWorkload/Production/ProductionMergeOutputB',
+                       '/TestWorkload/Production/ProductionMergeOutputA']
+        expWfTasks = ['/TestWorkload/Production',
+                      '/TestWorkload/Production/LogCollect',
+                      '/TestWorkload/Production/ProductionCleanupUnmergedOutputA',
+                      '/TestWorkload/Production/ProductionCleanupUnmergedOutputB',
+                      '/TestWorkload/Production/ProductionMergeOutputA',
+                      '/TestWorkload/Production/ProductionMergeOutputA/ProductionOutputAMergeLogCollect',
+                      '/TestWorkload/Production/ProductionMergeOutputB',
+                      '/TestWorkload/Production/ProductionMergeOutputB/ProductionOutputBMergeLogCollect']
+        expFsets = ['FILESET_DEFINED_DURING_RUNTIME',
+                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/ProductionMergeOutputA/merged-logArchive',
+                    '/TestWorkload/Production/ProductionMergeOutputA/merged-Merged',
+                    '/TestWorkload/Production/ProductionMergeOutputB/merged-logArchive',
+                    '/TestWorkload/Production/ProductionMergeOutputB/merged-Merged',
+                    '/TestWorkload/Production/unmerged-logArchive',
+                    '/TestWorkload/Production/unmerged-OutputA']
+        subMaps = ['FILESET_DEFINED_DURING_RUNTIME',
+                   (6,
+                    '/TestWorkload/Production/ProductionMergeOutputA/merged-logArchive',
+                    '/TestWorkload/Production/ProductionMergeOutputA/ProductionOutputAMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (3,
+                    '/TestWorkload/Production/ProductionMergeOutputB/merged-logArchive',
+                    '/TestWorkload/Production/ProductionMergeOutputB/ProductionOutputBMergeLogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (8,
+                    '/TestWorkload/Production/unmerged-logArchive',
+                    '/TestWorkload/Production/LogCollect',
+                    'MinFileBased',
+                    'LogCollect'),
+                   (7,
+                    '/TestWorkload/Production/unmerged-OutputA',
+                    '/TestWorkload/Production/ProductionCleanupUnmergedOutputA',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (5,
+                    '/TestWorkload/Production/unmerged-OutputA',
+                    '/TestWorkload/Production/ProductionMergeOutputA',
+                    'ParentlessMergeBySize',
+                    'Merge'),
+                   (4,
+                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/ProductionCleanupUnmergedOutputB',
+                    'SiblingProcessingBased',
+                    'Cleanup'),
+                   (2,
+                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/ProductionMergeOutputB',
+                    'ParentlessMergeBySize',
+                    'Merge')]
+
+        testArguments = MonteCarloWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = TEST_DB_NAME
+        testArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
+
+        factory = MonteCarloWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        myMask = Mask(FirstRun=1, FirstLumi=1, FirstEvent=1, LastRun=1, LastLumi=10, LastEvent=1000)
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", mask=myMask,
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
+        self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # same function as in WMBSHelper, otherwise we cannot know which fileset name is
+        maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        topFilesetName = 'TestWorkload-Production-%s' % md5(maskString).hexdigest()
+        expFsets[0] = topFilesetName
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subMaps[0] = (1, topFilesetName, '/TestWorkload/Production', 'EventBased', 'Production')
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
+
+        ### create another top level subscription
+        myMask = Mask(FirstRun=1, FirstLumi=11, FirstEvent=1001, LastRun=1, LastLumi=20, LastEvent=2000)
+        testWMBSHelper = WMBSHelper(testWorkload, "Production", mask=myMask,
+                                    cachepath=self.testInit.testDir)
+        testWMBSHelper.createTopLevelFileset()
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+
+        workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
+        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
+        self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
+
+        # same function as in WMBSHelper, otherwise we cannot know which fileset name is
+        maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        topFilesetName = 'TestWorkload-Production-%s' % md5(maskString).hexdigest()
+        expFsets.append(topFilesetName)
+        # returns a tuple of id, name, open and last_update
+        filesets = self.listFilesets.execute()
+        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
+        self.assertItemsEqual([item[1] for item in filesets], expFsets)
+
+        subMaps.append((9, topFilesetName, '/TestWorkload/Production', 'EventBased', 'Production'))
+        subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
+        print("List of subscriptions:\n%s" % pformat(subscriptions))
+        self.assertItemsEqual(subscriptions, subMaps)
 
 
 if __name__ == '__main__':

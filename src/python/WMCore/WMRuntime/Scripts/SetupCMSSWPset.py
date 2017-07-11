@@ -584,7 +584,7 @@ class SetupCMSSWPset(ScriptInterface):
             cms.Service("SiteLocalConfigService",
                         overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
                         )
-        )
+            )
 
         return
 
@@ -661,9 +661,9 @@ class SetupCMSSWPset(ScriptInterface):
         self.process = None
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
-        if scenario != None and scenario != "":
+        if scenario is not None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            if getattr(self.step.data.application.configuration, "pickledarguments", None) != None:
+            if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
                 funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
             else:
                 funcArgs = {}
@@ -692,7 +692,7 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         # Check process.source exists
-        if getattr(self.process, "source", None) == None:
+        if getattr(self.process, "source", None) is None:
             msg = "Error in CMSSW PSet: process is missing attribute 'source' or process.source is defined with None value."
             raise RuntimeError(msg)
 
@@ -721,7 +721,7 @@ class SetupCMSSWPset(ScriptInterface):
                 print("Failed to override numberOfThreads: %s" % str(ex))
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
-        if psetTweak != None:
+        if psetTweak is not None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
 
         # Apply task level tweaks

@@ -621,8 +621,8 @@ class StdBase(object):
 
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
-
-        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
@@ -645,7 +645,7 @@ class StdBase(object):
                                         max_wait_time=self.maxWaitTime,
                                         initial_lfn_counter=lfn_counter)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMIO":
+        if dataTier == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO=True)
         else:

@@ -88,7 +88,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsSetChecksum        = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi         = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
         self.dbsGetWorkflow        = self.dbsDaoFactory(classname = "ListWorkflow")
-
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
         self.stateChanger = ChangeState(config)
@@ -468,40 +467,7 @@ class AccountantWorker(WMConnectionBase):
 
         if jobSuccess:
             fileList = fwkJobReport.getAllFiles()
-
-            # consistency check comparing outputMap to fileList
-            # they should match except for some limited special cases
-            outputModules = set([])
-            for fwjrFile in fileList:
-                outputModules.add(fwjrFile['outputModule'])
-            if set(outputMap.keys()) == outputModules:
-                pass
-            elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
-                pass
-            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['Merged', 'logArchive']):
-                pass
-            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['MergedError', 'logArchive']):
-                pass
-            elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAW']):
-                pass
-            else:
-                failJob = True
-                if jobType in [ "Processing", "Production" ]:
-                    cmsRunSteps = 0
-                    for step in fwkJobReport.listSteps():
-                        if step.startswith("cmsRun"):
-                            cmsRunSteps += 1
-                    if cmsRunSteps > 1:
-                        failJob = False
-
-                if failJob:
-                    jobSuccess = False
-                    logging.error("Job %d , list of expected outputModules does not match job report, failing job", jobID)
-                    logging.debug("Job %d , expected outputModules %s", jobID, sorted(outputMap.keys()))
-                    logging.debug("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
-                    fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
-                else:
-                    logging.debug("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
+            jobSuccess, fileList = self._validateOutputs(fwkJobReport, jobID, jobType, fileList, outputMap)
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
 
@@ -531,7 +497,6 @@ class AccountantWorker(WMConnectionBase):
 
         # now handle the job (unless the special LogCollect check failed)
         if not skipLogCollect:
-
             wmbsJob = Job(id = jobID)
             wmbsJob.load()
             outputID = wmbsJob.loadOutputID()
@@ -545,9 +510,7 @@ class AccountantWorker(WMConnectionBase):
                 wmbsJob["outcome"] = "failure"
 
             for fwjrFile in fileList:
-
                 logging.debug("Job %d , register output %s", jobID, fwjrFile["lfn"])
-
                 wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                               jobID = jobID, task = fwkJobReport.getTaskName())
                 merged = fwjrFile['merged']
@@ -566,6 +529,9 @@ class AccountantWorker(WMConnectionBase):
                     pass
                 else:
                     outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+                if jobType != "LogCollect":
+                    dataTier = fwjrFile['dataset'].get('dataTier', '')
+                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel+dataTier)
                     for outputFileset in outputFilesets:
                         self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
@@ -584,6 +550,52 @@ class AccountantWorker(WMConnectionBase):
                 self.listOfJobsToFail.append(wmbsJob)
 
         return jobSuccess
+
+    def _validateOutputs(self, fwkJobReport, jobID, jobType, fileList, outputMap):
+        """
+        __validateOutputs_
+
+        Compare the list of output files (outputmodule + data tier) against the
+        expected output map for that specific job
+        """
+        jobSuccess = True
+
+        # there are a few special cases that we just pass as success
+        outputModules = set([])
+        for fwjrFile in fileList:
+            outputModules.add(fwjrFile['outputModule'] + fwjrFile['dataset'].get('dataTier', ''))
+        if set(outputMap.keys()) == outputModules:
+            pass
+        elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
+            pass
+        elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and\
+                        outputModules == set(['Merged', 'logArchive']):
+            pass
+        elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and\
+                        outputModules == set(['MergedError', 'logArchive']):
+            pass
+        elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAW']):
+            pass
+        else:
+            failJob = True
+            if jobType in ["Processing", "Production"]:
+                cmsRunSteps = 0
+                for step in fwkJobReport.listSteps():
+                    if step.startswith("cmsRun"):
+                        cmsRunSteps += 1
+                if cmsRunSteps > 1:
+                    failJob = False
+
+            if failJob:
+                jobSuccess = False
+                logging.error("Job %d , list of expected outputModules does not match job report, failing job", jobID)
+                logging.error("Job %d , expected outputModules %s", jobID, sorted(outputMap.keys()))
+                logging.error("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
+                fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+            else:
+                logging.warn("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
+
+        return jobSuccess, fileList
 
     def associateLogCollectToParentJobsInWMStats(self, fwkJobReport, logAchiveLFN, task):
         """

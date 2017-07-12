@@ -340,6 +340,8 @@ class StepChainWorkloadFactory(StdBase):
         elif taskConf["SplittingAlgo"] == "FileBased":
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
+        taskConf["SplittingArguments"].setdefault("deterministicPileup", self.deterministicPileup)
+
         return
 
     @staticmethod
@@ -349,6 +351,7 @@ class StepChainWorkloadFactory(StdBase):
                     "Step1": {"default": {}, "optional": False, "type": dict},
                     # ConfigCacheID is not used in the main dict for StepChain
                     "ConfigCacheID": {"optional": True, "null": True},
+                    "DeterministicPileup": {"default": False, "type": strToBool, "optional": True, "null": False},
                     "PrimaryDataset": {"null": True, "validate": primdataset},
                     "StepChain": {"default": 1, "type": int, "null": False,
                                   "optional": False, "validate": lambda x: x > 0},

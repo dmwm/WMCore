@@ -205,8 +205,9 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.lumisToProcess": fixupLumisToProcess,
                  "process.source.firstLuminosityBlock": fixupFirstLumi}
 
-    def __init__(self):
+    def __init__(self, crabPSet=False):
         ScriptInterface.__init__(self)
+        self.crabPSet = crabPSet
         self.process = None
 
     def createProcess(self, scenario, funcName, funcArgs):
@@ -556,14 +557,9 @@ class SetupCMSSWPset(ScriptInterface):
         runIsComplete = getattr(baggage, "runIsComplete", False)
         multiRun = getattr(baggage, "multiRun", False)
         runLimits = getattr(baggage, "runLimits", "")
-        try:
-            cmsswVersion = self.step.data.application.setup.cmsswVersion
-        except AttributeError:
-            # CRAB3 needs to use an environment var to get the version
-            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
 
         self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
-        if multiRun and isCMSSWSupported(cmsswVersion, "CMSSW_8_0_X"):
+        if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_X"):
             self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.step.data.application.configuration.pickledarguments)
@@ -588,7 +584,7 @@ class SetupCMSSWPset(ScriptInterface):
             cms.Service("SiteLocalConfigService",
                         overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
                         )
-        )
+            )
 
         return
 
@@ -620,13 +616,7 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
         Enable lazy-download for all merge jobs
         """
-        try:
-            cmsswVersion = self.step.data.application.setup.cmsswVersion
-        except AttributeError:
-            # CRAB3 needs to use an environment var to get the version
-            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
-
-        if cmsswVersion.startswith("CMSSW_7_5") and False:
+        if self.getCmsswVersion().startswith("CMSSW_7_5") and False:
             print("Using fastCloning/lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
                                           overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")))
@@ -642,18 +632,24 @@ class SetupCMSSWPset(ScriptInterface):
 
         Enable CondorStatusService for CMSSW releases that support it.
         """
-        try:
-            cmsswVersion = self.step.data.application.setup.cmsswVersion
-        except AttributeError:
-            # CRAB3 needs to use an environment var to get the version
-            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
-
-        if isCMSSWSupported(cmsswVersion, "CMSSW_7_6_X"):
+        if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_X"):
             print("Tag chirp updates from CMSSW with _%s_" % self.step.data._internal_name)
             self.process.add_(cms.Service("CondorStatusService",
                                           tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
 
         return
+
+    def getCmsswVersion(self):
+        """
+        _getCmsswVersion_
+
+        Return a string representing the CMSSW version to be used.
+        """
+        if not self.crabPSet:
+            return self.step.data.application.setup.cmsswVersion
+        else:
+            # CRAB3 needs to use an environment var to get the version
+            return os.environ.get("CMSSW_VERSION", "")
 
     def __call__(self):
         """
@@ -665,9 +661,9 @@ class SetupCMSSWPset(ScriptInterface):
         self.process = None
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
-        if scenario != None and scenario != "":
+        if scenario is not None and scenario != "":
             funcName = getattr(self.step.data.application.configuration, "function", None)
-            if getattr(self.step.data.application.configuration, "pickledarguments", None) != None:
+            if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
                 funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
             else:
                 funcArgs = {}
@@ -696,7 +692,7 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         # Check process.source exists
-        if getattr(self.process, "source", None) == None:
+        if getattr(self.process, "source", None) is None:
             msg = "Error in CMSSW PSet: process is missing attribute 'source' or process.source is defined with None value."
             raise RuntimeError(msg)
 
@@ -704,26 +700,28 @@ class SetupCMSSWPset(ScriptInterface):
 
         self.fixupProcess()
 
-        try:
-            origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
-            eventStreams = int(getattr(self.step.data.application.multicore, 'eventStreams', 0))
-            resources = {'cores': origCores}
-            resizeResources(resources)
-            numCores = resources['cores']
-            if numCores != origCores:
-                print("Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
-                eventStreams = 0
-            options = getattr(self.process, "options", None)
-            if options is None:
-                self.process.options = cms.untracked.PSet()
-                options = getattr(self.process, "options")
-            options.numberOfThreads = cms.untracked.uint32(numCores)
-            options.numberOfStreams = cms.untracked.uint32(eventStreams)
-        except AttributeError as ex:
-            print("Failed to override numberOfThreads: %s" % str(ex))
+        # In case of CRAB3, the number of threads in the PSet should not be overridden
+        if not self.crabPSet:
+            try:
+                origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+                eventStreams = int(getattr(self.step.data.application.multicore, 'eventStreams', 0))
+                resources = {'cores': origCores}
+                resizeResources(resources)
+                numCores = resources['cores']
+                if numCores != origCores:
+                    print("Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
+                    eventStreams = 0
+                options = getattr(self.process, "options", None)
+                if options is None:
+                    self.process.options = cms.untracked.PSet()
+                    options = getattr(self.process, "options")
+                options.numberOfThreads = cms.untracked.uint32(numCores)
+                options.numberOfStreams = cms.untracked.uint32(eventStreams)
+            except AttributeError as ex:
+                print("Failed to override numberOfThreads: %s" % str(ex))
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
-        if psetTweak != None:
+        if psetTweak is not None:
             self.applyPSetTweak(psetTweak, self.fixupDict)
 
         # Apply task level tweaks

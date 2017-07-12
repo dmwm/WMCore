@@ -10,7 +10,6 @@ import os
 import threading
 import unittest
 from hashlib import md5
-from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
@@ -96,24 +95,26 @@ class MonteCarloTest(EmulatedUnitTestCase):
         """
         Retrieve the workload from WMBS and test all its properties.
         """
+        goldenOutputMods = {"OutputA": "RECO", "OutputB": "USER"}
+
         prodWorkflow = Workflow(name="TestWorkload", task="/TestWorkload/Production")
         prodWorkflow.load()
 
         self.assertEqual(len(prodWorkflow.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
 
-        goldenOutputMods = ["OutputA", "OutputB"]
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = prodWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = prodWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            mergedOutput = prodWorkflow.outputMap[fset][0]["merged_output_fileset"]
+            unmergedOutput = prodWorkflow.outputMap[fset][0]["output_fileset"]
 
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
             self.assertEqual(mergedOutput.name,
-                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/Production/unmerged-%s" % goldenOutputMod,
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/Production/unmerged-%s" % (goldenOutputMod + tier),
                              "Error: Unmerged output fileset is wrong.")
 
         logArchOutput = prodWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -126,25 +127,26 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Production/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod in goldenOutputMods:
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Production/ProductionMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
                              "Error: Wrong number of WF outputs.")
-
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
+            from pprint import pformat
+            print(pformat(mergeWorkflow.outputMap))
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["output_fileset"]
 
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Merged output fileset is wrong.")
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Production/ProductionMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -170,11 +172,12 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(prodSubscription["split_algo"], "EventBased",
                          "Error: Wrong split algo.")
 
-        for outputName in ["OutputA", "OutputB"]:
-            unmergedOutput = Fileset(name="/TestWorkload/Production/unmerged-%s" % outputName)
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            unmergedOutput = Fileset(name="/TestWorkload/Production/unmerged-%s" % fset)
             unmergedOutput.loadData()
             mergeWorkflow = Workflow(name="TestWorkload",
-                                     task="/TestWorkload/Production/ProductionMerge%s" % outputName)
+                                     task="/TestWorkload/Production/ProductionMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
             mergeSubscription = Subscription(fileset=unmergedOutput, workflow=mergeWorkflow)
             mergeSubscription.loadData()
@@ -184,11 +187,12 @@ class MonteCarloTest(EmulatedUnitTestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
-        for outputName in ["OutputA", "OutputB"]:
-            unmerged = Fileset(name="/TestWorkload/Production/unmerged-%s" % outputName)
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            unmerged = Fileset(name="/TestWorkload/Production/unmerged-%s" % fset)
             unmerged.loadData()
             cleanupWorkflow = Workflow(name="TestWorkload",
-                                       task="/TestWorkload/Production/ProductionCleanupUnmerged%s" % outputName)
+                                       task="/TestWorkload/Production/ProductionCleanupUnmerged%s" % goldenOutputMod)
             cleanupWorkflow.load()
             cleanupSubscription = Subscription(fileset=unmerged, workflow=cleanupWorkflow)
             cleanupSubscription.loadData()
@@ -211,12 +215,13 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
-        for outputName in ["OutputA", "OutputB"]:
-            mergeLogCollect = Fileset(name="/TestWorkload/Production/ProductionMerge%s/merged-logArchive" % outputName)
+        for goldenOutputMod in goldenOutputMods:
+            mergeLogCollect = Fileset(
+                name="/TestWorkload/Production/ProductionMerge%s/merged-logArchive" % goldenOutputMod)
             mergeLogCollect.loadData()
             mergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                task="/TestWorkload/Production/ProductionMerge%s/Production%sMergeLogCollect" % (
-                                                   outputName, outputName))
+                                                   goldenOutputMod, goldenOutputMod))
             mergeLogCollectWorkflow.load()
             logCollectSub = Subscription(fileset=mergeLogCollect, workflow=mergeLogCollectWorkflow)
             logCollectSub.loadData()
@@ -423,13 +428,13 @@ class MonteCarloTest(EmulatedUnitTestCase):
                       '/TestWorkload/Production/ProductionMergeOutputB',
                       '/TestWorkload/Production/ProductionMergeOutputB/ProductionOutputBMergeLogCollect']
         expFsets = ['FILESET_DEFINED_DURING_RUNTIME',
-                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/unmerged-OutputBUSER',
                     '/TestWorkload/Production/ProductionMergeOutputA/merged-logArchive',
-                    '/TestWorkload/Production/ProductionMergeOutputA/merged-Merged',
+                    '/TestWorkload/Production/ProductionMergeOutputA/merged-MergedRECO',
                     '/TestWorkload/Production/ProductionMergeOutputB/merged-logArchive',
-                    '/TestWorkload/Production/ProductionMergeOutputB/merged-Merged',
+                    '/TestWorkload/Production/ProductionMergeOutputB/merged-MergedUSER',
                     '/TestWorkload/Production/unmerged-logArchive',
-                    '/TestWorkload/Production/unmerged-OutputA']
+                    '/TestWorkload/Production/unmerged-OutputARECO']
         subMaps = ['FILESET_DEFINED_DURING_RUNTIME',
                    (6,
                     '/TestWorkload/Production/ProductionMergeOutputA/merged-logArchive',
@@ -447,22 +452,22 @@ class MonteCarloTest(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (7,
-                    '/TestWorkload/Production/unmerged-OutputA',
+                    '/TestWorkload/Production/unmerged-OutputARECO',
                     '/TestWorkload/Production/ProductionCleanupUnmergedOutputA',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (5,
-                    '/TestWorkload/Production/unmerged-OutputA',
+                    '/TestWorkload/Production/unmerged-OutputARECO',
                     '/TestWorkload/Production/ProductionMergeOutputA',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (4,
-                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/unmerged-OutputBUSER',
                     '/TestWorkload/Production/ProductionCleanupUnmergedOutputB',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (2,
-                    '/TestWorkload/Production/unmerged-OutputB',
+                    '/TestWorkload/Production/unmerged-OutputBUSER',
                     '/TestWorkload/Production/ProductionMergeOutputB',
                     'ParentlessMergeBySize',
                     'Merge')]
@@ -481,11 +486,9 @@ class MonteCarloTest(EmulatedUnitTestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
@@ -494,12 +497,10 @@ class MonteCarloTest(EmulatedUnitTestCase):
         expFsets[0] = topFilesetName
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subMaps[0] = (1, topFilesetName, '/TestWorkload/Production', 'EventBased', 'Production')
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
         ### create another top level subscription
@@ -510,7 +511,6 @@ class MonteCarloTest(EmulatedUnitTestCase):
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
@@ -519,12 +519,10 @@ class MonteCarloTest(EmulatedUnitTestCase):
         expFsets.append(topFilesetName)
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subMaps.append((9, topFilesetName, '/TestWorkload/Production', 'EventBased', 'Production'))
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
 

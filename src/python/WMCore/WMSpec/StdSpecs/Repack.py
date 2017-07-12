@@ -12,8 +12,8 @@ from __future__ import division
 
 from Utils.Utilities import makeList
 from WMCore.Lexicon import procstringT0
-
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+
 
 class RepackWorkloadFactory(StdBase):
     """
@@ -60,18 +60,18 @@ class RepackWorkloadFactory(StdBase):
 
         repackTask = workload.newTask("Repack")
         repackOutMods = self.setupProcessingTask(repackTask, taskType,
-                                                 scenarioName = self.procScenario,
-                                                 scenarioFunc = "repack",
-                                                 scenarioArgs = { 'outputs' : self.outputs },
-                                                 splitAlgo = "Repack",
-                                                 splitArgs = mySplitArgs,
-                                                 stepType = cmsswStepType)
+                                                 scenarioName=self.procScenario,
+                                                 scenarioFunc="repack",
+                                                 scenarioArgs={'outputs': self.outputs},
+                                                 splitAlgo="Repack",
+                                                 splitArgs=mySplitArgs,
+                                                 stepType=cmsswStepType)
 
         repackTask.setTaskType("Repack")
 
         self.addLogCollectTask(repackTask)
 
-        for repackOutLabel in repackOutMods.keys():
+        for repackOutLabel in repackOutMods:
             self.addRepackMergeTask(repackTask, repackOutLabel)
 
         workload.setBlockCloseSettings(self.blockCloseDelay,
@@ -86,7 +86,7 @@ class RepackWorkloadFactory(StdBase):
         # set the LFN bases (normally done by request manager)
         # also pass run number to add run based directories
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -109,7 +109,7 @@ class RepackWorkloadFactory(StdBase):
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
-        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+        self.addLogCollectTask(mergeTask, taskName="%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.applyTemplates()
 
@@ -121,15 +121,15 @@ class RepackWorkloadFactory(StdBase):
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                        scramArch=self.scramArch)
 
-        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
-        #mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
-        #mergeTaskStageHelper.setMinMergeSize(0, 0)
+        # mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
+        # mergeTaskStageHelper.setMinMergeSize(0, 0)
 
         mergeTask.setTaskType("Merge")
 
@@ -142,16 +142,16 @@ class RepackWorkloadFactory(StdBase):
         mergeTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "merge")
 
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                             dataTier = getattr(parentOutputModule, "dataTier"),
-                             filterName = getattr(parentOutputModule, "filterName"),
-                             forceMerged = True)
+                             primaryDataset=getattr(parentOutputModule, "primaryDataset"),
+                             dataTier=getattr(parentOutputModule, "dataTier"),
+                             filterName=getattr(parentOutputModule, "filterName"),
+                             forceMerged=True)
 
         self.addOutputModule(mergeTask, "MergedError",
-                             primaryDataset = getattr(parentOutputModule, "primaryDataset") + "-Error",
-                             dataTier = getattr(parentOutputModule, "dataTier"),
-                             filterName = getattr(parentOutputModule, "filterName"),
-                             forceMerged = True)
+                             primaryDataset=getattr(parentOutputModule, "primaryDataset") + "-Error",
+                             dataTier=getattr(parentOutputModule, "dataTier"),
+                             filterName=getattr(parentOutputModule, "filterName"),
+                             forceMerged=True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))
 
@@ -195,7 +195,7 @@ class RepackWorkloadFactory(StdBase):
                     "GlobalTag": {"default": "fake"},
                     "ProcessingString": {"default": "", "validate": procstringT0},
                     "BlockCloseDelay": {"type": int, "optional": False,
-                                        "validate": lambda x : x > 0},
+                                        "validate": lambda x: x > 0},
                     "Outputs": {"type": makeList, "optional": False},
                     "MaxSizeSingleLumi": {"type": int, "optional": False},
                     "MaxSizeMultiLumi": {"type": int, "optional": False},

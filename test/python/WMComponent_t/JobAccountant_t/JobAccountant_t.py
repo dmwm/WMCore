@@ -6,35 +6,32 @@ Unit tests for the WMAgent JobAccountant component.
 """
 from __future__ import print_function
 
+import copy
 import os.path
 import threading
-import unittest
 import time
-import copy
+import unittest
+
+from nose.plugins.attrib import attr
 
 import WMCore.WMBase
-from WMCore.FwkJobReport.Report import Report
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.UUIDLib import makeUUID
-
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Job import Job
-from WMCore.WMBS.File import File
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.ACDC.DataCollectionService import DataCollectionService
-
-from WMCore.DataStructs.Run import Run
-
-from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
-from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
-from nose.plugins.attrib import attr
+from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.FwkJobReport.Report import Report
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class JobAccountantTest(unittest.TestCase):
@@ -130,7 +127,7 @@ class JobAccountantTest(unittest.TestCase):
 
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (
-        config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+            config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 
         return config
 
@@ -282,12 +279,12 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec="wf001.xml", owner="Steve",
                                      name="TestWF", task="None")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("FEVT", self.recoOutputFileset,
+        self.testWorkflow.addOutput("FEVTRECO", self.recoOutputFileset,
                                     self.recoOutputFileset)
-        self.testWorkflow.addOutput("FEVT", self.cleanupFileset, None)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
+        self.testWorkflow.addOutput("FEVTRECO", self.cleanupFileset, None)
+        self.testWorkflow.addOutput("ALCARECOStreamCombinedALCARECO", self.alcaOutputFileset,
                                     self.alcaOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
+        self.testWorkflow.addOutput("ALCARECOStreamCombinedALCARECO", self.cleanupFileset, None)
 
         inputFile = File(lfn="/path/to/some/lfn", size=600000, events=60000,
                          locations="T1_US_FNAL_Disk")
@@ -693,22 +690,22 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec=falseSpec, owner="Steve",
                                      name="TestWF", task="TestTopTask")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+        self.testWorkflow.addOutput("outputRECO", self.recoOutputFileset,
                                     self.mergedRecoOutputFileset)
-        self.testWorkflow.addOutput("output", self.cleanupFileset, None)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.alcaOutputFileset,
+        self.testWorkflow.addOutput("outputRECO", self.cleanupFileset, None)
+        self.testWorkflow.addOutput("ALCARECOStreamCombinedALCARECO", self.alcaOutputFileset,
                                     self.mergedAlcaOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
+        self.testWorkflow.addOutput("ALCARECOStreamCombinedALCARECO", self.cleanupFileset, None)
 
         self.testRecoMergeWorkflow = Workflow(spec=falseSpec, owner="Steve",
                                               name="TestRecoMergeWF", task="TestRecoMergeTask")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
+        self.testRecoMergeWorkflow.addOutput("MergedRECO", self.mergedRecoOutputFileset)
 
         self.testAlcaMergeWorkflow = Workflow(spec=falseSpec, owner="Steve",
                                               name="TestAlcaMergeWF", task="TestAlcaTask")
         self.testAlcaMergeWorkflow.create()
-        self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)
+        self.testAlcaMergeWorkflow.addOutput("MergedALCARECO", self.mergedAlcaOutputFileset)
 
         inputFile = File(lfn="/path/to/some/lfn", size=600000, events=60000,
                          locations="T1_US_FNAL_Disk")
@@ -843,21 +840,21 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow = Workflow(spec="wf001.xml", owner="Steve",
                                      name="Steves", task="/Steves/Stupid/ProcessingTask")
         self.testWorkflow.create()
-        self.testWorkflow.addOutput("output", self.recoOutputFileset,
+        self.testWorkflow.addOutput("outputRECO", self.recoOutputFileset,
                                     self.mergedRecoOutputFileset)
-        self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset,
+        self.testWorkflow.addOutput("ALCARECOStreamCombinedALCARECO", self.aodOutputFileset,
                                     self.mergedAodOutputFileset)
 
         self.testRecoMergeWorkflow = Workflow(spec="wf002.xml", owner="Steve",
                                               name="Steves", task="/Steves/Stupid/RecoMergeTask")
         self.testRecoMergeWorkflow.create()
-        self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset,
+        self.testRecoMergeWorkflow.addOutput("MergedRECO", self.mergedRecoOutputFileset,
                                              self.mergedRecoOutputFileset)
 
         self.testAodMergeWorkflow = Workflow(spec=falseSpec, owner="Steve",
                                              name="Steves", task="/Steves/Stupid/Task")
         self.testAodMergeWorkflow.create()
-        self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset,
+        self.testAodMergeWorkflow.addOutput("MergedAOD", self.mergedAodOutputFileset,
                                             self.mergedAodOutputFileset)
 
         inputFileA = File(lfn="/path/to/some/lfnA", size=600000, events=60000,
@@ -970,6 +967,7 @@ class JobAccountantTest(unittest.TestCase):
         jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
                                          "WMComponent_t/JobAccountant_t/fwjrs",
                                          "MergeSuccess.pkl"))
+
         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
         self.verifyJobSuccess(self.testJob["id"])
 

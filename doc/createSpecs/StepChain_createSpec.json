@@ -28,7 +28,12 @@
         "default": "https://cmsweb.cern.ch/couchdb", 
         "optional": true, 
         "type": "<type 'str'>"
-    }, 
+    },
+    "DeterministicPileup": {
+        "default": false,
+        "optional": true,
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    },
     "DQMConfigCacheID": {
         "default": null, 
         "optional": true, 

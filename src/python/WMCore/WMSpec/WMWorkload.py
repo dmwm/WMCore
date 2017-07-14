@@ -654,7 +654,7 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setJobResourceInformation(memoryReq=memory)
         return
 
-    def setAcquisitionEra(self, acquisitionEras):
+    def setAcquisitionEra(self, acquisitionEras, runNumber=None):
         """
         _setAcquistionEra_
 
@@ -665,12 +665,12 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.taskIterator():
             task.setAcquisitionEra(acquisitionEras, stepChain=stepNameMapping)
 
-        self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets(runNumber=runNumber)
         # set acquistionEra for workload (need to refactor)
         self.data.properties.acquisitionEra = acquisitionEras
         return
 
-    def setProcessingVersion(self, processingVersions):
+    def setProcessingVersion(self, processingVersions, runNumber=None):
         """
         _setProcessingVersion_
 
@@ -682,11 +682,11 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.taskIterator():
             task.setProcessingVersion(processingVersions, stepChain=stepNameMapping)
 
-        self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets(runNumber)
         self.data.properties.processingVersion = processingVersions
         return
 
-    def setProcessingString(self, processingStrings):
+    def setProcessingString(self, processingStrings, runNumber=None):
         """
         _setProcessingString_
 
@@ -698,7 +698,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.taskIterator():
             task.setProcessingString(processingStrings, stepChain=stepNameMapping)
 
-        self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets(runNumber)
         self.data.properties.processingString = processingStrings
         return
 
@@ -1630,7 +1630,7 @@ class WMWorkloadHelper(PersistencyHelper):
         validateArgumentsUpdate(schema, argumentDefinition)
         return
 
-    def updateArguments(self, kwargs):
+    def updateArguments(self, kwargs, runNumber=None):
         """
         set up all the argument related to assigning request.
         args are validated before update.
@@ -1649,7 +1649,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                   pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
 
         # FIXME not validated
-        self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
+        self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"],
+                        runNumber=runNumber)
 
         self.setMergeParameters(int(kwargs["MinMergeSize"]),
                                 int(kwargs["MaxMergeSize"]),
@@ -1658,11 +1659,11 @@ class WMWorkloadHelper(PersistencyHelper):
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
         if kwargs.get("AcquisitionEra") is not None:
-            self.setAcquisitionEra(kwargs["AcquisitionEra"])
+            self.setAcquisitionEra(kwargs["AcquisitionEra"], runNumber)
         if kwargs.get("ProcessingString") is not None:
-            self.setProcessingString(kwargs["ProcessingString"])
+            self.setProcessingString(kwargs["ProcessingString"], runNumber)
         if kwargs.get("ProcessingVersion") is not None:
-            self.setProcessingVersion(kwargs["ProcessingVersion"])
+            self.setProcessingVersion(kwargs["ProcessingVersion"], runNumber)
 
         self.setupPerformanceMonitoring(kwargs["MaxRSS"],
                                         kwargs["MaxVSize"],

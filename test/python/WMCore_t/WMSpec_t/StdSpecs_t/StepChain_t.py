@@ -405,6 +405,7 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(splitParams['events_per_job'], 200)
         self.assertEqual(splitParams['events_per_lumi'], 100)
         self.assertFalse(splitParams['lheInputFiles'], "Wrong LHE flag")
+        self.assertFalse(splitParams['deterministicPileup'])
         self.assertTrue(splitParams['performance']['timePerEvent'] >= 144)
         self.assertTrue(splitParams['performance']['sizePerEvent'] >= 512)
         self.assertTrue(splitParams['performance']['memoryRequirement'] == 3500)
@@ -1180,6 +1181,8 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertDictEqual(task.getTrustSitelists(), {'trustPUlists': False, 'trustlists': False})
             self.assertItemsEqual(task.getIgnoredOutputModulesForTask(),
                                   testArguments['Step1'].get('IgnoredOutputModules', []))
+            splitParams = task.jobSplittingParameters()
+            self.assertTrue(splitParams['deterministicPileup'])
 
             # step level checks
             task = workload.getTaskByName('GENSIMMergeRAWSIMoutput')
@@ -1193,7 +1196,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
-
+        testArguments['DeterministicPileup'] = True
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]

@@ -1,10 +1,11 @@
 {"createRequest": {
-    "Comments": "StepChain ReDigi with 3 steps and LumiList (19l). EventAware based on TpE (~50evts - 2l)",
+    "Comments": "StepChain ReDigi with 3 steps and LumiList (19l). EventAware based on TpE (~50evts - 2l); DeterministicPileup enabled",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0_patch1",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DeterministicPileup": true,
     "GlobalTag": "PHYS14_25_V3",
     "AcquisitionEra": "Fall13_Test",
     "ProcessingString": "TEST_StepChain_POSTLS162",

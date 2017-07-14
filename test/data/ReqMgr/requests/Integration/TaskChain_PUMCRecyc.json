@@ -29,7 +29,7 @@
         "AcquisitionEra": "CMSSW_8_1_0", 
         "CMSSWVersion": "CMSSW_8_1_0", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "TaskChain PU recycling with 4 cores; 4.5GB for Task1, 9GB for Task2; PrepID at top level and Task2; Harvesting enabled", 
+        "Comments": "PU recycling with 4 cores; 4.5GB for Task1, 9GB for Task2; PrepID at top level and Task2; DeterministicPU enabled for both tasks; Harvesting enabled",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DQMConfigCacheID": "e2a5c7c675f60b4777564d5dd16b0dcd", 
@@ -56,6 +56,7 @@
         "Task1": {
             "AcquisitionEra": "CMSSW_8_1_0", 
             "ConfigCacheID": "e2a5c7c675f60b4777564d5dd157112a", 
+            "DeterministicPileup": true,
             "GlobalTag": "81X_upgrade2017_realistic_v26", 
             "InputDataset": "/RelValH125GGgluonfusion_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM", 
             "KeepOutput": true, 
@@ -70,6 +71,7 @@
         "Task2": {
             "AcquisitionEra": "CMSSW_8_1_0", 
             "ConfigCacheID": "e2a5c7c675f60b4777564d5dd15b240e", 
+            "DeterministicPileup": true,
             "GlobalTag": "81X_upgrade2017_realistic_v26", 
             "InputFromOutputModule": "FEVTDEBUGHLToutput", 
             "InputTask": "DigiFullPU_2017PU", 

@@ -39,46 +39,7 @@ class ExecuteTest(unittest.TestCase):
         err, text = runCommandWithOutput("python %s -text" % self.base)
         self.assertEqual(2, err)
         self.assertTrue("ExecutableCommands.py: error" in text)
-        self.assertEqual((1, "0\n"), runCommandWithOutput("python %s -exit 0" % self.base))
-        self.assertEqual((1, "a\n"), runCommandWithOutput("python %s -exit a" % self.base))
-        self.assertEqual((0, "a\n"), runCommandWithOutput("python %s -text a" % self.base))
+        self.assertEqual((1, 'stdout: \nstderr: 0\n'), runCommandWithOutput("python %s -exit 0" % self.base))
+        self.assertEqual((1, 'stdout: \nstderr: a\n'), runCommandWithOutput("python %s -exit a" % self.base))
+        self.assertEqual((0, 'stdout: a\n\nstderr: '), runCommandWithOutput("python %s -text a" % self.base))
 
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommand_error(self, mock_sys):
-        runCommand("python %s -exit 0" % self.base)
-        mock_sys.stdout.write.assert_called_with("")
-        mock_sys.stderr.write.assert_any_call("")
-        mock_sys.stderr.write.assert_any_call("0\n")
-
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommand_noError(self, mock_sys):
-        runCommand("python %s -text a" % self.base)
-        mock_sys.stdout.write.assert_any_call("a\n")
-        mock_sys.stderr.write.assert_any_call("")
-
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommand_errorAndText(self, mock_sys):
-        runCommand("python %s -exception test" % self.base)
-        assert "Exception: test" in mock_sys.stderr.write.call_args_list[0][0][0] or \
-               "Exception: test" in mock_sys.stderr.write.call_args_list[1][0][0]
-        mock_sys.stdout.write.assert_any_call("test\n")
-
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommandWithOutput_error(self, mock_sys):
-        runCommand("python %s -exit 0" % self.base)
-        mock_sys.stdout.write.assert_called_with("")
-        mock_sys.stderr.write.assert_any_call("")
-        mock_sys.stderr.write.assert_any_call("0\n")
-
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommandWithOutput_noError(self, mock_sys):
-        runCommand("python %s -text a" % self.base)
-        mock_sys.stdout.write.assert_any_call("a\n")
-        mock_sys.stderr.write.assert_any_call("")
-
-    @mock.patch('WMCore.Storage.Execute.sys')
-    def testRunCommandWithOutput_errorAndText(self, mock_sys):
-        runCommand("python %s -exception test" % self.base)
-        assert "Exception: test\n" in mock_sys.stderr.write.call_args_list[0][0][0] or \
-               "Exception: test" in mock_sys.stderr.write.call_args_list[1][0][0]
-        mock_sys.stdout.write.assert_any_call("test\n")

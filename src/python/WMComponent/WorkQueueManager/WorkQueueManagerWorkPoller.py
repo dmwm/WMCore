@@ -13,6 +13,8 @@ import random
 import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Agent.Configuration import loadConfigurationFile
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import isDrainMode
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
@@ -38,11 +40,11 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         Pull in work
-            """
-        try:
-            self.pullWork()
-        except Exception as ex:
-            self.queue.logger.error("Error in work pull loop: %s" % str(ex))
+        """
+        # refresh agent configuration, config file is automatically fetched
+        self.config = loadConfigurationFile(None)
+        self.pullWork()
+
         try:
             # process if we get work or not - we may have to split old work
             # i.e. if transient errors were seen during splitting
@@ -51,29 +53,31 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             self.queue.logger.error("Error in new work split loop: %s" % str(ex))
         return
 
-    def retrieveCondition(self):
+    def passRetrieveCondition(self):
         """
-        _retrieveCondition_
-        set true or false for given retrieve condion
-        i.e. thredshod on workqueue
+        _passRetrieveCondition_
+        set true or false for given retrieve condition
+        i.e. thresholds on workqueue, agent in drain
         """
-        return True
+        return not isDrainMode(self.config)
 
     def pullWork(self):
         """Get work from parent"""
-        self.queue.logger.info("Pulling work from %s" % self.queue.parent_queue.queueUrl)
-        work = 0
+        if not self.passRetrieveCondition():
+            self.queue.logger.info("Draining queue: skipping work pull")
+            return
+
         try:
-            if self.retrieveCondition():
-                work = self.queue.pullWork()
+            self.queue.logger.info("Pulling work from %s" % self.queue.parent_queue.queueUrl)
+            work = self.queue.pullWork()
+            self.queue.logger.info("Obtained %s unit(s) of work" % work)
         except IOError as ex:
             self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
                                     (str(ex), traceback.format_exc()))
         except Exception as ex:
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"
                                     % (str(ex), traceback.format_exc()))
-        self.queue.logger.info("Obtained %s unit(s) of work" % work)
-        return work
+        return
 
     def processWork(self):
         """Process new work"""

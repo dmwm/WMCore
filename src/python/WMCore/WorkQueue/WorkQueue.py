@@ -732,10 +732,6 @@ class WorkQueue(WorkQueueBase):
             msg = 'Backend busy or down: skipping work pull'
             self._printLog(msg, printFlag, "warning")
             return False
-        if self.params['DrainMode']:
-            msg = 'Draining queue: skipping work pull'
-            self._printLog(msg, printFlag, "warning")
-            return False
 
         left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
                                                   ChildQueueUrl=self.params['QueueURL'])

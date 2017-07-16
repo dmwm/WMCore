@@ -1088,8 +1088,8 @@ class StdBase(object):
                                               "validate": lambda x: x in ["Low", "Normal", "High"]},
                      "DeleteFromSource": {"default": False, "type": strToBool},
                      # merge settings
-                     "UnmergedLFNBase": {"default": "/store/unmerged"},
-                     "MergedLFNBase": {"default": "/store/data"},
+                     "UnmergedLFNBase": {"assign_optional": True},
+                     "MergedLFNBase": {"assign_optional": True},
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
                                       "validate": lambda x: x > 0},
                      "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,

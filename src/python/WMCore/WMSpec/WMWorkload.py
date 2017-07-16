@@ -1724,13 +1724,13 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
                                   pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
 
-        # FIXME not validated
-        self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
-
         self.setMergeParameters(int(kwargs["MinMergeSize"]),
                                 int(kwargs["MaxMergeSize"]),
                                 int(kwargs["MaxMergeEvents"]))
 
+        # FIXME not validated
+        if kwargs.get("MergedLFNBase") and kwargs.get("UnmergedLFNBase"):
+            self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
         if kwargs.get("AcquisitionEra") is not None:

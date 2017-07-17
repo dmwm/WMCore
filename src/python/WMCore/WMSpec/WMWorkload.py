@@ -974,7 +974,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
+                if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() > 0:
                     stepHelper.setMinMergeSize(minSize, maxEvents)
 
             if task.taskType() == "Merge":

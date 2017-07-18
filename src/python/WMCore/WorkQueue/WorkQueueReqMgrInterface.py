@@ -76,10 +76,6 @@ class WorkQueueReqMgrInterface(object):
         work = 0
         workLoads = []
 
-        if queue.params['DrainMode']:
-            self.logger.info('Draining queue: Skip requesting work from ReqMgr')
-            return 0
-
         try:
             workLoads = self.getAvailableRequests()
         except Exception as ex:
@@ -288,11 +284,6 @@ class WorkQueueReqMgrInterface(object):
 
         work = 0
         requests = []
-
-        # Drain mode, don't pull any work into open requests. They will be closed if the queue stays in drain long enough
-        if queue.params['DrainMode']:
-            self.logger.info('Draining queue: Skip requesting work from ReqMgr')
-            return 0
 
         try:
             requests = self.reqMgr2.getRequestByStatus("running-open", detail=False)

@@ -158,17 +158,25 @@ class AuxBaseAPI(RESTEntity):
 
 
     def validate(self, apiobj, method, api, param, safe):
-        pass
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["subName"] = param.args.pop(0)
+            return
+        return
 
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
-    def get(self):
+    def get(self, subName=None):
         """
         Return entire self.name document
-
+        subName is subcategory of document which is added as postfix string
         """
         try:
-            sw = self.reqmgr_aux_db.document(self.name)
+            if subName:
+                docName = "%s_%s" % (self.name, subName)
+            else:
+                docName = self.name
+            sw = self.reqmgr_aux_db.document(docName)
             del sw["_id"]
             del sw["_rev"]
         except CouchNotFoundError:
@@ -177,7 +185,7 @@ class AuxBaseAPI(RESTEntity):
         return rows([sw])
     
     @restcall
-    def post(self):
+    def post(self, subName=None):
         """
         post sofware version doucment
         """
@@ -186,10 +194,41 @@ class AuxBaseAPI(RESTEntity):
             raise MissingPostData()
         else:
             doc = json.loads(data)
-        doc = Document(self.name, doc)
+        if subName:
+            docName = "%s_%s" % (self.name, subName)
+        else:
+            docName = self.name
+        doc = Document(docName, doc)
         result = self.reqmgr_aux_db.commitOne(doc)
         return result
 
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    def put(self, subName=None):
+        """
+        update document for the given  self.name and subName
+        """
+        data = cherrypy.request.body.read()
+        if not data:
+            raise MissingPostData()
+        else:
+            propertyDict = json.loads(data)
+
+        try:
+            result = None
+            if subName:
+                docName = "%s_%s" % (self.name, subName)
+            else:
+                docName = self.name
+
+            if propertyDict:
+                existDoc = self.reqmgr_aux_db.document(docName)
+                existDoc.update(propertyDict)
+
+                result = self.reqmgr_aux_db.commitOne(existDoc)
+        except CouchNotFoundError:
+            raise NoSuchInstance
+
+        return result
 
 class CMSSWVersions(AuxBaseAPI):
     """

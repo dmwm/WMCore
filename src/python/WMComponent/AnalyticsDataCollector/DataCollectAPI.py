@@ -4,7 +4,6 @@ Provide functions to collect data and upload data
 
 import os
 import time
-import subprocess
 import logging
 
 import WMCore
@@ -432,16 +431,6 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
 
 
-def isDrainMode(config):
-    """
-    config is loaded WMAgentCofig
-    """
-    if hasattr(config, "Tier0Feeder"):
-        return False
-    else:
-        return config.WorkQueueManager.queueParams.get('DrainMode', False)
-
-
 def initAgentInfo(config):
     agentInfo = {}
     agentInfo['agent_team'] = config.Agent.teamName
@@ -450,31 +439,6 @@ def initAgentInfo(config):
     # temporarly add port for the split test
     agentInfo['agent_url'] = "%s" % config.Agent.hostName
     return agentInfo
-
-
-def diskUse():
-    """
-    This returns the % use of each disk partition
-    """
-    diskPercent = []
-    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
-    output = df.communicate()[0].split("\n")
-    for x in output:
-        split = x.split()
-        if split != [] and split[0] != 'Filesystem':
-            diskPercent.append({'mounted': split[5], 'percent': split[4]})
-
-    return diskPercent
-
-
-def numberCouchProcess():
-    """
-    This returns the number of couch process
-    """
-    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
-    process = ps.communicate()[0].count('couchjs')
-
-    return process
 
 
 class DataUploadTime(object):

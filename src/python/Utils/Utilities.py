@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from __future__ import division, print_function
 import time
-
+import subprocess
 
 def makeList(stringList):
     """
@@ -78,3 +78,28 @@ def timeit(func):
         return (t2 - t1), res, func.__name__
 
     return wrapper
+
+
+def diskUse():
+    """
+    This returns the % use of each disk partition
+    """
+    diskPercent = []
+    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
+    output = df.communicate()[0].split("\n")
+    for x in output:
+        split = x.split()
+        if split != [] and split[0] != 'Filesystem':
+            diskPercent.append({'mounted': split[5], 'percent': split[4]})
+
+    return diskPercent
+
+
+def numberCouchProcess():
+    """
+    This returns the number of couch process
+    """
+    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
+    process = ps.communicate()[0].count('couchjs')
+
+    return process

@@ -22,6 +22,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMException import WMException
 
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 
 class JobArchiverPollerException(WMException):
     """
@@ -307,7 +308,7 @@ class JobArchiverPoller(BaseWorkerThread):
         injected = []
         for name in result:
             try:
-                if self.workQueue.getWMBSInjectionStatus(workflowName=name):
+                if self.workQueue.getWMBSInjectionStatus(name, isDrainMode()):
                     injected.append(name)
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup

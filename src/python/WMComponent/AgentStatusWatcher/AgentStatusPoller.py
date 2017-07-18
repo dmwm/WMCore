@@ -7,6 +7,7 @@ Perform general agent monitoring, like:
 """
 __all__ = []
 
+import os
 import threading
 import logging
 import time
@@ -22,7 +23,7 @@ from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
     diskUse, numberCouchProcess
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
-
+from WMCore.Configuration import loadConfigurationFile, saveConfigurationFile
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -37,6 +38,12 @@ class AgentStatusPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
+        self.config_path = os.path.join(os.environ.get('config', ''), 'config.py')
+        if not os.path.exists(config_path):
+            self.config_path = '/data/srv/wmagent/current/config/wmagent/config.py'
+            if not os.path.exists(config_path):
+                self.config_path = None
+
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
@@ -106,6 +113,9 @@ class AgentStatusPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
+            if self.config_path is not None:
+                self.config = loadConfigurationFile(self.config_path)
+
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
 
@@ -200,6 +210,9 @@ class AgentStatusPoller(BaseWorkerThread):
             if float(disk['percent'].strip('%')) >= diskUseThreshold and \
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
+                self.config.WorkQueueManager.queueParams['DrainMode'] = True
+                if self.config_path is not None and not isDrainMode(self.config):
+                    saveConfigurationFile(self.config, self.config_path)
 
         # Couch process warning
         couchProc = numberCouchProcess()

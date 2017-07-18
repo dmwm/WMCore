@@ -312,6 +312,12 @@ else
 fi
 echo "Done!" && echo
 
+### Upload WMAgentConfig to AuxDB
+echo "*** Upload WMAgentConfig to AuxDB ***"
+cd $MANAGE
+./manage execute-agent wmagent-upload-config
+echo "Done!" && echo
+
 ###
 # set scripts and specific cronjobs
 ###

@@ -1257,13 +1257,6 @@ class WorkQueueTest(WorkQueueTestCase):
         # no more work available
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA': 1000}, {})))
 
-    def testDrainMode(self):
-        """Stop acquiring work when DrainMode set"""
-        self.localQueue.params['DrainMode'] = True
-        self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}), 0)
-
     def testWMBSInjectionStatus(self):
 
         self.globalQueue.queueWork(self.spec.specUrl())

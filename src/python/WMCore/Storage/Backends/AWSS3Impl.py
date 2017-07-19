@@ -48,12 +48,11 @@ class AWSS3Impl(StageOutImpl):
             EXIT_STATUS=$?
             echo "aws s3 cp exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero aws s3 cp Exit status!!!"
+               echo "ERROR: Non-zero aws s3 cp Exit status!!!"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
             fi
-            exit 0
+            exit $EXIT_STATUS
             """ % self.createRemoveFileCommand(targetPFN)
 
         return result

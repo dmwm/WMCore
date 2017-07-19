@@ -15,7 +15,6 @@ import argparse
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
-from WMCore.Storage.Execute import execute
 
 
 class XRDCPImpl(StageOutImpl):
@@ -150,12 +149,12 @@ class XRDCPImpl(StageOutImpl):
             copyCommand += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
-            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"ERROR: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
         else:
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
-            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"ERROR: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
         return copyCommand
 
@@ -166,7 +165,7 @@ class XRDCPImpl(StageOutImpl):
         """
         (_, host, path, _) = self.splitPFN(pfnToRemove)
         command = "xrdfs %s rm %s" % (host, path)
-        execute(command)
+        self.executeCommand(command)
         return
 
 registerStageOutImpl("xrdcp", XRDCPImpl)

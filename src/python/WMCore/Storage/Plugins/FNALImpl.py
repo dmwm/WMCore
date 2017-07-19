@@ -281,7 +281,7 @@ class FNALImpl(StageOutImplV2):
             try:
                 self.runCommandFailOnNonZero(result)
             except:
-                logging.info("dccp failed, removing failed file")
+                logging.info("xrdcp failed, removing failed file")
                 if not stageOut and os.path.exists(pnfsPfn2(targetPFN)):
                     logging.info("unlinking %s" % pnfsPfn2(targetPFN))
                     os.unlink(pnfsPfn2(targetPFN))

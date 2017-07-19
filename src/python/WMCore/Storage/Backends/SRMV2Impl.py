@@ -10,8 +10,8 @@ import os, re
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.StageOutError import StageOutError
+from WMCore.Storage.Execute import runCommandWithOutput
 
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
@@ -24,8 +24,8 @@ class SRMV2Impl(StageOutImpl):
     Implement interface for srmcp v2 command
 
     """
-
-    run = staticmethod(runCommand)
+    # also used in unittests
+    run = staticmethod(runCommandWithOutput)
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
@@ -75,7 +75,7 @@ class SRMV2Impl(StageOutImpl):
                 exitCode, output = self.run(checkdircmd + folder)
                 levelToCreateFrom = count # create dirs from here (at least)
                 if exitCode: # did srmls fail to execute properly?
-                    raise RuntimeError("Error checking directory existence, %s" % str(output))
+                    raise RuntimeError("ERROR checking directory existence, %s" % str(output))
                 if not output.count('SRM_FAILURE'): # any other codes?
                     break
             except Exception as ex:
@@ -84,7 +84,6 @@ class SRMV2Impl(StageOutImpl):
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
 
         #  // Create needed directory levels from end of previous loop
         # //  to end of directory structure
@@ -93,14 +92,13 @@ class SRMV2Impl(StageOutImpl):
             try:
                 exitCode, output = self.run(mkdircommand + folder)
                 if exitCode:
-                    raise RuntimeError("Error creating directory, %s" % str(output))
+                    raise RuntimeError("ERROR creating directory, %s" % str(output))
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircommand + folder
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
 
     def createRemoveFileCommand(self, pfn):
         """
@@ -142,12 +140,13 @@ class SRMV2Impl(StageOutImpl):
             EXIT_STATUS=`cat $REPORT_FILE | cut -f3 -d" "`
             echo "srmcp exit status: $EXIT_STATUS"
             if [[ "X$EXIT_STATUS" == "X" ]] && [[ `grep -c SRM_INVALID_PATH srm.output.$$` != 0 ]]; then
-                exit 1 # dir does not eixst
+                echo "ERROR: srmcp failed with SRM_INVALID_PATH"
+                exit 1   # dir does not exist
             elif [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero srmcp Exit status!!!"
+               echo "ERROR: srmcp exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
+               exit $EXIT_STATUS
             fi
 
             """ % self.createRemoveFileCommand(targetPFN)

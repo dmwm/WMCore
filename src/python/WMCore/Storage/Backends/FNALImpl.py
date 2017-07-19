@@ -126,7 +126,13 @@ class FNALImpl(StageOutImpl):
                 result += " %s " % options
             result += " %s " % sourcePFN
             result += " %s " % targetPFN
-            result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+            result += """
+            EXIT_STATUS=$?
+            if [[ $EXIT_STATUS != 0 ]]; then
+                echo "ERROR: xrdcp exited with $EXIT_STATUS"
+            fi
+            exit $EXIT_STATUS
+            """
             return result
 
     def buildStageInCommand(self, sourcePFN, targetPFN, options=None):
@@ -140,7 +146,13 @@ class FNALImpl(StageOutImpl):
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s " % targetPFN
-        result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+        result += """
+        EXIT_STATUS=$?
+        if [[ $EXIT_STATUS != 0 ]]; then
+            echo "ERROR: xrdcp exited with $EXIT_STATUS"
+        fi
+        exit $EXIT_STATUS
+        """
         return result
 
     def removeFile(self, pfnToRemove):

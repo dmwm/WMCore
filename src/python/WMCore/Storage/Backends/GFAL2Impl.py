@@ -9,7 +9,6 @@ import logging
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
@@ -19,7 +18,6 @@ class GFAL2Impl(StageOutImpl):
     _GFAL2Impl_
     Implement interface for GFAL2 commands (gfal-copy, gfal-rm)
     """
-    run = staticmethod(runCommand)
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
@@ -130,12 +128,11 @@ class GFAL2Impl(StageOutImpl):
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero gfal-copy Exit status!!!"
+               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
             fi
-            exit 0
+            exit $EXIT_STATUS
             """ % self.createRemoveFileCommand(targetPFN)
 
         return result

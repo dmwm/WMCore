@@ -9,8 +9,7 @@ from __future__ import print_function
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-
-from WMCore.Storage.Execute import runCommand
+from WMCore.Storage.Execute import runCommandWithOutput
 
 
 class CPImpl(StageOutImpl):
@@ -20,8 +19,7 @@ class CPImpl(StageOutImpl):
     Implement interface for plain cp command
 
     """
-
-    run = staticmethod(runCommand)
+    run = staticmethod(runCommandWithOutput)
 
     def createSourceName(self, protocol, pfn):
         """
@@ -41,29 +39,32 @@ class CPImpl(StageOutImpl):
         targetdir= os.path.dirname(targetPFN)
         checkdirexitCode = None
         checkdircmd="/bin/ls %s > /dev/null " % targetdir
-        print("Check dir existence : %s" %checkdircmd)
+        print("Check dir existence : %s" % checkdircmd)
         try:
-            checkdirexitCode = self.run(checkdircmd)
+            checkdirexitCode, output = self.run(checkdircmd)
         except Exception as ex:
             msg = "Warning: Exception while invoking command:\n"
             msg += "%s\n" % checkdircmd
             msg += "Exception: %s\n" % str(ex)
             msg += "Go on anyway..."
             print(msg)
-            pass
 
         if checkdirexitCode:
             mkdircmd = "umask 002 ; /bin/mkdir -p %s" % targetdir
-            print("=> creating the dir : %s" %mkdircmd)
+            print("=> creating the dir : %s" % mkdircmd)
             try:
-                self.run(mkdircmd)
+                exitCode, output = self.run(mkdircmd)
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircmd
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
+            if exitCode:
+                msg = "Warning: failed to create the dir %s with the following error:\n%s" % (targetdir, output)
+                print(msg)
+            else:
+                print("=> dir %s correctly created" % targetdir)
         else:
             print("=> dir already exists... do nothing.")
 

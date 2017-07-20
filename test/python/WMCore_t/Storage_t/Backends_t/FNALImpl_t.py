@@ -54,20 +54,27 @@ class FNALImplTest(unittest.TestCase):
     def testCreateStageOutCommand_stageInTrue(self):
         self.FNALImpl.stageIn = True
         result = self.FNALImpl.createStageOutCommand("sourcePFN", "targetPFN")
-        expedctedResult = "/usr/bin/xrdcp -d 0 "
-        expedctedResult += " sourcePFN "
-        expedctedResult += " targetPFN "
-        expedctedResult += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+        expedctedResult = "/usr/bin/xrdcp -d 0  sourcePFN  targetPFN "
+        expedctedResult += """
+        EXIT_STATUS=$?
+        if [[ $EXIT_STATUS != 0 ]]; then
+            echo "ERROR: xrdcp exited with $EXIT_STATUS"
+        fi
+        exit $EXIT_STATUS
+        """
         self.assertEqual(expedctedResult, result)
 
     def testCreateStageOutCommand_stageInTrueOptions(self):
         self.FNALImpl.stageIn = True
-        result = self.FNALImpl.createStageOutCommand("sourcePFN", "targetPFN", options=["test"])
-        expedctedResult = "/usr/bin/xrdcp -d 0 "
-        expedctedResult += " ['test'] "
-        expedctedResult += " sourcePFN "
-        expedctedResult += " targetPFN "
-        expedctedResult += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+        result = self.FNALImpl.createStageOutCommand("sourcePFN", "targetPFN", options="--test")
+        expedctedResult = "/usr/bin/xrdcp -d 0  --test  sourcePFN  targetPFN "
+        expedctedResult += """
+        EXIT_STATUS=$?
+        if [[ $EXIT_STATUS != 0 ]]; then
+            echo "ERROR: xrdcp exited with $EXIT_STATUS"
+        fi
+        exit $EXIT_STATUS
+        """
         self.assertEqual(expedctedResult, result)
 
     @mock.patch('WMCore.Storage.Backends.LCGImpl.LCGImpl.createStageOutCommand')
@@ -84,21 +91,35 @@ class FNALImplTest(unittest.TestCase):
     def testCreateStageOutCommand_xrdcpOptions(self, mock_stat):
         mock_stat.return_value = [0, 1, 2, 3, 4, 5, 6]
         result = self.FNALImpl.createStageOutCommand("root://test", "targetPFN", options="test")
-        expectedResult = "/usr/bin/xrdcp-old -d 0 -f "
+        expectedResult = "xrdcp-old -d 0 -f "
         expectedResult += " test "
         expectedResult += " root://test "
         expectedResult += " targetPFN "
-        expectedResult += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+        expectedResult += """
+            EXIT_STATUS=$?
+            if [[ $EXIT_STATUS != 0 ]]; then
+                echo "ERROR: xrdcp exited with $EXIT_STATUS"
+            fi
+            exit $EXIT_STATUS
+            """
         self.assertEqual(expectedResult, result)
 
     @mock.patch('WMCore.Storage.Backends.LCGImpl.os.stat')
     def testCreateStageOutCommand_xrdcpChecksum(self, mock_stat):
         mock_stat.return_value = [0, 1, 2, 3, 4, 5, 6]
         result = self.FNALImpl.createStageOutCommand("root://test", "targetPFN", checksums={"adler32": "32"})
-        expectedResult = "/usr/bin/xrdcp-old -d 0 -f "
+        expectedResult = "xrdcp-old -d 0 -f "
         expectedResult += " root://test "
         expectedResult += " targetPFN\?eos.targetsize=6\&eos.checksum=00000032 "
-        expectedResult += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
+        expectedResult += """
+            EXIT_STATUS=$?
+            if [[ $EXIT_STATUS != 0 ]]; then
+                echo "ERROR: xrdcp exited with $EXIT_STATUS"
+            fi
+            exit $EXIT_STATUS
+            """
+        print(expectedResult)
+        print(result)
         self.assertEqual(expectedResult, result)
 
     def testCreateStageOutCommand_srmAndXrdcp(self):

@@ -7,10 +7,12 @@ this will let us test that the fallback works properly
 
 """
 from __future__ import print_function
+
 import os
+
+from WMCore.Storage.Execute import runCommandWithOutput
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.Execute import runCommandWithOutput
 
 
 class TestFallbackToOldBackendImpl(StageOutImpl):
@@ -36,10 +38,10 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
 
         create dir with group permission
         """
-        targetdir= os.path.dirname(targetPFN)
+        targetdir = os.path.dirname(targetPFN)
 
-        checkdircmd="/bin/ls %s > /dev/null " % targetdir
-        print("Check dir existence : %s" %checkdircmd)
+        checkdircmd = "/bin/ls %s > /dev/null " % targetdir
+        print("Check dir existence : %s" % checkdircmd)
         try:
             checkdirexitCode, output = runCommandWithOutput(checkdircmd)
         except Exception as ex:
@@ -51,7 +53,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
 
         if checkdirexitCode:
             mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-            print("=> creating the dir : %s" %mkdircmd)
+            print("=> creating the dir : %s" % mkdircmd)
             try:
                 exitCode, output = runCommandWithOutput(mkdircmd)
             except Exception as ex:
@@ -68,8 +70,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         else:
             print("=> dir already exists... do nothing.")
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -91,10 +92,9 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
             echo "ERROR: Size Mismatch between local and SE"
             exit 60311
         fi
-        """ % (targetPFN,original_size)
+        """ % (targetPFN, original_size)
         print(result)
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

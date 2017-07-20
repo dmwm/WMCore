@@ -3,9 +3,8 @@
 _GFAL2Impl_
 Implementation of StageOutImpl interface for gfal-copy
 """
-import os
 import argparse
-import logging
+import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -29,7 +28,6 @@ class GFAL2Impl(StageOutImpl):
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
         self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
 
-
     def createFinalPFN(self, pfn):
         """
         _createFinalPFN_
@@ -43,14 +41,12 @@ class GFAL2Impl(StageOutImpl):
             return "file://%s" % os.path.abspath(pfn)
         return pfn
 
-
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
         GFAL2 uses file:/// urls
         """
         return self.createFinalPFN(pfn)
-
 
     def createTargetName(self, protocol, pfn):
         """
@@ -59,7 +55,6 @@ class GFAL2Impl(StageOutImpl):
         """
         return self.createFinalPFN(pfn)
 
-
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
@@ -67,7 +62,6 @@ class GFAL2Impl(StageOutImpl):
         it is not needed to create directory
         """
         return
-
 
     def createRemoveFileCommand(self, pfn):
         """
@@ -82,7 +76,6 @@ class GFAL2Impl(StageOutImpl):
             return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
             return self.removeCommand % self.createFinalPFN(pfn)
-
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
@@ -136,7 +129,6 @@ class GFAL2Impl(StageOutImpl):
             """ % self.createRemoveFileCommand(targetPFN)
 
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

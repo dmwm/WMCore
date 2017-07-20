@@ -31,14 +31,14 @@ class CPImplTest(unittest.TestCase):
 
     def testCreateOutputDirectory_error1Exception(self):
         self.CPImpl.run = Mock()
-        self.CPImpl.run.side_effect = [1, Exception()]
+        self.CPImpl.run.return_value = [1, Exception("Failed to create directory")]
         self.CPImpl.createOutputDirectory("dir/file/test")
         self.CPImpl.run.assert_has_calls([call("/bin/ls dir/file > /dev/null "),
                                           call("umask 002 ; /bin/mkdir -p dir/file")])
 
     @mock.patch('WMCore.Storage.Backends.CPImpl.CPImpl.run')
     def testCreateOutputDirectory_error1(self, mock_runCommand):
-        mock_runCommand.return_value = 1
+        mock_runCommand.return_value = [1, 2]
         self.CPImpl.createOutputDirectory("dir/file/test")
         mock_runCommand.assert_has_calls([call("/bin/ls dir/file > /dev/null "),
                                           call("umask 002 ; /bin/mkdir -p dir/file")])
@@ -46,7 +46,7 @@ class CPImplTest(unittest.TestCase):
     def testCreateStageOutCommand_realFile(self):
         base = os.path.join(getTestBase(), "WMCore_t/Storage_t/ExecutableCommands.py")
         result = self.CPImpl.createStageOutCommand(base, "test")
-        expectedResult = [" '590' -eq $DEST_SIZE", "DEST_SIZE=`/bin/ls -l test", base]
+        expectedResult = [" '642' -eq $DEST_SIZE", "DEST_SIZE=`/bin/ls -l test", base]
         for text in expectedResult:
             self.assertIn(text, result)
 

@@ -58,7 +58,7 @@ class SRMV2ImplTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.Backends.SRMV2Impl.SRMV2Impl.run')
     def testCreateOutputDirectory_exitCode(self, mock_run):
         mock_run.return_value = (1, "test")
-        self.assertRaises(RuntimeError("Error creating directory, test"),
+        self.assertRaises(RuntimeError("ERROR creating directory, test"),
                           self.SRMV2Impl.createOutputDirectory("/folder/test/test2/test3/test4/test5"))
         calls = [call("srmls -recursion_depth=0 -retry_num=1 /folder/test/test2/test3/test4")]
         mock_run.assert_has_calls(calls)
@@ -66,7 +66,7 @@ class SRMV2ImplTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.Backends.SRMV2Impl.SRMV2Impl.run')
     def testCreateOutputDirectory_exitCode2(self, mock_run):
         mock_run.side_effect = [(0, "SRM_FAILURE test"), (0, "SRM_FAILURE test"), (1, "test")]
-        self.assertRaises(RuntimeError("Error creating directory, test"),
+        self.assertRaises(RuntimeError("ERROR creating directory, test"),
                           self.SRMV2Impl.createOutputDirectory("folder/test1/test2/test3/test4/test5/test6/test7"))
         calls = [call("srmls -recursion_depth=0 -retry_num=1 folder/test1/test2/test3/test4/test5/test6"),
                  call("srmls -recursion_depth=0 -retry_num=1 folder/test1/test2/test3/test4/test5"),
@@ -122,12 +122,13 @@ class SRMV2ImplTest(unittest.TestCase):
             EXIT_STATUS=`cat $REPORT_FILE | cut -f3 -d" "`
             echo "srmcp exit status: $EXIT_STATUS"
             if [[ "X$EXIT_STATUS" == "X" ]] && [[ `grep -c SRM_INVALID_PATH srm.output.$$` != 0 ]]; then
-                exit 1 # dir does not eixst
+                echo "ERROR: srmcp failed with SRM_INVALID_PATH"
+                exit 1   # dir does not exist
             elif [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero srmcp Exit status!!!"
+               echo "ERROR: srmcp exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
+               exit $EXIT_STATUS
             fi
 
             """ % createRemoveFileCommandResult
@@ -136,19 +137,19 @@ class SRMV2ImplTest(unittest.TestCase):
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
 
         metadataCheck = \
-        """
-        SRM_OUTPUT=`srmls -recursion_depth=0 -retry_num=1 %s 2>/dev/null`
-        SRM_SIZE=`echo $SRM_OUTPUT | grep '%s' | grep -v '%s' | awk '{print $1;}'`
-        echo "SRM Size is $SRM_SIZE"
-        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-           exit 0
-        else
-           echo $SRM_OUTPUT
-           echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
-           %s
-           exit 60311
-        fi
-        """ % (remotePFN, remotePath, remoteHost, createRemoveFileCommandResult)
+            """
+            SRM_OUTPUT=`srmls -recursion_depth=0 -retry_num=1 %s 2>/dev/null`
+            SRM_SIZE=`echo $SRM_OUTPUT | grep '%s' | grep -v '%s' | awk '{print $1;}'`
+            echo "SRM Size is $SRM_SIZE"
+            if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+               exit 0
+            else
+               echo $SRM_OUTPUT
+               echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+               %s
+               exit 60311
+            fi
+            """ % (remotePFN, remotePath, remoteHost, createRemoveFileCommandResult)
         result += metadataCheck
 
         return result

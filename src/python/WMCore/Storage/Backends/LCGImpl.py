@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for lcg-cp
 
 """
 import os
+
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 

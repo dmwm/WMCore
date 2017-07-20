@@ -9,12 +9,11 @@ Generic, will/should work with any site.
 """
 from __future__ import print_function
 
-import os
 import argparse
+import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-
 
 
 class XRDCPImpl(StageOutImpl):

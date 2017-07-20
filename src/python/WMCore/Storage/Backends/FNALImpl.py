@@ -6,10 +6,12 @@ Implementation of StageOutImpl interface for FNAL
 
 """
 from __future__ import print_function
+
 import os
+
+from WMCore.Storage.Backends.LCGImpl import LCGImpl
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 _CheckExitCodeOption = True
 

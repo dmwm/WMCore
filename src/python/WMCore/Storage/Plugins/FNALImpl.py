@@ -99,7 +99,7 @@ class FNALImpl(StageOutImplV2):
         if PFN.find('/store/user/meloam/lustre/') != -1:
             method = 'lustre'
 
-        logging.debug("Using method %s for PFN %s" % (method, PFN))
+        logging.debug("Using method %s for PFN %s", method, PFN)
         return method
 
     def substituteLustrePath(self, pfn):
@@ -137,26 +137,26 @@ class FNALImpl(StageOutImplV2):
 
 
         """
-        logging.info("createOutputDirectoryDCAP called on %s" % targetPFN)
+        logging.info("createOutputDirectoryDCAP called on %s", targetPFN)
         # only create dir on remote storage
         if targetPFN.find('/pnfs/') == -1:
             return
 
         filePath = self.dcapToPNFS(targetPFN)
         directory = os.path.dirname(filePath)
-        logging.info("Creating path: %s" % directory)
+        logging.info("Creating path: %s", directory)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
     def createOutputDirectoryEOS(self, targetPFN):
-        logging.info("createOutputDirectoryEOS called on %s" % targetPFN)
+        logging.info("createOutputDirectoryEOS called on %s", targetPFN)
         # only create dir on remote storage
         if targetPFN.find('root://cmseos.fnal.gov') == -1:
             return
 
         filePath = targetPFN.split("root://cmseos.fnal.gov/", 1)[1]
         directory = os.path.dirname(filePath)
-        logging.info("Creating path: %s" % directory)
+        logging.info("Creating path: %s", directory)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -175,17 +175,17 @@ class FNALImpl(StageOutImplV2):
         if method == 'srm':
             return self.srmImpl.createSourceName(protocol, pfn)
         elif method == 'dccp':
-            logging.info("Translating PFN for dcache: %s" % pfn)
+            logging.info("Translating PFN for dcache: %s", pfn)
             pfn = pfn.split("/store/")[1]
             dcacheDoor = getoutput(
                 ". " + envScript + "\n" + \
                 "/opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = "%s%s" % (dcacheDoor, pfn)
-            logging.info("  Translated PFN: %s" % pfn)
+            logging.info("  Translated PFN: %s", pfn)
         elif method == 'lustre':
-            logging.info("Translating PFN for lustre: %s" % pfn)
+            logging.info("Translating PFN for lustre: %s", pfn)
             pfn = self.substituteLustrePath(pfn)
-            logging.info("  Translated PFN: %s" % pfn)
+            logging.info("  Translated PFN: %s", pfn)
         else:
             raise RuntimeError("Unknown method found in createSourceName: %s" % method)
 
@@ -207,13 +207,13 @@ class FNALImpl(StageOutImplV2):
             pfnSplit = pfnToRemove.split("/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             if os.path.exists(filePath):
-                logging.info("Removing file: " + filePath)
+                logging.info("Removing file: %s", filePath)
                 os.unlink(filePath)
         elif method == 'lustre':
             pfnToRemove = self.substituteLustrePath(pfnToRemove)
             filePath = pfnToRemove.split("root://cmseos.fnal.gov/", 1)[1]
             if os.path.exists(filePath):
-                logging.info("Removing file: " + filePath)
+                logging.info("Removing file: %s", filePath)
                 os.unlink(filePath)
         else:
             raise RuntimeError("Unsupported storage method in doDelete: %s" % method)
@@ -283,7 +283,7 @@ class FNALImpl(StageOutImplV2):
             except:
                 logging.info("xrdcp failed, removing failed file")
                 if not stageOut and os.path.exists(pnfsPfn2(targetPFN)):
-                    logging.info("unlinking %s" % pnfsPfn2(targetPFN))
+                    logging.info("unlinking %s", pnfsPfn2(targetPFN))
                     os.unlink(pnfsPfn2(targetPFN))
                 else:
                     self.doDelete(targetPFN, pnn, command, options, protocol)
@@ -301,7 +301,6 @@ class FNALImpl(StageOutImplV2):
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
-            dirname = os.path.dirname(targetPFN)
             result = "#!/bin/bash\n"
             result += ". " + envScript + "\n"
             result += "dccp -o 86400  -d 0 -X -role=cmsprod %s %s %s" % (optionsStr, sourcePFN, targetPFN)
@@ -310,7 +309,7 @@ class FNALImpl(StageOutImplV2):
             except:
                 logging.info("dccp failed, removing failed file")
                 if not stageOut and os.path.exists(pnfsPfn2(targetPFN)):
-                    logging.info("unlinking %s" % pnfsPfn2(targetPFN))
+                    logging.info("unlinking %s", pnfsPfn2(targetPFN))
                     os.unlink(pnfsPfn2(targetPFN))
                 else:
                     self.doDelete(targetPFN, pnn, command, options, protocol)

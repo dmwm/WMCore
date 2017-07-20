@@ -102,10 +102,10 @@ class LCGImplTest(unittest.TestCase):
             cat stageout.log
             echo -e "\nlcg-cp exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-                echo "Non-zero lcg-cp Exit status!!!"
+                echo "ERROR: lcg-cp exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"
                 %s
-                exit 60311
+                exit $EXIT_STATUS
             fi
 
             """ % createRemoveFileCommandResult
@@ -126,9 +126,8 @@ class LCGImplTest(unittest.TestCase):
                         %s
                         exit 60311
                     fi
-                else
-                    exit 0
                 fi
+                exit 0
                 """ % (checksums, createRemoveFileCommandResult)
         else:
             checksumCommand = "exit 0"

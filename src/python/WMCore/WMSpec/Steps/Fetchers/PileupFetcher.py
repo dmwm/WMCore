@@ -141,7 +141,7 @@ class PileupFetcher(FetcherInterface):
         """
         cacheFile = self._getCacheFilePath(stepHelper)
 
-        if not self._isCacheExpired(cacheFile) and os.path.getsize(cacheFile) > 0:
+        if not self._isCacheExpired(cacheFile, delta=0.5) and os.path.getsize(cacheFile) > 0:
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
             fileName = self._getStepFilePath(stepHelper)

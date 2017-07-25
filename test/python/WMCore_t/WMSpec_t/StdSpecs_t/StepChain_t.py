@@ -576,6 +576,59 @@ class StepChainTests(EmulatedUnitTestCase):
             '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
         return
 
+    def testSubscriptions(self):
+        """
+        Build a StepChain workload defining different processed dataset name among the steps
+        """
+        subscriptionInfo = {'AutoApproveSites': ['T1_US_FNAL_Disk'],
+                            'CustodialGroup': 'FacOps',
+                            'CustodialSites': ['T1_US_FNAL_MSS'],
+                            'CustodialSubType': 'Replica',
+                            'DeleteFromSource': False,
+                            'NonCustodialGroup': 'AnalysisOps',
+                            'NonCustodialSites': ['T1_US_FNAL_Disk'],
+                            'NonCustodialSubType': 'Move',
+                            'Priority': 'High'}
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "CustodialSites": subscriptionInfo['CustodialSites'],
+                      "NonCustodialSites": subscriptionInfo['NonCustodialSites'],
+                      "AutoApproveSubscriptionSites": subscriptionInfo['AutoApproveSites'],
+                      "SubscriptionPriority": subscriptionInfo['Priority'],
+                      "CustodialSubType": subscriptionInfo['CustodialSubType'],
+                      "NonCustodialSubType": subscriptionInfo['NonCustodialSubType'],
+                      "CustodialGroup": subscriptionInfo['CustodialGroup'],
+                      "NonCustodialGroup": subscriptionInfo['NonCustodialGroup']
+                      }
+
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # and assign it
+        testWorkload.updateArguments(assignDict)
+
+        outputDsets = testWorkload.listOutputDatasets()
+        self.assertEqual(len(outputDsets), 3)
+        expectedInfo = {dset: deepcopy(subscriptionInfo) for dset in outputDsets}
+        self.assertDictEqual(testWorkload.getSubscriptionInformation(), expectedInfo)
+
+        ### and now test it with duplicated output module settings
+        testArguments['Step2']['KeepOutput'] = True
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        testWorkload.updateArguments(assignDict)
+
+        outputDsets = testWorkload.listOutputDatasets()
+        self.assertEqual(len(outputDsets), 4)
+        expectedInfo = {dset: deepcopy(subscriptionInfo) for dset in outputDsets}
+        self.assertDictEqual(testWorkload.getSubscriptionInformation(), expectedInfo)
+
     def testOutputDataSettings(self):
         """
         Build a StepChain workload defining different processed dataset name among the steps
@@ -678,8 +731,7 @@ class StepChainTests(EmulatedUnitTestCase):
                       "UnmergedLFNBase": "/store/unmerged"
                       }
         testWorkload.updateArguments(assignDict)
-        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7981
-        # _checkThisOutputStuff(assigned=True)
+        _checkThisOutputStuff(assigned=True)
 
         # Case 4: workload creation and assignment, output dataset overriden with new values
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)

@@ -916,11 +916,13 @@ class WMWorkloadTest(unittest.TestCase):
             self.assertEqual(datasetSub["NonCustodialSubType"], "Replica",
                              "Wrong custodial subscription type for %s" % outputDataset)
 
+        testWorkload = self.makeTestWorkload()[0]
         testWorkload.setSubscriptionInformation(custodialSites=["CMSSite_1", "CMSSite_2"],
                                                 nonCustodialSites=["CMSSite_3"],
                                                 autoApproveSites=["CMSSite_2"], custodialSubType="Move",
                                                 nonCustodialSubType="Move", priority="Normal")
         subInformation = testWorkload.getSubscriptionInformation()
+
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
             self.assertEqual(set(datasetSub["CustodialSites"]), set(["CMSSite_1", "CMSSite_2"]),

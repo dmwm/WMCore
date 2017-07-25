@@ -1686,18 +1686,6 @@ class WMWorkloadHelper(PersistencyHelper):
         # Check whether we should check location for the data
         self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
 
-        # Set phedex subscription information
-        if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
-            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
-                                            nonCustodialSites=kwargs["NonCustodialSites"],
-                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                            custodialSubType=kwargs["CustodialSubType"],
-                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                            custodialGroup=kwargs["CustodialGroup"],
-                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                            priority=kwargs["SubscriptionPriority"],
-                                            deleteFromSource=kwargs["DeleteFromSource"])
-
         # Block closing information
         self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
                                    kwargs["BlockCloseMaxFiles"],
@@ -1717,6 +1705,20 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)
+
+        # Since it lists the output datasets, it has to be done in the very end
+        # Set phedex subscription information
+        # Set phedex subscription information
+        if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
+            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                            nonCustodialSites=kwargs["NonCustodialSites"],
+                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                            custodialSubType=kwargs["CustodialSubType"],
+                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                            custodialGroup=kwargs["CustodialGroup"],
+                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                            priority=kwargs["SubscriptionPriority"],
+                                            deleteFromSource=kwargs["DeleteFromSource"])
 
         return
 

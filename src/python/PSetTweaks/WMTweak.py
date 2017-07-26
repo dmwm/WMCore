@@ -8,6 +8,12 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import map
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import logging
 import pickle
 import traceback
@@ -120,7 +126,7 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    lfnGroup = modifier + str(old_div(job.get("counter", 0), 1000)).zfill(4)
     return lfnGroup
 
 
@@ -214,7 +220,7 @@ def expandParameter(process, param):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in list(lastResults.items()):
                 for param in listParams(lastResultVal):
                     newResultKey = "%s.%s" % (lastResultKey, param)
                     newResultVal = getattr(lastResultVal, param)
@@ -228,7 +234,7 @@ def expandParameter(process, param):
 
         else:
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in list(lastResults.items()):
                 newResultKey = "%s.%s" % (lastResultKey, pset)
                 newResultVal = getattr(lastResultVal, pset, None)
                 if not hasattr(newResultVal, "parameters_"):
@@ -244,7 +250,7 @@ def expandParameter(process, param):
 listParams = lambda x: [y for y in x.parameters_()]
 
 
-class TweakMaker:
+class TweakMaker(object):
     """
     _TweakMaker_
 
@@ -265,7 +271,7 @@ class TweakMaker:
         tweak = PSetTweak()
         # handle process parameters
         processParams = []
-        [processParams.extend(expandParameter(process, param).keys())
+        [processParams.extend(list(expandParameter(process, param).keys()))
          for param in self.processLevel]
 
         [tweak.addParameter(param, getParameter(process, param))
@@ -324,7 +330,7 @@ childParameters = lambda p, x: [i for i in x._internal_settings if i not in x._i
 childSections = lambda s: [getattr(s, x) for x in s._internal_children]
 
 
-class ConfigSectionDecomposer:
+class ConfigSectionDecomposer(object):
     """
     _ConfigSectionDecomposer_
 
@@ -357,7 +363,7 @@ class ConfigSectionDecomposer:
             paramVal = getattr(configSect, par)
             self.parameters[paramName] = paramVal
 
-        map(self, childSections(configSect))
+        list(map(self, childSections(configSect)))
         self.queue.pop(-1)
 
 
@@ -471,7 +477,7 @@ def makeJobTweak(job):
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
-    for run in runs.keys():
+    for run in list(runs.keys()):
         lumiPairs = runs[run]
         for lumiPair in lumiPairs:
             if len(lumiPair) != 2:
@@ -488,7 +494,7 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k, v in baggageParams.items():
+    for k, v in list(baggageParams.items()):
         result.addParameter(k, v)
 
     return result

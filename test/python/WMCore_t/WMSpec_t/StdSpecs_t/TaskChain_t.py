@@ -1484,7 +1484,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName in mergedMods[t]:
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1506,7 +1506,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWorkload.updateArguments(assignDict)
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName, value in mergedMods[t].iteritems():
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1549,7 +1549,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         lfnBases = ("/store/unmerged", "/store/mc")
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName, value in mergedMods[t].iteritems():
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1559,13 +1559,12 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         return
 
-    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, assigned=False):
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases):
         """
         Validate data related to output dataset, output modules and subscriptions
         :param task: task object
         :param outMods: dictionary with the output module info for this task
         :param outDsets: dictionary with the output datasets info for this task
-        :param assigned: flag saying whether the workload was assigned or not
         """
         self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), [])
 
@@ -1577,14 +1576,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         for modName in outModDict:
             self._validateOutputModule(outModDict[modName], outMods[modName])
 
-        if assigned:
-            defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
-                           'DeleteFromSource': False, 'NonCustodialGroup': 'DataOps', 'CustodialSites': [],
-                           'CustodialSubType': 'Replica', 'CustodialGroup': 'DataOps', 'NonCustodialSubType': 'Replica'}
-            subscription = {dset: defaultSubs for dset in outputDsets}
-        else:
-            subscription = {}
-        self.assertDictEqual(task.getSubscriptionInformation(), subscription)
+        self.assertDictEqual(task.getSubscriptionInformation(), {})
 
         # step level checks
         self.assertEqual(task.getTopStepName(), 'cmsRun1')

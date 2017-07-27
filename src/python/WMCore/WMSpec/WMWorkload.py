@@ -1770,15 +1770,16 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Since it lists the output datasets, it has to be done in the very end
         # Set phedex subscription information
-        self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
-                                        nonCustodialSites=kwargs["NonCustodialSites"],
-                                        autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                        custodialSubType=kwargs["CustodialSubType"],
-                                        nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                        custodialGroup=kwargs["CustodialGroup"],
-                                        nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                        priority=kwargs["SubscriptionPriority"],
-                                        deleteFromSource=kwargs["DeleteFromSource"])
+        if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
+            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                            nonCustodialSites=kwargs["NonCustodialSites"],
+                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                            custodialSubType=kwargs["CustodialSubType"],
+                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                            custodialGroup=kwargs["CustodialGroup"],
+                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                            priority=kwargs["SubscriptionPriority"],
+                                            deleteFromSource=kwargs["DeleteFromSource"])
 
         return
 

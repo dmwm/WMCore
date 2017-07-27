@@ -114,10 +114,12 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo["WMBS_INFO"] = wmbsInfo
             logging.info("WMBS data collected in: %d secs", timeSpent)
 
-            timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
-            localWQInfo['total_query_time'] = int(timeSpent)
-            agentInfo["LocalWQ_INFO"] = localWQInfo
-            logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
+            if not hasattr(self.config, "Tier0Feeder"):
+                # Tier0 Agent doesn't have LQ.
+                timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
+                localWQInfo['total_query_time'] = int(timeSpent)
+                agentInfo["LocalWQ_INFO"] = localWQInfo
+                logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
 
             uploadTime = int(time.time())
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)

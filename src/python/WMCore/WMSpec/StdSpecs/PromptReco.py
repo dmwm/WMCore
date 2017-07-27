@@ -101,11 +101,6 @@ class PromptRecoWorkloadFactory(DataProcessing):
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,
                                       doLogCollect = self.doLogCollect)
 
-        workload.setBlockCloseSettings(self.blockCloseDelay,
-                                       workload.getBlockCloseMaxFiles(),
-                                       workload.getBlockCloseMaxEvents(),
-                                       workload.getBlockCloseMaxSize())
-
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
@@ -191,8 +186,6 @@ class PromptRecoWorkloadFactory(DataProcessing):
                                          "null" : False},
                     "SkimFilesPerJob" : {"default" : 1, "type" : int, "validate" : lambda x : x > 0,
                                          "null" : False},
-                    "BlockCloseDelay" : {"default" : 86400, "type" : int, "validate" : lambda x : x > 0,
-                                         "null" : False}
                     }
 
         baseArgs.update(specArgs)

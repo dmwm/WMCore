@@ -1687,15 +1687,16 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
 
         # Set phedex subscription information
-        self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
-                                        nonCustodialSites=kwargs["NonCustodialSites"],
-                                        autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                        custodialSubType=kwargs["CustodialSubType"],
-                                        nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                        custodialGroup=kwargs["CustodialGroup"],
-                                        nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                        priority=kwargs["SubscriptionPriority"],
-                                        deleteFromSource=kwargs["DeleteFromSource"])
+        if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
+            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                            nonCustodialSites=kwargs["NonCustodialSites"],
+                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                            custodialSubType=kwargs["CustodialSubType"],
+                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                            custodialGroup=kwargs["CustodialGroup"],
+                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                            priority=kwargs["SubscriptionPriority"],
+                                            deleteFromSource=kwargs["DeleteFromSource"])
 
         # Block closing information
         self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],

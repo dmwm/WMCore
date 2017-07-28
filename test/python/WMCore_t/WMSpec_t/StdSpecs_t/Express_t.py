@@ -10,7 +10,6 @@ from __future__ import division, print_function
 import threading
 import unittest
 from copy import deepcopy
-from pprint import pprint, pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
@@ -111,22 +110,24 @@ class ExpressTest(unittest.TestCase):
         expressWorkflow = Workflow(name="TestWorkload",
                                    task="/TestWorkload/Express")
         expressWorkflow.load()
-        pprint(expressWorkflow.outputMap)
         self.assertEqual(len(expressWorkflow.outputMap.keys()), len(testArguments["Outputs"]) + 1,
                          "Error: Wrong number of WF outputs in the Express WF.")
 
-        goldenOutputMods = ["write_PrimaryDataset1_FEVT", "write_StreamExpress_ALCARECO", "write_StreamExpress_DQMIO"]
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = expressWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = expressWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+        goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
+                            "write_StreamExpress_ALCARECO": "ALCARECO",
+                            "write_StreamExpress_DQMIO": "DQMIO"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            mergedOutput = expressWorkflow.outputMap[fset][0]["merged_output_fileset"]
+            unmergedOutput = expressWorkflow.outputMap[fset][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
             if goldenOutputMod != "write_StreamExpress_ALCARECO":
                 self.assertEqual(mergedOutput.name,
-                                 "/TestWorkload/Express/ExpressMerge%s/merged-Merged" % goldenOutputMod,
+                                 "/TestWorkload/Express/ExpressMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                                  "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/Express/unmerged-%s" % goldenOutputMod,
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/Express/unmerged-%s" % fset,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
         logArchOutput = expressWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -145,20 +146,19 @@ class ExpressTest(unittest.TestCase):
         self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
                          "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
-        goldenOutputMods = []
-        for alcaProd in testArguments["AlcaSkims"]:
-            goldenOutputMods.append("ALCARECOStream%s" % alcaProd)
-
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = alcaSkimWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = alcaSkimWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+        goldenOutputMods = {"ALCARECOStreamPromptCalibProd": "ALCAPROMPT",
+                            "ALCARECOStreamTkAlMinBias": "ALCARECO"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            mergedOutput = alcaSkimWorkflow.outputMap[fset][0]["merged_output_fileset"]
+            unmergedOutput = alcaSkimWorkflow.outputMap[fset][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
             self.assertEqual(mergedOutput.name,
-                             "/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-%s" % goldenOutputMod,
+                             "/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-%s" % fset,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
             self.assertEqual(unmergedOutput.name,
-                             "/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-%s" % goldenOutputMod,
+                             "/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-%s" % fset,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
         logArchOutput = alcaSkimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -193,8 +193,9 @@ class ExpressTest(unittest.TestCase):
                              "%s/unmerged-logArchive" % dqmTask,
                              "Error: LogArchive output fileset is wrong.")
 
-        goldenOutputMods = ["write_PrimaryDataset1_FEVT", "write_StreamExpress_DQMIO"]
-        for goldenOutputMod in goldenOutputMods:
+        goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
+                            "write_StreamExpress_DQMIO": "DQMIO"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Express/ExpressMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
@@ -202,17 +203,17 @@ class ExpressTest(unittest.TestCase):
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
                              "Error: Wrong number of WF outputs.")
 
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["output_fileset"]
 
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Express/ExpressMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Express/ExpressMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Merged output fileset is wrong.")
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Express/ExpressMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Express/ExpressMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -238,7 +239,7 @@ class ExpressTest(unittest.TestCase):
         self.assertEqual(expressSubscription["split_algo"], "Express",
                          "Error: Wrong split algorithm. %s" % expressSubscription["split_algo"])
 
-        alcaRecoFileset = Fileset(name="/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECO")
+        alcaRecoFileset = Fileset(name="/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECOALCARECO")
         alcaRecoFileset.loadData()
 
         alcaSkimSubscription = Subscription(fileset=alcaRecoFileset, workflow=alcaSkimWorkflow)
@@ -249,7 +250,8 @@ class ExpressTest(unittest.TestCase):
         self.assertEqual(alcaSkimSubscription["split_algo"], "ExpressMerge",
                          "Error: Wrong split algorithm. %s" % alcaSkimSubscription["split_algo"])
 
-        mergedDQMFileset = Fileset(name="/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-Merged")
+        mergedDQMFileset = Fileset(
+            name="/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-MergedDQMIO")
         mergedDQMFileset.loadData()
 
         dqmSubscription = Subscription(fileset=mergedDQMFileset, workflow=dqmWorkflow)
@@ -260,9 +262,11 @@ class ExpressTest(unittest.TestCase):
         self.assertEqual(dqmSubscription["split_algo"], "Harvest",
                          "Error: Wrong split algo.")
 
-        unmergedOutputs = ["write_PrimaryDataset1_FEVT", "write_StreamExpress_DQMIO"]
-        for unmergedOutput in unmergedOutputs:
-            unmergedDataTier = Fileset(name="/TestWorkload/Express/unmerged-%s" % unmergedOutput)
+        unmergedOutputs = {"write_PrimaryDataset1_FEVT": "FEVT",
+                           "write_StreamExpress_DQMIO": "DQMIO"}
+        for unmergedOutput, tier in unmergedOutputs.items():
+            fset = unmergedOutput + tier
+            unmergedDataTier = Fileset(name="/TestWorkload/Express/unmerged-%s" % fset)
             unmergedDataTier.loadData()
             dataTierMergeWorkflow = Workflow(name="TestWorkload",
                                              task="/TestWorkload/Express/ExpressMerge%s" % unmergedOutput)
@@ -275,9 +279,12 @@ class ExpressTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ExpressMerge",
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
-        goldenOutputMods = ["write_PrimaryDataset1_FEVT", "write_StreamExpress_ALCARECO", "write_StreamExpress_DQMIO"]
-        for goldenOutputMod in goldenOutputMods:
-            unmergedFileset = Fileset(name="/TestWorkload/Express/unmerged-%s" % goldenOutputMod)
+        goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
+                            "write_StreamExpress_ALCARECO": "ALCARECO",
+                            "write_StreamExpress_DQMIO": "DQMIO"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            unmergedFileset = Fileset(name="/TestWorkload/Express/unmerged-%s" % fset)
             unmergedFileset.loadData()
             cleanupWorkflow = Workflow(name="TestWorkload",
                                        task="/TestWorkload/Express/ExpressCleanupUnmerged%s" % goldenOutputMod)
@@ -324,7 +331,7 @@ class ExpressTest(unittest.TestCase):
             expressMergeLogCollect.loadData()
             expressMergeLogCollectWorkflow = Workflow(name="TestWorkload",
                                                       task="/TestWorkload/Express/ExpressMerge%s/Express%sMergeLogCollect" % (
-                                                      goldenOutputMod, goldenOutputMod))
+                                                          goldenOutputMod, goldenOutputMod))
             expressMergeLogCollectWorkflow.load()
             logCollectSubscription = Subscription(fileset=expressMergeLogCollect,
                                                   workflow=expressMergeLogCollectWorkflow)
@@ -467,22 +474,22 @@ class ExpressTest(unittest.TestCase):
                       '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/ExpressMergewrite_StreamExpress_DQMIOPeriodicDQMHarvestMerged/ExpressMergewrite_StreamExpress_DQMIOMergedPeriodicDQMHarvestLogCollect',
                       '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/Expresswrite_StreamExpress_DQMIOMergeLogCollect']
         expFsets = ['TestWorkload-Express-Run123456',
-                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamPromptCalibProd',
-                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamTkAlMinBias',
-                    '/TestWorkload/Express/unmerged-write_RAW',
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECO',
+                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamPromptCalibProdALCAPROMPT',
+                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamTkAlMinBiasALCARECO',
+                    '/TestWorkload/Express/unmerged-write_RAWRAW',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECOALCARECO',
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-logArchive',
-                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-Sqlite',
+                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-SqliteALCAPROMPT',
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-logArchive',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/ExpressMergewrite_StreamExpress_DQMIOPeriodicDQMHarvestMerged/unmerged-logArchive',
-                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-Merged',
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIO',
+                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-MergedDQMIO',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIODQMIO',
                     '/TestWorkload/Express/ExpressMergewrite_PrimaryDataset1_FEVT/merged-logArchive',
-                    '/TestWorkload/Express/ExpressMergewrite_PrimaryDataset1_FEVT/merged-Merged',
+                    '/TestWorkload/Express/ExpressMergewrite_PrimaryDataset1_FEVT/merged-MergedFEVT',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/ExpressMergewrite_StreamExpress_DQMIOEndOfRunDQMHarvestMerged/unmerged-logArchive',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-logArchive',
                     '/TestWorkload/Express/unmerged-logArchive',
-                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVT']
+                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVTFEVT']
 
         subMaps = [(5,
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-logArchive',
@@ -490,12 +497,12 @@ class ExpressTest(unittest.TestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (4,
-                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-Sqlite',
+                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/unmerged-SqliteALCAPROMPT',
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProdConditionSqlite',
                     'Condition',
                     'Harvesting'),
                    (3,
-                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamPromptCalibProd',
+                    '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/unmerged-ALCARECOStreamPromptCalibProdALCAPROMPT',
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO/ExpressAlcaSkimwrite_StreamExpress_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd',
                     'AlcaHarvest',
                     'Harvesting'),
@@ -525,12 +532,12 @@ class ExpressTest(unittest.TestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (11,
-                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-Merged',
+                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-MergedDQMIO',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/ExpressMergewrite_StreamExpress_DQMIOEndOfRunDQMHarvestMerged',
                     'Harvest',
                     'Harvesting'),
                    (9,
-                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-Merged',
+                    '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/merged-MergedDQMIO',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO/ExpressMergewrite_StreamExpress_DQMIOPeriodicDQMHarvestMerged',
                     'Harvest',
                     'Harvesting'),
@@ -540,32 +547,32 @@ class ExpressTest(unittest.TestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (17,
-                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVT',
+                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVTFEVT',
                     '/TestWorkload/Express/ExpressCleanupUnmergedwrite_PrimaryDataset1_FEVT',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (15,
-                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVT',
+                    '/TestWorkload/Express/unmerged-write_PrimaryDataset1_FEVTFEVT',
                     '/TestWorkload/Express/ExpressMergewrite_PrimaryDataset1_FEVT',
                     'ExpressMerge',
                     'Merge'),
                    (2,
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECO',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECOALCARECO',
                     '/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO',
                     'ExpressMerge',
                     'Express'),
                    (7,
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECO',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_ALCARECOALCARECO',
                     '/TestWorkload/Express/ExpressCleanupUnmergedwrite_StreamExpress_ALCARECO',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (14,
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIO',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIODQMIO',
                     '/TestWorkload/Express/ExpressCleanupUnmergedwrite_StreamExpress_DQMIO',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (8,
-                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIO',
+                    '/TestWorkload/Express/unmerged-write_StreamExpress_DQMIODQMIO',
                     '/TestWorkload/Express/ExpressMergewrite_StreamExpress_DQMIO',
                     'ExpressMerge',
                     'Merge'),
@@ -587,20 +594,16 @@ class ExpressTest(unittest.TestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflows:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
 

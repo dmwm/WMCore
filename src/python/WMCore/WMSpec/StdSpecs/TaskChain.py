@@ -454,7 +454,7 @@ class TaskChainWorkloadFactory(StdBase):
 
         procTasks = {}
         for outputModuleName in unmergedModules:
-            self.addCleanupTask(parentTask, outputModuleName)
+            self.addCleanupTask(parentTask, outputModuleName, dataTier=outputModules[outputModuleName]['dataTier'])
             procTasks[outputModuleName] = parentTask
         self.mergeMapping[parentTask.name()].update(procTasks)
 

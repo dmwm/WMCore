@@ -622,7 +622,8 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
@@ -659,7 +660,7 @@ class StdBase(object):
                              filterName=getattr(parentOutputModule, "filterName"),
                              forceMerged=True, taskConf=taskConf)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName, dataTier)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy=self.dqmUploadProxy,
@@ -673,7 +674,7 @@ class StdBase(object):
 
         return mergeTask
 
-    def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None):
+    def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None, dataTier=''):
         """
         _addCleanupTask_
 
@@ -687,7 +688,7 @@ class StdBase(object):
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
-        cleanupTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        cleanupTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job=50)
 
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)

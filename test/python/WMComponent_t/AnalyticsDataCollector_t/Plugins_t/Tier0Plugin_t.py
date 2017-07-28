@@ -12,22 +12,17 @@ import os
 import unittest
 
 from WMComponent.AnalyticsDataCollector.Plugins.Tier0Plugin import Tier0Plugin
-
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.StdSpecs.PromptReco import PromptRecoWorkloadFactory
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
 class Tier0PluginTest(unittest.TestCase):
-
-
     def setUp(self):
         """
         _setUp_
@@ -74,8 +69,8 @@ class Tier0PluginTest(unittest.TestCase):
         mergeTasks = ['RepackMergewrite_QuadElectron_RAW', 'RepackMergewrite_TriPhoton_RAW',
                       'RepackMergewrite_SingleNeutrino_RAW']
 
-        self.stateMap = {'Merge' : [],
-                         'Processing Done' : []}
+        self.stateMap = {'Merge': [],
+                         'Processing Done': []}
         self.orderedStates = ['Merge', 'Processing Done']
 
         # Populate WMStats
@@ -93,29 +88,29 @@ class Tier0PluginTest(unittest.TestCase):
         workload.save(specPath)
 
         # Populate WMBS
-        topFileset = Fileset(name = 'TestStreamerFileset')
+        topFileset = Fileset(name='TestStreamerFileset')
         topFileset.create()
 
-        options = {'spec' : specPath, 'owner' : 'ItsAMeMario',
-                   'name' : workflowName, 'wfType' : 'tier0'}
-        topLevelWorkflow = Workflow(task = '/%s/Repack' % workflowName,
+        options = {'spec': specPath, 'owner': 'ItsAMeMario',
+                   'name': workflowName, 'wfType': 'tier0'}
+        topLevelWorkflow = Workflow(task='/%s/Repack' % workflowName,
                                     **options)
         topLevelWorkflow.create()
         topLevelSub = Subscription(topFileset, topLevelWorkflow)
         topLevelSub.create()
         self.stateMap['Merge'].append(topFileset)
         for task in mergeTasks:
-            mergeWorkflow = Workflow(task = '/%s/Repack/%s' % (workflowName, task), **options)
+            mergeWorkflow = Workflow(task='/%s/Repack/%s' % (workflowName, task), **options)
             mergeWorkflow.create()
-            unmergedFileset = Fileset(name = 'TestUnmergedFileset%s' % task)
+            unmergedFileset = Fileset(name='TestUnmergedFileset%s' % task)
             unmergedFileset.create()
             mergeSub = Subscription(unmergedFileset, mergeWorkflow)
             mergeSub.create()
             self.stateMap['Processing Done'].append(unmergedFileset)
-        cleanupWorkflow = Workflow(task = '/Repack_Run481516_StreamZ/Repack/RepackCleanupUnmergedwrite_QuadElectron_RAW',
+        cleanupWorkflow = Workflow(task='/Repack_Run481516_StreamZ/Repack/RepackCleanupUnmergedwrite_QuadElectron_RAW',
                                    **options)
         cleanupWorkflow.create()
-        unmergedFileset = Fileset(name = 'TestUnmergedFilesetToCleanup')
+        unmergedFileset = Fileset(name='TestUnmergedFilesetToCleanup')
         unmergedFileset.create()
         cleanupSub = Subscription(unmergedFileset, cleanupWorkflow)
         cleanupSub.create()
@@ -133,17 +128,18 @@ class Tier0PluginTest(unittest.TestCase):
         workflowName = 'Express_Run481516_StreamZFast'
         secondLevelTasks = ['ExpressMergewrite_StreamZFast_DQM', 'ExpressMergewrite_ExpressPhysics_FEVT',
                             'ExpressAlcaSkimwrite_StreamZFast_ALCARECO', 'ExpressCleanupUnmergedwrite_StreamZFast_DQM',
-                            'ExpressCleanupUnmergedwrite_ExpressPhysics_FEVT', 'ExpressCleanupUnmergedwrite_StreamZFast_ALCARECO']
+                            'ExpressCleanupUnmergedwrite_ExpressPhysics_FEVT',
+                            'ExpressCleanupUnmergedwrite_StreamZFast_ALCARECO']
         alcaHarvestTask = 'ExpressAlcaSkimwrite_StreamZFast_ALCARECOAlcaHarvestALCARECOStreamPromptCalibProd'
         dqmHarvestTask = 'ExpressMergewrite_StreamZFast_DQMEndOfRunDQMHarvestMerged'
 
-        self.stateMap = {'Merge' : [],
-                         'Harvesting' : [],
-                         'Processing Done' : []}
+        self.stateMap = {'Merge': [],
+                         'Harvesting': [],
+                         'Processing Done': []}
         self.orderedStates = ['Merge', 'Harvesting', 'Processing Done']
 
         # Populate WMStats
-        self.requestDBWriter.insertGenericRequest({'RequestName' : workflowName})
+        self.requestDBWriter.insertGenericRequest({'RequestName': workflowName})
         self.requestDBWriter.updateRequestStatus(workflowName, 'Closed')
 
         # Create a wmspec in disk
@@ -160,20 +156,20 @@ class Tier0PluginTest(unittest.TestCase):
         workload.save(specPath)
 
         # Populate WMBS
-        sharedFileset = Fileset(name = 'TestFileset')
+        sharedFileset = Fileset(name='TestFileset')
         sharedFileset.create()
         sharedFileset.markOpen(False)
 
-        options = {'spec' : specPath, 'owner' : 'ItsAMeMario',
-                   'name' : workflowName, 'wfType' : 'tier0'}
-        topLevelWorkflow = Workflow(task = '/%s/Express' % workflowName,
+        options = {'spec': specPath, 'owner': 'ItsAMeMario',
+                   'name': workflowName, 'wfType': 'tier0'}
+        topLevelWorkflow = Workflow(task='/%s/Express' % workflowName,
                                     **options)
         topLevelWorkflow.create()
         topLevelSub = Subscription(sharedFileset, topLevelWorkflow)
         topLevelSub.create()
         self.stateMap['Merge'].append(topLevelSub)
-        for task in filter(lambda x : not x.count('CleanupUnmerged'), secondLevelTasks):
-            secondLevelWorkflow = Workflow(task = '/%s/Express/%s' % (workflowName, task), **options)
+        for task in filter(lambda x: not x.count('CleanupUnmerged'), secondLevelTasks):
+            secondLevelWorkflow = Workflow(task='/%s/Express/%s' % (workflowName, task), **options)
             secondLevelWorkflow.create()
             mergeSub = Subscription(sharedFileset, secondLevelWorkflow)
             mergeSub.create()
@@ -181,7 +177,7 @@ class Tier0PluginTest(unittest.TestCase):
 
         for (parent, child) in [('ExpressAlcaSkimwrite_StreamZFast_ALCARECO', alcaHarvestTask),
                                 ('ExpressMergewrite_StreamZFast_DQM', dqmHarvestTask)]:
-            harvestingWorkflow = Workflow(task = '/%s/Express/%s/%s' % (workflowName, parent, child),
+            harvestingWorkflow = Workflow(task='/%s/Express/%s/%s' % (workflowName, parent, child),
                                           **options)
             harvestingWorkflow.create()
             harvestingSub = Subscription(sharedFileset, harvestingWorkflow)
@@ -207,18 +203,18 @@ class Tier0PluginTest(unittest.TestCase):
         testArguments["CouchURL"] = os.environ["COUCHURL"]
         workload = factory.factoryWorkloadConstruction(workflowName, testArguments)
 
-        wmbsHelper = WMBSHelper(workload, 'Reco', 'SomeBlock', cachepath = self.testDir)
+        wmbsHelper = WMBSHelper(workload, 'Reco', 'SomeBlock', cachepath=self.testDir)
         wmbsHelper.createTopLevelFileset()
         wmbsHelper._createSubscriptionsInWMBS(wmbsHelper.topLevelTask, wmbsHelper.topLevelFileset)
 
-        self.stateMap = {'AlcaSkim' : [],
-                         'Merge' : [],
-                         'Harvesting' : [],
-                         'Processing Done' : []}
+        self.stateMap = {'AlcaSkim': [],
+                         'Merge': [],
+                         'Harvesting': [],
+                         'Processing Done': []}
         self.orderedStates = ['AlcaSkim', 'Merge', 'Harvesting', 'Processing Done']
 
         # Populate WMStats
-        self.requestDBWriter.insertGenericRequest({'RequestName' : workflowName})
+        self.requestDBWriter.insertGenericRequest({'RequestName': workflowName})
         self.requestDBWriter.updateRequestStatus(workflowName, 'Closed')
 
         topLevelTask = '/%s/Reco' % workflowName
@@ -233,9 +229,9 @@ class Tier0PluginTest(unittest.TestCase):
 
         self.stateMap['AlcaSkim'].append(wmbsHelper.topLevelSubscription)
 
-        alcaSkimWorkflow = Workflow(name = workflowName, task = alcaSkimTask)
+        alcaSkimWorkflow = Workflow(name=workflowName, task=alcaSkimTask)
         alcaSkimWorkflow.load()
-        alcarecoFileset = Fileset(name = '/PromptReco_Run195360_Cosmics/Reco/unmerged-write_ALCARECO')
+        alcarecoFileset = Fileset(name='/PromptReco_Run195360_Cosmics/Reco/unmerged-write_ALCARECOALCARECO')
         alcarecoFileset.load()
         alcaSkimSub = Subscription(alcarecoFileset, alcaSkimWorkflow)
         alcaSkimSub.load()
@@ -243,23 +239,23 @@ class Tier0PluginTest(unittest.TestCase):
 
         for task in mergeTasks:
             mergeTask = task % topLevelTask
-            mergeWorkflow = Workflow(name = workflowName, task = mergeTask)
+            mergeWorkflow = Workflow(name=workflowName, task=mergeTask)
             mergeWorkflow.load()
             if 'AlcaSkim' in mergeTask:
                 stream = mergeTask.split('/')[-1][13:]
-                unmergedFileset = Fileset(name = '%s/unmerged-%s' % (alcaSkimTask, stream))
+                unmergedFileset = Fileset(name='%s/unmerged-%sALCARECO' % (alcaSkimTask, stream))
                 unmergedFileset.load()
             else:
                 dataTier = mergeTask.split('/')[-1].split('_')[-1]
-                unmergedFileset = Fileset(name = '%s/unmerged-write_%s' % (topLevelTask, dataTier))
+                unmergedFileset = Fileset(name='%s/unmerged-write_%s%s' % (topLevelTask, dataTier, dataTier))
                 unmergedFileset.load()
             mergeSub = Subscription(unmergedFileset, mergeWorkflow)
             mergeSub.load()
             self.stateMap['Harvesting'].append(mergeSub)
 
-        harvestingWorkflow = Workflow(name = workflowName, task = harvestingTask)
+        harvestingWorkflow = Workflow(name=workflowName, task=harvestingTask)
         harvestingWorkflow.load()
-        harvestingFileset = Fileset(name = '/PromptReco_Run195360_Cosmics/Reco/RecoMergewrite_DQM/merged-Merged')
+        harvestingFileset = Fileset(name='/PromptReco_Run195360_Cosmics/Reco/RecoMergewrite_DQM/merged-MergedDQM')
         harvestingFileset.load()
         harvestingSub = Subscription(harvestingFileset, harvestingWorkflow)
         harvestingSub.load()
@@ -267,7 +263,7 @@ class Tier0PluginTest(unittest.TestCase):
 
         return
 
-    def verifyStateTransitions(self, transitionMethod = 'markFinished', transitionTrigger = True):
+    def verifyStateTransitions(self, transitionMethod='markFinished', transitionTrigger=True):
         """
         _verifyStateTransitions_
 
@@ -299,7 +295,8 @@ class Tier0PluginTest(unittest.TestCase):
                 self.plugin([], self.requestDBWriter, self.requestDBWriter)
                 currentStateWorkflows = self.requestDBWriter.getRequestByStatus([currentState])
                 nextStateWorkflows = self.requestDBWriter.getRequestByStatus([nextState])
-                self.assertEqual(len(currentStateWorkflows), 0, 'Workflow did not move correctly from %s' % currentState)
+                self.assertEqual(len(currentStateWorkflows), 0,
+                                 'Workflow did not move correctly from %s' % currentState)
                 self.assertEqual(len(nextStateWorkflows), 1, 'Workflow did not move correctly to %s' % nextState)
         return
 
@@ -353,6 +350,7 @@ class Tier0PluginTest(unittest.TestCase):
         self.verifyStateTransitions()
 
         return
+
 
 if __name__ == "__main__":
     unittest.main()

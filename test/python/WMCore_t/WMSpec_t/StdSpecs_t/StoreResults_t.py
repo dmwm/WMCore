@@ -8,7 +8,6 @@ from __future__ import print_function
 
 import threading
 import unittest
-from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
@@ -76,18 +75,18 @@ class StoreResultsTest(unittest.TestCase):
 
         self.assertEqual(len(testWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
-
-        goldenOutputMods = ["Merged"]
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = testWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = testWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+        goldenOutputMods = {"Merged": "USER"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            mergedOutput = testWorkflow.outputMap[fset][0]["merged_output_fileset"]
+            unmergedOutput = testWorkflow.outputMap[fset][0]["output_fileset"]
 
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
-            self.assertEqual(mergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % goldenOutputMod,
+            self.assertEqual(mergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % fset,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % goldenOutputMod,
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % fset,
                              "Error: Unmerged output fileset is wrong: %s." % unmergedOutput.name)
 
         logArchOutput = testWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -122,7 +121,7 @@ class StoreResultsTest(unittest.TestCase):
         expWfTasks = ['/TestWorkload/StoreResults',
                       '/TestWorkload/StoreResults/StoreResultsLogCollect']
         expFsets = ['TestWorkload-StoreResults-/MinimumBias/ComissioningHI-v1/RAW',
-                    '/TestWorkload/StoreResults/merged-Merged',
+                    '/TestWorkload/StoreResults/merged-MergedUSER',
                     '/TestWorkload/StoreResults/merged-logArchive']
         subMaps = [(2,
                     '/TestWorkload/StoreResults/merged-logArchive',
@@ -146,20 +145,16 @@ class StoreResultsTest(unittest.TestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
 

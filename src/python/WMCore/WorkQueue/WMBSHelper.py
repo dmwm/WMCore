@@ -10,23 +10,24 @@ import threading
 import traceback
 from collections import defaultdict
 
-from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WMBS.File import File
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
+from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Job import Job
-from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WMException import WMException
+from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -119,13 +120,14 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
     return
 
 
-def freeSlots(multiplier=1.0, minusRunning=False, allowedStates=['Normal'], knownCmsSites=None):
+def freeSlots(multiplier=1.0, minusRunning=False, allowedStates=None, knownCmsSites=None):
     """
     Get free resources from wmbs.
 
     Specify multiplier to apply a ratio to the actual numbers.
     minusRunning control if running jobs should be counted
     """
+    allowedStates = allowedStates or ['Normal']
     rc_sites = ResourceControl().listThresholdsForCreate()
     thresholds = defaultdict(lambda: 0)
     jobCounts = defaultdict(dict)
@@ -233,18 +235,18 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.create()
         return
 
-    def outputFilesetName(self, task, outputModuleName):
+    def outputFilesetName(self, task, outputModuleName, dataTier=''):
         """
         _outputFilesetName_
 
-        Generate an output fileset name for the given task and output module.
+        Generate an output fileset name for the given task, output module and data tier.
         """
         if task.taskType() == "Merge":
-            outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                  outputModuleName)
+            outputFilesetName = "%s/merged-%s%s" % (task.getPathName(),
+                                                    outputModuleName, dataTier)
         else:
-            outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                    outputModuleName)
+            outputFilesetName = "%s/unmerged-%s%s" % (task.getPathName(),
+                                                      outputModuleName, dataTier)
 
         return outputFilesetName
 
@@ -313,29 +315,35 @@ class WMBSHelper(WMConnectionBase):
                 if outputModuleName in ignoredOutputModules:
                     logging.info("IgnoredOutputModule set for %s, skipping fileset creation.", outputModuleName)
                     continue
-                outputFileset = Fileset(self.outputFilesetName(task, outputModuleName))
+                dataTier = getattr(getattr(outputModule, outputModuleName), "dataTier", '')
+                filesetName = self.outputFilesetName(task, outputModuleName, dataTier)
+                outputFileset = Fileset(filesetName)
                 outputFileset.create()
                 outputFileset.markOpen(True)
                 mergedOutputFileset = None
 
                 for childTask in task.childTaskIterator():
                     if childTask.data.input.outputModule == outputModuleName:
-                        if childTask.taskType() == "Merge":
-                            mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
+                        childDatatier = getattr(childTask.data.input, 'dataTier', '')
+                        if childTask.taskType() in ["Cleanup", "Merge"] and childDatatier != dataTier:
+                            continue
+                        elif childTask.taskType() == "Merge" and childDatatier == dataTier:
+                            filesetName = self.outputFilesetName(childTask, "Merged", dataTier)
+                            mergedOutputFileset = Fileset(filesetName)
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
 
                             primaryDataset = getattr(getattr(outputModule, outputModuleName), "primaryDataset", None)
-                            if primaryDataset != None:
+                            if primaryDataset is not None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
                         self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
 
                 if mergedOutputFileset is None:
-                    workflow.addOutput(outputModuleName, outputFileset,
+                    workflow.addOutput(outputModuleName + dataTier, outputFileset,
                                        outputFileset)
                 else:
-                    workflow.addOutput(outputModuleName, outputFileset,
+                    workflow.addOutput(outputModuleName + dataTier, outputFileset,
                                        mergedOutputFileset)
 
         return self.topLevelSubscription
@@ -369,7 +377,7 @@ class WMBSHelper(WMConnectionBase):
                         events=self.mask['LastEvent'] - self.mask['FirstEvent'] + 1,  # inclusive range
                         locations=locations,
                         merged=False,  # merged causes dbs parentage relation
-                       )
+                        )
 
         if self.mask:
             lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1)  # inclusive range
@@ -412,19 +420,19 @@ class WMBSHelper(WMConnectionBase):
 
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs', self.wmSpec.name(),
-                                                                         self.block,
-                                                                         len(block['Files']))
+                         self.block,
+                         len(block['Files']))
             addedFiles = self.addFiles(block)
         # For MC case
         else:
             logging.info(
                 '"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs', self.wmSpec.name(),
-                                                                                            self.mask['FirstRun'],
-                                                                                            self.mask['FirstLumi'],
-                                                                                            self.mask['FirstEvent'],
-                                                                                            self.mask['LastRun'],
-                                                                                            self.mask['LastLumi'],
-                                                                                            self.mask['LastEvent'])
+                self.mask['FirstRun'],
+                self.mask['FirstLumi'],
+                self.mask['FirstEvent'],
+                self.mask['LastRun'],
+                self.mask['LastLumi'],
+                self.mask['LastEvent'])
             addedFiles = self.addMCFakeFile()
 
         self.commitTransaction(existingTransaction=False)
@@ -640,7 +648,7 @@ class WMBSHelper(WMConnectionBase):
                 run = Run(lumi['RunNumber'], lumiSecList)
             else:
                 lumiSecTuple = ((lumi['LumiSectionNumber'], lumi['EventCount'])
-                               if 'EventCount' in lumi else lumi['LumiSectionNumber'])
+                                if 'EventCount' in lumi else lumi['LumiSectionNumber'])
                 run = Run(lumi['RunNumber'], lumiSecTuple)
             wmbsFile.addRun(run)
 

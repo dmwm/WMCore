@@ -40,28 +40,29 @@ class PromptRecoWorkloadFactory(DataProcessing):
 
         recoOutputs = []
         for dataTier in self.writeTiers:
-            recoOutputs.append( { 'dataTier' : dataTier,
-                                  'eventContent' : dataTier,
-                                  'moduleLabel' : "write_%s" % dataTier } )
+            recoOutputs.append({'dataTier': dataTier,
+                                'eventContent': dataTier,
+                                'moduleLabel': "write_%s" % dataTier})
 
         recoTask = workload.newTask("Reco")
 
-        scenarioArgs = { 'globalTag' : self.globalTag,
-                         'skims' : self.alcaSkims,
-                         'PhysicsSkims' : self.physicsSkims,
-                         'dqmSeq' : self.dqmSequences,
-                         'outputs' : recoOutputs }
+        scenarioArgs = {'globalTag': self.globalTag,
+                        'skims': self.alcaSkims,
+                        'PhysicsSkims': self.physicsSkims,
+                        'dqmSeq': self.dqmSequences,
+                        'outputs': recoOutputs}
         if self.globalTagConnect:
             scenarioArgs['globalTagConnect'] = self.globalTagConnect
 
         recoOutMods = self.setupProcessingTask(recoTask, taskType, self.inputDataset,
-                                               scenarioName = self.procScenario,
-                                               scenarioFunc = "promptReco",
-                                               scenarioArgs = scenarioArgs,
-                                               splitAlgo = self.procJobSplitAlgo,
-                                               splitArgs = self.procJobSplitArgs,
-                                               stepType = cmsswStepType,
-                                               forceUnmerged = ["write_ALCARECO"] if 'ALCARECO' in self.writeTiers else False)
+                                               scenarioName=self.procScenario,
+                                               scenarioFunc="promptReco",
+                                               scenarioArgs=scenarioArgs,
+                                               splitAlgo=self.procJobSplitAlgo,
+                                               splitArgs=self.procJobSplitArgs,
+                                               stepType=cmsswStepType,
+                                               forceUnmerged=[
+                                                   "write_ALCARECO"] if 'ALCARECO' in self.writeTiers else False)
         if self.doLogCollect:
             self.addLogCollectTask(recoTask)
 
@@ -69,37 +70,37 @@ class PromptRecoWorkloadFactory(DataProcessing):
         for recoOutLabel, recoOutInfo in recoOutMods.items():
             if recoOutInfo['dataTier'] != "ALCARECO":
                 mergeTask = self.addMergeTask(recoTask, self.procJobSplitAlgo, recoOutLabel,
-                                              doLogCollect = self.doLogCollect)
+                                              doLogCollect=self.doLogCollect)
                 recoMergeTasks[recoOutInfo['dataTier']] = mergeTask
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
                 alcaTaskConf = {'Multicore': 1, 'EventStreams': 0}
-                scenarioArgs = { 'globalTag' : self.globalTag,
-                                 'skims' : self.alcaSkims,
-                                 'primaryDataset' : self.inputPrimaryDataset }
+                scenarioArgs = {'globalTag': self.globalTag,
+                                'skims': self.alcaSkims,
+                                'primaryDataset': self.inputPrimaryDataset}
                 if self.globalTagConnect:
                     scenarioArgs['globalTagConnect'] = self.globalTagConnect
 
                 alcaOutMods = self.setupProcessingTask(alcaTask, taskType,
-                                                       inputStep = recoTask.getStep("cmsRun1"),
-                                                       inputModule = recoOutLabel,
-                                                       scenarioName = self.procScenario,
-                                                       scenarioFunc = "alcaSkim",
-                                                       scenarioArgs = scenarioArgs,
-                                                       splitAlgo = "WMBSMergeBySize",
-                                                       splitArgs = {"max_merge_size": self.maxMergeSize,
-                                                                    "min_merge_size": self.minMergeSize,
-                                                                    "max_merge_events": self.maxMergeEvents},
-                                                       stepType = cmsswStepType,
+                                                       inputStep=recoTask.getStep("cmsRun1"),
+                                                       inputModule=recoOutLabel,
+                                                       scenarioName=self.procScenario,
+                                                       scenarioFunc="alcaSkim",
+                                                       scenarioArgs=scenarioArgs,
+                                                       splitAlgo="WMBSMergeBySize",
+                                                       splitArgs={"max_merge_size": self.maxMergeSize,
+                                                                  "min_merge_size": self.minMergeSize,
+                                                                  "max_merge_events": self.maxMergeEvents},
+                                                       stepType=cmsswStepType,
                                                        taskConf=alcaTaskConf)
                 if self.doLogCollect:
-                    self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
-                self.addCleanupTask(recoTask, recoOutLabel)
+                    self.addLogCollectTask(alcaTask, taskName="AlcaSkimLogCollect")
+                self.addCleanupTask(recoTask, recoOutLabel, dataTier=recoOutInfo['dataTier'])
 
                 for alcaOutLabel in alcaOutMods:
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,
-                                      doLogCollect = self.doLogCollect)
+                                      doLogCollect=self.doLogCollect)
 
         workload.setBlockCloseSettings(self.blockCloseDelay,
                                        workload.getBlockCloseMaxFiles(),
@@ -113,7 +114,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
@@ -159,40 +160,40 @@ class PromptRecoWorkloadFactory(DataProcessing):
     @staticmethod
     def getWorkloadCreateArgs():
         baseArgs = DataProcessing.getWorkloadCreateArgs()
-        specArgs = {"RequestType" : {"default" : "PromptReco", "optional" : True},
+        specArgs = {"RequestType": {"default": "PromptReco", "optional": True},
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "Scenario" : {"default" : None, "optional" : False,
-                                  "attr" : "procScenario", "null" : False},
+                    "Scenario": {"default": None, "optional": False,
+                                 "attr": "procScenario", "null": False},
                     "ProcessingString": {"default": "", "validate": procstringT0},
-                    "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
-                                    "type" : makeList, "optional" : False, "null" : False},
-                    "AlcaSkims" : {"default" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
-                                   "type" : makeList, "optional" : False, "null" : False},
-                    "PhysicsSkims" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "null" : False},
-                    "InitCommand" : {"default" : None, "optional" : True, "null" : True},
-                    "EnvPath" : {"default" : None, "optional" : True, "null" : True},
-                    "BinPath" : {"default" : None, "optional" : True,  "null" : True},
-                    "DoLogCollect" : {"default" : True, "type" : strToBool,
-                                      "optional" : True, "null" : False},
-                    "SplittingAlgo" : {"default" : "EventBased", "null" : False,
-                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                    "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "procJobSplitAlgo"},
-                    "EventsPerJob" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0,
-                                      "null" : False},
-                    "SkimSplittingAlgo" : {"default" : "FileBased", "null" : False,
-                                           "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                        "EventAwareLumiBased", "FileBased"],
-                                           "attr" : "skimJobSplitAlgo"},
-                    "SkimEventsPerJob" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0,
-                                          "null" : False},
-                    "SkimLumisPerJob" : {"default" : 8, "type" : int, "validate" : lambda x : x > 0,
-                                         "null" : False},
-                    "SkimFilesPerJob" : {"default" : 1, "type" : int, "validate" : lambda x : x > 0,
-                                         "null" : False},
-                    "BlockCloseDelay" : {"default" : 86400, "type" : int, "validate" : lambda x : x > 0,
-                                         "null" : False}
+                    "WriteTiers": {"default": ["RECO", "AOD", "DQM", "ALCARECO"],
+                                   "type": makeList, "optional": False, "null": False},
+                    "AlcaSkims": {"default": ["TkAlCosmics0T", "MuAlGlobalCosmics", "HcalCalHOCosmics"],
+                                  "type": makeList, "optional": False, "null": False},
+                    "PhysicsSkims": {"default": [], "type": makeList,
+                                     "optional": True, "null": False},
+                    "InitCommand": {"default": None, "optional": True, "null": True},
+                    "EnvPath": {"default": None, "optional": True, "null": True},
+                    "BinPath": {"default": None, "optional": True, "null": True},
+                    "DoLogCollect": {"default": True, "type": strToBool,
+                                     "optional": True, "null": False},
+                    "SplittingAlgo": {"default": "EventBased", "null": False,
+                                      "validate": lambda x: x in ["EventBased", "LumiBased",
+                                                                  "EventAwareLumiBased", "FileBased"],
+                                      "attr": "procJobSplitAlgo"},
+                    "EventsPerJob": {"default": 500, "type": int, "validate": lambda x: x > 0,
+                                     "null": False},
+                    "SkimSplittingAlgo": {"default": "FileBased", "null": False,
+                                          "validate": lambda x: x in ["EventBased", "LumiBased",
+                                                                      "EventAwareLumiBased", "FileBased"],
+                                          "attr": "skimJobSplitAlgo"},
+                    "SkimEventsPerJob": {"default": 500, "type": int, "validate": lambda x: x > 0,
+                                         "null": False},
+                    "SkimLumisPerJob": {"default": 8, "type": int, "validate": lambda x: x > 0,
+                                        "null": False},
+                    "SkimFilesPerJob": {"default": 1, "type": int, "validate": lambda x: x > 0,
+                                        "null": False},
+                    "BlockCloseDelay": {"default": 86400, "type": int, "validate": lambda x: x > 0,
+                                        "null": False}
                     }
 
         baseArgs.update(specArgs)

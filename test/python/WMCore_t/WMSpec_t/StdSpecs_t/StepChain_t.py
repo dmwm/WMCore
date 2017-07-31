@@ -1056,10 +1056,9 @@ class StepChainTests(EmulatedUnitTestCase):
         task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
         self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
         task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
-        # TODO: update the fallback PrepId to the workload level. PR issue: #7978
-        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['PrepID']))
         task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
-        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['PrepID']))
 
         # and we assign it too, better safe than sorry
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
@@ -1072,9 +1071,9 @@ class StepChainTests(EmulatedUnitTestCase):
         task = testWorkload.getTaskByName('GENSIMMergeRAWSIMoutput')
         self.assertEqual(task.getPrepID(), testArguments['Step1']['PrepID'])
         task = testWorkload.getTaskByName('RECOMergeAODSIMoutput')
-        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['PrepID']))
         task = testWorkload.getTaskByName('RECOMergeRECOSIMoutput')
-        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['Step1']['PrepID']))
+        self.assertEqual(task.getPrepID(), testArguments['Step3'].get('PrepID', testArguments['PrepID']))
 
         return
 

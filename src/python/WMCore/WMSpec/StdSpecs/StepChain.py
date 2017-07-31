@@ -47,6 +47,7 @@ class StepChainWorkloadFactory(StdBase):
         self.sizePerEvent = None
         self.timePerEvent = None
         self.primaryDataset = None
+        self.prepID = None
         # stepMapping is going to be used during assignment for properly mapping
         # the arguments to each step/cmsRun
         self.stepMapping = {}
@@ -273,6 +274,9 @@ class StepChainWorkloadFactory(StdBase):
         """
         frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
         scramArch = taskConf.get("ScramArch", self.scramArch)
+        # PrepID has to be inherited from the workload level, not from task
+        if not taskConf.get('PrepID'):
+            taskConf['PrepID'] = self.prepID
 
         for outputModuleName in outputMods.keys():
             dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,

@@ -3,13 +3,11 @@
 _GFAL2Impl_
 Implementation of StageOutImpl interface for gfal-copy
 """
-import os
 import argparse
-import logging
+import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
@@ -19,7 +17,6 @@ class GFAL2Impl(StageOutImpl):
     _GFAL2Impl_
     Implement interface for GFAL2 commands (gfal-copy, gfal-rm)
     """
-    run = staticmethod(runCommand)
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
@@ -30,7 +27,6 @@ class GFAL2Impl(StageOutImpl):
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
         self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
-
 
     def createFinalPFN(self, pfn):
         """
@@ -45,14 +41,12 @@ class GFAL2Impl(StageOutImpl):
             return "file://%s" % os.path.abspath(pfn)
         return pfn
 
-
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
         GFAL2 uses file:/// urls
         """
         return self.createFinalPFN(pfn)
-
 
     def createTargetName(self, protocol, pfn):
         """
@@ -61,7 +55,6 @@ class GFAL2Impl(StageOutImpl):
         """
         return self.createFinalPFN(pfn)
 
-
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
@@ -69,7 +62,6 @@ class GFAL2Impl(StageOutImpl):
         it is not needed to create directory
         """
         return
-
 
     def createRemoveFileCommand(self, pfn):
         """
@@ -84,7 +76,6 @@ class GFAL2Impl(StageOutImpl):
             return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
             return self.removeCommand % self.createFinalPFN(pfn)
-
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
@@ -130,16 +121,14 @@ class GFAL2Impl(StageOutImpl):
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero gfal-copy Exit status!!!"
+               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
             fi
-            exit 0
+            exit $EXIT_STATUS
             """ % self.createRemoveFileCommand(targetPFN)
 
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

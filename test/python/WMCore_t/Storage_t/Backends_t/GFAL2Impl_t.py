@@ -112,12 +112,11 @@ class GFAL2ImplTest(unittest.TestCase):
             EXIT_STATUS=$?
             echo "gfal-copy exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero gfal-copy Exit status!!!"
+               echo "ERROR: gfal-copy exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
             fi
-            exit 0
+            exit $EXIT_STATUS
             """ % createRemoveFileCommandResult
 
         return result

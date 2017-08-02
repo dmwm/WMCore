@@ -634,29 +634,6 @@ class StepChainTests(EmulatedUnitTestCase):
         Build a StepChain workload defining different processed dataset name among the steps
         """
 
-        def _checkThisOutputStuff(assigned=False):
-            "Performs a bunch of tests for the output settings"
-            self.assertItemsEqual(testWorkload.listOutputDatasets(), outDsets)
-            self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
-
-            task = testWorkload.getTaskByName(testArguments['Step1']['StepName'])
-            self._checkOutputDsetsAndMods(task, outMods, outDsets, lfnBases, transientMod, assigned=assigned)
-
-            # test merge tasks now
-            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput')
-            step = task.getStepHelper("cmsRun1")
-            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['RAWSIMoutput'])
-
-            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeAODSIMoutput')
-            step = task.getStepHelper("cmsRun1")
-            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['AODSIMoutput'])
-
-            task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeRECOSIMoutput')
-            step = task.getStepHelper("cmsRun1")
-            self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods['RECOSIMoutput'])
-
-            return
-
         outDsets = ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
                     '/PrimaryDataset-StepChain/AcqEra_Step3-FilterD-ProcStr_Step3-v3/AODSIM',
                     '/PrimaryDataset-StepChain/AcqEra_Step3-FilterC-ProcStr_Step3-v3/GEN-SIM-RECO']
@@ -712,13 +689,14 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # Case 1: only workload creation
         lfnBases = ("/store/unmerged", "/store/data")
-        _checkThisOutputStuff()
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
+                                   assigned=False, step2Transient=transientMod)
 
         # Case 2: workload creation and assignment, with no output dataset override
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
         testWorkload.updateArguments(assignDict)
-        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7979
-        # _checkThisOutputStuff(assigned=True)
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+                                   step2Transient=transientMod)
 
         # Case 3: workload creation and assignment, output dataset overriden with the same values
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -731,17 +709,19 @@ class StepChainTests(EmulatedUnitTestCase):
                       "UnmergedLFNBase": "/store/unmerged"
                       }
         testWorkload.updateArguments(assignDict)
-        _checkThisOutputStuff(assigned=True)
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+                                   step2Transient=transientMod)
 
         # Case 4: workload creation and assignment, output dataset overriden with new values
+        lfnBases = ("/store/unmerged", "/store/mc")
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"GENSIM": "AcqEra_StepA", "DIGI": "AcqEra_StepB", "RECO": "AcqEra_StepC"},
                       "ProcessingString": {"GENSIM": "ProcStr_StepA", "DIGI": "ProcStr_StepB",
                                            "RECO": "ProcStr_StepC"},
                       "ProcessingVersion": {"GENSIM": 41, "DIGI": 42, "RECO": 43},
-                      "MergedLFNBase": "/store/mc",
-                      "UnmergedLFNBase": "/store/unmerged"
+                      "MergedLFNBase": lfnBases[1],
+                      "UnmergedLFNBase": lfnBases[0]
                       }
         testWorkload.updateArguments(assignDict)
         for tp in [("Step1", "StepA"), ("Step2", "StepB"), ("Step3", "StepC")]:
@@ -750,23 +730,167 @@ class StepChainTests(EmulatedUnitTestCase):
             for mod in outMods:
                 outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
                                 for k, v in outMods[mod].items()}
+            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                            for k, v in transientMod['RAWSIMoutput'].items()}
         for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
                 outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
                                 for k, v in outMods[mod].items()}
+            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                            for k, v in transientMod['RAWSIMoutput'].items()}
+
         mergedMods = deepcopy(outMods)
         mergedMods['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
         mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3 + 1]})
         mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[5 + 1]})
 
-        # FIXME TODO FIXME this is currently broken, so I'll keep it commented out. Issue #7979
-        # _checkThisOutputStuff(assigned=True)
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+                                   step2Transient=transientMod)
 
         return
 
-    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, tranMods, assigned=False):
+    def testDupOutputDataSettings(self):
+        """
+        Build a StepChain workload defining different processed dataset name among the steps
+        and keeping the output of different steps using the same output module
+        """
+        outDsets = ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                    '/PrimaryDataset-StepChain/AcqEra_Step2-FilterB-ProcStr_Step2-v2/GEN-SIM-RAW',
+                    '/PrimaryDataset-StepChain/AcqEra_Step3-FilterD-ProcStr_Step3-v3/AODSIM',
+                    '/PrimaryDataset-StepChain/AcqEra_Step3-FilterC-ProcStr_Step3-v3/GEN-SIM-RECO']
+
+        outputLFNBases = ['/store/unmerged/AcqEra_Step1/PrimaryDataset-StepChain/GEN-SIM/FilterA-ProcStr_Step1-v1',
+                          '/store/data/AcqEra_Step1/PrimaryDataset-StepChain/GEN-SIM/FilterA-ProcStr_Step1-v1',
+                          '/store/unmerged/AcqEra_Step2/PrimaryDataset-StepChain/GEN-SIM-RAW/FilterB-ProcStr_Step2-v2',
+                          '/store/data/AcqEra_Step2/PrimaryDataset-StepChain/GEN-SIM-RAW/FilterB-ProcStr_Step2-v2',
+                          '/store/unmerged/AcqEra_Step3/PrimaryDataset-StepChain/GEN-SIM-RECO/FilterC-ProcStr_Step3-v3',
+                          '/store/data/AcqEra_Step3/PrimaryDataset-StepChain/GEN-SIM-RECO/FilterC-ProcStr_Step3-v3',
+                          '/store/unmerged/AcqEra_Step3/PrimaryDataset-StepChain/AODSIM/FilterD-ProcStr_Step3-v3',
+                          '/store/data/AcqEra_Step3/PrimaryDataset-StepChain/AODSIM/FilterD-ProcStr_Step3-v3']
+
+        outMods = {'RAWSIMoutput': [dict(dataTier='GEN-SIM', filterName='FilterA', transient=True,
+                                         primaryDataset=REQUEST['PrimaryDataset'],
+                                         processedDataset="AcqEra_Step1-FilterA-ProcStr_Step1-v1",
+                                         lfnBase=outputLFNBases[0],
+                                         mergedLFNBase=outputLFNBases[0 + 1]),
+                                    dict(dataTier='GEN-SIM-RAW', filterName='FilterB', transient=True,
+                                         primaryDataset=REQUEST['PrimaryDataset'],
+                                         processedDataset="AcqEra_Step2-FilterB-ProcStr_Step2-v2",
+                                         lfnBase=outputLFNBases[2],
+                                         mergedLFNBase=outputLFNBases[2 + 1])],
+                   'RECOSIMoutput': dict(dataTier='GEN-SIM-RECO', filterName='FilterC', transient=True,
+                                         primaryDataset=REQUEST['PrimaryDataset'],
+                                         processedDataset="AcqEra_Step3-FilterC-ProcStr_Step3-v3",
+                                         lfnBase=outputLFNBases[4],
+                                         mergedLFNBase=outputLFNBases[4 + 1]),
+                   'AODSIMoutput': dict(dataTier='AODSIM', filterName='FilterD', transient=True,
+                                        primaryDataset=REQUEST['PrimaryDataset'],
+                                        processedDataset="AcqEra_Step3-FilterD-ProcStr_Step3-v3",
+                                        lfnBase=outputLFNBases[6],
+                                        mergedLFNBase=outputLFNBases[6 + 1])}
+
+        lfnBases = ("/store/unmerged", "/store/data")
+
+        mergedMods = deepcopy(outMods)
+        mergedMods['RAWSIMoutput'][0].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
+        mergedMods['RAWSIMoutput'][1].update({'transient': False, 'lfnBase': outputLFNBases[2 + 1]})
+        mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4 + 1]})
+        mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[6 + 1]})
+
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['AcquisitionEra'] = 'AcqEra_' + s
+            testArguments[s]['ProcessingString'] = 'ProcStr_' + s
+            testArguments[s]['ProcessingVersion'] = int(s.replace('Step', ''))
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # creation only
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
+                                   assigned=False)
+
+        # now assign it, output dataset overriden with new values
+        lfnBases = ("/store/unmerged", "/store/mc")
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"GENSIM": "AcqEra_StepA", "DIGI": "AcqEra_StepB", "RECO": "AcqEra_StepC"},
+                      "ProcessingString": {"GENSIM": "ProcStr_StepA", "DIGI": "ProcStr_StepB",
+                                           "RECO": "ProcStr_StepC"},
+                      "ProcessingVersion": {"GENSIM": 41, "DIGI": 42, "RECO": 43},
+                      "UnmergedLFNBase": lfnBases[0],
+                      "MergedLFNBase": lfnBases[1],
+                      }
+        testWorkload.updateArguments(assignDict)
+        for tp in [("Step1", "StepA"), ("Step2", "StepB"), ("Step3", "StepC")]:
+            outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
+            outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
+            for mod in outMods:
+                if isinstance(outMods[mod], dict):
+                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                    for k, v in outMods[mod].items()}
+                else:
+                    outMods[mod] = [
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        out in outMods[mod]]
+        for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
+            outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
+            outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
+            for mod in outMods:
+                if isinstance(outMods[mod], dict):
+                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
+                                    for k, v in outMods[mod].items()}
+                else:
+                    outMods[mod] = [
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        out in outMods[mod]]
+        mergedMods = deepcopy(outMods)
+        mergedMods['RAWSIMoutput'][0].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
+        mergedMods['RAWSIMoutput'][1].update({'transient': False, 'lfnBase': outputLFNBases[2 + 1]})
+        mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4 + 1]})
+        mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[6 + 1]})
+
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True)
+
+        return
+
+    def _checkThisOutputStuff(self, workload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=False,
+                              step2Transient=None):
+        "Performs a bunch of tests for the output settings"
+        self.assertItemsEqual(workload.listOutputDatasets(), outDsets)
+        self.assertItemsEqual(workload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
+
+        task = workload.getTaskByName('GENSIM')
+        self._checkOutputDsetsAndMods(task, outMods, outDsets, lfnBases, step2Transient, assigned)
+
+        # test merge tasks now
+        for count, mergeTask in enumerate(['GENSIMMergeRAWSIMoutput', 'DIGIMergeRAWSIMoutput', 'RECOMergeRECOSIMoutput',
+                                           'RECOMergeAODSIMoutput']):
+            if step2Transient and mergeTask == 'DIGIMergeRAWSIMoutput':
+                continue
+            task = workload.getTaskByPath('/TestWorkload/GENSIM/%s' % mergeTask)
+            step = task.getStepHelper("cmsRun1")
+            modName = mergeTask.split('Merge')[-1]
+            if step2Transient:
+                if mergeTask == "DIGIMergeRAWSIMoutput":
+                    self._validateOutputModule('Merged', step.getOutputModule('Merged'), step2Transient[modName])
+                else:
+                    self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[modName])
+            else:
+                if mergeTask in ["GENSIMMergeRAWSIMoutput", "DIGIMergeRAWSIMoutput"]:
+                    self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[modName][count])
+                else:
+                    self._validateOutputModule('Merged', step.getOutputModule('Merged'), mergedMods[modName])
+
+        return
+
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, step2Transient, assigned=False):
         """
         Validate data related to output dataset, output modules and subscriptions
         :param task: task object
@@ -779,14 +903,8 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertItemsEqual(task._getLFNBase(), lfnBases)
         outputDsets = [x['outputDataset'] for x in task.listOutputDatasetsAndModules()]
         self.assertItemsEqual(outputDsets, outDsets)
-
-        # saved output modules
-        outModDict = {}
-        outModDict.update(task.getOutputModulesForStep("cmsRun1").dictionary_())
-        outModDict.update(task.getOutputModulesForStep("cmsRun3").dictionary_())
-        self.assertItemsEqual(outModDict.keys(), outMods.keys())
-        for modName in outModDict:
-            self._validateOutputModule(modName, outModDict[modName], outMods[modName])
+        outputMods = list(set([x['outputModule'] for x in task.listOutputDatasetsAndModules()]))
+        self.assertItemsEqual(outputMods, outMods)
 
         if assigned:
             defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
@@ -797,21 +915,36 @@ class StepChainTests(EmulatedUnitTestCase):
             subscription = {}
         self.assertDictEqual(task.getSubscriptionInformation(), subscription)
 
-        # step level checks
+        # check output modules from both task and step level
         self.assertEqual(task.getTopStepName(), 'cmsRun1')
-        for run in ['cmsRun1', 'cmsRun3']:
-            step = task.getStepHelper(run)
-            for modName in step.listOutputModules():
-                self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName])
+        for count, stepRun in enumerate(['cmsRun1', 'cmsRun2', 'cmsRun3']):
+            outModDict = task.getOutputModulesForStep(stepRun).dictionary_()
+            for modName in outModDict:
+                if step2Transient:
+                    if stepRun == "cmsRun2":
+                        self._validateOutputModule(modName, outModDict[modName], step2Transient[modName])
+                    else:
+                        self._validateOutputModule(modName, outModDict[modName], outMods[modName])
+                else:
+                    if stepRun in ["cmsRun1", "cmsRun2"]:
+                        self._validateOutputModule(modName, outModDict[modName], outMods[modName][count])
+                    else:
+                        self._validateOutputModule(modName, outModDict[modName], outMods[modName])
 
-        # transient output module checks
-        outModDict = task.getOutputModulesForStep("cmsRun2").dictionary_()
-        self.assertItemsEqual(outModDict.keys(), tranMods.keys())
-        for modName, outMod in outModDict.iteritems():
-            self._validateOutputModule(modName, outModDict[modName], tranMods[modName])
-        step = task.getStepHelper("cmsRun2")
-        for modName in step.listOutputModules():
-            self._validateOutputModule(modName, step.getOutputModule(modName), tranMods[modName])
+            step = task.getStepHelper(stepRun)
+            for modName in step.listOutputModules():
+                if step2Transient:
+                    if stepRun == "cmsRun2":
+                        self._validateOutputModule(modName, step.getOutputModule(modName), step2Transient[modName])
+                    else:
+                        self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName])
+                else:
+                    if stepRun in ["cmsRun1", "cmsRun2"]:
+                        self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName][count])
+                    else:
+                        self._validateOutputModule(modName, step.getOutputModule(modName), outMods[modName])
+
+        return
 
     def _validateOutputModule(self, outModName, outModObj, dictExp):
         """

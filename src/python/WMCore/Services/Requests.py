@@ -45,7 +45,7 @@ except ImportError:
 
 # Python3 compatibility
 if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
-    basestring = str
+    str = str
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -236,7 +236,7 @@ class Requests(dict):
 
         # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
         # PY3 Don't let futurize change this
-        assert isinstance(encoded_data, (str, basestring)), \
+        assert isinstance(encoded_data, (str, str)), \
             "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying

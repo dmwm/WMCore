@@ -23,7 +23,7 @@ class AddRunLumi(DBFormatter):
                 binds.extend(self.getBinds(filename=entry['lfn'], runs=entry['runs']))
             return binds
 
-        if isinstance(filename, basestring):
+        if isinstance(filename, str):
             lfn = filename
         elif isinstance(filename, dict):
             lfn = filename('lfn')

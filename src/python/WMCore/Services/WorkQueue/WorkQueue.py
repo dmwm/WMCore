@@ -365,7 +365,7 @@ class WorkQueue(object):
 
         Returns the whole elements in workqueue that match the list of status given.
         """
-        if isinstance(status, basestring):
+        if isinstance(status, str):
             status = [status]
 
         options = {'stale': 'update_after'} if stale else {}

@@ -15,7 +15,7 @@ from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
 
 # xdrlib cannot handle unicode strings
 def unicodeToStr(value):
-    if not isinstance(value, basestring):
+    if not isinstance(value, str):
         return 'unknown'
     try:
         return str(value)

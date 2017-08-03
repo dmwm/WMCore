@@ -72,7 +72,7 @@ class RequestHandler(object):
             (either json.dumps or urllib.urlencode)
         """
         #data is already encoded, just return it
-        if isinstance(params, basestring):
+        if isinstance(params, str):
             return params
 
         #data is not encoded, we need to do that
@@ -92,7 +92,7 @@ class RequestHandler(object):
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
         """Set options for given curl object, params should be a dictionary"""
-        if not (isinstance(params, (dict, basestring)) or params is None):
+        if not (isinstance(params, (dict, str)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)

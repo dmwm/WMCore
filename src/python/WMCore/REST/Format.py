@@ -46,7 +46,7 @@ class RESTFormat(object):
         # to a single string. Convert files to 1MB chunks.
         if stream is None:
             stream = ['']
-        elif isinstance(stream, basestring):
+        elif isinstance(stream, str):
             stream = [stream]
         elif isinstance(stream, types.FileType):
             stream = cherrypy.lib.file_generator(stream, 512*1024)

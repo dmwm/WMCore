@@ -134,7 +134,7 @@ class BasePlugin:
         requiredOSes = set()
         if scramArch is None:
             requiredOSes.add('any')
-        elif isinstance(scramArch, basestring):
+        elif isinstance(scramArch, str):
             for arch, validOSes in ARCH_TO_OS.iteritems():
                 if arch in scramArch:
                     requiredOSes.update(validOSes)

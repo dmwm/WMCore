@@ -45,7 +45,7 @@ class Request(RESTEntity):
         no_multi_key = ["detail", "_nostale", "date_range", "common_dict"]
         for key, value in param.kwargs.items():
             # convert string to list
-            if key not in no_multi_key and isinstance(value, basestring):
+            if key not in no_multi_key and isinstance(value, str):
                 param.kwargs[key] = [value]
 
         detail = param.kwargs.get('detail', True)
@@ -91,7 +91,7 @@ class Request(RESTEntity):
         if isinstance(ids, list):
             for rid in ids:
                 doc[rid] = 'on'
-        elif isinstance(ids, basestring):
+        elif isinstance(ids, str):
             doc[ids] = 'on'
 
         docs = []

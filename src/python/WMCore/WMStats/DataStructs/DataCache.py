@@ -58,7 +58,7 @@ class DataCache(object):
         reqData = DataCache.getlatestJobData()
 
         if maskList is not None:
-            if isinstance(maskList, basestring):
+            if isinstance(maskList, str):
                 maskList = [maskList]
             if "RequestName" not in maskList:
                 maskList.append("RequestName")

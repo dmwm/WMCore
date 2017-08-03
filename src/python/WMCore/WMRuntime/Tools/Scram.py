@@ -262,12 +262,12 @@ class Scram(object):
         if runtimeDir == None:
             executeIn = self.projectArea
         # if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
-        if isinstance(logName, basestring) and not os.path.exists(logName):
+        if isinstance(logName, str) and not os.path.exists(logName):
             f = open(logName, 'w')
             f.write('Log for recording SCRAM command-line output\n')
             f.write('-------------------------------------------\n')
             f.close()
-        logFile = open(logName, 'a') if isinstance(logName, basestring) else logName
+        logFile = open(logName, 'a') if isinstance(logName, str) else logName
         bashcmd = "/bin/bash"
         if cleanEnv:
             bashcmd = "env - " + bashcmd
@@ -327,7 +327,7 @@ class Scram(object):
         self.code = proc.returncode
         self.lastExecuted = command
         # close the logfile if one has been created from the name. Let the caller close it if he passed a file object.
-        if isinstance(logName, basestring):
+        if isinstance(logName, str):
             logFile.close()
         return self.code
 

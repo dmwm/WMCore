@@ -56,7 +56,7 @@ class WMStatsServer(Service):
         """
         args = ""
         for name, values in queryDict.items():
-            if isinstance(values, (basestring, int)):
+            if isinstance(values, (str, int)):
                 values = [values]
             for val in values:
                 args += '%s=%s&' % (name, val)

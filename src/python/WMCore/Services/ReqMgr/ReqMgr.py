@@ -62,7 +62,7 @@ class ReqMgr(Service):
         else:
             args = ""
         for name, values in queryDict.items():
-            if isinstance(values, basestring) or isinstance(values, int):
+            if isinstance(values, str) or isinstance(values, int):
                 values = [values]
             for val in values:
                 args += '%s=%s&' % (name, val)

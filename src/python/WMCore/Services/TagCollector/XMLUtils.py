@@ -36,7 +36,7 @@ def adjust_value(value):
 
 def xml_parser(data, prim_key, tags=None):
     "Generic XML parser"
-    if  isinstance(data, basestring):
+    if  isinstance(data, str):
         stream = StringIO.StringIO()
         stream.write(data)
         stream.seek(0)

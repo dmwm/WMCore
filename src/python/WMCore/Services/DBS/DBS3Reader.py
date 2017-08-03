@@ -617,7 +617,7 @@ class DBS3Reader(object):
         """
 
         singleBlockName = None
-        if isinstance(fileBlockNames, basestring):
+        if isinstance(fileBlockNames, str):
             singleBlockName = fileBlockNames
             fileBlockNames = [fileBlockNames]
 

@@ -19,7 +19,7 @@ LOGDB_MSG_TYPES = ['info', 'error', 'warning', 'comment']
 
 def gen_hash(key):
     "Generate hash for given key"
-    if  not isinstance(key, basestring):
+    if  not isinstance(key, str):
         raise NotImplementedError
     keyhash = hashlib.md5()
     keyhash.update(key)

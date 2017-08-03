@@ -735,7 +735,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if isinstance(f, basestring) or "LumiList" not in f:
+            if isinstance(f, str) or "LumiList" not in f:
                 results.append(f)
                 continue
 

@@ -187,7 +187,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         return (finishedwfs, finishedwfsWithLogCollectAndCleanUp)
 
     def killCondorJobsByWFStatus(self, statusList):
-        if isinstance(statusList, basestring):
+        if isinstance(statusList, str):
             statusList = [statusList]
         reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
         logging.info("There are %d requests in 'aborted' status in central couch.", len(reqNames))

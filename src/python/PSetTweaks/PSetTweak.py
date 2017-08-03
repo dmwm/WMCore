@@ -297,7 +297,7 @@ class PSetTweak:
         for param, value in self:
             psetName = param.rsplit(".", 1)[0]
             paramName = param.rsplit(".", 1)[1]
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 value = "\"%s\"" % value
             result += "setattr(%s, \"%s\", %s)\n" % (
                 psetName, paramName, value)

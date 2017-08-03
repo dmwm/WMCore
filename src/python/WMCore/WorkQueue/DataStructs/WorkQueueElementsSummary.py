@@ -31,7 +31,7 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     If dataLocality is set to True, then it considers only sites that pass
     the data location constraint.
     """
-    if status and isinstance(status, basestring):
+    if status and isinstance(status, str):
         activeStatus = [status]
     elif status and isinstance(status, (list, tuple)):
         activeStatus = status

@@ -207,7 +207,7 @@ def convertOutput(outputList):
                 del outDict[field]
 
         for field in WMARCHIVE_CONVERT_TO_LIST:
-            if field in outDict and isinstance(outDict[field], basestring):
+            if field in outDict and isinstance(outDict[field], str):
                 outDict[field] = [outDict[field]]
 
         for oldKey, newKey in WMARCHIVE_DATA_MAP.items():

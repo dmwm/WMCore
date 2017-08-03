@@ -1550,7 +1550,7 @@ class WMTaskHelper(TreeHelper):
     def _getKeyValue(self, keyname, stepname, values):
         if keyname not in values:
             return
-        elif isinstance(values[keyname], basestring):
+        elif isinstance(values[keyname], str):
             return values[keyname]
         elif isinstance(values[keyname], dict):
             return values[keyname].get(stepname)

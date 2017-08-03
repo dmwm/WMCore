@@ -42,7 +42,7 @@ def calculateChecksum(tarfile_, exclude=None):
     hasher = hashlib.sha256()
 
     ## "massage" out the input parameters
-    if isinstance(tarfile_, basestring):
+    if isinstance(tarfile_, str):
         tar = tarfile.open(tarfile_, mode='r')
     else:
         tar = tarfile.open(fileobj=tarfile_, mode='r')

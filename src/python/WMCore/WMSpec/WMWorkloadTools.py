@@ -19,7 +19,7 @@ from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 def makeLumiList(lumiDict):
     try:
-        if isinstance(lumiDict, basestring):
+        if isinstance(lumiDict, str):
             lumiDict = json.loads(lumiDict)
         ll = LumiList(compactList=lumiDict)
         return ll.getCompactList()
@@ -318,7 +318,7 @@ def setArgumentsWithDefault(arguments, argumentDefinition):
 
     # set the Campaign default value to the same as AcquisitionEra if Campaign is not specified
     if "Campaign" in argumentDefinition and not arguments.get("Campaign"):
-        if "AcquisitionEra" in arguments and isinstance(arguments["AcquisitionEra"], basestring):
+        if "AcquisitionEra" in arguments and isinstance(arguments["AcquisitionEra"], str):
             arguments["Campaign"] = arguments["AcquisitionEra"]
 
     return

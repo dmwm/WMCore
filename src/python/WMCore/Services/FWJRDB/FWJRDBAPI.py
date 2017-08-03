@@ -43,7 +43,7 @@ class FWJRDBAPI():
 
         options = self.setDefaultStaleOptions(options)
 
-        if keys and isinstance(keys, basestring):
+        if keys and isinstance(keys, str):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
 

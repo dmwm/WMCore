@@ -227,7 +227,7 @@ def state_transition(docs):
 # code taken from
 # http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
 def toString(data):
-    if isinstance(data, basestring):
+    if isinstance(data, str):
         return str(data)
     elif isinstance(data, collections.Mapping):
         return dict(map(toString, data.iteritems()))

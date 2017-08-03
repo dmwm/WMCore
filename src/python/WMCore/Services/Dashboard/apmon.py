@@ -425,7 +425,7 @@ class ApMon(object):
         Set the destinations of the ApMon instance. It accepts the same parameters as the constructor.
         """
         try:
-            if isinstance(initValue, basestring):
+            if isinstance(initValue, str):
                 self.configAddresses = [initValue]
                 self.configRecheck = True
                 self.configRecheckInterval = 600

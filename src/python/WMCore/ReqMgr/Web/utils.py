@@ -75,7 +75,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
     rest_keys = []
     for key in keys:
         val = jsondata[key]
-        if  isinstance(val, basestring) and val.startswith('REPLACE-'):
+        if  isinstance(val, str) and val.startswith('REPLACE-'):
             priority_keys.append(key)
         else:
             rest_keys.append(key)
@@ -113,7 +113,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                         sel += "<option value=\"%s\">%s</option>" % (item, item)
                 sel += "</select>"
             val = sel
-        elif isinstance(val, basestring):
+        elif isinstance(val, str):
             if  val.startswith('REPLACE-'):
                 val = '<input type="text" name="%s" placeholder="%s" class="width-100">'\
                         % (key, val)

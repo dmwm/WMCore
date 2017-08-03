@@ -43,7 +43,7 @@ class RequestDBReader(object):
 
         options = self.setDefaultStaleOptions(options)
 
-        if keys and isinstance(keys, basestring):
+        if keys and isinstance(keys, str):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
 
@@ -165,7 +165,7 @@ class RequestDBReader(object):
         if isinstance(requestNames, list) and len(requestNames) == 1:
             requestNames = requestNames[0]
 
-        if isinstance(requestNames, basestring):
+        if isinstance(requestNames, str):
             requestInfo = self._getRequestByName(requestNames, detail=detail)
         else:
             requestInfo = self._getRequestByNames(requestNames, detail=detail)
@@ -236,7 +236,7 @@ class RequestDBReader(object):
         return requestInfo
 
     def getStatusAndTypeByRequest(self, requestNames):
-        if isinstance(requestNames, basestring):
+        if isinstance(requestNames, str):
             requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}

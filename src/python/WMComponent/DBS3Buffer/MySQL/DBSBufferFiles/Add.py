@@ -17,7 +17,7 @@ class Add(DBFormatter):
     def getBinds(self, files, size, events, cksum, dataset_algo, status, workflowID, inPhedex):
         # Can't use self.dbi.buildbinds here...
         binds = {}
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             binds = {'lfn': files,
                      'filesize': size,
                      'events': events,

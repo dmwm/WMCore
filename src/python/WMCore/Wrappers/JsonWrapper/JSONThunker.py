@@ -12,7 +12,7 @@ if sys.version.startswith('3.'):
 
     # Make types compatible, can also be removed once transition is over
     long = int
-    basestring = str
+    str = str
 
 
 class _EmptyClass(object):
@@ -46,7 +46,7 @@ class JSONThunker(object):
                                  str,
                                  bytes,
                                  unicode,
-                                 basestring
+                                 str
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -167,7 +167,7 @@ class JSONThunker(object):
         toThunk = self.checkRecursion(toThunk)
         toThunk = self.checkBlackListed(toThunk)
 
-        if isinstance(toThunk, basestring):
+        if isinstance(toThunk, str):
             # things that got blacklisted
             return toThunk
         if hasattr(toThunk, '__to_json__'):

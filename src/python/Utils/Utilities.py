@@ -13,7 +13,7 @@ def makeList(stringList):
     """
     if isinstance(stringList, list):
         return stringList
-    if isinstance(stringList, basestring):
+    if isinstance(stringList, str):
         toks = stringList.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
             return []

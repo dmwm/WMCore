@@ -242,7 +242,7 @@ class RESTModel(WebAPI):
         for a in self.methods[verb][method]['args']:
             if a in input_kwargs.keys():
                 v = input_kwargs[a]
-                if isinstance(v, basestring):
+                if isinstance(v, str):
                     input_data[a] = str(v)
                 else:
                     input_data[a] = v
@@ -250,7 +250,7 @@ class RESTModel(WebAPI):
             else:
                 if len(input_args):
                     v = input_args.pop(0)
-                    if isinstance(v, basestring):
+                    if isinstance(v, str):
                         input_data[a] = str(v)
                     else:
                         input_data[a] = v

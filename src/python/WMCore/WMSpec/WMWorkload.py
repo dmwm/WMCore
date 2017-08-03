@@ -1084,10 +1084,9 @@ class WMWorkloadHelper(PersistencyHelper):
                     and stepHelper.getSkipBadFiles():
                 stepHelper.setSkipBadFiles(False)
 
-            if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
-                    and taskHelper.taskType() == "Production":
-                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
-                                                          None))
+            if taskHelper.isTopOfTree() and taskHelper.taskType() == "Production" and stepName == "cmsRun1":
+                # set it only for the first cmsRun in multi-steps tasks
+                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi", None))
         return
 
     def listJobSplittingParametersByTask(self, initialTask=None, performance=True):

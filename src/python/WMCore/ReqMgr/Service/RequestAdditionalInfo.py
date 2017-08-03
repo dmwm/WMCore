@@ -5,6 +5,7 @@ import json
 import cherrypy
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from Utils.Utilities import strToBool
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
@@ -71,17 +72,17 @@ def _validate_split_param(split_algo, split_param):
     else:
         return (False, None)
 
-def _assign_if_key_exsit(key, original_params, return_params, cast_type):
-    if key in original_params:
-        if cast_type == None:
-            return_params[key] = original_params[key]
-        elif cast_type == bool:
-            if str(original_params[key]).lower() == "true":
-                return_params[key] = True
-            else:
-                return_params[key] = False
-        else:
-            return_params[key] = cast_type(original_params[key])
+def _assign_key_value(keyname, keyvalue, return_params, cast_type):
+    if cast_type == None:
+        return_params[keyname] = keyvalue
+    elif cast_type == bool:
+        try:
+            return_params[keyname] = strToBool(keyvalue)
+        except ValueError:
+            msg = "%s expects a boolean value, you provided %s" % (keyname, keyvalue)
+            raise cherrypy.HTTPError(400, msg)
+    else:
+        return_params[keyname] = cast_type(keyvalue)
 
 class RequestSpec(RESTEntity):
 
@@ -208,7 +209,6 @@ class WorkloadSplitting(RESTEntity):
 
         splittingDict = helper.listJobSplittingParametersByTask(performance = False)
         taskNames = sorted(splittingDict.keys())
-
         splitInfo = []
         for taskName in taskNames:
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
@@ -232,6 +232,12 @@ class WorkloadSplitting(RESTEntity):
         data = cherrypy.request.body.read()
         splittingInfo = json.loads(data)
 
+        helper = WMWorkloadHelper()
+        try:
+            helper.loadSpecFromCouch(self.reqdb_url, name)
+        except Exception:
+            raise cherrypy.HTTPError(404, "Cannot find workload for: %s" % name)
+
         for taskInfo in splittingInfo:
             splittingTask = taskInfo["taskName"]
             splittingAlgo = taskInfo["splitAlgo"]
@@ -240,24 +246,15 @@ class WorkloadSplitting(RESTEntity):
             for param in submittedParams:
                 validFlag, castType = _validate_split_param(splittingAlgo, param)
                 if validFlag:
-                    _assign_if_key_exsit(param, submittedParams, splitParams, castType)
+                    _assign_key_value(param, submittedParams[param], splitParams, castType)
                 else:
-                    #TO Maybe raise the error messge
-                    pass
-
-            #TODO: this is only gets updated through script. Maybe we should disallow it.
-            _assign_if_key_exsit("include_parents", submittedParams, splitParams, bool)
-
-            helper = WMWorkloadHelper()
-            try:
-                helper.loadSpecFromCouch(self.reqdb_url, name)
-            except Exception:
-                raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
+                    msg = "Parameter '%s' is not supported in the algorithm '%s'" % (param, splittingAlgo)
+                    raise cherrypy.HTTPError(400, msg)
 
             helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
 
-            # Not sure why it needs to updated per each task but if following lines are outside the loop
-            # it doesn't work
-            url = "%s/%s" % (self.reqdb_url, name)
-            result = helper.saveCouchUrl(url)
+        # Now persist all these changes in the workload
+        url = "%s/%s" % (self.reqdb_url, name)
+        result = helper.saveCouchUrl(url)
+
         return result

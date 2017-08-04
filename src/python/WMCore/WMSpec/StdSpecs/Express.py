@@ -236,11 +236,6 @@ class ExpressWorkloadFactory(StdBase):
                                            periodic_harvest_interval = self.periodicHarvestInterval,
                                            doLogCollect = True)
 
-        workload.setBlockCloseSettings(self.blockCloseDelay,
-                                       workload.getBlockCloseMaxFiles(),
-                                       workload.getBlockCloseMaxEvents(),
-                                       workload.getBlockCloseMaxSize())
-
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
@@ -485,8 +480,6 @@ class ExpressWorkloadFactory(StdBase):
                     "AlcaHarvestDir": {"optional": False, "null": True},
                     "AlcaSkims": {"type": makeList, "optional": False},
                     "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False},
-                    "BlockCloseDelay": {"type": int, "optional": False,
-                                        "validate": lambda x : x > 0},
                     "Outputs": {"type": makeList, "optional": False},
                     "MaxInputRate": {"type": int, "optional": False},
                     "MaxInputEvents": {"type": int, "optional": False},

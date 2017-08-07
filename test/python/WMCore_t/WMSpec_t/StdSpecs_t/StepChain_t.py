@@ -690,12 +690,12 @@ class StepChainTests(EmulatedUnitTestCase):
         # Case 1: only workload creation
         lfnBases = ("/store/unmerged", "/store/data")
         self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
-                                   assigned=False, step2Transient=transientMod)
+                                   step2Transient=transientMod)
 
         # Case 2: workload creation and assignment, with no output dataset override
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team"}
         testWorkload.updateArguments(assignDict)
-        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
                                    step2Transient=transientMod)
 
         # Case 3: workload creation and assignment, output dataset overriden with the same values
@@ -709,7 +709,7 @@ class StepChainTests(EmulatedUnitTestCase):
                       "UnmergedLFNBase": "/store/unmerged"
                       }
         testWorkload.updateArguments(assignDict)
-        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
                                    step2Transient=transientMod)
 
         # Case 4: workload creation and assignment, output dataset overriden with new values
@@ -746,7 +746,7 @@ class StepChainTests(EmulatedUnitTestCase):
         mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[3 + 1]})
         mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[5 + 1]})
 
-        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True,
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
                                    step2Transient=transientMod)
 
         return
@@ -813,8 +813,7 @@ class StepChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
         # creation only
-        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods,
-                                   assigned=False)
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods)
 
         # now assign it, output dataset overriden with new values
         lfnBases = ("/store/unmerged", "/store/mc")
@@ -856,18 +855,18 @@ class StepChainTests(EmulatedUnitTestCase):
         mergedMods['RECOSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4 + 1]})
         mergedMods['AODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[6 + 1]})
 
-        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=True)
+        self._checkThisOutputStuff(testWorkload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods)
 
         return
 
-    def _checkThisOutputStuff(self, workload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, assigned=False,
+    def _checkThisOutputStuff(self, workload, outDsets, outputLFNBases, outMods, lfnBases, mergedMods, subscribed=False,
                               step2Transient=None):
         "Performs a bunch of tests for the output settings"
         self.assertItemsEqual(workload.listOutputDatasets(), outDsets)
         self.assertItemsEqual(workload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
 
         task = workload.getTaskByName('GENSIM')
-        self._checkOutputDsetsAndMods(task, outMods, outDsets, lfnBases, step2Transient, assigned)
+        self._checkOutputDsetsAndMods(task, outMods, outDsets, lfnBases, step2Transient)
 
         # test merge tasks now
         for count, mergeTask in enumerate(['GENSIMMergeRAWSIMoutput', 'DIGIMergeRAWSIMoutput', 'RECOMergeRECOSIMoutput',
@@ -890,13 +889,12 @@ class StepChainTests(EmulatedUnitTestCase):
 
         return
 
-    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, step2Transient, assigned=False):
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, step2Transient):
         """
         Validate data related to output dataset, output modules and subscriptions
         :param task: task object
         :param outMods: dictionary with the output module info for this task
         :param outDsets: dictionary with the output datasets info for this task
-        :param assigned: flag saying whether the workload was assigned or not
         """
         self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), [])
 
@@ -906,14 +904,7 @@ class StepChainTests(EmulatedUnitTestCase):
         outputMods = list(set([x['outputModule'] for x in task.listOutputDatasetsAndModules()]))
         self.assertItemsEqual(outputMods, outMods)
 
-        if assigned:
-            defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
-                           'DeleteFromSource': False, 'NonCustodialGroup': 'DataOps', 'CustodialSites': [],
-                           'CustodialSubType': 'Replica', 'CustodialGroup': 'DataOps', 'NonCustodialSubType': 'Replica'}
-            subscription = {dset: defaultSubs for dset in outputDsets}
-        else:
-            subscription = {}
-        self.assertDictEqual(task.getSubscriptionInformation(), subscription)
+        self.assertDictEqual(task.getSubscriptionInformation(), {})
 
         # check output modules from both task and step level
         self.assertEqual(task.getTopStepName(), 'cmsRun1')

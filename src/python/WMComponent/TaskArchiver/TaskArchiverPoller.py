@@ -202,17 +202,12 @@ class TaskArchiverPoller(BaseWorkerThread):
         This method will call several auxiliary methods to do the following:
 
         1. Notify the WorkQueue about finished subscriptions
-        2. update dbsbuffer_workflow table with finished subscription
+        2. mark workflow as completed in the dbsbuffer_workflow table
         """
-
-
-        #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs),finishedwfs.keys())
-        # update the completed flag in dbsbuffer_workflow table so blocks can be closed
-        # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) == 0:
             return
 
+        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs), finishedwfs.keys())
         completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
 
         centralCouchAlive = True
@@ -234,19 +229,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
 
-                    #Now we know the workflow as a whole is gone, we can delete the information from couch
+                    # Tier-0 case, the agent has to mark it completed
                     if not self.useReqMgrForCompletionCheck:
-                        if workflow in abortedWorkflows:
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, "aborted-completed")
-                            logging.info("status updated to aborted completed %s", workflow)
-                        else:
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
-                            logging.info("status updated to completed %s", workflow)
+                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
+                        logging.info("status updated to completed %s", workflow)
 
                     completedWorkflowsDAO.execute([workflow])
 
                 except TaskArchiverPollerException as ex:
-
                     #Something didn't go well when notifying the workqueue, abort!!!
                     logging.error("Something bad happened while archiving tasks.")
                     logging.error(str(ex))

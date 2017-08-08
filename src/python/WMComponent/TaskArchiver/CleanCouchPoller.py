@@ -9,8 +9,8 @@ import shutil
 import httplib
 import urllib2
 import threading
-import traceback
 import time
+import urllib2
 
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Algorithms import MathAlgos
@@ -30,22 +30,6 @@ from WMCore.WMBS.Workflow import Workflow
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
-
-
-class FileEncoder(json.JSONEncoder):
-    """
-    JSON encoder to transform sets to lists and handle any object with a __to_json__ method
-    """
-
-    def default(self, obj):
-        """
-        Redefine JSONEncoder default method
-        """
-        if hasattr(obj, '__to_json__'):
-            return obj.__to_json__()
-        elif isinstance(obj, set):
-            return list(obj)
-        return json.JSONEncoder.default(self, obj)
 
 
 class CleanCouchPollerException(WMException):
@@ -152,27 +136,27 @@ class CleanCouchPoller(BaseWorkerThread):
 
     def algorithm(self, parameters=None):
         """
-        Get information from wmbs, workqueue and local couch.
+        Get information from wmbs, workqueue and local couch and:
           - It deletes old wmstats docs
+          - deletes all JobCouch data for archived workflows
+          - creates the workload summary for completed workflows
           - Archive workflows
         """
         try:
-            logging.info("Cleaning up the old request docs")
+            logging.info("Cleaning up old request docs from local wmstats")
             report = self.wmstatsCouchDB.deleteOldDocs(self.DataKeepDays)
             logging.info("%s docs deleted", report)
-        except Exception:
-            logging.error("Cleaning up the old docs failed")
-            msg = traceback.format_exc()
-            logging.error(msg)
+        except Exception as e:
+            msg = "Local wmstats clean up failed with error: %s" % str(e)
+            logging.exception(msg)
 
         try:
-            logging.info("Cleaning up the archived request docs")
+            logging.info("Cleaning up all local couch data for archived requests")
             report = self.cleanAlreadyArchivedWorkflows()
             logging.info("%s archived workflows deleted", report)
-        except Exception:
-            logging.error("Cleaning up archived failed")
-            msg = traceback.format_exc()
-            logging.error(msg)
+        except Exception as e:
+            msg = "Local couch clean up for archived requests failed with error: %s" % str(e)
+            logging.exception(msg)
 
         try:
             logging.info("Creating workload summary")
@@ -183,19 +167,17 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("Cleaning up couch db")
             self.cleanCouchDBAndChangeToArchiveStatus()
             logging.info("Done: cleaning up couch db")
-        except Exception:
-            msg = traceback.format_exc()
-            logging.error(msg)
-            logging.error("Error occurred, will try again next cycle")
+        except Exception as e:
+            msg = "Error creating workload and/or cleaning up couch: %s" % str(e)
+            logging.exception(msg)
 
         try:
-            logging.info("Cleaning up wmsbs and disk")
+            logging.info("Cleaning up wmbs and disk")
             self.deleteWorkflowFromWMBSAndDisk()
             logging.info("Done: cleaning up wmsbs and disk")
         except Exception as ex:
-            msg = traceback.format_exc()
-            logging.error(msg)
-            logging.error("Error occurred, will try again next cycle: %s", str(ex))
+            msg = "Error cleaning up wmbs and disk: %s" % str(ex)
+            logging.exception(msg)
 
     def archiveWorkflows(self, workflows, archiveState):
         updated = 0
@@ -211,7 +193,7 @@ class CleanCouchPoller(BaseWorkerThread):
 
     def archiveSummaryAndPublishToDashBoard(self, finishedwfsWithLogCollectAndCleanUp):
         """
-        _completeWithLogCollectAndCleanUp_
+        _archiveSummaryAndPublishToDashBoard_
 
         This method will call several auxiliary methods to do the following:
         1. Archive workloadsumary when all the subscription including CleanUp and LogCollect tasks are finished.
@@ -370,7 +352,7 @@ class CleanCouchPoller(BaseWorkerThread):
 
             results = localWMStats.loadView("WMStatsAgent", "allWorkflows", options=options)['rows']
             requestNames = [x['key'] for x in results]
-            logging.info("There are %s workfows to check for archived status", len(requestNames))
+            logging.info("There are %s workflows to check for archived status", len(requestNames))
 
             workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
 
@@ -412,11 +394,8 @@ class CleanCouchPoller(BaseWorkerThread):
 
             except Exception as ex:
                 # Something didn't go well on couch, abort!!!
-                msg = "Couldn't delete %s\n" % workflow
-                msg += "Exception message: %s" % str(ex)
-                msg += "\nTraceback: %s" % traceback.format_exc()
-                logging.error(msg)
-                continue
+                msg = "Couldn't delete %s\nException message: %s" % (workflow, str(ex))
+                logging.exception(msg)
 
         logging.info("Time to kill %d workflows.", len(wfsToDelete))
         self.killWorkflows(wfsToDelete)
@@ -500,10 +479,8 @@ class CleanCouchPoller(BaseWorkerThread):
                         logging.error("Attempted to delete sandbox dir but it was already gone: %s", sandboxDir)
 
             except Exception as ex:
-                msg = "Critical error while deleting workflow %s\n" % workflow
-                msg += str(ex)
-                msg += str(traceback.format_exc())
-                logging.error(msg)
+                msg = "Critical error while deleting workflow %s\nError: %s" % (workflow, str(ex))
+                logging.exception(msg)
 
     def archiveWorkflowSummary(self, spec):
         """
@@ -928,19 +905,11 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.debug("Those datasets are interesting %s", str(interestingDatasets))
         if len(interestingDatasets) == 0:
             return
+
         # Request will be only interesting for performance if it's a ReReco or PromptReco
-        (isReReco, isPromptReco) = (False, False)
-        if workload.getRequestType() == 'ReReco':
-            isReReco = True
-        # Yes, few people like magic strings, but have a look at :
-        # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718
-        # Might be safe enough
-        # FIXME: in TaskArchiver, add a test to make sure that the dataset makes sense (procDataset ~= /a/ERA-PromptReco-vVERSON/DQM)
-        if re.search('PromptReco_', workload.name()):
-            isPromptReco = True
-        # We are not interested if it's not a PromptReco or a ReReco
-        if (isReReco or isPromptReco) is False:
+        if workload.getRequestType() not in ['ReReco', 'PromptReco']:
             return
+
         logging.info("%s has interesting performance information, trying to publish to DashBoard", workload.name())
         release = workload.getCMSSWVersions()[0]
         if not release:

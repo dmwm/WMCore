@@ -108,7 +108,8 @@ class StdBase(object):
                    'BPHSkim': 'USER',
                    'PAMinBias': 'RAW-RECO',
                    'PAZEE': 'RAW-RECO',
-                   'PAZMM': 'RAW-RECO'
+                   'PAZMM': 'RAW-RECO',
+                   'EXONoBPTXSkim': 'USER'
                    }
         return skimMap
 

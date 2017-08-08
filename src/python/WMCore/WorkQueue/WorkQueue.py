@@ -140,7 +140,7 @@ class WorkQueue(WorkQueueBase):
         if self.params.get('WMBSUrl'):
             self.params['WMBSUrl'] = Lexicon.sanitizeURL(self.params['WMBSUrl'])['url']
         self.params.setdefault('Teams', [])
-        self.params.setdefault('DrainMode', False)
+
         if self.params.get('CacheDir'):
             try:
                 os.makedirs(self.params['CacheDir'])
@@ -732,10 +732,6 @@ class WorkQueue(WorkQueueBase):
             msg = 'Backend busy or down: skipping work pull'
             self._printLog(msg, printFlag, "warning")
             return False
-        if self.params['DrainMode']:
-            msg = 'Draining queue: skipping work pull'
-            self._printLog(msg, printFlag, "warning")
-            return False
 
         left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
                                                   ChildQueueUrl=self.params['QueueURL'])
@@ -1136,7 +1132,7 @@ class WorkQueue(WorkQueueBase):
 
         return result
 
-    def getWMBSInjectionStatus(self, workflowName=None):
+    def getWMBSInjectionStatus(self, workflowName=None, drainMode=False):
         """
         if the parent queue exist return the result from parent queue.
         other wise return the result from the current queue.
@@ -1145,7 +1141,7 @@ class WorkQueue(WorkQueueBase):
         returns list of [{workflowName: injection status (True or False)}]
         if the workflow is not exist return []
         """
-        if self.parent_queue and not self.params['DrainMode']:
+        if self.parent_queue and not drainMode:
             return self.parent_queue.getWMBSInjectStatus(workflowName)
         else:
             return self.backend.getWMBSInjectStatus(workflowName)

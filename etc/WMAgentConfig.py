@@ -467,8 +467,6 @@ config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
-config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
-config.AnalyticsDataCollector.diskUseThreshold = 85
 config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 

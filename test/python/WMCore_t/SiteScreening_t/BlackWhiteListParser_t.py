@@ -41,6 +41,18 @@ class FakeLogger:
         """
         pass
 
+    def warning(self, *args):
+        """
+        Dummy method
+        """
+        pass
+
+    def error(self, *args):
+        """
+        Dummy method
+        """
+        pass
+
 fakeLogger  = FakeLogger()
 
 class BlackWhiteListParserTest(unittest.TestCase):

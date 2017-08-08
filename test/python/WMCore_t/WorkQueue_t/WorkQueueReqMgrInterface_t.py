@@ -183,16 +183,6 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.assertTrue('DBS config error' in reqMgr.msg[reqMgr.names[0]])
         reqMgr._removeSpecs()
 
-    def testDrainMode(self):
-        """Stop acquiring work when DrainMode set"""
-        globalQ = self.setupGlobalWorkqueue(DrainMode=True)
-        reqMgr = fakeReqMgr()
-        reqMgrInt = WorkQueueReqMgrInterface()
-        reqMgrInt.reqMgr = reqMgr
-        self.assertEqual(len(globalQ), 0)
-        reqMgrInt(globalQ)
-        self.assertEqual(len(globalQ), 0)
-
     def testCancelPickedUp(self):
         """WorkQueue cancels if canceled in ReqMgr"""
         globalQ = self.setupGlobalWorkqueue()

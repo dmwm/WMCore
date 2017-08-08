@@ -9,7 +9,7 @@ __all__ = []
 
 import logging
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import isDrainMode
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 
 
 class DrainStatusPoller(BaseWorkerThread):

@@ -12,7 +12,7 @@ import threading
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PyCondor.PyCondorAPI import isScheddOverloaded
-
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
@@ -60,7 +60,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         i.e. user config for enabling schedd limit check or threshold on workqueue, etc
         """
 
-        return (not isScheddOverloaded())
+        return not (isDrainMode(self.config) or isScheddOverloaded())
 
     def pullWork(self):
         """Get work from parent"""

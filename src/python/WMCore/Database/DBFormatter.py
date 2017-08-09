@@ -94,7 +94,7 @@ class DBFormatter(WMObject):
             return {}
 
         r = result[0]
-        description = map(lambda x: str(x).lower(), r.keys)
+        description = [str(x).lower() for x in r.keys]
         if len(r.data) < 1:
             return {}
 

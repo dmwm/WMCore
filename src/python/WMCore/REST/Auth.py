@@ -67,9 +67,9 @@ def authz_match(role=[], group=[], site=[], verbose=False):
     site = (site and isinstance(site, str) and [site]) or site
 
     # Reformat all items into canonical format.
-    role = role and map(authz_canonical, role)
-    group = group and map(authz_canonical, group)
-    site = site and map(authz_canonical, site)
+    role = role and list(map(authz_canonical, role))
+    group = group and list(map(authz_canonical, group))
+    site = site and list(map(authz_canonical, site))
 
     # If role, group and site are all empty, no authz requirements: pass
     if not (role or group or site):

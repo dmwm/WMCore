@@ -45,7 +45,7 @@ class Interface:
                  {'startkey' :[group, user],
                    'endkey' : [group, user]}, []
                 )
-        output = map(lambda x : str(x[u'id']), result[u'rows'])
+        output = [str(x[u'id']) for x in result[u'rows']]
         return output
 
 

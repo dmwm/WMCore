@@ -1728,7 +1728,7 @@ class DatabaseRESTApi(RESTApi):
     @staticmethod
     def _logconnections(*args):
         """SIGUSR2 signal handler to log status of all pools."""
-        map(lambda p: p.logstatus(), DatabaseRESTApi._ALL_POOLS)
+        list(map(lambda p: p.logstatus(), DatabaseRESTApi._ALL_POOLS))
 
     def _add(self, entities):
         """Add entities.

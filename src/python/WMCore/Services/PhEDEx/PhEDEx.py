@@ -13,21 +13,20 @@ class PhEDEx(Service):
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, dict=None, responseType="json", secure=True):
+    def __init__(self, httpDict=None, responseType="json", logger=None):
         """
         responseType will be either xml or json
         """
-        if not dict:
-            dict = {}
+        httpDict = httpDict or {}
         self.responseType = responseType.lower()
 
-        dict["timeout"] = 300
+        httpDict['logger'] = logger if logger else logging.getLogger()
+        httpDict["timeout"] = 300
+        if 'endpoint' not in httpDict:
+            httpDict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
+        httpDict.setdefault('cacheduration', 0)
 
-        if 'endpoint' not in dict:
-            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
-
-        dict.setdefault('cacheduration', 0)
-        Service.__init__(self, dict)
+        Service.__init__(self, httpDict)
 
     def _getResult(self, callname, clearCache=False,
                    args=None, verb="POST"):

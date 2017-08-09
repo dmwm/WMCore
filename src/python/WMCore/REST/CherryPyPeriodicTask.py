@@ -35,7 +35,7 @@ class CherryPyPeriodicTask(object):
         if hasattr(config, "central_logdb_url"):
             # default set up for logDB config section need to contain propervalues
             from WMCore.Services.LogDB.LogDB import LogDB
-            self.logDB = LogDB(config.central_logdb_url, config.log_reporter,
+            self.logDB = LogDB(config.central_logdb_url, config.log_reporter, logger=self.logger,
                                thread_name=config.object.rsplit(".", 1)[-1])
         else:
             self.logDB = None

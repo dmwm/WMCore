@@ -118,9 +118,9 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         gather active data statistics
         """
 
-        reqmgrSvc = ReqMgr(config.reqmgr2_url)
+        reqmgrSvc = ReqMgr(config.reqmgr2_url, logger=self.logger)
         gqService = WorkQueue(config.workqueue_url)
-        wmstatsSvc = WMStatsServer(config.wmstats_url)
+        wmstatsSvc = WMStatsServer(config.wmstats_url, logger=self.logger)
 
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()

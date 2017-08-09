@@ -41,7 +41,6 @@ class JSONThunker(object):
                                  bool,
                                  int,
                                  float,
-                                 long,
                                  complex,
                                  str,
                                  bytes,

@@ -37,8 +37,7 @@ def quote(data):
         res = data
     elif  isinstance(data, list):
         res = data
-    elif  isinstance(data, long) or isinstance(data, int) or\
-          isinstance(data, float):
+    elif  isinstance(data, int) or isinstance(data, float):
         res = data
     else:
         try:

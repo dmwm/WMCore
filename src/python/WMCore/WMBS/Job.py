@@ -410,7 +410,7 @@ class Job(WMBSBase, WMJob):
         # Transfer all simple keys
         for key in self.keys():
             keyType = type(self.get(key))
-            if keyType in [str, long, int, float]:
+            if keyType in [str, int, float]:
                 job[key] = self[key]
 
         for file in self['input_files']:

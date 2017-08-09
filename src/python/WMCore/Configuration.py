@@ -22,7 +22,6 @@ _SimpleTypes = [
     float,
     basestring,  # For py2/py3 compatibility, don't let futurize remove PY3 Remove when python 3 transition complete
     str,
-    long,  # PY3: Not needed in python3, will be converted to duplicate int
     type(None),
     int,
 ]

@@ -308,7 +308,7 @@ class JobArchiverPoller(BaseWorkerThread):
         injected = []
         for name in result:
             try:
-                if self.workQueue.getWMBSInjectionStatus(name, isDrainMode()):
+                if self.workQueue.getWMBSInjectionStatus(name, isDrainMode(self.config)):
                     injected.append(name)
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup
@@ -316,6 +316,7 @@ class JobArchiverPoller(BaseWorkerThread):
             except Exception as ex:
                 logging.exception("Injection status checking failed, investigate: %s", str(ex))
 
+        logging.info("Found %d workflows to mark as injected", len(injected))
         # Now, mark as injected those that returned True
         if len(injected) > 0:
             myThread.transaction.begin()
@@ -334,6 +335,7 @@ class JobArchiverPoller(BaseWorkerThread):
 
         closableFilesetDAO = self.daoFactory(classname="Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
+        logging.info("Found %d filesets to be closed", len(closableFilesets))
 
         for closableFileset in closableFilesets:
             openFileset = Fileset(id=closableFileset)

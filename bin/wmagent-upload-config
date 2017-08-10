@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+from __future__ import division, print_function
+import os
+from WMCore.Agent.DefaultConfig import DEFAULT_AGENT_CONFIG
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
+
+def insertWMAgentConfig(reqmgrURL, hostName, agentConfig):
+    reqMgrAux = ReqMgrAux(reqmgrURL)
+    reqMgrAux.postWMAgentConfig(wmConfig.Agent.hostName, agentConfig)
+
+if __name__ == "__main__":
+    wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
+    
+    insertWMAgentConfig(wmConfig.TaskArchiver.ReqMgr2ServiceURL,
+                        wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
+    

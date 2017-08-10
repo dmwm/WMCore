@@ -1,35 +1,34 @@
 """
 Perform cleanup actions
 """
-import re
+import httplib
 import json
 import logging
 import os.path
+import re
 import shutil
-import httplib
-import urllib2
 import threading
 import time
 import urllib2
 
-from WMCore.Lexicon import sanitizeURL
-from WMCore.Algorithms import MathAlgos
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMException import WMException
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
-from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
-from WMCore.DataStructs.LumiList import LumiList
-from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow import Workflow
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
+from WMCore.Algorithms import MathAlgos
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
+from WMCore.Lexicon import sanitizeURL
+from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class CleanCouchPollerException(WMException):
@@ -711,7 +710,8 @@ class CleanCouchPoller(BaseWorkerThread):
             for step in histograms['stepLevel'][task]:
                 jsonHistograms['stepLevel'][task][step] = {}
                 for histogram in histograms['stepLevel'][task][step]:
-                    jsonHistograms['stepLevel'][task][step][histogram] = histograms['stepLevel'][task][step][histogram].toJSON()
+                    jsonHistograms['stepLevel'][task][step][histogram] = histograms['stepLevel'][task][step][
+                        histogram].toJSON()
 
         workflowData['histograms'] = jsonHistograms
 
@@ -831,15 +831,18 @@ class CleanCouchPoller(BaseWorkerThread):
                                                                     options={"startkey": [x['jobID']],
                                                                              "endkey": [x['jobID'],
                                                                                         x['retry_count']],
-                                                                             "stale": "update_after"})['rows'][0]['value']['lfn']
+                                                                             "stale": "update_after"})
+                            logArchive = logArchive['rows'][0]['value']['lfn']
                             logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
                                                                       options={"startkey": [workflowName, logArchive],
                                                                                "endkey": [workflowName, logArchive],
-                                                                               "stale": "update_after"})['rows'][0]['value']
+                                                                               "stale": "update_after"})
+                            logCollectID = logCollectID['rows'][0]['value']
                             logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
                                                                     options={"startkey": logCollectID,
                                                                              "endkey": logCollectID,
-                                                                             "stale": "update_after"})['rows'][0]['value']['lfn']
+                                                                             "stale": "update_after"})
+                            logCollect = logCollect['rows'][0]['value']['lfn']
                             x['logArchive'] = logArchive.split('/')[-1]
                             x['logCollect'] = logCollect
                         except IndexError as ex:
@@ -957,7 +960,8 @@ class CleanCouchPoller(BaseWorkerThread):
             responseData = response.read()
             responseJSON = json.loads(responseData)
             if response.status != 200:
-                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d", response.code)
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d",
+                             response.code)
                 return False
         except Exception as ex:
             logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s', dataset, run)
@@ -968,7 +972,8 @@ class CleanCouchPoller(BaseWorkerThread):
             if "content" in responseJSON["hist"]["bins"]:
                 return responseJSON
         except Exception as ex:
-            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out", dataset, run)
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out",
+                         dataset, run)
             return False
         # If it gets here before returning False or responseJSON, it went wrong
         return False

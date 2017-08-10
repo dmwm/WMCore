@@ -242,7 +242,6 @@ config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
-config.ErrorHandler.failureExitCodes = [8023, 8026, 50660, 50661, 50664, 71102]
 config.ErrorHandler.maxFailTime = 120000
 config.ErrorHandler.maxProcessSize = 30
 

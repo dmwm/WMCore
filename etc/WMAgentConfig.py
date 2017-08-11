@@ -7,12 +7,7 @@ WMAgent Configuration
 
 Sample WMAgent configuration.
 """
-
-__revision__ = "$Id: WMAgentConfig.py,v 1.2 2010/01/26 22:03:40 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
-
 import os
-
 from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.
@@ -286,8 +281,7 @@ config.TaskArchiver.requireCouch = True
 config.TaskArchiver.useReqMgrForCompletionCheck = True
 config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
 config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.TaskArchiver.localWMStatsURL = "%s/%s" % (
-config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.DataKeepDays = 0.125  # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20  # 20 min
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
@@ -459,10 +453,8 @@ config.AnalyticsDataCollector.logLevel = globalLogLevel
 config.AnalyticsDataCollector.pollInterval = 600
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (
 config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
-config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (
-config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (
-config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"

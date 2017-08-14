@@ -13,6 +13,7 @@ from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
+from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 
 
 class EmulatedUnitTestCase(unittest.TestCase):
@@ -21,10 +22,12 @@ class EmulatedUnitTestCase(unittest.TestCase):
     services.
     """
 
-    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True, mockSiteDB=True):
+    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
+                 mockSiteDB=True, mockReqMgrAux=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockSiteDB = mockSiteDB
+        self.mockReqMgrAux = mockReqMgrAux
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -56,5 +59,11 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)
             self.inUseSiteDBApi = self.siteDBPatcher.start()
             self.addCleanup(self.siteDBPatcher.stop)
+
+        if self.mockReqMgrAux:
+            self.auxDBPatcher = mock.patch('WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
+                                                  new=MockReqMgrAux)
+            self.inUseAuxDB = self.auxDBPatcher.start()
+            self.addCleanup(self.auxDBPatcher.stop)
 
         return

@@ -120,7 +120,7 @@ class LumiList(object):
             if len(runs) <= 0 or len(lumis) != len(runs):
                 raise RuntimeError('Improper format for wmagentFormat. # of lumi lists must match # of runs')
 
-            for run, lumiString in itertools.izip(runs, lumis):
+            for run, lumiString in zip(runs, lumis):
                 runLumis = lumiString.split(',')
                 if not str(run) in self.compactList:
                     self.compactList[str(run)] = []

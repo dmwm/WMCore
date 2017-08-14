@@ -28,15 +28,15 @@ import logging
 import threading
 import traceback
 
-from WMCore.DAOFactory                           import DAOFactory
-from WMCore.WMException                          import WMException
-from WMCore.WorkQueue.WorkQueue                  import localQueue
-from WMCore.WorkQueue.WorkQueueExceptions        import WorkQueueNoMatchingElements
-from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
-from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
-from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
-
 from WMComponent.TaskArchiver.DataCache import DataCache
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
+from WMCore.WMException import WMException
+from WMCore.WorkQueue.WorkQueue import localQueue
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
 
 class TaskArchiverPollerException(WMException):
     """
@@ -49,6 +49,7 @@ class TaskArchiverPollerException(WMException):
     """
     pass
 
+
 class TaskArchiverPoller(BaseWorkerThread):
     """
     Polls for Ended jobs
@@ -57,6 +58,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
     requireCouch:  raise an exception on couch failure instead of ignoring
     """
+
     def __init__(self, config):
         """
         Initialise class members
@@ -64,15 +66,15 @@ class TaskArchiverPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
 
-        self.config      = config
+        self.config = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
 
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
@@ -85,21 +87,21 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.workQueue = None
 
-        self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
-        self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
+        self.timeout = getattr(self.config.TaskArchiver, "timeOut", None)
+        self.useReqMgrForCompletionCheck = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
 
         if not self.useReqMgrForCompletionCheck:
-            #sets the local monitor summary couch db
+            # sets the local monitor summary couch db
             self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL,
-                                                   couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+                                                       couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
             self.centralCouchDBWriter = self.requestLocalCouchDB
         else:
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
 
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
 
-        #Load the cleanout state ID and save it
-        stateIDDAO = self.daoFactory(classname = "Jobs.GetStateID")
+        # Load the cleanout state ID and save it
+        stateIDDAO = self.daoFactory(classname="Jobs.GetStateID")
         self.stateID = stateIDDAO.execute("cleanout")
 
         return
@@ -114,7 +116,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         _algorithm_
 
@@ -133,7 +135,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         except WMException:
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
-                   and getattr(myThread.transaction, 'transaction', False):
+                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
@@ -141,7 +143,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             msg = "Caught exception in TaskArchiver\n"
             msg += str(ex)
             if getattr(myThread, 'transaction', False) \
-                   and getattr(myThread.transaction, 'transaction', False):
+                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise TaskArchiverPollerException(msg)
 
@@ -157,16 +159,15 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         myThread.transaction.begin()
 
-        #Get the subscriptions that are now finished and mark them as such
+        # Get the subscriptions that are now finished and mark them as such
         logging.info("Polling for finished subscriptions")
-        finishedSubscriptions = self.daoFactory(classname = "Subscriptions.MarkNewFinishedSubscriptions")
-        finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
+        finishedSubscriptions = self.daoFactory(classname="Subscriptions.MarkNewFinishedSubscriptions")
+        finishedSubscriptions.execute(self.stateID, timeOut=self.timeout)
         logging.info("Finished subscriptions updated")
 
         myThread.transaction.commit()
 
         return
-
 
     def getFinishedWorkflows(self):
         """
@@ -177,7 +178,7 @@ class TaskArchiverPoller(BaseWorkerThread):
            finishedwfsWithLogCollectAndCleanUp - including LogCollect and CleanUp task
         """
 
-        finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
+        finishedWorkflowsDAO = self.daoFactory(classname="Workflow.GetFinishedWorkflows")
         finishedwfs = finishedWorkflowsDAO.execute()
         finishedLogCollectAndCleanUpwfs = finishedWorkflowsDAO.execute(onlySecondary=True)
         finishedwfsWithLogCollectAndCleanUp = {}
@@ -202,18 +203,13 @@ class TaskArchiverPoller(BaseWorkerThread):
         This method will call several auxiliary methods to do the following:
 
         1. Notify the WorkQueue about finished subscriptions
-        2. update dbsbuffer_workflow table with finished subscription
+        2. mark workflow as completed in the dbsbuffer_workflow table
         """
-
-
-        #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs),finishedwfs.keys())
-        # update the completed flag in dbsbuffer_workflow table so blocks can be closed
-        # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) == 0:
             return
 
-        completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
+        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs), finishedwfs.keys())
+        completedWorkflowsDAO = self.dbsDaoFactory(classname="UpdateWorkflowsToCompleted")
 
         centralCouchAlive = True
         try:
@@ -226,7 +222,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         if centralCouchAlive:
             for workflow in finishedwfs:
                 try:
-                    #Notify the WorkQueue, if there is one
+                    # Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []
                         logging.info("Marking subscriptions as Done ...")
@@ -234,25 +230,20 @@ class TaskArchiverPoller(BaseWorkerThread):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
 
-                    #Now we know the workflow as a whole is gone, we can delete the information from couch
+                    # Tier-0 case, the agent has to mark it completed
                     if not self.useReqMgrForCompletionCheck:
-                        if workflow in abortedWorkflows:
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, "aborted-completed")
-                            logging.info("status updated to aborted completed %s", workflow)
-                        else:
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
-                            logging.info("status updated to completed %s", workflow)
+                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
+                        logging.info("status updated to completed %s", workflow)
 
                     completedWorkflowsDAO.execute([workflow])
 
                 except TaskArchiverPollerException as ex:
-
-                    #Something didn't go well when notifying the workqueue, abort!!!
+                    # Something didn't go well when notifying the workqueue, abort!!!
                     logging.error("Something bad happened while archiving tasks.")
                     logging.error(str(ex))
                     continue
                 except Exception as ex:
-                    #Something didn't go well on couch, abort!!!
+                    # Something didn't go well on couch, abort!!!
                     msg = "Problem while archiving tasks for workflow %s\n" % workflow
                     msg += "Exception message: %s" % str(ex)
                     msg += "\nTraceback: %s" % traceback.format_exc()
@@ -270,9 +261,9 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         for sub in subList:
             try:
-                self.workQueue.doneWork(SubscriptionId = sub)
+                self.workQueue.doneWork(SubscriptionId=sub)
             except WorkQueueNoMatchingElements:
-                #Subscription wasn't known to WorkQueue, feel free to clean up
+                # Subscription wasn't known to WorkQueue, feel free to clean up
                 logging.debug("Local WorkQueue knows nothing about this subscription: %s", sub)
             except Exception as ex:
                 msg = "Error talking to workqueue: %s\n" % str(ex)
@@ -280,4 +271,3 @@ class TaskArchiverPoller(BaseWorkerThread):
                 raise TaskArchiverPollerException(msg)
 
         return
-

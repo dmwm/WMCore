@@ -71,7 +71,8 @@ def fwjr_parser(doc):
     pdict = dict(totalJobCPU=0, totalJobTime=0, totalEventCPU=0)
     ddict = {}
     for key, val in steps.items():
-        wrappedTotalJobTime += val['stop'] - val['start']
+        if val['stop'] is not None and val['start'] is not None:
+            wrappedTotalJobTime += val['stop'] - val['start']
         site_name = val['site']
         site_summary = dict(wrappedTotalJobTime=wrappedTotalJobTime,
                             inputEvents=0, dataset=ddict,

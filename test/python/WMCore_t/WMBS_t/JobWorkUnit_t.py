@@ -98,6 +98,22 @@ class JobWorkUnitTest(JobTestBase):
 
         return
 
+    def testJobState(self):
+        """
+        _testJobState_
+
+        Unittest to see if we can figure out what the jobState actually is and set it
+        """
+
+        testJobA = self.createTestJob()
+
+        value = testJobA.getState()
+
+        self.assertEqual(value, 'new')
+
+        return
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,20 +14,21 @@ from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.DataStructs.Run import Run
 from WMCore.WMConnectionBase import WMConnectionBase
 
+
 class DBSBufferUtil(WMConnectionBase):
     """
     APIs related to file addition for DBSBuffer
 
     """
+
     def __init__(self):
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
         return
-
 
     def loadDBSBufferFilesBulk(self, fileObjs):
         """
@@ -42,8 +43,8 @@ class DBSBufferUtil(WMConnectionBase):
         for f in fileObjs:
             binds.append(f["id"])
 
-        loadFiles = self.daoFactory(classname = "DBSBufferFiles.LoadBulkFilesByID")
-        results = loadFiles.execute(files = binds, transaction = False)
+        loadFiles = self.daoFactory(classname="DBSBufferFiles.LoadBulkFilesByID")
+        results = loadFiles.execute(files=binds, transaction=False)
 
         for entry in results:
             # Add loaded information
@@ -53,21 +54,20 @@ class DBSBufferUtil(WMConnectionBase):
 
         for dbsfile in dbsFiles:
             if 'runInfo' in dbsfile.keys():
-            # Then we have to replace it with a real run
+                # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
-                    run = Run(runNumber = r)
+                    run = Run(runNumber=r)
                     run.extend(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
             if 'parentLFNs' in dbsfile.keys():
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
-                    newFile = DBSBufferFile(lfn = lfn)
+                    newFile = DBSBufferFile(lfn=lfn)
                     dbsfile['parents'].add(newFile)
                 del dbsfile['parentLFNs']
 
         return dbsFiles
-
 
     def findUploadableDAS(self):
         """
@@ -75,11 +75,10 @@ class DBSBufferUtil(WMConnectionBase):
 
         Find all dataset_algo with uploadable files.
         """
-        findDAS = self.daoFactory(classname = "FindDASToUpload")
-        result = findDAS.execute(transaction = False)
+        findDAS = self.daoFactory(classname="FindDASToUpload")
+        result = findDAS.execute(transaction=False)
 
         return result
-
 
     def findOpenBlocks(self):
         """
@@ -87,11 +86,10 @@ class DBSBufferUtil(WMConnectionBase):
 
         This should find all blocks.
         """
-        openBlocks = self.daoFactory(classname = "GetOpenBlocks")
-        result = openBlocks.execute(transaction = False)
+        openBlocks = self.daoFactory(classname="GetOpenBlocks")
+        result = openBlocks.execute(transaction=False)
 
         return result
-
 
     def loadBlocksByDAS(self, das):
         """
@@ -101,11 +99,10 @@ class DBSBufferUtil(WMConnectionBase):
         blocks associated with it in the
         Open status
         """
-        findBlocks = self.daoFactory(classname = "LoadBlocksByDAS")
-        result = findBlocks.execute(das = das, transaction = False)
+        findBlocks = self.daoFactory(classname="LoadBlocksByDAS")
+        result = findBlocks.execute(das=das, transaction=False)
 
         return result
-
 
     def loadBlocks(self, blocknames):
         """
@@ -119,11 +116,10 @@ class DBSBufferUtil(WMConnectionBase):
             # Nothing to do
             return []
 
-        findBlocks = self.daoFactory(classname = "LoadBlocks")
-        result = findBlocks.execute(blocknames, transaction = False)
+        findBlocks = self.daoFactory(classname="LoadBlocks")
+        result = findBlocks.execute(blocknames, transaction=False)
 
         return result
-
 
     def findUploadableFilesByDAS(self, datasetpath):
         """
@@ -133,8 +129,8 @@ class DBSBufferUtil(WMConnectionBase):
         """
         dbsFiles = []
 
-        findFiles = self.daoFactory(classname = "LoadDBSFilesByDAS")
-        results = findFiles.execute(datasetpath = datasetpath, transaction = False)
+        findFiles = self.daoFactory(classname="LoadDBSFilesByDAS")
+        results = findFiles.execute(datasetpath=datasetpath, transaction=False)
 
         for entry in results:
             # Add loaded information
@@ -146,19 +142,18 @@ class DBSBufferUtil(WMConnectionBase):
             if 'runInfo' in dbsfile.keys():
                 # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
-                    run = Run(runNumber = r)
+                    run = Run(runNumber=r)
                     run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
             if 'parentLFNs' in dbsfile.keys():
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
-                    newFile = DBSBufferFile(lfn = lfn)
+                    newFile = DBSBufferFile(lfn=lfn)
                     dbsfile['parents'].add(newFile)
                 del dbsfile['parentLFNs']
 
         return dbsFiles
-
 
     def loadFilesByBlock(self, blockname):
         """
@@ -168,8 +163,8 @@ class DBSBufferUtil(WMConnectionBase):
         """
         dbsFiles = []
 
-        findFiles = self.daoFactory(classname = "LoadFilesByBlock")
-        results = findFiles.execute(blockname = blockname, transaction = False)
+        findFiles = self.daoFactory(classname="LoadFilesByBlock")
+        results = findFiles.execute(blockname=blockname, transaction=False)
 
         for entry in results:
             # Add loaded information
@@ -181,19 +176,18 @@ class DBSBufferUtil(WMConnectionBase):
             if 'runInfo' in dbsfile.keys():
                 # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
-                    run = Run(runNumber = r)
+                    run = Run(runNumber=r)
                     run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
             if 'parentLFNs' in dbsfile.keys():
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
-                    newFile = DBSBufferFile(lfn = lfn)
+                    newFile = DBSBufferFile(lfn=lfn)
                     dbsfile['parents'].add(newFile)
                 del dbsfile['parentLFNs']
 
         return dbsFiles
-
 
     def getCompletedWorkflows(self):
         """
@@ -202,19 +196,19 @@ class DBSBufferUtil(WMConnectionBase):
         completed here is not request manager completed status.
         It indicates all the tasks belongs to this workflow within the agent are completed
         """
-        wfCompletedDAO = self.daoFactory(classname = "GetCompletedWorkflows")
-        result = wfCompletedDAO.execute(transaction = False)
+        wfCompletedDAO = self.daoFactory(classname="GetCompletedWorkflows")
+        result = wfCompletedDAO.execute(transaction=False)
 
         return result
-    
+
     def getPhEDExDBSStatusForCompletedWorkflows(self, summary=False):
-        
+
         """
         _getPhEDxDBSStatuForCompletedWorkflows_
         Check the PhEDEx and DBS upload status for the completed workflow
         """
-        wfCompletedStatusDAO = self.daoFactory(classname = "CheckStatusForCompletedWorkflows")
-        result = wfCompletedStatusDAO.execute(transaction = False)
+        wfCompletedStatusDAO = self.daoFactory(classname="CheckStatusForCompletedWorkflows")
+        result = wfCompletedStatusDAO.execute(transaction=False)
         if summary:
             result = self.summaryPhEDExDBSStatus(result)
 
@@ -240,3 +234,35 @@ class DBSBufferUtil(WMConnectionBase):
             else:
                 summary[workflow]["DBSUploaded"] = False
         return summary
+
+    def isAllWorkflowCompleted(self):
+        """
+        check whether all the workflows are completed status in give agent (not globaly in reqmgr)
+        This should be used as preconditon for checking draining status
+        """
+        completeFWFlag = self.daoFactory(classname="IsAllWorkflowsCompleted")
+        return completeFWFlag.execute(transaction=False)
+
+    def countOpenBlocks(self):
+        """
+        check to see if any blocks are open in DBS, reported in drain statistics
+        """
+        openBlockCount = self.daoFactory(classname="CountOpenBlocks")
+        result = openBlockCount.execute()
+        return result
+
+    def countFilesByStatus(self, status):
+        """
+        get counts of files by status, reported in drain statistics
+        """
+        fileCount = self.daoFactory(classname="CountFilesByStatus")
+        result = fileCount.execute(status)
+        return result
+
+    def countPhedexNotUploaded(self):
+        """
+        get counts of files not uploaded to phedex, reported in drain statistics
+        """
+        phedexCount = self.daoFactory(classname="CountPhedexNotUploaded")
+        result = phedexCount.execute()
+        return result

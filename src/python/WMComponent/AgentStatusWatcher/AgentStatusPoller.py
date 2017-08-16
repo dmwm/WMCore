@@ -22,7 +22,7 @@ from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
     convertToAgentCouchDoc, initAgentInfo, DataUploadTime
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
-
+from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -187,6 +187,7 @@ class AgentStatusPoller(BaseWorkerThread):
         if isDrainMode(self.config):
             logging.info("Agent is in DrainMode")
             agentInfo['drain_mode'] = True
+            agentInfo['drain_stats'] = DrainStatusPoller.getDrainInfo()
         else:
             agentInfo['drain_mode'] = False
 

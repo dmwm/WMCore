@@ -10,7 +10,7 @@ __all__ = []
 import logging
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
-
+from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
 
 class DrainStatusPoller(BaseWorkerThread):
     """
@@ -25,6 +25,7 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
+        self.drainAPI = DrainStatusAPI()
 
     def algorithm(self, parameters):
         """
@@ -34,8 +35,9 @@ class DrainStatusPoller(BaseWorkerThread):
             logging.info("Checking agent drain status...")
 
             try:
-                DrainStatusPoller.drainStats = self.collectDrainInfo()
+                DrainStatusPoller.drainStats = self.drainAPI.collectDrainInfo()
                 logging.info("Finished collecting agent drain status.")
+                logging.info("Drain stats: " + str(DrainStatusPoller.drainStats))
 
             except Exception as ex:
                 msg = "Error occurred, will retry later:\n"
@@ -44,18 +46,9 @@ class DrainStatusPoller(BaseWorkerThread):
         else:
             logging.info("Agent not in drain mode. Skipping drain check...")
 
-    def collectDrainInfo(self):
-        """
-        Call methods to check the drain status
-        """
-        # return empty dict until real stats are queried
-        results = {}
-        return results
-
     @classmethod
     def getDrainInfo(cls):
         """
         Return drainStats class variable
         """
         return cls.drainStats
-

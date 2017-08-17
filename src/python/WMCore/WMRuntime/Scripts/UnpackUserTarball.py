@@ -6,15 +6,17 @@ Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import urlparse
-from urllib import URLopener
+from urllib.request import URLopener
 
 try:
     from commands import getstatusoutput
@@ -59,7 +61,7 @@ def getRetriever(scheme):
         certfile = None
 
     if scheme == 'http' or not certfile:
-        retriever = urllib.urlretrieve
+        retriever = urllib.request.urlretrieve
     else:
         print("Using %s as X509 certificate" % certfile)
         op = URLopener(None, key_file=certfile, cert_file=certfile)

@@ -5,10 +5,12 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import json
 import random
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
@@ -276,7 +278,7 @@ class WorkQueueBackend(object):
         data = {"updates": json.dumps(updatedParams),
                 "options": json.dumps(optionsArg)}
         for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
+            thisuri = uri + ele + "?" + urllib.parse.urlencode(data)
             self.db.makeRequest(uri=thisuri, type='PUT')
         return
 
@@ -289,7 +291,7 @@ class WorkQueueBackend(object):
         data = {"updates": json.dumps(updatedParams),
                 "options": json.dumps(optionsArg)}
         for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
+            thisuri = uri + ele + "?" + urllib.parse.urlencode(data)
             self.inbox.makeRequest(uri=thisuri, type='PUT')
         return
 

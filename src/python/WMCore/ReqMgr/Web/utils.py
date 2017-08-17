@@ -9,12 +9,14 @@ Description:
 from __future__ import print_function
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
 import cgi
 import json
 import time
 import hashlib
 import cherrypy
-from urllib2 import URLError
+from urllib.error import URLError
 
 def tstamp():
     "Generic time stamp"

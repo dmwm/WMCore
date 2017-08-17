@@ -9,10 +9,12 @@ Description:
 from __future__ import print_function
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import httplib
 import json
 
@@ -62,20 +64,20 @@ def disable_urllib2Proxy():
     Setup once and forever urllib2 proxy, see
     http://kember.net/articles/obscure-python-urllib2-proxy-gotcha
     """
-    proxy_support = urllib2.ProxyHandler({})
-    opener = urllib2.build_opener(proxy_support)
-    urllib2.install_opener(opener)
+    proxy_support = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(proxy_support)
+    urllib.request.install_opener(opener)
 
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
     """
     Simple HTTPS client authentication class based on provided
     key/ca information
     """
     def __init__(self, key=None, cert=None, level=0):
         if  level > 1:
-            urllib2.HTTPSHandler.__init__(self, debuglevel=1)
+            urllib.request.HTTPSHandler.__init__(self, debuglevel=1)
         else:
-            urllib2.HTTPSHandler.__init__(self)
+            urllib.request.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
 
@@ -99,7 +101,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
     on provided URL and set of parameters. Use post=True to
     invoke POST request.
     """
-    encoded_data = urllib.urlencode(params)
+    encoded_data = urllib.parse.urlencode(params)
     if  not post:
         if  encoded_data:
             url = url + '?' + encoded_data
@@ -114,24 +116,24 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
         # https://www.python.org/dev/peps/pep-0476/
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     for key, val in headers.iteritems():
         req.add_header(key, val)
     if  verbose > 1:
-        handler = urllib2.HTTPHandler(debuglevel=1)
-        opener  = urllib2.build_opener(handler)
-        urllib2.install_opener(opener)
+        handler = urllib.request.HTTPHandler(debuglevel=1)
+        opener  = urllib.request.build_opener(handler)
+        urllib.request.install_opener(opener)
     ckey, cert = get_key_cert()
     handler = HTTPSClientAuthHandler(ckey, cert, verbose)
     if  verbose:
         print("handler", handler, handler.__dict__)
-    opener  = urllib2.build_opener(handler)
-    urllib2.install_opener(opener)
+    opener  = urllib.request.build_opener(handler)
+    urllib.request.install_opener(opener)
     try:
         if  post:
-            data = urllib2.urlopen(req, encoded_data)
+            data = urllib.request.urlopen(req, encoded_data)
         else:
-            data = urllib2.urlopen(req)
+            data = urllib.request.urlopen(req)
         info = data.info()
         code = data.getcode()
         if  verbose > 1:
@@ -141,7 +143,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
             data = json.load(data)
         else:
             data = data.read()
-    except urllib2.HTTPError as httperror:
+    except urllib.error.HTTPError as httperror:
         msg  = 'HTTPError, url=%s, args=%s, headers=%s' \
                     % (url, params, headers)
         data = {'error': 'Unable to contact %s' % url , 'reason': msg}

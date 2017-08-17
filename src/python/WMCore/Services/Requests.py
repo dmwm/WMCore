@@ -9,6 +9,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import base64
 import cStringIO as StringIO
 import logging
@@ -19,7 +21,7 @@ import stat
 import sys
 import tempfile
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import urlparse
 import types
 from httplib import HTTPException
@@ -230,7 +232,7 @@ class Requests(dict):
             headers["Content-length"] = len(encoded_data)
         elif verb == 'GET' and data:
             # encode the data as a get string
-            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
+            uri = "%s?%s" % (uri, urllib.parse.urlencode(data, doseq=True))
 
         headers["Content-length"] = str(len(encoded_data))
 
@@ -293,7 +295,7 @@ class Requests(dict):
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return urllib.urlencode(data, doseq=1)
+        return urllib.parse.urlencode(data, doseq=1)
 
     def decode(self, data):
         """

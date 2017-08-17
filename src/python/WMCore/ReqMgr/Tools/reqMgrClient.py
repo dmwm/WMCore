@@ -6,12 +6,14 @@
 """
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
 import os
 import re
 import sys
 import json
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 import httplib
 
 # default headers for PUT and POST methods
@@ -47,7 +49,7 @@ def requestManagerPost(url, request, params, head = HEADERS):
     conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
                                     key_file = os.getenv('X509_USER_PROXY'))
     headers = head
-    encodedParams = urllib.urlencode(params)
+    encodedParams = urllib.parse.urlencode(params)
     conn.request("POST", request, encodedParams, headers)
     response = conn.getresponse()
     data = response.read()
@@ -66,7 +68,7 @@ def requestManagerPut(url, request, params, head = HEADERS):
     conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
                                     key_file = os.getenv('X509_USER_PROXY'))
     headers = head
-    encodedParams = urllib.urlencode(params)
+    encodedParams = urllib.parse.urlencode(params)
     conn.request("PUT", request, encodedParams, headers)
     response = conn.getresponse()
     data = response.read()

@@ -9,6 +9,8 @@ from __future__ import print_function
 
 
 
+from future import standard_library
+standard_library.install_aliases()
 __license__    = "GPL"
 
 __maintainer__ = "Valentin Kuznetsov"
@@ -103,7 +105,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     if  debug:
         httplib.HTTPConnection.debuglevel = 1
     if  type(params) is not str:
-        params = urllib.urlencode(params, doseq=True)
+        params = urllib.parse.urlencode(params, doseq=True)
     if  debug:
         print("input parameters", params)
     headers = {"Content-type": "application/x-www-form-urlencoded",

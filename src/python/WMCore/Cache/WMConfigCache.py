@@ -6,10 +6,12 @@ Being in itself a wrapped class around a config cache
 """
 
 
+from future import standard_library
+standard_library.install_aliases()
 import hashlib
 import logging
 import traceback
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.DataStructs.WMObject import WMObject
@@ -452,7 +454,7 @@ class ConfigCache(WMObject):
 
         """
         # The newConfig parameter is a URL suitable for passing to urlopen.
-        configString = urllib.urlopen(newConfig).read(-1)
+        configString = urllib.request.urlopen(newConfig).read(-1)
         configMD5 = hashlib.md5(configString).hexdigest()
 
         self.document['md5_hash'] = configMD5

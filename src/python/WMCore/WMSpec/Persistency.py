@@ -9,8 +9,9 @@ Placeholder for ideas at present....
 
 """
 from __future__ import print_function
-
-from urllib2 import urlopen, Request
+from future import standard_library
+standard_library.install_aliases()
+from urllib.request import urlopen, Request
 from urlparse import urlparse
 try:
     import cPickle as pickle

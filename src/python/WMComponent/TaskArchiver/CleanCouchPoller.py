@@ -1,6 +1,8 @@
 """
 Perform cleanup actions
 """
+from future import standard_library
+standard_library.install_aliases()
 import httplib
 import json
 import logging
@@ -9,7 +11,7 @@ import re
 import shutil
 import threading
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -1015,8 +1017,8 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.debug("Going to upload this payload %s", data)
 
         try:
-            request = urllib2.Request(dashBoardUrl, data, headers)
-            response = urllib2.urlopen(request)
+            request = urllib.request.Request(dashBoardUrl, data, headers)
+            response = urllib.request.urlopen(request)
             if response.code != 200:
                 logging.info("Something went wrong while uploading to DashBoard, response code %d", response.code)
                 return False

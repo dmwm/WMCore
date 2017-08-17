@@ -1,3 +1,5 @@
+from future import standard_library
+standard_library.install_aliases()
 import json
 from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer
@@ -178,7 +180,7 @@ class WorkQueue(object):
         """Update given element's (identified by id) with new parameters"""
         if not elementIds:
             return
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
         optionsArg = {}
         if "options" in updatedParams:
@@ -186,7 +188,7 @@ class WorkQueue(object):
         data = {"updates": json.dumps(updatedParams),
                 "options": json.dumps(optionsArg)}
         for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
+            thisuri = uri + ele + "?" + urllib.parse.urlencode(data)
             self.db.makeRequest(uri=thisuri, type='PUT')
         return
 

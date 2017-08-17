@@ -11,8 +11,10 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -59,7 +61,7 @@ class CouchAppTestHarness:
         push a list of couchapps to the database
         """
         for couchappdir in  couchappdirs:
-            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
+            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.parse.quote_plus(self.dbName)))
 
 
 class TestInitCouchApp(TestInit):

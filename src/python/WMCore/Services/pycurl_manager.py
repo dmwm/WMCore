@@ -11,11 +11,13 @@ underlying data-services.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import cStringIO as StringIO
 import httplib
 import json
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import pycurl
 
@@ -78,7 +80,7 @@ class RequestHandler(object):
         #data is not encoded, we need to do that
         if verb in ['GET', 'HEAD']:
             if params:
-                encoded_data = urllib.urlencode(params, doseq=doseq)
+                encoded_data = urllib.parse.urlencode(params, doseq=doseq)
             else:
                 return ''
         else:

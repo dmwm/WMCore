@@ -1,9 +1,11 @@
 """
 Perform cleanup actions
 """
+from future import standard_library
+standard_library.install_aliases()
 __all__ = []
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import threading
 import logging
 import traceback
@@ -157,9 +159,9 @@ class ResourceControlUpdater(BaseWorkerThread):
             self.ioBoundMetric)
 
         # get info from dashboard
-        sites = urllib2.urlopen(urlSiteState).read()
-        cpuBound = urllib2.urlopen(urlCpuBound).read()
-        ioBound = urllib2.urlopen(urlIoBound).read()
+        sites = urllib.request.urlopen(urlSiteState).read()
+        cpuBound = urllib.request.urlopen(urlCpuBound).read()
+        ioBound = urllib.request.urlopen(urlIoBound).read()
 
         # parse from json format to dictionary, get only 'csvdata'
         ssbSiteState = json.loads(sites)['csvdata']

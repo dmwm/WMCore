@@ -1,6 +1,8 @@
+from future import standard_library
+standard_library.install_aliases()
 import hashlib
 import hmac
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from httplib import HTTPConnection
 from urlparse import urlparse
 
@@ -25,11 +27,11 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
 
     data = None
     if verb == 'GET' and values:
-        data = urllib.urlencode(values, doseq=True)
+        data = urllib.parse.urlencode(values, doseq=True)
     elif verb != 'GET' and values:
         # needs to test other encoding type
         if contentType == "application/x-www-form-urlencoded":
-            data = urllib.urlencode(values)
+            data = urllib.parse.urlencode(values)
         else:
             # for other encoding scheme values assumed to be encoded already
             data = values

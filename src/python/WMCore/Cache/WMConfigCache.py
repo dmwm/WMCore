@@ -20,6 +20,7 @@ from WMCore.GroupUser.Group import Group
 from WMCore.GroupUser.User  import makeUser
 
 import WMCore.GroupUser.Decorators as Decorators
+from future.utils import with_metaclass
 
 
 class ConfigCacheException(WMException):
@@ -39,9 +40,8 @@ class Singleton(type):
                     super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class DocumentCache(object):
+class DocumentCache(with_metaclass(Singleton, object)):
     """DocumentCache holds config ids. Use this class as singleton"""
-    __metaclass__ = Singleton
     def __init__(self, database, detail = True):
         super(DocumentCache, self).__init__()
         self.cache = {}

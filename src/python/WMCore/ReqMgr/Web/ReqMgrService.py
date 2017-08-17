@@ -7,6 +7,8 @@ __author__ = "Valentin Kuznetsov"
 """
 from __future__ import print_function
 
+from builtins import map
+from builtins import str
 import collections
 import json
 # system modules

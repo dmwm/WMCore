@@ -10,6 +10,8 @@ from __future__ import print_function
 
 
 
+from builtins import map
+from builtins import str
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchConnectionError(Exception):

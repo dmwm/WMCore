@@ -1,3 +1,6 @@
+from builtins import map
+from builtins import str
+from builtins import zip
 import cherrypy
 import inspect
 import os

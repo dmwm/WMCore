@@ -1,3 +1,4 @@
+from builtins import str
 from __future__ import (print_function, division)
 
 import json

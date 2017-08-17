@@ -3,6 +3,7 @@ Set of rules and functions
 Handling resubmission Block construction
 """
 
+from builtins import str
 ACDC_PREFIX = "acdc"
 
 class ACDCBlock(object):

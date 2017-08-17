@@ -8,6 +8,7 @@ this will let us test that the fallback works properly
 """
 from __future__ import print_function
 
+from builtins import str
 import os
 
 from WMCore.Storage.Execute import runCommandWithOutput

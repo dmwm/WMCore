@@ -9,6 +9,7 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
+from builtins import str
 import os
 
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig

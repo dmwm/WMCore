@@ -8,6 +8,7 @@ Does not support rerunnable jobs, ie. which are
 automatically requeued by LSF with a different job id
 """
 
+from builtins import str
 import os
 import re
 import errno

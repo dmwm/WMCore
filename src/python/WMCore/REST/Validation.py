@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import str
 from WMCore.REST.Error import *
 import math, re
 import numbers

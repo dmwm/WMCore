@@ -1,3 +1,4 @@
+from builtins import str
 from WMCore.WebTools.RESTModel import RESTModel
 from cherrypy import response, request, HTTPError
 

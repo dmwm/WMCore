@@ -6,6 +6,7 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
+from builtins import str
 import logging
 import traceback
 from math import ceil

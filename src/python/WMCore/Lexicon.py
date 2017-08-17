@@ -7,6 +7,7 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
 
+from builtins import str
 import re
 import string
 import urlparse

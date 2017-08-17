@@ -5,6 +5,7 @@ _ListOpenByName_
 MySQL implementation of Fileset.ListOpenByName
 """
 
+from builtins import str
 __all__ = []
 
 

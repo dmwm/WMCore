@@ -10,6 +10,7 @@ of ConfigSections
 
 
 
+from builtins import str
 import types
 
 from WMCore.Configuration import ConfigSection

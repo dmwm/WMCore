@@ -7,6 +7,8 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 """
 
+from builtins import range
+from builtins import str
 import os
 import logging
 log = logging

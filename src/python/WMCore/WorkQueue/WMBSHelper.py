@@ -5,6 +5,9 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
+from builtins import range
+from builtins import zip
+from builtins import str
 import logging
 import threading
 import traceback

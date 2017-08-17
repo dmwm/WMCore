@@ -6,6 +6,7 @@ Resubmission module, this creates truncated workflows
 with limited input for error recovery.
 """
 
+from builtins import str
 from Utils.Utilities import makeList
 from WMCore.Lexicon import couchurl, identifier, cmsname, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase

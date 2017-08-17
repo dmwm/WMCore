@@ -8,6 +8,9 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
+from builtins import map
+from builtins import zip
+from builtins import str
 import os.path
 import time
 

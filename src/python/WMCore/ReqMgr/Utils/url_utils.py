@@ -9,6 +9,7 @@ Description:
 from __future__ import print_function
 
 # system modules
+from builtins import str
 import os
 import sys
 import urllib

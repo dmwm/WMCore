@@ -32,6 +32,7 @@
 """
 from __future__ import print_function
 from __future__ import division
+from builtins import str
 from WMCore.Services.Dashboard.Logger import Logger
 import socket
 import os

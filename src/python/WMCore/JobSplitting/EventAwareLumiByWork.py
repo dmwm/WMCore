@@ -13,6 +13,7 @@ class to simplify the code
 
 """
 
+from builtins import str
 from __future__ import (division, print_function)
 
 import logging

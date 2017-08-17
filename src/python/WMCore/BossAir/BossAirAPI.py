@@ -16,6 +16,7 @@ Interfaces geared toward the outside expect WMBS objects.  Interfaces
 geared toward the inside expect RunJob objects.  Interior interfaces are
 marked by names starting with '_' such as '_listRunning'
 """
+from builtins import str
 import os.path
 import threading
 import logging

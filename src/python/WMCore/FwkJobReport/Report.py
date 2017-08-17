@@ -7,6 +7,8 @@ Framework job report object.
 """
 from __future__ import print_function
 
+from builtins import range
+from builtins import str
 import logging
 import math
 import re

@@ -8,6 +8,7 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+from builtins import str
 import json
 import logging
 import re

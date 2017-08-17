@@ -7,6 +7,8 @@ For glide-in use.
 """
 from __future__ import division
 
+from builtins import range
+from builtins import str
 import Queue
 import glob
 import logging

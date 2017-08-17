@@ -7,6 +7,7 @@ Interface definition for a step executor
 
 """
 
+from builtins import str
 import os
 import sys
 import json

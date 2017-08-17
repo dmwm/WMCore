@@ -7,6 +7,8 @@ Simple mathematical tools and tricks that might prove to
 be useful.
 """
 
+from builtins import range
+from builtins import str
 import math
 import decimal
 import logging

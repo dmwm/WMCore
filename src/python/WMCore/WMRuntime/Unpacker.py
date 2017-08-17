@@ -19,6 +19,7 @@ This will then do the following:
 
 """
 from __future__ import print_function
+from builtins import str
 import sys
 import os
 import tarfile

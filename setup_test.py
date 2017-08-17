@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from builtins import str
 import atexit
 import hashlib
 import os

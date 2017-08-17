@@ -8,6 +8,7 @@ Modified from ProdCommon.DataMgmt.PhEDEx.DropMaker.py
 TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuart
 """
 
+from builtins import str
 import logging
 from xml.dom.minidom import getDOMImplementation
 

@@ -7,6 +7,9 @@ Implementation of StageOutImpl interface for SRM Version 2
 """
 from __future__ import print_function
 
+from builtins import zip
+from builtins import range
+from builtins import str
 import os
 import re
 

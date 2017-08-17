@@ -22,6 +22,7 @@ immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
 Note that exitCodesNoRetry has precedence over passExitCodes.
 """
+from builtins import str
 import logging
 import os.path
 import threading

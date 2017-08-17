@@ -7,6 +7,7 @@ Implementation of an Executor for a StageOut step
 """
 from __future__ import print_function
 
+from builtins import str
 import sys
 import os
 import os.path

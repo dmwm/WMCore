@@ -41,6 +41,7 @@ deleted from the site it was originally injected at.
 
 """
 
+from builtins import str
 import threading
 import logging
 import traceback

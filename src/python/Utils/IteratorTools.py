@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 from __future__ import division, print_function
 
+from builtins import str
+from builtins import map
 import collections
 from itertools import islice
 from itertools import chain

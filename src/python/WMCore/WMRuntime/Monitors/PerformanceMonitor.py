@@ -8,6 +8,7 @@ the agreed limits of virtual memory and wallclock time, and terminate it
 if it exceeds them.
 """
 
+from builtins import str
 import os
 import signal
 import os.path

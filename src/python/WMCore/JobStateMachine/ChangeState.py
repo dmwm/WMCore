@@ -5,6 +5,7 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
+from builtins import str
 import time
 import logging
 import traceback

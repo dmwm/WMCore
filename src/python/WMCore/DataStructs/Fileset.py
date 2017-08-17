@@ -6,6 +6,8 @@ Data object that contains a set of files
 
 """
 from __future__ import print_function
+from builtins import str
+from builtins import map
 __all__ = []
 
 

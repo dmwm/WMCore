@@ -6,6 +6,7 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
+from builtins import str
 import logging
 import operator
 import threading

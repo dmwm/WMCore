@@ -7,6 +7,7 @@ and then apply them to job groups
 
 """
 
+from builtins import map
 from WMCore.JobSplitting.Generators.GeneratorFactory import GeneratorFactory
 
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper

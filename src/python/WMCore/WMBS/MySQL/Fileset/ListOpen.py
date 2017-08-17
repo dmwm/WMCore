@@ -5,6 +5,7 @@ _ListOpen_
 MySQL implementation of Fileset.ListOpen
 """
 
+from builtins import str
 __all__ = []
 
 

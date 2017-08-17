@@ -12,6 +12,7 @@ https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 
 from __future__ import division, print_function
 
+from builtins import str
 import os
 import threading
 import time

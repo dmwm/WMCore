@@ -8,6 +8,8 @@ Used for the expat xml parsers
 
 """
 
+from builtins import next
+from builtins import str
 import os
 import re
 import xml.parsers.expat

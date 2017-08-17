@@ -1,3 +1,4 @@
+from builtins import map
 import cherrypy, hmac, hashlib, logging, re
 
 def user_info_from_headers(key, verbose=False):

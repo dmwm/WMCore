@@ -4,6 +4,7 @@ _ReReco_
 
 Standard ReReco workflow.
 """
+from builtins import str
 from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate

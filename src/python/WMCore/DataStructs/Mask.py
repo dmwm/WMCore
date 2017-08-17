@@ -10,6 +10,7 @@ job in two ways:
 
 """
 
+from builtins import range
 from WMCore.DataStructs.Run import Run
 
 class Mask(dict):

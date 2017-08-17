@@ -9,6 +9,7 @@ Created on Apr 16, 2013
 @author: dballest
 """
 
+from builtins import str
 import logging
 import threading
 

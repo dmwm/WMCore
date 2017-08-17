@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+from builtins import str
 from WMCore.Services.DBS.ProdException import ProdException
 
 

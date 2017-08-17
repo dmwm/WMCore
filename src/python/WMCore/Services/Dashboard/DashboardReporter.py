@@ -4,6 +4,7 @@ __DashboardReporter__
 Utilities for reporting information to the dashboard
 """
 
+from builtins import str
 import time
 import logging
 

@@ -8,6 +8,9 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 
 """
 from __future__ import print_function
+from builtins import range
+from builtins import map
+from builtins import str
 import logging
 import pickle
 import traceback

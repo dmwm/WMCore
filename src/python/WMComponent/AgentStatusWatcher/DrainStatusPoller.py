@@ -5,6 +5,7 @@ to be shutdown and a new version be put in place.
 """
 from __future__ import division
 
+from builtins import str
 __all__ = []
 
 import logging

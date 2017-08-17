@@ -6,6 +6,8 @@ Runtime binary file for CleanUp type nodes
 
 """
 from __future__ import print_function
+from builtins import filter
+from builtins import str
 import sys
 import os
 from WMCore.Storage.TaskState import TaskState, getTaskState

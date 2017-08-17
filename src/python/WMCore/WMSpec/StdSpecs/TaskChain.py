@@ -84,6 +84,7 @@ Example initial processing task
  },
 """
 from __future__ import division
+from builtins import str
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase

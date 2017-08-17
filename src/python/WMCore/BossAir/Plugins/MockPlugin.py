@@ -5,6 +5,8 @@ _BossAirPlugin_
 Base class for BossAir plugins
 """
 
+from builtins import range
+from builtins import str
 import os
 import logging
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException

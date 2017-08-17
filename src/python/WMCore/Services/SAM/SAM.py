@@ -8,6 +8,7 @@ Talk to the SAM Service to get site status from the results of SAM tests.
 
 
 
+from builtins import zip
 from WMCore.Services.Service import Service
 
 class SAM(Service):

@@ -6,6 +6,7 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
+from builtins import str
 import logging
 import os
 import subprocess

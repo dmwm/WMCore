@@ -5,6 +5,7 @@ This is the Dashboard API Module for the Worker Node
 """
 from __future__ import print_function
 
+from builtins import str
 import sys
 import os
 import traceback

@@ -8,6 +8,7 @@ into DBS if required
 """
 from __future__ import print_function
 
+from builtins import str
 import logging
 
 from DBSAPI.dbsApi import DbsApi

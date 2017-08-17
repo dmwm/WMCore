@@ -10,6 +10,8 @@ Diagnostic implementation for a job's LogCollect step
 
 
 
+from builtins import range
+from builtins import str
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 

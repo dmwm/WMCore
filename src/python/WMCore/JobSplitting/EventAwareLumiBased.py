@@ -12,6 +12,7 @@ Created on Sep 25, 2012
 @author: dballest
 """
 
+from builtins import str
 import logging
 import math
 import operator

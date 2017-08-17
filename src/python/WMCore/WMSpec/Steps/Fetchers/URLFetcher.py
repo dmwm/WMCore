@@ -5,6 +5,7 @@ _URLFetcher_
 Fetch urls based on the sandbox information in a WMStep
 
 """
+from builtins import str
 import os
 import re
 import logging

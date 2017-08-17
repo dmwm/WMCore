@@ -2,6 +2,7 @@
 """
 Poll request manager for new work
 """
+from builtins import str
 __all__ = []
 
 

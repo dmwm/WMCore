@@ -5,6 +5,9 @@ _SRMV2Impl_
 Implementation of StageOutImpl interface for SRM Version 2
 
 """
+from builtins import zip
+from builtins import range
+from builtins import str
 import os, re
 import logging, tempfile
 import subprocess

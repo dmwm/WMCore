@@ -10,6 +10,8 @@ Created on Nov 2, 2012
 @author: dballest
 """
 
+from builtins import filter
+from builtins import str
 import threading
 import traceback
 import re

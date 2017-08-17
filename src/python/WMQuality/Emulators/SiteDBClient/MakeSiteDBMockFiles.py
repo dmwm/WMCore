@@ -4,6 +4,7 @@ MakeSiteDBMockFiles
 Program to create mock SiteDB JSON files used by the SiteDB mock-based emulator
 """
 
+from builtins import str
 from __future__ import (division, print_function)
 
 import json

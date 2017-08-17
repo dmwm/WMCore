@@ -25,6 +25,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
+from builtins import range
+from builtins import str
 import time
 import threading
 import logging

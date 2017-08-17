@@ -7,6 +7,7 @@ Run the stage out commands in a nice non-blocking way
 """
 from __future__ import print_function
 
+from builtins import str
 from subprocess import Popen, PIPE
 
 from WMCore.Storage.StageOutError import StageOutError

@@ -5,6 +5,7 @@ _List_
 Oracle implementation of ListFileset
 
 """
+from builtins import str
 __all__ = []
 
 

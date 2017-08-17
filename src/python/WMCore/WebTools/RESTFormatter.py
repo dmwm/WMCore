@@ -7,6 +7,7 @@ appropriate format and sets the CherryPy header appropriately.
 
 Could add YAML via http://pyyaml.org/
 """
+from builtins import str
 import json
 from types import GeneratorType
 

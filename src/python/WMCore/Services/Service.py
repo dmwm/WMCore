@@ -48,6 +48,7 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
+from builtins import str
 import datetime
 import json
 import logging

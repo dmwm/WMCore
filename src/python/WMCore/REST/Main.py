@@ -8,6 +8,7 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from builtins import str
 import sys, os, errno, re, os.path, subprocess, socket, time
 import cherrypy, logging, thread, traceback
 import WMCore.REST.Tools

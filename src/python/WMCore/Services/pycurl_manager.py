@@ -38,10 +38,13 @@ for row in data:
 """
 from __future__ import print_function
 
+from builtins import str
+
 # system modules
 import os
 import re
 import sys
+
 import cStringIO as StringIO
 import httplib
 import json

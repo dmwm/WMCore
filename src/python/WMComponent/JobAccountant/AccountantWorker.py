@@ -11,6 +11,7 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
+from builtins import str
 import collections
 import gc
 import logging

@@ -19,6 +19,7 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
+from builtins import str
 import cgi
 import traceback
 

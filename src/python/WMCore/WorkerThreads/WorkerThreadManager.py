@@ -6,6 +6,7 @@ A class used to manage regularly running worker threads.
 """
 from __future__ import print_function
 
+from builtins import str
 import threading
 import logging
 import time

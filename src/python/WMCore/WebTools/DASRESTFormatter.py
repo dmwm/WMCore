@@ -11,6 +11,7 @@ A REST formatter that appends the DAS headers to the result data
 # I want dasjson and plist to be methods instead of functions
 # pylint: disable=R0201
 
+from builtins import str
 import json
 import plistlib
 

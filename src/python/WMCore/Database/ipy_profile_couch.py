@@ -9,6 +9,7 @@ from __future__ import print_function
 
 
 
+from builtins import str
 __license__    = "GPL"
 
 __maintainer__ = "Valentin Kuznetsov"

@@ -9,6 +9,8 @@ Description: LogDB report class to represent LogDB messages
 from __future__ import print_function
 
 # system modules
+from builtins import range
+from builtins import str
 import os
 import sys
 

@@ -8,6 +8,8 @@ _JobSubmitterPoller_t_
 Submit jobs for execution.
 """
 
+from builtins import range
+from builtins import str
 import logging
 import threading
 import os.path

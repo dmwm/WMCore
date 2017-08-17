@@ -11,6 +11,7 @@ Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
 
+from builtins import str
 import os
 import os.path
 import threading

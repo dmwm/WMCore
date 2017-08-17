@@ -41,6 +41,7 @@ Sending strings is supported, but they will not be stored in the
 farm's store nor shown in the farm's window in the MonALISA client.
 """
 from __future__ import division
+from builtins import str
 import re
 import xdrlib
 import socket

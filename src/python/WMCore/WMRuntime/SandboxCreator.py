@@ -5,6 +5,7 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+from builtins import map
 import os
 import shutil
 import tarfile

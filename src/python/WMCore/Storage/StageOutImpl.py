@@ -7,6 +7,8 @@ inherit this object and implement the methods accordingly
 
 """
 from __future__ import print_function
+from builtins import range
+from builtins import str
 import time
 import os
 from WMCore.Storage.Execute import runCommandWithOutput

@@ -5,6 +5,7 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
+from builtins import str
 import os
 import os.path
 import logging

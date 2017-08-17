@@ -10,6 +10,7 @@ from __future__ import print_function
 #     -> this prints out html file, normally resulting html snippet will be used ...
 
 
+from builtins import range
 import json
 import random
 import urllib

@@ -12,6 +12,7 @@ of agent's components, etc.
 # be ensured automatically
 
 
+from builtins import zip
 import os
 import logging
 from xml.etree.ElementTree import ElementTree

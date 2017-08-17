@@ -10,6 +10,7 @@ to perform thread-specific setup and clean-up operations
 
 
 
+from builtins import str
 import threading
 import logging
 import time

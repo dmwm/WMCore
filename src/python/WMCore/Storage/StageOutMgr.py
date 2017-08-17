@@ -10,6 +10,7 @@ use this class as a basic API
 from __future__ import print_function
 
 # If we don't import them, they cannot be ever used (bad PyCharm!)
+from builtins import str
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 

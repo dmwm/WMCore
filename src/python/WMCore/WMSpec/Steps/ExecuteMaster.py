@@ -10,6 +10,7 @@ for each step
 
 """
 
+from builtins import str
 import os
 import threading
 import traceback

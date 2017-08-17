@@ -27,6 +27,7 @@ Note:  Jobs are split up by subscription, so having
 one long subscription can make the JobCreatorWorker
 wait for excessively long amounts of time while it runs.
 """
+from builtins import next
 __all__ = []
 
 

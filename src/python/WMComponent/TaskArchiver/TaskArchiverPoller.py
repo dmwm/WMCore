@@ -23,6 +23,7 @@ histogramLimit: Limit in terms of number of standard deviations from the
   average at which you cut the histogram off.  All points outside of that
   go into overflow and underflow.
 """
+from builtins import str
 __all__ = []
 import logging
 import threading

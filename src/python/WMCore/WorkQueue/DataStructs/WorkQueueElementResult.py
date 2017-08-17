@@ -9,6 +9,7 @@ A dictionary based object meant to represent a WorkQueue block
 
 
 
+from builtins import str
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""
     def __init__(self, **kwargs):

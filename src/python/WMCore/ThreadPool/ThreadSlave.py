@@ -16,6 +16,7 @@ attribute.
 
 
 
+from builtins import str
 import base64
 import logging
 import threading

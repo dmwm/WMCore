@@ -6,6 +6,7 @@ CouchFileset.py
 Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from builtins import str
 import time
 
 from WMCore.ACDC.Fileset import Fileset

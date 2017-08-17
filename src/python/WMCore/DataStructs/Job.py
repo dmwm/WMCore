@@ -6,6 +6,8 @@ Data object that describes a job
 
 """
 
+from builtins import range
+from builtins import map
 __all__ = []
 
 

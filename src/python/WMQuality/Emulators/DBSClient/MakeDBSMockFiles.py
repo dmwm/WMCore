@@ -9,6 +9,7 @@ new files from scratch (i.e., you need to delete the previous DBS json
 mocked data).
 """
 
+from builtins import str
 from __future__ import (division, print_function)
 
 import json

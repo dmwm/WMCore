@@ -5,6 +5,7 @@ _CMSSW_
 Basic Emulator for CMSSW Step
 
 """
+from builtins import str
 from WMCore.WMSpec.Steps.Emulator import Emulator
 from WMCore.FwkJobReport.ReportEmu import ReportEmu
 from WMCore.WMSpec.WMStep import WMStepHelper

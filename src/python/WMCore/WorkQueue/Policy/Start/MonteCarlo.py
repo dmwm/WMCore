@@ -5,6 +5,7 @@ WorkQueue splitting by block
 """
 from __future__ import division
 
+from builtins import str
 import os
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError

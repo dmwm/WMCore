@@ -7,6 +7,7 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: CMS modules
 """
 
+from builtins import str
 from __future__ import (division, print_function)
 
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct

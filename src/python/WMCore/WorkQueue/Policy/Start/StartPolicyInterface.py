@@ -3,6 +3,7 @@
 WorkQueue SplitPolicyInterface
 
 """
+from builtins import str
 __all__ = []
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface

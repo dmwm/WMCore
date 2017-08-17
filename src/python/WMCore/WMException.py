@@ -6,6 +6,7 @@ General Exception class for WM modules
 
 """
 
+from builtins import str
 import exceptions
 import inspect
 import logging

@@ -8,6 +8,7 @@ Possible non-production poller prototype for
 JobStatusAir
 """
 
+from builtins import str
 import time
 import logging
 import threading

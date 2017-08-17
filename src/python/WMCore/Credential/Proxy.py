@@ -4,6 +4,8 @@ _Proxy_
 Wrap gLite proxy commands.
 """
 
+from builtins import filter
+from builtins import str
 import contextlib
 import copy
 import os

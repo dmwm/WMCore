@@ -5,6 +5,7 @@ _SimpleCondorPlugin_
 """
 from __future__ import division, print_function
 
+from builtins import str
 import logging
 import os
 import os.path

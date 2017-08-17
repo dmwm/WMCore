@@ -13,6 +13,7 @@ Base class for formatters that create tables.
 
 
 
+from builtins import str
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION

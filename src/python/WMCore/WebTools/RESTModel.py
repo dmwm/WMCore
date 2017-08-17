@@ -4,6 +4,7 @@
 """
 Rest Model abstract implementation
 """
+from builtins import str
 from functools import wraps
 from WMCore.Lexicon import check
 from WMCore.WebTools.WebAPI import WebAPI

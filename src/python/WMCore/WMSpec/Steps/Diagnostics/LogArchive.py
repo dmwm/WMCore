@@ -5,6 +5,8 @@ _LogArchive_
 Diagnostic implementation for a job's LogArchive step
 """
 
+from builtins import range
+from builtins import str
 import os
 
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler

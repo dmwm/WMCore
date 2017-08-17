@@ -9,6 +9,7 @@ Handlers are mapped to messages in the component.
 
 
 
+from builtins import str
 import logging
 
 

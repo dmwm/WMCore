@@ -3,6 +3,7 @@
 Some generic base classes for building web pages with.
 """
 
+from builtins import str
 import hashlib
 import json
 import logging

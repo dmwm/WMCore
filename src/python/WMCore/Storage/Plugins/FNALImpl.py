@@ -5,6 +5,8 @@ _FNALImpl_
 Implementation of StageOutImpl interface for FNAL
 
 """
+from builtins import range
+from builtins import str
 import logging
 import os
 

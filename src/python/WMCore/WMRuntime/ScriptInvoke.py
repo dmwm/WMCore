@@ -12,6 +12,7 @@ environment in which the Runtime Script implementation needs to be called.
 
 """
 
+from builtins import str
 import os
 import sys
 import traceback

@@ -49,6 +49,7 @@ component won't crash but it won't do anything at all. All
 jobs that get in cooloff would stay there forever.
 Any parameter can be skipped and the component will use internal defaults.
 """
+from builtins import str
 __all__ = []
 
 

@@ -7,6 +7,7 @@ Created by Dave Evans on 2010-10-12.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import str
 import unittest
 import time
 import logging

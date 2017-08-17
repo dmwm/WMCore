@@ -6,6 +6,7 @@ Being in itself a wrapped class around a config cache
 """
 
 
+from builtins import str
 import hashlib
 import logging
 import traceback

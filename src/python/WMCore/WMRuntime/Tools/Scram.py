@@ -25,6 +25,7 @@ sample usage:
 
 """
 
+from builtins import str
 import os
 import os.path
 import sys

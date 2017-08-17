@@ -3,6 +3,7 @@ Provide functions to collect data and upload data
 """
 from __future__ import print_function
 
+from builtins import range
 import logging
 
 from WMCore.Lexicon import splitCouchServiceURL

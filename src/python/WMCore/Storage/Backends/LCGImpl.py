@@ -5,6 +5,7 @@ _LCGImpl_
 Implementation of StageOutImpl interface for lcg-cp
 
 """
+from builtins import str
 import os
 
 from WMCore.Storage.Registry import registerStageOutImpl

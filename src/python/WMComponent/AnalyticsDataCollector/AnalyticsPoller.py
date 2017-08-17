@@ -1,6 +1,7 @@
 """
 Perform cleanup actions
 """
+from builtins import str
 __all__ = []
 
 

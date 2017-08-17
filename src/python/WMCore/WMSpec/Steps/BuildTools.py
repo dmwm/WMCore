@@ -7,6 +7,7 @@ Utils to assist in the build process
 
 """
 
+from builtins import str
 import os
 import logging
 from WMCore.WMSpec.ConfigSectionTree import nodeName

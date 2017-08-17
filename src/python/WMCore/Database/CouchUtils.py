@@ -8,6 +8,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 from __future__ import print_function
 
+from builtins import str
 import functools
 from httplib import HTTPException
 

@@ -7,6 +7,7 @@ API for retrieving information from SiteDB
 """
 from __future__ import print_function
 from __future__ import division
+from builtins import zip
 import json
 import logging
 from WMCore.Services.Service import Service

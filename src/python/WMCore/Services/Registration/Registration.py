@@ -24,6 +24,7 @@ reg.refreshCache()
 
 This will push the configuration up to the Registration service
 '''
+from builtins import str
 from WMCore.Database.CMSCouch import CouchServer
 
 class Registration():

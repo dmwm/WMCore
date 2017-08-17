@@ -5,6 +5,7 @@ _LoadForErrHandler_
 MySQL implementation of Jobs.LoadForErrorHandler.
 """
 
+from builtins import filter
 from WMCore.Database.DBFormatter import DBFormatter
 
 from WMCore.WMBS.File       import File

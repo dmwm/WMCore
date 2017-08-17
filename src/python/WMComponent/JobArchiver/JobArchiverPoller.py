@@ -2,6 +2,7 @@
 """
 The actual jobArchiver algorithm
 """
+from builtins import str
 __all__ = []
 
 import threading

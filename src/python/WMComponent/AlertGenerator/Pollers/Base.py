@@ -4,6 +4,7 @@ within the Alert messaging framework.
 
 """
 
+from builtins import zip
 import sys
 import time
 import logging

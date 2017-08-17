@@ -5,6 +5,8 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+from builtins import map
+from builtins import str
 import json
 import random
 import time

@@ -5,6 +5,7 @@ _Config_
 Pseudo CMSSW config classes.
 """
 
+from builtins import object
 class Container():
     """
     _Container_

@@ -8,6 +8,7 @@ Test spec with known output modules used for testing.
 
 
 
+from builtins import object
 from WMCore.WMSpec.WMWorkload import newWorkload
 
 class TestWorkloadFactory(object):

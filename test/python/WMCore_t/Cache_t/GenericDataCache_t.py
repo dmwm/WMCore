@@ -5,6 +5,7 @@ Test class for the WMConfigCache
 """
 from __future__ import print_function, division
 
+from builtins import object
 import unittest
 import time
 from WMCore.Cache.GenericDataCache import GenericDataCache, CacheExistException, \

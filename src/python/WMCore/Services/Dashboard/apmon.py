@@ -879,9 +879,9 @@ class ApMon(object):
         if value is None:
             self.logger.log(Logger.WARNING, "Ignore " + str(name)+ " parameter because of None value")
             return False
-        if isinstance(name, unicode):
+        if isinstance(name, str):
             name = str(name)
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             value = str(value)
         try:
             typeValue = self.__valueTypes[type(value)]

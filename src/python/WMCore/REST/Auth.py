@@ -33,7 +33,7 @@ def user_info_from_headers(key, verbose=False):
             if hk.startswith("cms-authn"):
                 val = headers[hk]
                 if hk in ("cms-authn-name", "cms-authn-dn"):
-                    val = unicode(val, "utf-8")
+                    val = str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
                 user['roles'][hkname] = { 'site': set(), 'group': set() }

@@ -166,7 +166,7 @@ def genid(kwds):
 def checkarg(kwds, arg):
     """Check arg in a dict that it has str/unicode type"""
     data = kwds.get(arg, None)
-    cond = data and (isinstance(data, str) or isinstance(data, unicode))
+    cond = data and (isinstance(data, str) or isinstance(data, str))
     return cond
 
 def checkargs(supported):
@@ -178,7 +178,7 @@ def checkargs(supported):
 
         def require_string(val):
             """Check that provided input is a string"""
-            if not (isinstance(val, str) or isinstance(val, unicode)):
+            if not (isinstance(val, str) or isinstance(val, str)):
                 code = web_code('Invalid input')
                 raise URLError('code=%s' % code)
 

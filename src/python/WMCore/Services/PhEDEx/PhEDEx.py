@@ -317,7 +317,7 @@ class PhEDEx(Service):
         nodeList = nodeNameMap['phedex']['node']
         ret = None
         for node in nodeList:
-            if node['se'] == unicode(se):
+            if node['se'] == str(se):
                 if node['kind'] == 'Buffer':
                     return node['name']
                 elif node['kind'] == 'MSS':

@@ -118,7 +118,7 @@ class XMLFormat(RESTFormat):
         """Render an object `obj` into XML."""
         if isinstance(obj, type(None)):
             result = ""
-        elif isinstance(obj, (unicode, str)):
+        elif isinstance(obj, (str, str)):
             result = xml.sax.saxutils.escape(obj).encode("utf-8")
         elif isinstance(obj, (int, float, bool)):
             result = xml.sax.saxutils.escape(str(obj)).encode("utf-8")
@@ -316,7 +316,7 @@ class PrettyJSONHTMLFormat(PrettyJSONFormat):
         """Render an object `obj` into HTML."""
         if isinstance(obj, type(None)):
             result = ""
-        elif isinstance(obj, (unicode, str)):
+        elif isinstance(obj, (str, str)):
             result = "<pre>%s</pre>" % obj if '\n' in obj else obj
         elif isinstance(obj, (int, float, bool)):
             result = "%s" % obj

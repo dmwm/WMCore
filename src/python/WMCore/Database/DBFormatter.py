@@ -75,7 +75,7 @@ class DBFormatter(WMObject):
                 entry = {}
                 for index in xrange(0,len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if type(i[index]) == unicode:
+                    if type(i[index]) == str:
                         entry[str(descriptions[index].lower())] = str(i[index])
                     else:
                         entry[str(descriptions[index].lower())] = i[index]

@@ -31,7 +31,7 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    format = lambda x: str(x) if stringify and isinstance(x, unicode) else x
+    format = lambda x: str(x) if stringify and isinstance(x, str) else x
     for name, newname in mapping.iteritems():
         if name in data:
             data[newname] = format(data[name])
@@ -198,9 +198,9 @@ class DBS3Reader(object):
         """
         # Pointless code in python3
         if isinstance(block, str):
-            block = unicode(block)
+            block = str(block)
         if isinstance(dataset, str):
-            dataset = unicode(dataset)
+            dataset = str(dataset)
 
         try:
             if block:
@@ -675,7 +675,7 @@ class DBS3Reader(object):
         """
         # Pointless code in python3
         if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
+            fileBlockName = str(fileBlockName)
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
@@ -703,7 +703,7 @@ class DBS3Reader(object):
 
         """
         if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
+            fileBlockName = str(fileBlockName)
 
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"

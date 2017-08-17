@@ -134,7 +134,7 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             value = str(value)
 
         # for backward compatibility use getattr and sure to work if the

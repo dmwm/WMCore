@@ -62,7 +62,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [str(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -85,7 +85,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [str(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:

@@ -4,6 +4,7 @@ Created on Jun 18, 2009
 @author: meloam
 '''
 from __future__ import print_function
+from builtins import object
 import WMCore_t.WMSpec_t.samples.BasicProductionWorkload as testWorkloads
 import WMCore.WMSpec.Steps.Templates.LogArchive as LogArchiveTemplate
 import WMCore.WMSpec.Steps.Executors.LogArchive as LogArchiveExecutor
@@ -242,7 +243,7 @@ class LogArchiveTest(unittest.TestCase):
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
-class otherLogArchiveTexst:#(unittest.TestCase):
+class otherLogArchiveTexst(object):#(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave

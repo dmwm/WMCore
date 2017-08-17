@@ -4,6 +4,7 @@ Created on Jun 18, 2009
 @author: meloam
 '''
 from __future__ import print_function
+from builtins import object
 import WMCore_t.WMSpec_t.samples.BasicProductionWorkload as testWorkloads
 import WMCore.WMSpec.Steps.Templates.StageOut as StageOutTemplate
 import WMCore.WMSpec.Steps.Executors.StageOut as StageOutExecutor
@@ -243,7 +244,7 @@ class StageOutTest(unittest.TestCase):
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
-class otherStageOutTexst:#(unittest.TestCase):
+class otherStageOutTexst(object):#(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave

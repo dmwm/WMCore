@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from builtins import object
 import unittest
 import logging
 import urllib2
@@ -11,7 +12,7 @@ from tempfile import NamedTemporaryFile
 
 # DISABLING because this doesn't properly shut down the cherrypy
 # server or clean up the state
-class RootTest():
+class RootTest(object):
 
     def getBaseConfiguration(self):
         config = Configuration()

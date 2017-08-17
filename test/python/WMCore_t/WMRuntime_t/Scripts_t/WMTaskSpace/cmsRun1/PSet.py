@@ -5,9 +5,10 @@ _Pset_
 Bogus CMSSW PSet for testing runtime code.
 """
 
+from builtins import object
 import FWCore.ParameterSet.Config as cms
 
-class Container():
+class Container(object):
     """
     _Container_
 
@@ -15,7 +16,7 @@ class Container():
     """
     pass
 
-class Process():
+class Process(object):
     """
     _Process_
 

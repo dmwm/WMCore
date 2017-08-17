@@ -6,13 +6,14 @@ This migrates a dataset from local to global
 Input: Dictionary from RequestQuery
 """
 from __future__ import print_function
+from builtins import object
 import os
 import traceback
 from dbs.apis.dbsClient import DbsApi
 from threading import Timer
 
 
-class MigrationToGlobal:
+class MigrationToGlobal(object):
 
     def __init__(self):
 

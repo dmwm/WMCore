@@ -1,4 +1,5 @@
 # system modules
+from builtins import object
 import cherrypy
 from cherrypy.test import webtest
 from cherrypy import expose
@@ -12,7 +13,7 @@ from WMCore.REST.Tools import tools
 FAKE_FILE = fake_authz_key_file()
 PORT = 8888
 
-class Root:
+class Root(object):
     def __init__(self, *args):
         pass
 

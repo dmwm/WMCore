@@ -1,6 +1,7 @@
+from builtins import object
 import logging
 
-class TestRegistryFile2:
+class TestRegistryFile2(object):
 
 
     def doSomething(self, parameters = {}):

@@ -33,10 +33,12 @@ by a user on the command line, whichever other argument can be overridden too.
 from __future__ import print_function
 
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
 from httplib import HTTPSConnection, HTTPConnection
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import logging
 from optparse import OptionParser, TitledHelpFormatter
 import json
@@ -124,7 +126,7 @@ class ReqMgrClient(RESTClient):
         Talks to the ReqMgr webpage, as if the request came from the web browser.
 
         """
-        encodedParams = urllib.urlencode(requestArgs["createRequest"])
+        encodedParams = urllib.parse.urlencode(requestArgs["createRequest"])
         logging.info("Injecting a request for arguments (webpage):\n%s ..." % requestArgs["createRequest"])
         # the response is now be an HTML webpage
         status, data = self.httpRequest("POST", "/reqmgr/create/makeSchema",
@@ -166,7 +168,7 @@ class ReqMgrClient(RESTClient):
         """
         params = {"requestName": requestName,
                   "status": "assignment-approved"}
-        encodedParams = urllib.urlencode(params)
+        encodedParams = urllib.parse.urlencode(params)
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request",
                                         data=encodedParams, headers=self.textHeaders)
@@ -202,7 +204,7 @@ class ReqMgrClient(RESTClient):
             jsonEncodedParams = {}
             for paramKey in assignArgs.keys():
                 jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
-            encodedParams = urllib.urlencode(jsonEncodedParams, True)
+            encodedParams = urllib.parse.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
             status, data = self.httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
                                             data=encodedParams, headers=self.textHeaders)
@@ -230,7 +232,7 @@ class ReqMgrClient(RESTClient):
             splittingParams['requestName'] = requestName
             splittingParams['splittingTask'] = '/%s/%s' % (requestName, taskName)
             splittingParams['splittingAlgo'] = splittingAlgo
-            encodedParams = urllib.urlencode(splittingParams, True)
+            encodedParams = urllib.parse.urlencode(splittingParams, True)
             logging.info("Changing splitting parameters for request '%s' and task '%s' ..." % (requestName, taskName))
             status, data = self.httpRequest("POST", "/reqmgr/view/handleSplittingPage",
                                             data=encodedParams, headers=self.textHeaders)
@@ -358,7 +360,7 @@ class ReqMgrClient(RESTClient):
         # jsonSender.put("request/%s?priority=%s" % (requestName, priority))
         # "requestName": requestName can probably be specified here as well
         params = {"priority": "%s" % priority}
-        encodedParams = urllib.urlencode(params)
+        encodedParams = urllib.parse.urlencode(params)
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
                                         data=encodedParams, headers=self.textHeaders)
         if status > 200:

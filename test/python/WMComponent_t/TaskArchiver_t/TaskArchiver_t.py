@@ -5,6 +5,8 @@ TaskArchiver test
 Tests both the archiving of tasks and the creation of the
 workloadSummary
 """
+from builtins import str
+from builtins import range
 import json
 import logging
 import os.path

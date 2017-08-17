@@ -1,5 +1,6 @@
 from __future__ import print_function
 # system modules
+from builtins import str
 import cherrypy
 from multiprocessing import Process
 from cherrypy.test import webtest

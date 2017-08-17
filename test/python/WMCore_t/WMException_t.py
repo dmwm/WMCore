@@ -6,6 +6,7 @@ General test for WMException
 
 """
 from __future__ import print_function, division
+from builtins import str
 import logging
 import unittest
 import os

@@ -6,6 +6,9 @@ WorkQueue tests
 """
 from __future__ import print_function
 
+from builtins import next
+from builtins import range
+from builtins import str
 import os
 import threading
 import time

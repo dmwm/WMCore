@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 
+from builtins import zip
+from builtins import str
+from builtins import range
 import unittest
 
 # import FWCore.ParameterSet.Config as cms

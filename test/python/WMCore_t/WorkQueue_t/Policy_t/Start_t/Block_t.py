@@ -3,6 +3,7 @@
     WorkQueue.Policy.Start.Block tests
 """
 
+from builtins import str
 import unittest
 
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload

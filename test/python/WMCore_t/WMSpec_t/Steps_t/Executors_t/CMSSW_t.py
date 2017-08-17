@@ -10,6 +10,7 @@ Created by Dave Evans on 2010-03-15.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import str
 import inspect
 import os
 import shutil

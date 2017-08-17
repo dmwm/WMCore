@@ -5,6 +5,7 @@ _EventBased_t_
 Event based splitting test.
 """
 
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File

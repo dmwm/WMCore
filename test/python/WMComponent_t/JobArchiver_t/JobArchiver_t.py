@@ -4,6 +4,7 @@
 JobArchiver test
 """
 
+from builtins import range
 import os
 import shutil
 import threading

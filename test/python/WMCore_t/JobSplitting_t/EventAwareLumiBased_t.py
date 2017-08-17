@@ -9,6 +9,7 @@ Created on Sep 25, 2012
 
 @author: dballest
 """
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File

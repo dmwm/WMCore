@@ -3,6 +3,7 @@
 Tests for ConfigSectionTree
 """
 
+from builtins import str
 import unittest
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree

@@ -6,6 +6,7 @@ _scaleTest_
 Fills a DBSBuffer with random data and then runs a DBSUpload process on it.
 """
 from __future__ import print_function
+from builtins import range
 import os
 import sys
 import time

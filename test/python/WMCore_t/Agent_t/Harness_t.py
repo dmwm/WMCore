@@ -5,6 +5,7 @@ Component test TestComponent module and the harness
 """
 from __future__ import print_function
 
+from builtins import str
 import os
 import threading
 import time

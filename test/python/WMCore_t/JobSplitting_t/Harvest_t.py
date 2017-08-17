@@ -6,6 +6,8 @@ Harvest job splitting test
 
 """
 
+from builtins import range
+from builtins import str
 import unittest
 import threading
 import logging

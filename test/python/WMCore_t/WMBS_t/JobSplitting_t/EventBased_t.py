@@ -5,6 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
+from builtins import str
+from builtins import range
 import unittest
 import threading
 import os

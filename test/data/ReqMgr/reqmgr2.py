@@ -15,6 +15,7 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py
 """
 from __future__ import print_function
+from builtins import filter
 import os
 import sys
 from httplib import HTTPSConnection, HTTPConnection

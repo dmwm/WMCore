@@ -4,6 +4,7 @@ Unittest for WMStep
 """
 
 
+from builtins import str
 import unittest
 from WMCore.WMSpec.WMStep import WMStep, makeWMStep
 

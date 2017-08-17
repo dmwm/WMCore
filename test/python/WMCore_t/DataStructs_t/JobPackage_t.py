@@ -5,6 +5,7 @@ _JobPackage_
 Unittests for JobPackage persistency mechanism
 """
 
+from builtins import range
 import os
 import unittest
 

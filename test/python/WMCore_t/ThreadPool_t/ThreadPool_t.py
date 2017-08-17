@@ -12,6 +12,7 @@ from __future__ import print_function
 
 
 
+from builtins import str
 import unittest
 import threading
 import time

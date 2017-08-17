@@ -33,6 +33,8 @@ by a user on the command line, whichever other argument can be overridden too.
 from __future__ import print_function
 
 
+from builtins import filter
+from builtins import str
 import os
 import sys
 from httplib import HTTPSConnection, HTTPConnection

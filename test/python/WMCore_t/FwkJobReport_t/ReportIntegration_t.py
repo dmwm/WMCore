@@ -6,6 +6,7 @@ Verify that the whole FWJR chain works correctly:
   CMSSW XML -> XMLParser -> Report -> Pickle -> UnPickle -> Accountant
 """
 
+from builtins import str
 import unittest
 import os
 import xml.dom.minidom

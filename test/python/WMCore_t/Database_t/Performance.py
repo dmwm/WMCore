@@ -11,6 +11,7 @@ DB Performance Testcases
 """
 from __future__ import print_function
 
+from builtins import str
 import logging, time
 
 class Performance:

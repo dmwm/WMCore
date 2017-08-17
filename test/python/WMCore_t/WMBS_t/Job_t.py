@@ -6,6 +6,7 @@ Unit tests for the WMBS job class.
 """
 from __future__ import absolute_import
 
+from builtins import str
 import threading
 import unittest
 

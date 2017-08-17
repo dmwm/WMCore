@@ -5,6 +5,7 @@ Created on 16 Jul 2009
 @author: metson
 '''
 
+from builtins import str
 import unittest
 import logging
 import os

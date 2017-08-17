@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import range
 from WMCore.WebTools.RESTModel import RESTModel, restexpose
 from cherrypy import HTTPError
 

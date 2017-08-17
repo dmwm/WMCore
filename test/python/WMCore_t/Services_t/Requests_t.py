@@ -7,6 +7,7 @@ Created on Aug 6, 2009
 '''
 from __future__ import print_function
 
+from builtins import range
 import os
 import shutil
 import tempfile

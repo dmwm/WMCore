@@ -6,6 +6,7 @@ This migrates a dataset from local to global
 Input: Dictionary from RequestQuery
 """
 from __future__ import print_function
+from builtins import str
 import os
 import traceback
 from dbs.apis.dbsClient import DbsApi

@@ -5,6 +5,7 @@ Unittests for IteratorTools functions
 
 from __future__ import division, print_function
 
+from builtins import range
 import itertools
 import unittest
 

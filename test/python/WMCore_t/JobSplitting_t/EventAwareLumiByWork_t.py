@@ -8,6 +8,7 @@ specific ones for this algorithm.
 
 from __future__ import division, print_function
 
+from builtins import range
 import logging
 import unittest
 from collections import Counter

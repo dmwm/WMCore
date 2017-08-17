@@ -7,6 +7,7 @@ Created by Dave Evans on 2012-01-27.
 Copyright (c) 2012 evansde77. All rights reserved.
 """
 
+from builtins import str
 import unittest
 import os
 import tempfile

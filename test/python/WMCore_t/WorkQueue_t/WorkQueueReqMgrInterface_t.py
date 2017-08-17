@@ -4,6 +4,7 @@
 WorkQueueRegMgrInterface test
 """
 
+from builtins import next
 import unittest
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase

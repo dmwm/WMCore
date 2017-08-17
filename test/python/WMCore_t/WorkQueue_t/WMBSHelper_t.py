@@ -5,6 +5,7 @@ _WMBSHelper_t_
 Unit tests for the WMBSHelper class.
 """
 
+from builtins import next
 import os
 import threading
 import unittest

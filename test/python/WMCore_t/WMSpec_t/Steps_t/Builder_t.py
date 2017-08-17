@@ -8,6 +8,7 @@ Unittest for Builder.py
 
 
 
+from builtins import str
 import unittest
 import tempfile
 import shutil

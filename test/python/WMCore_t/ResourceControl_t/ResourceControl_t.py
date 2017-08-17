@@ -5,6 +5,7 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
+from builtins import str
 import os
 import subprocess
 import sys

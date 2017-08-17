@@ -8,6 +8,7 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 """
 from __future__ import print_function
 
+from builtins import range
 import json
 import os
 import threading

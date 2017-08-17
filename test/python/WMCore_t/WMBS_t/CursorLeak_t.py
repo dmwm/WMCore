@@ -5,6 +5,7 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
+from builtins import range
 import threading
 import unittest
 

@@ -2,6 +2,8 @@
 #pylint: disable=E1101,C0103,R0902
 
 
+from builtins import range
+from builtins import str
 import unittest
 
 from WMCore.Configuration import ConfigSection

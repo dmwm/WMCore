@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function, division
+from builtins import str
 import unittest
 import time
 

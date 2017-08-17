@@ -6,6 +6,7 @@ File based splitting test.
 """
 
 
+from builtins import range
 import unittest
 import os
 import threading

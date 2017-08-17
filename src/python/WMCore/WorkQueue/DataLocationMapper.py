@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
 
+from future import standard_library
+standard_library.install_aliases()
 from collections import defaultdict
 import time
 import logging
@@ -21,7 +23,7 @@ def isGlobalDBS(dbs):
     try:
         # try to determine from name - save a trip to server
         # fragile but if this url changes many other things will break also...
-        from urlparse import urlparse
+        from urllib.parse import urlparse
         url = urlparse(dbs.dbs.getServerUrl())  # DBSApi has url not DBSReader
         if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
             return True

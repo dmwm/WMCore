@@ -7,7 +7,9 @@ independent python structure
 
 """
 
-import StringIO
+from future import standard_library
+standard_library.install_aliases()
+import io
 import imp
 import inspect
 import json
@@ -400,7 +402,7 @@ class PSetTweak:
 
 
             jsoniser = JSONiser()
-            jsoniser.dejson(json.load(StringIO.StringIO(jsonContent)))
+            jsoniser.dejson(json.load(io.StringIO(jsonContent)))
 
             for param, value in jsoniser.parameters.items():
                 self.addParameter(param , value)

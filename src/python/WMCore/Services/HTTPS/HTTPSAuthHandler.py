@@ -5,9 +5,11 @@ See usage example in:
 src/python/WMCore/WMSpec/Steps/Executors/DQMUpload.py
 """
 from __future__ import print_function, division
+from future import standard_library
+standard_library.install_aliases()
 import logging
 import urllib2
-import httplib
+import http.client
 import ssl
 
 
@@ -43,8 +45,8 @@ class HTTPSAuthHandler(urllib2.HTTPSHandler):
 
     def get_connection(self, host, **kwargs):
         if self.ctx:
-            return httplib.HTTPSConnection(host, context=self.ctx, **kwargs)
-        return httplib.HTTPSConnection(host)
+            return http.client.HTTPSConnection(host, context=self.ctx, **kwargs)
+        return http.client.HTTPSConnection(host)
 
     def https_open(self, req):
         """

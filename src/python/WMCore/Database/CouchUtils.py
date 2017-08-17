@@ -8,8 +8,10 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import functools
-from httplib import HTTPException
+from http.client import HTTPException
 
 import WMCore.Database.CMSCouch as CMSCouch
 

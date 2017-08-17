@@ -5,6 +5,8 @@ _FNALImpl_
 Implementation of StageOutImpl interface for FNAL
 
 """
+from future import standard_library
+standard_library.install_aliases()
 import logging
 import os
 
@@ -13,7 +15,7 @@ from WMCore.Storage.Plugins.LCGImpl import LCGImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 try:
-    from commands import getoutput
+    from subprocess import getoutput
 except ImportError:
     # python3
     from subprocess import getoutput

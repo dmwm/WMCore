@@ -8,11 +8,13 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import sys, os, errno, re, os.path, subprocess, socket, time
-import cherrypy, logging, thread, traceback
+import cherrypy, logging, _thread, traceback
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
-from cStringIO import StringIO
+from io import StringIO
 from optparse import OptionParser
 from cherrypy import Application
 from cherrypy.lib import profiler
@@ -183,7 +185,7 @@ class RESTMain:
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))
+        _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 

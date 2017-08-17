@@ -7,7 +7,9 @@ For glide-in use.
 """
 from __future__ import division
 
-import Queue
+from future import standard_library
+standard_library.install_aliases()
+import queue
 import glob
 import logging
 import multiprocessing
@@ -444,7 +446,7 @@ class PyCondorPlugin(BasePlugin):
         for dummy in range(nSubmits):
             try:
                 res = self.result.get(block=True, timeout=timeout)
-            except Queue.Empty:
+            except queue.Empty:
                 # If the queue was empty go to the next submit
                 # Those jobs have vanished
                 logging.error("Queue.Empty error received!")

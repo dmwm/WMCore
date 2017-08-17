@@ -6,6 +6,8 @@ Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import re
 import shutil
@@ -13,11 +15,11 @@ import subprocess
 import sys
 import tempfile
 import urllib
-import urlparse
+import urllib.parse
 from urllib import URLopener
 
 try:
-    from commands import getstatusoutput
+    from subprocess import getstatusoutput
 except ImportError:
     # python3
     from subprocess import getstatusoutput
@@ -80,7 +82,7 @@ def UnpackUserTarball():
     jobDir = os.environ['WMAGENTJOBDIR']
 
     for tarball in tarballs:
-        splitResult = urlparse.urlsplit(tarball)
+        splitResult = urllib.parse.urlsplit(tarball)
         tarFile = os.path.join(jobDir, os.path.basename(tarball))
 
         # Is it a URL or a file that exists in the jobDir?

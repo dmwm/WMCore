@@ -27,6 +27,8 @@ Note:  Jobs are split up by subscription, so having
 one long subscription can make the JobCreatorWorker
 wait for excessively long amounts of time while it runs.
 """
+from future import standard_library
+standard_library.install_aliases()
 __all__ = []
 
 
@@ -40,7 +42,7 @@ import os.path
 import gc
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

@@ -10,6 +10,8 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import time
 import urllib
 import re
@@ -17,7 +19,7 @@ import hashlib
 import base64
 import logging
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 from datetime import datetime
 
 from WMCore.Services.Requests import JSONRequests

@@ -7,11 +7,13 @@ Implementation of an Executor for a DQMUpload step
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
 import logging
 import urllib2
-from cStringIO import StringIO
+from io import StringIO
 from functools import reduce
 from gzip import GzipFile
 from hashlib import md5

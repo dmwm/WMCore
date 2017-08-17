@@ -9,8 +9,10 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import base64
-import cStringIO as StringIO
+import io as StringIO
 import logging
 import os
 import shutil
@@ -20,9 +22,9 @@ import sys
 import tempfile
 import traceback
 import urllib
-import urlparse
+import urllib.parse
 import types
-from httplib import HTTPException
+from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from WMCore.Algorithms import Permissions
@@ -90,7 +92,7 @@ class Requests(dict):
         # then update with the incoming dict
         self.update(idict)
 
-        self['endpoint_components'] = urlparse.urlparse(self['host'])
+        self['endpoint_components'] = urllib.parse.urlparse(self['host'])
 
         # If cachepath = None disable caching
         if 'cachepath' in idict and idict['cachepath'] is None:

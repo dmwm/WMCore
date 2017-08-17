@@ -5,11 +5,13 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import shutil
 import tarfile
 import tempfile
-import urlparse
+import urllib.parse
 import zipfile
 import logging
 
@@ -179,7 +181,7 @@ class SandboxCreator:
             tarContent.append((utilsPath, '/Utils'))
 
         for sb in userSandboxes:
-            splitResult = urlparse.urlsplit(sb)
+            splitResult = urllib.parse.urlsplit(sb)
             if not splitResult[0]:
                 tarContent.append((sb, os.path.basename(sb)))
 

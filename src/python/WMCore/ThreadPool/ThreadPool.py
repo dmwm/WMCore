@@ -11,13 +11,15 @@ To use this you need to use the ThreadSlave class
 
 
 
+from future import standard_library
+standard_library.install_aliases()
 import base64
 import logging
 import random
 import threading
 import time
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

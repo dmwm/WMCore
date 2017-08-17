@@ -2,6 +2,8 @@
 """
 The JobCreator Poller for the JSM
 """
+from future import standard_library
+standard_library.install_aliases()
 __all__ = []
 
 
@@ -11,7 +13,7 @@ import logging
 import traceback
 import threading
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

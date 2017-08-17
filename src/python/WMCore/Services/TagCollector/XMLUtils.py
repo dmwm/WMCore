@@ -7,9 +7,11 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Set of utilities for RequestManager code
 """
 
+from future import standard_library
+standard_library.install_aliases()
 from __future__ import (division, print_function)
 
-import cStringIO as StringIO
+import io as StringIO
 import re
 import xml.etree.cElementTree as ET
 

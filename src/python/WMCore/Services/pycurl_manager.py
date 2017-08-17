@@ -11,8 +11,10 @@ underlying data-services.
 """
 from __future__ import print_function
 
-import cStringIO as StringIO
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+import io as StringIO
+import http.client
 import json
 import logging
 import urllib
@@ -194,7 +196,7 @@ class RequestHandler(object):
             data = bbuf.getvalue()
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \
                     % (url, header.status, header.reason, header.header)
-            exc = httplib.HTTPException(msg)
+            exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)
             setattr(exc, 'url', url)

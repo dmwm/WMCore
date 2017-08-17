@@ -16,12 +16,14 @@ attribute.
 
 
 
+from future import standard_library
+standard_library.install_aliases()
 import base64
 import logging
 import threading
 import os
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

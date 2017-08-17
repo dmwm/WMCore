@@ -25,10 +25,12 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import time
 import threading
 import logging
-import Queue
+import queue
 import traceback
 import multiprocessing
 
@@ -686,7 +688,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 blocksToClose.append(blockresult)
                 self.blockCount -= 1
                 logging.debug("Got a block to close")
-            except Queue.Empty:
+            except queue.Empty:
                 # This means the queue has no current results
                 time.sleep(2)
                 emptyCount += 1

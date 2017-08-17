@@ -8,13 +8,15 @@ _JobSubmitterPoller_t_
 Submit jobs for execution.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import logging
 import threading
 import os.path
 from collections import defaultdict, Counter
 from operator import itemgetter
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

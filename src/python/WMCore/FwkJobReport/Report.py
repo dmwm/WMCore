@@ -7,6 +7,8 @@ Framework job report object.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import logging
 import math
 import re
@@ -22,7 +24,7 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

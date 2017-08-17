@@ -7,9 +7,11 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import re
 import string
-import urlparse
+import urllib.parse
 
 from WMCore.WMException import WMException
 
@@ -588,7 +590,7 @@ def sanitizeURL(url):
        WANNING: This doesn't check the correctness of url format.
        Don't use ':' in username or password.
     """
-    endpoint_components = urlparse.urlparse(url)
+    endpoint_components = urllib.parse.urlparse(url)
     # Cleanly pull out the user/password from the url
     if endpoint_components.port:
         netloc = '%s:%s' % (endpoint_components.hostname,
@@ -597,7 +599,7 @@ def sanitizeURL(url):
         netloc = endpoint_components.hostname
 
     # Build a URL without the username/password information
-    url = urlparse.urlunparse(
+    url = urllib.parse.urlunparse(
             [endpoint_components.scheme,
              netloc,
              endpoint_components.path,

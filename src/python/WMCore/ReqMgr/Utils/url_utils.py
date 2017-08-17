@@ -9,11 +9,13 @@ Description:
 from __future__ import print_function
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
 import urllib
 import urllib2
-import httplib
+import http.client
 import json
 
 def get_key_cert():
@@ -89,9 +91,9 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     def get_connection(self, host, timeout=300):
         """Connection method"""
         if  self.key:
-            return httplib.HTTPSConnection(host, key_file=self.key,
+            return http.client.HTTPSConnection(host, key_file=self.key,
                                                 cert_file=self.cert)
-        return httplib.HTTPSConnection(host)
+        return http.client.HTTPSConnection(host)
 
 def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=True):
     """

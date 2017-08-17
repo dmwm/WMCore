@@ -10,10 +10,12 @@ Placeholder for ideas at present....
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 from urllib2 import urlopen, Request
-from urlparse import urlparse
+from urllib.parse import urlparse
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
 
+from builtins import object
 from collections import defaultdict
 import time
 import logging

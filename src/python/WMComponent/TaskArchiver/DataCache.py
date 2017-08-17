@@ -1,3 +1,4 @@
+from builtins import object
 from __future__ import (print_function, division)
 
 class DataCache(object):

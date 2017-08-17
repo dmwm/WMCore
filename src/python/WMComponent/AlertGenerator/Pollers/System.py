@@ -5,6 +5,7 @@ utilisation by particular processes, etc.
 
 """
 
+from builtins import object
 import logging
 import subprocess
 

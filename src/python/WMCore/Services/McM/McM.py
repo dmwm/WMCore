@@ -5,6 +5,7 @@ A service class for retrieving data from McM using
 an SSO cookie since it sits behind CERN SSO
 """
 
+from builtins import object
 import json
 import os
 import pycurl

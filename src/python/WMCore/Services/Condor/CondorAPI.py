@@ -5,6 +5,7 @@ Class used to interact with Condor daemons on the agent
 """
 
 from __future__ import division
+from builtins import object
 import htcondor
 import logging
 

@@ -8,6 +8,7 @@ Class for creating bogus framework job reports.
 
 
 
+from builtins import object
 import os.path
 
 from WMCore.Services.UUIDLib import makeUUID

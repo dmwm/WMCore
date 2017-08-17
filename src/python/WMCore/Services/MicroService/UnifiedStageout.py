@@ -8,6 +8,7 @@ Description: UnifiedStageoutManager class provides full functionality of the Uni
 from __future__ import print_function, division
 
 
+from builtins import object
 class UnifiedStageoutManager(object):
     """
     Initialize UnifiedStageoutManager class

@@ -8,6 +8,7 @@ into an object with an API for getting info from it.
 """
 
 
+from builtins import object
 import os
 import logging
 

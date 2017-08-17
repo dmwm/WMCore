@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 
+from builtins import object
 from WMCore.ReqMgr.DataStructs.DefaultConfig.EDITABLE_SPLITTING_PARAM_CONFIG import EDITABLE_SPLITTING_PARAM_CONFIG
 from WMCore.ReqMgr.DataStructs.DefaultConfig.DAS_RESULT_FILTER import DAS_RESULT_FILTER
 from WMCore.ReqMgr.DataStructs.DefaultConfig.PERMISSION_BY_REQUEST_TYPE import PERMISSION_BY_REQUEST_TYPE

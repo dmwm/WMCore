@@ -1,3 +1,4 @@
+from builtins import object
 class ConfigDBMapInterface(object):
     """
     Interface for converting the configuration to

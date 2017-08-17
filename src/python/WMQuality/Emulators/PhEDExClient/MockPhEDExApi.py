@@ -7,6 +7,7 @@ https://github.com/dmwm/WMCore/blob/a22bbd2a62c08eff50ea26f3886266a5b25963b1/src
 which should be consulted for a more complete implementation
 """
 
+from builtins import object
 from __future__ import (division, print_function)
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError

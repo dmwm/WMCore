@@ -4,6 +4,7 @@ _SubscriptionList_
 Module with data structures to handle PhEDEx subscriptions
 in bulk.
 """
+from builtins import object
 import logging
 
 from WMCore.WMException import WMException

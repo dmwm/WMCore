@@ -8,6 +8,7 @@ Module dealing with Configuration file in python format
 
 """
 
+from builtins import object
 import imp
 import os
 import sys

@@ -1,4 +1,5 @@
 
+from builtins import object
 import threading
 
 from sqlalchemy import create_engine

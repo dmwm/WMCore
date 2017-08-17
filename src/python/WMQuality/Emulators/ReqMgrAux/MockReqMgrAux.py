@@ -1,3 +1,4 @@
+from builtins import object
 from __future__ import (division, print_function)
 from WMCore.Agent.DefaultConfig import DEFAULT_AGENT_CONFIG
 

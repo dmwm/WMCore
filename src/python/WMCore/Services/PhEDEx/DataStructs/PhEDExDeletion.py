@@ -8,6 +8,7 @@ Created on May 29, 2013
 @author: dballest
 """
 
+from builtins import object
 class PhEDExDeletion(object):
     """
     _PhEDExDeletion_

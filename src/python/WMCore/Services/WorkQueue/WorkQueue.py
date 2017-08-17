@@ -1,3 +1,4 @@
+from builtins import object
 import json
 from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer

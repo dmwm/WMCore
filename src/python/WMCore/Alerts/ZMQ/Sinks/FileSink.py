@@ -4,6 +4,7 @@ FileSink - store alerts into a file.
 """
 
 
+from builtins import object
 import logging
 import json
 from contextlib import contextmanager

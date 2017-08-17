@@ -10,6 +10,7 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
 
+from builtins import object
 import time
 import urllib
 import re

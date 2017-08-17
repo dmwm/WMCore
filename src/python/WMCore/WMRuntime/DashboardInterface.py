@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # This is the interface to the Dashboard that the monitor will use
 
+from builtins import object
 import threading
 import os
 import time

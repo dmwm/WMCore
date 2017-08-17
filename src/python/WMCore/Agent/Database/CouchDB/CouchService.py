@@ -1,3 +1,4 @@
+from builtins import object
 import WMCore.Database.CouchUtils as CouchUtils
 import traceback
 import logging

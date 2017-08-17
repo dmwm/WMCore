@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Helper class for RequestManager interaction
 """
+from builtins import object
 import os
 import time
 import socket

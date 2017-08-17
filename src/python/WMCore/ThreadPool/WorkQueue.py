@@ -34,6 +34,7 @@ function. This helps the caller to determine which function
 
 
 
+from builtins import object
 import threading
 
 class SerializedThreadPool( object ):

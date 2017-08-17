@@ -2,6 +2,7 @@
 Provide functions to collect data and upload data
 """
 
+from builtins import object
 import os
 import time
 import logging

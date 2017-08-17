@@ -11,6 +11,7 @@ underlying data-services.
 """
 from __future__ import print_function
 
+from builtins import object
 import cStringIO as StringIO
 import httplib
 import json

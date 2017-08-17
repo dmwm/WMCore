@@ -4,6 +4,7 @@
 Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 """
 
+from builtins import object
 from __future__ import (division, print_function)
 
 import copy

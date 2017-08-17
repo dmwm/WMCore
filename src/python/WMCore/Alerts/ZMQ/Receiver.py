@@ -9,6 +9,7 @@ Had issues with multiprocessing.Process implementation of the Receiver.
 
 
 
+from builtins import object
 import time
 import logging
 from threading import Thread

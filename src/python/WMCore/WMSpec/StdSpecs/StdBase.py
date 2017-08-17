@@ -4,6 +4,7 @@ _StdBase_
 
 Base class with helper functions for standard WMSpec files.
 """
+from builtins import object
 import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr

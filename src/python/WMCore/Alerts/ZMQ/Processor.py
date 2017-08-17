@@ -5,6 +5,7 @@ by a Receiver to process Alert streams sent from Agent components.
 
 """
 
+from builtins import object
 import sys
 import logging
 import traceback

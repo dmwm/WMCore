@@ -5,6 +5,7 @@
 Web tools.
 """
 
+from builtins import object
 __revision__ = "$Id: tools.py,v 1.5 2010/04/07 18:19:31 valya Exp $"
 __author__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"

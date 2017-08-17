@@ -13,6 +13,7 @@ rather than using only CMSCouch class directly.
 
 """
 
+from builtins import object
 import logging
 
 from WMCore.Database.CMSCouch import Document, Database, CouchServer

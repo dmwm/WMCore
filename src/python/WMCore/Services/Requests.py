@@ -9,6 +9,7 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set.
 """
 
+from builtins import object
 import base64
 import cStringIO as StringIO
 import logging

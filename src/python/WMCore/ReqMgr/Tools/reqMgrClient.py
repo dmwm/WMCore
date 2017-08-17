@@ -6,6 +6,7 @@
 """
 
 # system modules
+from builtins import object
 import os
 import re
 import sys

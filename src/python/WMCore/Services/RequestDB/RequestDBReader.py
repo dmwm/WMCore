@@ -1,3 +1,4 @@
+from builtins import object
 import time
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL

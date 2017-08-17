@@ -3,6 +3,7 @@ CouchSink - CouchDB alerts store with the AlertProcessor.
 
 """
 
+from builtins import object
 import logging
 
 from WMCore.Database.CMSCouch import Document, Database, CouchServer

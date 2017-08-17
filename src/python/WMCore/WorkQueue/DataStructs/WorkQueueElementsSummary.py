@@ -2,6 +2,7 @@
 WorkQueueElementsSummary
 
 """
+from builtins import object
 from __future__ import (print_function, division)
 from collections import defaultdict
 from math import ceil

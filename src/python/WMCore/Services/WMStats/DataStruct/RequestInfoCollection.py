@@ -1,4 +1,5 @@
 
+from builtins import object
 class JobSummary(object):
     """
     job summary data structure from job format in couchdb

@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 
+from builtins import object
 from Utils.IteratorTools import nestedDictUpdate
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo

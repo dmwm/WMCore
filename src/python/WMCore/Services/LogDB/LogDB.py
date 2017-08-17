@@ -5,6 +5,7 @@ https://github.com/dmwm/WMCore/issues/5705
 """
 
 # standard modules
+from builtins import object
 import re
 import logging
 import threading

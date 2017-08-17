@@ -5,6 +5,7 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+from builtins import object
 import time
 from collections import defaultdict
 

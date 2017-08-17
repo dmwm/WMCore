@@ -8,6 +8,7 @@ Description: MicroServiceManager class provides full functionality of the MicroS
 from __future__ import print_function, division
 
 
+from builtins import object
 class MicroServiceManager(object):
     """
     Initialize MicroService  server configuration.

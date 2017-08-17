@@ -870,7 +870,7 @@ def processRequestArgs(intputConfigFile, commandLineJson):
         for k, v in items:
             if isinstance(v, dict):
                 check(v.items())
-            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+            if isinstance(v, str) and v.endswith("OVERRIDE-ME"):
                 logging.warn("Not properly set: %s: %s" % (k, v))
     check(requestArgs.items())
     return requestArgs

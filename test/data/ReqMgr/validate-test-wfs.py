@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
 import urllib
 import urllib2
-import httplib
+import http.client
 import json
 import argparse
 import pwd
@@ -40,7 +42,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return http.client.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def getX509():

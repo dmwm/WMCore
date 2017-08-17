@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import time
 import shutil
@@ -12,7 +14,7 @@ import threading
 
 from subprocess import Popen, PIPE
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

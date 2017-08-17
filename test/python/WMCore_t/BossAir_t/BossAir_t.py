@@ -5,6 +5,8 @@ BossAir preliminary test
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os.path
 import threading
 import unittest
@@ -12,7 +14,7 @@ import getpass
 import subprocess
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

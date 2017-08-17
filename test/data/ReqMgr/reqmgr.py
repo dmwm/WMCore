@@ -33,9 +33,11 @@ by a user on the command line, whichever other argument can be overridden too.
 from __future__ import print_function
 
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 import sys
-from httplib import HTTPSConnection, HTTPConnection
+from http.client import HTTPSConnection, HTTPConnection
 import urllib
 import logging
 from optparse import OptionParser, TitledHelpFormatter

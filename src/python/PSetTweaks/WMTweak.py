@@ -8,6 +8,7 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 
 """
 from __future__ import print_function
+from builtins import object
 import logging
 import pickle
 import traceback
@@ -244,7 +245,7 @@ def expandParameter(process, param):
 listParams = lambda x: [y for y in x.parameters_()]
 
 
-class TweakMaker:
+class TweakMaker(object):
     """
     _TweakMaker_
 
@@ -324,7 +325,7 @@ childParameters = lambda p, x: [i for i in x._internal_settings if i not in x._i
 childSections = lambda s: [getattr(s, x) for x in s._internal_children]
 
 
-class ConfigSectionDecomposer:
+class ConfigSectionDecomposer(object):
     """
     _ConfigSectionDecomposer_
 

@@ -10,6 +10,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchConnectionError(Exception):
@@ -19,7 +20,7 @@ class CouchConnectionError(Exception):
         self.arg = arg
 
 
-class Interface:
+class Interface(object):
     def __init__(self, couchUrl, couchDatabase):
         self.cdb_url = couchUrl
         self.cdb_database = couchDatabase

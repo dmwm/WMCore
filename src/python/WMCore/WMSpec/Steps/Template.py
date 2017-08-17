@@ -6,6 +6,7 @@ Template class for all Step Template implementations to inherit and implement
 the API
 
 """
+from builtins import object
 import os
 
 from WMCore.WMSpec.WMStep import WMStepHelper
@@ -116,7 +117,7 @@ class CoreHelper(WMStepHelper):
         """
         return self.data.build.directories
 
-class Template:
+class Template(object):
     """
     _Template_
 

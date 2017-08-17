@@ -10,6 +10,7 @@ to perform thread-specific setup and clean-up operations
 
 
 
+from builtins import object
 import threading
 import logging
 import time
@@ -21,7 +22,7 @@ from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.Alerts import API as alertAPI
 
-class BaseWorkerThread:
+class BaseWorkerThread(object):
     """
     A base class for worker threads, used for work that needs to occur at
     regular intervals. Framework (through WorkerThreadManager) ensures that

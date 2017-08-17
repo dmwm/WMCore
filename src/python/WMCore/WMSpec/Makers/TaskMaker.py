@@ -14,6 +14,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 import os.path
 import threading
 import inspect
@@ -36,7 +37,7 @@ from WMCore.WMBS.Fileset             import Fileset
 #
 
 
-class TaskMaker:
+class TaskMaker(object):
     """
     Class for separating and starting all tasks in a WMWorkload
 

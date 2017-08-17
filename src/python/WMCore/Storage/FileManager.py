@@ -7,6 +7,7 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 """
 
+from builtins import object
 import os
 import logging
 log = logging
@@ -24,7 +25,7 @@ import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 import time
 
-class FileManager:
+class FileManager(object):
     """
     _FileManager_
 

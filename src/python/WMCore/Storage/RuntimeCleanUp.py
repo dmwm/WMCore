@@ -6,6 +6,7 @@ Runtime binary file for CleanUp type nodes
 
 """
 from __future__ import print_function
+from builtins import object
 import sys
 import os
 from WMCore.Storage.TaskState import TaskState, getTaskState
@@ -45,14 +46,14 @@ class CleanUpFailure(Exception):
 
         print(msg)
 
-class SkippedFileFilter:
+class SkippedFileFilter(object):
     def __init__(self, skippedFiles):
         self.skipped = [ i['Lfn'] for i in skippedFiles ]
 
     def __call__(self, filedata):
         return filedata['LFN'] not in self.skipped
 
-class CleanUpManager:
+class CleanUpManager(object):
     """
     _CleanUpManager_
 

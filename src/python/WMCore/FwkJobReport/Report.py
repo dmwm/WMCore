@@ -7,6 +7,7 @@ Framework job report object.
 """
 from __future__ import print_function
 
+from builtins import object
 import logging
 import math
 import re
@@ -103,7 +104,7 @@ def addAttributesToFile(fileSection, **attributes):
     return
 
 
-class Report:
+class Report(object):
     """
     The base class for the new jobReport
 

@@ -27,6 +27,7 @@ Note:  Jobs are split up by subscription, so having
 one long subscription can make the JobCreatorWorker
 wait for excessively long amounts of time while it runs.
 """
+from builtins import object
 __all__ = []
 
 
@@ -170,7 +171,7 @@ def doMemoryCheck(msgString):
 
 
 
-class JobCreatorWorker:
+class JobCreatorWorker(object):
     """
     This is the ProcessPool worker function that actually
     runs the jobCreator

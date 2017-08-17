@@ -7,6 +7,7 @@ Utils to assist in the build process
 
 """
 
+from builtins import object
 import os
 import logging
 from WMCore.WMSpec.ConfigSectionTree import nodeName
@@ -14,7 +15,7 @@ from WMCore.WMSpec.ConfigSectionTree import nodeName
 
 
 
-class File:
+class File(object):
     """
     _File_
 
@@ -61,7 +62,7 @@ class File:
 
 
 
-class Directory:
+class Directory(object):
     """
     _Directory_
 

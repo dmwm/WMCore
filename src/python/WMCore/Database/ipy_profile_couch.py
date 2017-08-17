@@ -9,6 +9,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 __license__    = "GPL"
 
 __maintainer__ = "Valentin Kuznetsov"
@@ -29,7 +30,7 @@ from   IPython import Release
 import IPython.ipapi
 import __main__
 
-class PrintManager:
+class PrintManager(object):
     def __init__(self):
         from IPython import ColorANSI
         self.term = ColorANSI.TermColors

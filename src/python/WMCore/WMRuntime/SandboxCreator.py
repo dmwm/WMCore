@@ -5,6 +5,7 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+from builtins import object
 import os
 import shutil
 import tarfile
@@ -31,7 +32,7 @@ def tarFilter(tarinfo):
     else:
         return tarinfo
 
-class SandboxCreator:
+class SandboxCreator(object):
 
     def __init__(self):
         self.packageWMCore = True

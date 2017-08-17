@@ -24,9 +24,10 @@ reg.refreshCache()
 
 This will push the configuration up to the Registration service
 '''
+from builtins import object
 from WMCore.Database.CMSCouch import CouchServer
 
-class Registration():
+class Registration(object):
     def __init__(self, cfg_dict = {}, reg_info = {}):
         """
         Initialise the regsvc for this component,

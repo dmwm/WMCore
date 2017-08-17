@@ -10,6 +10,7 @@ for each step
 
 """
 
+from builtins import object
 import os
 import threading
 import traceback
@@ -22,7 +23,7 @@ import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
-class ExecuteMaster:
+class ExecuteMaster(object):
     """
     _ExecuteMaster_
 

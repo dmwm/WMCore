@@ -1,6 +1,7 @@
 """
 Use this for only unit test
 """
+from builtins import object
 import os
 import sys
 import logging
@@ -78,7 +79,7 @@ def emulatorHook(cls):
     This is used as decorator to switch between Emulator and real Class
     on instance creation.
     """
-    class EmulatorWrapper:
+    class EmulatorWrapper(object):
         def __init__(self, *args, **kwargs):
             aClass = EmulatorHelper.getClass(cls)
             self.wrapped = aClass(*args, **kwargs)

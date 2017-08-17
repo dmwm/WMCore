@@ -25,6 +25,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 from logging.handlers import RotatingFileHandler
 
 import logging
@@ -52,7 +53,7 @@ class HarnessException(WMException):
     Otherwise, it's just part of WMException.
     """
 
-class Harness:
+class Harness(object):
     """
     Harness class that wraps standard functionality used in all daemon
     components

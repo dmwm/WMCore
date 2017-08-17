@@ -7,12 +7,13 @@ inherit this object and implement the methods accordingly
 
 """
 
+from builtins import object
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError
 import logging
 import os
 
-class StageOutImplV2:
+class StageOutImplV2(object):
     """
     _StageOutImplV2_
 

@@ -7,12 +7,13 @@ and then apply them to job groups
 
 """
 
+from builtins import object
 from WMCore.JobSplitting.Generators.GeneratorFactory import GeneratorFactory
 
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.ConfigSectionTree import *
 
-class GeneratorManager:
+class GeneratorManager(object):
     """
     _GeneratorManager_
 

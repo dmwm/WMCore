@@ -6,6 +6,7 @@ Harvest job splitting test
 
 """
 
+from builtins import range
 import unittest
 import threading
 import logging
@@ -382,7 +383,7 @@ class HarvestTest(unittest.TestCase):
         self.finishJobs(jobGroups, harvestSub)
 
         newFile = File("/some/file/test3", size=1000, events=100)
-        newFile.addRun(Run(1, *range(9, 15)))
+        newFile.addRun(Run(1, *list(range(9, 15))))
         newFile.setLocation('T2_CH_CERN')
         multipleFilesFileset.addFile(newFile)
         multipleFilesFileset.commit()

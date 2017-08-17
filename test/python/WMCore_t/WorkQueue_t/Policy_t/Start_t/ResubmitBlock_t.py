@@ -9,6 +9,7 @@ Created on Feb 19, 2013
 @author: dballest
 """
 
+from builtins import range
 import os
 import unittest
 
@@ -138,7 +139,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for j in range(1, lumisPerFile + 1, lumisPerACDCRecord):
                 lfn = '/store/data/a/%d' % i
                 acdcFile = File(lfn=lfn, size=100, events=250, locations=self.validLocations, merged=1)
-                run = Run(i + 1, *range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1)))
+                run = Run(i + 1, *list(range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1))))
                 acdcFile.addRun(run)
                 acdcDoc = {'collection_name' : self.workflowName,
                            'collection_type' : 'ACDC.CollectionTypes.DataCollection',
@@ -153,7 +154,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for j in range(1, lumisPerFile + 1, lumisPerACDCRecord):
                 lfn = '/store/unmerged/b/%d' % i
                 acdcFile = File(lfn=lfn, size=100, events=250, locations=set([choice(self.validLocations)]), merged=0)
-                run = Run(i + 1, *range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1)))
+                run = Run(i + 1, *list(range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1))))
                 acdcFile.addRun(run)
                 acdcDoc = {'collection_name' : self.workflowName,
                            'collection_type' : 'ACDC.CollectionTypes.DataCollection',

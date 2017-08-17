@@ -6,6 +6,7 @@ Lumi based splitting tests, using the DataStructs classes.
 See WMCore/WMBS/JobSplitting/ for the WMBS (SQL database) version.
 """
 
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File

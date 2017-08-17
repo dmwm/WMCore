@@ -8,6 +8,7 @@ Created on Nov 7, 2012
 @author: dballest
 """
 
+from builtins import range
 import os
 import unittest
 

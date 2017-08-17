@@ -6,6 +6,7 @@
 DBSUpload test TestDBSUpload module and the harness
 
 """
+from builtins import range
 import json
 import os
 import threading

@@ -7,6 +7,7 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
+from builtins import range
 import json
 import unittest
 import logging

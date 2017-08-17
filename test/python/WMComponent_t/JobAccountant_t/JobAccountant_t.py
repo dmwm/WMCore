@@ -6,6 +6,7 @@ Unit tests for the WMAgent JobAccountant component.
 """
 from __future__ import print_function
 
+from builtins import range
 import copy
 import os.path
 import threading

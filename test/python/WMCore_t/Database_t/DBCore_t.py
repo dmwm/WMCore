@@ -8,6 +8,7 @@ Unit tests for the DBInterface class
 
 
 
+from builtins import range
 import unittest
 import logging
 import threading

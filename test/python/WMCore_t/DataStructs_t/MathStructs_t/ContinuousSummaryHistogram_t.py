@@ -10,6 +10,7 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from builtins import range
 import unittest
 import random
 

@@ -4,6 +4,7 @@
 WorkQueuManager test
 """
 
+from builtins import range
 import os
 import logging
 import threading

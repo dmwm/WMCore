@@ -4,6 +4,7 @@ _ChangeState_t_
 
 """
 
+from builtins import range
 import unittest
 import os
 import threading

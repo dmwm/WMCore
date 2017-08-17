@@ -7,6 +7,7 @@ Test lumi based splitting.
 
 from __future__ import division
 
+from builtins import range
 import threading
 import unittest
 import random

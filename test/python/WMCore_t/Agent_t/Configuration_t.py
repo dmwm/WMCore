@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #pylint: disable=E1101,C0103,R0902
 
+from builtins import range
 import unittest
 import os
 import tempfile

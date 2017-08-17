@@ -5,6 +5,7 @@ _Subscription_t_
 Testcase for the Subscription class
 """
 
+from builtins import range
 import random
 import unittest
 

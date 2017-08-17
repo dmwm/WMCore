@@ -5,6 +5,7 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
+from builtins import range
 import threading
 import unittest
 

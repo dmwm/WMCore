@@ -5,6 +5,7 @@ Unittests for IteratorTools functions
 
 from __future__ import division, print_function
 
+from builtins import range
 import itertools
 import unittest
 
@@ -22,7 +23,7 @@ class IteratorToolsTest(unittest.TestCase):
         """
 
         listChunks = [i for i in grouper(list(range(0, 7)), 3)]  # Want list(range) for python 3
-        iterChunks = [i for i in grouper(xrange(0, 7), 3)]  # xrange becomes range in python 3
+        iterChunks = [i for i in grouper(range(0, 7), 3)]  # xrange becomes range in python 3
 
         for a, b in itertools.izip_longest(listChunks, iterChunks):
             self.assertEqual(a, b)
@@ -34,7 +35,7 @@ class IteratorToolsTest(unittest.TestCase):
         Test the flattenList function (returns a flat list out
         of a list of lists)
         """
-        doubleList = [range(1, 4), range(10, 11), range(15, 18)]
+        doubleList = [list(range(1, 4)), list(range(10, 11)), list(range(15, 18))]
         flatList = flattenList(doubleList)
         self.assertEqual(len(flatList), 7)
         self.assertEqual(set(flatList), set([1, 2, 3, 10, 15, 16, 17]))

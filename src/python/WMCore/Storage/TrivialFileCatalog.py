@@ -25,6 +25,7 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 """
 
+from builtins import range
 import os
 import re
 import urlparse

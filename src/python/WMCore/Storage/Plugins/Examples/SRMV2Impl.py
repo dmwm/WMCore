@@ -5,6 +5,7 @@ _SRMV2Impl_
 Implementation of StageOutImpl interface for SRM Version 2
 
 """
+from builtins import range
 import os, re
 import logging, tempfile
 import subprocess
@@ -72,7 +73,7 @@ class SRMV2Impl(StageOutImplV2):
         dirsToCheck = dirs[:]; dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
         # the -1 in the zip is because we assume that /store is there
-        for count, dir in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
+        for count, dir in zip(list(range(len(dirsToCheck), 0, -1)), dirsToCheck):
             _, output = self.runCommandWarnOnError(['srmls',\
                                                            '-recursion_depth=0',\
                                                             '-retry_num=%s'\

@@ -5,6 +5,7 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
+from builtins import range
 import logging
 import threading
 import traceback
@@ -380,7 +381,7 @@ class WMBSHelper(WMConnectionBase):
                         )
 
         if self.mask:
-            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1)  # inclusive range
+            lumis = list(range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1))  # inclusive range
             wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis))  # assume run number static
         else:
             wmbsFile.addRun(Run(1, 1))

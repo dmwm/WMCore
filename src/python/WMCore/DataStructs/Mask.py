@@ -10,6 +10,7 @@ job in two ways:
 
 """
 
+from builtins import range
 from WMCore.DataStructs.Run import Run
 
 class Mask(dict):
@@ -215,7 +216,7 @@ class Mask(dict):
                 if pair[0] == pair[1]:
                     maskLumis.add(pair[0])
                 else:
-                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1, 1))
+                    maskLumis = maskLumis.union(list(range(pair[0], pair[1] + 1, 1)))
 
             filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
             if len(filteredLumis) > 0:

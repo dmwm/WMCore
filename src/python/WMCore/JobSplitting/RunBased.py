@@ -13,6 +13,7 @@ If file spans a run will need to create a mask for that file.
 
 
 
+from builtins import range
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.Services.UUIDLib import makeUUID

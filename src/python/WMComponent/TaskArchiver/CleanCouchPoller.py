@@ -1,6 +1,7 @@
 """
 Perform cleanup actions
 """
+from builtins import range
 import httplib
 import json
 import logging

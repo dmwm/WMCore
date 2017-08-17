@@ -5,6 +5,7 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+from builtins import range
 import json
 import random
 import time
@@ -360,7 +361,7 @@ class WorkQueueBackend(object):
             self.logger.info("setting teams %s" % teams)
         if wfs:
             result = []
-            for i in xrange(0, len(wfs), 20):
+            for i in range(0, len(wfs), 20):
                 options['wfs'] = wfs[i:i + 20]
                 data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
                 result.extend(json.loads(data))

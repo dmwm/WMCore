@@ -13,6 +13,7 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
+from builtins import range
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import primdataset

@@ -24,6 +24,11 @@ that is not in DBS, decide whether its components are in DBS,
 add them, and then add the files.  This is why everything is
 so convoluted.
 """
+
+from builtins import range
+import time
+import threading
+import logging
 import Queue
 import json
 import logging

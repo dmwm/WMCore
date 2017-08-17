@@ -4,6 +4,7 @@ _Proxy_
 Wrap gLite proxy commands.
 """
 
+from builtins import range
 import contextlib
 import copy
 import os
@@ -64,7 +65,7 @@ def destroyListCred(credNameList=None, credTimeleftList=None, logger=None, timeo
     credTimeleftList = credTimeleftList or {}
     cleanCredCmdList = []
 
-    for credIdx in xrange(len(credNameList)):
+    for credIdx in range(len(credNameList)):
         hours, minutes, seconds = credTimeleftList[credIdx]
         timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         if timeleft == 0:

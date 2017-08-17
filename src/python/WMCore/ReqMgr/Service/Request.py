@@ -3,6 +3,7 @@ ReqMgr request handling.
 
 """
 
+from builtins import range
 import json
 import traceback
 

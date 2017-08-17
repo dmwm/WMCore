@@ -13,6 +13,7 @@ This code began life in COMP/CRAB/python/LumiList.py
 """
 
 
+from builtins import range
 import copy
 import itertools
 import json

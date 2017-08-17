@@ -8,6 +8,7 @@ interactions.
 
 
 
+from builtins import range
 import datetime
 import time
 import types
@@ -73,7 +74,7 @@ class DBFormatter(WMObject):
                 #WARNING: this can generate errors for some stupid reason
                 # in both oracle and mysql.
                 entry = {}
-                for index in xrange(0,len(descriptions)):
+                for index in range(0,len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
                     if type(i[index]) == unicode:
                         entry[str(descriptions[index].lower())] = str(i[index])

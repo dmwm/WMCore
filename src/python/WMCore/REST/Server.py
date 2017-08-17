@@ -1,3 +1,4 @@
+from builtins import range
 import cherrypy
 import inspect
 import os
@@ -1225,7 +1226,7 @@ class DBConnectionPool(Thread):
 
     def __init__(self, id, dbspec):
         Thread.__init__(self, name=self.__class__.__name__)
-        self.sigready = [Condition() for _ in xrange(0, self.num_signals)]
+        self.sigready = [Condition() for _ in range(0, self.num_signals)]
         self.sigqueue = Condition()
         self.queue = []
         self.idle = []
@@ -1452,7 +1453,7 @@ class DBConnectionPool(Thread):
                                 len(self.inuse), len(self.idle)))
 
         # Attempt to connect max_tries times.
-        for _ in xrange(0, self.max_tries):
+        for _ in range(0, self.max_tries):
             try:
                 # Take next idle connection, or make a new one if none exist.
                 # Then test and prepare that connection, linking it in trace

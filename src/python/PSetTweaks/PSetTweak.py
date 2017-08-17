@@ -7,6 +7,7 @@ independent python structure
 
 """
 
+from builtins import range
 import StringIO
 import imp
 import inspect

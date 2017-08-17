@@ -7,6 +7,8 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 """
 
+from builtins import range
+import os
 import logging
 import time
 import traceback

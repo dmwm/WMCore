@@ -23,7 +23,7 @@ class IteratorToolsTest(unittest.TestCase):
         """
 
         listChunks = [i for i in grouper(list(range(0, 7)), 3)]  # Want list(range) for python 3
-        iterChunks = [i for i in grouper(range(0, 7), 3)]  # xrange becomes range in python 3
+        iterChunks = [i for i in grouper(list(range(0, 7)), 3)]  # xrange becomes range in python 3
 
         for a, b in itertools.izip_longest(listChunks, iterChunks):
             self.assertEqual(a, b)

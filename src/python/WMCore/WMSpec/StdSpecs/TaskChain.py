@@ -84,6 +84,7 @@ Example initial processing task
  },
 """
 from __future__ import division
+from builtins import range
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -223,14 +224,14 @@ class TaskChainWorkloadFactory(StdBase):
                 origTpe = 1.0
             sumTpe = 0
             tpeCount = 0
-            for i in xrange(1, self.taskChain + 1):
+            for i in range(1, self.taskChain + 1):
                 if 'TimePerEvent' in arguments["Task%d" % i]:
                     sumTpe += arguments["Task%d" % i]['TimePerEvent']
                     tpeCount += 1
             if tpeCount > 0:
                 blowupFactor = sumTpe / origTpe
 
-        for i in xrange(1, self.taskChain + 1):
+        for i in range(1, self.taskChain + 1):
 
             originalTaskConf = arguments["Task%d" % i]
             taskConf = {}
@@ -566,7 +567,7 @@ class TaskChainWorkloadFactory(StdBase):
         """
         numTasks = schema['TaskChain']
         transientMapping = {}
-        for i in xrange(1, numTasks + 1):
+        for i in range(1, numTasks + 1):
             taskNumber = "Task%s" % i
             if taskNumber not in schema:
                 msg = "No Task%s entry present in request" % i

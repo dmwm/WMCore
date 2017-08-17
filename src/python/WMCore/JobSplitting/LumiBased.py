@@ -6,6 +6,7 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
+from builtins import range
 import logging
 import operator
 
@@ -112,7 +113,7 @@ class LumiChecker(object):
         if job:  # the first time you call "newJob" in the splitting algorithm currentJob is None
             for run, lumiIntervals in job['mask']['runAndLumis'].iteritems():
                 for startLumi, endLumi in lumiIntervals:
-                    for lumi in xrange(startLumi, endLumi + 1):
+                    for lumi in range(startLumi, endLumi + 1):
                         self.lumiJobs[(run, lumi)] = job
 
     def fixInputFiles(self):

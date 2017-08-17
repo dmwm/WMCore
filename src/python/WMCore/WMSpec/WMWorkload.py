@@ -6,6 +6,7 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 from __future__ import print_function
+from builtins import range
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop

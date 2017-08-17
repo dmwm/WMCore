@@ -15,6 +15,7 @@ Caveats:
 
 
 
+from builtins import range
 class _SearchOp:
     """
     __SearchOp_

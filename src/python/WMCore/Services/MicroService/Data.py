@@ -79,8 +79,8 @@ class Data(RESTEntity):
         All work is done by MicroServiceManager
         """
         if 'status' in args:
-            return results(dict(performance=self.mgr.status(**kwds)))
-        return results({'request': kwds, 'results': 'Not available', 'microservice': self.mgr.__class__.__name__})
+            return json.dumps(dict(performance=self.mgr.status(**kwds)))
+        return json.dumps({'request': kwds, 'results': 'Not available', 'microservice': self.mgr.__class__.__name__})
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)

@@ -45,6 +45,16 @@ class MonteCarlo(StartPolicyInterface):
         mask = Mask(**self.mask)
 
         #First let's initialize some parameters
+        lumis_per_job = ceil(self.args['SliceSize'] / self.args['SubSliceSize'])
+        totalLumisPerElement = int(self.args['MaxJobsPerElement']) * lumis_per_job
+
+        if self.args['MaxLumisPerElement'] and totalLumisPerElement > int(self.args['MaxLumisPerElement']):
+            # If there are too many lumis in the WQ element. reduce the number of jobs per element
+            self.args['MaxJobsPerElement'] = floor(int(self.args['MaxLumisPerElement']) / lumis_per_job)
+            if self.args['MaxJobsPerElement'] == 0:
+                raise WorkQueueWMSpecError(self.wmspec, """Too many lumis (%s) in a job:
+                                           Change 'SliceSize' / 'SubSliceSize'""" % lumis_per_job)
+
         stepSize = int(self.args['SliceSize']) * int(self.args['MaxJobsPerElement'])
         total = mask['LastEvent'] - mask['FirstEvent'] + 1
         lastAllowedEvent = mask['LastEvent']
@@ -63,14 +73,10 @@ class MonteCarlo(StartPolicyInterface):
             # Therefore total lumis can't be calculated from total events / SubSliceSize
             # It has to be caluated by adding the lumis_per_job * number of jobs
             nEvents = mask['LastEvent'] - mask['FirstEvent'] + 1
-            lumis_per_job = ceil(self.args['SliceSize'] / self.args['SubSliceSize'])
             nLumis = floor(nEvents / self.args['SliceSize']) * lumis_per_job
             remainingLumis = ceil(nEvents % self.args['SliceSize'] / self.args['SubSliceSize'])
             nLumis += remainingLumis
             jobs = ceil(nEvents/self.args['SliceSize'])
-
-            if self.args['MaxLumisPerElement'] and nLumis > int(self.args['MaxLumisPerElement']):
-                raise WorkQueueWMSpecError(self.wmspec, "Too many lumis in WQE: %s" % nLumis)
 
             mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,

@@ -137,7 +137,7 @@ class CMSDefaultHandler(DiagnosticHandler):
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 25)
-            msg += '\n Adding last ten lines of SCRAM error log:\n'
+            msg += '\n Adding last 25 lines of SCRAM error log:\n'
             msg += logTail
 
         # make sure the report has the error in it

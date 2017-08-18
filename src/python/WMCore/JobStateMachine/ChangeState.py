@@ -373,7 +373,7 @@ class ChangeState(WMObject, WMConnectionBase):
                     if "steps" in fwjrDocument["fwjr"]:
                         for step in fwjrDocument["fwjr"]["steps"]:
                             if "errors" in fwjrDocument["fwjr"]["steps"][step]:
-                                errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+                                errmsgs[step] = job["fwjr"].getStepErrors(step)
                             if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
                                 inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
 

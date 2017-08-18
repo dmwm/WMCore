@@ -33,6 +33,12 @@ from WMCore.REST.Format import JSONFormat
 from WMCore.Services.MicroService.Manager import MicroServiceManager
 from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
 
+def results(res):
+    "Return results in a list format suitable by REST server"
+    if not isinstance(res, list):
+        return [res]
+    return res
+
 class Data(RESTEntity):
     "REST interface for MicroService"
     def __init__(self, app, api, config, mount):
@@ -97,7 +103,7 @@ class Data(RESTEntity):
             if 'request' in data.keys():
                 kwargs = data['request']
                 result = self.mgr.request(**kwargs)
-            return json.dumps(result)
+            return results(result)
         except cherrypy.HTTPError:
             raise
         except Exception as exp:

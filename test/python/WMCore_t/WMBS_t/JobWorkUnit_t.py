@@ -9,6 +9,7 @@ from __future__ import absolute_import, division, print_function
 import unittest
 
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.WorkUnit import WU_STATES
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset as Fileset
 from WMCore.WMBS.Job import Job
@@ -98,21 +99,23 @@ class JobWorkUnitTest(JobTestBase):
 
         return
 
-    def testJobState(self):
+    def testJobAndWorkunitState(self):
         """
         _testJobState_
 
         Unittest to see if we can figure out what the jobState actually is and set it
         """
 
-        testJobA = self.createTestJob()
+        self.createSingleJobWorkflow()
 
-        value = testJobA.getState()
+        self.assertEqual(self.testJob.getState(), 'new')
 
-        self.assertEqual(value, 'new')
+        loadByFRL = WorkUnit(taskID=self.testWorkflow.id, fileid=self.testFileA['id'], runLumi=Run(1, 45))
+        loadByFRL.load()
+
+        self.assertEqual(loadByFRL.getState(), WU_STATES['new'])
 
         return
-
 
 
 if __name__ == "__main__":

@@ -9,6 +9,8 @@ import threading
 import unittest
 
 from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.WorkUnit import JOB_WU_STATE_MAP, WU_STATES
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -279,6 +281,7 @@ class TestChangeState(unittest.TestCase):
 
         for i in range(4):
             newFile = File(lfn="File%s" % i, locations={"T2_CH_CERN"})
+            newFile.addRun(Run(i + 1, *[10 + i]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -325,6 +328,118 @@ class TestChangeState(unittest.TestCase):
 
         self.assertTrue(jobAState == "created" and jobBState == "created" and jobCState == "new" and jobDState == "new",
                         "Error: Jobs didn't change state correctly.")
+
+        # Check the state of all the work units in all the jobs
+        wuStateDAO = self.daoFactory(classname="WorkUnit.GetStatesByJob")
+        jobStates = [jobAState, jobBState, jobCState, jobDState]
+        testJobs = [testJobA, testJobB, testJobC, testJobD]
+
+        for testJob, jobState in zip(testJobs, jobStates):
+            wuStates = wuStateDAO.execute(job=testJob)
+            for state in wuStates:
+                self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP[jobState]],
+                                 "Workunit %s state is wrong." % state['wuid'])
+
+        return
+
+    def testWorkUnitStateAndCount(self):
+        """
+        _testPersist_
+
+        This is the test class for function Propagate from module ChangeState
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
+
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve", name="wf001", task=self.taskName)
+        testWorkflow.create()
+        testFileset = Fileset(name="TestFileset")
+        testFileset.create()
+
+        for i in range(4):
+            newFile = File(lfn="File%s" % i, locations={"T2_CH_CERN"})
+            newFile.addRun(Run(i + 1, *[10 + i, 30 + i]))
+            newFile.create()
+            testFileset.addFile(newFile)
+
+        testFileset.commit()
+        testSubscription = Subscription(fileset=testFileset, workflow=testWorkflow, split_algo="FileBased")
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
+
+        self.assertEqual(len(jobGroup.jobs), 4)
+
+        testJobA = jobGroup.jobs[0]
+        testJobB = jobGroup.jobs[1]
+        testJobC = jobGroup.jobs[2]
+        testJobD = jobGroup.jobs[3]
+
+        testJobs = [testJobA, testJobB, testJobC, testJobD]
+        for testJob in testJobs:
+            testJob.update({'user': 'sfoulkes', 'group': 'DMWM', 'taskType': 'Processing'})
+
+        # Run testJobA through a set of transitions, test state and retry count at each point
+        wuStateDAO = self.daoFactory(classname="WorkUnit.GetStatesByJob")
+        wuStates = wuStateDAO.execute(job=testJobA)
+        self.assertEqual(len(wuStates), 2, 'Job should have two workunits')
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['none']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 0)
+
+        change.persist([testJobA], 'new', 'none')
+        wuStates = wuStateDAO.execute(job=testJobA)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['new']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 0)
+
+        change.persist([testJobA], 'created', 'new')
+        wuStates = wuStateDAO.execute(job=testJobA)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['created']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 1)
+
+        change.persist([testJobA], 'executing', 'created')
+        change.persist([testJobA], 'jobfailed', 'executing')
+        change.persist([testJobA], 'jobcooloff', 'jobfailed')
+        change.persist([testJobA], 'created', 'jobcooloff')
+        wuStates = wuStateDAO.execute(job=testJobA)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['created']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 2)
+
+        # Run testJobB through a set of transitions, test state and retry count at each point
+        change.persist([testJobB], 'new', 'none')
+        change.persist([testJobB], 'created', 'new')
+        wuStates = wuStateDAO.execute(job=testJobB)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['created']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 1)
+
+        change.persist([testJobB], 'createfailed', 'created')
+        change.persist([testJobB], 'createcooloff', 'createfailed')
+        change.persist([testJobB], 'created', 'createcooloff')
+        wuStates = wuStateDAO.execute(job=testJobB)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['created']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 2)
+
+        change.persist([testJobB], 'killed', 'created')
+        wuStates = wuStateDAO.execute(job=testJobB)
+        for state in wuStates:
+            self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP['killed']],
+                             "Workunit %s state is wrong." % state['wuid'])
+            self.assertEqual(state['retries'], 2)
 
         return
 
@@ -399,6 +514,18 @@ class TestChangeState(unittest.TestCase):
             "Error: Retry count is wrong."
         assert testJobD["retry_count"] == 0, \
             "Error: Retry count is wrong."
+
+        # Check the state of all the work units in all the jobs
+        wuStateDAO = self.daoFactory(classname="WorkUnit.GetStatesByJob")
+        stateDAO = self.daoFactory(classname="Jobs.GetState")
+        testJobs = [testJobA, testJobB, testJobC, testJobD]
+
+        for testJob in testJobs:
+            jobState = stateDAO.execute(id=testJob["id"])
+            wuStates = wuStateDAO.execute(job=testJob)
+            for state in wuStates:
+                self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP[jobState]],
+                                 "Workunit %s state is wrong." % state['wuid'])
 
         return
 
@@ -609,6 +736,18 @@ class TestChangeState(unittest.TestCase):
             job.load()
             self.assertEqual(job['retry_count'], 99999)
             self.assertEqual(job['state'], 'killed')
+
+        # Check the state of all the work units in all the jobs
+        wuStateDAO = self.daoFactory(classname="WorkUnit.GetStatesByJob")
+        stateDAO = self.daoFactory(classname="Jobs.GetState")
+        testJobs = [testJobA, testJobB, testJobC, testJobD]
+
+        for testJob in testJobs:
+            jobState = stateDAO.execute(id=testJob["id"])
+            wuStates = wuStateDAO.execute(job=testJob)
+            for state in wuStates:
+                self.assertEqual(state['status'], WU_STATES[JOB_WU_STATE_MAP[jobState]],
+                                 "Workunit %s state is wrong." % state['wuid'])
 
         return
 

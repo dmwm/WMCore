@@ -482,8 +482,9 @@ class ChangeState(WMObject, WMConnectionBase):
             job['oldstate'] = oldstate
 
         dao = self.daofactory(classname="Jobs.ChangeState")
-        dao.execute(jobs, conn=self.getDBConn(),
-                    transaction=self.existingTransaction())
+        dao.execute(jobs, conn=self.getDBConn(), transaction=self.existingTransaction())
+        dao = self.daofactory(classname="WorkUnit.ChangeState")
+        dao.execute(jobs, conn=self.getDBConn(), transaction=self.existingTransaction())
 
     def reportToDashboard(self, jobs, newstate, oldstate):
         """

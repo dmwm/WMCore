@@ -111,3 +111,15 @@ class WorkUnit(WMBSBase, DSWorkUnit):
         action = self.daofactory(classname="WorkUnit.Delete")
         action.execute(wuid=self["id"], conn=self.getDBConn(), transaction=self.existingTransaction())
         return
+
+    def getState(self):
+        """
+        _getState_
+
+        Retrieve the state that the workunit is currently in.
+        """
+
+        action = self.daofactory(classname="WorkUnit.GetState")
+        state = action.execute(wuid=self['id'], conn=self.getDBConn(), transaction=self.existingTransaction)
+
+        return state

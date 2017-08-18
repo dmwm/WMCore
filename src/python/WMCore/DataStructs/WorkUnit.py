@@ -14,6 +14,22 @@ from functools import total_ordering
 
 from WMCore.DataStructs.WMObject import WMObject
 
+WU_STATES = {'new': 0, 'succeeded': 1, 'running': 2, 'failing': 3, 'failed': 4, }
+WU_JOB_STATE_MAP = {'new': ['none', 'new'],
+                    'running': ['created', 'executing',
+                                'createcooloff', 'submitcooloff', 'jobcooloff',
+                                'createpaused', 'submitpaused', 'jobpaused'],
+                    'succeeded': ['success', 'cleanout', 'complete'],  # Does cleanout belong here?
+                    'failing': ['createfailed', 'submitfailed', 'jobfailed', 'retrydone', 'exhausted', 'killed'],
+                    'failed': [],
+                    }
+
+# Invert the WorkUnit to Job state map to allow direct lookup by job state
+JOB_WU_STATE_MAP = {}
+for wuState, jobStates in WU_JOB_STATE_MAP.iteritems():
+    for jobState in jobStates:
+        JOB_WU_STATE_MAP[jobState] = wuState
+
 
 @total_ordering
 class WorkUnit(WMObject, dict):

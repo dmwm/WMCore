@@ -141,7 +141,7 @@ class DummyRESTModel(RESTModel):
         if not isinstance(request_input["aList"], list):
             request_input["aList"] = [int(request_input["aList"])]
         else:
-            request_input["aList"] = map(int, request_input["aList"])
+            request_input["aList"] = list(map(int, request_input["aList"]))
         return request_input
 
     def val_0(self, request_input):

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from WMCore.Services.Service import Service
 
@@ -9,7 +10,7 @@ class WMStatsServer(Service):
 
     """
 
-    def __init__(self, url, header=None):
+    def __init__(self, url, header=None, logger=None):
         """
         responseType will be either xml or json
         """
@@ -18,6 +19,7 @@ class WMStatsServer(Service):
         header = header or {}
         # url is end point
         httpDict['endpoint'] = "%s/data" % url
+        httpDict['logger'] = logger if logger else logging.getLogger()
 
         # cherrypy converts request.body to params when content type is set
         # application/x-www-form-urlencodeds

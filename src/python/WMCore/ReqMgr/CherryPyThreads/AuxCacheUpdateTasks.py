@@ -1,7 +1,6 @@
-'''
+"""
 Created on May 19, 2015
-
-'''
+"""
 
 from __future__ import (division, print_function)
 
@@ -16,7 +15,7 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
     def __init__(self, rest, config):
 
         super(AuxCacheUpdateTasks, self).__init__(config)
-        self.reqmgrAux = ReqMgrAux(config.reqmgr2_url)
+        self.reqmgrAux = ReqMgrAux(config.reqmgr2_url, logger=self.logger)
 
     def setConcurrentTasks(self, config):
         """
@@ -28,5 +27,5 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-
         self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
+        self.logger.info("Updated CMSSW versions in the auxiliar db")

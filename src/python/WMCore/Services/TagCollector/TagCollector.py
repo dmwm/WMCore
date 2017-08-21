@@ -1,5 +1,7 @@
 from __future__ import (division, print_function)
 
+import logging
+
 from collections import defaultdict
 from WMCore.Services.Service import Service
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
@@ -25,8 +27,8 @@ class TagCollector(Service):
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL
         params.setdefault('cacheduration', 3600)
-        if logger:
-            params["logger"] = logger
+        params['logger'] = logger if logger else logging.getLogger()
+
         Service.__init__(self, params)
 
     def _getResult(self, callname="", clearCache=False,

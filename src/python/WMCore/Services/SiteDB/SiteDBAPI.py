@@ -8,6 +8,7 @@ API for retrieving information from SiteDB
 from __future__ import print_function
 from __future__ import division
 import json
+import logging
 from WMCore.Services.Service import Service
 
 def unflattenJSON(data):
@@ -29,9 +30,11 @@ class SiteDBAPI(Service):
     Class to define just the data interaction layer with SiteDB
     """
 
-    def __init__(self, config={}):
+    def __init__(self, config={}, logger=None):
         config = dict(config)
         config['endpoint'] = "https://cmsweb.cern.ch/sitedb/data/prod/"
+        config['logger'] = logger if logger else logging.getLogger()
+
         Service.__init__(self, config)
 
     def getJSON(self, callname, filename='result.json', clearCache=False, verb='GET', data={}):

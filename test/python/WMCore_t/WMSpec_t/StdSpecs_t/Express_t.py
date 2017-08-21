@@ -110,13 +110,13 @@ class ExpressTest(unittest.TestCase):
         expressWorkflow = Workflow(name="TestWorkload",
                                    task="/TestWorkload/Express")
         expressWorkflow.load()
-        self.assertEqual(len(expressWorkflow.outputMap.keys()), len(testArguments["Outputs"]) + 1,
+        self.assertEqual(len(list(expressWorkflow.outputMap.keys())), len(testArguments["Outputs"]) + 1,
                          "Error: Wrong number of WF outputs in the Express WF.")
 
         goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
                             "write_StreamExpress_ALCARECO": "ALCARECO",
                             "write_StreamExpress_DQMIO": "DQMIO"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             mergedOutput = expressWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = expressWorkflow.outputMap[fset][0]["output_fileset"]
@@ -143,12 +143,12 @@ class ExpressTest(unittest.TestCase):
         alcaSkimWorkflow = Workflow(name="TestWorkload",
                                     task="/TestWorkload/Express/ExpressAlcaSkimwrite_StreamExpress_ALCARECO")
         alcaSkimWorkflow.load()
-        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
+        self.assertEqual(len(list(alcaSkimWorkflow.outputMap.keys())), len(testArguments["AlcaSkims"]) + 1,
                          "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
         goldenOutputMods = {"ALCARECOStreamPromptCalibProd": "ALCAPROMPT",
                             "ALCARECOStreamTkAlMinBias": "ALCARECO"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             mergedOutput = alcaSkimWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = alcaSkimWorkflow.outputMap[fset][0]["output_fileset"]
@@ -195,12 +195,12 @@ class ExpressTest(unittest.TestCase):
 
         goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
                             "write_StreamExpress_DQMIO": "DQMIO"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Express/ExpressMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
@@ -264,7 +264,7 @@ class ExpressTest(unittest.TestCase):
 
         unmergedOutputs = {"write_PrimaryDataset1_FEVT": "FEVT",
                            "write_StreamExpress_DQMIO": "DQMIO"}
-        for unmergedOutput, tier in unmergedOutputs.items():
+        for unmergedOutput, tier in list(unmergedOutputs.items()):
             fset = unmergedOutput + tier
             unmergedDataTier = Fileset(name="/TestWorkload/Express/unmerged-%s" % fset)
             unmergedDataTier.loadData()
@@ -282,7 +282,7 @@ class ExpressTest(unittest.TestCase):
         goldenOutputMods = {"write_PrimaryDataset1_FEVT": "FEVT",
                             "write_StreamExpress_ALCARECO": "ALCARECO",
                             "write_StreamExpress_DQMIO": "DQMIO"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             unmergedFileset = Fileset(name="/TestWorkload/Express/unmerged-%s" % fset)
             unmergedFileset.loadData()

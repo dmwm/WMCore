@@ -154,9 +154,9 @@ class RuntimeTest(unittest.TestCase):
         self.testInit.delWorkDir()
 
         # Clean up imports
-        if 'WMSandbox' in sys.modules.keys():
+        if 'WMSandbox' in list(sys.modules.keys()):
             del sys.modules['WMSandbox']
-        if 'WMSandbox.JobIndex' in sys.modules.keys():
+        if 'WMSandbox.JobIndex' in list(sys.modules.keys()):
             del sys.modules['WMSandbox.JobIndex']
 
 

@@ -125,7 +125,7 @@ class CouchFileset_t(unittest.TestCase):
             testFileset.add([testFile])
 
         for file in testFileset.listFiles():
-            self.assertTrue(file["lfn"] in testFiles.keys(),
+            self.assertTrue(file["lfn"] in list(testFiles.keys()),
                             "Error: File missing.")
             self.assertEqual(file["events"], testFiles[file["lfn"]]["events"],
                              "Error: Wrong number of events.")
@@ -157,7 +157,7 @@ class CouchFileset_t(unittest.TestCase):
             testFileset.add([testFile])
 
         for file in testFileset.fileset().files:
-            self.assertTrue(file["lfn"] in testFiles.keys(),
+            self.assertTrue(file["lfn"] in list(testFiles.keys()),
                             "Error: File missing.")
             self.assertEqual(file["events"], testFiles[file["lfn"]]["events"],
                              "Error: Wrong number of events.")

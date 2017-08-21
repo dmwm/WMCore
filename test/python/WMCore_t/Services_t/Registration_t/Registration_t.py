@@ -56,7 +56,7 @@ class RegistrationTest(unittest.TestCase):
 
         json = BasicAuthJSONRequests(self.testInit.couchUrl)
         data = json.get('/%s/%s' % (self.couch_db, str(reg_info['location'].__hash__())))
-        for k, v in reg_info.items():
+        for k, v in list(reg_info.items()):
             if k != 'timestamp':
                 assert data[0][k] == v, \
                 "Registration incomplete: %s should equal %s for key %s" % (data[0][k], v, k)

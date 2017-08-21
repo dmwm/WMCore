@@ -352,7 +352,7 @@ class LumiListTest(unittest.TestCase):
                   }
         # create a lumilist like {'21' : {'2':None ...} ...}
         lumis = {}
-        for run, ls in clumis.items():
+        for run, ls in list(clumis.items()):
             newrun = str(int(run) + 20)
             lumis[newrun] = {str(l): None for l in ls}
 

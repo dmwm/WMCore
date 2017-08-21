@@ -100,10 +100,10 @@ class MonteCarloTest(EmulatedUnitTestCase):
         prodWorkflow = Workflow(name="TestWorkload", task="/TestWorkload/Production")
         prodWorkflow.load()
 
-        self.assertEqual(len(prodWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(prodWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             mergedOutput = prodWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = prodWorkflow.outputMap[fset][0]["output_fileset"]
@@ -127,12 +127,12 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Production/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Production/ProductionMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
             from pprint import pformat
             print(pformat(mergeWorkflow.outputMap))
@@ -172,7 +172,7 @@ class MonteCarloTest(EmulatedUnitTestCase):
         self.assertEqual(prodSubscription["split_algo"], "EventBased",
                          "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             unmergedOutput = Fileset(name="/TestWorkload/Production/unmerged-%s" % fset)
             unmergedOutput.loadData()
@@ -187,7 +187,7 @@ class MonteCarloTest(EmulatedUnitTestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in list(goldenOutputMods.items()):
             fset = goldenOutputMod + tier
             unmerged = Fileset(name="/TestWorkload/Production/unmerged-%s" % fset)
             unmerged.loadData()

@@ -328,7 +328,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         getUninjected = daofactory(classname = "GetUninjectedFiles")
 
         uninjectedFiles = getUninjected.execute()
-        self.assertEqual(uninjectedFiles.keys(), ['srm-cms.cern.ch'])
+        self.assertEqual(list(uninjectedFiles.keys()), ['srm-cms.cern.ch'])
 
         return
 

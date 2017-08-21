@@ -60,7 +60,7 @@ class DBCoreTest(unittest.TestCase):
 
         for i in range(len(files)):
             self.assertEqual(binds[i][seqname], files[i])
-            self.assertEqual(binds[i][dictbinds.keys()[0]], dictbinds[dictbinds.keys()[0]])
+            self.assertEqual(binds[i][list(dictbinds.keys())[0]], dictbinds[list(dictbinds.keys())[0]])
 
 
         return

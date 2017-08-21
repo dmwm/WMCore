@@ -214,7 +214,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
             0].fetchall()
 
         for val in result:
-            self.assertEqual(val.values(), ['cleanout'])
+            self.assertEqual(list(val.values()), ['cleanout'])
 
         dirList = os.listdir(cacheDir)
         for job in testJobGroup.jobs:

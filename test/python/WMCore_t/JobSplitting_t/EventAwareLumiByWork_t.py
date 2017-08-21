@@ -563,7 +563,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 2)
         for job in jobs:
-            for run in job['mask'].getRunAndLumis().keys():
+            for run in list(job['mask'].getRunAndLumis().keys()):
                 self.assertIn(run, [1, 4])
 
         # Re-split with a break on runs
@@ -578,7 +578,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(len(jobs), 4)
         self.enforceLimits(jobs=jobs, runsPerJob=1)
         for job in jobs:
-            for run in job['mask'].getRunAndLumis().keys():
+            for run in list(job['mask'].getRunAndLumis().keys()):
                 self.assertIn(run, [1, 3, 4])
 
         # Re-split with a break on files
@@ -593,7 +593,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(len(jobs), 3)
         self.enforceLimits(jobs=jobs, filesPerJob=1)
         for job in jobs:
-            for run in job['mask'].getRunAndLumis().keys():
+            for run in list(job['mask'].getRunAndLumis().keys()):
                 self.assertIn(run, [1, 2, 3])
 
     def testLumiMaskAndWhitelist(self):

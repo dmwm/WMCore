@@ -374,7 +374,7 @@ class HarvestTest(unittest.TestCase):
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
             ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8]],
                                        2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
-            run = runs.keys()[0]
+            run = list(runs.keys())[0]
             for lumiPair in runs[run]:
                 for lumi in range(lumiPair[0], lumiPair[1] + 1):
                     self.assertTrue((str(run), lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
@@ -398,7 +398,7 @@ class HarvestTest(unittest.TestCase):
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
             ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8], [9, 14]],
                                        2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
-            run = runs.keys()[0]
+            run = list(runs.keys())[0]
             for lumiPair in runs[run]:
                 for lumi in range(lumiPair[0], lumiPair[1] + 1):
                     self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
@@ -433,7 +433,7 @@ class HarvestTest(unittest.TestCase):
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
             ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8], [9, 14]],
                                        2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
-            run = runs.keys()[0]
+            run = list(runs.keys())[0]
             for lumiPair in runs[run]:
                 for lumi in range(lumiPair[0], lumiPair[1] + 1):
                     self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))

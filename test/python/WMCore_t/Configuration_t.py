@@ -319,7 +319,7 @@ class ConfigurationTest(unittest.TestCase):
         config.Task1.section_("subSection")
         config.Task1.subSection.value3 = "MyValue3"
         d = config.dictionary_whole_tree_()
-        for values in d.values():
+        for values in list(d.values()):
             self.assertFalse(isinstance(values, ConfigSection))
         self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
 

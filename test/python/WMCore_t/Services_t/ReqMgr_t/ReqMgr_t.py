@@ -131,7 +131,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 0)
         response = self.reqSvc.getRequestByStatus('assigned')
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["T1_US_CBS"])
+        self.assertEqual(list(response[0].values())[0]["SiteWhitelist"], ["T1_US_CBS"])
 
         self.reqSvc.updateRequestStats(requestName, {'total_jobs': 100, 'input_lumis': 100,
                                'input_events': 100, 'input_num_files': 100})

@@ -149,12 +149,12 @@ class PhEDExTest(unittest.TestCase):
         call1 = self.phedexApi.getPFN(['T2_UK_SGrid_Bristol'], ['/store/user/metson/file'])
 
         # Should get one mapping back (one lfn, one node)
-        self.assertTrue(len(call1.keys()) == 1)
-        call1_key = call1.keys()[0]
+        self.assertTrue(len(list(call1.keys())) == 1)
+        call1_key = list(call1.keys())[0]
 
         call2 = self.phedexApi.getPFN(['T2_UK_SGrid_Bristol', 'T1_US_FNAL_Buffer'], ['/store/user/metson/file'])
         # Should get back two mappings (two nodes)
-        self.assertTrue(call1_key in call2.keys())
+        self.assertTrue(call1_key in list(call2.keys()))
 
         # and one of the mappings should be the same as from the previous call
         self.assertTrue(call1[call1_key] == call2[call1_key])

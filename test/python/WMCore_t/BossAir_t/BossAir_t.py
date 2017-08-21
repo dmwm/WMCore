@@ -380,12 +380,12 @@ class BossAirTest(unittest.TestCase):
         baAPI = BossAirAPI(config=config)
 
         # We should have loaded a plugin
-        self.assertTrue('TestPlugin' in baAPI.plugins.keys())
+        self.assertTrue('TestPlugin' in list(baAPI.plugins.keys()))
 
         result = myThread.dbi.processData("SELECT name FROM bl_status")[0].fetchall()
         statusList = []
         for i in result:
-            statusList.append(i.values()[0])
+            statusList.append(list(i.values())[0])
 
         # We should have the plugin states in the database
         self.assertEqual(statusList.sort(), ['New', 'Dead', 'Gone'].sort())

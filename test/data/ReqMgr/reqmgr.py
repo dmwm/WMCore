@@ -114,7 +114,7 @@ class ReqMgrClient(RESTClient):
             sys.exit(1)
         data = json.loads(data)
 
-        requestName = data.values()[0]["RequestName"]
+        requestName = list(data.values())[0]["RequestName"]
         logging.info("Create request '%s' succeeded." % requestName)
         return requestName
 
@@ -200,7 +200,7 @@ class ReqMgrClient(RESTClient):
             # TODO this needs to be put right with proper REST interface
             del assignArgs["Team"]
             jsonEncodedParams = {}
-            for paramKey in assignArgs.keys():
+            for paramKey in list(assignArgs.keys()):
                 jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
             encodedParams = urllib.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
@@ -341,7 +341,7 @@ class ReqMgrClient(RESTClient):
             sys.exit(1)
         data = json.loads(data)
 
-        newRequestName = data.values()[0]["RequestName"]
+        newRequestName = list(data.values())[0]["RequestName"]
         logging.info("Clone request succeeded: original request name: '%s' "
                      "new request name: '%s'" % (requestName, newRequestName))
         return newRequestName
@@ -858,7 +858,7 @@ def processRequestArgs(intputConfigFile, commandLineJson):
         logging.info("Parsing request arguments on the command line ...")
         cliJson = json.loads(commandLineJson)
         # if a key exists in cliJson, update values in the main requestArgs dict
-        for k in requestArgs.keys():
+        for k in list(requestArgs.keys()):
             if k in cliJson:
                 requestArgs[k].update(cliJson[k])
     else:
@@ -869,10 +869,10 @@ def processRequestArgs(intputConfigFile, commandLineJson):
     def check(items):
         for k, v in items:
             if isinstance(v, dict):
-                check(v.items())
+                check(list(v.items()))
             if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
                 logging.warn("Not properly set: %s: %s" % (k, v))
-    check(requestArgs.items())
+    check(list(requestArgs.items()))
     return requestArgs
 
 

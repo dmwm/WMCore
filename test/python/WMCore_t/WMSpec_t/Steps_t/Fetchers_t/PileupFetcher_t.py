@@ -96,7 +96,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         # configuration with actual DBS results, the structure of pileupDict:
         #    {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
         #                     "BlockB": {"FileList": [], "PhEDExNodeNames": []}, ....}
-        for pileupType, datasets in inputArgs.items():
+        for pileupType, datasets in list(inputArgs.items()):
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
 

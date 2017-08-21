@@ -324,7 +324,7 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertFalse(task.getInputStep(), "Wrong input step")
         # task level checks for output data
         outModDict = task.getOutputModulesForTask(cmsRunOnly=True)[0].dictionary_()  # only 1 cmsRun process
-        self.assertItemsEqual(outModDict.keys(), outMods.keys())
+        self.assertItemsEqual(list(outModDict.keys()), list(outMods.keys()))
         for modName in outModDict:
             self._validateOutputModule(modName, outModDict[modName], outMods[modName])
 
@@ -729,17 +729,17 @@ class StepChainTests(EmulatedUnitTestCase):
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
                 outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                for k, v in outMods[mod].items()}
+                                for k, v in list(outMods[mod].items())}
             transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                            for k, v in transientMod['RAWSIMoutput'].items()}
+                                            for k, v in list(transientMod['RAWSIMoutput'].items())}
         for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
                 outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                for k, v in outMods[mod].items()}
+                                for k, v in list(outMods[mod].items())}
             transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                            for k, v in transientMod['RAWSIMoutput'].items()}
+                                            for k, v in list(transientMod['RAWSIMoutput'].items())}
 
         mergedMods = deepcopy(outMods)
         mergedMods['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
@@ -833,10 +833,10 @@ class StepChainTests(EmulatedUnitTestCase):
             for mod in outMods:
                 if isinstance(outMods[mod], dict):
                     outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                    for k, v in outMods[mod].items()}
+                                    for k, v in list(outMods[mod].items())}
                 else:
                     outMods[mod] = [
-                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in list(out.items())} for
                         out in outMods[mod]]
         for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
@@ -844,10 +844,10 @@ class StepChainTests(EmulatedUnitTestCase):
             for mod in outMods:
                 if isinstance(outMods[mod], dict):
                     outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                    for k, v in outMods[mod].items()}
+                                    for k, v in list(outMods[mod].items())}
                 else:
                     outMods[mod] = [
-                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in list(out.items())} for
                         out in outMods[mod]]
         mergedMods = deepcopy(outMods)
         mergedMods['RAWSIMoutput'][0].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
@@ -1328,7 +1328,7 @@ class StepChainTests(EmulatedUnitTestCase):
         def _checkInputData(workload, sitewhitelist=None):
             "Validate input data/block/run/step/PU for the 4-tasks request"
             sitewhitelist = sitewhitelist or []
-            self.assertEqual(workload.listPileupDatasets().values(), [{testArguments['Step2']['MCPileup']}])
+            self.assertEqual(list(workload.listPileupDatasets().values()), [{testArguments['Step2']['MCPileup']}])
 
             task = workload.getTaskByName(testArguments['Step1']['StepName'])
             self.assertEqual(task.taskType(), "Production")

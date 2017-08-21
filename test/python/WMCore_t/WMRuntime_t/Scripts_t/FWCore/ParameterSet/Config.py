@@ -122,7 +122,7 @@ def PSet(**attributes):
     Create a new PSet with the given attributes.
     """
     newPSet = Container()
-    for attributeName in attributes.keys():
+    for attributeName in list(attributes.keys()):
         setattr(newPSet, attributeName, attributes[attributeName])
 
     return newPSet

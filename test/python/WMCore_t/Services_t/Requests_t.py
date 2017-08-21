@@ -176,9 +176,9 @@ class testJSONRequests(unittest.TestCase):
     def roundTripLax(self, data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
-        datakeys = data.keys()
+        datakeys = list(data.keys())
 
-        for k in decoded.keys():
+        for k in list(decoded.keys()):
             assert k in datakeys
             datakeys.pop(datakeys.index(k))
         #print 'the following keys were dropped\n\t',datakeys

@@ -273,7 +273,7 @@ class ReqMgrClient(RESTClient):
         # returns also all allowed transitions
         data = self._caller_checker("/status?transition=true", "GET")
         for status_def in data:
-            status = status_def.keys()[0]
+            status = list(status_def.keys())[0]
             trans = status_def[status]
             assert status in data2, "%s is not in %s" % (status, data2)
             assert isinstance(trans, list), "transition %s should be list" % trans
@@ -427,7 +427,7 @@ def process_request_args(intput_config_file, command_line_json):
         logging.info("Parsing request arguments on the command line ...")
         cli_json = json.loads(command_line_json)
         # if a key exists in cli_json, update values in the main request_args dict
-        for k in request_args.keys():
+        for k in list(request_args.keys()):
             if k in cli_json:
                 request_args[k].update(cli_json[k])
     else:
@@ -438,11 +438,11 @@ def process_request_args(intput_config_file, command_line_json):
     def check(items):
         for k, v in items:
             if isinstance(v, dict):
-                check(v.items())
+                check(list(v.items()))
             if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
                 logging.warn("Not properly set: %s: %s" % (k, v))
 
-    check(request_args.items())
+    check(list(request_args.items()))
     return request_args
 
 

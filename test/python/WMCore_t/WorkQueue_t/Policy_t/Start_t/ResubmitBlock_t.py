@@ -218,7 +218,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 2)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(50, unit['Jobs'])
@@ -251,7 +251,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
@@ -281,7 +281,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(500, unit['Jobs'])
@@ -312,7 +312,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
@@ -328,7 +328,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
@@ -357,7 +357,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             self.assertEqual(len(units), 2)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
-                inputBlock = unit['Inputs'].keys()[0]
+                inputBlock = list(unit['Inputs'].keys())[0]
                 self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.siteWhitelist))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(50, unit['Jobs'])

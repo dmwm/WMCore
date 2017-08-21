@@ -304,7 +304,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         # consider only locally available files
         filesInConfigDict = []
-        for v in pileupSubDict.values():
+        for v in list(pileupSubDict.values()):
             if seLocalName in v["phedexNodeNames"]:
                 filesInConfigDict.extend(v["FileList"])
 

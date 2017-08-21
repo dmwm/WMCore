@@ -73,13 +73,13 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         # Run through all good state transitions and assert that they work
-        for state in self.transitions.keys():
+        for state in list(self.transitions.keys()):
             for dest in self.transitions[state]:
                 change.check(dest, state)
         dummystates = ['dummy1', 'dummy2', 'dummy3', 'dummy4']
 
         # Then run through some bad state transistions and assertRaises(AssertionError)
-        for state in self.transitions.keys():
+        for state in list(self.transitions.keys()):
             for dest in dummystates:
                 self.assertRaises(AssertionError, change.check, dest, state)
         return
@@ -139,7 +139,7 @@ class TestChangeState(unittest.TestCase):
 
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
-        for transition in testJobADoc["states"].itervalues():
+        for transition in testJobADoc["states"].values():
             self.assertTrue(isinstance(transition["timestamp"], int) or 
                             isinstance(transition["timestamp"], long))
 
@@ -479,11 +479,11 @@ class TestChangeState(unittest.TestCase):
         assert fwjrDoc["retrycount"] == 0, \
                "Error: Retry count is wrong."
 
-        assert len(fwjrDoc["fwjr"]["steps"].keys()) == 2, \
+        assert len(list(fwjrDoc["fwjr"]["steps"].keys())) == 2, \
                "Error: Wrong number of steps in FWJR."
-        assert "cmsRun1" in fwjrDoc["fwjr"]["steps"].keys(), \
+        assert "cmsRun1" in list(fwjrDoc["fwjr"]["steps"].keys()), \
                "Error: cmsRun1 step is missing from FWJR."
-        assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
+        assert "stageOut1" in list(fwjrDoc["fwjr"]["steps"].keys()), \
                "Error: stageOut1 step is missing from FWJR."
 
         return

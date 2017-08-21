@@ -36,7 +36,7 @@ class MigrationToGlobal:
         First calls DBS3 for the migration status. If it is the last loop (over = True),
         remove submitted requests and handle the uncomplete requests
         """
-        for task in self.migrationRequests.keys():
+        for task in list(self.migrationRequests.keys()):
             # Loop over all the submitted migration requests
             if self.migrationRequests[task]['status'] == 'submitted':
                 request_status = self.dbsApi.statusMigration(migration_rqst_id = self.migrationRequests[task]['id'])
@@ -77,7 +77,7 @@ class MigrationToGlobal:
         Loop over migration requests and returns True if there is pending work
         """
         pending = False
-        for task in self.migrationRequests.keys():
+        for task in list(self.migrationRequests.keys()):
             if self.migrationRequests[task]['status'] == 'submitted':
                 pending = True
         return pending
@@ -89,7 +89,7 @@ class MigrationToGlobal:
         report = {}
         print("%20s %15s %25s %150s" %('Savannah Ticket','Migration id','Migration Status','Dataset'))
         print("%20s %15s %25s %150s" %('-'*20,'-'*15,'-'*25,'-'*150))
-        for task in self.migrationRequests.keys():
+        for task in list(self.migrationRequests.keys()):
             #report[task] = [self.migrationRequests[task]['status'],self.migrationRequests[task]['dataset']]
             print("%20s %15s %25s %150s" %(task, self.migrationRequests[task]['id'],
                                        self.migrationRequests[task]['status'],
@@ -123,7 +123,7 @@ class MigrationToGlobal:
 
         # Submit Migration request
         # Creates a Dictionary with the migration request and its status
-        for task in self.migrationRequests.keys():
+        for task in list(self.migrationRequests.keys()):
 
             try:
                 request = self.migrationRequests[task]

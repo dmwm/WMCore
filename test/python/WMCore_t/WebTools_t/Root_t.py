@@ -75,8 +75,8 @@ class RootTest():
         server = Root(config)
         server.start(blocking=False)
 
-        self.assertFalse('foo' in cpconfig.keys(), 'non-standard configurable passed to server')
-        self.assertFalse('stuff' in cpconfig.keys(), 'non-standard configurable passed to server')
+        self.assertFalse('foo' in list(cpconfig.keys()), 'non-standard configurable passed to server')
+        self.assertFalse('stuff' in list(cpconfig.keys()), 'non-standard configurable passed to server')
 
         server.stop()
 

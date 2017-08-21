@@ -80,7 +80,7 @@ class LogArchiveTest(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in list(sys.modules.keys()):
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -149,7 +149,7 @@ class LogArchiveTest(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in list(sys.modules.keys()):
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -256,7 +256,7 @@ class otherLogArchiveTexst:#(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in list(sys.modules.keys()):
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -325,7 +325,7 @@ class otherLogArchiveTexst:#(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in list(sys.modules.keys()):
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):

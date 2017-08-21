@@ -403,14 +403,14 @@ class JobAccountantTest(unittest.TestCase):
                 "Error: Output file has wrong size: %s, %s" % \
                 (outputFile["size"], fwkJobReportFile["size"])
 
-            for ckType in fwkJobReportFile["checksums"].keys():
-                assert ckType in outputFile["checksums"].keys(), \
+            for ckType in list(fwkJobReportFile["checksums"].keys()):
+                assert ckType in list(outputFile["checksums"].keys()), \
                     "Error: Output file is missing checksums: %s" % ckType
                 assert outputFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                     "Error: Checksums don't match."
 
-            assert len(fwkJobReportFile["checksums"].keys()) == \
-                   len(outputFile["checksums"].keys()), \
+            assert len(list(fwkJobReportFile["checksums"].keys())) == \
+                   len(list(outputFile["checksums"].keys())), \
                 "Error: Wrong number of checksums."
 
             jobType = self.getJobTypeAction.execute(jobID=jobID)
@@ -450,7 +450,7 @@ class JobAccountantTest(unittest.TestCase):
                 if len(fwjrRuns[run.run]) == 0:
                     del fwjrRuns[run.run]
 
-            assert len(fwjrRuns.keys()) == 0, \
+            assert len(list(fwjrRuns.keys())) == 0, \
                 "Error: Missing runs, lumis: %s" % fwjrRuns
 
             testJobGroup = JobGroup(id=testJob["jobgroup"])
@@ -504,14 +504,14 @@ class JobAccountantTest(unittest.TestCase):
                 "Error: DBS file has wrong size: %s, %s" % \
                 (dbsFile["size"], fwkJobReportFile["size"])
 
-            for ckType in fwkJobReportFile["checksums"].keys():
-                assert ckType in dbsFile["checksums"].keys(), \
+            for ckType in list(fwkJobReportFile["checksums"].keys()):
+                assert ckType in list(dbsFile["checksums"].keys()), \
                     "Error: DBS file is missing checksums: %s" % ckType
                 assert dbsFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                     "Error: Checksums don't match."
 
-            assert len(fwkJobReportFile["checksums"].keys()) == \
-                   len(dbsFile["checksums"].keys()), \
+            assert len(list(fwkJobReportFile["checksums"].keys())) == \
+                   len(list(dbsFile["checksums"].keys())), \
                 "Error: Wrong number of checksums."
 
             assert len(dbsFile["locations"]) == 1, \
@@ -536,7 +536,7 @@ class JobAccountantTest(unittest.TestCase):
                 if len(fwjrRuns[run.run]) == 0:
                     del fwjrRuns[run.run]
 
-            assert len(fwjrRuns.keys()) == 0, \
+            assert len(list(fwjrRuns.keys())) == 0, \
                 "Error: Missing runs, lumis: %s" % fwjrRuns
 
             # PSetHash and ConfigContent are not currently used.
@@ -1673,7 +1673,7 @@ class JobAccountantTest(unittest.TestCase):
 
         result = accountant.__call__(parameters=[job])
 
-        self.assertTrue('jobReport' in result[0].keys())
+        self.assertTrue('jobReport' in list(result[0].keys()))
         report = result[0]['jobReport']
 
         self.assertEqual(report.getJobID(), 1)

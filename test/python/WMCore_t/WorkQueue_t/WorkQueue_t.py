@@ -263,7 +263,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # create relevant sites in wmbs
         rc = ResourceControl()
         site_se_mapping = {'T2_XX_SiteA': 'a.example.com', 'T2_XX_SiteB': 'b.example.com'}
-        for site, se in site_se_mapping.iteritems():
+        for site, se in site_se_mapping.items():
             rc.insertSite(site, 100, 200, se, cmsName=site)
             daofactory = DAOFactory(package="WMCore.WMBS",
                                     logger=threading.currentThread().logger,

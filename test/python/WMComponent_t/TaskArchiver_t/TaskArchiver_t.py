@@ -528,7 +528,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
 
         # Check the output
-        self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO'])
+        self.assertEqual(list(workloadSummary['output'].keys()), ['/Electron/MorePenguins-v0/RECO'])
         self.assertEqual(sorted(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks']),
                          ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
@@ -566,7 +566,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
-        for x in workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys():
+        for x in list(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys()):
             if x in config.TaskArchiver.histogramKeys:
                 continue
             for y in ['average', 'stdDev']:

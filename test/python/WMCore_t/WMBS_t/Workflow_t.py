@@ -278,7 +278,7 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowB = Workflow(name="wf001", task='Test')
         testWorkflowB.load()
 
-        self.assertEqual(len(testWorkflowB.outputMap.keys()), 0,
+        self.assertEqual(len(list(testWorkflowB.outputMap.keys())), 0,
                          "ERROR: Output map exists before output is assigned")
 
         testWorkflowA.addOutput("outModOne", testFilesetA, testMergedFilesetA)
@@ -288,11 +288,11 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowC = Workflow(name="wf001", task='Test')
         testWorkflowC.load()
 
-        self.assertEqual(len(testWorkflowC.outputMap.keys()), 2,
+        self.assertEqual(len(list(testWorkflowC.outputMap.keys())), 2,
                          "ERROR: Incorrect number of outputs in output map")
-        self.assertTrue("outModOne" in testWorkflowC.outputMap.keys(),
+        self.assertTrue("outModOne" in list(testWorkflowC.outputMap.keys()),
                         "ERROR: Output modules missing from workflow output map")
-        self.assertTrue("outModTwo" in testWorkflowC.outputMap.keys(),
+        self.assertTrue("outModTwo" in list(testWorkflowC.outputMap.keys()),
                         "ERROR: Output modules missing from workflow output map")
 
         for outputMap in testWorkflowC.outputMap["outModOne"]:

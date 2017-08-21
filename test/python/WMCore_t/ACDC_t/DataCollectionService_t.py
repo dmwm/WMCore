@@ -140,7 +140,7 @@ class DataCollectionService_t(unittest.TestCase):
             self.assertEqual(chunkMetaData["events"], chunk["events"])
             self.assertEqual(chunkMetaData["locations"], chunk["locations"])
 
-            self.assertTrue(chunk["files"] in goldenMetaData.keys(), "Error: Extra chunk found.")
+            self.assertTrue(chunk["files"] in list(goldenMetaData.keys()), "Error: Extra chunk found.")
             self.assertEqual(chunk["lumis"], goldenMetaData[chunk["files"]]["lumis"],
                              "Error: Lumis in chunk is wrong.")
             self.assertEqual(chunk["locations"], goldenMetaData[chunk["files"]]["locations"],
@@ -151,7 +151,7 @@ class DataCollectionService_t(unittest.TestCase):
 
             chunkFiles = dcs.getChunkFiles("ACDCTest", "/ACDCTest/reco", chunk["offset"], chunk["files"])
 
-            self.assertTrue(chunk["files"] in goldenFiles.keys(), "Error: Extra chunk found.")
+            self.assertTrue(chunk["files"] in list(goldenFiles.keys()), "Error: Extra chunk found.")
             goldenChunkFiles = goldenFiles[chunk["files"]]
             self.assertEqual(len(chunkFiles), len(goldenChunkFiles))
 
@@ -259,7 +259,7 @@ class DataCollectionService_t(unittest.TestCase):
                         testJobF, testJobG, testJobH, testJobI])
         whiteList = dcs.getLumiWhitelist("ACDCTest", "/ACDCTest/reco")
 
-        self.assertEqual(len(whiteList.keys()), 3,
+        self.assertEqual(len(list(whiteList.keys())), 3,
                          "Error: There should be 3 runs.")
         self.assertEqual(whiteList["1"], [[1, 4], [6, 7], [9, 9], [11, 12]],
                          "Error: Whitelist for run 1 is wrong.")

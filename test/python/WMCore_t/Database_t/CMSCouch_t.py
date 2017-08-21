@@ -63,7 +63,7 @@ class CMSCouchTest(unittest.TestCase):
         doc = {'foo':123, 'bar':456}
         id = self.db.commitOne(doc, timestamp=True)[0]['id']
         doc = self.db.document(id)
-        self.assertTrue('timestamp' in doc.keys())
+        self.assertTrue('timestamp' in list(doc.keys()))
 
     def testDeleteDoc(self):
         doc = {'foo':123, 'bar':456}

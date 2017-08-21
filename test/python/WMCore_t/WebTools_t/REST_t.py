@@ -162,7 +162,7 @@ class RESTTest(RESTBaseUnitTest):
         request_input = {'input_int':123, 'input_str':'abc'}
         output={'code':200, 'type':'text/json'}
         result = json.loads(methodTest(verb, url, request_input=request_input, output=output)[0])
-        for i in result.keys():
+        for i in list(result.keys()):
             self.assertEqual(result[i], request_input[i], '%s does not match response' % i)
 
     def testA(self):

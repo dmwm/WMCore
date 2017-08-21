@@ -52,7 +52,7 @@ class MockDbsApiTest(ExtendedUnitTestCase):
                    'listBlockParents': {'block_name': block_with_parent},
                    }
 
-        for member in members.keys():
+        for member in list(members.keys()):
             # Get from  mock DBS
             args = []
             kwargs = members[member]

@@ -138,7 +138,7 @@ def handleAssignment(args, fname, jsonData):
         # always overwrite it as provided in the command line and task/step name
         if 'ProcessingString' in assignDict and isinstance(assignDict['ProcessingString'], dict):
             assignRequest['ProcessingString'] = assignDict['ProcessingString']
-            for task, _ in assignRequest['ProcessingString'].iteritems():
+            for task, _ in assignRequest['ProcessingString'].items():
                 assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
 
         # also reuse values as provided in the request schema at creation level

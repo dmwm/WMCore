@@ -113,10 +113,10 @@ class CouchCollection_t(unittest.TestCase):
             if fileset["name"] == "TestFilesetC":
                 testFiles.extend(testFilesB)
 
-            self.assertEqual(len(testFiles), len(fileset.files.keys()),
+            self.assertEqual(len(testFiles), len(list(fileset.files.keys())),
                              "Error: Wrong number of files in fileset.")
             for testFile in testFiles:
-                self.assertTrue(testFile["lfn"] in fileset.files.keys(),
+                self.assertTrue(testFile["lfn"] in list(fileset.files.keys()),
                                 "Error: File is missing.")
                 self.assertEqual(testFile["events"],
                                  fileset.files[testFile["lfn"]]["events"],

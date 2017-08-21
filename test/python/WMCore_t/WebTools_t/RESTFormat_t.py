@@ -43,7 +43,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
 
-        for textType in rf.supporttypes.keys():
+        for textType in list(rf.supporttypes.keys()):
             # test accepted type should return 200 error
             methodTest('GET', url, accept=textType, output={'code':200})
 

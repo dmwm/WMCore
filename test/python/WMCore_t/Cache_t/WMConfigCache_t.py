@@ -201,7 +201,7 @@ class testWMConfigCache(unittest.TestCase):
 
         configs = configCacheA.listAllConfigsByLabel()
 
-        self.assertEqual(len(configs.keys()), 2,
+        self.assertEqual(len(list(configs.keys())), 2,
                          "Error: There should be two configs")
         self.assertEqual(configs["labelA"], configCacheA.getCouchID(),
                          "Error: Label A is wrong.")

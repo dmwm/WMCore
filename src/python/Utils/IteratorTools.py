@@ -46,8 +46,8 @@ def convertFromUnicodeToStr(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(convertFromUnicodeToStr, data.iteritems()))
+        return dict(list(map(convertFromUnicodeToStr, data.iteritems())))
     elif isinstance(data, collections.Iterable):
-        return type(data)(map(convertFromUnicodeToStr, data))
+        return type(data)(list(map(convertFromUnicodeToStr, data)))
     else:
         return data

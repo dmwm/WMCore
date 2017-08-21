@@ -88,13 +88,13 @@ class JobFactory(WMObject):
         module = __import__(module, globals(), locals(), [grouptype])
         self.groupInstance = getattr(module, grouptype.split('.')[-1])
 
-        map(lambda x: x.start(), self.generators)
+        list(map(lambda x: x.start(), self.generators))
 
         self.limit = int(kwargs.get("file_load_limit", self.limit))
         self.algorithm(*args, **kwargs)
         self.commit()
 
-        map(lambda x: x.finish(), self.generators)
+        list(map(lambda x: x.finish(), self.generators))
         return self.jobGroups
 
     def algorithm(self, *args, **kwargs):
@@ -115,7 +115,7 @@ class JobFactory(WMObject):
         """
         self.appendJobGroup()
         self.currentGroup = self.groupInstance(subscription=self.subscription)
-        map(lambda x: x.startGroup(self.currentGroup), self.generators)
+        list(map(lambda x: x.startGroup(self.currentGroup), self.generators))
         return
 
     def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
@@ -157,7 +157,7 @@ class JobFactory(WMObject):
         """
 
         if self.currentGroup:
-            map(lambda x: x.finishGroup(self.currentGroup), self.generators)
+            list(map(lambda x: x.finishGroup(self.currentGroup), self.generators))
         if self.currentGroup:
             self.jobGroups.append(self.currentGroup)
             self.currentGroup = None

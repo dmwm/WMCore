@@ -230,9 +230,9 @@ def toString(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(toString, data.iteritems()))
+        return dict(list(map(toString, data.iteritems())))
     elif isinstance(data, collections.Iterable):
-        return type(data)(map(toString, data))
+        return type(data)(list(map(toString, data)))
     else:
         return data
 

@@ -29,7 +29,7 @@ class ChangeState(DBFormatter):
                     'time': self.timestamp(),
                     'couch_record': job['couch_record']}
             return dict
-        return map(function, jobs)
+        return list(map(function, jobs))
 
     def execute(self, jobs = [], conn = None, transaction = False):
         """

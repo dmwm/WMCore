@@ -357,7 +357,7 @@ class ConfigSectionDecomposer:
             paramVal = getattr(configSect, par)
             self.parameters[paramName] = paramVal
 
-        map(self, childSections(configSect))
+        list(map(self, childSections(configSect)))
         self.queue.pop(-1)
 
 

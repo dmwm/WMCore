@@ -8,8 +8,8 @@ a set of jobs based on lumi sections
 
 import logging
 import operator
-import threading
 
+from Utils.IteratorTools import flattenList
 from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File import File
@@ -135,6 +135,12 @@ class LumiBased(JobFactory):
 
     locations = []
 
+    def __init__(self, package='WMCore.DataStructs', subscription=None, generators=None, limit=0):
+        super(LumiBased, self).__init__(package, subscription, generators, limit)
+
+        self.loadRunLumi = None  # Placeholder for DAO factory if needed
+        self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -143,12 +149,10 @@ class LumiBased(JobFactory):
         Allow a flag to determine if we split files between jobs
         """
 
-        myThread = threading.currentThread()
-
         lumisPerJob = int(kwargs.get('lumis_per_job', 1))
         totalLumis = int(kwargs.get('total_lumis', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
-        collectionName = kwargs.get('collectionName', None)
+        self.collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
         runWhitelist = kwargs.get('runWhitelist', [])
@@ -158,10 +162,11 @@ class LumiBased(JobFactory):
         applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
         eventsPerLumiInDataset = 0
 
-        if deterministicPileup and self.package == 'WMCore.WMBS':
-            getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
-            jobNumber = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
-            self.nJobs = jobNumber
+        if self.package == 'WMCore.WMBS':
+            self.loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
+            if deterministicPileup:
+                getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
+                self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
 
         timePerEvent, sizePerEvent, memoryRequirement = \
             self.getPerformanceParameters(kwargs.get('performance', {}))
@@ -171,40 +176,29 @@ class LumiBased(JobFactory):
             goodRunList = buildLumiMask(runs, lumis)
 
         # If we have runLumi info, we need to load it from couch
-        if collectionName:
+        if self.collectionName:
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
                 couchURL = kwargs.get('couchURL')
                 couchDB = kwargs.get('couchDB')
                 filesetName = kwargs.get('filesetName')
-                collectionName = kwargs.get('collectionName')
 
-                logging.info('Creating jobs for ACDC fileset %s' % filesetName)
+                logging.info('Creating jobs for ACDC fileset %s', filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
-                goodRunList = dcs.getLumiWhitelist(collectionName, filesetName)
+                goodRunList = dcs.getLumiWhitelist(self.collectionName, filesetName)
             except Exception as ex:
                 msg = "Exception while trying to load goodRunList. "
                 msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
                 logging.exception(msg)
                 return
 
-        lDict = self.sortByLocation()
+        lDict = self.getFilesSortedByLocation(lumisPerJob)
+        if not lDict:
+            logging.info("There are not enough lumis/files to be splitted. Trying again next cycle")
+            return
         locationDict = {}
-
-        # First we need to load the data
-        if self.package == 'WMCore.WMBS':
-            loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
-
         for key in lDict.keys():
             newlist = []
-            # First we need to load the data
-            if self.package == 'WMCore.WMBS':
-                fileLumis = loadRunLumi.execute(files=lDict[key])
-                for f in lDict[key]:
-                    lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
-                        f.addRun(run=Run(run, *lumiDict[run]))
-
             for f in lDict[key]:
                 # if hasattr(f, 'loadData'):
                 #    f.loadData()
@@ -367,3 +361,39 @@ class LumiBased(JobFactory):
         self.lumiChecker.closeJob(self.currentJob)
         self.lumiChecker.fixInputFiles()
         return
+
+    def getFilesSortedByLocation(self, lumisPerJob):
+        """
+        _getFilesSortedByLocation_
+
+        Retrieves a list of files available and sort them by location.
+        If the fileset is closed, resume the splitting. Otherwise check whether
+        there are enough lumis in each of these locations. If lumis don't
+        match the desired lumis_per_job splitting parameter, then skip those
+        files until further cycles.
+        :param lumisPerJob: number of lumi sections desired in the splitting
+        :return: a dictionary of files, key'ed by a frozenset location
+        """
+        lDict = self.sortByLocation()
+        if not self.loadRunLumi:
+            return lDict  # then it's a DataStruct/CRAB splitting
+
+        checkMinimumWork = self.checkForAmountOfWork()
+
+        # first, check whether we have enough files to reach the desired lumis_per_job
+        for sites in lDict.keys():
+            fileLumis = self.loadRunLumi.execute(files=lDict[sites])
+            if checkMinimumWork:
+                # fileLumis has a format like {230: {1: [1]}, 232: {1: [2]}, 304: {1: [3]}, 306: {1: [4]}}
+                availableLumisPerLocation = [runL for fileItem in fileLumis.values() for runL in fileItem.values()]
+
+                if lumisPerJob > len(flattenList(availableLumisPerLocation)):
+                    # then we don't split these files for the moment
+                    lDict.pop(sites)
+                    continue
+            for f in lDict[sites]:
+                lumiDict = fileLumis.get(f['id'], {})
+                for run in lumiDict.keys():
+                    f.addRun(run=Run(run, *lumiDict[run]))
+
+        return lDict

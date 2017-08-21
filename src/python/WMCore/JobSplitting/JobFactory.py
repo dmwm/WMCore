@@ -223,7 +223,7 @@ class JobFactory(WMObject):
         """
         _sortByLocation_
 
-        Retrieve available files and return them sorted by loacation.
+        Retrieve available files and return them sorted by location.
         The keys in the dict correspond to a set of locations.
 
         If TrustSiteLists is set ignore the file locations and treat all files
@@ -292,8 +292,8 @@ class JobFactory(WMObject):
 
         for proxy in results:
             self.proxies.append(proxy)
-            logging.debug("Received %i proxies", len(self.proxies))
 
+        logging.debug("Received %i proxies", len(self.proxies))
         # Activate everything so that we grab files by proxy
         self.grabByProxy = True
 
@@ -407,7 +407,7 @@ class JobFactory(WMObject):
             if int(parentInfo["merged"]) == 1:
                 newParents.add(parentInfo["lfn"])
 
-            elif parentInfo['gpmerged'] == None:
+            elif parentInfo['gpmerged'] is None:
                 continue
 
             # Handle the files that result from merge jobs that aren't redneck
@@ -425,6 +425,51 @@ class JobFactory(WMObject):
                     newParents.add(parent)
 
         return newParents
+
+    def checkForAmountOfWork(self):
+        """
+        Depending on what and how we are running the job splitting, check or
+        not for a minimum amount of work (lumi sections) before passing the list
+        of files all the way to the algorithm
+        :return: a boolean flag
+        """
+        if self.collectionName:
+            return False
+
+        fileset = self.subscription.getFileset()
+        fileset.load()
+        if not fileset.open:
+            return False  # it's closed, so just run the last jobs for it
+
+        return True
+
+    def getFilesSortedByLocation(self, eventsPerJob):
+        """
+        _getFilesSortedByLocation_
+
+        Function used by the EventAware* splitting algorithms for retrieving
+        a list of files available and sort them by location.
+
+        If the fileset is closed, keep splitting these data. Otherwise check
+        whether there are enough events in each of these locations, if events
+        don't match the desired events_per_job splitting parameter, then skip
+        those files until further cycles.
+        :param eventsPerJob: number of events desired in the splitting
+        :return: a dictionary of files, key'ed by a frozenset location
+        """
+        lDict = self.sortByLocation()
+        if not self.loadRunLumi:
+            return lDict  # then it's a DataStruct/CRAB splitting
+
+        if self.checkForAmountOfWork():
+            # first, check whether we have enough files to reach the desired events_per_job
+            for sites in lDict.keys():
+                availableEventsPerLocation = sum([f['events'] for f in lDict[sites]])
+                if eventsPerJob > availableEventsPerLocation:
+                    # then we don't split these files for the moment
+                    lDict.pop(sites)
+
+        return lDict
 
     @staticmethod
     def getPerformanceParameters(defaultParams):

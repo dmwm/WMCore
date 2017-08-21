@@ -48,7 +48,7 @@ class RESTApi(WebAPI):
                                  'version': 1}})
 
         # TODO: implement HEAD & TRACE
-        self.supporttypes = self.formatter.supporttypes.keys()
+        self.supporttypes = list(self.formatter.supporttypes.keys())
 
     def _set_model(self, config):
         """
@@ -108,7 +108,7 @@ class RESTApi(WebAPI):
             # If something raises an HTTPError assume it's something that should
             # go to the client
             response.status = h[0]
-            for kwarg in kwargs.keys():
+            for kwarg in list(kwargs.keys()):
                 if isinstance(kwargs[kwarg], cgi.FieldStorage):
                     kwargs[kwarg] = 'FieldStorage class, not printed.'
             self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, h[1]))
@@ -120,7 +120,7 @@ class RESTApi(WebAPI):
             # If something raises a generic exception assume the details are private
             # and should not go to the client
             response.status = 500
-            for kwarg in kwargs.keys():
+            for kwarg in list(kwargs.keys()):
                 if isinstance(kwargs[kwarg], cgi.FieldStorage):
                     kwargs[kwarg] = 'FieldStorage class, not printed.'
             debugMsg = replaceToSantizeURL("""call to %s with args: %s kwargs: %s resulted in %s \n

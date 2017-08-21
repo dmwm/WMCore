@@ -586,7 +586,7 @@ def findCustodialLocation(url, dataset):
     r2 = conn.getresponse()
     result = json.loads(r2.read())
     request = result['phedex']
-    if 'block' not in request.keys():
+    if 'block' not in list(request.keys()):
         return "No Site"
     if len(request['block']) == 0:
         return "No Site"
@@ -605,7 +605,7 @@ def checkAcceptedSubscriptionRequest(url, dataset, site):
     resp = conn.getresponse()
     result = json.load(resp)
     requests = result['phedex']
-    if 'request' not in requests.keys():
+    if 'request' not in list(requests.keys()):
         return [False, False]
     ourNode = False
     otherNode = False

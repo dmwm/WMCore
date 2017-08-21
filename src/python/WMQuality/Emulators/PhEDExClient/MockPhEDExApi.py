@@ -243,7 +243,7 @@ class MockPhEDExApi(object):
             """
 
             if kwargs:
-                signature = '%s:%s' % (item, sorted(kwargs.iteritems()))
+                signature = '%s:%s' % (item, sorted(kwargs.items()))
             else:
                 signature = item
 

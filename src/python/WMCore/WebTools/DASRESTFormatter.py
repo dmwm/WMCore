@@ -66,7 +66,7 @@ class DASRESTFormatter(RESTFormatter):
         "Return DAS compliant xml"
         das = runDas(self, func, data, expires)
         header = "<?xml version='1.0' standalone='yes'?>"
-        keys = das.keys()
+        keys = list(das.keys())
         keys.remove('results')
         string = ''
         for key in keys:

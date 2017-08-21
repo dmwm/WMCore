@@ -136,7 +136,7 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
 if __name__ == '__main__':
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
+        opts, args = getopt.getopt(sys.argv[1:], "", list(options.keys()))
     except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)

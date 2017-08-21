@@ -67,7 +67,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
                                                      secure, secureParam)
 
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
-    for key, value in output.items():
+    for key, value in list(output.items()):
         msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
                 % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
         assert keyMap[key] == value, msg
@@ -82,7 +82,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
 
 def _generateHash(keyfile, headers):
     prefix = suffix = ""
-    hkeys = headers.keys()
+    hkeys = list(headers.keys())
     hkeys.sort()
     for hk in hkeys:
         hk=hk.lower()

@@ -145,7 +145,7 @@ class Mask(dict):
         if not type(lumis) == list:
             lumis = list(lumis)
 
-        if not run in self['runAndLumis'].keys():
+        if not run in list(self['runAndLumis'].keys()):
             self['runAndLumis'][run] = []
 
         self['runAndLumis'][run].append([min(lumis), max(lumis)])
@@ -173,7 +173,7 @@ class Mask(dict):
             # ALWAYS TRUE
             return True
 
-        if not run in self['runAndLumis'].keys():
+        if not run in list(self['runAndLumis'].keys()):
             return False
 
         for pair in self['runAndLumis'][run]:

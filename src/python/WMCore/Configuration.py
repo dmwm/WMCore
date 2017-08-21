@@ -109,7 +109,7 @@ class ConfigSection(object):
         elif isinstance(value, tuple(_ComplexTypes)):
             vallist = value
             if isinstance(value, dict):
-                vallist = value.values()
+                vallist = list(value.values())
             for val in vallist:
                 self._complexTypeCheck(name, val)
         else:
@@ -595,7 +595,7 @@ def loadConfigurationFile(filename):
         msg += str(traceback.format_exc())
         raise RuntimeError(msg)
 
-    for attr in modRef.__dict__.values():
+    for attr in list(modRef.__dict__.values()):
         if isinstance(attr, Configuration):
             return attr
 

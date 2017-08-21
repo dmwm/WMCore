@@ -55,7 +55,7 @@ class ApmonTransPort:
         Send multiple parameters to the Monalisa, with last given cluster and node name
         """
         try:
-            params.items()
+            list(params.items())
         except AttributeError as ex:
             msg = "ApmonTransPort: Unable to sendAll the params, use _dict_ - "
             msg += str(ex)

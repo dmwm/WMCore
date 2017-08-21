@@ -480,8 +480,8 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = DBSReader(inputDataset.dbsurl)
         maskedBlocks = Block(**self.splitArgs).getMaskedBlocks(task, dbs, dataset)
-        for dummyBlock, files in maskedBlocks.items():
-            for dummyFile, lumiList in files.items():
+        for dummyBlock, files in list(maskedBlocks.items()):
+            for dummyFile, lumiList in list(files.items()):
                 self.assertEqual(str(lumiList), str(inputLumis & lumiMask))
 
 

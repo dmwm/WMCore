@@ -208,7 +208,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         if len(finishedwfs) == 0:
             return
 
-        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs), finishedwfs.keys())
+        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs), list(finishedwfs.keys()))
         completedWorkflowsDAO = self.dbsDaoFactory(classname="UpdateWorkflowsToCompleted")
 
         centralCouchAlive = True
@@ -226,7 +226,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if self.workQueue != None:
                         subList = []
                         logging.info("Marking subscriptions as Done ...")
-                        for l in finishedwfs[workflow]["workflows"].values():
+                        for l in list(finishedwfs[workflow]["workflows"].values()):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
 

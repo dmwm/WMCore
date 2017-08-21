@@ -32,7 +32,7 @@ class GetAvailableFilesMeta(DBFormatter):
         formattedResults = DBFormatter.formatDict(self, results)
 
         for formattedResult in formattedResults:
-            if "size" in formattedResult.keys():
+            if "size" in list(formattedResult.keys()):
                 formattedResult["size"] = int(formattedResult["size"])
             else:
                 formattedResult["size"] = int(formattedResult["filesize"])

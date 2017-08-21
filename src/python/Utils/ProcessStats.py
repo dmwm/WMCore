@@ -66,7 +66,7 @@ def threadStack():
     tdict = {}
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     threads = []
-    for tid, stack in sys._current_frames().items():
+    for tid, stack in list(sys._current_frames().items()):
         tdict = {"thead": id2name.get(tid, ""), "thead_id": tid}
         stacklist = []
         for filename, lineno, name, line in traceback.extract_stack(stack):

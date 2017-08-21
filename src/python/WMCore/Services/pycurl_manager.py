@@ -126,7 +126,7 @@ class RequestHandler(object):
         curl.setopt(pycurl.URL, url)
         if  headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                    ["%s: %s" % (k, v) for k, v in headers.items()])
+                    ["%s: %s" % (k, v) for k, v in list(headers.items())])
         bbuf = StringIO.StringIO()
         hbuf = StringIO.StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)

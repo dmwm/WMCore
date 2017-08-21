@@ -49,7 +49,7 @@ if __name__ == '__main__':
 
     siteDB = SiteDBAPI()
     for call in calls:
-        signature = str(sorted(call.iteritems()))
+        signature = str(sorted(call.items()))
         callname = call['callname']
         try:
             result = siteDB.getJSON(**call)

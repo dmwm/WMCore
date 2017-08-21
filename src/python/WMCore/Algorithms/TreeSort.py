@@ -76,7 +76,7 @@ class _Node:
         Call operator on self and then pass down
         """
         operator(self)
-        for c in self.children.values():
+        for c in list(self.children.values()):
             c.traverse(operator)
 
 
@@ -90,7 +90,7 @@ class _Node:
         for x in range(0, indent):
             padding += " "
         msg = "%s_Node : %s\n" % (padding, self.name)
-        for c in self.children.values():
+        for c in list(self.children.values()):
             msg += "%s%s" % (padding, c.stringMe(indent+1))
         return msg
 
@@ -198,7 +198,7 @@ class TreeSort:
         requested, returning the _Node matching that LFN
 
         """
-        for root in self.roots.values():
+        for root in list(self.roots.values()):
             searcher = _SearchOp(name)
             root.traverse(searcher)
             if searcher.result != None:
@@ -215,7 +215,7 @@ class TreeSort:
 
         """
         sorter = _OrderOp()
-        for root in self.roots.values():
+        for root in list(self.roots.values()):
             root.traverse(sorter)
         return sorter.result
 
@@ -225,7 +225,7 @@ class TreeSort:
         format method to aid debugging
         """
         msg = ""
-        for root in self.roots.values():
+        for root in list(self.roots.values()):
             msg += "%s\n" % root.stringMe()
 
         return msg

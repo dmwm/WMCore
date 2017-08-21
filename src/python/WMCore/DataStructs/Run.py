@@ -66,7 +66,7 @@ class Run(WMObject):
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError(msg)
 
-        for lumi, events in rhs.eventsPerLumi.iteritems():
+        for lumi, events in rhs.eventsPerLumi.items():
             if lumi not in self.eventsPerLumi or not self.eventsPerLumi[lumi]:  # Either doesn't exist, 0, or None
                 self.eventsPerLumi[lumi] = events
             else:
@@ -130,7 +130,7 @@ class Run(WMObject):
         Calculate the value of the hash
         """
         value = self.run.__hash__()
-        value += hash(frozenset(self.eventsPerLumi.items()))  # Hash that represents the dictionary
+        value += hash(frozenset(list(self.eventsPerLumi.items())))  # Hash that represents the dictionary
         return value
 
     @property
@@ -218,7 +218,7 @@ class Run(WMObject):
         """
         self.run = jsondata["Run"]
         self.eventsPerLumi = {}
-        for lumi, events in jsondata["Lumis"].iteritems():
+        for lumi, events in jsondata["Lumis"].items():
             self.eventsPerLumi[int(lumi)] = events  # Make the keys integers again
 
         return self

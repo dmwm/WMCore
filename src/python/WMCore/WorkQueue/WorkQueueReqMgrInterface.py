@@ -212,7 +212,7 @@ class WorkQueueReqMgrInterface(object):
         tempResults = self.reqMgr2.getRequestByStatus("assigned")
         filteredResults = []
         for requests in tempResults:
-            for request in requests.values():
+            for request in list(requests.values()):
                 filteredResults.append(request)
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
         filteredResults.sort(key=lambda r: r["Teams"][0])

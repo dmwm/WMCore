@@ -231,13 +231,13 @@ class ReRecoWorkloadFactory(DataProcessing):
         Check for required fields, and some skim facts
         """
         DataProcessing.validateSchema(self, schema)
-        mainOutputModules = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
+        mainOutputModules = list(self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
                                                            configCacheUrl = schema['ConfigCacheUrl'],
                                                            couchDBName = schema["CouchDBName"],
-                                                           getOutputModules = True).keys()
+                                                           getOutputModules = True).keys())
 
         # Skim facts have to be validated outside the usual master validation
-        skimSchema = {k: v for (k, v) in schema.iteritems() if k.startswith("Skim")}
+        skimSchema = {k: v for (k, v) in schema.items() if k.startswith("Skim")}
         skimArguments = self.getSkimArguments()
         skimIndex = 1
         skimInputs = set()

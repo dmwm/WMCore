@@ -726,11 +726,11 @@ class ResourceControlTest(EmulatedUnitTestCase):
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('test_T1_US_FNAL_Buffer' in list(result.keys()))
         self.assertGreaterEqual(len(result), 1)
-        for siteName in result.keys():
+        for siteName in list(result.keys()):
             self.assertEqual(len(result[siteName]['thresholds']), 2)
             self.assertEqual(result[siteName]['total_pending_slots'], 200)
             self.assertEqual(result[siteName]['total_running_slots'], 400)
-            for taskType, thresh in result[siteName]['thresholds'].items():
+            for taskType, thresh in list(result[siteName]['thresholds'].items()):
                 if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], 100)

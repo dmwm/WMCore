@@ -395,12 +395,12 @@ class WorkQueueBackend(object):
 
             prio = element['Priority']
             possibleSite = None
-            sites = thresholds.keys()
+            sites = list(thresholds.keys())
             random.shuffle(sites)
             for site in sites:
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
-                    curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, list(siteJobCounts.get(site, {}).items())))
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site
@@ -541,7 +541,7 @@ class WorkQueueBackend(object):
         else:
             injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
             finalInjectionStatus = []
-            for request in injectionStatus.keys():
+            for request in list(injectionStatus.keys()):
                 inboxElement = self.getInboxElements(WorkflowName=request)
                 requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
                 finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})

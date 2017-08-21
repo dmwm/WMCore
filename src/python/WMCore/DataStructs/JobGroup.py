@@ -130,7 +130,7 @@ class JobGroup(WMObject):
         This just gets a length for either dict or list objects
         """
         if type(obj) == dict:
-            return len(obj.keys())
+            return len(list(obj.keys()))
         elif type(obj) == list:
             return len(obj)
         else:

@@ -361,7 +361,7 @@ class WorkQueue(WorkQueueBase):
                     elif match['Inputs']:
                         blockName, dbsBlock = self._getDBSBlock(match, wmspec)
                 except Exception as ex:
-                    msg = "%s, %s: \n" % (wmspec.name(), match['Inputs'].keys())
+                    msg = "%s, %s: \n" % (wmspec.name(), list(match['Inputs'].keys()))
                     msg += "failed to retrieve data from DBS/PhEDEx in LQ: \n%s" % str(ex)
                     self.logger.error(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
@@ -389,23 +389,23 @@ class WorkQueue(WorkQueueBase):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
         dbs = get_dbs(match['Dbs'])
-        datasetName = match['Inputs'].keys()[0]
+        datasetName = list(match['Inputs'].keys())[0]
 
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
         for blockName in blocks:
             tmpDsetDict.update(dbs.getFileBlock(blockName))
 
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
-        dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
+        dbsDatasetDict['Files'] = [f for block in list(tmpDsetDict.values()) for f in block['Files']]
         dbsDatasetDict['PhEDExNodeNames'].extend(
-            [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
+            [f for block in list(tmpDsetDict.values()) for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
         """Get DBS info for this block"""
-        blockName = match['Inputs'].keys()[0]  # TODO: Allow more than one
+        blockName = list(match['Inputs'].keys())[0]  # TODO: Allow more than one
 
         if match['ACDC']:
             acdcInfo = match['ACDC']
@@ -896,7 +896,7 @@ class WorkQueue(WorkQueueBase):
         reqNames = self.backend.getWorkflows(includeInbox=True, includeSpecs=True)
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
-        for key, value in requestsInfo.items():
+        for key, value in list(requestsInfo.items()):
             if (value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
 
@@ -1020,7 +1020,7 @@ class WorkQueue(WorkQueueBase):
                                                                                   unit['Task'].getPathName(),
                                                                                   unit['Jobs'], policyName)
                 if unit['Inputs']:
-                    msg += ' on %s' % unit['Inputs'].keys()[0]
+                    msg += ' on %s' % list(unit['Inputs'].keys())[0]
                 if unit['Mask']:
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
@@ -1084,7 +1084,7 @@ class WorkQueue(WorkQueueBase):
                     if not self.params.get('LocalQueueFlag'):
                         processedInputs = []
                         for unit in work:
-                            processedInputs.extend(unit['Inputs'].keys())
+                            processedInputs.extend(list(unit['Inputs'].keys()))
                         if processedInputs or rejectedWork:
                             chunkSize = 20
                             chunkProcessed = processedInputs[:chunkSize]

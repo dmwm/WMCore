@@ -152,7 +152,7 @@ def check_scripts(scripts, resource, path):
     and that the script actually exists
     """
     for script in scripts:
-        if script not in resource.keys():
+        if script not in list(resource.keys()):
             spath = os.path.normpath(os.path.join(path, script))
             if os.path.isfile(spath):
                 resource.update({script: spath})
@@ -188,10 +188,10 @@ def tasks_configs(docs, html=False):
             curl = 'https://cmsweb.cern.ch/couchdb'
         if  not name:
             continue
-        for key, val in doc.items():
+        for key, val in list(doc.items()):
             _map_configcache_url(tConfigs, curl, key, val)
             if chainTypeFlag and key.startswith(ctype) and isinstance(val, dict):
-                for kkk in val.keys():
+                for kkk in list(val.keys()):
                     # append task/step number and name
                     keyStr = "%s: %s" % (key, val.get("%sName" % ctype, ''))
                     _map_configcache_url(tConfigs, curl, kkk, val[kkk], keyStr)
@@ -230,7 +230,7 @@ def toString(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(toString, data.iteritems()))
+        return dict(map(toString, iter(data.items())))
     elif isinstance(data, collections.Iterable):
         return type(data)(map(toString, data))
     else:
@@ -341,7 +341,7 @@ class ReqMgrService(TemplatedPage):
 
         # fetch assignment arguments specification from StdBase
         self.assignArgs = StdBase().getWorkloadAssignArgs()
-        self.assignArgs = {key: val['default'] for key, val in self.assignArgs.items()}
+        self.assignArgs = {key: val['default'] for key, val in list(self.assignArgs.items())}
 
 
     def getTeams(self):
@@ -413,7 +413,7 @@ class ReqMgrService(TemplatedPage):
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         dataResult = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
         for data in dataResult:
-            for val in data.values():
+            for val in list(data.values()):
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -448,7 +448,7 @@ class ReqMgrService(TemplatedPage):
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus', 'Campaign']
         dataResult = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
         for data in dataResult:
-            for val in data.values():
+            for val in list(data.values()):
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -479,7 +479,7 @@ class ReqMgrService(TemplatedPage):
         self.update_scripts()
         content = self.templatepage('create', table=json2table(jsondata, web_ui_names(), jsondata),
                                     jsondata=json2form(jsondata, indent=2, keep_first_value=True), name=spec,
-                                    scripts=[s for s in self.sdict.keys() if s != 'ts'],
+                                    scripts=[s for s in list(self.sdict.keys()) if s != 'ts'],
                                     specs=all_specs)
         return self.abs_page('create', content)
 
@@ -527,7 +527,7 @@ class ReqMgrService(TemplatedPage):
             # extend filterout list with "RequestStatus" since it is passed separately
             filterout_attrs.append("RequestStatus")
 
-            for key, val in self.assignArgs.items():
+            for key, val in list(self.assignArgs.items()):
                 if not doc.get(key):
                     doc[key] = val
 
@@ -589,7 +589,7 @@ class ReqMgrService(TemplatedPage):
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus', 'Campaign']
         docs = []
         for data in dataResult:
-            for doc in data.values():
+            for doc in list(data.values()):
                 docs.append(request_attr(doc, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -697,7 +697,7 @@ class ReqMgrService(TemplatedPage):
     def serve(self, kwds, imap, idir, datatype='', minimize=False):
         "Serve files for high level APIs (yui/css/js)"
         args = []
-        for key, val in kwds.items():
+        for key, val in list(kwds.items()):
             if key == 'f':  # we only look-up files from given kwds dict
                 if isinstance(val, list):
                     args += val
@@ -734,7 +734,7 @@ class ReqMgrService(TemplatedPage):
         Return asked set of files for JS, YUI, CSS.
         """
         idx = "-".join(scripts)
-        if idx not in self._cache.keys():
+        if idx not in list(self._cache.keys()):
             data = ''
             if datatype == 'css':
                 data = '@CHARSET "UTF-8";'

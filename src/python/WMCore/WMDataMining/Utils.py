@@ -56,7 +56,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     report = {}
     nMCMCalls = 0
     with McM(cert=mcmCert, key=mcmKey, url=mcmUrl, tmpDir=tmpDir) as mcm:
-        for wf in result.keys():
+        for wf in list(result.keys()):
 
             # Store a copy of the CouchDB document so we can compare later before updating
             if couchdb.documentExists(wf):

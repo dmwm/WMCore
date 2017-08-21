@@ -36,7 +36,7 @@ class Task(Thread):
         """Get the daemon status. Returns dictionary of time stamps of the
         the last hundred times this thread last did 'work'."""
         with self._cv:
-            return dict((k, v) for k, v in self._status.items())
+            return dict((k, v) for k, v in list(self._status.items()))
 
     def stop(self):
         """Tell the task thread to quit."""

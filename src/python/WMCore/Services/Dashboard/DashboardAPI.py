@@ -99,7 +99,7 @@ class DashboardAPI(object):
             contextArgs['MonitorID'] = taskId
         if jobId is not None:
             contextArgs['MonitorJobID'] = jobId
-        for key in contextConf.keys():
+        for key in list(contextConf.keys()):
             if key not in contextArgs and self.defaultContext[key] is not None:
                 contextArgs[key] = self.defaultContext[key]
         context = getContext(contextArgs)
@@ -145,7 +145,7 @@ def getContext(overload={}):
     if not isinstance(overload, dict):
         overload = {}
     context = {}
-    for paramName in contextConf.keys():
+    for paramName in list(contextConf.keys()):
         paramValue = None
         if paramName in overload:
             paramValue = overload[paramName]
@@ -183,10 +183,10 @@ def filterArgs(argValues):
     contextValues = {}
     paramValues = {}
 
-    for paramName in argValues.keys():
+    for paramName in list(argValues.keys()):
         paramValue = argValues[paramName]
         if paramValue is not None:
-            if paramName in contextConf.keys():
+            if paramName in list(contextConf.keys()):
                 contextValues[paramName] = paramValue
             else:
                 paramValues[paramName] = paramValue

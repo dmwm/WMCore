@@ -173,7 +173,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         self.thresholdsByVOName(ssbIoSlots, ssbSiteSlots, slotsType='slotsIO')
 
         # Now remove sites with state only, such that no updates are applied to them
-        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.iteritems() if len(v) == 3}
+        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.items() if len(v) == 3}
 
         if not ssbSiteSlots:
             logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")

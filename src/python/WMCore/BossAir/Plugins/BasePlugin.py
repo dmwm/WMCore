@@ -34,7 +34,7 @@ class BasePlugin:
 
     @staticmethod
     def verifyState(stateMap):
-        for state in stateMap.values():
+        for state in list(stateMap.values()):
             if state not in BasePlugin.globalState:
                 raise BossAirPluginException("not valid state %s" % state)
         return stateMap
@@ -54,7 +54,7 @@ class BasePlugin:
 
         # NOTE: Don't overwrite this.
         # However stateMap should be implemented in child class.
-        self.states = self.stateMap().keys()
+        self.states = list(self.stateMap().keys())
 
 
 
@@ -135,12 +135,12 @@ class BasePlugin:
         if scramArch is None:
             requiredOSes.add('any')
         elif isinstance(scramArch, basestring):
-            for arch, validOSes in ARCH_TO_OS.iteritems():
+            for arch, validOSes in ARCH_TO_OS.items():
                 if arch in scramArch:
                     requiredOSes.update(validOSes)
         elif isinstance(scramArch, list):
             for validArch in scramArch:
-                for arch, validOSes in ARCH_TO_OS.iteritems():
+                for arch, validOSes in ARCH_TO_OS.items():
                     if arch in validArch:
                         requiredOSes.update(validOSes)
         else:

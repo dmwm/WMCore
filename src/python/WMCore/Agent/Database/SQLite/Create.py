@@ -38,7 +38,7 @@ class Create(CreateAgentBase):
         self.constraints.clear()
 
     def execute(self, conn = None, transaction = None):
-        for i in self.create.keys():
+        for i in list(self.create.keys()):
             self.create[i] = self.create[i].replace('AUTO_INCREMENT', 'AUTOINCREMENT')
 
         return CreateAgentBase.execute(self, conn, transaction)

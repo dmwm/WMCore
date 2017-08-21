@@ -27,7 +27,7 @@ class DAOFactory(object):
             dia = self.dbinterface.engine.dialect
             #TODO: Make good
             dialect = None
-            for i in self.dialects.keys():
+            for i in list(self.dialects.keys()):
                 if isinstance(dia, self.dialects[i]):
                     dialect = i
             if not dialect:

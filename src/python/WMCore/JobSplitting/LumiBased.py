@@ -49,7 +49,7 @@ def isGoodRun(goodRunList, run):
     if goodRunList is None or goodRunList == {}:
         return True
 
-    if str(run) in goodRunList.keys():
+    if str(run) in list(goodRunList.keys()):
         # @e can find a run
         return True
 
@@ -110,7 +110,7 @@ class LumiChecker(object):
         if not self.applyLumiCorrection:
             return
         if job:  # the first time you call "newJob" in the splitting algorithm currentJob is None
-            for run, lumiIntervals in job['mask']['runAndLumis'].iteritems():
+            for run, lumiIntervals in job['mask']['runAndLumis'].items():
                 for startLumi, endLumi in lumiIntervals:
                     for lumi in xrange(startLumi, endLumi + 1):
                         self.lumiJobs[(run, lumi)] = job
@@ -123,7 +123,7 @@ class LumiChecker(object):
         if not self.applyLumiCorrection:
             return
 
-        for (run, lumi), files in self.splitLumiFiles.iteritems():
+        for (run, lumi), files in self.splitLumiFiles.items():
             for file_ in files:
                 self.lumiJobs[(run, lumi)].addFile(file_)
 
@@ -195,14 +195,14 @@ class LumiBased(JobFactory):
         if self.package == 'WMCore.WMBS':
             loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
 
-        for key in lDict.keys():
+        for key in list(lDict.keys()):
             newlist = []
             # First we need to load the data
             if self.package == 'WMCore.WMBS':
                 fileLumis = loadRunLumi.execute(files=lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
+                    for run in list(lumiDict.keys()):
                         f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
@@ -240,7 +240,7 @@ class LumiBased(JobFactory):
         lumisInJob = 0
         lumisInTask = 0
         self.lumiChecker = LumiChecker(applyLumiCorrection)
-        for location in locationDict.keys():
+        for location in list(locationDict.keys()):
 
             # For each location, we need a new jobGroup
             self.newGroup()

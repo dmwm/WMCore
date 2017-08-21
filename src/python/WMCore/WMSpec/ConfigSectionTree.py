@@ -401,7 +401,7 @@ class TreeHelper:
         if not type(value) == dict:
             raise Exception("TreeHelper.addValue passed a value that was not a dictionary")
 
-        for key in value.keys():
+        for key in list(value.keys()):
             splitList = key.split('.')
             setResult = value[key]
             if len(splitList) == 1:

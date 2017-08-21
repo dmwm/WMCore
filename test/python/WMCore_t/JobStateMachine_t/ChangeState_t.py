@@ -139,7 +139,7 @@ class TestChangeState(unittest.TestCase):
 
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
-        for transition in testJobADoc["states"].values():
+        for transition in list(testJobADoc["states"].values()):
             self.assertTrue(isinstance(transition["timestamp"], int) or 
                             isinstance(transition["timestamp"], long))
 

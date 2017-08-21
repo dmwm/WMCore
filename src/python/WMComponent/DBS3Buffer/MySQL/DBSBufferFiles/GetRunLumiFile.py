@@ -28,7 +28,7 @@ class GetRunLumiFile(DBFormatter):
         run_lumis={}
         for r in result:
             for i in r.fetchall():
-                if i[0] not in run_lumis.keys():
+                if i[0] not in list(run_lumis.keys()):
                     run_lumis[i[0]]=[]
                 run_lumis[i[0]].append((i[1], i[2]))
 

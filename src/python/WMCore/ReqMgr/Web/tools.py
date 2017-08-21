@@ -82,7 +82,7 @@ class TemplatedPage(Page):
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
         verbose = config.get('verbose', 0)
-        self.jinja = True if 'jinja2' in sys.modules.keys() else False
+        self.jinja = True if 'jinja2' in list(sys.modules.keys()) else False
         if  self.jinja:
             templates = 'JINJA'
         else:

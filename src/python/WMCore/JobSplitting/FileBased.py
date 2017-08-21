@@ -66,7 +66,7 @@ class FileBased(JobFactory):
         ## Make a list with all the files, sorting them by LFN. Remove from the list all
         ## the files filtered out by the lumi-mask (if there is one).
         files = []
-        for filesPerLocSet in locationDict.values():
+        for filesPerLocSet in list(locationDict.values()):
             for f in filesPerLocSet:
                 files.append(f)
         if len(files):
@@ -92,11 +92,11 @@ class FileBased(JobFactory):
             removedFiles = files[totalFiles:]
             files = files[:totalFiles]
             for f in removedFiles:
-                for locSet in locationDict.keys():
+                for locSet in list(locationDict.keys()):
                     if f in locationDict[locSet]:
                         locationDict[locSet].remove(f)
 
-        for locSet in locationDict.keys():
+        for locSet in list(locationDict.keys()):
             #Now we have all the files in a certain location set
             fileList = locationDict[locSet]
             filesInJob  = 0

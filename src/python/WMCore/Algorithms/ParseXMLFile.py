@@ -28,7 +28,7 @@ class Node:
         self.name = str(name)
         self.attrs = {}
         self.text = None
-        [ self.attrs.__setitem__(str(k), str(v)) for k,v in attrs.items()]
+        [ self.attrs.__setitem__(str(k), str(v)) for k,v in list(attrs.items())]
         self.children = []
 
     def __str__(self):

@@ -36,7 +36,7 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     elif status and isinstance(status, (list, tuple)):
         activeStatus = status
     else:
-        activeStatus = elements.keys()
+        activeStatus = list(elements.keys())
 
     uniqueJobsSummary = {}
     possibleJobsSummary = {}
@@ -87,7 +87,7 @@ class WorkQueueElementsSummary(object):
             elementsByRequest[ele["RequestName"]].append(ele)
 
         self.wqResultsByRequest = {}
-        for reqName, wqElements in elementsByRequest.iteritems():
+        for reqName, wqElements in elementsByRequest.items():
             self.wqResultsByRequest[reqName] = WorkQueueElementResult(Elements=wqElements)
 
     def elementsWithHigherPriorityInSameSites(self, requestName, returnFormat="dict"):

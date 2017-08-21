@@ -22,7 +22,7 @@ def user_info_from_headers(key, verbose=False):
     # Extract user information from the headers. Collect data required
     # for HMAC validation while processing headers.
     prefix = suffix = ""
-    hkeys = headers.keys()
+    hkeys = list(headers.keys())
     hkeys.sort()
     for hk in hkeys:
         hk = hk.lower()
@@ -78,7 +78,7 @@ def authz_match(role=[], group=[], site=[], verbose=False):
         return
 
     # Otherwise determine set intersection of requirements.
-    for r, authz in ((user and user['roles']) or {}).iteritems():
+    for r, authz in ((user and user['roles']) or {}).items():
         if (not role) or (r in role):
             if not (group or site):
                 if verbose:

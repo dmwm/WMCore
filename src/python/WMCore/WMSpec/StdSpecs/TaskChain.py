@@ -235,7 +235,7 @@ class TaskChainWorkloadFactory(StdBase):
             originalTaskConf = arguments["Task%d" % i]
             taskConf = {}
             # Make a shallow copy of the taskConf
-            for k, v in originalTaskConf.items():
+            for k, v in list(originalTaskConf.items()):
                 taskConf[k] = v
             parent = taskConf.get("InputTask", None)
 
@@ -440,10 +440,10 @@ class TaskChainWorkloadFactory(StdBase):
         If not merged then only a cleanup task is created.
         """
         modulesToMerge = []
-        unmergedModules = outputModules.keys()
+        unmergedModules = list(outputModules.keys())
         if keepOutput:
-            unmergedModules = [x for x in outputModules.keys() if x in transientOutputModules]
-            modulesToMerge = [x for x in outputModules.keys() if x not in transientOutputModules]
+            unmergedModules = [x for x in list(outputModules.keys()) if x in transientOutputModules]
+            modulesToMerge = [x for x in list(outputModules.keys()) if x not in transientOutputModules]
 
         procMergeTasks = {}
         for outputModuleName in modulesToMerge:

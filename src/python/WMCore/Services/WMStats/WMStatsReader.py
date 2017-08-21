@@ -37,13 +37,13 @@ REQUEST_PROPERTY_MAP = {
 
 def convertToLegacyFormat(requestDoc):
     converted = {}
-    for key, value in requestDoc.items():
+    for key, value in list(requestDoc.items()):
 
         if key == "RequestTransition":
             newValue = []
             for transDict in value:
                 newItem = {}
-                for transKey, transValue in transDict.items():
+                for transKey, transValue in list(transDict.items()):
                     newItem[REQUEST_PROPERTY_MAP.get(transKey, transKey)] = transValue
                     newValue.append(newItem)
             value = newValue
@@ -120,8 +120,8 @@ class WMStatsReader(object):
         return jobInfoByRequestAndAgent
 
     def _updateRequestInfoWithJobInfo(self, requestInfo):
-        if len(requestInfo.keys()) != 0:
-            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(requestInfo.keys())
+        if len(list(requestInfo.keys())) != 0:
+            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(list(requestInfo.keys()))
             self._combineRequestAndJobData(requestInfo, jobInfoByRequestAndAgent)
 
     def _getCouchView(self, view, options, keys=None):
@@ -322,7 +322,7 @@ class WMStatsReader(object):
 
         if legacyFormat:
             # convert the format to wmstas old format
-            for requestName, doc in requestInfo.items():
+            for requestName, doc in list(requestInfo.items()):
                 requestInfo[requestName] = convertToLegacyFormat(doc)
 
         if jobInfoFlag:
@@ -350,7 +350,7 @@ class WMStatsReader(object):
 
         workflowDict = self.reqDB.getStatusAndTypeByRequest(requestNames)
         archivedRequests = []
-        for request, value in workflowDict.items():
+        for request, value in list(workflowDict.items()):
             if value[0].endswith("-archived"):
                 archivedRequests.append(request)
 

@@ -104,7 +104,7 @@ class StartPolicyInterface(PolicyInterface):
         dbsUrl = self.initialTask.dbsUrl()
         if dbsUrl is None and self.pileupData:
             # Get the first DBS found
-            dbsUrl = self.wmspec.listPileupDatasets().keys()[0]
+            dbsUrl = list(self.wmspec.listPileupDatasets().keys())[0]
 
         args.setdefault('Status', 'Available')
         args.setdefault('WMSpec', self.wmspec)
@@ -121,7 +121,7 @@ class StartPolicyInterface(PolicyInterface):
         if not args['Priority']:
             args['Priority'] = 0
         ele = WorkQueueElement(**args)
-        for data, sites in ele['Inputs'].items():
+        for data, sites in list(ele['Inputs'].items()):
             if not sites:
                 raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
 

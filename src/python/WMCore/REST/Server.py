@@ -152,7 +152,7 @@ class RESTFrontPage:
         :arg bool debug_mode:    Specifies how to set REST_DEBUG, see above."""
 
         # Verify all roots do end in a slash.
-        for origin, info in roots.iteritems():
+        for origin, info in roots.items():
             if not re.match(r"^[-a-z0-9]+$", origin):
                 raise ValueError("invalid root label")
             if not info["root"].endswith("/"):
@@ -183,7 +183,7 @@ class RESTFrontPage:
 
         if instances:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
-                         for k, v in instances().iteritems()]
+                         for k, v in instances().items()]
             instances.sort(lambda a, b: a["order"] - b["order"])
             self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
@@ -272,9 +272,9 @@ class RESTFrontPage:
                 elif ctype != ctypemap[suffix]:
                     ctype = "text/plain"
                 if suffix == "html":
-                    for var, value in self._substitutions.iteritems():
+                    for var, value in self._substitutions.items():
                         data = data.replace("@" + var + "@", value)
-                    for var, files in self._embeddings.iteritems():
+                    for var, files in self._embeddings.items():
                         value = ""
                         for fpath in files:
                             if not os.access(fpath, os.R_OK):
@@ -756,7 +756,7 @@ class MiniRESTApi:
         api = param.args.pop(0)
         if api not in self.methods[request.method]:
             response.headers['Allow'] = \
-                " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
+                " ".join(sorted([m for m, d in self.methods.items() if api in d]))
             raise APIMethodMismatch()
         apiobj = self.methods[request.method][api]
 
@@ -868,7 +868,7 @@ class RESTApi(MiniRESTApi):
         :arg callable entry: The pre-entry callback hook. See :meth:`_enter`.
         :arg callable wrapper: Optional wrapper to modify the method handler.
         :returns: Nothing."""
-        for label, entity in entities.iteritems():
+        for label, entity in entities.items():
             for method in _METHODS:
                 handler = getattr(entity, method.lower(), None)
                 if not handler and method == 'HEAD':
@@ -1719,8 +1719,8 @@ class DatabaseRESTApi(RESTApi):
         module = __import__(modname, globals(), locals(), [item])
         self._db = getattr(module, item)
         myid = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
-        for spec in self._db.values():
-            for db in spec.values():
+        for spec in list(self._db.values()):
+            for db in list(spec.values()):
                 if isinstance(db, dict):
                     db["pool"] = DBConnectionPool(myid, db)
                     DatabaseRESTApi._ALL_POOLS.append(db["pool"])
@@ -2251,8 +2251,8 @@ class DatabaseRESTApi(RESTApi):
         For example the call ``api.bindmap(a = [1, 2], b = [3, 4])`` returns a
         list of dictionaries ``[{ "a": 1, "b": 3 }, { "a": 2, "b": 4 }]``."""
 
-        keys = kwargs.keys()
-        return [dict(list(zip(keys, vals))) for vals in zip(*kwargs.values())]
+        keys = list(kwargs.keys())
+        return [dict(list(zip(keys, vals))) for vals in zip(*list(kwargs.values()))]
 
 
 ######################################################################

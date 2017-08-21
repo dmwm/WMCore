@@ -16,7 +16,7 @@ class AddFiles(DBFormatter):
 
     def getBinds(self, jobDict):
         binds = []
-        for jid in jobDict.keys():
+        for jid in list(jobDict.keys()):
             #For each job
             for fileID in jobDict[jid]:
                 #For each file in each job

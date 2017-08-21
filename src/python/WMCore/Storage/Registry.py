@@ -45,7 +45,7 @@ def registerStageOutImpl(name, classRef):
     Register a StageOutImpl subclass with the name provided
 
     """
-    if name in Registry.StageOutImpl.keys():
+    if name in list(Registry.StageOutImpl.keys()):
         msg = "Duplicate StageOutImpl registered for name: %s\n" % name
         raise RegistryError(msg)
 

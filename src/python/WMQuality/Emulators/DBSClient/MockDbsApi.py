@@ -111,11 +111,11 @@ class MockDbsApi(object):
         :return: the dictionary that DBS would have returned
         """
 
-        if self.url not in mockData.keys():
+        if self.url not in list(mockData.keys()):
             raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
 
         if kwargs:
-            signature = '%s:%s' % (self.item, sorted(kwargs.iteritems()))
+            signature = '%s:%s' % (self.item, sorted(kwargs.items()))
         else:
             signature = self.item
 

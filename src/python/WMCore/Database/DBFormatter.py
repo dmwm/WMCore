@@ -110,7 +110,7 @@ class DBFormatter(WMObject):
 
         """
         if type(cursor.keys) == types.MethodType:
-            keys = [x.lower() for x in cursor.keys()]
+            keys = [x.lower() for x in list(cursor.keys())]
         else:
             keys = [x.lower() for x in cursor.keys]
         result = []
@@ -130,7 +130,7 @@ class DBFormatter(WMObject):
 
     def getBinds(self, **kwargs):
         binds = {}
-        for i in kwargs.keys():
+        for i in list(kwargs.keys()):
             binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
         return binds
 

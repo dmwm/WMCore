@@ -70,7 +70,7 @@ class WorkUnit(WMObject, dict):
         Hash function for this dict.
         """
 
-        return hash(frozenset(self.items()))
+        return hash(frozenset(list(self.items())))
 
     def json(self, thunker=None):
         """

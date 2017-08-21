@@ -94,7 +94,7 @@ class Data(RESTEntity):
         result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
             data = json.load(cherrypy.request.body)
-            if 'request' in data.keys():
+            if 'request' in list(data.keys()):
                 kwargs = data['request']
                 result = self.mgr.request(**kwargs)
             return json.dumps(result)

@@ -315,7 +315,7 @@ class StdBase(object):
         #    procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
 
         newSplitArgs = {}
-        for argName in splitArgs.keys():
+        for argName in list(splitArgs.keys()):
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
@@ -412,7 +412,7 @@ class StdBase(object):
                                                    configDoc, couchDBName,
                                                    configCacheUrl=configCacheUrl)
         outputModules = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(procTask,
                                                 outputModuleName,
                                                 configOutput[outputModuleName].get('primaryDataset',

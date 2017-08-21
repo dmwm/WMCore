@@ -40,7 +40,7 @@ class ReproducibleSeeding(GeneratorInterface):
         confCache.load()
         seeds = confCache.document[u'pset_tweak_details'][u'process'][u'RandomNumberGeneratorService']
         self.seedTable = []
-        for k in seeds.keys():
+        for k in list(seeds.keys()):
             if k == u"parameters_" : continue
             self.seedTable.append("process.RandomNumberGeneratorService.%s.initialSeed" % k)
 

@@ -126,7 +126,7 @@ class RetryManagerPoller(BaseWorkerThread):
         self.typePluginsAssoc = getattr(self.config.RetryManager, 'plugins', {})
         self.typePluginsAssoc.setdefault('default', 'DefaultRetryAlgo')
 
-        for pluginName in self.typePluginsAssoc.values():
+        for pluginName in list(self.typePluginsAssoc.values()):
             try:
                 plugin = self.pluginFactory.loadObject(classname = pluginName,
                                                             args = config)
@@ -193,7 +193,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
         transitions = Transitions()
         oldstate = '%scooloff' % (cooloffType)
-        if not oldstate in transitions.keys():
+        if not oldstate in list(transitions.keys()):
             msg = 'Unknown job type %s' % (cooloffType)
             logging.error(msg)
             self.sendAlert(6, msg = msg)

@@ -306,7 +306,7 @@ class WorkQueue(object):
         since inbox db will be cleaned up first when workflow is completed
         """
         workflowStatus = self.getWorkflowStatusFromWQE(stale=stale)
-        return [wf for wf, status in workflowStatus.iteritems() if status == "completed"]
+        return [wf for wf, status in workflowStatus.items() if status == "completed"]
 
     def getJobsByStatus(self, inboxFlag=False, group=True):
         """

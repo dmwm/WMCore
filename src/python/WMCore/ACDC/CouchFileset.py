@@ -183,7 +183,7 @@ class CouchFileset(Fileset):
                 raise RuntimeError(msg)
 
             files = doc["files"]
-            for d in files.values():
+            for d in list(files.values()):
                 yield d
 
     @connectToCouch

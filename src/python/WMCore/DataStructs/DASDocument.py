@@ -25,7 +25,7 @@ class DASDocument(dict):
                 "response_checksum": "",
                 "request_api": "",
                 "call_time": 0}
-        self.keys = dict.keys()
+        self.keys = list(dict.keys())
         self.setdefault(service, dict)
 
     def compare(self, dict):

@@ -368,12 +368,12 @@ class BossAirAPI(WMConnectionBase):
         pluginDict = {}
         for job in runJobs:
             plugin = job['plugin']
-            if plugin not in pluginDict.keys():
+            if plugin not in list(pluginDict.keys()):
                 pluginDict[plugin] = []
             pluginDict[plugin].append(job)
 
-        for plugin in pluginDict.keys():
-            if plugin not in self.plugins.keys():
+        for plugin in list(pluginDict.keys()):
+            if plugin not in list(self.plugins.keys()):
                 # Then we have a non-existant plugin
                 msg = "CRITICAL ERROR: Non-existant plugin!\n"
                 msg += "Given a plugin %s that we don't have access to.\n" % (plugin)
@@ -456,12 +456,12 @@ class BossAirAPI(WMConnectionBase):
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
-            if plugin not in jobsToTrack.keys():
+            if plugin not in list(jobsToTrack.keys()):
                 jobsToTrack[plugin] = []
             jobsToTrack[plugin].append(runningJob)
 
-        for plugin in jobsToTrack.keys():
-            if plugin not in self.plugins.keys():
+        for plugin in list(jobsToTrack.keys()):
+            if plugin not in list(self.plugins.keys()):
                 msg = "Jobs tracking with non-existant plugin %s\n" % (plugin)
                 msg += "They were submitted but can't be tracked?\n"
                 msg += "That's too strange to continue\n"
@@ -518,12 +518,12 @@ class BossAirAPI(WMConnectionBase):
         jobsToComplete = {}
 
         for job in jobs:
-            if job['plugin'] not in jobsToComplete.keys():
+            if job['plugin'] not in list(jobsToComplete.keys()):
                 jobsToComplete[job['plugin']] = []
             jobsToComplete[job['plugin']].append(job)
 
         try:
-            for plugin in jobsToComplete.keys():
+            for plugin in list(jobsToComplete.keys()):
                 self.plugins[plugin].complete(jobsToComplete[plugin])
         except WMException:
             raise
@@ -619,12 +619,12 @@ class BossAirAPI(WMConnectionBase):
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
-            if plugin not in jobsToKill.keys():
+            if plugin not in list(jobsToKill.keys()):
                 jobsToKill[plugin] = []
             jobsToKill[plugin].append(runningJob)
 
-        for plugin in jobsToKill.keys():
-            if plugin not in self.plugins.keys():
+        for plugin in list(jobsToKill.keys()):
+            if plugin not in list(self.plugins.keys()):
                 msg = "Jobs tracking with non-existant plugin %s\n" % (plugin)
                 msg += "They were submitted but can't be tracked?\n"
                 msg += "That's too strange to continue\n"
@@ -712,7 +712,7 @@ class BossAirAPI(WMConnectionBase):
         the data will be updated according the keyword arguments which
         will be interpreted by the individual plugins accordingly.
         """
-        for plugin in self.plugins.keys():
+        for plugin in list(self.plugins.keys()):
             try:
                 pluginInst = self.plugins[plugin]
                 pluginInst.updateJobInformation(workflow, task, **kwargs)
@@ -733,7 +733,7 @@ class BossAirAPI(WMConnectionBase):
         Kill all jobs if the site is the only site for the job.
         """
         jobkill = []
-        for plugin in self.plugins.keys():
+        for plugin in list(self.plugins.keys()):
             try:
                 pluginInst = self.plugins[plugin]
                 tempjoblist = pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
@@ -765,7 +765,7 @@ class BossAirAPI(WMConnectionBase):
                     runJob = rj
                     break
             # We should have two instances of the job
-            for key in runJob.keys():
+            for key in list(runJob.keys()):
                 # Fill one from the other
                 # runJob, being most recent, should be on top
                 if runJob[key] is None:
@@ -795,7 +795,7 @@ class BossAirAPI(WMConnectionBase):
                     rj = RunJob()
                     rj.buildFromJob(wmbsJob)
                     rj['id'] = runJob['id']
-                    for key in rj.keys():
+                    for key in list(rj.keys()):
                         if rj[key] is None:
                             rj[key] = runJob.get(key, None)
                     finalJobs.append(rj)

@@ -129,7 +129,7 @@ class TaskMaker:
         for toptask in self.workload.taskIterator():
             #for each task, build sandbox, register, and subscribe
             for task in toptask.taskIterator():
-                if task.name() in self.workflowDict.keys():
+                if task.name() in list(self.workflowDict.keys()):
                     raise Exception('Duplicate task name for workload %s, task %s' %(self.workload.name(), task.name()))
 
                 if not self.skipSubscription:
@@ -171,7 +171,7 @@ class TaskMaker:
             stepName = task.inputReference().inputStep.split('/')[-1]
             taskName = task.inputReference().inputStep.split('/')[-2]
             outputModule = task.inputReference().outputModule
-            if not taskName in self.workflowDict.keys():
+            if not taskName in list(self.workflowDict.keys()):
                 raise Exception ('I am being asked to chain output for a task %s which does not yet exist' %(taskName))
             outputWorkflow = self.workflowDict[taskName]
             outputWorkflow.addOutput(outputModule, fileSet)

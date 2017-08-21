@@ -40,7 +40,7 @@ class CleanUpFailure(Exception):
         msg += " Failed to clean up file:\n"
         msg += " %s\n" % lfn
         msg += " Details:\n"
-        for key, val in details.items():
+        for key, val in list(details.items()):
             msg += "  %s: %s\n" % (key, val)
 
         print(msg)

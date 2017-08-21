@@ -109,7 +109,7 @@ class ReceiverLogic(object):
             # if set, check for shutdown condition when all senders
             # have unregistered themselves
             if self.closeWhenEmpty:
-                if len(self._registSenders.keys()) == 0:
+                if len(list(self._registSenders.keys())) == 0:
                     self._doShutdown = True
 
 

@@ -66,7 +66,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # create indexes
-        for i in self.indexes.keys():
+        for i in list(self.indexes.keys()):
             try:
                 self.dbi.processData(self.indexes[i],
                                      conn = conn,
@@ -78,7 +78,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # set constraints
-        for i in self.constraints.keys():
+        for i in list(self.constraints.keys()):
             try:
                 self.dbi.processData(self.constraints[i],
                                  conn = conn,
@@ -90,7 +90,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # insert permanent data
-        for i in self.inserts.keys():
+        for i in list(self.inserts.keys()):
             try:
                 self.dbi.processData(self.inserts[i],
                                      conn = conn,
@@ -112,6 +112,6 @@ class DBCreator(DBFormatter):
         """
         string = ''
         for i in self.create, self.constraints, self.inserts, self.indexes:
-            for j in i.keys():
+            for j in list(i.keys()):
                 string = string + i[j].lstrip() + '\n'
         return string

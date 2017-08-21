@@ -254,7 +254,7 @@ class PhEDEx(Service):
 
         # Hard to query all at once in one GET call, POST not cacheable
         # Query each dataset and record relevant dataset or block location
-        for dsname, items in inputs.items():
+        for dsname, items in list(inputs.items()):
             try:
                 # query for all blocks in dataset
                 kwargs['block'] = dsname + '#%'

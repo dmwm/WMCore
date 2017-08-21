@@ -41,7 +41,7 @@ class DataCache(object):
     def filterData(filterDict, maskList):
         reqData = DataCache.getlatestJobData()
 
-        for _, reqInfo in reqData.iteritems():
+        for _, reqInfo in reqData.items():
             reqData = RequestInfo(reqInfo)
             if reqData.andFilterCheck(filterDict):
                 for prop in maskList:
@@ -63,7 +63,7 @@ class DataCache(object):
             if "RequestName" not in maskList:
                 maskList.append("RequestName")
 
-        for _, reqDict in reqData.iteritems():
+        for _, reqDict in reqData.items():
             reqInfo = RequestInfo(reqDict)
             if reqInfo.andFilterCheck(filterDict):
 
@@ -79,6 +79,6 @@ class DataCache(object):
     def getProtectedLFNs():
         reqData = DataCache.getlatestJobData()
 
-        for _, reqInfo in reqData.iteritems():
+        for _, reqInfo in reqData.items():
             for dirPath in protectedLFNs(reqInfo):
                 yield dirPath

@@ -372,7 +372,7 @@ class FileManager:
 
 
         """
-        for lfn in self.completedFiles.keys():
+        for lfn in list(self.completedFiles.keys()):
             self.info("Cleaning out file: %s\n" % lfn)
             try:
                 self.deleteLFN(lfn)

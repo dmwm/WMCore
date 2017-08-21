@@ -97,7 +97,7 @@ class Service(dict):
         cfg_dict = cfg_dict or {}
         #The following should read the configuration class
         for a in ['endpoint']:
-            assert a in cfg_dict.keys(), "Can't have a service without a %s" % a
+            assert a in list(cfg_dict.keys()), "Can't have a service without a %s" % a
 
         #if end point ends without '/', add that
         if not cfg_dict['endpoint'].endswith('/'):

@@ -20,5 +20,5 @@ class PresetSeeder(GeneratorInterface):
 
     def __call__(self, wmbsJob):
         baggage = wmbsJob.getBaggage()
-        for x in self.options.keys():
+        for x in list(self.options.keys()):
             wmbsJob.addBaggageParameter("PresetSeeder.%s" %(x), self.options[x])

@@ -33,7 +33,7 @@ class GetBulkLocation(DBFormatter):
 
         fileDict = {}
         for entry in result:
-            if not entry['id'] in fileDict.keys():
+            if not entry['id'] in list(fileDict.keys()):
                 fileDict[entry['id']] = []
             fileDict[entry['id']].append(entry['pnn'])
 

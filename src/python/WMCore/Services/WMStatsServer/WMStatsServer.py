@@ -55,7 +55,7 @@ class WMStatsServer(Service):
         :returns: url query string
         """
         args = ""
-        for name, values in queryDict.items():
+        for name, values in list(queryDict.items()):
             if isinstance(values, (basestring, int)):
                 values = [values]
             for val in values:

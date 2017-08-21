@@ -52,7 +52,7 @@ class ReqMgrConfigDataCache(object):
     @staticmethod
     def putDefaultConfig():
         error = ""
-        for doc_name, content in DEFAULT_CONFIG.items():
+        for doc_name, content in list(DEFAULT_CONFIG.items()):
             try:
                 ReqMgrConfigDataCache._req_aux_db.putDocument(doc_name, content)
             except Exception as ex:

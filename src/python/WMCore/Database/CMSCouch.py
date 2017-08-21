@@ -59,7 +59,7 @@ class Document(dict):
         # https://issues.apache.org/jira/browse/COUCHDB-1141
         deletedDict = {'_id': self['_id'], '_rev': self['_rev'], '_deleted': True}
         self.update(deletedDict)
-        for key in self.keys():
+        for key in list(self.keys()):
             if key not in deletedDict:
                 del self[key]
 
@@ -71,7 +71,7 @@ class Document(dict):
         this object and adding a bunch of keys that couch won't understand.
         """
         jsonDict = {}
-        for key in self.keys():
+        for key in list(self.keys()):
             jsonDict[key] = self[key]
 
         return jsonDict
@@ -196,7 +196,7 @@ class Database(CouchDBRequests):
             data[label] = int(time.time())
         else:
             for doc in data:
-                if label not in doc.keys():
+                if label not in list(doc.keys()):
                     doc[label] = int(time.time())
         return data
 
@@ -467,7 +467,7 @@ class Database(CouchDBRequests):
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             # We can't encode the stale option, as it will be converted to '"ok"'
             # which couch barfs on.
             if k == "stale":
@@ -500,7 +500,7 @@ class Database(CouchDBRequests):
         deal with it appropriately.
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):
@@ -540,7 +540,7 @@ class Database(CouchDBRequests):
         keys is the list of key (ids) for doc to be returned
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):

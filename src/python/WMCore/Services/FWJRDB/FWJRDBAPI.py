@@ -71,7 +71,7 @@ class FWJRDBAPI():
         if detail or returnDict:
             return result
         else:
-            return result.keys()
+            return list(result.keys())
 
     def getFWJRByArchiveStatus(self, status, limit=None, skip=None):
         """

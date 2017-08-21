@@ -98,7 +98,7 @@ def addAttributesToFile(fileSection, **attributes):
 
     Add attributes to a file in the FWJR.
     """
-    for attName in attributes.keys():
+    for attName in list(attributes.keys()):
         setattr(fileSection, attName, attributes[attName])
     return
 
@@ -208,7 +208,7 @@ class Report:
                 continue
 
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
-            for key in jsonPerformance[reportSection].keys():
+            for key in list(jsonPerformance[reportSection].keys()):
                 val = jsonPerformance[reportSection][key]
                 if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
@@ -434,7 +434,7 @@ class Report:
 
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
-        keyList = aFile.keys()
+        keyList = list(aFile.keys())
 
         fileRef.section_("runs")
         if "runs" in aFile:
@@ -498,7 +498,7 @@ class Report:
         fileRef = getattr(srcMod.files, fileSection)
         srcMod.files.fileCount += 1
 
-        keyList = attrs.keys()
+        keyList = list(attrs.keys())
 
         fileRef.section_("runs")
         if "runs" in attrs:
@@ -531,7 +531,7 @@ class Report:
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        [setattr(newFile, x, y) for x, y in list(attrs.items())]
 
         analysisFiles.fileCount += 1
         return
@@ -549,7 +549,7 @@ class Report:
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        [setattr(newFile, x, y) for x, y in list(attrs.items())]
 
         self.report.cleanup.removed.fileCount += 1
         return
@@ -743,7 +743,7 @@ class Report:
         for run in runList:
             lumis = getattr(fileRef.runs, run)
             if isinstance(lumis, dict):
-                newRun = Run(int(run), *lumis.items())
+                newRun = Run(int(run), *list(lumis.items()))
             else:
                 newRun = Run(int(run), *lumis)
             newFile.addRun(newRun)
@@ -1453,7 +1453,7 @@ class Report:
         error = None
         files = self.getAllFilesFromStep(step=stepName)
         for f in files:
-            if 'adler32' not in f.get('checksums', {}).keys():
+            if 'adler32' not in list(f.get('checksums', {}).keys()):
                 error = f.get('lfn', None)
             elif f['checksums']['adler32'] is None:
                 error = f.get('lfn', None)

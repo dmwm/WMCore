@@ -30,7 +30,7 @@ def nestedDictUpdate(d, u):
     Code from Alex Matelli
     http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     """
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = nestedDictUpdate(d.get(k, {}), v)
             d[k] = r
@@ -46,7 +46,7 @@ def convertFromUnicodeToStr(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(convertFromUnicodeToStr, data.iteritems()))
+        return dict(map(convertFromUnicodeToStr, iter(data.items())))
     elif isinstance(data, collections.Iterable):
         return type(data)(map(convertFromUnicodeToStr, data))
     else:

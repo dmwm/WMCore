@@ -90,14 +90,14 @@ class EventAwareLumiBased(JobFactory):
         if self.package == 'WMCore.WMBS':
             loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
 
-        for key in lDict.keys():
+        for key in list(lDict.keys()):
             newlist = []
             # First we need to load the data
             if self.package == 'WMCore.WMBS':
                 fileLumis = loadRunLumi.execute(files=lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
+                    for run in list(lumiDict.keys()):
                         f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in lDict[key]:

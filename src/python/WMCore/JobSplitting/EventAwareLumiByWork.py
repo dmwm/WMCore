@@ -105,7 +105,7 @@ class EventAwareLumiByWork(JobFactory):
         stopTask = False
         lastFile = None
 
-        for location, filesAtLocation in filesByLocation.iteritems():
+        for location, filesAtLocation in filesByLocation.items():
             self.newGroup()  # For each location, we need a new jobGroup
             self.eventsInJob = 0
             self.jobLumis = []
@@ -226,7 +226,7 @@ class EventAwareLumiByWork(JobFactory):
         self.currentJob.addResourceEstimates(jobTime=events * timePerEvent, disk=events * sizePerEvent,
                                              memory=memoryRequirement)
         # Add job mask information
-        for run, lumiRanges in lumiList.iteritems():
+        for run, lumiRanges in lumiList.items():
             for lumiRange in lumiRanges:
                 self.currentJob['mask'].addRunAndLumis(run=int(run), lumis=lumiRange)
         # Add files
@@ -323,5 +323,5 @@ class EventAwareLumiByWork(JobFactory):
         fileLumis = self.loadRunLumi.execute(files=filesByLocation)
         for f in filesByLocation:
             lumiDict = fileLumis.get(f['id'], {})
-            for run in lumiDict.keys():
+            for run in list(lumiDict.keys()):
                 f.addRun(run=Run(run, *lumiDict[run]))

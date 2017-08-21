@@ -97,13 +97,13 @@ class LsfPlugin(BasePlugin):
         submitDict = {}
         for job in jobs:
             sandbox = job['sandbox']
-            if not sandbox in submitDict.keys():
+            if not sandbox in list(submitDict.keys()):
                 submitDict[sandbox] = []
             submitDict[sandbox].append(job)
 
 
         # Now submit the bastards
-        for sandbox in submitDict.keys():
+        for sandbox in list(submitDict.keys()):
             jobList = submitDict.get(sandbox, [])
             while len(jobList) > 0:
                 jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]

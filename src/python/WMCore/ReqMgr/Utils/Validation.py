@@ -30,7 +30,7 @@ def loadRequestSchema(workload, requestSchema):
     Takes a WMWorkloadHelper, operates on it directly with the schema
     """
     schema = workload.data.request.section_('schema')
-    for key, value in requestSchema.iteritems():
+    for key, value in requestSchema.items():
         if isinstance(value, dict) and key == 'LumiList':
             value = json.dumps(value)
         try:
@@ -39,7 +39,7 @@ def loadRequestSchema(workload, requestSchema):
             # Attach TaskChain tasks
             if isinstance(value, dict) and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
                 newSec = schema.section_(key)
-                for k, v in requestSchema[key].iteritems():
+                for k, v in requestSchema[key].items():
                     if isinstance(value, dict) and key == 'LumiList':
                         value = json.dumps(value)
                     try:
@@ -152,7 +152,7 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
     *arg and **kwargs are only for the interface
     """
     response = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    originalArgs = response.values()[0]
+    originalArgs = list(response.values())[0]
 
     chainArgs = None
     if originalArgs["RequestType"] == 'Resubmission':
@@ -189,7 +189,7 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
     *arg and **kwargs are only for the interface
     """
     response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
-    originalArgs = response.values()[0]
+    originalArgs = list(response.values())[0]
 
     chainArgs = None
     specClass = loadSpecClassByType(originalArgs["RequestType"])
@@ -224,7 +224,7 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state):
     requests = reqmgr_db_service.getRequestByNames(request_name)
     # generator object can't be subscribed: need to loop.
     # only one row should be returned
-    for request in requests.values():
+    for request in list(requests.values()):
         current_state = request["RequestStatus"]
     if not check_allowed_transition(current_state, new_state):
         raise InvalidStateTransition(current_state, new_state)
@@ -233,7 +233,7 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state):
 
 def create_json_template_spec(specArgs):
     template = {}
-    for key, prop in specArgs.items():
+    for key, prop in list(specArgs.items()):
 
         if key == "RequestorDN":
             # this will be automatically collected so skip it.

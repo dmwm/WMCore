@@ -45,7 +45,7 @@ class Save(SaveMasksMySQL):
                      'lastlumi': mask['LastLumi'], 'inclusivemask': inclusiveMask}
 
             fail = True
-            for key in binds.keys():
+            for key in list(binds.keys()):
                 if key != 'jobid' and key != 'inclusivemask' and binds[key] != None:
                     # At least one of the keys contains something
                     fail = False

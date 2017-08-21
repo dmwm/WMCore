@@ -115,7 +115,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
         import ssl
         ssl._create_default_https_context = ssl._create_unverified_context
     req = urllib2.Request(url)
-    for key, val in headers.iteritems():
+    for key, val in headers.items():
         req.add_header(key, val)
     if  verbose > 1:
         handler = urllib2.HTTPHandler(debuglevel=1)

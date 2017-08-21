@@ -143,18 +143,18 @@ class Directory:
         logging.info("create(%s)" % newDir)
         if not os.path.exists(newDir):
             os.makedirs(newDir)
-        for f in self.files.values():
+        for f in list(self.files.values()):
             f.fetch(newDir)
 
-        for child in self.children.values():
+        for child in list(self.children.values()):
             child.create(newDir)
         return
 
     def __str__(self):
         result = "%s\n" % self.path()
-        for f in self.files.values():
+        for f in list(self.files.values()):
             result += "%s ==> %s\n" % (f.path(), f.source)
-        for d in self.children.values():
+        for d in list(self.children.values()):
             result += str(d)
 
         return result

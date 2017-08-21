@@ -41,7 +41,7 @@ class RESTMainTestServer(object):
         cherrypy.config.update({'server.socket_host': self.host})
         cherrypy.config.update({'request.show_tracebacks': True})
         cherrypy.config.update({'environment': 'test_suite'})
-        for app in cherrypy.tree.apps.values():
+        for app in list(cherrypy.tree.apps.values()):
             if '/' in app.config:
                 app.config["/"]["request.show_tracebacks"] = True
 
@@ -59,7 +59,7 @@ class RESTMainTestServer(object):
         cherrypy.engine.stop()
 
         # Ensure the next server that's started gets fresh objects
-        for name, server in getattr(cherrypy, 'servers', {}).items():
+        for name, server in list(getattr(cherrypy, 'servers', {}).items()):
             server.unsubscribe()
             del cherrypy.servers[name]
 

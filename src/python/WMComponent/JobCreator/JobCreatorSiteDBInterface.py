@@ -63,7 +63,7 @@ class JobCreatorSiteDBInterface(SiteDBJSON):
 
         siteDict = self.getSiteDict()
 
-        if not name in siteDict.keys():
+        if not name in list(siteDict.keys()):
             logging.error("Asked for a site name %s that was not in siteDB" %(name))
             return 0
 

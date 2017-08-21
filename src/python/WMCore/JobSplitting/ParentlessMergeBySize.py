@@ -203,11 +203,11 @@ class ParentlessMergeBySize(JobFactory):
 
         groupedFiles = self.defineFileGroups(mergeableFiles)
 
-        for pnn in groupedFiles.keys():
+        for pnn in list(groupedFiles.keys()):
             if self.mergeAcrossRuns:
                 self.defineMergeJobs(groupedFiles[pnn])
             else:
-                for runNumber in groupedFiles[pnn].keys():
+                for runNumber in list(groupedFiles[pnn].keys()):
                     self.defineMergeJobs(groupedFiles[pnn][runNumber])
 
         return

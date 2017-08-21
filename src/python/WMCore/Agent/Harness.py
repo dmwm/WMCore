@@ -153,7 +153,7 @@ class Harness:
                            'INFO'     : logging.INFO,
                            'SQLDEBUG' : logging.SQLDEBUG}
             if hasattr(compSect, "logLevel") and \
-                compSect.logLevel in self.logMsg.keys():
+                compSect.logLevel in list(self.logMsg.keys()):
                 logging.getLogger().setLevel(self.logMsg[compSect.logLevel])
             WMLogging.sqldebug("wmcore level debug:")
 
@@ -469,7 +469,7 @@ while trying to handle msg: %s
         msg += '\n'
         msg += '>>Event Subscriptions --> Handlers<<\n'
         msg += '------------------------------------\n'
-        for message in self.messages.keys():
+        for message in list(self.messages.keys()):
             msg += message+'-->'+ str(self.messages[message])+'\n'
         msg += '\n'
         msg += '\n'

@@ -65,7 +65,7 @@ class StepChainWorkloadFactory(StdBase):
 
         # Update the task configuration
         taskConf = {}
-        for k, v in arguments["Step1"].iteritems():
+        for k, v in arguments["Step1"].items():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
 
@@ -177,7 +177,7 @@ class StepChainWorkloadFactory(StdBase):
             currentCmsRun = "cmsRun%d" % i
             self.stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
-            for k, v in origArgs[currentStepNumber].iteritems():
+            for k, v in origArgs[currentStepNumber].items():
                 taskConf[k] = v
 
             parentStepNumber = self.stepMapping.get(taskConf['InputStep'])[0]
@@ -253,7 +253,7 @@ class StepChainWorkloadFactory(StdBase):
         configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
                                                    configCacheUrl=self.configCacheUrl,
                                                    couchDBName=self.couchDBName)
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(task, outputModuleName,
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
@@ -278,7 +278,7 @@ class StepChainWorkloadFactory(StdBase):
         if not taskConf.get('PrepID'):
             taskConf['PrepID'] = self.prepID
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,
                                           cmsswVersion=frameworkVersion, scramArch=scramArch,
                                           forceTaskName=taskConf.get('StepName'), taskConf=taskConf)
@@ -439,7 +439,7 @@ class StepChainWorkloadFactory(StdBase):
                 configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
                                                            configCacheUrl=schema['ConfigCacheUrl'],
                                                            couchDBName=schema["CouchDBName"])
-                for modName, values in configOutput.items():
+                for modName, values in list(configOutput.items()):
                     thisOutput = (modName, values['dataTier'])
                     if thisOutput in outputModTier:
                         msg = "StepChain cannot save output of different steps using "

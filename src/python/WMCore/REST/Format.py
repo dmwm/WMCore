@@ -124,7 +124,7 @@ class XMLFormat(RESTFormat):
             result = xml.sax.saxutils.escape(str(obj)).encode("utf-8")
         elif isinstance(obj, dict):
             result = "<dict>"
-            for k, v in obj.iteritems():
+            for k, v in obj.items():
                 result += "<key>%s</key><value>%s</value>" % \
                   (xml.sax.saxutils.escape(k).encode("utf-8"),
                    XMLFormat.format_obj(v))
@@ -322,7 +322,7 @@ class PrettyJSONHTMLFormat(PrettyJSONFormat):
             result = "%s" % obj
         elif isinstance(obj, dict):
             result = "<ul>"
-            for k, v in obj.iteritems():
+            for k, v in obj.items():
                 result += "<li><b>%s</b>: %s</li>" % (k, PrettyJSONHTMLFormat.format_obj(v))
             result += "</ul>"
         elif is_iterable(obj):

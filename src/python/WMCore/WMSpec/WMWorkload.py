@@ -210,7 +210,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
-        for key in ownerProperties.keys():
+        for key in list(ownerProperties.keys()):
             setattr(self.data.owner, key, ownerProperties[key])
 
         return
@@ -228,7 +228,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
-        for key in ownerProperties.keys():
+        for key in list(ownerProperties.keys()):
             setattr(self.data.owner, key, ownerProperties[key])
         return
 
@@ -266,7 +266,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the Start policy and its parameters
         """
         self.data.policies.start.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in params.items():
             setattr(self.data.policies.start, key, val)
 
     def startPolicy(self):
@@ -293,7 +293,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the End policy and its parameters
         """
         self.data.policies.end.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in params.items():
             setattr(self.data.policies.end, key, val)
 
     def endPolicy(self):
@@ -1180,7 +1180,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
-                for module in outModule.dictionary_().values():
+                for module in list(outModule.dictionary_().values()):
                     lfnBase = getattr(module, "lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)

@@ -43,7 +43,7 @@ class Registration():
             self.server = CouchServer(config_dict['server'])
             self.db = self.server.connectDatabase(config_dict['database'])
 
-            if 'location' not in reg_info.keys():
+            if 'location' not in list(reg_info.keys()):
                 raise KeyError('Registration needs a location in its reg_info')
             self.location_hash = str(reg_info['location'].__hash__())
             reg_info['_id'] = self.location_hash

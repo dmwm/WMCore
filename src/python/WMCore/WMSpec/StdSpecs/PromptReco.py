@@ -67,7 +67,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
             self.addLogCollectTask(recoTask)
 
         recoMergeTasks = {}
-        for recoOutLabel, recoOutInfo in recoOutMods.items():
+        for recoOutLabel, recoOutInfo in list(recoOutMods.items()):
             if recoOutInfo['dataTier'] != "ALCARECO":
                 mergeTask = self.addMergeTask(recoTask, self.procJobSplitAlgo, recoOutLabel,
                                               doLogCollect=self.doLogCollect)

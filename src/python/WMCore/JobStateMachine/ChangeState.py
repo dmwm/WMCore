@@ -266,7 +266,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 if job['mask']['runAndLumis'] != {}:
                     # Then we have to save the mask runAndLumis
                     jobDocument['mask']['runAndLumis'] = {}
-                    for key in job['mask']['runAndLumis'].keys():
+                    for key in list(job['mask']['runAndLumis'].keys()):
                         jobDocument['mask']['runAndLumis'][str(key)] = job['mask']['runAndLumis'][key]
 
                 jobDocument["name"] = job["name"]

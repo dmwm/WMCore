@@ -238,7 +238,7 @@ def compareSpecial(d1, d2, key=None):
 
         if key == 'PNN':
             for dset in d2:
-                for block, value in d2[dset].items():
+                for block, value in list(d2[dset].items()):
                     if isinstance(value, dict):
                         if d1[dset][block][key] != d2[dset][block][key]:
                             return outcome

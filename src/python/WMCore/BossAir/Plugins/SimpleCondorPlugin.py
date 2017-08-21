@@ -609,7 +609,7 @@ class SimpleCondorPlugin(BasePlugin):
 
             ad = convertFromUnicodeToStr(ad)
             condorAd = classad.ClassAd()
-            for k, v in ad.iteritems():
+            for k, v in ad.items():
                 condorAd[k] = v
             classAds.append((condorAd, 1))
 

@@ -29,7 +29,7 @@ def getStepSpace(stepName):
 
     """
     modName = "WMTaskSpace"
-    if modName in sys.modules.keys():
+    if modName in list(sys.modules.keys()):
         taskspace = sys.modules[modName]
     else:
         try:

@@ -192,9 +192,9 @@ class RESTMain:
                         'server', 'tools', 'wsgi', 'checker'):
             if not hasattr(self.srvconfig, section):
                 continue
-            for opt, value in getattr(self.srvconfig, section).dictionary_().iteritems():
+            for opt, value in getattr(self.srvconfig, section).dictionary_().items():
                 if isinstance(value, ConfigSection):
-                    for xopt, xvalue in value.dictionary_().iteritems():
+                    for xopt, xvalue in value.dictionary_().items():
                         cpconfig.update({"%s.%s.%s" % (section, opt, xopt): xvalue})
                 elif isinstance(value, str) or isinstance(value, int):
                     cpconfig.update({"%s.%s" % (section, opt): value})

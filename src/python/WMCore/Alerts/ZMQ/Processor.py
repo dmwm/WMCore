@@ -79,7 +79,7 @@ def handleSoft(targets, config):
         alert = (yield)
         alertBuffer.append(alert)
         if len(alertBuffer) >= bufferSize:
-            for target in targets.values():
+            for target in list(targets.values()):
                 # if sending to a particular sink fails, the entire component
                 # should remain functional
                 # suboptimal to put this exception handling twice, but putting
@@ -104,7 +104,7 @@ def handleCritical(targets, config):
     """
     while True:
         alert = (yield)
-        for target in targets.values():
+        for target in list(targets.values()):
             # if sending to a particular sink fails, the entire component
             # should remain functional
             # suboptimal to put this exception handling twice, but putting

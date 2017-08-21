@@ -184,7 +184,7 @@ class Workflow(WMBSBase, WMWorkflow):
                                  transaction=self.existingTransaction())
 
         self.outputMap = {}
-        for outputID in results.keys():
+        for outputID in list(results.keys()):
             for outputMap in results[outputID]:
                 outputFileset = Fileset(id=outputMap["output_fileset"])
                 if outputMap["merged_output_fileset"] != None:

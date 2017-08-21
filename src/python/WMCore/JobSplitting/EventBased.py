@@ -79,7 +79,7 @@ class EventBased(JobFactory):
                     fileLumis = loadRunLumi.execute(files=fileList)
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
-                        for run in lumiDict.keys():
+                        for run in list(lumiDict.keys()):
                             f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in fileList:

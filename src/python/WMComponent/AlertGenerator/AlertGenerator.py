@@ -104,7 +104,7 @@ class AlertGenerator(Harness):
                     logging.error("%s failed to initialize, reason: %s\n%s" %
                                   (pollerClass, ex, traceString))
 
-        l = [configSectionsToPollersMap.values(), configuredPollers, self._pollers]
+        l = [list(configSectionsToPollersMap.values()), configuredPollers, self._pollers]
         logging.info("Known pollers implementations:\n%s (%s)\n"
                      "Configured pollers:\n%s (%s)\n"
                      "Instantiated pollers:\n%s (%s)" %

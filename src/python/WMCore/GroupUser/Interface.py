@@ -63,7 +63,7 @@ class Interface:
         """
         updateUri = "/" + self.couch.name + "/_design/GroupUser/_update/"+ update + "/" + document
         argsstr = "?"
-        for k, v in args.items():
+        for k, v in list(args.items()):
             argsstr += "%s=%s&" % (k, v)
         updateUri += argsstr
         updateUri= updateUri[:-1]

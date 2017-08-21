@@ -26,7 +26,7 @@ def format_algo_web_list(task_name, task_type, split_param):
 
     if default_algo in algo_list:
         new_param = {"algorithm": default_algo}
-        for key, value in split_param.items():
+        for key, value in list(split_param.items()):
             if key in algo_config["algo_params"][default_algo]:
                 new_param[key] = value
         param_list.append(new_param)

@@ -186,12 +186,12 @@ class DQMUpload(Executor):
         """
         boundary = '----------=_DQM_FILE_BOUNDARY_=-----------'
         (body, crlf) = ('', '\r\n')
-        for (key, value) in args.items():
+        for (key, value) in list(args.items()):
             payload = str(value)
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"' % key) + crlf
             body += crlf + payload + crlf
-        for (key, filename) in files.items():
+        for (key, filename) in list(files.items()):
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"; filename="%s"'
                      % (key, os.path.basename(filename))) + crlf

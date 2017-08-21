@@ -208,7 +208,7 @@ class Subscription(WMBSBase, WMSubscription):
             if loadChecksums:
                 fl.loadChecksum()
             fl.update(fileInfoDict[f['file']])
-            if 'locations' in f.keys():
+            if 'locations' in list(f.keys()):
                 fl.setLocation(f['locations'], immediateSave = False)
             files.add(fl)
 
@@ -354,9 +354,9 @@ class Subscription(WMBSBase, WMSubscription):
         """
         jobLocate = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
 
-        result = jobLocate.execute(location = location,
+        result = list(jobLocate.execute(location = location,
                                    subscription = self['id'],
-                                   state = state).values()[0]
+                                   state = state).values())[0]
         return result
 
     def getJobGroups(self):
@@ -656,7 +656,7 @@ class Subscription(WMBSBase, WMSubscription):
         maskList = []
         for job in jobList:
             mask = job['mask']
-            if len(mask['runAndLumis'].keys()) > 0:
+            if len(list(mask['runAndLumis'].keys())) > 0:
                 # Then we have multiple binds
                 binds = mask.produceCommitBinds(jobID = job['id'])
                 maskList.extend(binds)

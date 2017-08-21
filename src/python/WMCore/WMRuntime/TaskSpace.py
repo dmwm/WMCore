@@ -119,7 +119,7 @@ class TaskSpace:
 
         """
         modName = "WMTaskSpace.%s" % stepName
-        if modName in sys.modules.keys():
+        if modName in list(sys.modules.keys()):
             space = sys.modules[modName]
         else:
             try:

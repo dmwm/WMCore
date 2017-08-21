@@ -141,7 +141,7 @@ class ListThresholdsForCreate(DBFormatter):
         _formatTable_
         """
         results = []
-        for k, v in formattedResults.items():
+        for k, v in list(formattedResults.items()):
             item = {}
             item['site'] = k
             item.update(v)

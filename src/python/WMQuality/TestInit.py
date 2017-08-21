@@ -193,7 +193,7 @@ class TestInit(object):
             modules[module] = 'done'
 
         try:
-            self.init.setSchema(modules.keys(), params = params)
+            self.init.setSchema(list(modules.keys()), params = params)
         except Exception as ex:
             print(traceback.format_exc())
             raise ex
@@ -203,7 +203,7 @@ class TestInit(object):
         for module in (defaultModules + customModules + self.currModules):
             modules[module] = 'done'
 
-        self.currModules = modules.keys()
+        self.currModules = list(modules.keys())
 
         return
 

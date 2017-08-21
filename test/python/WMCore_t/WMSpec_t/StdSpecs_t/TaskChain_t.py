@@ -1508,7 +1508,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
             self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
-            for modName, value in mergedMods[t].items():
+            for modName, value in list(mergedMods[t].items()):
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
                 task = testWorkload.getTaskByName(mergeName)
                 step = task.getStepHelper("cmsRun1")
@@ -1551,7 +1551,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
             self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
-            for modName, value in mergedMods[t].items():
+            for modName, value in list(mergedMods[t].items()):
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
                 task = testWorkload.getTaskByName(mergeName)
                 step = task.getStepHelper("cmsRun1")

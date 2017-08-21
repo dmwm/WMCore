@@ -23,7 +23,7 @@ class ExtendedUnitTestCase(unittest.TestCase):
         """
 
         def traverse_dict(dictionary):
-            for key, value in dictionary.iteritems():
+            for key, value in dictionary.items():
                 if isinstance(value, dict):
                     traverse_dict(value)
                 elif isinstance(value, list):

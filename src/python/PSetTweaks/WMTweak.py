@@ -214,7 +214,7 @@ def expandParameter(process, param):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in list(lastResults.items()):
                 for param in listParams(lastResultVal):
                     newResultKey = "%s.%s" % (lastResultKey, param)
                     newResultVal = getattr(lastResultVal, param)
@@ -228,7 +228,7 @@ def expandParameter(process, param):
 
         else:
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in list(lastResults.items()):
                 newResultKey = "%s.%s" % (lastResultKey, pset)
                 newResultVal = getattr(lastResultVal, pset, None)
                 if not hasattr(newResultVal, "parameters_"):
@@ -265,7 +265,7 @@ class TweakMaker:
         tweak = PSetTweak()
         # handle process parameters
         processParams = []
-        [processParams.extend(expandParameter(process, param).keys())
+        [processParams.extend(list(expandParameter(process, param).keys()))
          for param in self.processLevel]
 
         [tweak.addParameter(param, getParameter(process, param))
@@ -471,7 +471,7 @@ def makeJobTweak(job):
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
-    for run in runs.keys():
+    for run in list(runs.keys()):
         lumiPairs = runs[run]
         for lumiPair in lumiPairs:
             if len(lumiPair) != 2:
@@ -488,7 +488,7 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k, v in baggageParams.items():
+    for k, v in list(baggageParams.items()):
         result.addParameter(k, v)
 
     return result

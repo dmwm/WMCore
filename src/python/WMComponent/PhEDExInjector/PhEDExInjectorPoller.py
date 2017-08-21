@@ -213,7 +213,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         for datasetPath in injectionData:
             datasetSpec = injectionSpec.getDataset(datasetPath)
 
-            for fileBlockName, fileBlock in injectionData[datasetPath].iteritems():
+            for fileBlockName, fileBlock in injectionData[datasetPath].items():
                 blockSpec = datasetSpec.getFileblock(fileBlockName,
                                                      fileBlock["is-open"])
 
@@ -242,7 +242,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         blocks = []
         for datasetPath in unInjectedData:
 
-            for blockName, fileBlock in unInjectedData[datasetPath].items():
+            for blockName, fileBlock in list(unInjectedData[datasetPath].items()):
 
                 newBlock = {blockName: set()}
 
@@ -263,7 +263,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         uninjectedFiles = self.getUninjected.execute()
 
-        for siteName in uninjectedFiles.keys():
+        for siteName in list(uninjectedFiles.keys()):
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -349,7 +349,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         migratedBlocks = self.getMigrated.execute()
 
-        for siteName in migratedBlocks.keys():
+        for siteName in list(migratedBlocks.keys()):
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -437,7 +437,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             return
 
         try:
-            subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
+            subscriptions = self.phedex.getSubscriptionMapping(*list(blockDict.keys()))
         except:
             logging.error("Couldn't get subscription info from PhEDEx, retry next cycle")
             return
@@ -514,7 +514,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         _deleteBlocksPhEDExCalls_
         actual PhEDEx calls for block deletion
         """
-        deletion = PhEDExDeletion(blocksToDelete.keys(), location,
+        deletion = PhEDExDeletion(list(blocksToDelete.keys()), location,
                                   level='block',
                                   comments="WMAgent blocks auto-delete from %s" % location,
                                   blocks=blocksToDelete)

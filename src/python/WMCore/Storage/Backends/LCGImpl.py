@@ -33,7 +33,7 @@ class LCGImpl(StageOutImpl):
             'GRID_ENV_LOCATION':  '/grid-env.sh',
         }
 
-        for env, script in setupScripts.iteritems():
+        for env, script in setupScripts.items():
             if os.environ.get(env):
                 fullScript = os.path.normpath(os.path.join(os.environ[env], script))
                 if os.path.isfile(fullScript):

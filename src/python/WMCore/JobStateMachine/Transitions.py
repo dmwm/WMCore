@@ -37,7 +37,7 @@ class Transitions(dict):
         states other than cleanout.
         """
         knownstates = set(self.keys())
-        for possiblestates in self.values():
+        for possiblestates in list(self.values()):
             for i in possiblestates:
                 knownstates.add(i)
         return list(knownstates)

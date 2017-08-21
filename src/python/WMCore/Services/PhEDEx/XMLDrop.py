@@ -54,12 +54,12 @@ class XMLFileblock(list):
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
             checksum = ",".join(["%s:%s" % (x, y) for x, y \
-                                 in checksums.items() \
+                                 in list(checksums.items()) \
                                  if y not in (None, '')])
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
             formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
-                                           in checksums.items() \
+                                           in list(checksums.items()) \
                                            if y not in (None, '')])
             file = doc.createElement("file")
             file.setAttribute('name', lfn)
@@ -122,7 +122,7 @@ class XMLDataset(list):
         dataset.setAttribute('is-transient', self.datasetIsTransient)
         dataset.setAttribute('name', self.datasetName)
 
-        for block in self.fileblocks.values():
+        for block in list(self.fileblocks.values()):
             dataset.appendChild(block.save())
 
         return dataset
@@ -189,7 +189,7 @@ class XMLInjectionSpec:
         dbs.setAttribute('name', self.dbs)
         result.appendChild(dbs)
 
-        for dataset in self.datasetPaths.values():
+        for dataset in list(self.datasetPaths.values()):
             dbs.appendChild(dataset.save())
 
         return result.toprettyxml()

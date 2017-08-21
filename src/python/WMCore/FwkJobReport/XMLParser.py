@@ -428,14 +428,14 @@ def perfStoreHandler():
         writeMethod = None
         readMethod = None
         # Figure out read method
-        for key in storageValues.keys():
+        for key in list(storageValues.keys()):
             if checkRegEx('Timing-([a-z]{4})-read(v?)-numOperations', key):
                 if storageValues[key] != 0.0:
                     # This is the reader
                     readMethod = key.split('-')[1]
                     break
         # Figure out the write method
-        for key in storageValues.keys():
+        for key in list(storageValues.keys()):
             if checkRegEx('Timing-([a-z]{4})-write(v?)-numOperations', key):
                 if storageValues[key] != 0.0:
                     # This is the reader

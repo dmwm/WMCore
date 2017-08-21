@@ -20,4 +20,4 @@ class GetPendingSlots(DBFormatter):
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 
-        return result[0].fetchall()[0].values()[0]
+        return list(result[0].fetchall()[0].values())[0]

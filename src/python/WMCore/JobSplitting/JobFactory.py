@@ -328,7 +328,7 @@ class JobFactory(WMObject):
         if isinstance(resultProxy.keys, list):
             keys = resultProxy.keys
         else:
-            keys = resultProxy.keys()
+            keys = list(resultProxy.keys())
             if isinstance(keys, set):
                 # If it's a set, handle it
                 keys = list(keys)

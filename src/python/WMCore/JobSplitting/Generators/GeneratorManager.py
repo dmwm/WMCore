@@ -67,7 +67,7 @@ class GeneratorManager:
         job group provided
 
         """
-        [ map(generator, jobGroup.jobs) for generator in self.generators.values()]
+        [ map(generator, jobGroup.jobs) for generator in list(self.generators.values())]
         return
 
 
@@ -79,7 +79,7 @@ class GeneratorManager:
         """
         generatorList = []
 
-        for name in self.generators.keys():
+        for name in list(self.generators.keys()):
             generatorList.append(self.generators[name])
 
         return generatorList

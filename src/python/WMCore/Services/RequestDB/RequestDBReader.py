@@ -68,7 +68,7 @@ class RequestDBReader(object):
         if detail or returnDict:
             return result
         else:
-            return result.keys()
+            return list(result.keys())
 
     def _getRequestByName(self, requestName, detail):
         result = self.couchDB.getDoc(requestName)

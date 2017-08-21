@@ -355,7 +355,7 @@ class CleanCouchPoller(BaseWorkerThread):
 
             workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
 
-            for request, value in workflowDict.items():
+            for request, value in list(workflowDict.items()):
                 if value[0].endswith("-archived"):
                     self.cleanAllLocalCouchDB(request)
                     numDeletedRequests += 1
@@ -372,7 +372,7 @@ class CleanCouchPoller(BaseWorkerThread):
         deletablewfs = deletableWorkflowsDAO.execute()
 
         # Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion: %s", len(deletablewfs), deletablewfs.keys())
+        logging.info("Found %d candidate workflows for deletion: %s", len(deletablewfs), list(deletablewfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(deletablewfs) == 0:
@@ -415,7 +415,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 # Get the task-workflow ids, sort them by ID,
                 # higher ID first so we kill
                 # the leaves of the tree first, root last
-                workflowsIDs = workflows[workflow]["workflows"].keys()
+                workflowsIDs = list(workflows[workflow]["workflows"].keys())
                 workflowsIDs.sort(reverse=True)
 
                 # Now go through all tasks and load the WMBS workflow objects
@@ -530,7 +530,7 @@ class CleanCouchPoller(BaseWorkerThread):
         for row in retryData:
             taskName = row['key'][2]
             count = str(row['key'][1])
-            if taskName not in workflowData['retryData'].keys():
+            if taskName not in list(workflowData['retryData'].keys()):
                 workflowData['retryData'][taskName] = {}
             workflowData['retryData'][taskName][count] = row['value']
 
@@ -555,7 +555,7 @@ class CleanCouchPoller(BaseWorkerThread):
         workflowData['performance'] = {}
         for key in perf:
             workflowData['performance'][key] = {}
-            for attr in perf[key].keys():
+            for attr in list(perf[key].keys()):
                 workflowData['performance'][key][attr] = perf[key][attr]
 
         workflowData["_id"] = workflowName
@@ -577,7 +577,7 @@ class CleanCouchPoller(BaseWorkerThread):
             workflowData['output'][dataset]['nFiles'] = entry['count']
             workflowData['output'][dataset]['size'] = entry['size']
             workflowData['output'][dataset]['events'] = entry['events']
-            workflowData['output'][dataset]['tasks'] = outputList.get(dataset, {}).keys()
+            workflowData['output'][dataset]['tasks'] = list(outputList.get(dataset, {}).keys())
 
         # If the workflow was aborted, then don't parse all the jobs, cut at 5k
         try:
@@ -644,15 +644,15 @@ class CleanCouchPoller(BaseWorkerThread):
                             'errorsBySite': DiscreteSummaryHistogram('Errors by site',
                                                                      'Site')}
                     errorsBySiteData = histograms['stepLevel'][task][step]['errorsBySite']
-                    if task not in workflowData['errors'].keys():
+                    if task not in list(workflowData['errors'].keys()):
                         workflowData['errors'][task] = {'failureTime': 0}
-                    if step not in workflowData['errors'][task].keys():
+                    if step not in list(workflowData['errors'][task].keys()):
                         workflowData['errors'][task][step] = {}
                     workflowData['errors'][task]['failureTime'] += (stop - start)
                     stepFailures = workflowData['errors'][task][step]
                     for error in errors:
                         exitCode = str(error['exitCode'])
-                        if exitCode not in stepFailures.keys():
+                        if exitCode not in list(stepFailures.keys()):
                             stepFailures[exitCode] = {"errors": [],
                                                       "jobs": 0,
                                                       "input": [],
@@ -671,7 +671,7 @@ class CleanCouchPoller(BaseWorkerThread):
                                 stepFailures[exitCode]['input'].append(inputLFN)
                         # Add runs to structure
                         for run in runs:
-                            if str(run.run) not in stepFailures[exitCode]['runs'].keys():
+                            if str(run.run) not in list(stepFailures[exitCode]['runs'].keys()):
                                 stepFailures[exitCode]['runs'][str(run.run)] = []
                             logging.debug("number of lumis failed: %s", len(run.lumis))
                             nodupLumis = set(run.lumis)
@@ -767,16 +767,16 @@ class CleanCouchPoller(BaseWorkerThread):
         for row in perf:
             taskName = row['value']['taskName']
             stepName = row['value']['stepName']
-            if taskName not in taskList.keys():
+            if taskName not in list(taskList.keys()):
                 taskList[taskName] = {}
-            if stepName not in taskList[taskName].keys():
+            if stepName not in list(taskList[taskName].keys()):
                 taskList[taskName][stepName] = []
             value = row['value']
             taskList[taskName][stepName].append(value)
 
-        for taskName in taskList.keys():
+        for taskName in list(taskList.keys()):
             final = {}
-            for stepName in taskList[taskName].keys():
+            for stepName in list(taskList[taskName].keys()):
                 output = {'jobTime': []}
                 outputFailed = {'jobTime': []}  # This will be same, but only for failed jobs
                 final[stepName] = {}
@@ -786,10 +786,10 @@ class CleanCouchPoller(BaseWorkerThread):
                 # keyed by the name of the value
                 for row in taskList[taskName][stepName]:
                     masterList.append(row)
-                    for key in row.keys():
+                    for key in list(row.keys()):
                         if key in ['startTime', 'stopTime', 'taskName', 'stepName', 'jobID']:
                             continue
-                        if key not in output.keys():
+                        if key not in list(output.keys()):
                             output[key] = []
                             if len(failedJobs) > 0:
                                 outputFailed[key] = []
@@ -818,7 +818,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         pass
 
                 # Now that we've sorted the data, we process it one key at a time
-                for key in output.keys():
+                for key in list(output.keys()):
                     final[stepName][key] = {}
                     # Assemble the 'worstOffenders'
                     # These are the top [self.nOffenders] in that particular category
@@ -996,7 +996,7 @@ class CleanCouchPoller(BaseWorkerThread):
 
             if instLuminosity > minLumi and instLuminosity < maxLumi:
                 worthPoints[instLuminosity] = timePerEvent
-        logging.debug("Got %d worthwhile performance points", len(worthPoints.keys()))
+        logging.debug("Got %d worthwhile performance points", len(list(worthPoints.keys())))
 
         return worthPoints
 

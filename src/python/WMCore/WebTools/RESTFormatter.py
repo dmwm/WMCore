@@ -71,13 +71,13 @@ class RESTFormatter(TemplatedPage):
     def format(self, data, datatype, expires):
         response_data = ''
         func = self.supporttypes[datatype]
-        if datatype not in self.supporttypes.keys():
+        if datatype not in list(self.supporttypes.keys()):
             response.status = 406
             expires=0
             response_data = self.supporttypes['text/plain']({'exception': 406,
                                                 'type': 'HTTPError',
             'message': '%s is not supported. Valid accept headers are: %s' %\
-                    (datatype, self.supporttypes.keys())})
+                    (datatype, list(self.supporttypes.keys()))})
 
         try:
             response_data = self.supporttypes[datatype](data)

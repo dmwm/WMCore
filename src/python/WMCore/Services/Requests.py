@@ -162,7 +162,7 @@ class Requests(dict):
         headers = {"Content-type": contentType,
                    "User-agent": "WMCore.Services.Requests/v001",
                    "Accept": self['accept_type']}
-        for key in self.additionalHeaders.keys():
+        for key in list(self.additionalHeaders.keys()):
             headers[key] = self.additionalHeaders[key]
         # And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
@@ -197,7 +197,7 @@ class Requests(dict):
                    "Accept": self['accept_type']}
         encoded_data = ''
 
-        for key in self.additionalHeaders.keys():
+        for key in list(self.additionalHeaders.keys()):
             headers[key] = self.additionalHeaders[key]
 
         # And now overwrite any headers that have been passed into the call:
@@ -260,7 +260,7 @@ class Requests(dict):
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
-            for con in conn.connections.values():
+            for con in list(conn.connections.values()):
                 con.close()
             conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client

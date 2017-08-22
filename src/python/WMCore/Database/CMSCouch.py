@@ -9,7 +9,9 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
+from __future__ import division
 
+from past.utils import old_div
 import time
 import urllib
 import re
@@ -1144,7 +1146,7 @@ class CouchMonitor(object):
         adhoc way to check the replication
         """
         # monitor the last update on replications according to 5 min + checkpoint_interval
-        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval'] / 1000
+        secsUpdateOn = 5 * 60 + old_div(activeStatus['checkpoint_interval'], 1000)
         lastUpdate = activeStatus["updated_on"]
         updateNum = int(activeStatus["source_seq"])
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)

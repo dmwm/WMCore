@@ -2,6 +2,8 @@
 
 
 
+from __future__ import division
+from past.utils import old_div
 import os
 import os.path
 import threading
@@ -286,7 +288,7 @@ class CreateWorkArea:
         Create a sub-directory to allow storage of large jobs
         """
 
-        value = jobCounter/1000
+        value = old_div(jobCounter,1000)
         jobCollDir = '%s/JobCollection_%i_%i' %(taskDir, self.jobGroup.id, value)
         #Set this to a global variable
         self.collectionDir = jobCollDir

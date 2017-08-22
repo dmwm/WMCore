@@ -5,7 +5,9 @@ _FileBased_
 File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
+from __future__ import division
 
+from past.utils import old_div
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File import File
 from WMCore.WMSpec.WMTask import buildLumiMask
@@ -59,7 +61,7 @@ class FileBased(JobFactory):
                     if f['lumiCount'] == 0:
                         continue
                     ## Do average event per lumi calculation.
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(old_div(float(f['events']), f['lumiCount']))
                 newlist.append(f)
             locationDict[key] = sorted(newlist, key = lambda f: f['lfn'])
 

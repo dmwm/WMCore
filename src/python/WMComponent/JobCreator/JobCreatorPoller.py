@@ -2,6 +2,8 @@
 """
 The JobCreator Poller for the JSM
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 
@@ -112,7 +114,7 @@ def capResourceEstimates(jobGroups, nCores, constraints):
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
             else:
                 # we assume job efficiency as nCores * 0.8 for multicore
-                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
+                j['estimatedJobTime'] = min(old_div(j['estimatedJobTime'],(nCores * 0.8)),
                                             constraints['MaxWallTimeSecs'])
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
                                               constraints['MaxRequestDiskKB'] * nCores)

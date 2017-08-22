@@ -4,6 +4,8 @@ _ReReco_
 
 Standard ReReco workflow.
 """
+from __future__ import division
+from past.utils import old_div
 from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
@@ -160,7 +162,7 @@ class ReRecoWorkloadFactory(DataProcessing):
             if skimConfig["SkimJobSplitAlgo"] == "FileBased":
                 skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
             elif skimConfig["SkimJobSplitAlgo"] == "EventBased" or skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
-                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int((8.0 * 3600.0) / skimConfig["TimePerEvent"])))
+                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int(old_div((8.0 * 3600.0), skimConfig["TimePerEvent"]))))
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["max_events_per_lumi"] = 20000
             elif skimConfig["SkimJobSplitAlgo"] == "LumiBased":

@@ -5,7 +5,9 @@ _WMBSMergeBySize_
 Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
+from __future__ import division
 
+from past.utils import old_div
 import threading
 
 from WMCore.WMBS.File import File
@@ -147,7 +149,7 @@ class WMBSMergeBySize(JobFactory):
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
-            self.currentJob.addResourceEstimates(disk = float(file["size"])/1024)
+            self.currentJob.addResourceEstimates(disk = old_div(float(file["size"]),1024))
             self.currentJob.addFile(file)
 
     def defineMergeJobs(self, mergeUnits):

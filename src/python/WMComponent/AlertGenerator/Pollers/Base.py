@@ -3,7 +3,9 @@ Module accommodates base and/or general purpose classes for pollers
 within the Alert messaging framework.
 
 """
+from __future__ import division
 
+from past.utils import old_div
 import sys
 import time
 import logging
@@ -257,7 +259,7 @@ class PeriodPoller(BasePoller):
         avgPerc = None
         if len(measurements) >= measurements._numOfMeasurements:
             # evaluate: calculate average value and react
-            avgPerc = round((sum(measurements) / len(measurements)), 2)
+            avgPerc = round((old_div(sum(measurements), len(measurements))), 2)
             details = dict(period = self.config.period,
                            numMeasurements = len(measurements),
                            average = "%s%%" % avgPerc)

@@ -274,7 +274,6 @@ sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
-  sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == hlt ]]; then
   sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
   sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py

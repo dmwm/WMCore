@@ -5,7 +5,9 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 from __future__ import print_function
+from __future__ import division
 
+from past.utils import old_div
 import copy
 import os.path
 import threading
@@ -1299,7 +1301,7 @@ class JobAccountantTest(unittest.TestCase):
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        print("  Performance: %s fwjrs/sec" % (old_div(100, (endTime - startTime))))
 
         for (jobID, fwjrPath) in self.jobs:
             print("  Validating %s, %s" % (jobID, fwjrPath))
@@ -1636,7 +1638,7 @@ class JobAccountantTest(unittest.TestCase):
 
         endTime = time.time()
         print("  Time: %f" % (endTime - startTime))
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        print("  Performance: %s fwjrs/sec" % (old_div(100, (endTime - startTime))))
 
         for (jobID, fwjrPath) in self.jobs:
             print("  Validating %s, %s" % (jobID, fwjrPath))

@@ -10,6 +10,8 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from __future__ import division
+from past.utils import old_div
 import unittest
 import random
 
@@ -179,7 +181,7 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
 
         # With high probability we must have chopped at least one point
         self.assertTrue(pointsInHistogram < 1000)
-        self.assertAlmostEqual(pointsInHistogram / 1000.0, 0.68, places = 1)
+        self.assertAlmostEqual(old_div(pointsInHistogram, 1000.0), 0.68, places = 1)
 
         # Create a histogram without histogram data
         histogram = ContinuousSummaryHistogram('TestHisto', 'MyLabel', 'SomeoneElsesLabel',

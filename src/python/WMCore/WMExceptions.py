@@ -73,6 +73,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       64: "I/O error: cannot open data file (SEAL).",
                       65: "End of job from user application (CMSSW).",
                       66: "Application exception.",
+                      70: "Invalid Arguments: Not all the required arguments for cmsRun is passed",
                       71: "Failed to initiate Scram project",
                       72: "Failed to enter Scram project directory",
                       73: "Failed to get Scram runtime",  # Keeping old error here, as not sure from there previously it was taken: "Failed writing to read-only file system"

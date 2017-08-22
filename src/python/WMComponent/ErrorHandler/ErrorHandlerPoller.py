@@ -38,6 +38,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 
 class ErrorHandlerException(WMException):
@@ -85,6 +86,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
                                                     database=config.ACDC.database)
+        if hasattr(self.config, "Tier0Feeder"):
+            self.reqAuxDB = None
+        else:
+            self.reqAuxDB = ReqMgrAux(self.config.TaskArchiver.ReqMgr2ServiceURL)
 
         return
 
@@ -195,6 +200,12 @@ class ErrorHandlerPoller(BaseWorkerThread):
         cooloffJobs = []
         passJobs = []
         exhaustJobs = []
+
+        if self.reqAuxDB is None:
+            exitCodesNoRetry = self.config.ErrorHandler.failureExitCodes
+        else:
+            exitCodesNoRetry = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("NoRetryExitCodes", [])
+
         for job in jobList:
             report = Report()
             reportPath = job['fwjr_path']
@@ -234,7 +245,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     exhaustJobs.append(job)
                     continue
 
-                if len([x for x in report.getExitCodes() if x in self.exitCodes]):
+                if len([x for x in report.getExitCodes() if x in exitCodesNoRetry]):
                     msg = "Job %i exhausted due to a bad exit code (%s)" % (job['id'], str(report.getExitCodes()))
                     logging.error(msg)
                     exhaustJobs.append(job)

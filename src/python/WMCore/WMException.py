@@ -17,6 +17,7 @@ WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
 WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
 WMEXCEPTION_REGEXP = re.compile(r"\%s.*?\%s" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR), re.DOTALL)
 
+
 def listWMExceptionStr(filename):
 
     with open(filename, 'r') as logfile:
@@ -24,6 +25,7 @@ def listWMExceptionStr(filename):
         wholefile = logfile.read()
         for b in WMEXCEPTION_REGEXP.finditer(wholefile):
             yield b.group()
+
 
 class WMException(exceptions.Exception):
     """
@@ -33,14 +35,14 @@ class WMException(exceptions.Exception):
     it was raised.
 
     """
-    def __init__(self, message, errorNo = None, **data):
+    def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
         exceptions.Exception.__init__(self, self.name,
                                       message)
 
         #  //
         # // Init data dictionary with defaults
-        #//
+        # //
         self.data = {}
         self.data.setdefault("ClassName", None)
         self.data.setdefault("ModuleName", None)
@@ -58,7 +60,7 @@ class WMException(exceptions.Exception):
 
         #  //
         # // Automatically determine the module name
-        #//  if not set
+        # //  if not set
         if self.data['ModuleName'] == None:
             try:
                 frame = inspect.currentframe()
@@ -72,7 +74,7 @@ class WMException(exceptions.Exception):
 
         #  //
         # // Find out where the exception came from
-        #//
+        # //
         try:
             stack = inspect.stack(1)[1]
             self.data['FileName'] = stack[1]
@@ -83,7 +85,7 @@ class WMException(exceptions.Exception):
 
         #  //
         # // ClassName if ClassInstance is passed
-        #//
+        # //
         try:
             if self.data['ClassInstance'] != None:
                 self.data['ClassName'] = \
@@ -152,7 +154,7 @@ class WMException(exceptions.Exception):
         strg += "\nException Class: %s\n" % self.name
         strg += "Message: %s\n" % self._message
         for key, value in self.data.items():
-            strg += "\t%s : %s\n" % (key, value, )
+            strg += "\t%s : %s\n" % (key, value,)
         strg += "\nTraceback: \n"
         strg += self.traceback
         strg += '\n'

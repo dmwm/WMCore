@@ -23,14 +23,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         Initialize
         """
         BaseWorkerThread.__init__(self)
-        # set the workqueue service for REST call
         self.config = config
-        self.setVariables(self.config)
 
-    def setVariables(self, config):
-        """
-        load all the variables from the config file
-        """
         # get dashboard url, set metric columns from config
         self.dashboard = config.AgentStatusWatcher.dashboard
         self.siteStatusMetric = config.AgentStatusWatcher.siteStatusMetric
@@ -60,12 +54,6 @@ class ResourceControlUpdater(BaseWorkerThread):
         # switch this component on/off
         self.enabled = getattr(config.AgentStatusWatcher, 'enabled', True)
 
-    def setup(self, parameters):
-        """
-        Set db connection and prepare resource control
-        """
-        # Interface to WMBS/BossAir db
-        myThread = threading.currentThread()
         # set resource control
         self.resourceControl = ResourceControl(config=self.config)
 
@@ -85,8 +73,6 @@ class ResourceControlUpdater(BaseWorkerThread):
             5. Change site thresholds when needed (and task thresholds)
         Sites from SSB are validated with PhEDEx node names
         """
-        # set variables every polling cycle
-        self.setVariables(self.config)
         if not self.enabled:
             logging.info("This component is not enabled in the configuration. Doing nothing.")
             return
@@ -126,17 +112,16 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.error("WMStats is not available or is unresponsive.")
 
         if not agentsByTeam:
-            logging.debug("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
+            logging.warning("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
         else:
-            self.agentsByTeam = agentsByTeam
             agentsCount = []
             for team in self.teamNames.split(','):
-                if team not in self.agentsByTeam:
-                    agentsCount.append(1)
+                if team not in agentsByTeam:
+                    agentsCount.append(self.agentsNumByTeam)
                 else:
-                    agentsCount.append(self.agentsByTeam[team])
+                    agentsCount.append(agentsByTeam[team])
             # If agent is in several teams, we choose the team with less agents
-            self.agentsNumByTeam = min(agentsCount, self.agentsNumByTeam)
+            self.agentsNumByTeam = min(min(agentsCount), self.agentsNumByTeam)
             logging.debug("Agents connected to the same team (not in DrainMode): %d", self.agentsNumByTeam)
         return
 

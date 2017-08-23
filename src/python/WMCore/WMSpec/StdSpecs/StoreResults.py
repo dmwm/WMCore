@@ -14,6 +14,7 @@ from Utils.Utilities import makeList
 from WMCore.Lexicon import dataset, block, physicsgroup
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
+
 class StoreResultsWorkloadFactory(StdBase):
     """
     _StoreResultsWorkloadFactory_
@@ -35,7 +36,6 @@ class StoreResultsWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
 
-
         mergeTask = workload.newTask("StoreResults")
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
@@ -47,40 +47,39 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
 
-
-        self.addLogCollectTask(mergeTask, taskName = "StoreResultsLogCollect")
+        self.addLogCollectTask(mergeTask, taskName="StoreResultsLogCollect")
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
 
         mergeTask.addInputDataset(name=self.inputDataset,
-                                  primary = inputPrimaryDataset,
-                                  processed = inputProcessedDataset,
-                                  tier = inputDataTier,
-                                  dbsurl = self.dbsUrl,
-                                  block_blacklist = self.blockBlacklist,
-                                  block_whitelist = self.blockWhitelist,
-                                  run_blacklist = self.runBlacklist,
-                                  run_whitelist = self.runWhitelist)
+                                  primary=inputPrimaryDataset,
+                                  processed=inputProcessedDataset,
+                                  tier=inputDataTier,
+                                  dbsurl=self.dbsUrl,
+                                  block_blacklist=self.blockBlacklist,
+                                  block_whitelist=self.blockWhitelist,
+                                  run_blacklist=self.runBlacklist,
+                                  run_whitelist=self.runWhitelist)
 
         splitAlgo = "ParentlessMergeBySize"
         mergeTask.setSplittingAlgorithm(splitAlgo,
-                                        max_merge_size = self.maxMergeSize,
-                                        min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents)
+                                        max_merge_size=self.maxMergeSize,
+                                        min_merge_size=self.minMergeSize,
+                                        max_merge_events=self.maxMergeEvents)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                        scramArch=self.scramArch)
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setSkipBadFiles(True)
         mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset = inputPrimaryDataset,
-                             dataTier = self.dataTier,
-                             filterName = None,
-                             forceMerged = True)
+                             primaryDataset=inputPrimaryDataset,
+                             dataTier=self.dataTier,
+                             filterName=None,
+                             forceMerged=True)
 
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
         workload.setDashboardActivity("StoreResults")
@@ -95,12 +94,12 @@ class StoreResultsWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
-        specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : False},
-                    "InputDataset" : {"optional" : False, "validate" : dataset, "null" : False},
+        specArgs = {"RequestType": {"default": "StoreResults", "optional": False},
+                    "InputDataset": {"optional": False, "validate": dataset, "null": False},
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "DataTier" : {"default" : "USER", "type" : str,
-                                  "optional" : True, "validate" : None,
-                                  "attr" : "dataTier", "null" : False},
+                    "DataTier": {"default": "USER", "type": str,
+                                 "optional": True, "validate": None,
+                                 "attr": "dataTier", "null": False},
                     "PhysicsGroup": {"default": "", "optional": False,
                                      "null": False, "validate": physicsgroup},
                     "MergedLFNBase": {"default": "/store/results", "type": str,

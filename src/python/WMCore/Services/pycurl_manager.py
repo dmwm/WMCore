@@ -8,15 +8,52 @@ Description: a basic wrapper around pycurl library.
 The RequestHandler class provides basic APIs to get data
 from a single resource or submit mutliple requests to
 underlying data-services.
+
+Examples:
+# CERN SSO: http://linux.web.cern.ch/linux/docs/cernssocookie.shtml
+# use RequestHandler with CERN SSO enabled site
+mgr = RequestHandler()
+url = "https://cms-gwmsmon.cern.ch/prodview/json/site_summary"
+params = {}
+tfile = tempfile.NamedTemporaryFile()
+cern_sso_cookie(url, tfile.name, cert, ckey)
+cookie = {url: tfile.name}
+header, data = mgr.request(url3, params, cookie=cookie)
+if header.status != 200:
+    print "ERROR"
+
+# fetch multiple urls at onces from various urls
+tfile = tempfile.NamedTemporaryFile()
+ckey = os.path.join(os.environ['HOME'], '.globus/userkey.pem')
+cert = os.path.join(os.environ['HOME'], '.globus/usercert.pem')
+url1 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/help"
+url2 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/datatiers"
+url3 = "https://cms-gwmsmon.cern.ch/prodview/json/site_summary"
+cern_sso_cookie(url3, tfile.name, cert, ckey)
+cookie = {url3: tfile.name}
+urls = [url1, url2, url3]
+data = getdata(urls, ckey, cert, cookie=cookie)
+for row in data:
+    print(row)
 """
 from __future__ import print_function
 
+# system modules
+import os
+import re
+import sys
 import cStringIO as StringIO
 import httplib
 import json
 import logging
 import urllib
+import subprocess
 
+# python3
+if sys.version.startswith('3.'):
+    import io
+
+# 3d-party libraries
 import pycurl
 
 class ResponseHeader(object):
@@ -90,7 +127,8 @@ class RequestHandler(object):
         return encoded_data
 
     def set_opts(self, curl, url, params, headers,
-                 ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
+                 ckey=None, cert=None, capath=None, verbose=None,
+                 verb='GET', doseq=True, cainfo=None, cookie=None):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
@@ -99,6 +137,9 @@ class RequestHandler(object):
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
+        if cookie and url in cookie:
+            curl.setopt(pycurl.COOKIEFILE, cookie[url])
+            curl.setopt(pycurl.COOKIEJAR, cookie[url])
 
         encoded_data = self.encode_params(params, verb, doseq)
 
@@ -176,11 +217,12 @@ class RequestHandler(object):
         return ResponseHeader(header)
 
     def request(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, capath=None, doseq=True, decode=False, cainfo=None):
+                verbose=0, ckey=None, cert=None, capath=None,
+                doseq=True, decode=False, cainfo=None, cookie=None):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                ckey, cert, capath, verbose, verb, doseq, cainfo)
+                ckey, cert, capath, verbose, verb, doseq, cainfo, cookie)
         curl.perform()
         if  verbose:
             print(verb, url, params, headers)
@@ -211,10 +253,10 @@ class RequestHandler(object):
         return header, data
 
     def getdata(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, doseq=True):
+                verbose=0, ckey=None, cert=None, doseq=True, cookie=None):
         """Fetch data for given set of parameters"""
         _, data = self.request(url=url, params=params, headers=headers, verb=verb,
-                    verbose=verbose, ckey=ckey, cert=cert, doseq=doseq)
+                    verbose=verbose, ckey=ckey, cert=cert, doseq=doseq, cookie=cookie)
         return data
 
     def getheader(self, url, params, headers=None, verb='GET',
@@ -225,13 +267,13 @@ class RequestHandler(object):
         return header
 
     def multirequest(self, url, parray, headers=None,
-                ckey=None, cert=None, verbose=None):
+                ckey=None, cert=None, verbose=None, cookie=None):
         """Fetch data for given set of parameters"""
         multi = pycurl.CurlMulti()
         for params in parray:
             curl = pycurl.Curl()
             bbuf, hbuf = \
-                self.set_opts(curl, url, params, headers, ckey, cert, verbose)
+                self.set_opts(curl, url, params, headers, ckey, cert, verbose, cookie=cookie)
             multi.add_handle(curl)
             while True:
                 ret, num_handles = multi.perform()
@@ -262,3 +304,149 @@ class RequestHandler(object):
                             raise Exception(err)
                 bbuf.flush()
                 hbuf.flush()
+
+HTTP_PAT = re.compile(\
+        "(https|http)://[-A-Za-z0-9_+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]")
+
+def validate_url(url):
+    "Validate URL"
+    if  HTTP_PAT.match(url):
+        return True
+    return False
+
+def pycurl_options():
+    "Default set of options for pycurl"
+    opts = {
+        'FOLLOWLOCATION': 1,
+        'CONNECTTIMEOUT': 270,
+        'MAXREDIRS': 5,
+        'NOSIGNAL': 1,
+        'TIMEOUT': 270,
+        'SSL_VERIFYPEER': False,
+        'VERBOSE': 0
+    }
+    return opts
+
+def cern_sso_cookie(url, fname, cert, ckey):
+    "Obtain cern SSO cookie and store it in given file name"
+    cmd = 'cern-get-sso-cookie -cert %s -key %s -r -u %s -o %s' \
+            % (cert, ckey, url, fname)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ)
+    proc.wait()
+
+def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=None):
+    """
+    Get data for given list of urls, using provided number of connections
+    and user credentials
+    """
+
+    if not options:
+        options = pycurl_options()
+
+    # Make a queue with urls
+    queue = [u for u in urls if validate_url(u)]
+
+    # Check args
+    num_urls = len(queue)
+    num_conn = min(num_conn, num_urls)
+
+    # Pre-allocate a list of curl objects
+    mcurl = pycurl.CurlMulti()
+    mcurl.handles = []
+    for _ in range(num_conn):
+        curl = pycurl.Curl()
+        curl.fp = None
+        for key, val in options.items():
+            curl.setopt(getattr(pycurl, key), val)
+        curl.setopt(pycurl.SSLKEY, ckey)
+        curl.setopt(pycurl.SSLCERT, cert)
+        mcurl.handles.append(curl)
+        if  headers:
+            curl.setopt(pycurl.HTTPHEADER, \
+                    ["%s: %s" % (k, v) for k, v in headers.items()])
+
+    # Main loop
+    freelist = mcurl.handles[:]
+    num_processed = 0
+    while num_processed < num_urls:
+        # If there is an url to process and a free curl object,
+        # add to multi-stack
+        while queue and freelist:
+            url = queue.pop(0)
+            curl = freelist.pop()
+            curl.setopt(pycurl.URL, url.encode('ascii', 'ignore'))
+            if cookie and url in cookie:
+                curl.setopt(pycurl.COOKIEFILE, cookie[url])
+                curl.setopt(pycurl.COOKIEJAR, cookie[url])
+            if  sys.version.startswith('3.'):
+                bbuf = io.BytesIO()
+                hbuf = io.BytesIO()
+            else:
+                bbuf = StringIO.StringIO()
+                hbuf = StringIO.StringIO()
+            curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
+            curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+            mcurl.add_handle(curl)
+            # store some info
+            curl.hbuf = hbuf
+            curl.bbuf = bbuf
+            curl.url = url
+        # Run the internal curl state machine for the multi stack
+        while True:
+            ret, _ = mcurl.perform()
+            if  ret != pycurl.E_CALL_MULTI_PERFORM:
+                break
+        # Check for curl objects which have terminated, and add them to the
+        # freelist
+        while True:
+            num_q, ok_list, err_list = mcurl.info_read()
+            for curl in ok_list:
+                if  sys.version.startswith('3.'):
+                    hdrs  = curl.hbuf.getvalue().decode('utf-8')
+                    data  = curl.bbuf.getvalue().decode('utf-8')
+                else:
+                    hdrs  = curl.hbuf.getvalue()
+                    data  = curl.bbuf.getvalue()
+                url   = curl.url
+                curl.bbuf.flush()
+                curl.bbuf.close()
+                curl.hbuf.close()
+                curl.hbuf = None
+                curl.bbuf = None
+                mcurl.remove_handle(curl)
+                freelist.append(curl)
+                yield {'url': url, 'data': data, 'headers': hdrs}
+            for curl, errno, errmsg in err_list:
+                hdrs  = curl.hbuf.getvalue()
+                data  = curl.bbuf.getvalue()
+                url   = curl.url
+                curl.bbuf.flush()
+                curl.bbuf.close()
+                curl.hbuf.close()
+                curl.hbuf = None
+                curl.bbuf = None
+                mcurl.remove_handle(curl)
+                freelist.append(curl)
+                yield {'url': url, 'data': None, 'headers': hdrs,\
+                        'error': errmsg, 'code': errno}
+            num_processed = num_processed + len(ok_list) + len(err_list)
+            if num_q == 0:
+                break
+        # Currently no more I/O is pending, could do something in the meantime
+        # (display a progress bar, etc.).
+        # We just call select() to sleep until some more data is available.
+        mcurl.select(1.0)
+
+    cleanup(mcurl)
+
+def cleanup(mcurl):
+    "Clean-up MultiCurl handles"
+    for curl in mcurl.handles:
+        if  curl.hbuf is not None:
+            curl.hbuf.close()
+            curl.hbuf = None
+        if  curl.bbuf is not None:
+            curl.bbuf.close()
+            curl.bbuf = None
+        curl.close()
+    mcurl.close()

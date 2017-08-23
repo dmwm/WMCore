@@ -11,7 +11,7 @@ Standard StoreResults workflow.
 """
 
 from Utils.Utilities import makeList
-from WMCore.Lexicon import dataset, block
+from WMCore.Lexicon import dataset, block, physicsgroup
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 class StoreResultsWorkloadFactory(StdBase):
@@ -27,14 +27,14 @@ class StoreResultsWorkloadFactory(StdBase):
 
         Create a StoreResults workload with the given parameters.
         """
+        # first of all, we update the merged LFN based on the physics group
+        arguments['MergedLFNBase'] += "/" + arguments['PhysicsGroup'].lower()
         StdBase.__call__(self, workloadName, arguments)
 
         (inputPrimaryDataset, inputProcessedDataset, inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
 
-        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
-        workload.setDashboardActivity("StoreResults")
 
         mergeTask = workload.newTask("StoreResults")
         self.addDashboardMonitoring(mergeTask)
@@ -82,6 +82,9 @@ class StoreResultsWorkloadFactory(StdBase):
                              filterName = None,
                              forceMerged = True)
 
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+        workload.setDashboardActivity("StoreResults")
+
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
@@ -94,27 +97,27 @@ class StoreResultsWorkloadFactory(StdBase):
         baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : False},
                     "InputDataset" : {"optional" : False, "validate" : dataset, "null" : False},
-                    "CmsPath" : {"default" : "/tmp", "type" : str,
-                                 "optional" : False, "validate" : None,
-                                 "attr" : "cmsPath", "null" : False},
+                    "ConfigCacheID": {"optional": True, "null": True},
                     "DataTier" : {"default" : "USER", "type" : str,
                                   "optional" : True, "validate" : None,
                                   "attr" : "dataTier", "null" : False},
-                    "MergedLFNBase" : {"default" : "/store/results", "type" : str,
-                                       "optional" : True, "validate" : None,
-                                       "attr" : "mergedLFNBase", "null" : False},
-                    "BlockBlacklist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockBlacklist", "null" : False},
-                    "BlockWhitelist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockWhitelist", "null" : False},
-                    "RunBlacklist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runBlacklist", "null" : False},
-                    "RunWhitelist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runWhitelist", "null" : False}}
+                    "PhysicsGroup": {"default": "", "optional": False,
+                                     "null": False, "validate": physicsgroup},
+                    "MergedLFNBase": {"default": "/store/results", "type": str,
+                                      "optional": True, "validate": None,
+                                      "attr": "mergedLFNBase", "null": False},
+                    "BlockBlacklist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "attr": "blockBlacklist", "null": False},
+                    "BlockWhitelist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "attr": "blockWhitelist", "null": False},
+                    "RunBlacklist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "attr": "runBlacklist", "null": False},
+                    "RunWhitelist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "attr": "runWhitelist", "null": False}}
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

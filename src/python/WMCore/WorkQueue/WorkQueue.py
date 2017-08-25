@@ -195,7 +195,7 @@ class WorkQueue(WorkQueueBase):
 
         if isinstance(self.params['Teams'], basestring):
             self.params['Teams'] = [x.strip() for x in \
-                                    self.params['Teams'].split(',')]
+                                    self.params['Teams'].split(',') if x.strip()]
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,

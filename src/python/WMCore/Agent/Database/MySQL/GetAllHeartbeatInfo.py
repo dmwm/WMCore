@@ -8,7 +8,6 @@ __all__ = []
 
 
 
-import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAllHeartbeatInfo(DBFormatter):

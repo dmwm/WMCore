@@ -85,7 +85,7 @@ def getWorkflows(url, status='assignment-approved'):
     return data.get('result', [])
 
 def workflowsInfo(workflows):
-    "Fetch workflow info and return back minimum info in flat format"
+    "Return minimum info about workflows in flat format"
     winfo = {}
     for wflow in workflows:
         for key, val in wflow.iteritems():
@@ -94,16 +94,6 @@ def workflowsInfo(workflows):
             selist = []
             priority = 0
             campaign = ''
-            if key == 'SiteWhiteList':
-                selist = val
-            if key == 'RequestPriority':
-                priority = val
-            if key == 'Campaign':
-                campaign = val
-            if key == 'InputDataset':
-                datasets.add(val)
-            if key == 'MCPileup':
-                pileups.add(val)
             for kkk, vvv in val.iteritems():
                 if STEP_PAT.match(kkk) or TASK_PAT.match(kkk):
                     dataset = vvv.get('InputDataset', '')
@@ -112,6 +102,16 @@ def workflowsInfo(workflows):
                         datasets.add(dataset)
                     if pileup:
                         pileups.add(pileup)
+                if kkk == 'SiteWhiteList':
+                    selist = vvv
+                if kkk == 'RequestPriority':
+                    priority = vvv
+                if kkk == 'Campaign':
+                    campaign = vvv
+                if kkk == 'InputDataset':
+                    datasets.add(vvv)
+                if kkk == 'MCPileup':
+                    pileups.add(vvv)
             winfo[key] = \
                     dict(datasets=list(datasets), pileups=list(pileups),\
                          priority=priority, selist=selist, campaign=campaign)

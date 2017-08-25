@@ -107,7 +107,7 @@ class LoadForErrorHandler(DBFormatter):
         fileList  = self.formatDict(filesResult)
         fileBinds = []
         if fileSelection:
-            fileList = filter(lambda x : x['lfn'] in fileSelection[x['jobid']], fileList)
+            fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
         for x in fileList:
             # Add new runs
             x['newRuns'] = []

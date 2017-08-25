@@ -82,13 +82,13 @@ class Job(WMObject, dict):
             def getLFN(file):
                 return file["lfn"]
 
-            lfns = map(getLFN, self["input_files"])
+            lfns = list(map(getLFN, self["input_files"]))
             return lfns
         elif type == "id":
             def getID(file):
                 return file["id"]
 
-            ids = map(getID, self["input_files"])
+            ids = list(map(getID, self["input_files"]))
             return ids
 
     def addFile(self, file):

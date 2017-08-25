@@ -400,7 +400,7 @@ class WorkQueueBackend(object):
             for site in sites:
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
-                    curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site

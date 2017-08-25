@@ -724,7 +724,7 @@ class JobCreatorPoller(BaseWorkerThread):
         try:
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
 
-            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
+            createFailedJobs = [x for x in wmbsJobGroup.jobs if x.get('failedOnCreation', False)]
             self.generateCreateFailedReports(createFailedJobs)
             self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:

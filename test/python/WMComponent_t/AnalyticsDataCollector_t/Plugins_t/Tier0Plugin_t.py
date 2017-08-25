@@ -168,7 +168,7 @@ class Tier0PluginTest(unittest.TestCase):
         topLevelSub = Subscription(sharedFileset, topLevelWorkflow)
         topLevelSub.create()
         self.stateMap['Merge'].append(topLevelSub)
-        for task in filter(lambda x: not x.count('CleanupUnmerged'), secondLevelTasks):
+        for task in [x for x in secondLevelTasks if not x.count('CleanupUnmerged')]:
             secondLevelWorkflow = Workflow(task='/%s/Express/%s' % (workflowName, task), **options)
             secondLevelWorkflow.create()
             mergeSub = Subscription(sharedFileset, secondLevelWorkflow)

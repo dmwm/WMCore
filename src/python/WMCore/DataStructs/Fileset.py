@@ -84,7 +84,7 @@ class Fileset(WMObject):
             """
             def getLFN(file):
                 return file["lfn"]
-            files = map(getLFN, self.getFiles(type='list'))
+            files = list(map(getLFN, self.getFiles(type='list')))
             return files
         elif type == 'id':
             """
@@ -93,7 +93,7 @@ class Fileset(WMObject):
             def getID(file):
                 return file["id"]
 
-            files = map(getID, self.getFiles(type='list'))
+            files = list(map(getID, self.getFiles(type='list')))
             return files
 
     def listNewFiles(self):

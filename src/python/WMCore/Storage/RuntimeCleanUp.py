@@ -91,9 +91,9 @@ class CleanUpManager:
         self.inputState.loadJobReport()
         inputReport = self.inputState.getJobReport()
 
-        inputFileDetails = filter(
+        inputFileDetails = list(filter(
             SkippedFileFilter(inputReport.skippedFiles),
-            inputReport.inputFiles)
+            inputReport.inputFiles))
 
 
         self.inputFiles = [ i['LFN'] for i in inputFileDetails ]

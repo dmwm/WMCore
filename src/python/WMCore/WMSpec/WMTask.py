@@ -61,7 +61,7 @@ def buildLumiMask(runs, lumis):
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
-    lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x
+    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])))) for x
                  in lumis]
     strRuns = [str(run) for run in runs]
 

@@ -95,3 +95,13 @@ def getFileInfo(filename):
                 'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_MTIME])),
                 'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_ATIME]))}
     return fileInfo
+
+
+def findMagicStr(filename, matchString):
+    """
+    """
+    with open(filename, 'r') as logfile:
+        # TODO: can we avoid reading the whole file
+        for line in logfile:
+            if matchString in line:
+                yield line

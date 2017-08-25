@@ -100,6 +100,10 @@ def workflowsInfo(workflows):
                 priority = val
             if key == 'Campaign':
                 campaign = val
+            if key == 'InputDataset':
+                datasets.add(val)
+            if key == 'MCPileup':
+                pileups.add(val)
             for kkk, vvv in val.iteritems():
                 if STEP_PAT.match(kkk) or TASK_PAT.match(kkk):
                     dataset = vvv.get('InputDataset', '')

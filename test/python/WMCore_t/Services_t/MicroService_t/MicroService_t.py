@@ -4,6 +4,8 @@ Unit tests for MicroService.py module
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 
+from __future__ import division, print_function
+
 import json
 import cherrypy
 import unittest
@@ -12,7 +14,6 @@ from WMCore_t.Services_t.MicroService_t import TestConfig
 from WMCore.Services.MicroService.RestApi import RestInterface
 from WMCore.Services.MicroService.Unified.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
-import WMQuality.CherrypyTestInit as CherrypyTestInit
 
 
 class ServiceManager(object):
@@ -26,12 +27,12 @@ class ServiceManager(object):
 
     def status(self, **kwargs):
         "Return current status about our service"
-        print("### CALL status", kwargs)
+        print("### CALL status %s" % kwargs)
         return {'state': self.state}
 
     def request(self, **kwargs):
         "Process request given to us"
-        print("### CALL request", kwargs)
+        print("### CALL request %s" % kwargs)
         self.state = kwargs.get('state', None)
         return {'state': self.state}
 
@@ -61,10 +62,10 @@ class MicroServiceTest(unittest.TestCase):
     def postRequest(self, params):
         "Perform POST request to our MicroService"
         headers = {'Content-type': 'application/json'}
-        print("### post call", self.url, params, headers)
+        print("### post call %s params=%s headers=%s" % (self.url, params, headers))
         data = self.mgr.getdata(self.url, params=params, headers=headers, \
                 verb='POST', cert=cert(), ckey=ckey())
-        print("### post call data", data)
+        print("### post call data %s" % data)
         return json.loads(data)
 
     def test_getState(self):
@@ -76,7 +77,7 @@ class MicroServiceTest(unittest.TestCase):
         self.postRequest(data)
         data = self.mgr.getdata(url, params={})
         data = json.loads(data)
-        print("### get", url, "data", data)
+        print("### url=%s, data=%s" % (url, data))
         for row in data['result']:
             if 'state' in row:
                 self.assertEqual(state, row['state'])

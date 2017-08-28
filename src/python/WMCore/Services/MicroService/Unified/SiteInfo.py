@@ -1,5 +1,8 @@
 """
 UnifiedSiteInfo module holds helper function to obtain site information.
+
+Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
+Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
@@ -9,21 +12,22 @@ from __future__ import print_function, division
 import time
 import json
 import tempfile
+import traceback
 from collections import defaultdict
 
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.Services.MicroService.Unified.Common import agentInfo_url, elapsedTime, \
-        phedex_url, cert, ckey, uConfig, stucktransfer_url, monitoring_url, \
-        dashboard_url
+from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, elapsedTime, \
+        phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
+        dashboardUrl
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
     headers = {'Accept': 'application/json'}
     params = {}
     mgr = RequestHandler()
-    url = '%s/nodeusagehistory' % phedex_url()
+    url = '%s/nodeusagehistory' % phedexUrl()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
     ret = defaultdict(int)
@@ -31,6 +35,7 @@ def getNodeQueues():
         for usage in node['usage']:
             ret[node['name']] += int(usage['miss_bytes'] / 1023.**4) #in TB
     return ret
+
 
 class SiteCache(object):
     "Return site info from various CMS data-sources"
@@ -41,29 +46,29 @@ class SiteCache(object):
         "Fetch information about sites from various CMS data-services"
         tfile = tempfile.NamedTemporaryFile()
         urls = [
-            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboard_url(),
-            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboard_url(),
+            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl(),
             'https://cms-gwmsmon.cern.ch/totalview/json/site_summary',
             'https://cms-gwmsmon.cern.ch/prodview/json/site_summary',
             'https://cms-gwmsmon.cern.ch/poolview/json/totals',
             'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
             'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json',
             'http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt',
-            '%s/storageoverview/latest/StorageOverview.json' % monitoring_url(),
-            '%s/stuck_1.json' % stucktransfer_url(),
-            '%s/stuck_2.json' % stucktransfer_url(),
-            '%s/stuck_m1.json' % stucktransfer_url(),
-            '%s/stuck_m3.json' % stucktransfer_url(),
-            '%s/stuck_m4.json' % stucktransfer_url(),
-            '%s/stuck_m5.json' % stucktransfer_url(),
-            '%s/stuck_m6.json' % stucktransfer_url(),
+            '%s/storageoverview/latest/StorageOverview.json' % monitoringUrl(),
+            '%s/stuck_1.json' % stucktransferUrl(),
+            '%s/stuck_2.json' % stucktransferUrl(),
+            '%s/stuck_m1.json' % stucktransferUrl(),
+            '%s/stuck_m3.json' % stucktransferUrl(),
+            '%s/stuck_m4.json' % stucktransferUrl(),
+            '%s/stuck_m5.json' % stucktransferUrl(),
+            '%s/stuck_m6.json' % stucktransferUrl(),
         ]
         cookie = {}
         ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
@@ -145,18 +150,19 @@ def getNodes(kind):
     "Get list of PhEDEx nodes"
     params = {}
     headers = {'Accept': 'application/json'}
-    url = '%s/nodes' % phedex_url()
+    url = '%s/nodes' % phedexUrl()
     mgr = RequestHandler()
     data = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     nodes = json.loads(data)['phedex']['node']
     return [node['name'] for node in nodes if node['kind'] == kind]
+
 
 class SiteInfo(object):
     "SiteInfo class provides info about sites"
     def __init__(self):
         self.config = uConfig
 
-        self.sites_ready_in_agent = agentsSites(agentInfo_url())
+        self.sites_ready_in_agent = agentsSites(agentInfoUrl())
 
         self.sites_ready = []
         self.sites_not_ready = []

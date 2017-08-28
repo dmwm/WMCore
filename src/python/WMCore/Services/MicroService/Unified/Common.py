@@ -1,5 +1,8 @@
 """
 Set of common utilities for Unified service.
+
+Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
+Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
@@ -25,6 +28,7 @@ from WMCore.Services.pycurl_manager import getdata as multi_getdata
 STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
+
 class UnifiedConfiguration(object):
     "UnifiedConfiguration class provides access to Unified configuration parameters"
     def __init__(self):
@@ -42,7 +46,7 @@ uConfig = UnifiedConfiguration()
 
 def dbsInfo(datasets):
     "Provides DBS info about dataset blocks"
-    urls = ['%s/blocks?detail=True&dataset=%s' % (dbs_url(), d) for d in datasets]
+    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl(), d) for d in datasets]
     data = multi_getdata(urls, ckey(), cert())
     datasetBlocks = {}
     datasetSizes = {}
@@ -65,7 +69,7 @@ def dbsInfo(datasets):
 
 def phedexInfo(datasets):
     "Fetch PhEDEx info about nodes for all datasets"
-    urls = ['%s/blockreplicasummary?dataset=%s' % (phedex_url(), d) for d in datasets]
+    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl(), d) for d in datasets]
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
@@ -75,10 +79,10 @@ def phedexInfo(datasets):
             blockNodes[item['name']] = nodes
     return blockNodes
 
-def getWorkflows(url, status='assignment-approved'):
+def getWorkflows(url, state='assignment-approved'):
     "Get list of workflows from ReqMgr2 data-service"
     headers = {'Accept': 'application/json'}
-    params = {'status':status}
+    params = {'status': state}
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
@@ -117,13 +121,13 @@ def workflowsInfo(workflows):
                          priority=priority, selist=selist, campaign=campaign)
     return winfo
 
-def eventsLumisInfo(inputs, sumOverLumi=0):
+def eventsLumisInfo(inputs, validFileOnly=0, sumOverLumi=0):
     "Get information about events and lumis for given set of inputs: blocks or datasets"
     what = 'dataset'
     if '#' in inputs[0]: # inputs are list of blocks
         what = 'block_name'
-    urls = ['%s/filesummaries?sumOverLumi=%s&%s=%s' \
-            % (dbs_url(), sumOverLumi, what, urllib.quote(i)) \
+    urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s' \
+            % (dbsUrl(), validFileOnly, sumOverLumi, what, urllib.quote(i)) \
             for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     eventsLumis = {}
@@ -174,7 +178,7 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
         cput = 0
         carry_on = {}
         while True:
-            t = '%s%d'%(base, itask)
+            t = '%s%d' % (base, itask)
             itask += 1
             if t in workflow:
                 task = workflow[t]
@@ -184,8 +188,8 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
                         nevts, _ = getEventsLumis(dataset, task['BlockWhitelist'], eventsLumis)
                     else:
                         nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
-                elif 'Input%s'%base in task:
-                    nevts = carry_on[task['Input%s'%base]]
+                elif 'Input%s' % base in task:
+                    nevts = carry_on[task['Input%s' % base]]
                 elif 'RequestNumEvents' in task:
                     nevts = float(task['RequestNumEvents'])
                 else:
@@ -219,14 +223,12 @@ def sigmoid(x):
     "Sigmoid function"
     return 1./(1 + math.exp(-x))
 
-def getNCopies(workflow, CPUh=None, m=2, M=3, w=50000, C0=100000):
+def getNCopies(cpuHours, minN=2, maxN=3, weight=50000, constant=100000):
     "Calculate number of copies for given workflow"
-    if CPUh is None:
-        CPUh = getComputingTime(workflow)
-    func = sigmoid(-C0/w)
-    D = (M-m) / (1-func)
-    O = (func*M - m)/(func-1)
-    return int(O + D * sigmoid((CPUh - C0)/w)), CPUh
+    func = sigmoid(-constant/weight)
+    fact = (maxN - minN) / (1-func)
+    base = (func*maxN - minN)/(func-1)
+    return int(base + fact * sigmoid((cpuHours - constant)/weight))
 
 def teraBytes(size):
     "Return size in TB"
@@ -242,43 +244,43 @@ def cert():
     return os.environ.get('X509_USER_PROXY', \
         os.path.join(os.environ['HOME'], '.globus/usercert.pem'))
 
-def stucktransfer_url():
-    "Return stucktransfer_url"
+def stucktransferUrl():
+    "Return stucktransfer url"
     return 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
 
-def dashboard_url():
+def dashboardUrl():
     "Return dashboard url"
     return 'http://dashb-ssb.cern.ch/dashboard/request.py'
 
-def monitoring_url():
+def monitoringUrl():
     "Return monitoring url"
     return 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
 
-def dbs_url():
+def dbsUrl():
     "Return DBS URL"
     return 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
-def reqmgr_url():
+def reqmgrUrl():
     "Return ReqMgr2 url"
     return 'https://cmsweb.cern.ch/reqmgr2'
 
-def reqmgr_cache_url():
+def reqmgrCacheUrl():
     "Return ReqMgr cache url"
     return 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
 
-def phedex_url():
+def phedexUrl():
     "Return PhEDEx url"
     return "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
 
-def ssb_url():
+def ssbUrl():
     "Return Dashboard SSB url"
     return "http://dashb-ssb.cern.ch/dashboard/request.py"
 
-def agentInfo_url():
+def agentInfoUrl():
     "Return agent info url"
     return 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
 
-def mcore_url():
+def mcoreUrl():
     "Return mcore url"
     return "http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json"
 

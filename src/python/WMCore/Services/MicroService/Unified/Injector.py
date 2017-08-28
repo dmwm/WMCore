@@ -12,8 +12,9 @@ import time
 
 # Unified modules
 from WMCore.Services.MicroService.Unified.Injector import injector
-from WMCore.Services.MicroService.Unified.Common import reqmgr_url, Options
+from WMCore.Services.MicroService.Unified.Common import reqmgrUrl, Options
 from Utils.ProcessStats import processStatus, threadStack
+
 
 class UnifiedInjectorManager(object):
     """
@@ -35,7 +36,7 @@ class UnifiedInjectorManager(object):
     def request(self, **kwargs):
         "Process request given to UnifiedInjector"
         self.ncalls += 1
-        url = kwargs.get('url', reqmgr_url)
+        url = kwargs.get('url', reqmgrUrl)
         spec = kwargs.get('spec', None)
         options = Options(kwargs)
         status = injector(url, options, spec)

@@ -84,9 +84,15 @@ class Data(RESTEntity):
         Implement GET request with given uid or set of parameters
         All work is done by MicroServiceManager
         """
+        res = {'request': kwds, 'microservice': self.mgr.__class__.__name__}
         if 'status' in args:
-            return results(dict(performance=self.mgr.status(**kwds)))
-        return results({'request': kwds, 'results': 'Not available', 'microservice': self.mgr.__class__.__name__})
+            if kwds:
+                res.update({'results': dict(status=self.mgr.status(**kwds))})
+            else:
+                res.update({'results': dict(status=self.mgr.status())})
+        else:
+            res.update({'results': dict(status={})})
+        return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)

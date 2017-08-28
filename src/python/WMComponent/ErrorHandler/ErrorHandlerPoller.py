@@ -14,16 +14,13 @@ config.ErrorHandler.readFWJR = True
 
 It will then take three arguments.
 
-config.ErrorHandler.failureExitCodes:  This should be a list of exitCodes on which you want the job to be
-immediately exhausted.  It defaults to [].
-
 config.ErrorHandler.maxFailTime:  This should be a time in seconds after which, if the job took that long to fail,
 it should be exhausted immediately.  It defaults to 24 hours.
 
 config.ErrorHandler.passExitCodes:  This should be a list of exitCodes that you want to cause the job to move
 immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
-Note that failureExitCodes has precedence over passExitCodes.
+Note that exitCodesNoRetry has precedence over passExitCodes.
 """
 import logging
 import os.path
@@ -74,8 +71,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
 
+        self.exitCodesNoRetry = []
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
-        self.exitCodes = getattr(self.config.ErrorHandler, 'failureExitCodes', [])
         self.maxFailTime = getattr(self.config.ErrorHandler, 'maxFailTime', 32 * 3600)
         self.readFWJR = getattr(self.config.ErrorHandler, 'readFWJR', False)
         self.passCodes = getattr(self.config.ErrorHandler, 'passExitCodes', [])
@@ -201,10 +198,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         passJobs = []
         exhaustJobs = []
 
-        if self.reqAuxDB is None:
-            exitCodesNoRetry = self.config.ErrorHandler.failureExitCodes
-        else:
-            exitCodesNoRetry = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("NoRetryExitCodes", [])
+        if self.reqAuxDB:
+            self.exitCodesNoRetry = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("NoRetryExitCodes", [])
 
         for job in jobList:
             report = Report()
@@ -245,7 +240,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     exhaustJobs.append(job)
                     continue
 
-                if len([x for x in report.getExitCodes() if x in exitCodesNoRetry]):
+                if len([x for x in report.getExitCodes() if x in self.exitCodesNoRetry]):
                     msg = "Job %i exhausted due to a bad exit code (%s)" % (job['id'], str(report.getExitCodes()))
                     logging.error(msg)
                     exhaustJobs.append(job)

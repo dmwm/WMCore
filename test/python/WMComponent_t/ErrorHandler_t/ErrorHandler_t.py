@@ -112,7 +112,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         # The poll interval at which to look for failed jobs
         config.ErrorHandler.pollInterval = 60
         # this will be overwritten in some unittests
-        config.ErrorHandler.failureExitCodes = []
         # JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl = os.getenv('COUCHURL', None)
@@ -245,7 +244,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
@@ -301,7 +300,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
@@ -339,7 +338,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
@@ -384,7 +383,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
@@ -432,7 +431,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         config = self.getConfig()
         config.ErrorHandler.readFWJR = True
-        config.ErrorHandler.failureExitCodes = [8020]
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -444,9 +442,10 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         changer.propagate(badJobGroup.jobs, 'jobfailed', 'complete')
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
+        testErrorHandler.exitCodesNoRetry = [8020]
         testErrorHandler.algorithm(None)
 
         # This should exhaust all jobs due to exit code
@@ -458,10 +457,9 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
-        config.ErrorHandler.failureExitCodes = []
         config.ErrorHandler.maxFailTime = -10
         testErrorHandler2 = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler2.reqAuxDB = None
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -482,7 +480,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         config.ErrorHandler.maxFailTime = 24 * 3600
         config.ErrorHandler.passExitCodes = [8020]
         testErrorHandler3 = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler3.reqAuxDB = None
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -526,7 +524,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         self.assertEqual(len(idList), nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
-        # set reqAuxDB None for the test, take the value from config.ErrorHandler.failureExitCodes
+        # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
 

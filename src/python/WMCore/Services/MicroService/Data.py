@@ -18,7 +18,7 @@ from __future__ import print_function, division
 import json
 import traceback
 import importlib
-from types import GeneratorType
+# from types import GeneratorType
 
 # 3d party modules
 import cherrypy
@@ -26,12 +26,12 @@ import cherrypy
 # WMCore modules
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
-from WMCore.REST.Validation import validate_rx, validate_str
+# from WMCore.REST.Validation import validate_rx, validate_str
 from WMCore.REST.Format import JSONFormat
 
 # MicroService modules
 from WMCore.Services.MicroService.Manager import MicroServiceManager
-from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
+# from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
 
 def results(res):
     "Return results in a list format suitable by REST server"
@@ -112,6 +112,6 @@ class Data(RESTEntity):
             return results(result)
         except cherrypy.HTTPError:
             raise
-        except Exception as exp:
+        except:
             msg = 'Unable to POST request, error=%s' % traceback.format_exc()
             raise cherrypy.HTTPError(status=500, message=msg)

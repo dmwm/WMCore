@@ -3,9 +3,9 @@ Unit tests for Unified/SiteInfo.py module
 
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
+from __future__ import division, print_function
 
 # system modules
-import time
 import unittest
 
 # WMCore modules
@@ -18,21 +18,21 @@ class SiteInfoTest(unittest.TestCase):
     def setUp(self):
         self.siteInfo = SiteInfo()
 
-    def test_getNodes(self):
+    def testGetNodes(self):
         "Test function for getNodes()"
         nodes = getNodes('MSS')
         self.assertEqual(True, 'T1_US_FNAL_MSS' in nodes)
 
-    def test_ce2SE(self):
+    def testCe2SE(self):
         "Test function for ce2SE()"
         self.assertEqual('T1_US_FNAL_MSS_Disk', self.siteInfo.ce2SE('T1_US_FNAL_MSS'))
 
-    def test_se2CE(self):
+    def testSe2CE(self):
         "Test function for se2CE()"
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_MSS'))
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_Disk'))
 
-    def test_siteCache(self):
+    def testSiteCache(self):
         "Test function for siteCache"
         keys = ['gwmsmon_prod_site_summary', 'gwmsmon_site_summary', 
                 'gwmsmon_totals', 'gwmsmon_prod_maxused',

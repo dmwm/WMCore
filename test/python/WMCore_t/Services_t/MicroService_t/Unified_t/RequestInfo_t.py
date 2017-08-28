@@ -3,6 +3,7 @@ Unit tests for Unified/RequestInfo.py module
 
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
+from __future__ import division, print_function
 
 import unittest
 

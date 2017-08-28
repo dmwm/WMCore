@@ -3,6 +3,7 @@ Unit tests for Unified/Common.py module
 
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
+from __future__ import division, print_function
 
 import unittest
 
@@ -16,7 +17,7 @@ class CommonTest(unittest.TestCase):
         self.datasets = ['/ZMM/Summer11-DESIGN42_V11_428_SLHC1-v1/GEN-SIM',
                 '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
 
-    def test_dbsInfo(self):
+    def testDbsInfo(self):
         "Test function for dbsInfo()"
         datasetBlocks, datasetSizes = dbsInfo(self.datasets)
         blocks = [b for d in self.datasets for b in datasetBlocks[d]]
@@ -26,20 +27,20 @@ class CommonTest(unittest.TestCase):
         sizes = sum([datasetSizes[d] for d in self.datasets])
         self.assertEqual(expect, sizes)
 
-    def test_workflowsInfo(self):
-	"Test function for workflowsInfo()"
+    def testWorkflowsInfo(self):
+        "Test function for workflowsInfo()"
         state = 'assignment-approved'
-	url = '%s/data/request' % reqmgrUrl()
-	workflows = getWorkflows(url, state=state)
+        url = '%s/data/request' % reqmgrUrl()
+        workflows = getWorkflows(url, state=state)
         winfo = workflowsInfo(workflows)
-        datasets = [d for row in winfo.values() for d in row['datasets']]
-        pileups = [d for row in winfo.values() for d in row['pileups']]
+#         datasets = [d for row in winfo.values() for d in row['datasets']]
+#         pileups = [d for row in winfo.values() for d in row['pileups']]
         if len(winfo.keys()):
             keys = sorted(['datasets', 'pileups', 'priority', 'selist', 'campaign'])
-            for key, wdict in winfo.items():
+            for wdict in winfo.values():
                 self.assertEqual(keys, sorted(wdict.keys()))
 
-    def test_getEventsLumis(self):
+    def testGetEventsLumis(self):
         "Test function for getEventsLumis()"
         totEvts = totLumis = 0
         for dataset in self.datasets:

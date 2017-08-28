@@ -257,7 +257,7 @@ class PromptRecoTest(unittest.TestCase):
 
         self.assertEqual(recoSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(recoSubscription["split_algo"], "EventBased",
+        self.assertEqual(recoSubscription["split_algo"], "EventAwareLumiBased",
                          "Error: Wrong split algorithm. %s" % recoSubscription["split_algo"])
 
         alcaRecoFileset = Fileset(name="/TestWorkload/Reco/unmerged-write_ALCARECOALCARECO")
@@ -268,7 +268,7 @@ class PromptRecoTest(unittest.TestCase):
 
         self.assertEqual(alcaSkimSubscription["type"], "Processing",
                          "Error: Wrong subscription type.")
-        self.assertEqual(alcaSkimSubscription["split_algo"], "WMBSMergeBySize",
+        self.assertEqual(alcaSkimSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algorithm. %s" % alcaSkimSubscription["split_algo"])
 
         mergedDQMFileset = Fileset(name="/TestWorkload/Reco/RecoMergewrite_DQM/merged-MergedDQM")
@@ -295,7 +295,7 @@ class PromptRecoTest(unittest.TestCase):
 
             self.assertEqual(mergeSubscription["type"], "Merge",
                              "Error: Wrong subscription type.")
-            self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
         unmergedOutputs = []
         for alcaProd in testArguments["AlcaSkims"]:
@@ -311,7 +311,7 @@ class PromptRecoTest(unittest.TestCase):
 
             self.assertEqual(mergeSubscription["type"], "Merge",
                              "Error: Wrong subscription type.")
-            self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
+            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
         goldenOutputMods = {"write_RECO": "RECO", "write_AOD": "AOD", "write_DQM": "DQM"}
@@ -560,7 +560,7 @@ class PromptRecoTest(unittest.TestCase):
                    (3,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamHcalCalHOCosmicsALCARECO',
                     '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamHcalCalHOCosmics',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (11,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamMuAlGlobalCosmicsALCARECO',
@@ -570,7 +570,7 @@ class PromptRecoTest(unittest.TestCase):
                    (9,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamMuAlGlobalCosmicsALCARECO',
                     '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamMuAlGlobalCosmics',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (8,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamTkAlCosmics0TALCARECO',
@@ -580,7 +580,7 @@ class PromptRecoTest(unittest.TestCase):
                    (6,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-ALCARECOStreamTkAlCosmics0TALCARECO',
                     '/TestWorkload/Reco/AlcaSkim/AlcaSkimMergeALCARECOStreamTkAlCosmics0T',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (12,
                     '/TestWorkload/Reco/AlcaSkim/unmerged-logArchive',
@@ -620,7 +620,7 @@ class PromptRecoTest(unittest.TestCase):
                    (2,
                     '/TestWorkload/Reco/unmerged-write_ALCARECOALCARECO',
                     '/TestWorkload/Reco/AlcaSkim',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Processing'),
                    (13,
                     '/TestWorkload/Reco/unmerged-write_ALCARECOALCARECO',
@@ -635,7 +635,7 @@ class PromptRecoTest(unittest.TestCase):
                    (14,
                     '/TestWorkload/Reco/unmerged-write_AODAOD',
                     '/TestWorkload/Reco/RecoMergewrite_AOD',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (21,
                     '/TestWorkload/Reco/unmerged-write_DQMDQM',
@@ -645,7 +645,7 @@ class PromptRecoTest(unittest.TestCase):
                    (17,
                     '/TestWorkload/Reco/unmerged-write_DQMDQM',
                     '/TestWorkload/Reco/RecoMergewrite_DQM',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (24,
                     '/TestWorkload/Reco/unmerged-write_RECORECO',
@@ -655,12 +655,12 @@ class PromptRecoTest(unittest.TestCase):
                    (22,
                     '/TestWorkload/Reco/unmerged-write_RECORECO',
                     '/TestWorkload/Reco/RecoMergewrite_RECO',
-                    'WMBSMergeBySize',
+                    'ParentlessMergeBySize',
                     'Merge'),
                    (1,
                     'TestWorkload-Reco-/MinimumBias/ComissioningHI-v1/RAW',
                     '/TestWorkload/Reco',
-                    'EventBased',
+                    'EventAwareLumiBased',
                     'Processing')]
 
         testArguments = PromptRecoWorkloadFactory.getTestArguments()

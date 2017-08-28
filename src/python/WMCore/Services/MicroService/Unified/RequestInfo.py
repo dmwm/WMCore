@@ -1,5 +1,8 @@
 """
 UnifiedrequestInfo module provides set of tools to handle given worflow request.
+
+Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
+Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 # futures
 from __future__ import print_function, division
@@ -7,14 +10,19 @@ from __future__ import print_function, division
 # system modules
 import os
 import json
+import time
 import copy
 import pickle
 
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
+from WMCore.Services.pycurl_manager import getdata as multi_getdata
 from WMCore.Services.MicroService.Unified.Common import uConfig, cert, ckey,\
-        reqmgr_cache_url, dbs_url
+        reqmgrCacheUrl, dbsUrl, eventsLumisInfo, getWorkflows, workflowsInfo,\
+        dbsInfo, phedexInfo, reqmgrUrl, elapsedTime, getComputingTime,\
+        getNCopies, teraBytes
 from WMCore.Services.MicroService.Unified.SiteInfo import SiteInfo
+
 
 class CampaignInfo(object):
     """
@@ -39,6 +47,7 @@ class CampaignInfo(object):
                             reg = black[0:-1]
                             self.campaigns[camp]['parameters']['SiteBlacklist'].extend(\
                                 [s for s in siteInfo.all_sites if s.startswith(reg)])
+
     def get(self, camp, key, default):
         "Get certain campaign from campaign list"
         if camp in self.campaigns:
@@ -54,14 +63,14 @@ class CampaignInfo(object):
 
 def findParent(dataset):
     "Helper function to find a parent of the dataset"
-    url = '%s/datasetparents' % dbs_url()
+    url = '%s/datasetparents' % dbsUrl()
     params = {'dataset': dataset}
     headers = {'Accept': 'application/json'}
     mgr = RequestHandler()
     data = mgr.getdata(url, params=params, headers=headers, cert=cert(), ckey=ckey())
     return [str(i['parent_dataset']) for i in json.loads(data)]
 
-def IOforTask(request):
+def ioForTask(request):
     "Return lfn, primary, parent and secondary datasets for given request"
     lhe = False
     primary = set()
@@ -87,7 +96,8 @@ def getIO(request):
         base = request['RequestType'].replace('Chain', '')
         item = 1
         while '%s%d' % (base, item) in request:
-            alhe, aprimary, aparent, asecondary = IOforTask(request['%s%d' % (base, item)])
+            alhe, aprimary, aparent, asecondary = \
+                    ioForTask(request['%s%d' % (base, item)])
             if alhe:
                 lhe = True
             primary.update(aprimary)
@@ -95,7 +105,7 @@ def getIO(request):
             secondary.update(asecondary)
             item += 1
     else:
-        lhe, primary, parent, secondary = IOforTask(request)
+        lhe, primary, parent, secondary = ioForTask(request)
     return lhe, primary, parent, secondary
 
 def isRelval(request):
@@ -104,7 +114,7 @@ def isRelval(request):
         return True
     return False
 
-def collectin_uhm_chain(request, member, func=None, default=None, base=None):
+def collectionHelper(request, member, func=None, default=None, base=None):
     "Helper function to return uhm chain as a dictionary"
     coll = {}
     item = 1
@@ -122,9 +132,9 @@ def collectin_uhm_chain(request, member, func=None, default=None, base=None):
 def collectinchain(request, member, func=None, default=None):
     "Helper function to return dictionary of collection chain"
     if request['RequestType'] == 'StepChain':
-        return collectin_uhm_chain(request, member, func, default, base='Step')
+        return collectionHelper(request, member, func, default, base='Step')
     elif request['RequestType'] == 'TaskChain':
-        return collectin_uhm_chain(request, member, func, default, base='Task')
+        return collectionHelper(request, member, func, default, base='Task')
     else:
         raise Exception("should not call collectinchain on non-chain request")
 
@@ -148,45 +158,58 @@ def heavyRead(request):
 
 def taskDescending(node, select=None):
     "Helper function to walk through task nodes in descending order"
-    all_tasks = []
+    allTasks = []
     if not select:
-        all_tasks.append(node)
+        allTasks.append(node)
     else:
         for key, value in select.items():
             if (isinstance(value, list) and getattr(node, key) in value) or \
                 (not isinstance(value, list) and getattr(node, key) == value):
-                all_tasks.append(node)
+                allTasks.append(node)
                 break
 
     for child in node.tree.childNames:
-        ch = getattr(node.tree.children, child)
-        all_tasks.extend(taskDescending(ch, select))
-    return all_tasks
+        chItem = getattr(node.tree.children, child)
+        allTasks.extend(taskDescending(chItem, select))
+    return allTasks
 
-def get_spec(request):
+def getRequestSpecs(requestNames):
+    "Helper function to get all specs for given set of request names"
+    urls = [str('%s/%s/spec' % (reqmgrCacheUrl(), r)) for r in requestNames]
+    data = multi_getdata(urls, ckey(), cert())
+    rdict = {}
+    for row in data:
+        req = row['url'].split('/')[-2]
+        rdict[req] = pickle.loads(row['data'])
+    return rdict
+
+def getSpec(request, reqSpecs=None):
     "Get request from workload cache"
-    url = str('%s/%s/spec' % (reqmgr_cache_url(), request['RequestName']))
+    if reqSpecs and request['RequestName'] in reqSpecs:
+        return reqSpecs[request['RequestName']]
+    url = str('%s/%s/spec' % (reqmgrCacheUrl(), request['RequestName']))
     mgr = RequestHandler()
     data = mgr.getdata(url, params={}, cert=cert(), ckey=ckey())
     return pickle.loads(data)
 
-def getAllTasks(request, select=None):
+def getAllTasks(request, select=None, reqSpecs=None):
     "Return all task for given request"
-    all_tasks = []
-    tasklist = get_spec(request).tasks.tasklist
-    for task in tasklist:
-        node = getattr(get_spec(request).tasks, task)
-        all_tasks.extend(taskDescending(node, select))
-    return all_tasks
+    allTasks = []
+    tasks = getSpec(request, reqSpecs).tasks
+    for task in tasks.tasklist:
+        node = getattr(tasks, task)
+        allTasks.extend(taskDescending(node, select))
+    return allTasks
 
-def getWorkTasks(request):
+def getWorkTasks(request, reqSpecs=None):
     "Return work tasks for given request"
-    return getAllTasks(request, select={'taskType': ['Production', 'Processing', 'Skim']})
+    return getAllTasks(request, select={'taskType': ['Production', 'Processing', 'Skim']},\
+            reqSpecs=reqSpecs)
 
-def getSplittings(request):
+def getSplittings(request, reqSpecs=None):
     "Return splittings for given request"
     spl = []
-    for task in getWorkTasks(request):
+    for task in getWorkTasks(request, reqSpecs=reqSpecs):
         tsplit = task.input.splitting
         spl.append({"splittingAlgo": tsplit.algorithm, "splittingTask": task.pathName})
         get_those = ['events_per_lumi', 'events_per_job', 'lumis_per_job',\
@@ -200,23 +223,23 @@ def getSplittings(request):
                 spl[-1][key] = val
         for get in get_those:
             if hasattr(tsplit, get):
-                set_to = get
+                setTo = get
                 if tsplit.algorithm in translate:
                     for src, des in translate[tsplit.algorithm]:
                         if src == get:
-                            set_to = des
+                            setTo = des
                             break
-                spl[-1][set_to] = getattr(tsplit, get)
+                spl[-1][setTo] = getattr(tsplit, get)
     return spl
 
-def getBlowupFactors(request):
+def getBlowupFactors(request, reqSpecs=None):
     "Return blowup factors for given request"
     if request['RequestType'] != 'TaskChain':
         return 1., 1., 1.
-    min_child_job_per_event = None
-    root_job_per_event = None
-    max_blow_up = 0
-    splits = getSplittings(request)
+    minChildJobPerEvent = None
+    rootJobPerEvent = None
+    maxBlowUp = 0
+    splits = getSplittings(request, reqSpecs=reqSpecs)
     for item in splits:
         c_size = None
         p_size = None
@@ -233,101 +256,100 @@ def getBlowupFactors(request):
                 for key in ['events_per_job', 'avg_events_per_job']:
                     if key in parent:
                         p_size = parent[key]
-                if not min_child_job_per_event or min_child_job_per_event > c_size:
-                    min_child_job_per_event = c_size
+                if not minChildJobPerEvent or minChildJobPerEvent > c_size:
+                    minChildJobPerEvent = c_size
         else:
-            root_job_per_event = c_size
+            rootJobPerEvent = c_size
         if c_size and p_size:
-            blow_up = float(p_size)/c_size
-            if blow_up > max_blow_up:
-                max_blow_up = blow_up
-    return min_child_job_per_event, root_job_per_event, max_blow_up
+            blowUp = float(p_size)/c_size
+            if blowUp > maxBlowUp:
+                maxBlowUp = blowUp
+    return minChildJobPerEvent, rootJobPerEvent, maxBlowUp
 
 def getMulticore(request):
     "Return max number of cores for a given request"
     mcores = [int(request.get('Multicore', 1))]
     if 'Chain' in request['RequestType']:
-        mcores_d = collectinchain(request, 'Multicore', default=1)
-        mcores.extend(map(int, mcores_d.values()))
+        mcoresCol = collectinchain(request, 'Multicore', default=1)
+        mcores.extend(map(int, mcoresCol.values()))
     return max(mcores)
 
-def getSiteWhiteList(request, siteInfo, pickone=False, verbose=True):
+def getSiteWhiteList(request, siteInfo, reqSpecs=None, pickone=False, verbose=True):
     "Return site list for given request"
     lheinput, primary, parent, secondary = getIO(request)
-    sites_allowed = []
+    allowedSites = []
     if lheinput:
-        sites_allowed = sorted(siteInfo.sites_eos)
+        allowedSites = sorted(siteInfo.sites_eos)
     elif secondary:
         if heavyRead(request):
-            sites_allowed = sorted(set(siteInfo.sites_T1s + siteInfo.sites_with_goodIO))
+            allowedSites = sorted(set(siteInfo.sites_T1s + siteInfo.sites_with_goodIO))
         else:
-            sites_allowed = sorted(set(siteInfo.sites_T1s + siteInfo.sites_with_goodAAA))
+            allowedSites = sorted(set(siteInfo.sites_T1s + siteInfo.sites_with_goodAAA))
     elif primary:
-        sites_allowed = sorted(set(siteInfo.sites_T1s + siteInfo.sites_T2s + siteInfo.sites_T3s))
+        allowedSites = sorted(set(siteInfo.sites_T1s + siteInfo.sites_T2s + siteInfo.sites_T3s))
     else:
         # no input at all all site should contribute
-        sites_allowed = sorted(set(siteInfo.sites_T2s + siteInfo.sites_T1s + siteInfo.sites_T3s))
+        allowedSites = sorted(set(siteInfo.sites_T2s + siteInfo.sites_T1s + siteInfo.sites_T3s))
     if pickone:
-        sites_allowed = sorted([siteInfo.pick_CE(sites_allowed)])
+        allowedSites = sorted([siteInfo.pick_CE(allowedSites)])
 
     # do further restrictions based on memory
     # do further restrictions based on blow-up factor
-    min_child_job_per_event, root_job_per_event, blow_up = getBlowupFactors(request)
-    max_blow_up, needed_cores = uConfig.get('blow_up_limits', (0, 0))
-    if blow_up > max_blow_up:
+    minChildJobPerEvent, rootJobPerEvent, blowUp = \
+            getBlowupFactors(request, reqSpecs=reqSpecs)
+    maxBlowUp, neededCores = uConfig.get('blow_up_limits', (0, 0))
+    if blowUp > maxBlowUp:
         ## then restrict to only sites with >4k slots
-        new_sites_allowed = list(set(sites_allowed) &\
-                                 set([site for site in sites_allowed \
-                                        if siteInfo.cpu_pledges[site] > needed_cores]))
-        if new_sites_allowed:
-            sites_allowed = new_sites_allowed
+        newAllowedSites = list(set(allowedSites) &\
+                                 set([site for site in allowedSites \
+                                        if siteInfo.cpu_pledges[site] > neededCores]))
+        if newAllowedSites:
+            allowedSites = newAllowedSites
             print("swaping", verbose)
             if verbose:
                 print("restricting site white list because of blow-up factor",\
-                        min_child_job_per_event, root_job_per_event, max_blow_up)
+                        minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
 
     campaignInfo = CampaignInfo()
     for campaign in getCampaigns(request):
-        c_sites_allowed = campaignInfo.get(campaign, 'SiteWhitelist', [])
-        c_sites_allowed.extend(campaignInfo.parameters(campaign).get('SiteWhitelist', []))
-        if c_sites_allowed:
+        campSites = campaignInfo.get(campaign, 'SiteWhitelist', [])
+        campSites.extend(campaignInfo.parameters(campaign).get('SiteWhitelist', []))
+        if campSites:
             if verbose:
                 print("Using site whitelist restriction by campaign,",\
-                        campaign, "configuration", sorted(c_sites_allowed))
-            sites_allowed = list(set(sites_allowed) & set(c_sites_allowed))
-            if not sites_allowed:
-                sites_allowed = list(c_sites_allowed)
+                        campaign, "configuration", sorted(campSites))
+            allowedSites = list(set(allowedSites) & set(campSites))
+            if not allowedSites:
+                allowedSites = list(campSites)
 
-        c_black_list = campaignInfo.get(campaign, 'SiteBlacklist', [])
-        c_black_list.extend(campaignInfo.parameters(campaign).get('SiteBlacklist', []))
-        if c_black_list:
+        campBlackList = campaignInfo.get(campaign, 'SiteBlacklist', [])
+        campBlackList.extend(campaignInfo.parameters(campaign).get('SiteBlacklist', []))
+        if campBlackList:
             if verbose:
                 print("Reducing the whitelist due to black list in campaign configuration")
-                print("Removing", c_black_list)
-            sites_allowed = list(set(sites_allowed) - set(c_black_list))
+                print("Removing", campBlackList)
+            allowedSites = list(set(allowedSites) - set(campBlackList))
 
     ncores = getMulticore(request)
-    memory_allowed = siteInfo.sitesByMemory(float(request['Memory']), maxCore=ncores)
-    if memory_allowed != None:
+    memAllowed = siteInfo.sitesByMemory(float(request['Memory']), maxCore=ncores)
+    if memAllowed != None:
         if verbose:
             print("sites allowing", request['Memory'], "MB and", ncores, \
-                    "core are", sorted(memory_allowed))
+                    "core are", sorted(memAllowed))
         ## mask to sites ready for mcore
         if  ncores > 1:
-            memory_allowed = list(set(memory_allowed) & set(siteInfo.sites_mcore_ready))
-        sites_allowed = list(set(sites_allowed) & set(memory_allowed))
-    return lheinput, primary, parent, secondary, sorted(sites_allowed)
+            memAllowed = list(set(memAllowed) & set(siteInfo.sites_mcore_ready))
+        allowedSites = list(set(allowedSites) & set(memAllowed))
+    return lheinput, primary, parent, secondary, sorted(allowedSites)
 
-def test():
-    "Helper test function"
-    import time
-    from WMCore.Services.MicroService.Unified.Common import eventsLumisInfo, \
-            getWorkflows, workflowsInfo, dbsInfo, phedexInfo, reqmgr_url, elapsedTime, \
-            getComputingTime, getNCopies, teraBytes
-
-    url = '%s/data/request' % reqmgr_url()
+def requestsInfo(state='assignment-approved'):
+    """
+    Helper function to get information about all requests
+    in assignment-approved state in ReqMgr
+    """
+    url = '%s/data/request' % reqmgrUrl()
     time0 = orig = time.time()
-    workflows = getWorkflows(url)
+    workflows = getWorkflows(url, state=state)
     elapsedTime(time0, "### getWorkflows")
 
     winfo = workflowsInfo(workflows)
@@ -345,16 +367,25 @@ def test():
     eventsLumis = eventsLumisInfo(datasets)
     elapsedTime(time0, "### eventsLumisInfo")
 
-    tot_blks = tot_evts = tot_size = tot_cput = 0
+    # get specs for all requests and re-use them later in getSiteWhiteList as cache
+    requests = [v['RequestName'] for w in workflows for k, v in w.items()]
+    reqSpecs = getRequestSpecs(requests)
+
+    # get siteInfo instance once and re-use it later, it is time-consumed object
+    siteInfo = SiteInfo()
+
+    requests = {}
+    totBlocks = totEvents = totSize = totCpuT = 0
+    tst0 = time.time()
     for wflow in workflows:
         for wname, wspec in wflow.items():
             time0 = time.time()
             cput = getComputingTime(wspec, eventsLumis=eventsLumis)
-            ncopies = getNCopies(wspec, cput)
+            ncopies = getNCopies(cput)
 
             attrs = winfo[wname]
             ndatasets = len(attrs['datasets'])
-#             npileups = len(attrs['pileups'])
+            npileups = len(attrs['pileups'])
             nblocks = nevts = nlumis = size = 0
             nodes = set()
             for dataset in attrs['datasets']:
@@ -367,28 +398,38 @@ def test():
                 edata = eventsLumis[dataset]
                 nevts += edata['num_event']
                 nlumis += edata['num_lumi']
-            tot_blks += nblocks
-            tot_evts += nevts
-            tot_size += size
-            tot_cput += cput
+            totBlocks += nblocks
+            totEvents += nevts
+            totSize += size
+            totCpuT += cput
             sites = json.dumps(sorted(list(nodes)))
             print("\n### %s" % wname)
             print("%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s" \
                     % (ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites))
-            lheinput, primary, parent, secondary = getIO(wspec)
-            print("### LHE %s, Primary %s, Parent %s, Secondary %s" \
-                    % (lheinput, primary, parent, secondary))
             # find out which site can serve given workflow request
             t0 = time.time()
-            siteInfo = SiteInfo()
-            data = getSiteWhiteList(wspec, siteInfo)
-            # data = (lheinput, primary, parent, secondary, sites_allowed)
-            print("sites", data)
+            lheInput, primary, parent, secondary, allowedSites \
+                    = getSiteWhiteList(wspec, siteInfo, reqSpecs)
+            rdict = dict(datasets=datasets, blocks=datasetBlocks,\
+                    npileups=npileups, size=size,\
+                    nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies,\
+                    sites=sites, allowedSites=allowedSites, parent=parent,\
+                    lheInput=lheInput, primary=primary, secondary=secondary)
+            requests[wname] = rdict
+            print("sites", allowedSites)
             elapsedTime(t0, "getSiteWhiteList")
     print("\ntotal # of workflows %s, datasets %s, blocks %s, evts %s, size %s (%s TB), cput %s (hours)" \
-            % (len(winfo.keys()), len(datasets), tot_blks, tot_evts, tot_size, teraBytes(tot_size), tot_cput))
+            % (len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT))
+    elapsedTime(tst0, 'workflows info')
     elapsedTime(orig)
-
+    return requests
 
 if __name__ == '__main__':
-    test()
+    import cProfile # python profiler
+    import pstats   # profiler statistics
+    cmd='requestsInfo()'
+    cProfile.runctx(cmd, globals(), locals(), 'profile.dat')
+    info = pstats.Stats('profile.dat')
+    info.sort_stats('cumulative')
+    info.print_stats()
+#     requestsInfo()

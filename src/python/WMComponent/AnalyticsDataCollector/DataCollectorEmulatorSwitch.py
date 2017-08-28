@@ -12,10 +12,10 @@ class EmulatorHelper(object):
     Works as global value for the emulator switch.
     WARNNING: This is not multi thread safe.
     """
-    #DO not change default values
+    # DO not change default values
     LocalCouchDBData = None
     ReqMonDBData = None
-    WMAgentDBData= None
+    WMAgentDBData = None
 
     @staticmethod
     def getEmulatorClass(clsName):
@@ -36,7 +36,7 @@ class EmulatorHelper(object):
             return WMAgentDBDataEmulator
 
     @staticmethod
-    def setEmulators(localCouch=False,reqMon=False, wmagentDB=False):
+    def setEmulators(localCouch=False, reqMon=False, wmagentDB=False):
         EmulatorHelper.LocalCouchDBData = localCouch
         EmulatorHelper.ReqMonDBData = reqMon
         EmulatorHelper.WMAgentDBData = wmagentDB

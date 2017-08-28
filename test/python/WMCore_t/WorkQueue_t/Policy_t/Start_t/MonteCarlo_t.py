@@ -255,7 +255,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         self.assertRaises(NotImplementedError, policyInstance.modifyPolicyForWorkAddition, *[None])
         return
 
-    def _getLHEProdictionWorkload(self, splitArgs):
+    def _getLHEProductionWorkload(self, splitArgs):
 
         totalevents = 1010
 
@@ -265,7 +265,6 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             'EventBased',
             {'events_per_job': splitArgs['SliceSize'],
              'events_per_lumi': splitArgs['SubSliceSize']})
-        getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(LHEProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
 
@@ -277,7 +276,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumEvents', SliceSize=100, MaxJobsPerElement=8, SubSliceType='NumEventsPerLumi',
                          SubSliceSize=11, MaxLumisPerElement=100)
 
-        LHEProductionWorkload = self._getLHEProdictionWorkload(splitArgs)
+        LHEProductionWorkload = self._getLHEProductionWorkload(splitArgs)
         for task in LHEProductionWorkload.taskIterator():
             mc = MonteCarlo(**splitArgs)
             mc(LHEProductionWorkload, task)
@@ -286,7 +285,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumEvents', SliceSize=100, MaxJobsPerElement=8, SubSliceType='NumEventsPerLumi',
                          SubSliceSize=11, MaxLumisPerElement=40)
 
-        LHEProductionWorkload = self._getLHEProdictionWorkload(splitArgs)
+        LHEProductionWorkload = self._getLHEProductionWorkload(splitArgs)
         for task in LHEProductionWorkload.taskIterator():
             mc = MonteCarlo(**splitArgs)
             mc(LHEProductionWorkload, task)
@@ -295,7 +294,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumEvents', SliceSize=100, MaxJobsPerElement=8, SubSliceType='NumEventsPerLumi',
                          SubSliceSize=11, MaxLumisPerElement=1)
 
-        LHEProductionWorkload = self._getLHEProdictionWorkload(splitArgs)
+        LHEProductionWorkload = self._getLHEProductionWorkload(splitArgs)
         for task in LHEProductionWorkload.taskIterator():
             mc = MonteCarlo(**splitArgs)
             with self.assertRaises(WorkQueueWMSpecError):

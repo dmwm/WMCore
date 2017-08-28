@@ -62,8 +62,8 @@ WMStats.namespace("AgentDetailList");
             htmlstr += "<li><b>drain statistics:</b></li><ul>";
             htmlstr += "<li>workflows completed (" + agentInfo.drain_stats.workflows_completed + ")</li>";
             if (agentInfo.drain_stats.workflows_completed) {
-                htmlstr += "<li>condor running (" + agentInfo.drain_stats.condor_status.condor_running + ")</li>";
-                htmlstr += "<li>condor idle (" + agentInfo.drain_stats.condor_status.condor_idle + ")</li>";
+                htmlstr += "<li>condor running (" + agentInfo.drain_stats.condor_status.running + ")</li>";
+                htmlstr += "<li>condor idle (" + agentInfo.drain_stats.condor_status.idle + ")</li>";
                 htmlstr += "<li>dbs open blocks (" + agentInfo.drain_stats.upload_status.dbs_open_blocks + ")</li>";
                 htmlstr += "<li>dbs not uploaded (" + agentInfo.drain_stats.upload_status.dbs_notuploaded + ")</li>";
                 htmlstr += "<li>phedex not uploaded (" + agentInfo.drain_stats.upload_status.phedex_notuploaded + ")</li>";

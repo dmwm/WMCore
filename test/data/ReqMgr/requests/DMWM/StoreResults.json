@@ -1,27 +1,39 @@
 {
-    "createRequest": {
-        "AcquisitionEra": "StoreResults",
-        "CMSSWVersion": "CMSSW_5_3_8",
-        "CmsPath": "/uscmst1/prod/sw/cms",
-        "DataTier": "USER",
-        "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys02/DBSReader",
-        "GlobalTag": "UNKNOWN",
-        "Group": "DATAOPS",
-        "InputDataset": "/SingletopWprime_M-1800_right_TuneZ2star_8TeV-comphep/dsperka-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3-99bd99199697666ff01397dad5652e9e/USER",
-        "MaxMergeEvents": 100000,
-        "MaxMergeSize": 5000000000,
-        "Memory": 2394,
-        "MergedLFNBase": "/store/results/b2g",
-        "MinMergeSize": 1500000000,
-        "ProcessingString": "Summer12_DR53X_PU_S10_START53_V7A_v1_TLBSM_53x_v3_99bd99199697666ff01397dad5652e9e",
-        "ProcessingVersion": "1",
-        "RequestType": "StoreResults",
-        "ScramArch": "slc5_amd64_gcc462",
-        "SiteWhitelist": [
-            "T1_US_FNAL"
-        ],
-        "SizePerEvent": 512.0,
-        "TimePerEvent": 40,
-        "UnmergedLFNBase": "/store/unmerged"
-    }
+  "assignRequest": {
+    "AcquisitionEra": "StoreResults",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MaxRSS": 2400000,
+    "MaxVSize": 20000000,
+    "ProcessingString": "RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728",
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "TrustSitelists": true
+  },
+  "createRequest": {
+    "AcquisitionEra": "StoreResults",
+    "CMSSWVersion": "CMSSW_7_4_0_patch1",
+    "DataTier": "USER",
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
+    "GlobalTag": "crab3_tag",
+    "PhysicsGroup": "HIN",
+    "InputDataset": "/HIMinBiasUPC/twang-RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728-e4923d8707beca9ac7717c2aaa486589/USER",
+    "MaxMergeEvents": 200000,
+    "MaxMergeSize": 5000000000,
+    "Memory": 2394,
+    "MergedLFNBase": "/store/results",
+    "MinMergeSize": 1500000000,
+    "ProcessingString": "RECO_HIMinBiasUPC_HIRun2011_v1_HLT_HIMinBiasHfOrBSC_CMSSW740pre8_20150728",
+    "ProcessingVersion": "1",
+    "RequestType": "StoreResults",
+    "ScramArch": "slc6_amd64_gcc491",
+    "SizePerEvent": 512.0,
+    "TimePerEvent": 1,
+    "UnmergedLFNBase": "/store/unmerged"
+  }
 }

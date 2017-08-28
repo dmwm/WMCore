@@ -816,6 +816,26 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(primaryDatasetType("cosmic"), "data should be allowed")
         self.assertTrue(primaryDatasetType("test"), "test should be allowed")
 
+    def testPhysicsGroup(self):
+        """
+        _testPhysicsGroup_
+
+        Test a few use cases for PhysicsGroup
+        """
+        self.assertRaises(AssertionError, physicsgroup, '')
+        self.assertRaises(AssertionError, physicsgroup, 'A-30-length-Str_that_is_not_allowed')
+
+        self.assertTrue(physicsgroup('1'))
+        self.assertTrue(physicsgroup('A'))
+        self.assertTrue(physicsgroup('_'))
+        self.assertTrue(physicsgroup('-'))
+        self.assertTrue(physicsgroup('FacOps'))
+        self.assertTrue(physicsgroup('Heavy-Ions'))
+        self.assertTrue(physicsgroup('Heavy_Ions'))
+        self.assertTrue(physicsgroup('Tracker-POG'))
+        self.assertTrue(physicsgroup('Trigger'))
+        return
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -222,6 +222,14 @@ def userprocdataset(candidate):
     return (commonCheck and anlaysisCheck)
 
 
+def physicsgroup(candidate):
+    """
+    Check for Physics Group string which is added to StoreResults
+    merged LFN base. Up to 30 letters, numbers, dashes, underscores.
+    """
+    return check(r'%(physics_group)s$' % lfnParts, candidate, 30)
+
+
 def procversion(candidate):
     """ Integers """
     if isinstance(candidate, dict):

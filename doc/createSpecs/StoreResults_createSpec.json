@@ -23,12 +23,7 @@
         "default": "", 
         "optional": true, 
         "type": "<type 'str'>"
-    }, 
-    "CmsPath": {
-        "default": "/tmp", 
-        "optional": false, 
-        "type": "<type 'str'>"
-    }, 
+    },
     "Comments": {
         "default": "", 
         "optional": true, 
@@ -36,7 +31,7 @@
     }, 
     "ConfigCacheID": {
         "default": null, 
-        "optional": false, 
+        "optional": true,
         "type": "<type 'str'>"
     }, 
     "ConfigCacheUrl": {
@@ -188,7 +183,12 @@
         "default": 0, 
         "optional": true, 
         "type": "<type 'int'>"
-    }, 
+    },
+    "PhysicsGroup": {
+        "default": "",
+        "optional": false,
+        "type": "<type 'str'>"
+    },
     "PrepID": {
         "default": null, 
         "optional": true, 

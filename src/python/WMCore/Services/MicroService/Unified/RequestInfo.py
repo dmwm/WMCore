@@ -79,11 +79,15 @@ def ioForTask(request):
     parent = set()
     secondary = set()
     if 'InputDataset' in request:
-        primary = set(filter(None, [request['InputDataset']]))
+        datasets = request['InputDataset']
+        datasets = datasets if isinstance(datasets, list) else [datasets]
+        primary = set([r for r in datasets if r])
     if primary and 'IncludeParent' in request and request['IncludeParent']:
         parent = findParent(primary)
     if 'MCPileup' in request:
-        secondary = set(filter(None, [request['MCPileup']]))
+        pileups = request['MCPileup']
+        pileups = pileups if isinstance(pileups, list) else [pileups]
+        secondary = set([r for r in pileups if r])
     if 'LheInputFiles' in request and request['LheInputFiles'] in ['True', True]:
         lhe = True
     return lhe, primary, parent, secondary
@@ -251,8 +255,6 @@ def getBlowupFactors(request, reqSpecs=None):
                 cSize = item[key]
         parents = [s for s in splits \
                 if task.startswith(s['splittingTask']) and task != s['splittingTask']]
-#         parents = filter(lambda o: \
-#                 task.startswith(o['splittingTask']) and task != o['splittingTask'], splits)
         if parents:
             for parent in parents:
                 for key in ['events_per_job', 'avg_events_per_job']:
@@ -273,7 +275,7 @@ def getMulticore(request):
     mcores = [int(request.get('Multicore', 1))]
     if 'Chain' in request['RequestType']:
         mcoresCol = collectinchain(request, 'Multicore', default=1)
-        mcores.extend(map(int, mcoresCol.values()))
+        mcores.extend([int(v) for v in mcoresCol.values()])
     return max(mcores)
 
 def getSiteWhiteList(request, siteInfo, reqSpecs=None, pickone=False, verbose=True):

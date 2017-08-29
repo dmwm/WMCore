@@ -377,7 +377,7 @@ class WorkQueueBackend(object):
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
             # filter out exclude list from abvaling
-            if element['RequestName'] not in excludeWorkflows:
+            if element['RequestName'] not in excludeWorkflows and element["TeamName"].strip():
                 sortedElements.append(element)
 
         # sort elements to get them in priority first and timestamp order

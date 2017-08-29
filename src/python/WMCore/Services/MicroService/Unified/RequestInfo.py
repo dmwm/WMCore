@@ -241,12 +241,12 @@ def getBlowupFactors(request, reqSpecs=None):
     maxBlowUp = 0
     splits = getSplittings(request, reqSpecs=reqSpecs)
     for item in splits:
-        c_size = None
-        p_size = None
+        cSize = None
+        pSize = None
         task = item['splittingTask']
         for key in ['events_per_job', 'avg_events_per_job']:
             if key in item:
-                c_size = item[key]
+                cSize = item[key]
         parents = [s for s in splits \
                 if task.startswith(s['splittingTask']) and task != s['splittingTask']]
 #         parents = filter(lambda o: \
@@ -255,13 +255,13 @@ def getBlowupFactors(request, reqSpecs=None):
             for parent in parents:
                 for key in ['events_per_job', 'avg_events_per_job']:
                     if key in parent:
-                        p_size = parent[key]
-                if not minChildJobPerEvent or minChildJobPerEvent > c_size:
-                    minChildJobPerEvent = c_size
+                        pSize = parent[key]
+                if not minChildJobPerEvent or minChildJobPerEvent > cSize:
+                    minChildJobPerEvent = cSize
         else:
-            rootJobPerEvent = c_size
-        if c_size and p_size:
-            blowUp = float(p_size)/c_size
+            rootJobPerEvent = cSize
+        if cSize and pSize:
+            blowUp = float(pSize)/cSize
             if blowUp > maxBlowUp:
                 maxBlowUp = blowUp
     return minChildJobPerEvent, rootJobPerEvent, maxBlowUp
@@ -368,7 +368,7 @@ def requestsInfo(state='assignment-approved'):
     elapsedTime(time0, "### eventsLumisInfo")
 
     # get specs for all requests and re-use them later in getSiteWhiteList as cache
-    requests = [v['RequestName'] for w in workflows for k, v in w.items()]
+    requests = [v['RequestName'] for w in workflows for v in w.values()]
     reqSpecs = getRequestSpecs(requests)
 
     # get siteInfo instance once and re-use it later, it is time-consumed object
@@ -427,7 +427,7 @@ def requestsInfo(state='assignment-approved'):
 if __name__ == '__main__':
     import cProfile # python profiler
     import pstats   # profiler statistics
-    cmd='requestsInfo()'
+    cmd = 'requestsInfo()'
     cProfile.runctx(cmd, globals(), locals(), 'profile.dat')
     info = pstats.Stats('profile.dat')
     info.sort_stats('cumulative')

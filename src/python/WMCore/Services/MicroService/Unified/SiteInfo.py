@@ -85,7 +85,7 @@ class SiteCache(object):
             else:
                 try:
                     data = json.loads(row['data'])
-                except:
+                except Exception:
                     traceback.print_exc()
                     print(row)
                     data = {}
@@ -319,7 +319,7 @@ class SiteInfo(object):
             if not site in self.sites_ready:
                 self.sites_memory.pop(site)
         
-        for_max_running = siteCache.get('gwmsmon_site_summary')
+#         for_max_running = siteCache.get('gwmsmon_site_summary')
         for_better_max_running = siteCache.get('gwmsmon_prod_maxused')
         for site in self.cpu_pledges:
             new_max = self.cpu_pledges[site]
@@ -364,7 +364,7 @@ class SiteInfo(object):
                 continue
             try:
                 _, quota, _, locked, site = line.split()
-            except:
+            except Exception:
                 break
 
             if 'MSS' in site:
@@ -397,7 +397,7 @@ class SiteInfo(object):
         for name, column in columns.items():
             try:
                 all_data = siteCache.get('ssb_%d' % column)['csvdata']
-            except:
+            except Exception:
                 traceback.print_exc()
                 continue
             if not all_data:

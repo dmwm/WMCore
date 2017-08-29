@@ -11,7 +11,6 @@ from __future__ import print_function, division
 import time
 
 # Unified modules
-from WMCore.Services.MicroService.Unified.Common import reqmgrUrl, Options
 from Utils.ProcessStats import processStatus, threadStack
 
 
@@ -28,8 +27,8 @@ class UnifiedInjectorManager(object):
     def status(self):
         "Return current status about UnifiedInjector"
         sdict = {'server': processStatus()}
-        sdict['server'].update({'uptime': time.time()-self.time0,
-            'ncalls': self.ncalls, 'state': self.state})
+        sdict['server'].update({'uptime': time.time()-self.time0,\
+                'ncalls': self.ncalls, 'state': self.state})
         sdict.update(threadStack())
         return sdict
 

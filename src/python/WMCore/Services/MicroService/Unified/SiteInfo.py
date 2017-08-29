@@ -20,7 +20,7 @@ from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
 from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, elapsedTime, \
         phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
-        dashboardUrl
+        dashboardUrl, Singleton
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
@@ -39,8 +39,12 @@ def getNodeQueues():
 
 class SiteCache(object):
     "Return site info from various CMS data-sources"
-    def __init__(self):
-        self.siteInfo = self.fetch()
+    __metaclass__ = Singleton # in python3 use SiteCache(object, metaclass=Singleton)
+    def __init__(self, mode=None):
+        if mode == 'test':
+            self.siteInfo = {}
+        else:
+            self.siteInfo = self.fetch()
 
     def fetch(self):
         "Fetch information about sites from various CMS data-services"
@@ -112,16 +116,17 @@ class SiteCache(object):
                     if sid in row['url']:
                         siteInfo['stuck_%s' % sid] = data
             siteInfo['site_queues'] = getNodeQueues()
+        siteInfo['ready_in_agent'] = agentsSites(agentInfoUrl())
         return siteInfo
 
-    def get(self, resource):
+    def get(self, resource, default=None):
         "Return data about given resource"
-        return self.siteInfo[resource]
+        return self.siteInfo.get(resource, default)
 
 # static variable used in this module
-time0 = time.time()
-siteCache = SiteCache()
-elapsedTime(time0, "SiteCache init time")
+# time0 = time.time()
+# siteCache = SiteCache()
+# elapsedTime(time0, "SiteCache init time")
 
 def agentsSites(url):
     "Return list of sites known in CMS WMAgents"
@@ -159,10 +164,12 @@ def getNodes(kind):
 
 class SiteInfo(object):
     "SiteInfo class provides info about sites"
-    def __init__(self):
+    __metaclass__ = Singleton # in python3 use SiteCache(object, metaclass=Singleton)
+    def __init__(self, mode=None):
+        self.siteCache = SiteCache(mode)
         self.config = uConfig
 
-        self.sites_ready_in_agent = agentsSites(agentInfoUrl())
+        self.sites_ready_in_agent = self.siteCache.get('ready_in_agent', [])
 
         self.sites_ready = []
         self.sites_not_ready = []
@@ -174,7 +181,7 @@ class SiteInfo(object):
 #         except:
 #             pass
 
-        data = siteCache.get('ssb_237')
+        data = self.siteCache.get('ssb_237', {'csvdata': []})
         for siteInfo in data['csvdata']:
             if not siteInfo['Tier'] in [0, 1, 2, 3]:
                 continue
@@ -234,7 +241,7 @@ class SiteInfo(object):
         self.sites_memory = {}
 
         self.sites_mcore_ready = []
-        mcore_mask = siteCache.get('mcore')
+        mcore_mask = self.siteCache.get('mcore')
         if mcore_mask:
             self.sites_mcore_ready = \
                     [s for s in mcore_mask['sites_for_mcore'] if s in self.sites_ready]
@@ -254,16 +261,17 @@ class SiteInfo(object):
         ## and get SSB sync
         self.fetch_ssb_info()
 
-        mss_usage = siteCache.get('mss_usage')
+        mss_usage = self.siteCache.get('mss_usage')
         sites_space_override = self.config.get('sites_space_override', {})
-        use_field = 'Usable'
-        for mss in self.storage:
-            if not mss in mss_usage['Tape'][use_field]:
-                self.storage[mss] = 0
-            else:
-                self.storage[mss] = mss_usage['Tape'][use_field][mss]
-            if mss in sites_space_override:
-                self.storage[mss] = sites_space_override[mss]
+        if mss_usage:
+            use_field = 'Usable'
+            for mss in self.storage:
+                if not mss in mss_usage['Tape'][use_field]:
+                    self.storage[mss] = 0
+                else:
+                    self.storage[mss] = mss_usage['Tape'][use_field][mss]
+                if mss in sites_space_override:
+                    self.storage[mss] = sites_space_override[mss]
 
         self.fetch_queue_info()
         ## and detox info
@@ -310,46 +318,48 @@ class SiteInfo(object):
 
     def fetch_queue_info(self):
         "Fetch queue inforation"
-        self.queue = siteCache.get('site_queues')
+        self.queue = self.siteCache.get('site_queues')
 
     def fetch_glidein_info(self):
         "Fetch Glidein information"
-        self.sites_memory = siteCache.get('gwmsmon_totals')
+        self.sites_memory = self.siteCache.get('gwmsmon_totals', {})
         for site in self.sites_memory.keys():
             if not site in self.sites_ready:
                 self.sites_memory.pop(site)
         
-#         for_max_running = siteCache.get('gwmsmon_site_summary')
-        for_better_max_running = siteCache.get('gwmsmon_prod_maxused')
-        for site in self.cpu_pledges:
-            new_max = self.cpu_pledges[site]
-            if site in for_better_max_running:
-                new_max = int(for_better_max_running[site]['sixdays'])
+        for_better_max_running = self.siteCache.get('gwmsmon_prod_maxused')
+        if for_better_max_running:
+            for site in self.cpu_pledges:
+                new_max = self.cpu_pledges[site]
+                if site in for_better_max_running:
+                    new_max = int(for_better_max_running[site]['sixdays'])
 
-            if new_max:
-                self.cpu_pledges[site] = new_max
+                if new_max:
+                    self.cpu_pledges[site] = new_max
         
-        for_site_pressure = siteCache.get('gwmsmon_prod_site_summary')
-        self.sites_pressure = {}
-        for site in self.cpu_pledges:
-            pressure = 0
-            cpusPending = 0
-            cpusInUse = 0
-            if site in for_site_pressure:
-                cpusPending = for_site_pressure[site]['CpusPending']
-                cpusInUse = for_site_pressure[site]['CpusInUse']
-                if cpusInUse:
-                    pressure = cpusPending/float(cpusInUse)
-                else:
-                    pressure = -1
-                    self.sites_pressure[site] = (cpusPending, cpusInUse, pressure)
+        for_site_pressure = self.siteCache.get('gwmsmon_prod_site_summary')
+        if for_site_pressure:
+            self.sites_pressure = {}
+            for site in self.cpu_pledges:
+                pressure = 0
+                cpusPending = 0
+                cpusInUse = 0
+                if site in for_site_pressure:
+                    cpusPending = for_site_pressure[site]['CpusPending']
+                    cpusInUse = for_site_pressure[site]['CpusInUse']
+                    if cpusInUse:
+                        pressure = cpusPending/float(cpusInUse)
+                    else:
+                        pressure = -1
+                        self.sites_pressure[site] = (cpusPending, cpusInUse, pressure)
 
     def fetch_detox_info(self, buffer_level=0.8, sites_space_override=None):
         "Fetch Detox information"
-        ## put a retry in command line
-        info = siteCache.get('detox_sites')
+        info = self.siteCache.get('detox_sites')
+        if not info:
+            return
         if len(info) < 15:
-            info = siteCache.get('detox_sites')
+            info = self.siteCache.get('detox_sites')
             if len(info) < 15:
                 print("detox info is gone")
                 return
@@ -395,8 +405,12 @@ class SiteInfo(object):
 
         _info_by_site = {}
         for name, column in columns.items():
+            all_data = []
             try:
-                all_data = siteCache.get('ssb_%d' % column)['csvdata']
+                ssb_data = self.siteCache.get('ssb_%d' % column, [])
+                if ssb_data:
+                    all_data = ssb_data['csvdata']
+#                 all_data = self.siteCache.get('ssb_%d' % column)['csvdata']
             except Exception:
                 traceback.print_exc()
                 continue
@@ -466,11 +480,11 @@ def test():
 #     keys = ['site_summary', 'totals', 'maxusedcpus', 'mcore', 'detox_sites', 'mss_usage']
 #     keys += ['stuck_%s' % k for k in sids]
 #     keys += ['ssb_%s' % k for k in ssbids]
-    keys = ['ssb_%s' % k for k in ssbids]
-    for key in keys:
-        print("### %s" % key)
-        print(siteCache.get(key))
-#     siteInfo = SiteInfo()
+#     keys = ['ssb_%s' % k for k in ssbids]
+#     for key in keys:
+#         print("### %s" % key)
+#         print(siteCache.get(key))
+    siteInfo = SiteInfo(mode='test')
 #     nodes = getNodes('MSS')
 #     print(nodes)
 

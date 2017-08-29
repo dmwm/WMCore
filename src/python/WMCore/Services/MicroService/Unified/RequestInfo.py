@@ -31,8 +31,10 @@ class CampaignInfo(object):
     WmAgentScripts/campaigns.json and WmAgentScripts/campaigns.relval.json
     """
     def __init__(self):
-        campaigns = os.environ.get('UNIFIED_CAMPAIGNS')
-        campaignsRelVal = os.environ.get('UNIFIED_CAMPAIGNS_RELVAL')
+        fname = '/'.join(__file__.split('/')[:-1] + ['campaigns.json'])
+        campaigns = os.getenv('UNIFIED_CAMPAIGNS', fname)
+        fname = '/'.join(__file__.split('/')[:-1] + ['campaigns.relval.json'])
+        campaignsRelVal = os.getenv('UNIFIED_CAMPAIGNS_RELVAL', fname)
         self.campaigns = json.loads(open(campaigns).read())
         self.campaigns.update(json.loads(open(campaignsRelVal).read()))
         siteInfo = SiteInfo()

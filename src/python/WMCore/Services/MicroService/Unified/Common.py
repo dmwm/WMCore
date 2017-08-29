@@ -15,6 +15,7 @@ import json
 import time
 import math
 import urllib
+from xml.dom.minidom import getDOMImplementation
 
 # py2/py3 modules
 # from future import standard_library
@@ -32,7 +33,8 @@ TASK_PAT = re.compile(r'Task[0-9]')
 class UnifiedConfiguration(object):
     "UnifiedConfiguration class provides access to Unified configuration parameters"
     def __init__(self):
-        fname = os.getenv('UNIFIED_CONFIG_JSON', 'unifiedConfiguration.json')
+        fname = '/'.join(__file__.split('/')[:-1] + ['config.json'])
+        fname = os.getenv('UNIFIED_CONFIG_JSON', fname)
         self.configs = json.loads(open(fname).read())
 
     def get(self, parameter, default=None):
@@ -144,9 +146,9 @@ def getEventsLumis(dataset, blocks=None, eventsLumis=None):
     "Helper function to return number of events/lumis for given dataset or blocks"
     nevts = nlumis = 0
     if blocks:
-        missing_blocks = [b for b in blocks if b not in eventsLumis]
-        if missing_blocks:
-            eLumis = eventsLumisInfo(missing_blocks)
+        missingBlocks = [b for b in blocks if b not in eventsLumis]
+        if missingBlocks:
+            eLumis = eventsLumisInfo(missingBlocks)
             eventsLumis.update(eLumis)
         for block in blocks:
             data = eventsLumis[block]
@@ -176,7 +178,7 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
         base = workflow['RequestType'].replace('Chain', '')
         itask = 1
         cput = 0
-        carry_on = {}
+        carryOn = {}
         while True:
             t = '%s%d' % (base, itask)
             itask += 1
@@ -189,16 +191,16 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
                     else:
                         nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
                 elif 'Input%s' % base in task:
-                    nevts = carry_on[task['Input%s' % base]]
+                    nevts = carryOn[task['Input%s' % base]]
                 elif 'RequestNumEvents' in task:
                     nevts = float(task['RequestNumEvents'])
                 else:
                     print("this is not supported, making it zero cput")
                     nevts = 0
                 tpe = task.get('TimePerEvent', 1)
-                carry_on[task['%sName' % base]] = nevts
+                carryOn[task['%sName' % base]] = nevts
                 if 'FilterEfficiency' in task:
-                    carry_on[task['%sName' % base]] *= task['FilterEfficiency']
+                    carryOn[task['%sName' % base]] *= task['FilterEfficiency']
                 cput += tpe * nevts
             else:
                 break
@@ -246,45 +248,192 @@ def cert():
 
 def stucktransferUrl():
     "Return stucktransfer url"
-    return 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
+    default = 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
+    return uConfig.get('stucktransferUrl', default)
 
 def dashboardUrl():
     "Return dashboard url"
-    return 'http://dashb-ssb.cern.ch/dashboard/request.py'
+    default = 'http://dashb-ssb.cern.ch/dashboard/request.py'
+    return uConfig.get('dashboardUrl', default)
 
 def monitoringUrl():
     "Return monitoring url"
-    return 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
+    default = 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
+    return uConfig.get('monitoringUrl', default)
 
 def dbsUrl():
     "Return DBS URL"
-    return 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+    default = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+    return uConfig.get('dbsUrl', default)
 
 def reqmgrUrl():
     "Return ReqMgr2 url"
-    return 'https://cmsweb.cern.ch/reqmgr2'
+    default = 'https://cmsweb.cern.ch/reqmgr2'
+    return uConfig.get('reqmgrUrl', default)
 
 def reqmgrCacheUrl():
     "Return ReqMgr cache url"
-    return 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
+    default = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
+    return uConfig.get('reqmgrCacheUrl', default)
 
 def phedexUrl():
     "Return PhEDEx url"
-    return "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
+    default = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
+    return uConfig.get('phedexUrl', default)
 
 def ssbUrl():
     "Return Dashboard SSB url"
-    return "http://dashb-ssb.cern.ch/dashboard/request.py"
+    default = "http://dashb-ssb.cern.ch/dashboard/request.py"
+    return uConfig.get('ssbUrl', default)
 
 def agentInfoUrl():
     "Return agent info url"
-    return 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
+    default = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
+    return uConfig.get('agentInfoUrl', default)
 
 def mcoreUrl():
     "Return mcore url"
-    return "http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json"
+    default = "http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json"
+    return uConfig.get('mcoreUrl', default)
 
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):
     "Helper function to print elapsed time"
     print("%s: %s sec" % (msg, round(time.time()-time0, ndigits)))
 
+def getSubscriptions(dataset):
+    "Helper fuction to get subscriptions for a given dataset"
+    mgr = RequestHandler()
+    url = '%s/subscriptions' % phedexUrl()
+    params = {'dataset': dataset}
+    headers = {'Accept': 'application/json'}
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert())
+    return json.loads(data)['phedex']
+
+def getNodesForId(phedexid):
+    "Helper function to get nodes for given phedex id"
+    url = '%s/requestlist' % phedexUrl()
+    params = {'request': str(phedexid)}
+    headers = {'Accept': 'application/json'}
+    mgr = RequestHandler()
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert())
+    items = json.loads(data)['phedex']['request']
+    nodes = [n['name'] for i in items for n in i['node']]
+    return list(set(nodes))
+
+def alterSubscription(phedexid, decision, comments, nodes=None):
+    "Helper function to alter subscriptions for given phedex id and nodes"
+    mgr = RequestHandler()
+    headers = {'Accept': 'application/json'}
+    nodes = nodes if nodes else getNodesForId(phedexid)
+    params = {
+        'decision': decision,
+        'request': phedexid,
+        'node': ','.join(nodes),
+        'comments': comments
+        }
+    url = '%s/updaterequest'
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
+    result = json.loads(data)
+    if not result:
+        return False
+    if 'already' in result:
+        return True
+    return result
+
+def approveSubscription(phedexid, nodes=None, comments=''):
+    "Helper function to alter subscriptions for given phedex id and nodes"
+    if not comments:
+        comments = 'auto-approve subscription phedexid=%s' % phedexid
+    return alterSubscription(phedexid, 'approve', comments, nodes)
+
+def disapproveSubscription(phedexid, nodes=None, comments=''):
+    "Helper function to disapprove subscription for given phedex id and nodes"
+    if not comments:
+        comments = 'auto-disapprove subscription phedexid=%s' % phedexid
+    return alterSubscription(phedexid, 'disapprove', comments, nodes)
+
+def createXML(datasets):
+    """
+    From a list of datasets return an XML of the datasets in the format required by Phedex
+    """
+    # Create the minidom document
+    impl = getDOMImplementation()
+    doc = impl.createDocument(None, "data", None)
+    result = doc.createElement("data")
+    result.setAttribute('version', '2')
+    # Create the <dbs> base element
+    dbs = doc.createElement("dbs")
+    dbs.setAttribute("name", dbsUrl())
+    result.appendChild(dbs)
+    #Create each of the <dataset> element
+    for datasetname in datasets:
+        dataset = doc.createElement("dataset")
+        dataset.setAttribute("is-open", "y")
+        dataset.setAttribute("is-transient", "y")
+        dataset.setAttribute("name", datasetname)
+        dbs.appendChild(dataset)
+    return result.toprettyxml(indent="  ")
+
+def makeDeleteRequest(site, datasets, comments):
+    "Helper function to delete given datasets in Phedex subscription"
+    dataXML = createXML(datasets)
+    params = {
+        "node": site,
+        "data": dataXML,
+        "level": "dataset",
+        "rm_subscriptions": "y",
+        #"group": "DataOps",
+        #"priority": priority,
+        #"request_only":"y" ,
+        #"delete":"y",
+        "comments": comments
+    }
+    mgr = RequestHandler()
+    url = '%s/delete' % phedexUrl()
+    headers = {'Accept': 'application/json'}
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
+    return data
+
+def makeRequest(url, params):
+    "Helper function to make subscription request to PhEDEx"
+    mgr = RequestHandler()
+    headers = {'Accept': 'application/json'}
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
+    return data
+
+def makeReplicaRequest(site, datasets, comments, priority='normal', custodial='n',\
+        approve=False, mail=True, group="DataOps"):
+    "Helper function to make replica request to PhEDEx"
+    url = '%s/subscribe' % phedexUrl()
+    dataXML = createXML(datasets)
+    rOnly = "n" if approve else "y"
+    notice = "n" if mail else "y"
+    params = {"node": site, "data": dataXML, "group": group, "priority": priority,
+              "custodial": custodial, "request_only": rOnly, "move":"n",
+              "no_mail": notice, "comments": comments}
+    return makeRequest(url, params)
+
+def makeMoveRequest(site, datasets, comments, priority='normal', custodial='n', group="DataOps"):
+    "Helper function to make move request in PhEDEx"
+    url = '%s/subscribe' % phedexUrl()
+    dataXML = createXML(datasets)
+    params = {"node": site, "data": dataXML, "group": group, "priority": priority,
+              "custodial": custodial, "request_only": "y", "move":"y",
+              "no_mail": "n", "comments": comments}
+    return makeRequest(url, params)
+
+def updateSubscription(site, item, priority=None, userGroup=None, suspend=None):
+    "Helper function to update subscription for given set of parameters"
+    params = {"node": site}
+    if '#' in item:
+        params['block'] = item.replace('#', '%23')
+    else:
+        params['dataset'] = item
+    if priority:
+        params['priority'] = priority
+    if userGroup:
+        params['user_group'] = userGroup
+    if suspend:
+        params['suspend_until'] = suspend
+    url = '%s/updatesubscription' % phedexUrl()
+    return makeRequest(url, params)

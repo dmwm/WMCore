@@ -55,7 +55,11 @@ function(head, req) {
         };
 		
         var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-
+        // team shouldn't be empty string or undefined
+        if (teams.length === 0 || !ele["TeamName"]) {
+            continue;
+        }
+        
         // check work is for a team in the request
         if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
             continue;

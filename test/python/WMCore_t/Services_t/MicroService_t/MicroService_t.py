@@ -23,6 +23,7 @@ class ServiceManager(object):
     def __init__(self, config=None):
         self.config = config
         self.state = None
+        self.appname = 'test' # keep it since it is used by XMLFormat(self.app.appname))
 
     def status(self, **kwargs):
         "Return current status about our service"

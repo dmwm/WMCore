@@ -22,8 +22,7 @@ class ServiceManager(object):
     """
     def __init__(self, config=None):
         self.config = config
-	self.state = None
-        self.appname = 'test'
+        self.state = None
 
     def status(self, **kwargs):
         "Return current status about our service"

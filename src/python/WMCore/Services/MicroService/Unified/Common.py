@@ -50,7 +50,7 @@ def dbsInfo(datasets):
     data = multi_getdata(urls, ckey(), cert())
     datasetBlocks = {}
     datasetSizes = {}
-    nblocks = 0
+#     nblocks = 0
     for row in data:
         dataset = row['url'].split('=')[-1]
         rows = json.loads(row['data'])
@@ -61,10 +61,10 @@ def dbsInfo(datasets):
             size += item['block_size']
         datasetBlocks[dataset] = blocks
         datasetSizes[dataset] = size
-        nblocks += len(blocks)
-    tot_size = 0
-    for dataset, blocks in datasetBlocks.iteritems():
-        tot_size += datasetSizes[dataset]
+#         nblocks += len(blocks)
+#     tot_size = 0
+#     for dataset, blocks in datasetBlocks.iteritems():
+#         tot_size += datasetSizes[dataset]
     return datasetBlocks, datasetSizes
 
 def phedexInfo(datasets):

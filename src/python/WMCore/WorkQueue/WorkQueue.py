@@ -193,10 +193,6 @@ class WorkQueue(WorkQueueBase):
         else:
             self.SiteDB = SiteDB()
 
-        if isinstance(self.params['Teams'], basestring):
-            self.params['Teams'] = [x.strip() for x in \
-                                    self.params['Teams'].split(',')]
-
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
                                                               sitedb=self.SiteDB,

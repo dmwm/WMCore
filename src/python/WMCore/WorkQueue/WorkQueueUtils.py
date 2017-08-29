@@ -118,9 +118,9 @@ def queueConfigFromConfigObject(config):
     if hasattr(config, 'Alert'):
         qConfig['Config'] = config.Alert
 
-    if 'Teams' not in qConfig and hasattr(config.Agent, 'teamName'):
-        qConfig['Teams'] = config.Agent.teamName
-    if not 'logger' in qConfig:
+    if 'Team' not in qConfig and hasattr(config.Agent, 'teamName'):
+        qConfig['Team'] = config.Agent.teamName
+    if 'logger' not in qConfig:
         import threading
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):

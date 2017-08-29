@@ -40,8 +40,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         # sites forced to down
         self.forceSiteDown = getattr(config.AgentStatusWatcher, 'forceSiteDown', [])
 
-        # agent teams (for dynamic threshold) and queueParams (drain mode)
-        self.teamNames = config.Agent.teamName
+        # agent team (for dynamic threshold) and queueParams (drain mode)
+        self.teamName = config.Agent.teamName
         self.agentsNumByTeam = getattr(config.AgentStatusWatcher, 'defaultAgentsNumByTeam', 5)
 
         # only SSB sites
@@ -114,14 +114,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         if not agentsByTeam:
             logging.warning("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
         else:
-            agentsCount = []
-            for team in self.teamNames.split(','):
-                if team not in agentsByTeam:
-                    agentsCount.append(self.agentsNumByTeam)
-                else:
-                    agentsCount.append(agentsByTeam[team])
-            # If agent is in several teams, we choose the team with less agents
-            self.agentsNumByTeam = min(min(agentsCount), self.agentsNumByTeam)
+            self.agentsNumByTeam = agentsByTeam.get(self.teamName, self.agentsNumByTeam)
             logging.debug("Agents connected to the same team (not in DrainMode): %d", self.agentsNumByTeam)
         return
 

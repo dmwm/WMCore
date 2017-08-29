@@ -1109,6 +1109,7 @@ class StdBase(object):
                      "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
                      "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
                      "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
+                     "HardTimeout": {"default": 129600 + 300, "type": int, "validate": lambda x: x > 0},
                      # Block closing information
                      "BlockCloseMaxWaitTime": {"default": 66400, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxFiles": {"default": 500, "type": int, "validate": lambda x: x > 0},

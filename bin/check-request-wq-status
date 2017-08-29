@@ -161,12 +161,8 @@ def main():
     cfgObject = loadConfigurationFile(os.environ.get("WMAGENT_CONFIG", None))
     args = getOptions()
 
-    teams = cfgObject.Agent.teamName.split(",")
-    if len(teams) != 1:
-        print("No team or multiple teams are set %s" % teams)
-        return
-    team = teams[0].strip()
-    
+    team = cfgObject.Agent.teamName
+
     localQ = createWorkQueue(cfgObject)
     
     gqElements = localQ.parent_queue.getElements(status=args.status, WorkflowName=args.request, TeamName=team)

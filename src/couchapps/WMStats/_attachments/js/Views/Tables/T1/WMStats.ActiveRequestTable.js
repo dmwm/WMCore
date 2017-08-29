@@ -108,7 +108,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "defaultContent": 0,
               "title": "Eestimated Completion", 
               "render": function (data, type, row, meta) {
-                            return (WMStats.Utils.foramtDuration(requestData.estimateCompletionTime(row.workflow)));
+                            return (WMStats.Utils.formatDuration(requestData.estimateCompletionTime(row.workflow)));
                           },
                "type": "num-fmt"
             },

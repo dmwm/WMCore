@@ -30,6 +30,15 @@ STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
 
+class Singleton(type):
+    "Implement Singleton behavior as metaclass"
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        "Define single instance and return it back"
+        if  cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
 class UnifiedConfiguration(object):
     "UnifiedConfiguration class provides access to Unified configuration parameters"
     def __init__(self):

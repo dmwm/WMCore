@@ -5,17 +5,32 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 from __future__ import division, print_function
 
+import time
 import unittest
 
 from WMCore.Services.MicroService.Unified.Common import dbsInfo, getEventsLumis,\
-        workflowsInfo, reqmgrUrl, getWorkflows
+        workflowsInfo, reqmgrUrl, getWorkflows, Singleton
 
+
+class Test(object):
+    "Example of Singleton class"
+    __metaclass__ = Singleton # in python3 use MongoConnection(object, metaclass=Singleton)
+    def __init__(self):
+        self.time = time.time()
 
 class CommonTest(unittest.TestCase):
     "Unit test for Common module"
     def setUp(self):
         self.datasets = ['/ZMM/Summer11-DESIGN42_V11_428_SLHC1-v1/GEN-SIM',
                 '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
+
+    def testSingleton(self):
+        "Test singleton class"
+        obj1 = Test()
+        time.sleep(1)
+        obj2 = Test()
+        self.assertEqual(obj1.time, obj2.time)
+        self.assertEqual(id(obj1), id(obj2))
 
     def testDbsInfo(self):
         "Test function for dbsInfo()"

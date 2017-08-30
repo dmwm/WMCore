@@ -9,7 +9,6 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 from __future__ import print_function, division
 
 # syste modules
-import time
 import json
 import tempfile
 import traceback
@@ -18,7 +17,7 @@ from collections import defaultdict
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, elapsedTime, \
+from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, \
         phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
         dashboardUrl, Singleton
 
@@ -122,11 +121,6 @@ class SiteCache(object):
     def get(self, resource, default=None):
         "Return data about given resource"
         return self.siteInfo.get(resource, default)
-
-# static variable used in this module
-# time0 = time.time()
-# siteCache = SiteCache()
-# elapsedTime(time0, "SiteCache init time")
 
 def agentsSites(url):
     "Return list of sites known in CMS WMAgents"
@@ -471,22 +465,3 @@ class SiteInfo(object):
                     if talk:
                         print("setting", info['FreeDisk'], " disk for", ssite)
                     self.disk[ssite] = int(info['FreeDisk'])
-
-def test():
-    "Integration test"
-    ssbids = ['106']
-#     ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
-#     sids = ['1', '2', 'm1', 'm3', 'm4', 'm5', 'm6']
-#     keys = ['site_summary', 'totals', 'maxusedcpus', 'mcore', 'detox_sites', 'mss_usage']
-#     keys += ['stuck_%s' % k for k in sids]
-#     keys += ['ssb_%s' % k for k in ssbids]
-#     keys = ['ssb_%s' % k for k in ssbids]
-#     for key in keys:
-#         print("### %s" % key)
-#         print(siteCache.get(key))
-    siteInfo = SiteInfo(mode='test')
-#     nodes = getNodes('MSS')
-#     print(nodes)
-
-if __name__ == '__main__':
-    test()

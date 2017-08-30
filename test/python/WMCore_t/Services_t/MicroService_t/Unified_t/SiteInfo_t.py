@@ -33,16 +33,16 @@ class SiteInfoTest(unittest.TestCase):
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_MSS'))
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_Disk'))
 
-    def testSiteCache(self):
-        "Test function for siteCache"
-        keys = ['gwmsmon_prod_site_summary', 'gwmsmon_site_summary', 
-                'gwmsmon_totals', 'gwmsmon_prod_maxused',
-                'mcore', 'detox_sites', 'mss_usage', 'site_queues']
-        ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
-        sids = ['1', '2', 'm1', 'm3', 'm4', 'm5', 'm6']
-        keys += ['stuck_%s' % k for k in sids]
-        keys += ['ssb_%s' % k for k in ssbids]
-        # VK, I don't know yet what unit test should do in test mode
+    # VK, I don't know yet what unit test should do in test mode
+#     def testSiteCache(self):
+#         "Test function for siteCache"
+#         keys = ['gwmsmon_prod_site_summary', 'gwmsmon_site_summary', 
+#                 'gwmsmon_totals', 'gwmsmon_prod_maxused',
+#                 'mcore', 'detox_sites', 'mss_usage', 'site_queues']
+#         ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
+#         sids = ['1', '2', 'm1', 'm3', 'm4', 'm5', 'm6']
+#         keys += ['stuck_%s' % k for k in sids]
+#         keys += ['ssb_%s' % k for k in ssbids]
 #         self.assertEqual(sorted(keys), \
 #                 sorted(self.siteInfo.siteCache.siteInfo.keys()))
 

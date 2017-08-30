@@ -12,7 +12,7 @@ from WMCore.Services.MicroService.Unified.TaskManager import \
         TaskManager, genkey, UidSet
 
 
-def testFunc(interval, results):
+def myFunc(interval, results):
     "Test function"
     time.sleep(interval)
     results.update({interval: 'ok_%s' % interval})
@@ -48,9 +48,9 @@ class TaskManagerTest(unittest.TestCase):
         pid2 = genkey(str(args2) + str(kwds))
         pid3 = genkey(str(args3) + str(kwds))
 
-        jobs.append(mgr.spawn(testFunc, *args1))
-        jobs.append(mgr.spawn(testFunc, *args2))
-        jobs.append(mgr.spawn(testFunc, *args3))
+        jobs.append(mgr.spawn(myFunc, *args1))
+        jobs.append(mgr.spawn(myFunc, *args2))
+        jobs.append(mgr.spawn(myFunc, *args3))
 
         self.assertEqual(True, mgr.is_alive(pid1))
         self.assertEqual(True, mgr.is_alive(pid2))

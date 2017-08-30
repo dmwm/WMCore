@@ -13,13 +13,15 @@ import json
 import tempfile
 import traceback
 from collections import defaultdict
+from future.utils import with_metaclass
 
 # WMCore modules
+from WMCore.Cache.WMConfigCache import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
 from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, \
         phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
-        dashboardUrl, Singleton
+        dashboardUrl
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
@@ -36,9 +38,8 @@ def getNodeQueues():
     return ret
 
 
-class SiteCache(object):
+class SiteCache(with_metaclass(Singleton, object)):
     "Return site info from various CMS data-sources"
-    __metaclass__ = Singleton # in python3 use SiteCache(object, metaclass=Singleton)
     def __init__(self, mode=None):
         if mode == 'test':
             self.siteInfo = {}
@@ -156,9 +157,8 @@ def getNodes(kind):
     return [node['name'] for node in nodes if node['kind'] == kind]
 
 
-class SiteInfo(object):
+class SiteInfo(with_metaclass(Singleton, object)):
     "SiteInfo class provides info about sites"
-    __metaclass__ = Singleton # in python3 use SiteCache(object, metaclass=Singleton)
     def __init__(self, mode=None):
         self.siteCache = SiteCache(mode)
         self.config = uConfig

@@ -8,8 +8,10 @@ from __future__ import division, print_function
 import time
 import unittest
 
+from WMCore.Cache.WMConfigCache import Singleton
 from WMCore.Services.MicroService.Unified.Common import dbsInfo, getEventsLumis,\
-        workflowsInfo, reqmgrUrl, getWorkflows, Singleton
+        workflowsInfo, reqmgrUrl, getWorkflows, subscriptions, subsDetails4dataset,\
+        subsDetails4block
 
 
 class Test(object):
@@ -21,7 +23,7 @@ class Test(object):
 class CommonTest(unittest.TestCase):
     "Unit test for Common module"
     def setUp(self):
-        self.datasets = ['/ZMM/Summer11-DESIGN42_V11_428_SLHC1-v1/GEN-SIM',
+        self.datasets = ['/ZMM/Summer11-DESIGN42_V11_428_SLHC1-v1/GEN-SIM',\
                 '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
 
     def testSingleton(self):
@@ -50,10 +52,9 @@ class CommonTest(unittest.TestCase):
         winfo = workflowsInfo(workflows)
 #         datasets = [d for row in winfo.values() for d in row['datasets']]
 #         pileups = [d for row in winfo.values() for d in row['pileups']]
-        if len(winfo.keys()):
-            keys = sorted(['datasets', 'pileups', 'priority', 'selist', 'campaign'])
-            for wdict in winfo.values():
-                self.assertEqual(keys, sorted(wdict.keys()))
+        keys = sorted(['datasets', 'pileups', 'priority', 'selist', 'campaign'])
+        for wdict in winfo.values():
+            self.assertEqual(keys, sorted(wdict.keys()))
 
     def testGetEventsLumis(self):
         "Test function for getEventsLumis()"
@@ -66,6 +67,26 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(expect, totEvts)
         expect = 22+10
         self.assertEqual(expect, totLumis)
+
+    def testSubscriptions(self):
+        "Test subscriptions functionality"
+        params = {'group': 'DataOps', 'suspended': 'n'}
+        data = subscriptions(**params)
+        dataset = data[0]['name']
+        datasetInfo = subsDetails4dataset(dataset)
+        datasetBytes = datasetInfo[0]['bytes']
+        print("\ndataset=%s" % dataset)
+        print(datasetInfo)
+        datasetBlocks, _ = dbsInfo([dataset])
+        blocks = datasetBlocks[dataset]
+        block = blocks[0]
+        blockInfo = subsDetails4block(blocks)
+        blockBytes = blockInfo[0]['bytes']
+        nodes = list(set([s['node'] for b in blockInfo for s in b['subscription']]))
+        print("\nblock=%s" % block)
+        print("\nsubscribed to %s" % nodes)
+        self.assertEqual(True, blockBytes < datasetBytes)
+        self.assertEqual(1, len(nodes) > 1)
 
 if __name__ == '__main__':
     unittest.main()

@@ -394,11 +394,27 @@ def makeDeleteRequest(site, datasets, comments):
     data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
     return data
 
-def makeRequest(url, params):
-    "Helper function to make subscription request to PhEDEx"
+def getRequest(url, params):
+    "Helper function to GET data from given URL"
     mgr = RequestHandler()
     headers = {'Accept': 'application/json'}
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
+    verbose = 0
+    if 'verbose' in params:
+        verbose = params['verbose']
+        del params['verbose']
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verbose=verbose)
+    return data
+
+def postRequest(url, params):
+    "Helper function to POST request to given URL"
+    mgr = RequestHandler()
+    headers = {'Accept': 'application/json'}
+    verbose = 0
+    if 'verbose' in params:
+        verbose = params['verbose']
+        del params['verbose']
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), \
+            verb='POST', verbose=verbose)
     return data
 
 def makeReplicaRequest(site, datasets, comments, priority='normal', custodial='n',\
@@ -411,7 +427,7 @@ def makeReplicaRequest(site, datasets, comments, priority='normal', custodial='n
     params = {"node": site, "data": dataXML, "group": group, "priority": priority,
               "custodial": custodial, "request_only": rOnly, "move":"n",
               "no_mail": notice, "comments": comments}
-    return makeRequest(url, params)
+    return postRequest(url, params)
 
 def makeMoveRequest(site, datasets, comments, priority='normal', custodial='n', group="DataOps"):
     "Helper function to make move request in PhEDEx"
@@ -420,7 +436,7 @@ def makeMoveRequest(site, datasets, comments, priority='normal', custodial='n', 
     params = {"node": site, "data": dataXML, "group": group, "priority": priority,
               "custodial": custodial, "request_only": "y", "move":"y",
               "no_mail": "n", "comments": comments}
-    return makeRequest(url, params)
+    return postRequest(url, params)
 
 def updateSubscription(site, item, priority=None, userGroup=None, suspend=None):
     "Helper function to update subscription for given set of parameters"
@@ -436,4 +452,21 @@ def updateSubscription(site, item, priority=None, userGroup=None, suspend=None):
     if suspend:
         params['suspend_until'] = suspend
     url = '%s/updatesubscription' % phedexUrl()
-    return makeRequest(url, params)
+    return postRequest(url, params)
+
+def subscriptions(**params):
+    "Helper function to get list of subscriptions from PhEDEx"
+    url = '%s/subscriptions' % phedexUrl()
+    resp = getRequest(url, params)
+    data = json.loads(resp)
+    return data['phedex']['dataset']
+
+def subsDetails4dataset(dataset):
+    "Get details of specific subscriptions"
+    return subscriptions(dataset=dataset)
+
+def subsDetails4block(block):
+    "Get details of specific subscriptions"
+    data = subscriptions(block=block)
+    for row in data:
+        return row['block']

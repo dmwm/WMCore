@@ -4,7 +4,6 @@ Perform cleanup actions
 __all__ = []
 
 import urllib2
-import threading
 import logging
 import traceback
 import json
@@ -108,7 +107,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         agentsByTeam = {}
         try:
             agentsByTeam = self.centralCouchDBReader.agentsByTeam(filterDrain=True)
-        except Exception as ex:
+        except Exception:
             logging.error("WMStats is not available or is unresponsive.")
 
         if not agentsByTeam:

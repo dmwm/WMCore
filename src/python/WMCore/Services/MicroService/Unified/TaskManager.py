@@ -38,8 +38,7 @@ def set_thread_name(ident, name):
 def start_new_thread(name, func, args, unique=False):
     "Wrapper wroung standard thread.strart_new_thread call"
     if  unique:
-        threads = threading.enumerate()
-        threads.sort()
+        threads = sorted(threading.enumerate())
         for thr in threads:
             if  name == thr.name:
                 return thr

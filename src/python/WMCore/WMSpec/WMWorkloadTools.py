@@ -9,8 +9,8 @@ Created on Jun 13, 2013
 @author: dballest
 """
 import json
-import logging
 import re
+import inspect
 
 from Utils.Utilities import makeList, strToBool
 from WMCore.DataStructs.LumiList import LumiList
@@ -49,14 +49,16 @@ def _validateArgument(argument, value, argumentDefinition):
     """
     validNull = argumentDefinition["null"]
     if not validNull and value is None:
-        raise WMSpecFactoryException("Argument %s can't be None" % argument)
+        raise WMSpecFactoryException("Argument '%s' cannot be None" % argument)
     elif value is None:
         return value
 
     try:
         value = argumentDefinition["type"](value)
     except Exception:
-        raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
+        msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, value)
+        msg += "%s. It must be %s" % (type(value), argumentDefinition["type"])
+        raise WMSpecFactoryException(msg)
 
     _validateArgFunction(argument, value, argumentDefinition["validate"])
     return value
@@ -68,7 +70,7 @@ def _validateArgumentDict(argument, argValue, argumentDefinition):
     """
     validNull = argumentDefinition["null"]
     if not validNull and None in argValue.values():
-        raise WMSpecFactoryException("Argument %s can't be None" % argument)
+        raise WMSpecFactoryException("Argument '%s' cannot be None" % argument)
     elif all(val is None for val in argValue.values()):
         return argValue
 
@@ -81,7 +83,9 @@ def _validateArgumentDict(argument, argValue, argumentDefinition):
                 break
             val = argumentDefinition["type"](val)
         except Exception:
-            raise WMSpecFactoryException("Argument: %s, value: %s type is incorrect in schema." % (argument, val))
+            msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, val)
+            msg += "%s. It must be %s" % (type(val), argumentDefinition["type"])
+            raise WMSpecFactoryException(msg)
 
     _validateArgFunction(argument, argValue, argumentDefinition["validate"])
     return argValue
@@ -94,12 +98,15 @@ def _validateArgFunction(argument, value, valFunction):
     if valFunction:
         try:
             if not valFunction(value):
-                raise WMSpecFactoryException(
-                    "Argument %s, value: %s doesn't pass the validation function." % (argument, value))
+                msg = "Argument '%s' with value %r, doesn't pass the validate function." % (argument, value)
+                msg += "\nIt's definition is:\n%s" % inspect.getsource(valFunction)
+                raise WMSpecFactoryException(msg)
+        except WMSpecFactoryException:
+            # just re-raise it to keep the error message clear
+            raise
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
-            logging.error(str(ex))
-            raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
+            raise WMSpecFactoryException(str(ex))
     return
 
 
@@ -111,7 +118,7 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     for arg, argDef in argumentDefinition.iteritems():
         optional = argDef.get(optionKey, True)
         if not optional and arg not in arguments:
-            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argDef)
+            msg = "Argument '%s' is mandatory! Its definition is:\n%s" % (arg, inspect.getsource(argDef))
             raise WMSpecFactoryException(msg)
         # specific case when user GUI returns empty string for optional arguments
         elif arg not in arguments:

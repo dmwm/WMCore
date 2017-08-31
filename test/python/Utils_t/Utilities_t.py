@@ -76,6 +76,5 @@ class UtilitiesTests(unittest.TestCase):
         for v in [[1, 2], {'x': 123}, set([1])]:
             self.assertRaises(ValueError, safeStr, v)
 
-
 if __name__ == '__main__':
     unittest.main()

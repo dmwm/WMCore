@@ -3,7 +3,8 @@ Python thread pool, see
 http://code.activestate.com/recipes/577187-python-thread-pool/
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
-from __future__ import print_function
+# futures
+from __future__ import print_function, division
 
 # system modules
 import time

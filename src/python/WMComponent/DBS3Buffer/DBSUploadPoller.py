@@ -24,13 +24,14 @@ that is not in DBS, decide whether its components are in DBS,
 add them, and then add the files.  This is why everything is
 so convoluted.
 """
-
+import json
 import time
 import threading
 import logging
 import Queue
 import traceback
 import multiprocessing
+import os.path
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -198,9 +199,10 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.filesToUpdate = []
 
-        self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
-        self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
-                                   '/data/mnorman/block.json')
+        self.produceCopy = getattr(self.config.DBS3Upload, 'dumpBlock', False)
+
+        self.copyPath    = os.path.join(getattr(self.config.DBS3Upload, 'componentDir', '/data/srv/'),
+                                        'dbsuploader_block.json')
 
         self.timeoutWaiver = 1
 
@@ -635,10 +637,8 @@ class DBSUploadPoller(BaseWorkerThread):
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
             if self.produceCopy:
-                import json
-                f = open(self.copyPath, 'w')
-                f.write(json.dumps(encodedBlock))
-                f.close()
+                with open(self.copyPath, 'w') as jo:
+                    json.dump(encodedBlock, jo, indent=2)
             self.queuedBlocks.append(block.getName())
 
         # And all work is in and we're done for now

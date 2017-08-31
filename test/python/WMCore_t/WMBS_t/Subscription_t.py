@@ -193,17 +193,17 @@ class SubscriptionTest(unittest.TestCase):
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists before it was created"
+            "Subscription exists before it was created"
 
         testSubscription.create()
 
         assert testSubscription.exists() >= 0, \
-            "ERROR: Subscription does not exist after it was created"
+            "Subscription does not exist after it was created"
 
         testSubscription.delete()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists after it was deleted"
+            "Subscription exists after it was deleted"
 
         testFileset.delete()
         testFileA.delete()
@@ -224,7 +224,7 @@ class SubscriptionTest(unittest.TestCase):
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists before it was created"
+            "Subscription exists before it was created"
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -232,12 +232,12 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
 
         assert testSubscription.exists() >= 0, \
-            "ERROR: Subscription does not exist after it was created"
+            "Subscription does not exist after it was created"
 
         myThread.transaction.rollback()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists after transaction was rolled back."
+            "Subscription exists after transaction was rolled back."
 
         testFileset.delete()
         testFileA.delete()
@@ -259,12 +259,12 @@ class SubscriptionTest(unittest.TestCase):
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists before it was created"
+            "Subscription exists before it was created"
 
         testSubscription.create()
 
         assert testSubscription.exists() >= 0, \
-            "ERROR: Subscription does not exist after it was created"
+            "Subscription does not exist after it was created"
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -272,12 +272,12 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.delete()
 
         assert testSubscription.exists() == False, \
-            "ERROR: Subscription exists after it was deleted"
+            "Subscription exists after it was deleted"
 
         myThread.transaction.rollback()
 
         assert testSubscription.exists() >= 0, \
-            "ERROR: Subscription does not exist after roll back."
+            "Subscription does not exist after roll back."
 
         testFileset.delete()
         testFileA.delete()
@@ -313,11 +313,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for failedFile in failedFiles:
             assert failedFile in goldenFiles, \
-                "ERROR: Unknown failed files"
+                "Unknown failed files"
             goldenFiles.remove(failedFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing failed files"
+            "Missing failed files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -349,18 +349,18 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for failedFile in failedFiles:
             assert failedFile in goldenFiles, \
-                "ERROR: Unknown failed files"
+                "Unknown failed files"
             goldenFiles.remove(failedFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing failed files"
+            "Missing failed files"
 
         myThread.transaction.rollback()
 
         failedFiles = testSubscription.filesOfStatus(status="Failed")
 
         assert len(failedFiles) == 0, \
-            "ERROR: Transaction did not roll back failed files"
+            "Transaction did not roll back failed files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -397,11 +397,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for completedFile in completedFiles:
             assert completedFile in goldenFiles, \
-                "ERROR: Unknown completed file"
+                "Unknown completed file"
             goldenFiles.remove(completedFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing completed files"
+            "Missing completed files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -433,18 +433,18 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for completedFile in completedFiles:
             assert completedFile in goldenFiles, \
-                "ERROR: Unknown completed file"
+                "Unknown completed file"
             goldenFiles.remove(completedFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing completed files"
+            "Missing completed files"
 
         myThread.transaction.rollback()
 
         completedFiles = testSubscription.filesOfStatus(status="Completed")
 
         assert len(completedFiles) == 0, \
-            "ERROR: Transaction didn't roll back completed files."
+            "Transaction didn't roll back completed files."
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -481,11 +481,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for acquiredFile in acquiredFiles:
             assert acquiredFile in goldenFiles, \
-                "ERROR: Unknown acquired file"
+                "Unknown acquired file"
             goldenFiles.remove(acquiredFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing acquired files"
+            "Missing acquired files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -517,17 +517,17 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileA, testFileC]
         for acquiredFile in acquiredFiles:
             assert acquiredFile in goldenFiles, \
-                "ERROR: Unknown acquired file"
+                "Unknown acquired file"
             goldenFiles.remove(acquiredFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing acquired files"
+            "Missing acquired files"
 
         myThread.transaction.rollback()
         acquiredFiles = testSubscription.filesOfStatus(status="Acquired")
 
         assert len(acquiredFiles) == 0, \
-            "ERROR: Transaction didn't roll back acquired files."
+            "Transaction didn't roll back acquired files."
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -591,15 +591,15 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileD, testFileE, testFileF]
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
-                "Error: Unknown available file"
+                "Unknown available file"
             assert len(availableFile["locations"]) == 1, \
-                "Error: Wrong number of available files."
+                "Wrong number of available files."
             assert "goodse.cern.ch" in availableFile["locations"], \
-                "Error: Wrong SE name in file location."
+                "Wrong SE name in file location."
             goldenFiles.remove(availableFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing available files"
+            "Missing available files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -684,11 +684,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileDDict, testFileEDict, testFileFDict]
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
-                "ERROR: Unknown available file: %s" % availableFile
+                "Unknown available file: %s" % availableFile
             goldenFiles.remove(availableFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing available files"
+            "Missing available files"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -758,11 +758,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileD, testFileE, testFileF]
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
-                "ERROR: Unknown available file"
+                "Unknown available file"
             goldenFiles.remove(availableFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing available files"
+            "Missing available files"
 
         myThread.transaction.rollback()
         availableFiles = testSubscription.availableFiles()
@@ -772,11 +772,11 @@ class SubscriptionTest(unittest.TestCase):
 
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
-                "ERROR: Unknown available file"
+                "Unknown available file"
             goldenFiles.remove(availableFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Missing available files after rollback."
+            "Missing available files after rollback."
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -809,22 +809,22 @@ class SubscriptionTest(unittest.TestCase):
         testSubscriptionC.load()
 
         self.assertTrue(isinstance(testSubscriptionB["id"], int),
-                        "ERROR: Subscription id is not an int.")
+                        "Subscription id is not an int.")
         self.assertTrue(isinstance(testSubscriptionB["workflow"].id, int),
-                        "ERROR: Subscription workflow id is not an int.")
+                        "Subscription workflow id is not an int.")
         self.assertTrue(isinstance(testSubscriptionC["workflow"].id, int),
-                        "ERROR: Subscription workflow id is not an int.")
+                        "Subscription workflow id is not an int.")
         self.assertTrue(isinstance(testSubscriptionB["fileset"].id, int),
-                        "ERROR: Subscription fileset id is not an int.")
+                        "Subscription fileset id is not an int.")
         self.assertTrue(isinstance(testSubscriptionC["fileset"].id, int),
-                        "ERROR: Subscription fileset id is not an int.")
+                        "Subscription fileset id is not an int.")
 
         self.assertEqual(testWorkflow.id, testSubscriptionB["workflow"].id,
-                         "ERROR: Subscription load by ID didn't load workflow correctly")
+                         "Subscription load by ID didn't load workflow correctly")
         self.assertEqual(testFileset.id, testSubscriptionB["fileset"].id,
-                         "ERROR: Subscription load by ID didn't load fileset correctly")
+                         "Subscription load by ID didn't load fileset correctly")
         self.assertEqual(testSubscriptionA["id"], testSubscriptionC["id"],
-                         "ERROR: Subscription didn't load ID correctly.")
+                         "Subscription didn't load ID correctly.")
 
         return
 
@@ -850,25 +850,25 @@ class SubscriptionTest(unittest.TestCase):
                (testWorkflow.name == testSubscriptionB["workflow"].name) and \
                (testWorkflow.spec == testSubscriptionB["workflow"].spec) and \
                (testWorkflow.owner == testSubscriptionB["workflow"].owner), \
-            "ERROR: Workflow.LoadFromID Failed"
+            "Workflow.LoadFromID Failed"
 
         assert testFileset.id == testSubscriptionB["fileset"].id, \
-            "ERROR: Load didn't load fileset id"
+            "Load didn't load fileset id"
 
         assert testFileset.name == testSubscriptionB["fileset"].name, \
-            "ERROR: Load didn't load fileset name"
+            "Load didn't load fileset name"
 
         goldenFiles = [testFileA, testFileB, testFileC]
         for filesetFile in testSubscriptionB["fileset"].files:
             assert filesetFile in goldenFiles, \
-                "ERROR: Unknown file in fileset"
+                "Unknown file in fileset"
             goldenFiles.remove(filesetFile)
 
         assert len(goldenFiles) == 0, \
-            "ERROR: Fileset is missing files"
+            "Fileset is missing files"
 
         assert testSubscriptionA["id"] == testSubscriptionC["id"], \
-            "ERROR: Subscription didn't load ID correctly."
+            "Subscription didn't load ID correctly."
 
         return
 
@@ -905,13 +905,13 @@ class SubscriptionTest(unittest.TestCase):
         subIDs = subListAction.execute()
 
         assert len(subIDs) == 2, \
-            "ERROR: Too many subscriptions returned."
+            "Too many subscriptions returned."
 
         assert testSubscriptionA["id"] in subIDs, \
-            "ERROR: Subscription A is missing."
+            "Subscription A is missing."
 
         assert testSubscriptionB["id"] in subIDs, \
-            "ERROR: Subscription B is missing."
+            "Subscription B is missing."
 
         return
 
@@ -1065,29 +1065,21 @@ class SubscriptionTest(unittest.TestCase):
 
         incompleteSubs = subIncomplete.execute()
 
-        assert len(incompleteSubs) == 2, \
-            "ERROR: Wrong number of incomplete subscriptions returned: %s" % len(incompleteSubs)
-        assert testSubscription["id"] in incompleteSubs, \
-            "ERROR: Original subscription is missing."
+        self.assertEqual(len(incompleteSubs), 2,
+                         "Wrong number of incomplete subscriptions returned: %s" % len(incompleteSubs))
+        self.assertTrue(testSubscription["id"] in incompleteSubs, "Original subscription is missing.")
 
         otherSub = None
         for subId in incompleteSubs:
             if subId != testSubscription["id"]:
                 otherSub = subId
 
-        incompleteSub = subIncomplete.execute(minSub=min(incompleteSubs) + 1)
-
-        assert len(incompleteSub) == 1, \
-            "ERROR: Only one subscription should be returned: %s" % incompleteSub
-
         testSubscription.completeFiles([testFileA, testFileB, testFileC])
 
         incompleteSubs = subIncomplete.execute()
 
-        assert len(incompleteSubs) == 1, \
-            "ERROR: Wrong number of incomplete subscriptions returned."
-        assert otherSub in incompleteSubs, \
-            "ERROR: Wrong subscription ID returned."
+        self.assertEqual(len(incompleteSubs), 1, "Wrong number of incomplete subscriptions returned.")
+        self.assertTrue(otherSub in incompleteSubs, "Wrong subscription ID returned.")
 
         return
 
@@ -1137,11 +1129,11 @@ class SubscriptionTest(unittest.TestCase):
         firstResult = testSubscription.getJobGroups()
         for jobGroup in [testJobGroupA.id, testJobGroupB.id]:
             assert jobGroup in firstResult, \
-                "Error: jobgroup %s is missing. " % jobGroup
+                "jobgroup %s is missing. " % jobGroup
             firstResult.remove(jobGroup)
 
         assert len(firstResult) == 0, \
-            "Error: Too monay job groups in result."
+            "Too monay job groups in result."
 
         testJobA["state"] = "created"
         changeJobState.execute([testJobA])
@@ -1149,11 +1141,11 @@ class SubscriptionTest(unittest.TestCase):
         secondResult = testSubscription.getJobGroups()
         for jobGroup in [testJobGroupA.id, testJobGroupB.id]:
             assert jobGroup in secondResult, \
-                "Error: jobgroup %s is missing. " % jobGroup
+                "jobgroup %s is missing. " % jobGroup
             secondResult.remove(jobGroup)
 
         assert len(secondResult) == 0, \
-            "Error: Too monay job groups in result."
+            "Too monay job groups in result."
 
         testJobB["state"] = "created"
         changeJobState.execute([testJobB])
@@ -1161,11 +1153,11 @@ class SubscriptionTest(unittest.TestCase):
         thirdResult = testSubscription.getJobGroups()
         for jobGroup in [testJobGroupB.id]:
             assert jobGroup in thirdResult, \
-                "Error: jobgroup %s is missing. " % jobGroup
+                "jobgroup %s is missing. " % jobGroup
             thirdResult.remove(jobGroup)
 
         assert len(thirdResult) == 0, \
-            "Error: Too monay job groups in result."
+            "Too monay job groups in result."
 
         return
 
@@ -1298,16 +1290,16 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.completeFiles([testFileA, testFileC])
 
         assert testSubscription.isFileCompleted(testFileA) == True, \
-            "ERROR: file A should be completed"
+            "file A should be completed"
         assert testSubscription.isFileCompleted([testFileA, testFileC]) == True, \
-            "ERROR: file A, C should be completed"
+            "file A, C should be completed"
         assert testSubscription.isFileCompleted([testFileA,
                                                  testFileB,
                                                  testFileC]) == False, \
-            "ERROR: file A, B, C shouldn't be completed"
+            "file A, B, C shouldn't be completed"
 
         assert testSubscription.isFileCompleted(testFileB) == False, \
-            "ERROR: file B shouldn't be completed"
+            "file B shouldn't be completed"
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -1554,7 +1546,7 @@ class SubscriptionTest(unittest.TestCase):
         result = getAllJobs.execute(subscription=testSubscription["id"])
 
         assert len(result) == 2, \
-            "Error: Wrong number of jobs."
+            "Wrong number of jobs."
 
         testJobC = Job(name="TestJobC")
         testJobGroupA.add(testJobC)
@@ -1563,7 +1555,7 @@ class SubscriptionTest(unittest.TestCase):
         result = getAllJobs.execute(subscription=testSubscription["id"])
 
         assert len(result) == 3, \
-            "Error: Wrong number of jobs."
+            "Wrong number of jobs."
 
         return
 
@@ -1620,7 +1612,7 @@ class SubscriptionTest(unittest.TestCase):
         result = getSucceededJobs.execute(subscription=testSubscription["id"])
 
         assert len(result) == 2, \
-            "Error: Wrong number of jobs."
+            "Wrong number of jobs."
 
         testJobD = Job(name="TestJobD")
         testJobD.create(testJobGroupA)
@@ -1635,7 +1627,7 @@ class SubscriptionTest(unittest.TestCase):
         result = getSucceededJobs.execute(subscription=testSubscription["id"])
 
         assert len(result) == 3, \
-            "Error: Wrong number of jobs."
+            "Wrong number of jobs."
 
         return
 
@@ -1716,10 +1708,10 @@ class SubscriptionTest(unittest.TestCase):
         finishedSubs = finishedDAO.execute()
 
         self.assertEqual(len(finishedSubs), 2,
-                         "Error: Wrong number of finished subscriptions.")
+                         "Wrong number of finished subscriptions.")
 
         self.assertEqual(finishedSubs[0]["id"], testSubscription1["id"],
-                         "Error: Wrong subscription id.")
+                         "Wrong subscription id.")
 
         # Mark all output filesets which are input of another subscription as closed
         # That should make them all candidates for finalization
@@ -1731,7 +1723,7 @@ class SubscriptionTest(unittest.TestCase):
         finishedSubs = finishedDAO.execute()
 
         self.assertEqual(len(finishedSubs), 4,
-                         "Error: Wrong number of finished subscriptions.")
+                         "Wrong number of finished subscriptions.")
 
         return
 
@@ -1767,7 +1759,7 @@ class SubscriptionTest(unittest.TestCase):
 
         # First we have a job not in cleanout and an uninjected workflow
         self.assertEqual(len(finishedSubs), 0,
-                         "Error: There should be no finished subs.")
+                         "There should be no finished subs.")
 
         time.sleep(5)
 
@@ -1775,7 +1767,7 @@ class SubscriptionTest(unittest.TestCase):
         newFinishedDAO.execute(self.stateID, timeOut=3)
         finishedSubs = finishedDAO.execute()
         self.assertEqual(len(finishedSubs), 0,
-                         "Error: There should be no finished subs.")
+                         "There should be no finished subs.")
 
         injected = self.daofactory(classname="Workflow.MarkInjectedWorkflows")
         injected.execute(names=["wf001", "wfBOGUS"], injected=True)
@@ -1784,16 +1776,16 @@ class SubscriptionTest(unittest.TestCase):
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
         self.assertEqual(len(finishedSubs), 0,
-                         "Error: There should be no finished subs.")
+                         "There should be no finished subs.")
 
         # Now put the timeout in the mix
         newFinishedDAO.execute(self.stateID, timeOut=3)
         finishedSubs = finishedDAO.execute()
 
         self.assertEqual(len(finishedSubs), 1,
-                         "Error: There should be one finished subs.")
+                         "There should be one finished subs.")
         self.assertEqual(finishedSubs[0]["id"], testSubscription["id"],
-                         "Error: Wrong finished subscription.")
+                         "Wrong finished subscription.")
 
         return
 
@@ -1830,13 +1822,13 @@ class SubscriptionTest(unittest.TestCase):
         finishedSubs = finishedDAO.execute()
 
         self.assertEqual(len(finishedSubs), 1,
-                         "Error: There should be one finished subs. but %s found" % len(finishedSubs))
+                         "There should be one finished subs. but %s found" % len(finishedSubs))
 
         # Marking the subscription 1 as finished would trigger the deletion of
         # file B which is an error since it is the parent of C.
         dwf = deletableWorkflowDAO.execute()
         self.assertEqual(len(dwf), 0,
-                         "Error: There should be no deletable workflow. but %s found" % len(dwf))
+                         "There should be no deletable workflow. but %s found" % len(dwf))
 
         # Now let's finish the second subscription
         workflow2 = elements['Workflows'][1]
@@ -1855,19 +1847,19 @@ class SubscriptionTest(unittest.TestCase):
 
         dwf = deletableWorkflowDAO.execute()
         self.assertEqual(len(dwf), 2,
-                         "Error: There should be two deletable workflow. but %s found" % len(dwf))
+                         "There should be two deletable workflow. but %s found" % len(dwf))
 
         self.assertEqual(len(finishedSubs), 2,
-                         "Error: There should be two finished sub.")
+                         "There should be two finished sub.")
         self.assertEqual(finishedSubs[1]['id'], subscription2['id'],
-                         "Error: The finished sub is not the right one")
+                         "The finished sub is not the right one")
 
         # After another pass we pick up the first subscription
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
 
         self.assertEqual(len(finishedSubs), 2,
-                         "Error: There should be two finished subs.")
+                         "There should be two finished subs.")
 
     def testWhitelistBlacklist(self):
         """
@@ -1888,12 +1880,12 @@ class SubscriptionTest(unittest.TestCase):
         results = testSubscription.getWhiteBlackList()
 
         self.assertEqual(len(results), 3,
-                         "Error: Wrong number of items returned")
+                         "Wrong number of items returned")
         for result in results:
             if result["site_name"] == "site1" or result["site_name"] == "site2":
-                self.assertTrue(result["valid"], "Error: Valid should be True.")
+                self.assertTrue(result["valid"], "Valid should be True.")
             else:
-                self.assertFalse(result["valid"], "Error: Valid should be False.")
+                self.assertFalse(result["valid"], "Valid should be False.")
         return
 
     def testSubTypesInsertion(self):

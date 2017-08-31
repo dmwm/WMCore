@@ -1,9 +1,10 @@
 """
 _EventAwareLumiBased_t_
 
-Lumi based splitting test with awareness of events per lumi.
+Lumi based splitting test with awareness of events per lumi, using the DataStructs classes.
 It must pass the same tests as the LumiBased algorithm, plus
 specific ones for this algorithm.
+See WMCore/WMBS/JobSplitting/ for the WMBS (SQL database) version.
 
 Created on Sep 25, 2012
 

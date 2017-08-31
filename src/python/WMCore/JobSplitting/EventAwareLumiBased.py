@@ -30,6 +30,12 @@ class EventAwareLumiBased(JobFactory):
 
     locations = []
 
+    def __init__(self, package='WMCore.DataStructs', subscription=None, generators=None, limit=0):
+        super(EventAwareLumiBased, self).__init__(package, subscription, generators, limit)
+
+        self.loadRunLumi = None  # Placeholder for DAO factory if needed
+        self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -43,58 +49,59 @@ class EventAwareLumiBased(JobFactory):
         eventLimit = int(kwargs.get('max_events_per_lumi', 20000))
         totalEvents = int(kwargs.get('total_events', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
-        collectionName = kwargs.get('collectionName', None)
+        self.collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
         runWhitelist = kwargs.get('runWhitelist', [])
         runs = kwargs.get('runs', None)
         lumis = kwargs.get('lumis', None)
         applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
+        deterministicPileup = kwargs.get('deterministicPileup', False)
 
         timePerEvent, sizePerEvent, memoryRequirement = \
             self.getPerformanceParameters(kwargs.get('performance', {}))
-        deterministicPileup = kwargs.get('deterministicPileup', False)
+
         eventsPerLumiInDataset = 0
 
-        if deterministicPileup and self.package == 'WMCore.WMBS':
-            getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
-            jobNumber = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
-            self.nJobs = jobNumber
+        if self.package == 'WMCore.WMBS':
+            self.loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
+            if deterministicPileup:
+                getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
+                self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
 
         goodRunList = {}
         if runs and lumis:
             goodRunList = buildLumiMask(runs, lumis)
 
         # If we have runLumi info, we need to load it from couch
-        if collectionName:
+        if self.collectionName:
             try:
                 from WMCore.ACDC.DataCollectionService import DataCollectionService
                 couchURL = kwargs.get('couchURL')
                 couchDB = kwargs.get('couchDB')
                 filesetName = kwargs.get('filesetName')
-                collectionName = kwargs.get('collectionName')
 
                 logging.info('Creating jobs for ACDC fileset %s', filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
-                goodRunList = dcs.getLumiWhitelist(collectionName, filesetName)
+                goodRunList = dcs.getLumiWhitelist(self.collectionName, filesetName)
             except Exception as ex:
                 msg = "Exception while trying to load goodRunList. "
                 msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
                 logging.exception(msg)
                 return
 
-        lDict = self.sortByLocation()
+        lDict = self.getFilesSortedByLocation(avgEventsPerJob)
+        if not lDict:
+            logging.info("There are not enough events/files to be splitted. Trying again next cycle")
+            return
+
+
         locationDict = {}
-
-        # First we need to load the data
-        if self.package == 'WMCore.WMBS':
-            loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
-
         for key in lDict.keys():
             newlist = []
             # First we need to load the data
-            if self.package == 'WMCore.WMBS':
-                fileLumis = loadRunLumi.execute(files=lDict[key])
+            if self.loadRunLumi:
+                fileLumis = self.loadRunLumi.execute(files=lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
                     for run in lumiDict.keys():
@@ -218,7 +225,7 @@ class EventAwareLumiBased(JobFactory):
                             firstLumi = None
                             lastLumi = None
 
-                        if firstLumi == None:
+                        if firstLumi is None:
                             # Set the first lumi in the run
                             firstLumi = lumi
 

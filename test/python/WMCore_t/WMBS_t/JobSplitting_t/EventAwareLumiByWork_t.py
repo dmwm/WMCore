@@ -1,26 +1,30 @@
 """
 _EventAwareLumiByWork_t_
 
-Lumi based splitting test with awareness of events per lumi, using the DataStructs classes.
+Lumi based splitting test with awareness of events per lumi.
 It must pass the same tests as the LumiBased algorithm, plus
 specific ones for this algorithm.
-See WMCore/WMBS/JobSplitting/ for the WMBS (SQL database) version.
 """
 
 from __future__ import division, print_function
 
 import logging
 import unittest
+import threading
 from collections import Counter
 
-from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
-from WMCore.DataStructs.Subscription import Subscription
-from WMCore.DataStructs.Workflow import Workflow
+
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.UUIDLib import makeUUID
+from WMQuality.TestInit import TestInit
 
 
 class EventAwareLumiByWorkTest(unittest.TestCase):
@@ -37,14 +41,37 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"])
 
-        self.testWorkflow = Workflow()
-        self.performanceParams = {'timePerEvent': 12, 'memoryRequirement': 2300, 'sizePerEvent': 400}
+        self.splitterFactory = SplitterFactory(package="WMCore.JobSplitting")
 
-        logging.basicConfig()
-        logging.getLogger().setLevel(logging.DEBUG)
+        self.myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=logging,
+                                     dbinterface=self.myThread.dbi)
+
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("T1_US_FNAL", 1000, 2000, "T1_US_FNAL_Disk", "T1_US_FNAL")
+        myResourceControl.insertSite("T2_CH_CERN", 1000, 2000, "T2_CH_CERN", "T2_CH_CERN")
+
+        self.performanceParams = {'timePerEvent': 12,
+                                  'memoryRequirement': 2300,
+                                  'sizePerEvent': 400}
+        # dummy workflow
+        self.testWorkflow = Workflow(spec="spec.xml", owner="dmwm", name="testWorkflow", task="Test")
+        self.testWorkflow.create()
 
         return
+
+    def tearDown(self):
+        """
+        _tearDown_
+        """
+        self.testInit.clearDatabase()
+
 
     def createSubscription(self, nFiles, lumisPerFile, twoSites=False, nEventsPerFile=100):
         """
@@ -52,37 +79,106 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         Create a subscription for testing
         """
-
         baseName = makeUUID()
+
+        testWorkflow = Workflow(spec="spec.xml", owner="dmwm",
+                                name="testWorkflow_%s" % baseName[:4], task="Test")
+        testWorkflow.create()
 
         testFileset = Fileset(name=baseName)
         for i in range(nFiles):
-            newFile = self.createFile('%s_%i' % (baseName, i), nEventsPerFile, i, lumisPerFile, 'blenheim')
+            newFile = self.createFile('%s_%i' % (baseName, i), nEventsPerFile,
+                                      i, lumisPerFile, 'T1_US_FNAL_Disk')
             testFileset.addFile(newFile)
         if twoSites:
             for i in range(nFiles):
-                newFile = self.createFile('%s_%i_2' % (baseName, i), nEventsPerFile, nFiles+i, lumisPerFile, 'malpaquet')
+                newFile = self.createFile('%s_%i_2' % (baseName, i), nEventsPerFile,
+                                          i, lumisPerFile, 'T2_CH_CERN')
                 testFileset.addFile(newFile)
+        testFileset.create()
 
-        testSubscription = Subscription(fileset=testFileset, workflow=self.testWorkflow,
-                                        split_algo="EventAwareLumiByWork", type="Processing")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="EventAwareLumiByWork",
+                                        type="Processing")
+        testSubscription.create()
 
         return testSubscription
 
     @staticmethod
-    def createFile(lfn, events, run, lumis, location):
+    def createFile(lfn, events, run, lumis, location, lumiMultiplier=None):
         """
         _createFile_
 
         Create a file for testing
         """
+        if lumiMultiplier is None:
+            lumiMultiplier = run
+
         newFile = File(lfn=lfn, size=1000, events=events)
         lumiList = []
         for lumi in range(lumis):
-            lumiList.append((run * lumis) + lumi)
+            lumiList.append((lumiMultiplier * lumis) + lumi)
         newFile.addRun(Run(run, *lumiList))
         newFile.setLocation(location)
         return newFile
+
+    def _createThisSubscription(self, initialCounter=1):
+        """
+        Private function to create a fileset and subscription with
+        different fileset and file names
+
+        :param initialCounter: just a simple integer to be appended to files
+        :return: an splitter instance (jobFactory)
+        """
+        splitter = SplitterFactory()
+
+        # Create 3 files with 100 events per lumi:
+        # - file1 with 1 run  of 8 lumis
+        # - file2 with 2 runs of 2 lumis each
+        # - file3 with 1 run  of 5 lumis
+        testFileset = Fileset(name='Fileset%s' % initialCounter)
+
+        fileA = File(lfn="/this/is/file%s" % initialCounter, size=1000, events=800)
+        lumiListA = []
+        for lumi in range(8):
+            lumiListA.append(10 + lumi)
+        fileA.addRun(Run(1, *lumiListA))
+        fileA.setLocation("T1_US_FNAL_Disk")
+
+        initialCounter = int(initialCounter) + 1
+        fileB = File(lfn="/this/is/file%s" % initialCounter, size=1000, events=400)
+        lumiListB1 = []
+        lumiListB2 = []
+        for lumi in range(2):
+            lumiListB1.append(20 + lumi)
+            lumiListB2.append(30 + lumi)
+        fileB.addRun(Run(2, *lumiListB1))
+        fileB.addRun(Run(3, *lumiListB2))
+        fileB.setLocation("T1_US_FNAL_Disk")
+
+        initialCounter = int(initialCounter) + 1
+        fileC = File(lfn="/this/is/file%s" % initialCounter, size=1000, events=500)
+        lumiListC = []
+        for lumi in range(5):
+            lumiListC.append(40 + lumi)
+        fileC.addRun(Run(4, *lumiListC))
+        fileC.setLocation("T1_US_FNAL_Disk")
+
+        testFileset.addFile(fileA)
+        testFileset.addFile(fileB)
+        testFileset.addFile(fileC)
+        testFileset.create()
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiByWork",
+                                        type="Processing")
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        return jobFactory
 
     def testFileSplitting(self):
         """
@@ -93,7 +189,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         splitter = SplitterFactory()
 
         oneSetSubscription = self.createSubscription(nFiles=10, lumisPerFile=1)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=oneSetSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=oneSetSubscription)
 
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=100, performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -102,7 +198,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
             self.assertTrue(len(job['input_files']), 1)
 
         twoLumiFiles = self.createSubscription(nFiles=5, lumisPerFile=2)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=twoLumiFiles)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=twoLumiFiles)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=50, performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -110,7 +206,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
             self.assertEqual(len(job['input_files']), 1)
 
         wholeLumiFiles = self.createSubscription(nFiles=5, lumisPerFile=3)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=wholeLumiFiles)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=wholeLumiFiles)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=67, performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
@@ -132,7 +228,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles=5, lumisPerFile=2, twoSites=True)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=twoSiteSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=twoSiteSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=50, performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -148,7 +244,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=60,
                                performance=self.performanceParams)
 
@@ -159,7 +255,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=60,
                                performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -170,7 +266,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # Test total_events limit. (The algorithm cuts off after the lumi that
         # brings the total average event count over -or equal to- total_events.)
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=60, total_events=10,
                                performance=self.performanceParams)
@@ -182,7 +278,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Test the total event limit again
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=60, total_events=179,
                                performance=self.performanceParams)
@@ -193,7 +289,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Test the total event limit on the boundary
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=60, total_events=180,
                                performance=self.performanceParams)
@@ -204,7 +300,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Test the total event limit just past the boundary
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=60, total_events=181,
                                sperformance=self.performanceParams)
@@ -227,7 +323,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Create 5 files with 7 lumi per file and 100 events per lumi on average.
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=7, twoSites=False, nEventsPerFile=700)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         # First test, the optimal settings are 360 events per job
         # As we have files with 100 events per lumi, this will configure the splitting to
@@ -240,6 +336,8 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Now set the average to 200 events per job
         # This results in the algorithm reducing the lumis per job to 2
+        testSubscription = self.createSubscription(nFiles=5, lumisPerFile=7, twoSites=False, nEventsPerFile=700)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=200,
                                performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -249,7 +347,14 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # Check extremes, process a zero event files with lumis. It must be processed in one job
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=100, twoSites=False,
                                                    nEventsPerFile=0)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
+        jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=5000,
+                               performance=self.performanceParams)
+        self.assertEqual(len(jobGroups), 0)
+        # since there aren't enough events, we close this fileset to get it moving
+        fileset = testSubscription.getFileset()
+        fileset.markOpen(False)
+
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, events_per_job=5000,
                                performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -259,7 +364,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # Process files with 10k events per lumi, fallback to one lumi per job. We can't do better
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=5, twoSites=False,
                                                    nEventsPerFile=50000)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=5000,
                                performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -270,7 +375,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # brings the total average event count over -or equal to- total_events.)
         testSubscription = self.createSubscription(nFiles=5, lumisPerFile=3, twoSites=False,
                                                    nEventsPerFile=300)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=250, total_events=750,
                                performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
@@ -292,14 +397,21 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Create 100 files with 7 lumi per file and 0 events per lumi on average.
         testSubscription = self.createSubscription(nFiles=100, lumisPerFile=7, twoSites=False, nEventsPerFile=0)
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         # First test, the optimal settings are 360 events per job. As we have files with 0 events per lumi, this will
         # configure the splitting to a single job containing all files
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=360,
                                performance=self.performanceParams)
+        self.assertEqual(len(jobGroups), 0)
+
+        # since there are not enough events to be splitted, let's close the fileset and get it going
+        fileset = testSubscription.getFileset()
+        fileset.markOpen(False)
 
         # One job in one job group with 100 files
+        jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=360,
+                               performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 1)
@@ -307,13 +419,13 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Create 7 files, each one with different lumi/event distributions
         testFileset = Fileset(name="FilesetA")
-        testFileA = self.createFile("/this/is/file1", 250, 0, 5, "blenheim")
-        testFileB = self.createFile("/this/is/file2", 600, 1, 1, "blenheim")
-        testFileC = self.createFile("/this/is/file3", 1200, 2, 2, "blenheim")
-        testFileD = self.createFile("/this/is/file4", 100, 3, 1, "blenheim")
-        testFileE = self.createFile("/this/is/file5", 30, 4, 1, "blenheim")
-        testFileF = self.createFile("/this/is/file6", 10, 5, 1, "blenheim")
-        testFileG = self.createFile("/this/is/file7", 153, 6, 3, "blenheim")
+        testFileA = self.createFile("/this/is/file1", 250, 0, 5, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 600, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1200, 2, 2, "T1_US_FNAL_Disk")
+        testFileD = self.createFile("/this/is/file4", 100, 3, 1, "T1_US_FNAL_Disk")
+        testFileE = self.createFile("/this/is/file5", 30, 4, 1, "T1_US_FNAL_Disk")
+        testFileF = self.createFile("/this/is/file6", 10, 5, 1, "T1_US_FNAL_Disk")
+        testFileG = self.createFile("/this/is/file7", 153, 6, 3, "T1_US_FNAL_Disk")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
@@ -321,10 +433,13 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         testFileset.addFile(testFileE)
         testFileset.addFile(testFileF)
         testFileset.addFile(testFileG)
+        testFileset.create()
 
         testSubscription = Subscription(fileset=testFileset, workflow=self.testWorkflow,
                                         split_algo="EventAwareLumiByWork", type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         # Split the work targeting 150 events per job
         jobGroups = jobFactory(halt_job_on_file_boundaries=False, splitOnRun=False, events_per_job=150,
                                performance=self.performanceParams)
@@ -335,7 +450,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Test interactions of this algorithm with splitOnRun = True
         # Make 2 files, one with 3 runs and a second one with the last run of the first
-        fileA = File(lfn="/this/is/file1", size=1000, events=2400)
+        fileA = File(lfn="/this/is/file10", size=1000, events=2400)
         lumiListA = []
         lumiListB = []
         lumiListC = []
@@ -346,16 +461,18 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         fileA.addRun(Run(1, *lumiListA))
         fileA.addRun(Run(2, *lumiListA))
         fileA.addRun(Run(3, *lumiListA))
-        fileA.setLocation("malpaquet")
+        fileA.setLocation("T2_CH_CERN")
 
-        fileB = self.createFile('/this/is/file2', 200, 3, 5, "malpaquet")
+        fileB = self.createFile('/this/is/file11', 200, 3, 5, "T2_CH_CERN")
 
         testFileset = Fileset(name='FilesetB')
         testFileset.addFile(fileA)
         testFileset.addFile(fileB)
+        testFileset.create()
         testSubscription = Subscription(fileset=testFileset, workflow=self.testWorkflow,
                                         split_algo="EventAwareLumiByWork", type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        testSubscription.create()
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         # The settings for this splitting are 700 events per job
         jobGroups = jobFactory(splitOnRun=True, halt_job_on_file_boundaries=False, events_per_job=700,
                                performance=self.performanceParams)
@@ -379,16 +496,18 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Create 3 files, the one in the middle is a "bad" file
         testFileset = Fileset(name="FilesetA")
-        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "blenheim")
-        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "blenheim")
-        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "blenheim")
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "T1_US_FNAL_Disk")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
-
+        testFileset.create()
         testSubscription = Subscription(fileset=testFileset, workflow=self.testWorkflow,
                                         split_algo="EventAwareLumiByWork", type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         # Settings are to split on job boundaries, to fail single lumis with more than 800 events
         # and to put 550 events per job
@@ -418,16 +537,18 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Create 3 single-big-lumi files
         testFileset = Fileset(name="FilesetA")
-        testFileA = self.createFile("/this/is/file1", 1000, 0, 1, "somese.cern.ch")
-        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "somese.cern.ch")
-        testFileC = self.createFile("/this/is/file3", 1000, 2, 1, "somese.cern.ch")
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 1, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 1, "T1_US_FNAL_Disk")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
-
+        testFileset.create()
         testSubscription = Subscription(fileset=testFileset, workflow=self.testWorkflow,
                                         split_algo="EventAwareLumiByWork", type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         # Fail single lumis with more than 800 events and put 550 events per job
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=550,
@@ -462,7 +583,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         for lumi in range(8):
             lumiListA.append(10 + lumi)
         fileA.addRun(Run(1, *lumiListA))
-        fileA.setLocation("somese.cern.ch")
+        fileA.setLocation("T1_US_FNAL_Disk")
         lumiListB1 = []
         lumiListB2 = []
         for lumi in range(2):
@@ -470,23 +591,25 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
             lumiListB2.append(30 + lumi)
         fileB.addRun(Run(2, *lumiListB1))
         fileB.addRun(Run(3, *lumiListB2))
-        fileB.setLocation("somese.cern.ch")
+        fileB.setLocation("T1_US_FNAL_Disk")
         lumiListC = []
         for lumi in range(5):
             lumiListC.append(40 + lumi)
         fileC.addRun(Run(4, *lumiListC))
-        fileC.setLocation("somese.cern.ch")
+        fileC.setLocation("T1_US_FNAL_Disk")
 
         testFileset = Fileset(name='Fileset')
         testFileset.addFile(fileA)
         testFileset.addFile(fileB)
         testFileset.addFile(fileC)
-
+        testFileset.create()
         testSubscription = Subscription(fileset=testFileset,
                                         workflow=self.testWorkflow,
                                         split_algo="EventAwareLumiByWork",
                                         type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs",
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS",
                               subscription=testSubscription)
 
         # Use a lumi-mask = {1: [[10,14]], 2: [[20,21]], 4: [[40,41]]}
@@ -512,46 +635,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         Test that we can use a run white list to filter good runs/lumis.
         """
-        splitter = SplitterFactory()
-
-        # Create 3 files with 100 events per lumi:
-        # - file1 with 1 run  of 8 lumis
-        # - file2 with 2 runs of 2 lumis each
-        # - file3 with 1 run  of 5 lumis
-        fileA = File(lfn="/this/is/file1", size=1000, events=800)
-        fileB = File(lfn="/this/is/file2", size=1000, events=400)
-        fileC = File(lfn="/this/is/file3", size=1000, events=500)
-
-        lumiListA = []
-        for lumi in range(8):
-            lumiListA.append(10 + lumi)
-        fileA.addRun(Run(1, *lumiListA))
-        fileA.setLocation("somese.cern.ch")
-        lumiListB1 = []
-        lumiListB2 = []
-        for lumi in range(2):
-            lumiListB1.append(20 + lumi)
-            lumiListB2.append(30 + lumi)
-        fileB.addRun(Run(2, *lumiListB1))
-        fileB.addRun(Run(3, *lumiListB2))
-        fileB.setLocation("somese.cern.ch")
-        lumiListC = []
-        for lumi in range(5):
-            lumiListC.append(40 + lumi)
-        fileC.addRun(Run(4, *lumiListC))
-        fileC.setLocation("somese.cern.ch")
-
-        testFileset = Fileset(name='Fileset')
-        testFileset.addFile(fileA)
-        testFileset.addFile(fileB)
-        testFileset.addFile(fileC)
-
-        testSubscription = Subscription(fileset=testFileset,
-                                        workflow=self.testWorkflow,
-                                        split_algo="EventAwareLumiByWork",
-                                        type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs",
-                              subscription=testSubscription)
+        jobFactory = self._createThisSubscription(1)
 
         # Split with no breaks
         jobGroups = jobFactory(halt_job_on_file_boundaries=False,
@@ -568,6 +652,8 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
                 self.assertIn(run, [1, 4])
 
         # Re-split with a break on runs
+        jobFactory = self._createThisSubscription(11)
+
         jobGroups = jobFactory(halt_job_on_file_boundaries=False,
                                splitOnRun=True,
                                events_per_job=595,
@@ -583,6 +669,8 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
                 self.assertIn(run, [1, 3, 4])
 
         # Re-split with a break on files
+        jobFactory = self._createThisSubscription(111)
+
         jobGroups = jobFactory(halt_job_on_file_boundaries=True,
                                splitOnRun=False,
                                events_per_job=595,
@@ -603,46 +691,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         Test that we can use a lumi-mask to filter good runs/lumis.
         """
-        splitter = SplitterFactory()
-
-        # Create 3 files with 100 events per lumi:
-        # - file1 with 1 run  of 8 lumis
-        # - file2 with 2 runs of 2 lumis each
-        # - file3 with 1 run  of 5 lumis
-        fileA = File(lfn="/this/is/file1", size=1000, events=800)
-        fileB = File(lfn="/this/is/file2", size=1000, events=400)
-        fileC = File(lfn="/this/is/file3", size=1000, events=500)
-
-        lumiListA = []
-        for lumi in range(8):
-            lumiListA.append(10 + lumi)
-        fileA.addRun(Run(1, *lumiListA))
-        fileA.setLocation("somese.cern.ch")
-        lumiListB1 = []
-        lumiListB2 = []
-        for lumi in range(2):
-            lumiListB1.append(20 + lumi)
-            lumiListB2.append(30 + lumi)
-        fileB.addRun(Run(2, *lumiListB1))
-        fileB.addRun(Run(3, *lumiListB2))
-        fileB.setLocation("somese.cern.ch")
-        lumiListC = []
-        for lumi in range(5):
-            lumiListC.append(40 + lumi)
-        fileC.addRun(Run(4, *lumiListC))
-        fileC.setLocation("somese.cern.ch")
-
-        testFileset = Fileset(name='Fileset')
-        testFileset.addFile(fileA)
-        testFileset.addFile(fileB)
-        testFileset.addFile(fileC)
-
-        testSubscription = Subscription(fileset=testFileset,
-                                        workflow=self.testWorkflow,
-                                        split_algo="EventAwareLumiByWork",
-                                        type="Processing")
-        jobFactory = splitter(package="WMCore.DataStructs",
-                              subscription=testSubscription)
+        jobFactory = self._createThisSubscription(1)
 
         # Use a lumi-mask = {1: [[10,14]], 2: [[20,21]], 4: [[40,41]]}
         jobGroups = jobFactory(halt_job_on_file_boundaries=False,
@@ -672,7 +721,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(len(files), 2)
 
         # Two files with 2 lumis each: file0 has run0 and lumis 0,1 - file1 has run1 and lumis 2,3 - each 150 events
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
 
         jobGroups = jobFactory(events_per_job=50, halt_job_on_file_boundaries=False, splitOnRun=False,
                                performance=self.performanceParams)
@@ -682,21 +731,28 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 4)
 
-        # Recreate the same subscription as before
-        testSubscription = self.createSubscription(nFiles=2, lumisPerFile=2, twoSites=False, nEventsPerFile=150)
-        files = testSubscription.getFileset().getFiles()
-        # Now modifyng and adding duplicated lumis.
-        for runObj in files[0]['runs']:
-            if runObj.run == 0:
-                # continue
-                runObj.appendLumi(42)
-        for runObj in files[1]['runs']:
-            if runObj.run == 1:
-                # continue
-                runObj.run = 0
-                runObj.appendLumi(42)
-        files[1]['locations'] = {'blenheim'}
-        jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
+        # Recreate the same subscription as before, but with duplicated lumis
+        testFileset = Fileset(name='FilesetA')
+        fileA = File(lfn="/this/is/file1", size=1000, events=150)
+        lumiListA = [0, 1, 42]
+        fileA.addRun(Run(0, *lumiListA))
+        fileA.setLocation("T1_US_FNAL_Disk")
+        testFileset.addFile(fileA)
+
+        fileB = File(lfn="/this/is/file2", size=1000, events=150)
+        lumiListB = [2, 3, 42]
+        fileB.addRun(Run(0, *lumiListB))
+        fileB.setLocation("T1_US_FNAL_Disk")
+        testFileset.addFile(fileB)
+        testFileset.create()
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiByWork",
+                                        type="Processing")
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS", subscription=testSubscription)
         jobGroups = jobFactory(events_per_job=50, halt_job_on_file_boundaries=True, performance=self.performanceParams)
 
         # Now we will have: file0: Run0 and lumis [0, 1, 42] file1: Run0 and lumis [2, 3, 42]
@@ -729,6 +785,96 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(n2files, 1)
         self.assertItemsEqual(lumi1files, [0, 1, 2, 3])
         self.assertItemsEqual(lumi2files, [42])
+
+
+    def test_NotEnoughEvents(self):
+        """
+        _test_NotEnoughEvents_
+
+        Checks whether jobs are not created when there are not enough files (actually, events)
+        according to the events_per_job requested to the splitter algorithm
+        """
+        splitter = SplitterFactory()
+
+        # Very small fileset (single file) without enough events
+        testSubscription = self.createSubscription(nFiles=1, lumisPerFile=2, nEventsPerFile=200)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(events_per_job=500,
+                               performance=self.performanceParams,
+                               splitOnRun=False)
+
+        self.assertEqual(len(jobGroups), 0)
+
+        # Still a small fileset (two files) without enough events
+        testSubscription = self.createSubscription(nFiles=2, lumisPerFile=2, nEventsPerFile=200)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(events_per_job=500,
+                               performance=self.performanceParams,
+                               splitOnRun=False)
+
+        self.assertEqual(len(jobGroups), 0)
+
+        # Finally an acceptable fileset size (three files) with enough events
+        testSubscription = self.createSubscription(nFiles=3, lumisPerFile=2, nEventsPerFile=200)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(events_per_job=500,
+                               performance=self.performanceParams,
+                               splitOnRun=False)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(len(jobs[0]['input_files']), 3)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        try:
+            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]], 1: [[2, 3]], 2: [[4, 4]]})
+            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[5, 5]]})
+        except AssertionError:
+            # weird order
+            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]], 1: [[2, 2]], 2: [[4, 5]]})
+            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[3, 3]]})
+
+        # Test fileset with a single run and splitOnRun=True
+        testFileset = Fileset(name="FilesetA")
+        testFileA = self.createFile("/this/is/file1", 200, 1, 2, "T1_US_FNAL_Disk", lumiMultiplier=0)
+        testFileB = self.createFile("/this/is/file2", 200, 1, 2, "T1_US_FNAL_Disk", lumiMultiplier=1)
+        testFileC = self.createFile("/this/is/file3", 200, 1, 2, "T1_US_FNAL_Disk", lumiMultiplier=2)
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.create()
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiByWork",
+                                        type="Processing")
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(events_per_job=500,
+                               performance=self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(len(jobs[0]['input_files']), 3)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        try:
+            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[0, 1], [2, 3], [4, 4]]})
+            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[5, 5]]})
+        except AssertionError:
+            # weird order
+            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[0, 0], [2, 5]]})
+            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[1, 1]]})
+
+        return
 
     def enforceLimits(self, jobs=None, filesPerJob=None, jobsPerFile=None, runsPerJob=None):
         """

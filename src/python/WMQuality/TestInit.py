@@ -273,6 +273,10 @@ class TestInit(object):
         config.TaskArchiver.ReqMgrSeviceURL = "request manager service url"
         config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
+        config.component_("AnalyticsDataCollector")
+        config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        config.AnalyticsDataCollector.centralWMStatsURL = config.AnalyticsDataCollector.localWMStatsURL
+
         return config
 
     def clearDatabase(self, modules = []):

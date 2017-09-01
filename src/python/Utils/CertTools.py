@@ -10,7 +10,6 @@ def getKeyCertFromEnv():
     First preference to HOST Certificate, This is how it set in Tier0
 
     """
-
     envPairs = [('X509_HOST_KEY', 'X509_HOST_CERT'),  # First preference to HOST Certificate,
                 ('X509_USER_PROXY', 'X509_USER_PROXY'),  # Second preference to User Proxy, very common
                 ('X509_USER_KEY', 'X509_USER_CERT')]  # Third preference to User Cert/Proxy combinition

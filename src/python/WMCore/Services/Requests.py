@@ -100,6 +100,9 @@ class Requests(dict):
             cache_dir = (self.cachePath(idict.get('cachepath'), idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
+        self.setdefault("cert", None)
+        self.setdefault("key", None)
+        self.setdefault('capath', None)
         self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 
@@ -405,7 +408,7 @@ class Requests(dict):
 
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
-        if self.get('cert') and self.get('key'):
+        if self['cert'] and self['key']:
             key = self['key']
             cert = self['cert']
         else:
@@ -427,7 +430,7 @@ class Requests(dict):
         is capath == None then the server identity is not verified. To enable this check
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
-        capath = self.get('capath')
+        capath = self['capath']
         if not capath:
             capath = getCAPathFromEnv()
         return capath

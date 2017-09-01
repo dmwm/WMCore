@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=R0902,R0201,W0703,E1102
+# pylint: disable=R0902,R0201,W0703,E1102
 """
 _BaseWorkerThread_
 
@@ -8,24 +8,24 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-
-
-import threading
 import logging
+import sys
+import threading
 import time
 import traceback
-import sys
 
-from WMCore.Database.Transaction import Transaction
 from WMCore.Alerts import API as alertAPI
+from WMCore.Database.Transaction import Transaction
 
-class BaseWorkerThread:
+
+class BaseWorkerThread(object):
     """
     A base class for worker threads, used for work that needs to occur at
     regular intervals. Framework (through WorkerThreadManager) ensures that
     a default transaction, trigger and message service are available as in
     event handler threads.
     """
+
     def __init__(self):
         """
         Creates the worker, called from parent thread
@@ -67,7 +67,6 @@ class BaseWorkerThread:
         self.procid = 0
         if hasattr(myThread, 'msgService'):
             self.procid = myThread.msgService.procid
-
 
     def setup(self, parameters):
         """
@@ -151,11 +150,11 @@ class BaseWorkerThread:
                 self.workerName = myThread.getName()
 
             if hasattr(self.component.config, "General") and \
-               hasattr(self.component.config.General, "central_logdb_url") and \
-               hasattr(self.component.config, "Agent"):
+                    hasattr(self.component.config.General, "central_logdb_url") and \
+                    hasattr(self.component.config, "Agent"):
                 from WMCore.Services.LogDB.LogDB import LogDB
                 myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
-                                         self.component.config.Agent.hostName, logger=logging)
+                                             self.component.config.Agent.hostName, logger=logging)
             else:
                 myThread.logdbClient = None
 
@@ -179,7 +178,7 @@ class BaseWorkerThread:
                                 if self.useHeartbeat:
                                     self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
                             except Exception as ex:
-                                msg  = " Failed to update heartbeat for worker %s" % str(self)
+                                msg = " Failed to update heartbeat for worker %s" % str(self)
                                 msg += ":\n %s" % str(ex)
                                 msg += "\n Skipping worker algorithm!"
                                 logging.error(msg)
@@ -205,7 +204,7 @@ class BaseWorkerThread:
                             try:
                                 self.component.prepareToStop()
                             except Exception as ex:
-                                logging.error("Failed to halt component after worker crash: %s" % str(ex))
+                                logging.error("Failed to halt component after worker crash: %s", str(ex))
                             if self.useHeartbeat:
                                 self.heartbeatAPI.updateWorkerError(self.workerName, msg)
                             raise ex
@@ -258,8 +257,7 @@ class BaseWorkerThread:
             time.sleep(1)
             idleTime -= 1
 
-
-    def initAlerts(self, compName = None):
+    def initAlerts(self, compName=None):
         """
         _initAlerts_
 
@@ -277,12 +275,11 @@ class BaseWorkerThread:
         if not compName:
             compName = self.__class__.__name__
         preAlert, sender = alertAPI.setUpAlertsMessaging(self,
-                                                         compName = compName)
-        sendAlert = alertAPI.getSendAlert(sender = sender,
-                                          preAlert = preAlert)
+                                                         compName=compName)
+        sendAlert = alertAPI.getSendAlert(sender=sender,
+                                          preAlert=preAlert)
         self.sender = sender
         self.sendAlert = sendAlert
-
 
     def __del__(self):
         """

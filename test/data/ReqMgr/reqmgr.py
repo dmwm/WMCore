@@ -483,7 +483,6 @@ class ReqMgrClient(RESTClient):
         # implement this check automatically without listing request arguments
         # TODO 2:
         # double list: OutputDatasets (ticket already filed ...)
-        # Oracle:InputDatasetTypes: '{u'/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN': u'source'}' != CouchDB:InputDatasetTypes: '{}'
         # Oracle:RequestNumEvents: '0' != CouchDB:RequestNumEvents: 'None'
         fields = """RequestStatus
             RequestSizeFiles

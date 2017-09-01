@@ -442,7 +442,7 @@ WMStats.GenericRequests.prototype = {
                                  *    "SizePerEvent": 1154, "ConfigCacheID": "1ad063a0d73c1d81143b4182cbf84793", "Memory": 2300, 
                                  *    "RunBlacklist": [], "PrepID": "B2G-Summer12-00736", "AutoApproveSubscriptionSites": [], 
                                  *    "BlockBlacklist": [], "BlockWhitelist": [], "CustodialSubType": "Move", 
-                                 *    "RequestType": "MonteCarloFromGEN", "TimePerEvent": 16.87, "InputDatasetTypes": {},  
+                                 *    "RequestType": "MonteCarloFromGEN", "TimePerEvent": 16.87
                                  *    "OutputDatasets": ["/QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph/Integ_Test-MonteCarloFromGEN_SRYU_pnn-v1/GEN-SIM"], 
                                  *    "LumisPerJob": 1, "SoftwareVersions": ["CMSSW_5_3_19"], 
                                  *    "AcquisitionEra": "Integ_Test", "PrimaryDataset": "QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph", 

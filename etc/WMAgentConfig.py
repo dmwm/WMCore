@@ -38,13 +38,6 @@ workqueueInboxDbName = 'workqueue_inbox'
 workloadSummaryDB = "workloadsummary"
 workloadSummaryURL = couchURL
 
-# Information for the workqueue, email of the administrator and the team names
-# for this agent.
-userEmail = "cms-comp-ops-workflow-team@cern.ch"
-agentTeams = "team1,team2,cmsdataops"
-agentName = "WMAgentCommissioning"
-agentNumber = 0
-
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["SimpleCondorPlugin"]
 
@@ -78,10 +71,10 @@ config = Configuration()
 
 config.section_("Agent")
 config.Agent.hostName = serverHostName
-config.Agent.contact = userEmail
-config.Agent.teamName = agentTeams
-config.Agent.agentName = agentName
-config.Agent.agentNumber = agentNumber
+config.Agent.contact = "cms-comp-ops-workflow-team@cern.ch"
+config.Agent.teamName = "cmsdataops"
+config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True

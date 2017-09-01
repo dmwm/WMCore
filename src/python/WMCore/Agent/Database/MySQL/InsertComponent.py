@@ -23,7 +23,7 @@ class InsertComponent(DBFormatter):
     sql = """INSERT INTO wm_components (name, pid, update_threshold)
              VALUES (:name, :pid, :update_threshold)"""
 
-    def execute(self, name, pid, update_threshold = 6000,
+    def execute(self, name, pid, update_threshold = 1800,
                 conn = None, transaction = False):
         deleteBinds = {"name": name}
 

@@ -221,8 +221,7 @@ class AgentStatusPoller(BaseWorkerThread):
             if agentInfo.get('data_error', 'ok') != 'ok' or agentInfo.get('couch_process_warning', 0):
                 agentInfo['status'] = "error"
 
-        if agentInfo['down_components']:
-            logging.info("List of agent components down: %s", agentInfo['down_components'])
+        logging.info("List of agent components down: %s", agentInfo['down_components'])
 
         return agentInfo
 

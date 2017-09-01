@@ -1,6 +1,7 @@
 """
 Provide functions to collect data and upload data
 """
+from __future__ import division
 
 import os
 import time
@@ -199,28 +200,49 @@ class WMAgentDBData(object):
         return monitoring
 
     def getHeartbeatWarning(self):
+        """
+        _getHeartbeatWarning_
+
+        Fetch the status and last hearbeat for every single component
+        and their threads.
+
+        :return: returns a dictionary with a summary of the component
+        status and a short error message, if any.
+        """
 
         results = self.componentStatusAction.execute()
         currentTime = time.time()
         agentInfo = {}
-        agentInfo['down_components'] = []
-
-        agentInfo['down_component_detail'] = []
         agentInfo['status'] = 'ok'
+        agentInfo['down_components'] = []
+        agentInfo['down_component_detail'] = []
+
         for componentInfo in results:
-            hearbeatFlag = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
-            if (componentInfo["state"] != "Error") or hearbeatFlag:
-                agentInfo['down_components'].append(componentInfo['name'])
+            noHeartbeat = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
+            if componentInfo["state"] == "Error" or noHeartbeat:
                 agentInfo['status'] = 'down'
+                agentInfo['down_components'].append(componentInfo['name'])
+                if componentInfo["state"] == "Running":
+                    componentInfo["state"] = "Timeout"
+                    lastHeartbeat = (currentTime - componentInfo["last_updated"]) // 60
+                    componentInfo["error_message"] = "Last worker thread heartbeat was %d min ago" % lastHeartbeat
                 agentInfo['down_component_detail'].append(componentInfo)
+
         return agentInfo
 
     def getComponentStatus(self, config):
+        """
+        _getComponentStatus_
+
+        Aggregates the output of getHeartbeatWarning method with the Daemon
+        checks performed.
+        :param config: agent configuration object
+        :return: returns a dictionary with a summary of the component
+        status and a short error message, if any.
+        """
+        agentInfo = self.getHeartbeatWarning()
+
         components = config.listComponents_() + config.listWebapps_()
-        agentInfo = {}
-        agentInfo['down_components'] = set()
-        agentInfo['down_component_detail'] = []
-        agentInfo['status'] = 'ok'
         # check the component status
         for component in components:
             compDir = config.section_(component).componentDir
@@ -233,19 +255,11 @@ class WMAgentDBData(object):
                 daemon = Details(daemonXml)
                 if not daemon.isAlive():
                     downFlag = True
-            if downFlag:
-                agentInfo['down_components'].add(component)
+            if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
+                agentInfo['down_components'].append(component)
+                agentInfo['down_component_detail'].append(component)
 
-        # check the thread status
-        results = self.componentStatusAction.execute()
-        for componentInfo in results:
-            if componentInfo["state"] == "Error":
-                agentInfo['down_components'].add(componentInfo['name'])
-                agentInfo['status'] = 'down'
-                agentInfo['down_component_detail'].append(componentInfo)
-
-        agentInfo['down_components'] = list(agentInfo['down_components'])
         return agentInfo
 
     def getBatchJobInfo(self):

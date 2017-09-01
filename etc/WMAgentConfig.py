@@ -455,6 +455,15 @@ config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 
+config.component_("ArchiveDataReporter")
+config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
+config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
+config.ArchiveDataReporter.pollInterval = 300
+config.ArchiveDataReporter.WMArchiveURL = None
+config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
+config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive
+
+# AgentStatusWatcher has to be the last one in the config to avoid false alarms during startup
 config.component_("AgentStatusWatcher")
 config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
@@ -477,11 +486,3 @@ config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.drainStatusPollInterval = 43200
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
 config.AgentStatusWatcher.jsonFile = config.AgentStatusWatcher.componentDir + "/WMA_monitoring.json"
-
-config.component_("ArchiveDataReporter")
-config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
-config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
-config.ArchiveDataReporter.pollInterval = 300
-config.ArchiveDataReporter.WMArchiveURL = None
-config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
-config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive

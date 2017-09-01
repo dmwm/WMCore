@@ -415,3 +415,13 @@ class WMStatsReader(object):
             finalStruct["samples"].append(row["doc"])
 
         return jobInfoDoc
+
+    def getNumberOfJobsByExitCodeSiteTask(self, requestName, task, state, exitCode, site, agentName):
+
+        options = {'reduce': True, 'group_level': 6, 'startkey': [requestName, task, state, exitCode, site, agentName],
+                   'endkey': [requestName, task, state, exitCode, site, agentName, {}]}
+        results = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)["rows"]
+        if len(results) == 0:
+            return 0
+        else:
+            return results[0]["value"]

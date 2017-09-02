@@ -16,7 +16,7 @@ from collections import defaultdict
 from future.utils import with_metaclass
 
 # WMCore modules
-from WMCore.Cache.WMConfigCache import Singleton
+from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
 from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, \

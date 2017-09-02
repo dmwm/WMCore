@@ -22,6 +22,7 @@ from xml.dom.minidom import getDOMImplementation
 # standard_library.install_aliases()
 
 # WMCore modules
+from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
@@ -238,13 +239,13 @@ def teraBytes(size):
 
 def ckey():
     "Return user CA key either from proxy or userkey.pem"
-    return os.environ.get('X509_USER_PROXY', \
-        os.path.join(os.environ['HOME'], '.globus/userkey.pem'))
+    ckey, _ = getKeyCertFromEnv()
+    return ckey
 
 def cert():
     "Return user CA cert either from proxy or usercert.pem"
-    return os.environ.get('X509_USER_PROXY', \
-        os.path.join(os.environ['HOME'], '.globus/usercert.pem'))
+    _, cert = getKeyCertFromEnv()
+    return cert
 
 def stucktransferUrl():
     "Return stucktransfer url"

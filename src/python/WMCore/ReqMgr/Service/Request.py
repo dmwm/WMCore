@@ -417,7 +417,7 @@ class Request(RESTEntity):
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
 
         # FIXME: remove it on HG1710, when this #7355 is complete fixed
-        if not request_args['Team'] or isinstance(request_args['Team'], basestring):
+        if not request_args['Team'] or not isinstance(request_args['Team'], basestring):
             raise InvalidSpecParameterValue("Team MUST be a non-empty string")
 
         # legacy update schema to support ops script

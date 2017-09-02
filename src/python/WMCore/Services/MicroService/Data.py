@@ -18,7 +18,7 @@ from __future__ import print_function, division
 import json
 import traceback
 import importlib
-from types import GeneratorType
+# from types import GeneratorType
 
 # 3d party modules
 import cherrypy
@@ -26,12 +26,12 @@ import cherrypy
 # WMCore modules
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
-from WMCore.REST.Validation import validate_rx, validate_str
+# from WMCore.REST.Validation import validate_rx, validate_str
 from WMCore.REST.Format import JSONFormat
 
 # MicroService modules
 from WMCore.Services.MicroService.Manager import MicroServiceManager
-from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
+# from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
 
 def results(res):
     "Return results in a list format suitable by REST server"
@@ -84,9 +84,15 @@ class Data(RESTEntity):
         Implement GET request with given uid or set of parameters
         All work is done by MicroServiceManager
         """
+        res = {'request': kwds, 'microservice': self.mgr.__class__.__name__}
         if 'status' in args:
-            return results(dict(performance=self.mgr.status(**kwds)))
-        return results({'request': kwds, 'results': 'Not available', 'microservice': self.mgr.__class__.__name__})
+            if kwds:
+                res.update({'results': dict(status=self.mgr.status(**kwds))})
+            else:
+                res.update({'results': dict(status=self.mgr.status())})
+        else:
+            res.update({'results': dict(status={})})
+        return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)
@@ -106,6 +112,6 @@ class Data(RESTEntity):
             return results(result)
         except cherrypy.HTTPError:
             raise
-        except Exception as exp:
+        except:
             msg = 'Unable to POST request, error=%s' % traceback.format_exc()
             raise cherrypy.HTTPError(status=500, message=msg)

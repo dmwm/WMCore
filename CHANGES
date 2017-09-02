@@ -1,3 +1,236 @@
+1.1.4 to 1.1.6.pre9:
+  - Merge pull request #8120 from ticoann/cert_fix
+  - fix getKeyCert bug
+  - 1.1.6.pre8
+  - Merge pull request #8117 from ticoann/move_getcert
+  - Merge pull request #8093 from amaltaro/agentMon-ES
+  - Merge pull request #8116 from vkuznet/singleton-move
+  - Move Singleton from WMCore.Cache.WMConfigCache into Utils.Utilities
+  - unit test fixes and pylint
+  - Implement minute heartbeat for the components and monitor it
+  - Merge pull request #8107 from amaltaro/teams-7355
+  - refactor getKeyCert method
+  - Merge pull request #8080 from amaltaro/jobSplitting-7988
+  - Merge pull request #8114 from amaltaro/dbs-block-dump
+  - pylint fixes
+  - Update Team and make Teams a 1-element list
+  - pylint fixes
+  - Minor fix to block dump in DBS3Uploader
+  - Merge pull request #8063 from vilnius-dev/fix_cmp
+  - pylint fixes
+  - Return negative if x<y, zero if x==y, positive if x>y
+  - 1.1.6.pre7
+  - Merge pull request #8103 from ticoann/wmstats_duration_fix
+  - Merge pull request #8104 from ticoann/typo_in_unittest
+  - Merge pull request #8096 from hufnagel/promptreco-alcaskim-jobsplitter
+  - fix typo in unittest
+  - Merge pull request #8090 from amaltaro/storeResults-8075
+  - fix javascript functin typo
+  - change job splitting algorithm for AlcaSkim
+  - Merge pull request #8077 from ticoann/wq_job_control
+  - Merge pull request #8083 from amaltaro/exitCode-8050
+  - update unit tests
+  - Minor change to exitCodes in ErrorHandler
+  - Merge pull request #8040 from vytjan/EXONoBPTXSkimAdded
+  - Merge pull request #8094 from ticoann/dranin_monitor
+  - Pylint fixes; json template updated; json doc updated
+  - Fix StoreResults spec; added required PhysicsGroup argument
+  - Updated unittests to use WMBS instead of DataStructs; pylint fixes
+  - Run job splitter only on a reasonable amount of events/lumis
+  - add unittest and pylint fix
+  - condor monitor report fix
+  - Merge pull request #8043 from vilnius-dev/fix_filter
+  - change number of jobs per WQE by max lumi allowed
+  - Merge pull request #8089 from amaltaro/pendingJobs-8087
+  - Fix check for number of agents in a team
+  - Merge pull request #8088 from vkuznet/pycurl-multi-sso
+  - Add support for CERN SSO; add getdata to fetch multiple urls concurrently
+  - Merge pull request #8086 from ticoann/cleanup_reqmgr
+  - clean up script for oracle migration
+  - 1.1.6.pre6
+  - Merge pull request #8050 from ticoann/exitcode_retry
+  - Merge pull request #8078 from vkuznet/fix-MicroService3
+  - fix unittest
+  - Merge pull request #8049 from amaltaro/tagCollector-log
+  - add exitCode for non retry list
+  - Fix missing results function
+  - Fix timed rotating logs and logging under state dir
+  - 1.1.6.pre5
+  - Merge pull request #8054 from vkuznet/fix-MicroService1
+  - Merge pull request #8055 from ticoann/reqmgr_aux_mock
+  - Merge pull request #7963 from goughes/drain_stats
+  - add ReqMgrAux mock api
+  - Bug fixes for MicroService GET/POST APIs
+  - Merge pull request #8046 from amaltaro/workloadSummary-8039
+  - Collect drain stats and report to wmstats
+  - Merge pull request #7949 from vkuznet/micro-service
+  - Add MicroService classes
+  - Merge pull request #8047 from vilnius-dev/fix_raw_input
+  - Merge pull request #8023 from ticoann/wmagent_config_deployment
+  - raw_input fix applied
+  - add deployment script
+  - Merge pull request #8045 from amaltaro/isDrainMode-8044
+  - filter fix applied for test/
+  - pylint fixes
+  - Fix workload summary creation
+  - Fix isDrainMode arguments in JobArchiver
+  - 'filter' fix applied
+  - 1.1.6.pre4
+  - Merge pull request #8011 from ticoann/wmagent_config
+  - Added the new skim
+  - Merge pull request #8034 from amaltaro/stepchain-eventsPerLumi
+  - Merge pull request #8037 from ticoann/allow_0_job
+  - pylint fixes
+  - Only set events_per_lumi for the first cmsRun step
+  - Merge pull request #8027 from hufnagel/assignment-more-checks
+  - more selective assignment overrides
+  - handle wq job estimation failure
+  - Merge pull request #8032 from amaltaro/stepchain-test-7979
+  - Fix StepChain lfnBase unittests
+  - 1.1.6.pre3
+  - Merge pull request #8021 from amaltaro/stepchain-subscriptions-7981
+  - Fixed unittests
+  - Update subscription methods to keep list of datasets under an output module
+  - Merge pull request #8013 from amaltaro/shell-exitcode
+  - Merge pull request #8018 from amaltaro/stepchain-7978
+  - 1.1.6.pre2
+  - Merge pull request #7998 from amaltaro/stepchain-6787
+  - Merge pull request #8022 from ticoann/remove_wq_info_in_t0
+  - skip wq info collection for tier0
+  - remove draining unittest
+  - automatic draining checking
+  - Fix a few Backends unittests
+  - Return the exact exit code from the stage out copy command
+  - fixed unittest
+  - Inherit PrepID from the workload level for StepChain
+  - Fixed unittests; pylint fixes; new StepChain json template
+  - Support any mix of output modules in StepChain
+  - Merge pull request #8012 from amaltaro/stageout-rfcp-removal
+  - Merge pull request #8014 from amaltaro/pileup-caching
+  - remove and update unittests
+  - Set PU caching to 0.5h instead of 24
+  - RFCP/DCCP/PYDCCP/Hadoop/SRMFNAL plugins removal
+  - Merge pull request #7993 from emaszs/crab_multicore
+  - 1.1.6.pre1
+  - Merge pull request #8009 from hufnagel/fix-forceMerged
+  - Merge pull request #8007 from amaltaro/mergedLFNs-assign
+  - fix for forceMerged output
+  - Merge pull request #7994 from ticoann/check_schedd_limit
+  - check schedd limit before pulling the work
+  - Remove assignment default value for un/mergedLFN bases
+  - Merge pull request #7996 from ticoann/stageout_exitcode_fix
+  - add unittest
+  - Merge pull request #8000 from amaltaro/stepchain-deterministic
+  - return correct exit code
+  - Minor updates to json templates, doc spec and unit tests
+  - Support DeterministicPileup in StepChain
+  - SetupCMSSWPset pylint fixes
+  - Add option to not override PSet numThreads for CRAB
+  - Merge pull request #7995 from amaltaro/specs-filesets
+  - Fixed Workflow unittests
+  - Create new DAOs for workflow, filesets, subscriptions
+  - Merge pull request #7985 from amaltaro/reason-result
+  - 1.1.5.pre5
+  - Merge pull request #7783 from ticoann/aux_update
+  - add aux db update
+  - Merge pull request #7986 from amaltaro/cmsexeption
+  - Merge pull request #7984 from ticoann/remove_stdout_stderr_log
+  - Simple exception typo
+  - Merge pull request #7983 from ticoann/t0_jobdetail
+  - Merge pull request #7929 from amaltaro/chain-unittests
+  - Set result attr in HTTPException. Fix for 7964
+  - TaskChain unit tests for workload and task level
+  - remove stdout.log and stderr.log from component
+  - default open for detail tag
+  - Fix some get WMWorkload methods; deep chain unit tests
+  - 1.1.5.pre4
+  - Merge pull request #7980 from ticoann/fix_storage_unittest
+  - fix storage unittest
+  - Merge pull request #7975 from ericvaandering/gettask_type
+  - Merge pull request #7970 from ticoann/report_failed
+  - Merge pull request #7974 from amaltaro/wmfactory-debug
+  - Merge pull request #7820 from ericvaandering/workunit_objects
+  - Merge pull request #7971 from ticoann/fix_site_white_list_wq
+  - Fix GetTask - Job ID is long, not int.
+  - Merge pull request #7976 from dmwm/lodge_unstable
+  - Update UnstableTests.txt
+  - Fixes for Oracle found during oracle testing
+  - Preemptive pylint of GetTask.py
+  - pylint fixes
+  - Remove a debug log from WMFactory
+  - Merge pull request #7973 from amaltaro/tc-template-gensim
+  - TaskChain json template no longer needed
+  - Oracle versions of tested MySQL code
+  - Add WMBS WorkUnit object and start adding a minimal DAO which passes create, delete, transaction tests Contains "exists" and "get" by task, file, run, lumi
+  - Add a basic DataStructs WorkUnit and associated tests
+  - fix race condition for site white list update
+  - add failed wf  message to log db
+  - 1.1.5.pre3
+  - Merge pull request #7969 from ticoann/t0_job_detail
+  - human readable jobdetail page
+  - Merge pull request #7966 from amaltaro/resub-resub
+  - Fix for final request dict for ACDC/Clone of ACDC
+  - Merge pull request #7930 from amaltaro/deploy-114
+  - Remove cronjob to remove sick jobs; bump example to 1.1.4
+  - 1.1.5.pre2
+  - Merge pull request #7950 from amaltaro/memory-resub
+  - Merge pull request #7947 from ticoann/script_validate_cmssw_merge
+  - Merge pull request #7961 from amaltaro/cores-assignment
+  - Merge pull request #7933 from ticoann/stageout_log
+  - Merge pull request #7964 from ticoann/errorHandler-notFound
+  - Merge pull request #7959 from mmascher/fixlumilist
+  - Merge pull request #7946 from ticoann/cmssw_merge
+  - Merge pull request #7952 from ticoann/skipped_info
+  - Raise HTTPException instead of ServerNotFoundError
+  - add unittest
+  - filter exceptions on error log for wmstats
+  - Merge pull request #7962 from ticoann/fix_python3_compatibility
+  - Merge pull request #7825 from ticoann/wq_unittest
+  - Merge pull request #7957 from amaltaro/errorHandler-rollback
+  - fix python3 compatibility (sorted)
+  - Merge pull request #7954 from ericvaandering/cleanup_splitting
+  - Use more set literals
+  - Merge pull request #7955 from goughes/just_drain_thread
+  - Allow DQMHarvest to set Memory; allow Harvesting task to get performance settings
+  - Update all tasks during assignment if Multicore is passed
+  - Merge pull request #7960 from amaltaro/resub-new-tmpl
+  - Resubmission templates following the new creation mode
+  - Fix a problem with new lumilist format
+  - Properly override tasks in a Resubmission request
+  - Merge pull request #7956 from amaltaro/run-unittests
+  - pylint fixes
+  - Rollback unfinished transactions if ErrorHandler hits an exception
+  - Remove long data type tests from Run class
+  - add site info for skipped file report
+  - Add drain thread
+  - 1.1.5.pre1
+  - Merge pull request #7937 from amaltaro/run-EpL
+  - Merge pull request #7912 from ericvaandering/set_literal
+  - improved unit tests for new events per lumi dbs info
+  - Accept plain list of lumis in the Run object
+  - Merge pull request #7951 from vkuznet/status-fix
+  - Bug fix
+  - unittest update
+  - get cmssw value from config directly for taskchain
+  - script to check cmssw version match for TaskChain
+  - Merge pull request #7913 from vkuznet/procstats
+  - Merge pull request #7948 from amaltaro/eventsPerLumi-template
+  - TaskChain template reading input dataset with events per lumi info
+  - Merge pull request #7945 from hufnagel/fix-maxint-bug
+  - New module to return status and trhead stack of the given process
+  - seems like python3 doesn't know maxint
+  - Merge pull request #7934 from hufnagel/promptreco-alca-unmerged
+  - more fine-grained options to force unmerged and use them in PromptReco
+  - Cleanup JobCreator_t.py
+  - Merge pull request #7932 from amaltaro/exitCodesFail
+  - Merge pull request #7924 from hufnagel/tier0-dashboard
+  - Merge pull request #7928 from amaltaro/file-boundaries
+  - Fail jobs with exit code 87 or 8026
+  - pylint fixes
+  - Allow jobs to cross file boundaries - wmagent version
+  - report the correct dashboard activity from Tier0, fixes #7256
+  - wq_unittest
+
 1.1.4 to 1.1.6.pre8:
   - Merge pull request #8117 from ticoann/move_getcert
   - Merge pull request #8093 from amaltaro/agentMon-ES

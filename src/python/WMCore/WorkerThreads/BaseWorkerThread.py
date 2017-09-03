@@ -251,7 +251,7 @@ class BaseWorkerThread(object):
                 # send a heartbeat every minute
                 self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
 
-            if not self.notifyTerminate.isSet():
+            if self.notifyTerminate.isSet():
                 break
 
             time.sleep(1)

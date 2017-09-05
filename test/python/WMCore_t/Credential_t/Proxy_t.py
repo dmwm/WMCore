@@ -6,6 +6,7 @@ You need to source your UI before running these tests.
 Your proxy is initialized in testAAACreateProxy method and it is used by the remaining tests.
 """
 from __future__ import print_function
+from __future__ import division
 
 import unittest
 import os

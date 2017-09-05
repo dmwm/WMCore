@@ -4,6 +4,7 @@ _RunBased_t_
 
 RunBased splitting test.
 """
+from __future__ import division
 
 
 

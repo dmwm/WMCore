@@ -4,6 +4,7 @@ _FixedDelay_t_
 
 Fixed Delay splitting test.
 """
+from __future__ import division
 
 import unittest
 

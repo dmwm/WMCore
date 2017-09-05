@@ -1,3 +1,4 @@
+from __future__ import division
 import unittest
 from WMCore.BossAir.Plugins.MockPlugin import MockPlugin
 from WMCore.BossAir.Plugins.BasePlugin import BossAirPluginException

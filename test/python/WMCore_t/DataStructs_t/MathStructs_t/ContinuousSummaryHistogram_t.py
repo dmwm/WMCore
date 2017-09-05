@@ -10,6 +10,7 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from __future__ import division
 import unittest
 import random
 

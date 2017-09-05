@@ -5,6 +5,7 @@ Test the basic MyProxy operations.
 You need to source your UI before running these tests.
 The user Proxy and MyProxy is initialized in testCreateMyProxy method and they are used by the remaining tests.
 """
+from __future__ import division
 
 import unittest
 import os

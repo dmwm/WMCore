@@ -6,6 +6,7 @@
 DBSUpload test TestDBSUpload module and the harness
 
 """
+from __future__ import division
 import json
 import os
 import threading

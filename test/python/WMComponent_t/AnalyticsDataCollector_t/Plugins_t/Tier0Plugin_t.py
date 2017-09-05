@@ -7,6 +7,7 @@ Created on Nov 7, 2012
 
 @author: dballest
 """
+from __future__ import division
 
 import os
 import unittest

@@ -5,6 +5,7 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 from __future__ import print_function
+from __future__ import division
 
 import copy
 import os.path

@@ -5,6 +5,7 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
+from __future__ import division
 __all__ = []
 
 import json

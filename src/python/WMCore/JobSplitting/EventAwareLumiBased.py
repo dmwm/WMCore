@@ -11,6 +11,7 @@ Created on Sep 25, 2012
 
 @author: dballest
 """
+from __future__ import division
 
 import logging
 import math

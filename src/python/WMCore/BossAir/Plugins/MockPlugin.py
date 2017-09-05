@@ -4,6 +4,7 @@ _BossAirPlugin_
 
 Base class for BossAir plugins
 """
+from __future__ import division
 
 import os
 import logging

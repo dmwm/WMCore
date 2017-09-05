@@ -8,6 +8,7 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from __future__ import division
 import math
 
 from WMCore.DataStructs.MathStructs.SummaryHistogram import SummaryHistogram

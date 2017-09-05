@@ -40,6 +40,7 @@ being present for the site we injected it at. If all these conditions are met, i
 deleted from the site it was originally injected at.
 
 """
+from __future__ import division
 
 import threading
 import logging

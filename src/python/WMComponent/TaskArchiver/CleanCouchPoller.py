@@ -1,6 +1,7 @@
 """
 Perform cleanup actions
 """
+from __future__ import division
 import httplib
 import json
 import logging

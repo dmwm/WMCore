@@ -2,6 +2,7 @@
 """
 The JobCreator Poller for the JSM
 """
+from __future__ import division
 __all__ = []
 
 

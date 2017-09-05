@@ -6,6 +6,7 @@ _MathAlgos_
 Simple mathematical tools and tricks that might prove to
 be useful.
 """
+from __future__ import division
 
 import math
 import decimal

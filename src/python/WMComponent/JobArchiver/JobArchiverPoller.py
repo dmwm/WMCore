@@ -2,6 +2,7 @@
 """
 The actual jobArchiver algorithm
 """
+from __future__ import division
 __all__ = []
 
 import threading

@@ -10,6 +10,7 @@ _CreateWorkArea_
 Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
+from __future__ import division
 
 import os
 import os.path

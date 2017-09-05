@@ -9,6 +9,7 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
+from __future__ import division
 
 import time
 import urllib

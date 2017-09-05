@@ -206,7 +206,7 @@ class ReqMgr(Service):
         propDict["RequestName"] = request
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
 
-    def getAbortedAndForceCompleteRequestsFromMemoryCache(self):
+    def getAbortedAndForceCompleteRequestsFromMemoryCache(self, expire=0):
         """
         _getAbortedAndForceCompleteRequestsFromMemoryCache_
         """
@@ -214,7 +214,7 @@ class ReqMgr(Service):
         from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
         maskStates = ["aborted", "aborted-completed", "force-complete"]
-        return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, initCacheValue=[],
+        return MemoryCacheStruct(expire=expire, func=self.getRequestByStatus, initCacheValue=[],
                                  kwargs={'statusList': maskStates, "detail": False})
 
     def cloneRequest(self, requestName, overwrittenParams=None):

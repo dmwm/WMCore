@@ -7,7 +7,7 @@ import logging
 class MemoryCacheStruct(object):
     """
     WARNING: This can be used in multi thread by registering on GenericDataCache
-    But this cache is not thread saft.
+    But this cache is not thread safe.
     """
 
     def __init__(self, expire, func, initCacheValue=None, kwargs=None):
@@ -35,7 +35,7 @@ class MemoryCacheStruct(object):
         if self.isDataExpired():
             try:
                 self.data = self.func(**self.kwargs)
-                self.lastUpdate = int(time.time())
+                self.lastUpdated = int(time.time())
             except Exception:
                 if noFail:
                     logging.error(traceback.format_exc())

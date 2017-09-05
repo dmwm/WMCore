@@ -118,6 +118,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         stepNameMapping = self.getStepMapping()
         for task in self.taskIterator():
+            # Merge task has cmsRun1 step, so it gets messy on Merge ACDC of StepChain
+            if task.taskType() == "Merge":
+                continue
             task.updateLFNsAndDatasets(dictValues=assignArgs, stepMapping=stepNameMapping)
 
         return

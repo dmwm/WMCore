@@ -67,7 +67,7 @@ class FixedDelayTest(unittest.TestCase):
         self.multipleFileLumiset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
-            newFile.addRun(Run(1, *[45+i/3]))
+            newFile.addRun(Run(1, *[45+i//3]))
             newFile.create()
             self.multipleFileLumiset.addFile(newFile)
         self.multipleFileLumiset.commit()

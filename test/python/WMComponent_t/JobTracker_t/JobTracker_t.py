@@ -508,7 +508,7 @@ class JobTrackerTest(unittest.TestCase):
 
 
         # Now create some jobs
-        for job in testJobGroup.jobs[:(nJobs/2)]:
+        for job in testJobGroup.jobs[:(nJobs // 2)]:
             jdl = createJDL(id = job['id'], directory = submitDir, jobCE = jobCE)
             jdlFile = os.path.join(submitDir, 'condorJDL_%i.jdl' % (job['id']))
             handle = open(jdlFile, 'w')
@@ -529,10 +529,10 @@ class JobTrackerTest(unittest.TestCase):
 
         # Are jobs in the right state?
         result = self.getJobs.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nJobs/2)
+        self.assertEqual(len(result), nJobs//2)
 
         result = self.getJobs.execute(state = 'Complete', jobType = "Processing")
-        self.assertEqual(len(result), nJobs/2)
+        self.assertEqual(len(result), nJobs//2)
 
 
         # Then we're done
@@ -544,7 +544,7 @@ class JobTrackerTest(unittest.TestCase):
         self.assertEqual(nRunning, 0)
 
         print ("Process took %f seconds to process %i classAds" %((stopTime - startTime),
-                                                                  nJobs/2))
+                                                                  nJobs//2))
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
         p.print_stats()

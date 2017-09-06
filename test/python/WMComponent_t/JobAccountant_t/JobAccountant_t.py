@@ -1300,7 +1300,7 @@ class JobAccountantTest(unittest.TestCase):
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        print("  Performance: %s fwjrs/sec" % (100 // (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
             print("  Validating %s, %s" % (jobID, fwjrPath))
@@ -1637,7 +1637,7 @@ class JobAccountantTest(unittest.TestCase):
 
         endTime = time.time()
         print("  Time: %f" % (endTime - startTime))
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        print("  Performance: %s fwjrs/sec" % (100 // (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
             print("  Validating %s, %s" % (jobID, fwjrPath))

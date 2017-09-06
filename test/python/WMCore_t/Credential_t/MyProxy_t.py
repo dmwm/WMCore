@@ -92,7 +92,7 @@ class MyProxyTest(unittest.TestCase):
         self.proxy.renewMyProxy( proxy = self.proxyPath )
         time.sleep( 5 )
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath )
-        self.assertEqual(int(timeLeft) / 3600, 167)
+        self.assertEqual(int(timeLeft) // 3600, 167)
 
     @attr("integration")
     def testRenewMyProxyForServer( self ):
@@ -103,7 +103,7 @@ class MyProxyTest(unittest.TestCase):
         self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
         time.sleep( 5 )
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
-        self.assertEqual(int(timeLeft) / 3600, 167)
+        self.assertEqual(int(timeLeft) // 3600, 167)
 
     @attr("integration")
     def testMyProxyEnvironment(self):

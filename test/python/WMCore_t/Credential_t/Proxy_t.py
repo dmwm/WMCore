@@ -112,7 +112,7 @@ class ProxyTest(unittest.TestCase):
         Test if getTimeLeft method returns correctly the proxy time left.
         """
         timeLeft = self.proxy.getTimeLeft()
-        self.assertEqual(int(timeLeft) / 3600, 191)
+        self.assertEqual(int(timeLeft) // 3600, 191)
 
     @attr("integration")
     def testRenewProxy( self ):
@@ -123,7 +123,7 @@ class ProxyTest(unittest.TestCase):
         self.proxy.renew()
         time.sleep( 10 )
         timeLeft = self.proxy.getTimeLeft()
-        self.assertEqual(int(timeLeft) / 3600, 191)
+        self.assertEqual(int(timeLeft) // 3600, 191)
 
     @attr("integration")
     def testDestroyProxy(self ):
@@ -186,7 +186,7 @@ class ProxyTest(unittest.TestCase):
         attribute = self.proxy.prepareAttForVomsRenewal( self.proxy.getAttributeFromProxy( proxyPath ) )
         self.proxy.vomsExtensionRenewal( proxyPath, attribute )
         vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
-        self.assertEqual(int(vomsTimeLeft) / 3600, 191)
+        self.assertEqual(int(vomsTimeLeft) // 3600, 191)
 
     @attr("integration")
     def testElevateAttribute( self ):

@@ -275,11 +275,11 @@ class Tier0PluginTest(unittest.TestCase):
         """
 
         for idx in range(0, len(self.orderedStates) * 2):
-            nextState = self.orderedStates[idx / 2]
-            if (idx / 2) == 0:
+            nextState = self.orderedStates[idx // 2]
+            if (idx // 2) == 0:
                 currentState = 'Closed'
             else:
-                currentState = self.orderedStates[idx / 2 - 1]
+                currentState = self.orderedStates[idx // 2 - 1]
             if idx % 2 == 0:
                 for transitionObject in self.stateMap[nextState][:-1]:
                     method = getattr(transitionObject, transitionMethod)

@@ -44,7 +44,7 @@ class RunBasedTest(unittest.TestCase):
         self.multipleFileRunset = Fileset(name = "TestFileset3")
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
-            newFile.addRun(Run(i/3, *[45]))
+            newFile.addRun(Run(i//3, *[45]))
             self.multipleFileRunset.addFile(newFile)
 
         self.singleRunFileset = Fileset(name = "TestFileset4")

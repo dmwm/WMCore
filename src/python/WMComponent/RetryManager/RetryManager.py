@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
+# pylint: disable=W0613
 
 """
 _RetryManager_
@@ -9,15 +9,12 @@ attempts to put them in their non-cooloff state again.
 
 """
 
-
-
-
-
 import logging
 import threading
 
 from WMCore.Agent.Harness import Harness
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
+
 
 class RetryManager(Harness):
     """
@@ -40,5 +37,5 @@ class RetryManager(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
         pollInterval = self.config.RetryManager.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        logging.info("Setting poll interval to %s seconds", pollInterval)
         myThread.workerThreadManager.addWorker(RetryManagerPoller(self.config), pollInterval)

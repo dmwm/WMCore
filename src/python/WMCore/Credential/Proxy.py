@@ -3,7 +3,9 @@
 _Proxy_
 Wrap gLite proxy commands.
 """
+from __future__ import division
 
+from past.utils import old_div
 import contextlib
 import copy
 import os
@@ -209,7 +211,7 @@ class Proxy(Credential):
         if self.retcode:
             raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
 
-        daystoexp = int(timeleft / (60 * 60 * 24))
+        daystoexp = int(old_div(timeleft, (60 * 60 * 24)))
         return daystoexp
 
     def getProxyDetails(self):
@@ -603,7 +605,7 @@ class Proxy(Credential):
         timeLeft = int(timeLeft.strip())
 
         if timeLeft > 0:
-            vomsValid = "%d:%02d" % (timeLeft / 3600, (timeLeft - (timeLeft / 3600) * 3600) / 60)
+            vomsValid = "%d:%02d" % (old_div(timeLeft, 3600), old_div((timeLeft - (old_div(timeLeft, 3600)) * 3600), 60))
 
         self.logger.debug('Requested voms validity: %s' % vomsValid)
 

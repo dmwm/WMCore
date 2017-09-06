@@ -4,7 +4,9 @@ CPU and memory utilisation, available disk space, CPU/mem
 utilisation by particular processes, etc.
 
 """
+from __future__ import division
 
+from past.utils import old_div
 import logging
 import subprocess
 
@@ -80,7 +82,7 @@ class CPUPoller(PeriodPoller):
     """
     def __init__(self, config, generator):
         PeriodPoller.__init__(self, config, generator)
-        numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
+        numOfMeasurements = round(old_div(self.config.period, self.config.pollInterval), 0)
         self._measurements = Measurements(numOfMeasurements)
 
 
@@ -107,7 +109,7 @@ class MemoryPoller(PeriodPoller):
     """
     def __init__(self, config, generator):
         PeriodPoller.__init__(self, config, generator)
-        numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
+        numOfMeasurements = round(old_div(self.config.period, self.config.pollInterval), 0)
         self._measurements = Measurements(numOfMeasurements)
 
 
@@ -271,7 +273,7 @@ class DirectorySizePoller(BasePoller):
                  (self._myName, ex, out))
             logging.error(m)
             return None
-        return round(size / self._prefixBytesFactor, 3)
+        return round(old_div(size, self._prefixBytesFactor), 3)
 
 
     def check(self):

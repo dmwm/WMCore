@@ -5,6 +5,8 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 import threading
@@ -284,7 +286,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         if proxyWarning:
             warnMsg = "Agent proxy '%s' must be renewed ASAP. " % self.proxyFile
-            warnMsg += "Its time left is: %.2f hours." % (secsLeft / 3600.)
+            warnMsg += "Its time left is: %.2f hours." % (old_div(secsLeft, 3600.))
             agInfo['proxy_warning'] = warnMsg
 
         return

@@ -5,7 +5,9 @@ _LumiBased_
 Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
+from __future__ import division
 
+from past.utils import old_div
 import logging
 import operator
 
@@ -212,7 +214,7 @@ class LumiBased(JobFactory):
                 f['lowestRun'] = f['runs'][0]
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(old_div(float(f['events']), f['lumiCount']))
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']

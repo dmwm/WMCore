@@ -10,7 +10,9 @@ Normally, the generation task has no input. However, if there is a
 pile up section defined in the configuration, the generation task
 fetches from DBS the information about pileup input.
 """
+from __future__ import division
 
+from past.utils import old_div
 import math
 from Utils.Utilities import strToBool
 from WMCore.Lexicon import primdataset, dataset
@@ -95,7 +97,7 @@ class MonteCarloWorkloadFactory(StdBase):
         StdBase.__call__(self, workloadName, arguments)
 
         # Adjust the events by the filter efficiency
-        self.totalEvents = int(self.requestNumEvents / self.filterEfficiency)
+        self.totalEvents = int(old_div(self.requestNumEvents, self.filterEfficiency))
 
         # We don't write out every event in MC,
         # adjust the size per event accordingly
@@ -105,7 +107,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # 8h jobs are CMS standard, set the default with that in mind
         self.prodJobSplitAlgo = "EventBased"
         if self.eventsPerJob is None:
-            self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+            self.eventsPerJob = int(old_div((8.0 * 3600.0), self.timePerEvent))
         if self.eventsPerLumi is None:
             self.eventsPerLumi = self.eventsPerJob
         self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
@@ -121,7 +123,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # need to move the initial lfn counter
         self.previousJobCount = 0
         if self.firstLumi > 1:
-            self.previousJobCount = int(math.ceil((self.firstEvent - 1) / self.eventsPerJob))
+            self.previousJobCount = int(math.ceil(old_div((self.firstEvent - 1), self.eventsPerJob)))
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
 
         return self.buildWorkload()

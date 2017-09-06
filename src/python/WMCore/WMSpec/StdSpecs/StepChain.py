@@ -13,6 +13,8 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
+from __future__ import division
+from past.utils import old_div
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import primdataset
@@ -323,11 +325,11 @@ class StepChainWorkloadFactory(StdBase):
             filterEff = taskConf.get("FilterEfficiency")
             # Adjust totalEvents according to the filter efficiency
             taskConf["SplittingAlgo"] = "EventBased"
-            taskConf["RequestNumEvents"] = int(requestNumEvts / filterEff)
+            taskConf["RequestNumEvents"] = int(old_div(requestNumEvts, filterEff))
             taskConf["SizePerEvent"] = self.sizePerEvent * filterEff
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / self.timePerEvent)
+            taskConf["EventsPerJob"] = int(old_div((8.0 * 3600.0), self.timePerEvent))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 

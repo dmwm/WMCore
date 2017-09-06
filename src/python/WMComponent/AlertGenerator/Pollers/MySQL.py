@@ -2,7 +2,9 @@
 Common module for all MySQL related checked metrics.
 
 """
+from __future__ import division
 
+from past.utils import old_div
 import threading
 import logging
 
@@ -61,7 +63,7 @@ class MySQLPoller(PeriodPoller):
         """
         pid = self._getProcessPID()
         self._dbProcessDetail = ProcessDetail(pid, "MySQL")
-        numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
+        numOfMeasurements = round(old_div(self.config.period, self.config.pollInterval), 0)
         self._measurements = Measurements(numOfMeasurements)
 
 

@@ -40,7 +40,9 @@ being present for the site we injected it at. If all these conditions are met, i
 deleted from the site it was originally injected at.
 
 """
+from __future__ import division
 
+from past.utils import old_div
 import threading
 import logging
 import traceback
@@ -86,7 +88,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if getattr(config.PhEDExInjector, "subscribeDatasets", False):
             pollInterval = config.PhEDExInjector.pollInterval
             subInterval = config.PhEDExInjector.subscribeInterval
-            self.subFrequency = max(1, int(round(subInterval / pollInterval)))
+            self.subFrequency = max(1, int(round(old_div(subInterval, pollInterval))))
             logging.info("SubscribeDataset and deleteBlocks will run every %d polling cycles", self.subFrequency)
             # subscribe on first cycle
             self.pollCounter = self.subFrequency - 1

@@ -17,6 +17,8 @@ ACDC unsupported:
 - SiblingProcessingBased
 
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
@@ -70,8 +72,8 @@ class ResubmitBlock(StartPolicyInterface):
                                  NumberOfLumis=block[self.lumiType],
                                  NumberOfFiles=block['NumberOfFiles'],
                                  NumberOfEvents=block['NumberOfEvents'],
-                                 Jobs=ceil(float(block[self.args['SliceType']]) /
-                                           float(self.args['SliceSize'])),
+                                 Jobs=ceil(old_div(float(block[self.args['SliceType']]),
+                                           float(self.args['SliceSize']))),
                                  ACDC=block['ACDC'],
                                  NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
                                  NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')

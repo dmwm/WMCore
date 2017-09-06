@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
+from __future__ import division
 
+from past.utils import old_div
 from collections import defaultdict
 import time
 import logging
@@ -46,7 +48,7 @@ def isGlobalDBS(dbs):
 def timeFloor(number, interval=UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""
     from math import floor
-    return floor(number / interval) * interval
+    return floor(old_div(number, interval)) * interval
 
 
 def isDataset(inputData):

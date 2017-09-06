@@ -2,6 +2,8 @@
 """
 The actual jobArchiver algorithm
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 import threading
@@ -244,7 +246,7 @@ class JobArchiverPoller(BaseWorkerThread):
             workflow = job['workflow']
             firstCharacter = workflow[0]
             jobFolder = 'JobCluster_%i' \
-                        % (int(job['id'] / self.numberOfJobsToCluster))
+                        % (int(old_div(job['id'], self.numberOfJobsToCluster)))
             logDir = os.path.join(self.logDir, firstCharacter,
                                   workflow, jobFolder)
             if not os.path.exists(logDir):

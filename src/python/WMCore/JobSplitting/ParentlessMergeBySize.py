@@ -4,6 +4,8 @@ _ParentlessMergeBySize_
 
 WMBS merging that ignores file parents.
 """
+from __future__ import division
+from past.utils import old_div
 import time
 import threading
 
@@ -105,8 +107,8 @@ class ParentlessMergeBySize(JobFactory):
         # job disk based on
         #  - input for largest file on local disk
         #  - output on local disk (factor 1)
-        jobTime = 300 + (jobSize*4)/5000000
-        self.currentJob.addResourceEstimates(jobTime = jobTime, disk = (jobSize+largestFile)/1024)
+        jobTime = 300 + old_div((jobSize*4),5000000)
+        self.currentJob.addResourceEstimates(jobTime = jobTime, disk = old_div((jobSize+largestFile),1024))
 
         return
 

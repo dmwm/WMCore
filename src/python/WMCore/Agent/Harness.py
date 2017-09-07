@@ -208,8 +208,6 @@ class Harness:
                 myThread.dialect = 'MySQL'
             elif connectDialect.lower() == 'oracle':
                 myThread.dialect = 'Oracle'
-            elif connectDialect.lower() == 'sqlite':
-                myThread.dialect = 'SQLite'
 
             logging.info("Harness part constructor finished")
         except Exception as ex:

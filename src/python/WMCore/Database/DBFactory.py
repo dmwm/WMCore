@@ -4,7 +4,6 @@ import threading
 from sqlalchemy import create_engine
 from sqlalchemy import __version__ as sqlalchemy_version
 from WMCore.Database.Dialects import MySQLDialect
-from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
@@ -28,13 +27,6 @@ class DBFactory(object):
             #This will be deprecated.
             """
             Need to make the dburl here. Possible formats are:
-
-            postgres://username:password@host:port/database
-
-            sqlite:////absolute/path/to/database.txt
-            sqlite:///relative/path/to/database.txt
-            sqlite://
-            sqlite://:memory:
 
             mysql://host/database
             mysql://username@host/database
@@ -87,16 +79,11 @@ class DBFactory(object):
             self.dia = None
 
         else:
-            if self.dburl.split(':')[0].lower() == "sqlite":
-                self.engine = create_engine(self.dburl,
-                                            connect_args = options,
-                                            **self._defaultEngineParams)
-            else:
-                self.engine = self._engineMap.setdefault(self.dburl,
-                                             create_engine(self.dburl,
-                                                           connect_args = options,
-                                                           **self._defaultEngineParams)
-                                                      )
+            self.engine = self._engineMap.setdefault(self.dburl,
+                                                     create_engine(self.dburl,
+                                                                   connect_args=options,
+                                                                   **self._defaultEngineParams)
+                                                     )
             self.dia = self.engine.dialect
 
         self.lock = threading.Condition()

@@ -11,7 +11,7 @@ config.section_('General')
 config.General.workDir = '/home/test/application/WMAgentEmulator'
 config.section_('CoreDatabase')
 # CoreDatabase:
-# dialect: Choose between oracle, mysql or sqlite
+# dialect: Choose between oracle or mysql
 # socket:  Set the socket file location for mysql (optional)
 #
 config.CoreDatabase.connectUrl='mysql://username:password@cmssrv18.fnal.gov:3306/TestDB'

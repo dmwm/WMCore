@@ -2,7 +2,7 @@
 """
 _Destroy_
 
-Implementation of DBSBuffer.Destroy for SQLite
+Implementation of DBSBuffer.Destroy for MySQL
 """
 
 

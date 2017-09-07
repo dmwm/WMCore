@@ -162,7 +162,7 @@ myThread.dbi
 myThread.transaction
 # A dictionary of factories. Factories are instantiated with a namespace (e.g. WMCore.MsgService.MySQL) and load the appropriate objects. This is especially useful if you  work with multiple backends.
 myThread.factory
-# A String representing the backend. Currently there are 3: "MySQL", "Oracle", "SQLite" . These backends are used to define the proper namespace for importing data access objects (DAO) from factories.
+# A String representing the backend. Currently there are 2: "MySQL", "Oracle" . These backends are used to define the proper namespace for importing data access objects (DAO) from factories.
 # E.g. I can define a namespace: "WMCore.MsgService"+myThread.backend . 
 myThread.backend
 # pointer to current message service object being used

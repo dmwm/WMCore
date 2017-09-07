@@ -114,8 +114,6 @@ class BaseWorkerThread(object):
             myThread.dialect = "MySQL"
         elif connectDialect.lower() == "oracle":
             myThread.dialect = "Oracle"
-        elif connectDialect.lower() == "sqlite":
-            myThread.dialect = "SQLite"
 
         logging.info("Initialising default database")
         myThread.dbi = myThread.dbFactory.connect()

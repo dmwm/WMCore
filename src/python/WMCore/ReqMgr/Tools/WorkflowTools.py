@@ -1,24 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# pylint: disable=
+
 """
 File       : WorkflowManager.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Workflow management tools
 """
+
 from __future__ import print_function
 
-# system modules
+import httplib
+import json
 import os
 import re
-import json
-import httplib
+import sys
 
-# ReqMgr modules
-from ReqMgr.tools.reqMgrClient import WorkflowManager
-
-# DBS modules
-import dbs3Client as dbs3
+from WMCore.ReqMgr.Tools.reqMgrClient import WorkflowManager
 from dbs.apis.dbsClient import DbsApi
 
 # DBS3 helper functions
@@ -26,21 +23,21 @@ DBS3 = r'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
 
 def getDatasets(dataset_pattern):
-    "Return list of dataset for given dataset pattern"
+    """Return list of dataset for given dataset pattern"""
     dbsapi = DbsApi(url=DBS3, verifypeer=False)
     reply = dbsapi.listDatasets(dataset=dataset_pattern, dataset_access_type='*')
     return reply
 
 
 def getDatasetStatus(dataset):
-    "Return dataset status"
+    """Return dataset status"""
     dbsapi = DbsApi(url=DBS3, verifypeer=False)
     reply = dbsapi.listDatasets(dataset=dataset, dataset_access_type='*', detail=True)
     return reply[0]['dataset_access_type']
 
 
 def getWorkload(url, workflow):
-    "Return workload list"
+    """Return workload list"""
     conn = httplib.HTTPSConnection(url,
                                    cert_file=os.getenv('X509_USER_PROXY'),
                                    key_file=os.getenv('X509_USER_PROXY'))
@@ -127,9 +124,9 @@ class WorkflowDataOpsMgr(WorkflowManager):
 
         return versionNum
 
-    ### private methods
+    # private methods
     def _init(self):
-        "Perform initialization and cross-checks"
+        """Perform initialization and cross-checks"""
         self.input_dataset = self._input_dataset()
         self.global_tag = self._global_tag()
         self.ext_tag = self._ext_tag()
@@ -153,14 +150,14 @@ class WorkflowDataOpsMgr(WorkflowManager):
             raise Exception('ERROR: Input dataset is not PRODUCTION or VALID, status=%s' % inputDatasetStatus)
 
     def get(self, key, default=''):
-        "Get extension tag"
+        """Get extension tag"""
         val = self.kwds.get(key)
         if not val:
             val = default
         return val
 
     def _ext_tag(self):
-        "Get extension tag"
+        """Get extension tag"""
         if self.ext_tag:
             ext_tag = '_ext' + self.ext_tag
         else:
@@ -168,29 +165,28 @@ class WorkflowDataOpsMgr(WorkflowManager):
         return ext_tag
 
     def _global_tag(self):
-        "Extract required part of global tag from workflow info"
+        """Extract required part of global tag from workflow info"""
         return self.winfo.get('GlobalTag', '').split('::')[0]
 
     def _campaign(self):
-        "Return campaign from workflow info"
+        """Return campaign from workflow info"""
         return self.winfo.get('Campaign', '')
 
     def _max_rss(self):
-        "Return maxRSS"
+        """Return maxRSS"""
         max_rss = self.max_rss
-        if ('HiFall11' in self.workflow or 'HiFall13DR53X' in self.workflow) and \
-                        'IN2P3' in self.site_use:
+        if ('HiFall11' in self.workflow or 'HiFall13DR53X' in self.workflow) and 'IN2P3' in self.site_use:
             max_rss = 4000000
         return max_rss
 
     def _max_merge_events(self):
-        "Return max number of merge events"
+        """Return max number of merge events"""
         if 'DR61SLHCx' in self.workflow:
             return 5000
         return self.max_merge_events
 
     def _input_dataset(self):
-        "Return input dataset of workflow"
+        """Return input dataset of workflow"""
         dataset = self.winfo.get('InputDataset', '')
         if not dataset:
             raise Exception("Error: no input dataset found for %s" % self.workflow)
@@ -430,7 +426,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         return int(priority)
 
     def _team(self):
-        "Return appropriate team"
+        """Return appropriate team"""
         priority = self._priority()
         if self.site_use == 'HLT':
             team = 'hlt'
@@ -441,7 +437,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         return team
 
     def _sites(self):
-        "Find appropriate site to use"
+        """Find appropriate site to use"""
         workflow = self.workflow
         siteUse = ''
         siteCust = self.site_cust
@@ -530,7 +526,7 @@ def getScenario(ps):
 
 
 def getPileupScenario(winfo, config):
-    "Get pileup scanario for given workflow dict and configuration"
+    """Get pileup scanario for given workflow dict and configuration"""
     workflow = winfo['RequestName']
     pileup, meanPileUp, bunchSpacing, cmdLineOptions = getPileup(config)
     scenario = getScenario(pileup)
@@ -550,7 +546,7 @@ def getPileupScenario(winfo, config):
 
 
 def getPileup(config):
-    "Helper function used in getPileupScenario"
+    """Helper function used in getPileupScenario"""
     pu = 'Unknown'
     vmeanpu = 'None'
     bx = 'None'
@@ -570,7 +566,7 @@ def getPileup(config):
 
 
 def getConfig(url, cacheID):
-    "Helper function to get configuration for given cacheID"
+    """Helper function to get configuration for given cacheID"""
     conn = httplib.HTTPSConnection(url,
                                    cert_file=os.getenv('X509_USER_PROXY'),
                                    key_file=os.getenv('X509_USER_PROXY'))
@@ -580,7 +576,7 @@ def getConfig(url, cacheID):
 
 
 def findCustodialLocation(url, dataset):
-    "Helper function to find custodial location for given dataset"
+    """Helper function to find custodial location for given dataset"""
     conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     r1 = conn.request("GET", '/phedex/datasvc/json/prod/blockreplicas?dataset=' + dataset)
     r2 = conn.getresponse()
@@ -597,7 +593,7 @@ def findCustodialLocation(url, dataset):
 
 
 def checkAcceptedSubscriptionRequest(url, dataset, site):
-    "Helper function"
+    """Helper function"""
     conn = httplib.HTTPSConnection(url,
                                    cert_file=os.getenv('X509_USER_PROXY'),
                                    key_file=os.getenv('X509_USER_PROXY'))

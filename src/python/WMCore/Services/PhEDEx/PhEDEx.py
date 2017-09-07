@@ -3,6 +3,7 @@ import logging
 from xml.dom.minidom import parseString
 
 from WMCore.Services.Service import Service
+from WMCore.Services.PhEDEx import XMLDrop
 
 
 class PhEDEx(Service):
@@ -13,10 +14,11 @@ class PhEDEx(Service):
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, httpDict=None, responseType="json", logger=None):
+    def __init__(self, httpDict=None, responseType="json", logger=None, dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
         """
         responseType will be either xml or json
         """
+        self.dbsUrl = dbsUrl
         httpDict = httpDict or {}
         self.responseType = responseType.lower()
 
@@ -40,13 +42,13 @@ class PhEDEx(Service):
         """
         result = ''
         # make base file name from call name.
-        file = callname.replace("/", "_")
+        ifile = callname.replace("/", "_")
         if clearCache:
-            self.clearCache(file, args, verb=verb)
+            self.clearCache(ifile, args, verb=verb)
 
-        f = self.refreshCache(file, callname, args, verb=verb)
-        result = f.read()
-        f.close()
+        fobj = self.refreshCache(ifile, callname, args, verb=verb)
+        result = fobj.read()
+        fobj.close()
 
         if self.responseType == "json":
             return json.loads(result)
@@ -58,7 +60,7 @@ class PhEDEx(Service):
         """
         _injectBlocksToPhedex_
 
-        xmlData = XMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
+        xmlData = PhEDEx_DBS.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
 
         node: node name for injection
         strict: throw an error if it can't insert the data exactly as
@@ -75,7 +77,7 @@ class PhEDEx(Service):
 
         return self._getResult(callname, args=args, verb="POST")
 
-    def subscribe(self, subscription, xmlData):
+    def subscribe(self, subscription):
         """
         _subscribe_
 
@@ -90,6 +92,7 @@ class PhEDEx(Service):
         for node in subscription.nodes:
             args['node'].append(node)
 
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
         args['data'] = xmlData
         args['level'] = subscription.level
         args['priority'] = subscription.priority
@@ -101,14 +104,13 @@ class PhEDEx(Service):
 
         return self._getResult(callname, args=args, verb="POST")
 
-    def delete(self, deletion, xmlData):
+    def delete(self, deletion):
         """
         _delete_
 
         xmlData = XMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
         Deletion is a PhEDEX deletion structure
         """
-
         callname = 'delete'
         args = {}
 
@@ -116,6 +118,7 @@ class PhEDEx(Service):
         for node in deletion.nodes:
             args['node'].append(node)
 
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(deletion.datasetPaths))
         args['data'] = xmlData
         args['level'] = deletion.level
         args['rm_subscriptions'] = deletion.subscriptions
@@ -248,7 +251,6 @@ class PhEDEx(Service):
             if len(item.split('#')) > 1:
                 inputs[item.split('#')[0]].add(item)
             else:
-                inputs[item.split('#')[0]]
                 datasetsOnly.add(item)
 
         # Hard to query all at once in one GET call, POST not cacheable

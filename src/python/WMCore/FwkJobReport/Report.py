@@ -1503,6 +1503,9 @@ class Report:
         analysisFiles = self.getAnalysisFilesFromStep(step=stepName)
         if len(files) == 0 and len(analysisFiles) == 0:
             msg = WM_JOB_ERROR_CODES[60450]
+            msg += "\nList of skipped files is:\n"
+            for skipF in self.getSkippedFilesFromStep(stepName=stepName):
+                msg += "  %s\n" %  skipF
             self.addError(stepName, 60450, "NoOutput", msg)
             self.setStepStatus(stepName=stepName, status=60450)
         return

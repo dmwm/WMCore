@@ -6,6 +6,7 @@ Logging facilities used in WMCore.
 """
 import time
 import logging
+import codecs
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
 
 # a new log level which is lower than debug

@@ -106,10 +106,7 @@ class ResultSetTest(unittest.TestCase):
 
         self.assertEqual(len(testSet2.fetchall()), times)
         dialect = self.myThread.dialect.lower()
-        if dialect == 'sqlite':
-            self.assertEqual(str(testSet2.fetchall()[1][0]), 'value11')
-            self.assertEqual(testSet2.fetchone()[0], None)
-        elif dialect == 'mysql':
+        if dialect == 'mysql':
             self.assertEqual(str(testSet2.fetchall()[1][0]), 'value11')
             self.assertEqual(testSet2.fetchone()[0], 'value10')
         elif dialect == 'oracle':

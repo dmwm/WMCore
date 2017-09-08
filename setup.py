@@ -52,9 +52,6 @@ class EnvCommand(Command):
         pass
 
     def run(self):
-        if not os.getenv('DATABASE', False):
-            # Use an in memory sqlite one if none is configured.
-            print('export DATABASE=sqlite://')
         if not os.getenv('COUCHURL', False):
             # Use the default localhost URL if none is configured.
             print('export COUCHURL=http://localhost:5984')

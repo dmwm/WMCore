@@ -37,9 +37,6 @@ class DBFormatterTest(unittest.TestCase):
         if myThread.dialect == 'MySQL':
             myThread.create = """
 create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
-        if myThread.dialect == 'SQLite':
-            myThread.create = """
-                create table test (bind1 varchar(20), bind2 varchar(20))"""
 
         myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """

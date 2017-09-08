@@ -4,11 +4,6 @@ Test that the following dburl's are correctly made:
 
             postgres://username:password@host:port/database
 
-            sqlite:////absolute/path/to/database.txt
-            sqlite:///relative/path/to/database.txt
-            sqlite://
-            sqlite:///:memory:
-
             mysql://host/database
             mysql://username@host/database
             mysql://username:password@host:port/database
@@ -59,10 +54,6 @@ class DBFactoryTest(unittest.TestCase):
         """
 
         urls = [
-                'sqlite://',
-                'sqlite:///:memory:',
-                'sqlite:////absolute/path/to/database.txt',
-                'sqlite:///relative/path/to/database.txt',
                 'postgres://username:password@host:1234/database',
                 'mysql://host/database',
                 'mysql://username@host/database',
@@ -79,37 +70,6 @@ class DBFactoryTest(unittest.TestCase):
                     print("testAllURLs : ", testurl, "  .... FAIL!")
             except Exception as e:
                 print("testAllURLs : ", testurl, "  .... EXCEPTION!", e)
-
-    def testSQLiteInMemory(self):
-        """
-        Test that factory correctly makes:
-            sqlite://
-            sqlite:///:memory:
-        """
-        self.genericTest(testname='testSQLiteInMemory',
-                         testoptions={'dialect':'sqlite'},
-                         testurl='sqlite://')
-        self.genericTest(testname='testSQLiteInMemory',
-                         testoptions={'dialect':'sqlite',
-                                      'database':':memory:'},
-                         testurl='sqlite:///:memory:')
-
-    def testSQLiteInFile(self):
-        """
-        Test that factory correctly makes:
-            sqlite:////absolute/path/to/database.txt
-            sqlite:///relative/path/to/database.txt
-        """
-
-        self.genericTest(testname='testSQLiteInMemory',
-                         testoptions={'dialect':'sqlite',
-                                      'database':'relative/path/to/database.txt'},
-                         testurl='sqlite:///relative/path/to/database.txt')
-
-        self.genericTest(testname='testSQLiteInMemory',
-                         testoptions={'dialect':'sqlite',
-                                      'database':'/absolute/path/to/database.txt'},
-                         testurl='sqlite:////absolute/path/to/database.txt')
 
     def testPostGres(self):
         """

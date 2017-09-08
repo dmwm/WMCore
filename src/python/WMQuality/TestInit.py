@@ -127,8 +127,6 @@ class TestInit(object):
         dialectPart = dburl.split(":")[0]
         if dialectPart == 'mysql':
             return 'MySQL'
-        elif dialectPart == 'sqlite':
-            return 'SQLite'
         elif dialectPart == 'oracle':
             return 'Oracle'
         elif dialectPart == 'http':

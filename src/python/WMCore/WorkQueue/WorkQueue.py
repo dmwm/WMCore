@@ -1089,19 +1089,8 @@ class WorkQueue(WorkQueueBase):
                         processedInputs = []
                         for unit in work:
                             processedInputs.extend(unit['Inputs'].keys())
-                        if processedInputs or rejectedWork:
-                            chunkSize = 20
-                            chunkProcessed = processedInputs[:chunkSize]
-                            chunkRejected = rejectedWork[:chunkSize]
-                            # TODO:Make this a POST update, instead of several PUT
-                            while processedInputs or rejectedWork:
-                                self.backend.updateInboxElements(inbound.id, ProcessedInputs=chunkProcessed,
-                                                                 RejectedInputs=chunkRejected,
-                                                                 options={'incremental': True})
-                                processedInputs = processedInputs[chunkSize:]
-                                rejectedWork = rejectedWork[chunkSize:]
-                                chunkProcessed = processedInputs[:chunkSize]
-                                chunkRejected = rejectedWork[:chunkSize]
+                        self.backend.updateInboxElements(inbound.id, ProcessedInputs=processedInputs,
+                                                                 RejectedInputs=rejectedWork)
                         # if global queue, then update workflow stats to request mgr couch doc
                         # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
                         if not self.params.get("UnittestFlag", False):

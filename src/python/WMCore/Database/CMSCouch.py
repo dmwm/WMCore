@@ -8,7 +8,7 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 
 NOT A THREAD SAFE CLASS.
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 import time
 import urllib
@@ -20,8 +20,8 @@ import traceback
 from httplib import HTTPException
 from datetime import datetime
 
+from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Services.Requests import JSONRequests
-from WMCore.Lexicon import replaceToSantizeURL
 
 
 def check_name(dbname):
@@ -345,6 +345,45 @@ class Database(CouchDBRequests):
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                         (self.name, design, update_func, doc_id)
             return self.put(uri=updateUri, data=fields, decode=False)
+
+    def updateBulkDocuments(self, doc_ids, paramsToUpdate, updateLimits=1000):
+
+        uri = '/%s/_bulk_docs/' % self.name
+        conflictDocIDs = []
+        for ids in grouper(doc_ids, updateLimits):
+            # get original documens
+            docs = self.allDocs(options={"include_docs": True}, keys=ids)['rows']
+            data = {}
+            data['docs'] = []
+            for j in docs:
+                doc = {}
+                doc.update(j['doc'])
+                nestedDictUpdate(doc, paramsToUpdate)
+                data['docs'].append(doc)
+
+            if len(data['docs']) > 0:
+                retval = self.post(uri, data)
+                for result in retval:
+                    if result.get('error', None) == 'conflict':
+                        conflictDocIDs.append(result['id'])
+
+        return conflictDocIDs
+
+    def updateBulkDocumentsWithConflictHandle(self, doc_ids, updateParams, updateLimits=1000, maxConflictLimit=10):
+        """
+        param: doc_ids: list couch doc ids for updates, shouldn't contain any duplicate or empty string
+        param: updateParams: dictionary of parameters to be updated.
+        param: updateLimits: number of documents in one commit
+        pram maxConflictLimit: number of conflicts fix tries before we give up to fix it to prevent infinite calls
+        """
+        conflictDocIDs = self.updateBulkDocuments(doc_ids, updateParams, updateLimits)
+        if len(conflictDocIDs) > 0:
+            # wait a second before trying again for the confict documents
+            if maxConflictLimit == 0:
+                return conflictDocIDs
+            time.sleep(1)
+            self.updateBulkDocumentsWithConflictHandle(conflictDocIDs, updateParams, maxConflictLimit=maxConflictLimit - 1)
+        return []
 
     def putDocument(self, doc_id, fields):
         """

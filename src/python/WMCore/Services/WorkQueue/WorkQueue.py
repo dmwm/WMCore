@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Database.CMSCouch import CouchServer, CouchConflictError
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
@@ -69,6 +69,7 @@ class WorkQueue(object):
             inboxDBName = "%s_inbox" % dbName
         self.inboxDB = self.server.connectDatabase(inboxDBName, create=False)
         self.defaultOptions = {'stale': "update_after", 'reduce': True, 'group': True}
+        self.eleKey = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'
 
     def getTopLevelJobsByRequest(self):
         """Get data items we have work in the queue for"""
@@ -178,16 +179,11 @@ class WorkQueue(object):
         """Update given element's (identified by id) with new parameters"""
         if not elementIds:
             return
-        import urllib
-        uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        optionsArg = {}
-        if "options" in updatedParams:
-            optionsArg.update(updatedParams.pop("options"))
-        data = {"updates": json.dumps(updatedParams),
-                "options": json.dumps(optionsArg)}
-        for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
-            self.db.makeRequest(uri=thisuri, type='PUT')
+        eleParams = {}
+        eleParams[self.eleKey] = updatedParams
+        conflictIDs = self.db.updateBulkDocumentsWithConflictHandle(elementIds, eleParams, maxConflictLimit=20)
+        if conflictIDs:
+            raise CouchConflictError("WQ update failed with conflict", data=updatedParams, result=conflictedIDs)
         return
 
     def getAvailableWorkflows(self):

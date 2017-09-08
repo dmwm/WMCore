@@ -7,23 +7,16 @@ This is the test class for monitors
 """
 from __future__ import print_function
 
-
-
-
-import threading
-import time
-import logging
-import os
 import os.path
-import signal
-import subprocess
+import time
 
+from WMCore.Algorithms.SubprocessAlgos import *
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
-from WMCore.WMSpec.Steps.Executor               import getStepSpace
-from WMCore.WMSpec.WMStep                       import WMStepHelper
-from WMCore.Algorithms.SubprocessAlgos          import *
+from WMCore.WMSpec.Steps.Executor import getStepSpace
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 getStepName = lambda step: WMStepHelper(step).name()
+
 
 def getStepPID(stepSpace, stepName):
     """
@@ -38,11 +31,11 @@ def getStepPID(stepSpace, stepName):
         logging.error(msg)
         return
 
-    filehandle=open(pidFile,'r')
-    output=filehandle.read()
+    filehandle = open(pidFile, 'r')
+    output = filehandle.read()
 
     try:
-        stepPID=int(output)
+        stepPID = int(output)
     except ValueError:
         msg = "Couldn't find a number"
         logging.error(msg)
@@ -60,8 +53,8 @@ def searchForEvent(file):
 
     MatchRunEvent = re.compile("Run: [0-9]+ Event: [0-9]+$")
 
-    #I'm just grabbing the last twenty lines for the hell of it
-    tailNLinesFromFile(file, 20)
+    # I'm just grabbing the last twenty lines for the hell of it
+    lines = tailNLinesFromFile(file, 20)
 
     lastMatch = None
     for line in lines:
@@ -72,10 +65,10 @@ def searchForEvent(file):
     if lastMatch != None:
         #  //
         # // Extract and update last run/event number
-        #//
+        # //
         try:
             runInfo, lastEvent = lastMatch.split("Event:", 1)
-            lastRun =  int(runInfo.split("Run:", 1)[1])
+            lastRun = int(runInfo.split("Run:", 1)[1])
             lastEvent = int(lastEvent)
             return (lastRun, lastEvent)
         except Exception:
@@ -84,28 +77,19 @@ def searchForEvent(file):
     return (None, None)
 
 
-
-
-
-
-
-
-
 class TestMonitor(WMRuntimeMonitor):
-
     def __init__(self):
-        self.startTime        = None
-        self.currentStep      = None
-        self.currentStepName  = None
+        self.startTime = None
+        self.currentStep = None
+        self.currentStepName = None
         self.currentStepSpace = None
-        self.softTimeOut      = None
-        self.hardTimeOut      = None
-        self.killFlag         = False
-        self.cmsswFile        = None
+        self.softTimeOut = None
+        self.hardTimeOut = None
+        self.killFlag = False
+        self.cmsswFile = None
         WMRuntimeMonitor.__init__(self)
 
-
-    def initMonitor(self, task, job, logPath, args = {}):
+    def initMonitor(self, task, job, logPath, args={}):
         """
         Handles the monitor initiation
 
@@ -115,7 +99,6 @@ class TestMonitor(WMRuntimeMonitor):
         self.softTimeOut = args.get('softTimeOut', None)
         self.hardTimeOut = args.get('hardTimeOut', None)
 
-
     def jobStart(self, task):
         """
         Job start notifier.
@@ -123,7 +106,6 @@ class TestMonitor(WMRuntimeMonitor):
         print("Yeehaw!  I started a job")
 
         return
-
 
     def jobEnd(self, task):
         """
@@ -140,10 +122,10 @@ class TestMonitor(WMRuntimeMonitor):
         Step start notification
 
         """
-        self.currentStep      = step
-        self.currentStepName  = getStepName(step)
+        self.currentStep = step
+        self.currentStepName = getStepName(step)
         self.currentStepSpace = getStepSpace(self.currentStepName)
-        self.startTime        = time.time()
+        self.startTime = time.time()
         print("Step started")
 
         return
@@ -153,11 +135,10 @@ class TestMonitor(WMRuntimeMonitor):
         Step end notification
 
         """
-        self.currentStep      = None
-        self.currentStepName  = None
+        self.currentStep = None
+        self.currentStepName = None
         self.currentStepSpace = None
         print("Step ended")
-
 
     def periodicUpdate(self):
         """
@@ -166,30 +147,28 @@ class TestMonitor(WMRuntimeMonitor):
         """
 
         if not self.currentStep or not self.currentStepSpace:
-            #We're probably between steps
+            # We're probably between steps
             return
 
-
-        #Check for events
+        # Check for events
         if self.cmsswFile:
             run, event = searchForEvent(file)
             if run and event:
-                #Then we actually found something, otherwise do nothing
-                #Right now I don't know what to do
+                # Then we actually found something, otherwise do nothing
+                # Right now I don't know what to do
                 pass
 
-        #Do timeout
+        # Do timeout
         if not self.softTimeOut:
             return
 
-
         if time.time() - self.startTime > self.softTimeOut:
-            #Then we have to kill the process
+            # Then we have to kill the process
 
-            #First, get the PID
+            # First, get the PID
             stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
 
-            #Now kill it!
+            # Now kill it!
             msg = ""
             msg += "Start Time: %s\n" % self.startTime
             msg += "Time Now: %s\n" % time.time()
@@ -205,14 +184,14 @@ class TestMonitor(WMRuntimeMonitor):
                 msg += "WARNING: Hard Kill Timeout has Expired:"
                 logging.error(msg)
                 os.kill(stepPID, signal.SIGTERM)
-                killedpid, stat = os.waitpid(pid, os.WNOHANG)
+                killedpid, stat = os.waitpid(stepPID, os.WNOHANG)
                 if killedpid == 0:
                     os.kill(stepPID, signal.SIGKill)
-                    killedpid, stat = os.waitpid(pid, os.WNOHANG)
+                    killedpid, stat = os.waitpid(stepPID, os.WNOHANG)
                     if killedpid == 0:
                         logging.error("Can't kill job.  Out of options.  Waiting for system reboot.")
-                        #Panic!  It's unkillable!
+                        # Panic!  It's unkillable!
                         pass
 
 
-            #logging.error(msg)
+                        # logging.error(msg)

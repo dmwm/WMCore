@@ -910,37 +910,39 @@ class WMTaskHelper(TreeHelper):
 
         Set the subscription information for this task's datasets
         The subscriptions information is structured as follows:
-        data.subscriptions.outputModules is a list of all output modules with configured datasets
-        data.subscriptions.<outputModule>.dataset
-        data.subscriptions.<outputModule>.custodialSites
-        data.subscriptions.<outputModule>.nonCustodialSites
-        data.subscriptions.<outputModule>.autoApproveSites
-        data.subscriptions.<outputModule>.priority
-        data.subscriptions.<outputModule>.custodialSubType
-        data.subscriptions.<outputModule>.nonCustodialSubType
+        data.subscriptions.outputSubs is a list with the output section names (1 per dataset)
+        data.subscriptions.<outputSection>.dataset
+        data.subscriptions.<outputSection>.outputModule
+        data.subscriptions.<outputSection>.custodialSites
+        data.subscriptions.<outputSection>.nonCustodialSites
+        data.subscriptions.<outputSection>.autoApproveSites
+        data.subscriptions.<outputSection>.priority
+        data.subscriptions.<outputSection>.custodialSubType
+        data.subscriptions.<outputSection>.nonCustodialSubType
 
         The filters arguments allow to define a dataTier and primaryDataset. Only datasets
         matching those values will be configured.
         """
+        custodialSites = custodialSites or []
+        nonCustodialSites = nonCustodialSites or []
+        autoApproveSites = autoApproveSites or []
 
         if not hasattr(self.data, "subscriptions"):
             self.data.section_("subscriptions")
-            self.data.subscriptions.outputModules = []
+            self.data.subscriptions.outputSubs = []
 
         outputDatasets = self.listOutputDatasetsAndModules()
 
-        for entry in outputDatasets:
-            outputDataset = entry["outputDataset"]
-            outputModule = entry["outputModule"]
+        for entry in enumerate(outputDatasets, start=1):
+            subSectionName = "output%s" % entry[0]
+            outputDataset = entry[1]["outputDataset"]
+            outputModule = entry[1]["outputModule"]
 
             dsSplit = outputDataset.split('/')
-
             primDs = dsSplit[1]
-
+            tier = dsSplit[3]
             procDsSplit = dsSplit[2].split('-')
             skim = (len(procDsSplit) == 4)
-
-            tier = dsSplit[3]
 
             if primaryDataset and primDs != primaryDataset:
                 continue
@@ -949,51 +951,20 @@ class WMTaskHelper(TreeHelper):
             if dataTier and tier != dataTier:
                 continue
 
-            if outputModule not in self.data.subscriptions.outputModules:
-                self.data.subscriptions.outputModules.append(outputModule)
-                outputModuleSection = self.data.subscriptions.section_(outputModule)
-                outputModuleSection.dataset = outputDataset
-                outputModuleSection.custodialSites = []
-                outputModuleSection.nonCustodialSites = []
-                outputModuleSection.autoApproveSites = []
-                outputModuleSection.custodialSubType = "Replica"
-                outputModuleSection.nonCustodialSubType = "Replica"
-                outputModuleSection.custodialGroup = "DataOps"
-                outputModuleSection.nonCustodialGroup = "DataOps"
-                outputModuleSection.priority = "Low"
-                outputModuleSection.deleteFromSource = False
+            self.data.subscriptions.outputSubs.append(subSectionName)
+            outputSection = self.data.subscriptions.section_(subSectionName)
+            outputSection.dataset = outputDataset
+            outputSection.outputModule = outputModule
+            outputSection.custodialSites = custodialSites
+            outputSection.nonCustodialSites = nonCustodialSites
+            outputSection.autoApproveSites = autoApproveSites
+            outputSection.custodialSubType = custodialSubType
+            outputSection.nonCustodialSubType = nonCustodialSubType
+            outputSection.custodialGroup = custodialGroup
+            outputSection.nonCustodialGroup = nonCustodialGroup
+            outputSection.priority = priority
+            outputSection.deleteFromSource = deleteFromSource
 
-            outputModuleSection = getattr(self.data.subscriptions, outputModule)
-            if custodialSites is not None:
-                outputModuleSection.custodialSites = custodialSites
-            if nonCustodialSites is not None:
-                outputModuleSection.nonCustodialSites = nonCustodialSites
-            if autoApproveSites is not None:
-                outputModuleSection.autoApproveSites = autoApproveSites
-            outputModuleSection.priority = priority
-            outputModuleSection.deleteFromSource = deleteFromSource
-            outputModuleSection.custodialSubType = custodialSubType
-            outputModuleSection.nonCustodialSubType = nonCustodialSubType
-            outputModuleSection.custodialGroup = custodialGroup
-            outputModuleSection.nonCustodialGroup = nonCustodialGroup
-
-        return
-
-    def updateSubscriptionDataset(self, outputModuleName, outputModuleInfo):
-        """
-        _updateSubscriptionDataset_
-
-        Updates the dataset in the subscription information for the given output module,
-        if the given output module doesn't exist it does nothing.
-        """
-        if not hasattr(self.data, "subscriptions"):
-            return
-
-        if hasattr(self.data.subscriptions, outputModuleName):
-            subscriptionInfo = getattr(self.data.subscriptions, outputModuleName)
-            subscriptionInfo.dataset = '/%s/%s/%s' % (getattr(outputModuleInfo, "primaryDataset"),
-                                                      getattr(outputModuleInfo, "processedDataset"),
-                                                      getattr(outputModuleInfo, "dataTier"))
         return
 
     def getSubscriptionInformation(self):
@@ -1014,22 +985,29 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, "subscriptions"):
             return {}
 
+        # FIXME making it backwards compatible.
+        # New key is 'outputSubs', remove the outputModule handle around HG1710
+        subKeyName = 'outputModules'
+        if hasattr(self.data.subscriptions, 'outputSubs'):
+            subKeyName = 'outputSubs'
+
         subInformation = {}
-        for outputModule in self.data.subscriptions.outputModules:
-            outputModuleSection = getattr(self.data.subscriptions, outputModule)
-            dataset = outputModuleSection.dataset
-            subInformation[dataset] = {"CustodialSites": outputModuleSection.custodialSites,
-                                       "NonCustodialSites": outputModuleSection.nonCustodialSites,
-                                       "AutoApproveSites": outputModuleSection.autoApproveSites,
-                                       "Priority": outputModuleSection.priority,
+        for outputSub in getattr(self.data.subscriptions, subKeyName):
+            outputSection = getattr(self.data.subscriptions, outputSub)
+            dataset = outputSection.dataset
+
+            subInformation[dataset] = {"CustodialSites": outputSection.custodialSites,
+                                       "NonCustodialSites": outputSection.nonCustodialSites,
+                                       "AutoApproveSites": outputSection.autoApproveSites,
+                                       "Priority": outputSection.priority,
                                        # These might not be present in all specs
-                                       "CustodialGroup": getattr(outputModuleSection, "custodialGroup", "DataOps"),
-                                       "NonCustodialGroup": getattr(outputModuleSection, "nonCustodialGroup",
+                                       "CustodialGroup": getattr(outputSection, "custodialGroup", "DataOps"),
+                                       "NonCustodialGroup": getattr(outputSection, "nonCustodialGroup",
                                                                     "DataOps"),
-                                       "DeleteFromSource": getattr(outputModuleSection, "deleteFromSource", False),
+                                       "DeleteFromSource": getattr(outputSection, "deleteFromSource", False),
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
-                                       "CustodialSubType": getattr(outputModuleSection, "custodialSubType", "Replica"),
-                                       "NonCustodialSubType": getattr(outputModuleSection, "nonCustodialSubType",
+                                       "CustodialSubType": getattr(outputSection, "custodialSubType", "Replica"),
+                                       "NonCustodialSubType": getattr(outputSection, "nonCustodialSubType",
                                                                       "Replica")}
         return subInformation
 
@@ -1662,9 +1640,6 @@ class WMTaskHelper(TreeHelper):
                     lfnBase(mergedLFN)
                     setattr(outputModule, "processedDataset", processedDataset)
 
-                    # Once we change an output module we must update the subscription information
-                    self.updateSubscriptionDataset(outputModuleName, outputModule)
-
                     # For merge tasks, we want all output to go to the merged LFN base.
                     if taskType == "Merge":
                         setattr(outputModule, "lfnBase", mergedLFN)
@@ -1740,7 +1715,7 @@ class WMTask(ConfigSectionTree):
         self.constraints.sites.blacklist = []
         self.constraints.sites.trustlists = False
         self.constraints.sites.trustPUlists = False
-        self.subscriptions.outputModules = []
+        self.subscriptions.outputSubs = []
         self.input.section_("WMBS")
 
 

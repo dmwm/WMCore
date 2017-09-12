@@ -1,4 +1,4 @@
-'''
+"""
     This module is used to fork the current process into a daemon.
     Almost none of this is necessary (or advisable) if your daemon
     is being started by inetd. In that case, stdin, stdout and stderr are
@@ -18,21 +18,24 @@
       2003/02/24 by Clark Evans
 
       http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/66012
-'''
+"""
 from __future__ import print_function
+
 import logging
+import os
+import sys
+import time
 from logging.handlers import RotatingFileHandler
-import sys, os, time
-from signal import SIGTERM
 from xml.dom.minidom import Document, Element
 
 # File mode creation mask of the daemon.
 UMASK = 0o022
 
-def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
-              workdir= None, startmsg = 'started with pid %s', \
-              keepParent = False ):
-    '''
+
+def daemonize(stdout='/dev/null', stderr=None, stdin='/dev/null',
+              workdir=None, startmsg='started with pid %s',
+              keepParent=False):
+    """
         This forks the current process into a daemon.
         The stdin, stdout, and stderr arguments are file names that
         will be opened and be used to replace the standard file descriptors
@@ -41,13 +44,13 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
         Note that stderr is opened unbuffered, so
         if it shares a file with stdout then interleaved output
         may not appear in the order that you expect.
-    '''
+    """
     # Do first fork.
     try:
         pid = os.fork()
         if pid > 0:
             if not keepParent:
-                os._exit(0) # Exit first parent.
+                os._exit(0)  # Exit first parent.
             return pid
     except OSError as e:
         sys.stderr.write("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
@@ -61,14 +64,16 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
     # Do second fork.
     try:
         pid = os.fork()
-        if pid > 0: os._exit(0) # Exit second parent.
+        if pid > 0:
+            os._exit(0)  # Exit second parent.
     except OSError as e:
         sys.stderr.write("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
         print("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
         sys.exit(1)
 
     # Open file descriptors and print start message
-    if not stderr: stderr = stdout
+    if not stderr:
+        stderr = stdout
     si = file(stdin, 'r')
     so = file(stdout, 'a+')
     se = file(stderr, 'a+', 0)
@@ -76,13 +81,13 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
     sys.stderr.write("\n%s\n" % startmsg % pid)
     sys.stderr.flush()
     if workdir:
-        #file(pidfile,'w+').write("%s\n" % pid)
-        #Since the current working directory may be a mounted filesystem, we
-        #avoid the issue of not being able to unmount the filesystem at
-        #shutdown time by changing it to the root directory.
+        # file(pidfile,'w+').write("%s\n" % pid)
+        # Since the current working directory may be a mounted filesystem, we
+        # avoid the issue of not being able to unmount the filesystem at
+        # shutdown time by changing it to the root directory.
         os.chdir(workdir)
-        #We probably don't want the file mode creation mask inherited from
-        #the parent, so we give the child complete control over permissions.
+        # We probably don't want the file mode creation mask inherited from
+        # the parent, so we give the child complete control over permissions.
         os.umask(UMASK)
 
         daemon = Element("Daemon")
@@ -120,7 +125,7 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
         props.write(daemon.toprettyxml())
         props.close()
 
-# Redirect standard file descriptors.
+    # Redirect standard file descriptors.
     os.dup2(si.fileno(), sys.stdin.fileno())
     os.dup2(so.fileno(), sys.stdout.fileno())
     os.dup2(se.fileno(), sys.stderr.fileno())
@@ -128,10 +133,10 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
 
 
 def test():
-    '''
+    """
         This is an example main function run by the daemon.
         This prints a count and timestamp once per second.
-    '''
+    """
     logFile = os.path.join("/tmp/daemon.logging")
     logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
     logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
@@ -140,18 +145,19 @@ def test():
     logging.getLogger().setLevel(logging.INFO)
     logging.info("Message to log file")
 
-    sys.stdout.write ('Message to stdout...')
-    sys.stderr.write ('Message to stderr...')
+    sys.stdout.write('Message to stdout...')
+    sys.stderr.write('Message to stderr...')
     c = 0
     while True:
-        sys.stdout.write ('%d: %s\n' % (c, time.ctime(time.time())) )
-        logging.info('%d: %s\n' % (c, time.ctime(time.time())) )
+        sys.stdout.write('%d: %s\n' % (c, time.ctime(time.time())))
+        logging.info('%d: %s\n' % (c, time.ctime(time.time())))
         sys.stdout.flush()
         c = c + 1
         time.sleep(1)
-    logging.info(">>>Starting: "+compName+'<<<')
+    logging.info('>>>Starting:<<<')
 
-def createDaemon(workdir, keepParent = False):
+
+def createDaemon(workdir, keepParent=False):
     """
     This is a wrapper over the new daemon methods.
     That follows the same interface.
@@ -160,12 +166,12 @@ def createDaemon(workdir, keepParent = False):
     pidfile = os.path.join(workdir, 'Daemon.xml')
     startmsg = 'started with pid %s'
     try:
-        pf  = file(pidfile,'r')
+        pf = file(pidfile, 'r')
         pid = (pf.read().strip())
         pf.close()
     except IOError:
         pid = None
-    if pid :
+    if pid:
         mess = """
 Start aborted since pid file '%s' exists.
 Please kill process and remove file first.
@@ -177,8 +183,9 @@ information on that.
 
     return daemonize(workdir=workdir, startmsg=startmsg, keepParent=keepParent)
 
+
 if __name__ == "__main__":
-    parent_id = createDaemon('/tmp', keepParent = False)
+    parent_id = createDaemon('/tmp', keepParent=False)
     if parent_id == 0:
         test()
-    print('Kept parent: '+str(parent_id))
+    print('Kept parent: ' + str(parent_id))

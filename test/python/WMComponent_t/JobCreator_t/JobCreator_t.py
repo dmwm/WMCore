@@ -1,7 +1,6 @@
 #!/bin/env python
 # pylint: disable=E1101, W0201, E1103
 # E1101: reference config file variables
-# W0142: ** magic
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 

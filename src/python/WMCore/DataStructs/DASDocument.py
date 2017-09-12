@@ -8,9 +8,6 @@ this structure is found on:
 """
 
 
-
-from WMCore.Lexicon import url
-
 class DASDocument(dict):
     def __init__(self, service):
         """
@@ -19,7 +16,7 @@ class DASDocument(dict):
         dict = {"request_timestamp": 0,
                 "request_url": "",
                 "request_method": "GET",
-                "request_params" : {},
+                "request_params": {},
                 "response_version": 0,
                 "response_expires": 0,
                 "response_checksum": "",
@@ -38,6 +35,5 @@ class DASDocument(dict):
         """
         Is this instance of a DAS document valid?
         """
-
 
         return True

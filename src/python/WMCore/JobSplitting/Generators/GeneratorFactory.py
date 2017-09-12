@@ -5,8 +5,9 @@ _GeneratorFactory_
 
 """
 
-from WMCore.WMFactory import WMFactory
 from WMCore.WMException import WMException
+from WMCore.WMFactory import WMFactory
+
 
 class GeneratorFactoryException(WMException):
     """
@@ -25,6 +26,7 @@ class GeneratorFactory(WMFactory):
     Instantiate a WMFactory instance with the appropriate namespace
 
     """
+
     def __init__(self):
         self.factory = WMFactory(self.__class__.__name__,
                                  "WMCore.JobSplitting.Generators")
@@ -61,9 +63,6 @@ class GeneratorFactory(WMFactory):
         """
         result = []
         for generator in wmTaskHelper.listGenerators():
-            genInstance = self.getGenerator(generator,
-                                            wmTaskHelper,
-                                            **wmTaskHelper.getGeneratorSettings(generator)
-                                            )
+            genInstance = self.getGenerator(generator, **wmTaskHelper.getGeneratorSettings(generator))
             result.append(genInstance)
         return result

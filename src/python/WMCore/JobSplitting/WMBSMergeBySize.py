@@ -8,11 +8,11 @@ been split up honoring the original file boundaries.
 
 import threading
 
-from WMCore.WMBS.File import File
-from WMCore.DataStructs.Run import Run
-
 from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.WMBS.File import File
+
 
 def mergeUnitCompare(a, b):
     """
@@ -33,6 +33,7 @@ def mergeUnitCompare(a, b):
     else:
         return -1
 
+
 def fileCompare(a, b):
     """
     _fileCompare_
@@ -45,6 +46,7 @@ def fileCompare(a, b):
         return 0
     else:
         return -1
+
 
 def sortedFilesFromMergeUnits(mergeUnits):
     """
@@ -60,8 +62,8 @@ def sortedFilesFromMergeUnits(mergeUnits):
         mergeUnit["files"].sort(fileCompare)
 
         for file in mergeUnit["files"]:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
-                           events = file["file_events"], size = file["file_size"])
+            newFile = File(id=file["file_id"], lfn=file["file_lfn"],
+                           events=file["file_events"], size=file["file_size"])
 
             # The WMBS data structure puts locations that are passed in through
             # the constructor in the "newlocations" attribute.  We want these to
@@ -73,6 +75,7 @@ def sortedFilesFromMergeUnits(mergeUnits):
 
     return sortedFiles
 
+
 class WMBSMergeBySize(JobFactory):
     """
     _WMBSMergeBySize_
@@ -81,6 +84,7 @@ class WMBSMergeBySize(JobFactory):
     have been split up honoring the original file boundaries merging the files
     in the correct order.
     """
+
     def defineMergeUnits(self, mergeableFiles):
         """
         _defineMergeUnits_
@@ -94,6 +98,7 @@ class WMBSMergeBySize(JobFactory):
         under the files key.
         """
         mergeUnits = {}
+        newMergeUnit = {}
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
@@ -114,8 +119,8 @@ class WMBSMergeBySize(JobFactory):
                     mergeUnit["total_events"] += newMergeFile["file_events"]
 
                     if mergeableFile["file_run"] < mergeUnit["run"] or \
-                           (mergeableFile["file_run"] == mergeUnit["run"] and \
-                            mergeableFile["file_lumi"] < mergeUnit["lumi"]):
+                            (mergeableFile["file_run"] == mergeUnit["run"] and \
+                                         mergeableFile["file_lumi"] < mergeUnit["lumi"]):
                         newMergeUnit["run"] = newMergeFile["file_run"]
                         newMergeUnit["lumi"] = newMergeFile["file_lumi"]
 
@@ -143,11 +148,11 @@ class WMBSMergeBySize(JobFactory):
         if self.currentGroup == None:
             self.newGroup()
 
-        self.newJob(name = self.getJobName())
+        self.newJob(name=self.getJobName())
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
-            self.currentJob.addResourceEstimates(disk = float(file["size"])/1024)
+            self.currentJob.addResourceEstimates(disk=float(file["size"]) / 1024)
             self.currentJob.addFile(file)
 
     def defineMergeJobs(self, mergeUnits):
@@ -164,13 +169,13 @@ class WMBSMergeBySize(JobFactory):
 
         for mergeUnit in mergeUnits:
             if mergeUnit["total_size"] > self.maxMergeSize or \
-                   mergeUnit["total_events"] > self.maxMergeEvents:
+                            mergeUnit["total_events"] > self.maxMergeEvents:
                 self.createMergeJob([mergeUnit])
                 continue
             elif mergeUnit["total_size"] + mergeJobFileSize > self.maxMergeSize or \
-                     mergeUnit["total_events"] + mergeJobEvents > self.maxMergeEvents:
+                                    mergeUnit["total_events"] + mergeJobEvents > self.maxMergeEvents:
                 if mergeJobFileSize > self.minMergeSize or \
-                       self.forceMerge == True:
+                                self.forceMerge == True:
                     self.createMergeJob(mergeJobFiles)
                     mergeJobFileSize = 0
                     mergeJobEvents = 0
@@ -206,9 +211,9 @@ class WMBSMergeBySize(JobFactory):
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
 
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.WMBS",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
 
         self.subscription["fileset"].load()
 
@@ -216,25 +221,25 @@ class WMBSMergeBySize(JobFactory):
         if self.subscription["fileset"].open == True:
             self.forceMerge = False
         else:
-            orphanDAO = daoFactory(classname = "Subscriptions.FailOrphanFiles")
+            orphanDAO = daoFactory(classname="Subscriptions.FailOrphanFiles")
             orphanDAO.execute(self.subscription["id"],
                               self.subscription["fileset"].id,
-                              conn = myThread.transaction.conn,
-                              transaction = True)
+                              conn=myThread.transaction.conn,
+                              transaction=True)
 
-            getAction = daoFactory(classname = "Workflow.CheckInjectedWorkflow")
-            injected  = getAction.execute(name = self.subscription["workflow"].name,
-                                          conn = myThread.transaction.conn,
-                                          transaction = True)
+            getAction = daoFactory(classname="Workflow.CheckInjectedWorkflow")
+            injected = getAction.execute(name=self.subscription["workflow"].name,
+                                         conn=myThread.transaction.conn,
+                                         transaction=True)
             if injected:
                 self.forceMerge = True
             else:
                 self.forceMerge = False
 
-        mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
+        mergeDAO = daoFactory(classname="Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"],
-                                          conn = myThread.transaction.conn,
-                                          transaction = True)
+                                          conn=myThread.transaction.conn,
+                                          transaction=True)
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 

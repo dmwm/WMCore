@@ -8,17 +8,14 @@ but instead of combining multiple merge units together this will create a
 single job for each merge unit.
 """
 
-
-
-
 import threading
 
-from WMCore.WMBS.File import File
-from WMCore.DataStructs.Run import Run
-
 from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.File import File
+
 
 def mergeUnitCompare(a, b):
     """
@@ -39,6 +36,7 @@ def mergeUnitCompare(a, b):
     else:
         return -1
 
+
 def fileCompare(a, b):
     """
     _fileCompare_
@@ -51,6 +49,7 @@ def fileCompare(a, b):
         return 0
     else:
         return -1
+
 
 def sortedFilesFromMergeUnits(mergeUnits):
     """
@@ -66,8 +65,8 @@ def sortedFilesFromMergeUnits(mergeUnits):
         mergeUnit["files"].sort(fileCompare)
 
         for file in mergeUnit["files"]:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
-                           events = file["file_events"])
+            newFile = File(id=file["file_id"], lfn=file["file_lfn"],
+                           events=file["file_events"])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
 
             # The WMBS data structure puts locations that are passed in through
@@ -80,6 +79,7 @@ def sortedFilesFromMergeUnits(mergeUnits):
 
     return sortedFiles
 
+
 class SplitFileBased(JobFactory):
     """
     _SplitFileBased_
@@ -87,6 +87,7 @@ class SplitFileBased(JobFactory):
     JobSplitting algorithm for creating jobs that run over the results of split
     processing jobs.
     """
+
     def defineMergeUnits(self, mergeableFiles):
         """
         _defineMergeUnits_
@@ -100,6 +101,7 @@ class SplitFileBased(JobFactory):
         under the files key.
         """
         mergeUnits = {}
+        newMergeUnit = {}
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
@@ -116,8 +118,8 @@ class SplitFileBased(JobFactory):
                     mergeUnit["total_events"] += newMergeFile["file_events"]
 
                     if mergeableFile["file_run"] < mergeUnit["run"] or \
-                           (mergeableFile["file_run"] == mergeUnit["run"] and \
-                            mergeableFile["file_lumi"] < mergeUnit["lumi"]):
+                            (mergeableFile["file_run"] == mergeUnit["run"] and \
+                                         mergeableFile["file_lumi"] < mergeUnit["lumi"]):
                         newMergeUnit["run"] = newMergeFile["file_run"]
                         newMergeUnit["lumi"] = newMergeFile["file_lumi"]
 
@@ -145,7 +147,7 @@ class SplitFileBased(JobFactory):
         """
         for mergeUnit in mergeUnits:
             self.newGroup()
-            self.newJob(name = makeUUID())
+            self.newJob(name=makeUUID())
             sortedFiles = sortedFilesFromMergeUnits([mergeUnit])
 
             for file in sortedFiles:
@@ -160,11 +162,11 @@ class SplitFileBased(JobFactory):
         that correspond to completed job groups.  Create jobs for these files.
         """
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.WMBS",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
 
-        mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
+        mergeDAO = daoFactory(classname="Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"])
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)

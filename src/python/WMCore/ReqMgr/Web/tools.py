@@ -1,19 +1,16 @@
-#!/usr/bin/env python
-#-*- coding: ISO-8859-1 -*-
-
 """
 Web tools.
+Author: Valentin Kuznetsov <vkuznet {AT} gmail [DOT] com>
 """
 
-__revision__ = "$Id: tools.py,v 1.5 2010/04/07 18:19:31 valya Exp $"
-__author__ = "Valentin Kuznetsov"
-__email__ = "vkuznet@gmail.com"
+from __future__ import print_function
 
 # system modules
 import json
 import logging
 import os
 import sys
+import cgi
 import types
 from datetime import datetime, timedelta
 from json import JSONEncoder
@@ -33,6 +30,25 @@ try:
     import jinja2
 except:
     pass
+
+
+def quote(data):
+    """
+    Sanitize the data using cgi.escape.
+    """
+    if isinstance(data, (int, float, long, dict, list)):
+        res = data
+    else:
+        try:
+            if data:
+                res = cgi.escape(data, quote=True)
+            else:
+                res = ""
+        except Exception as exc:
+            print("Unable to cgi.escape(%s, quote=True)" % data)
+            print(exc)
+            res = ""
+    return res
 
 class Page(object):
     """
@@ -65,7 +81,7 @@ class Page(object):
 
     def log(self, msg, severity):
         """Define log level"""
-        if type(msg) != str:
+        if not isinstance(msg, str):
             msg = str(msg)
         if  msg:
             cplog(msg, context=self.name,
@@ -81,7 +97,6 @@ class TemplatedPage(Page):
         self.templatedir = config.get('tmpldir', tmpldir)
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
-        verbose = config.get('verbose', 0)
         self.jinja = True if 'jinja2' in sys.modules.keys() else False
         if  self.jinja:
             templates = 'JINJA'
@@ -180,9 +195,9 @@ def exposejson (func):
         try:
             jsondata = encoder.encode(data)
             return jsondata
-        except:
-            Exception("Fail to JSONtify obj '%s' type '%s'" \
-                % (data, type(data)))
+        except Exception as exp:
+            Exception("Fail to JSONtify obj '%s' type '%s', %s" \
+                % (data, type(data), exp))
     return wrapper
 
 def exposejs (func):

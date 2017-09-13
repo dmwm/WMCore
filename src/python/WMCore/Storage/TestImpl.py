@@ -7,19 +7,16 @@ Test harness for invoking an Implementation plugin
 """
 from __future__ import print_function
 
-import sys
 import getopt
+import sys
 
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.StageOutError import StageOutError
-import StageOut.Impl
-
 
 valid = ['input-pfn=', 'protocol=', "impl=", "target-pfn=", "cleanup"]
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
 except getopt.GetoptError as ex:
-    print(usage)
     print(str(ex))
     sys.exit(1)
 
@@ -28,7 +25,6 @@ targetPfn = None
 implName = None
 protocol = None
 doCleanup = False
-
 
 for opt, arg in opts:
     if opt == "--input-pfn":
@@ -64,14 +60,12 @@ except StageOutError as ex:
     print(str(ex))
     sys.exit(1)
 
-
 print(" Invoking StageOutImpl: %s" % implName)
 implInstance(protocol, inputPfn, targetPfn)
-
 
 if doCleanup:
     #  //
     # // Cleanup implies that we invoke the implementations
-    #//  removeFile method on the target PFN after the transfer
+    # //  removeFile method on the target PFN after the transfer
     print("Invoking %s.removeFile on %s" % (implName, targetPfn))
     implInstance.removeFile(targetPfn)

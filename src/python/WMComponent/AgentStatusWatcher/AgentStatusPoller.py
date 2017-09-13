@@ -104,6 +104,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)
         self.setUpCouchDBReplication()
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch

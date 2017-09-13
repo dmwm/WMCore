@@ -9,7 +9,7 @@ import time
 import random
 import traceback
 import threading
-
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PyCondor.PyCondorAPI import isScheddOverloaded
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
@@ -35,6 +35,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         self.logger.info('Sleeping for %d seconds before 1st loop' % t)
         time.sleep(t)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Pull in work

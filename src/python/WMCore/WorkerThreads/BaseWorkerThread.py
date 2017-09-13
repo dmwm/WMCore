@@ -17,7 +17,6 @@ import traceback
 from WMCore.Alerts import API as alertAPI
 from WMCore.Database.Transaction import Transaction
 
-
 class BaseWorkerThread(object):
     """
     A base class for worker threads, used for work that needs to occur at
@@ -181,7 +180,11 @@ class BaseWorkerThread(object):
                                 msg += "\n Skipping worker algorithm!"
                                 logging.error(msg)
                             else:
-                                self.algorithm(parameters)
+                                tSpent, results, _ = self.algorithm(parameters)
+                                if tSpent and self.useHeartbeat:
+                                    logging.info("%s took %.3f secs to execute", self.workerName, tSpent)
+                                    self.heartbeatAPI.updateWorkerCycle(self.workerName, tSpent, results)
+
                                 # Catch if someone forgets to commit/rollback
                                 if myThread.transaction.transaction is not None:
                                     msg = """ Thread %s:  Transaction reached

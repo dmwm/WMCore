@@ -40,15 +40,15 @@ class AgentStatusWatcher(Harness):
         drainStatusPollInterval = self.config.AgentStatusWatcher.drainStatusPollInterval
         myThread = threading.currentThread()
 
-        logging.info("Setting AgentStatus poll interval to %s seconds", agentPollInterval)
+        logging.info("Setting AgentStatusPoller poll interval to %s seconds", agentPollInterval)
         myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
                                                agentPollInterval)
 
-        logging.info("Setting ResourcesUpdate poll interval to %s seconds", resourceUpdaterPollInterval)
+        logging.info("Setting ResourceControlUpdater poll interval to %s seconds", resourceUpdaterPollInterval)
         myThread.workerThreadManager.addWorker(ResourceControlUpdater(self.config),
                                                resourceUpdaterPollInterval)
 
-        logging.info("Setting DrainStatus poll interval to %s seconds", drainStatusPollInterval)
+        logging.info("Setting DrainStatusPoller poll interval to %s seconds", drainStatusPollInterval)
         myThread.workerThreadManager.addWorker(DrainStatusPoller(self.config),
                                                drainStatusPollInterval)
         return

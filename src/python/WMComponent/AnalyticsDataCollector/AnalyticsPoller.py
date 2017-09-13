@@ -9,6 +9,7 @@ import threading
 import logging
 import time
 import traceback
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
@@ -76,6 +77,7 @@ class AnalyticsPoller(BaseWorkerThread):
             pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.Plugins")
             self.plugin = pluginFactory.loadObject(classname = self.pluginName)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch

@@ -12,6 +12,7 @@ import shutil
 import tarfile
 
 from Utils.IteratorTools import grouper
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
@@ -99,6 +100,7 @@ class JobArchiverPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the archiveJobs method, looking for each type of failure

@@ -15,6 +15,7 @@ try:
 except ImportError:
     import pickle
 
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
@@ -417,7 +418,7 @@ class JobCreatorPoller(BaseWorkerThread):
                       % (self.jobCacheDir)
                 raise JobCreatorException (msg)
 
-
+    @timeFunction
     def algorithm(self, parameters = None):
         """
         Actually runs the code

@@ -34,7 +34,7 @@ import traceback
 import os.path
 
 from dbs.apis.dbsClient import DbsApi
-
+from Utils.Timers import timeFunction
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
 from WMCore.Algorithms.MiscAlgos import sortListByKey
@@ -278,6 +278,7 @@ class DBSUploadPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

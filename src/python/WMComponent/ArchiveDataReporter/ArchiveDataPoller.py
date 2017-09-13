@@ -6,6 +6,7 @@ from __future__ import (division, print_function)
 import logging
 import traceback
 from Utils.IteratorTools import grouper
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 from WMCore.Services.WMArchive.WMArchive import WMArchive
@@ -36,6 +37,7 @@ class ArchiveDataPoller(BaseWorkerThread):
         self.numDocsRetrievePerPolling = getattr(self.config.ArchiveDataReporter, "numDocsRetrievePerPolling", 1000)
         self.numDocsUploadPerCall = getattr(self.config.ArchiveDataReporter, "numDocsUploadPerCall", 200)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch

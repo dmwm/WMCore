@@ -9,8 +9,8 @@ import logging
 import os
 import os.path
 
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMException import WMException
 from WMCore.FwkJobReport.Report import Report
@@ -69,6 +69,7 @@ class JobTrackerPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the archiveJobs method, looking for each type of failure

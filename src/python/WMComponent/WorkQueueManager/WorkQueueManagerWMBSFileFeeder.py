@@ -9,7 +9,7 @@ __all__ = []
 
 import time
 import random
-
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
@@ -41,6 +41,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.logger.info('Sleeping for %d seconds before 1st loop' % t)
         time.sleep(t)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Pull in work

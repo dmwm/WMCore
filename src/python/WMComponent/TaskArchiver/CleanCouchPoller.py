@@ -10,7 +10,7 @@ import shutil
 import threading
 import time
 import urllib2
-
+from Utils.Timers import timeFunction
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
@@ -133,6 +133,7 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.debug("Using url %s/%s for job", jobDBurl, jobDBName)
         logging.debug("Writing to  %s/%s for workloadSummary", sanitizeURL(workDBurl)['url'], workDBName)
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Get information from wmbs, workqueue and local couch and:

@@ -27,7 +27,7 @@ __all__ = []
 import logging
 import threading
 import traceback
-
+from Utils.Timers import timeFunction
 from WMComponent.TaskArchiver.DataCache import DataCache
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -116,6 +116,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

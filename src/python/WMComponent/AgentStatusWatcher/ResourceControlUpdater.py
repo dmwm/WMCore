@@ -7,6 +7,7 @@ import urllib2
 import logging
 import traceback
 import json
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
@@ -59,6 +60,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         # wmstats connection
         self.centralCouchDBReader = WMStatsReader(self.config.AgentStatusWatcher.centralWMStatsURL)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         _algorithm_

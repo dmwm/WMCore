@@ -23,7 +23,7 @@ class TemporaryEnvironmentTest(unittest.TestCase):
 
         with tmpEnv(NEW_ENV_VAR=u'blah'):
             self.assertTrue('NEW_ENV_VAR' in os.environ)
-            self.assertEquals(os.environ['NEW_ENV_VAR'], u'blah')
+            self.assertEqual(os.environ['NEW_ENV_VAR'], u'blah')
         self.assertFalse('NEW_ENV_VAR' in os.environ)
 
 

@@ -116,24 +116,24 @@ class Scram_t(unittest.TestCase):
                 tf.write('Memory = 2048\n')
                 tf.flush()
                 with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
-                    self.assertEquals(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
-                    self.assertEquals(getSingleScramArch('slc5_blah_blah'), 'slc5_blah_blah')
-                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                    self.assertEqual(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEqual(getSingleScramArch('slc5_blah_blah'), 'slc5_blah_blah')
+                    self.assertEqual(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
                                       'slc6_blah_blah')
-                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']),
+                    self.assertEqual(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']),
                                       'slc6_blah_blah')
-                    self.assertEquals(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
+                    self.assertEqual(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
             with tempfile.NamedTemporaryFile() as tf:
                 tf.write('GLIDEIN_REQUIRED_OS = "rhel7" \n')
                 tf.write('Memory = 2048\n')
                 tf.flush()
                 with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
-                    self.assertEquals(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
-                    self.assertEquals(getSingleScramArch('slc7_blah_blah'), 'slc7_blah_blah')
-                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                    self.assertEqual(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEqual(getSingleScramArch('slc7_blah_blah'), 'slc7_blah_blah')
+                    self.assertEqual(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
                                       'slc7_blah_blah')
-                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']), None)
-                    self.assertEquals(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']),
+                    self.assertEqual(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']), None)
+                    self.assertEqual(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']),
                                       'slc7_blah_blah')
         except Exception:
             raise

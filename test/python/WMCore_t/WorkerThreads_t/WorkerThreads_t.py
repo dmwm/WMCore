@@ -13,6 +13,7 @@ import threading
 import time
 import unittest
 
+from Utils.Timers import timeFunction
 # local import
 from WMCore_t.WorkerThreads_t.Dummy import Dummy
 
@@ -47,6 +48,7 @@ class DummyWorker1(BaseWorkerThread):
         logging.info("DummyWorker1 setup called")
         self.dummySetupCallback()
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Check the algorithm method is called
@@ -69,6 +71,7 @@ class DummyWorker2(BaseWorkerThread):
     A very basic dummy worker
     """
 
+    @timeFunction
     def algorithm(self, parameters):
         pass
 
@@ -78,6 +81,7 @@ class ErrorWorker(DummyWorker1):
     A worker that throws an error
     """
 
+    @timeFunction
     def algorithm(self, parameters):
         # workerThreadManager will be added by Harness
         # that isnt used here so add manually

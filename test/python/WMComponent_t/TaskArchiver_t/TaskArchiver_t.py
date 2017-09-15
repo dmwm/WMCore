@@ -533,7 +533,7 @@ class TaskArchiverTest(unittest.TestCase):
                          ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
         # Check histograms
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0][
                 'average'],
             0.89405199999999996, places=2)
@@ -543,11 +543,11 @@ class TaskArchiverTest(unittest.TestCase):
             10)
 
         # Check standard performance
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'],
             17.786300000000001,
             places=2)
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'], 0.0,
             places=2)
 
@@ -570,7 +570,7 @@ class TaskArchiverTest(unittest.TestCase):
             if x in config.TaskArchiver.histogramKeys:
                 continue
             for y in ['average', 'stdDev']:
-                self.assertAlmostEquals(
+                self.assertAlmostEqual(
                     workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'][x][y],
                     workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1'][x][y],
                     places=2)
@@ -779,7 +779,7 @@ class TaskArchiverTest(unittest.TestCase):
             if PD in interestingPDs and dataTier == "DQM":
                 interestingDatasets.append(dataset)
         # We should have found 1 interesting dataset
-        self.assertAlmostEquals(len(interestingDatasets), 1)
+        self.assertAlmostEqual(len(interestingDatasets), 1)
         if len(interestingDatasets) == 0:
             return
         # Request will be only interesting for performance if it's a ReReco or PromptReco

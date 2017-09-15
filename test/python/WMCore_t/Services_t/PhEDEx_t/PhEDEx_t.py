@@ -7,19 +7,17 @@ that has inject permissions.
 """
 
 import unittest
-import time
-
-from WMCore.Services.UUIDLib import makeUUID
-import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
-from WMCore.Storage.TrivialFileCatalog import readTFC
 
 from nose.plugins.attrib import attr
 
-class PhEDExTest(unittest.TestCase):
+import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.Storage.TrivialFileCatalog import readTFC
 
+
+class PhEDExTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -62,7 +60,7 @@ class PhEDExTest(unittest.TestCase):
         self.phedexApi.injectBlocks("T1_US_FNAL_MSS", xmlData)
 
         testSub = PhEDExSubscription([datasetA, datasetB], "T1_UK_RAL_MSS",
-                                      "Saturn")
+                                     "Saturn")
         xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
                                                    testSub.getDatasetPaths())
         result = self.phedexApi.subscribe(testSub, xmlData)
@@ -117,19 +115,18 @@ class PhEDExTest(unittest.TestCase):
 
         # Create a dataset level subscription to a node
         testDatasetSub = PhEDExSubscription([testDataset], "T1_UK_RAL_MSS",
-                                            "Saturn", requestOnly = "n")
+                                            "Saturn", request_only="n")
         datasetSpec = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
                                                        testDatasetSub.getDatasetPaths())
         self.phedexApi.subscribe(testDatasetSub, datasetSpec)
 
         # Create a block level subscrtion to a different node
         testBlockSub = PhEDExSubscription([testDataset], "T1_DE_KIT_MSS", "Saturn",
-                                          level = "block", requestOnly = "n")
+                                          level="block", request_only="n")
         self.phedexApi.subscribe(testBlockSub, blockSpec)
 
         subs = self.phedexApi.getSubscriptionMapping(testDataset)
-        self.assertEqual(subs[testDataset], set(["T1_UK_RAL_MSS"]),
-                         "Error: Dataset subscription is wrong.")
+        self.assertEqual(subs[testDataset], {"T1_UK_RAL_MSS"}, "Error: Dataset subscription is wrong.")
 
         subs = self.phedexApi.getSubscriptionMapping(blockA)
         self.assertEqual(len(subs[blockA]), 2,
@@ -166,17 +163,16 @@ class PhEDExTest(unittest.TestCase):
         Test XML and JSON in the same scope
         """
         site = 'T1_US_FNAL_Buffer'
-        dict = {}
-        dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
-        phedexJSON = PhEDEx(responseType='json', dict=dict)
-        dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/xml/test"
-        phedexXML  = PhEDEx(responseType='xml',  dict=dict)
+        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/json/test"}
+        phedexJSON = PhEDEx(responseType='json', httpDict=httpDict)
+        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/xml/test"}
+        phedexXML = PhEDEx(responseType='xml', httpDict=httpDict)
 
         phedexXML.getNodeTFC(site)
-        tfc_file = phedexXML.cacheFileName('tfc', inputdata={'node' : site})
+        tfc_file = phedexXML.cacheFileName('tfc', inputdata={'node': site})
         tfc_map = {}
         tfc_map[site] = readTFC(tfc_file)
-        pfn =    tfc_map[site].matchLFN('srmv2', '/store/user/jblow/dir/test.root')
+        pfn = tfc_map[site].matchLFN('srmv2', '/store/user/jblow/dir/test.root')
 
         self.assertTrue(pfn == 'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/user/jblow/dir/test.root')
 
@@ -194,6 +190,7 @@ class PhEDExTest(unittest.TestCase):
         self.assertTrue(self.phedexApi.getAuth("datasvc_inject"))
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,7 @@ import traceback
 import json
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 
@@ -104,6 +105,11 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Get the WMStats view about agents and teams
         """
+        if isDrainMode(self.config):
+            # maximize pending thresholds to get this agent drained ASAP
+            self.agentsNumByTeam = 1
+            return
+
         agentsByTeam = {}
         try:
             agentsByTeam = self.centralCouchDBReader.agentsByTeam(filterDrain=True)

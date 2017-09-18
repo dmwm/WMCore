@@ -181,7 +181,8 @@ class ExpressWorkloadFactory(StdBase):
                 alcaSkimTask = expressTask.addTask("%sAlcaSkim%s" % (expressTask.name(), expressOutLabel))
 
                 alcaSkimTask.setInputReference(expressTask.getStep(expressRecoStepName),
-                                               outputModule=expressOutLabel)
+                                               outputModule=expressOutLabel,
+                                               dataTier="ALCARECO")
 
                 alcaTaskConf = {'Multicore': 1,
                                 'EventStreams': 0}
@@ -362,7 +363,8 @@ class ExpressWorkloadFactory(StdBase):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        harvestTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        dataTier=getattr(parentOutputModule, "dataTier")
+        harvestTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         harvestTask.setSplittingAlgorithm("AlcaHarvest",
                                           **mySplitArgs)
@@ -370,7 +372,7 @@ class ExpressWorkloadFactory(StdBase):
         scenarioArgs = {'globalTag': self.globalTag,
                         'datasetName': "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                                       getattr(parentOutputModule, "processedDataset"),
-                                                      getattr(parentOutputModule, "dataTier")),
+                                                      dataTier),
                         'runNumber': self.runNumber,
                         'alcapromptdataset': alcapromptdataset}
 
@@ -383,7 +385,7 @@ class ExpressWorkloadFactory(StdBase):
 
         harvestTaskConditionHelper = harvestTaskCondition.getTypeHelper()
         harvestTaskConditionHelper.setRunNumber(self.runNumber)
-        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel)
+        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel+"ALCAPROMPT")
         harvestTaskConditionHelper.setConditionDir(condUploadDir)
 
         self.addOutputModule(harvestTask, condOutLabel,
@@ -415,6 +417,7 @@ class ExpressWorkloadFactory(StdBase):
         mySplitArgs['streamName'] = self.streamName
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
         conditionTask = parentTask.addTask("%sCondition%s" % (parentTask.name(), parentOutputModuleName))
 
@@ -422,7 +425,8 @@ class ExpressWorkloadFactory(StdBase):
         conditionTaskBogus = conditionTask.makeStep("bogus")
         conditionTaskBogus.setStepType("DQMUpload")
 
-        conditionTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        dataTier=getattr(parentOutputModule, "dataTier")
+        conditionTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         conditionTask.applyTemplates()
 

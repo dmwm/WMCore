@@ -98,12 +98,12 @@ def addAttributesToFile(fileSection, **attributes):
 
     Add attributes to a file in the FWJR.
     """
-    for attName in attributes.keys():
-        setattr(fileSection, attName, attributes[attName])
+    for attName, attValue in attributes.items():
+        setattr(fileSection, attName, attValue)
     return
 
 
-class Report:
+class Report(object):
     """
     The base class for the new jobReport
 
@@ -531,7 +531,8 @@ class Report:
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        for x, y in attrs.items():
+            setattr(newFile, x, y)
 
         analysisFiles.fileCount += 1
         return
@@ -549,7 +550,8 @@ class Report:
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        for x, y in attrs.items():
+            setattr(newFile, x, y)
 
         self.report.cleanup.removed.fileCount += 1
         return
@@ -1503,6 +1505,9 @@ class Report:
         analysisFiles = self.getAnalysisFilesFromStep(step=stepName)
         if len(files) == 0 and len(analysisFiles) == 0:
             msg = WM_JOB_ERROR_CODES[60450]
+            msg += "\nList of skipped files is:\n"
+            for skipF in self.getSkippedFilesFromStep(stepName=stepName):
+                msg += "  %s\n" % skipF
             self.addError(stepName, 60450, "NoOutput", msg)
             self.setStepStatus(stepName=stepName, status=60450)
         return

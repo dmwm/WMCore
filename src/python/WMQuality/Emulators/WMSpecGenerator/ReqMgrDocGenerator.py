@@ -1,5 +1,5 @@
-from builtins import range
 from __future__ import (print_function, division)
+from builtins import range
 import time
 import random
 

@@ -272,6 +272,8 @@ class SimpleCondorPlugin(BasePlugin):
                 if os.path.isfile(reportName):
                     os.remove(reportName)
 
+                # wait for 10 sec since it might still writting the log files
+                time.sleep(10)
                 # create a report from scratch
                 condorReport = Report()
                 logOutput = 'Could not find jobReport\n'

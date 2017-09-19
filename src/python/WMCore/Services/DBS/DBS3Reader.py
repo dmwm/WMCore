@@ -63,7 +63,7 @@ class DBS3Reader(object):
             raise DBSReaderError(msg)
 
         # connection to PhEDEx (Use default endpoint url)
-        self.phedex = PhEDEx(responseType="json")
+        self.phedex = PhEDEx(responseType="json", dbsUrl=self.dbsURL)
 
     def _getLumiList(self, blockName=None, lfns=None, validFileOnly=1):
         """

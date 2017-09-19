@@ -8,11 +8,7 @@ Modified from ProdCommon.DataMgmt.PhEDEx.DropMaker.py
 TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuart
 """
 
-import logging
 from xml.dom.minidom import getDOMImplementation
-
-from WMCore.Services.DBS.DBSReader import DBSReader
-
 
 class XMLFileblock(list):
     """
@@ -53,19 +49,14 @@ class XMLFileblock(list):
         result.setAttribute('is-open', self.isOpen)
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
-            checksum = ",".join(["%s:%s" % (x, y) for x, y \
-                                 in checksums.items() \
-                                 if y not in (None, '')])
-        for lfn, checksums, size in self:
-            # checksums is a comma separated list of key:value pair
             formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
                                            in checksums.items() \
                                            if y not in (None, '')])
-            file = doc.createElement("file")
-            file.setAttribute('name', lfn)
-            file.setAttribute('checksum', formattedChecksums)
-            file.setAttribute('bytes', str(size))
-            result.appendChild(file)
+            ifile = doc.createElement("file")
+            ifile.setAttribute('name', lfn)
+            ifile.setAttribute('checksum', formattedChecksums)
+            ifile.setAttribute('bytes', str(size))
+            result.appendChild(ifile)
 
         return result
 
@@ -81,7 +72,7 @@ class XMLDataset(list):
 
     def __init__(self, datasetName, datasetOpen = "y",
                  datasetTransient = "n" ):
-
+        list.__init__(self)
         self.datasetName = datasetName
         self.datasetIsOpen = datasetOpen
         self.datasetIsTransient = datasetTransient
@@ -207,39 +198,6 @@ class XMLInjectionSpec:
         handle.close()
         return
 
-def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
-    """
-    _makePhEDExDrop_
-
-    Given a DBS Url, dataset name and list of blockNames,
-    generate an XML structure for injection
-
-    """
-    spec = XMLInjectionSpec(dbsUrl)
-
-
-    reader = DBSReader(dbsUrl, version = "DBS_2_0_9")
-
-    dataset = spec.getDataset(datasetPath)
-
-    for block in blockNames:
-        blockContent = reader.getFileBlock(block)
-        isOpen = reader.blockIsOpen(block)
-        if isOpen:
-            xmlBlock = dataset.getFileblock(block, "y")
-        else:
-            xmlBlock = dataset.getFileblock(block, "n")
-
-        #Any Checksum from DBS is type cksum
-        for x in blockContent[block]['Files']:
-            checksums = {'cksum' : x['Checksum']}
-            if x.get('Adler32') not in (None, ''):
-                checksums['adler32'] = x['Adler32']
-            xmlBlock.addFile(x['LogicalFileName'], checksums, x['FileSize'])
-
-    xml = spec.save()
-    return xml
-
 
 def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):
 
@@ -274,3 +232,36 @@ def makePhEDExXMLForBlocks(dbsUrl, datasets):
 
     xmlString = spec.save()
     return xmlString
+
+def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
+    """
+    _makePhEDExDrop_
+
+    Given a DBS Url, dataset name and list of blockNames,
+    generate an XML structure for injection
+
+    """
+    from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+    reader = DBS3Reader(dbsUrl)
+
+    spec = XMLInjectionSpec(dbsUrl)
+
+    dataset = spec.getDataset(datasetPath)
+
+    for block in blockNames:
+        blockContent = reader.getFileBlock(block)
+        isOpen = reader.blockIsOpen(block)
+        if isOpen:
+            xmlBlock = dataset.getFileblock(block, "y")
+        else:
+            xmlBlock = dataset.getFileblock(block, "n")
+
+        # Any Checksum from DBS is type cksum
+        for x in blockContent[block]['Files']:
+            checksums = {'cksum' : x['Checksum']}
+            if x.get('Adler32') not in (None, ''):
+                checksums['adler32'] = x['Adler32']
+            xmlBlock.addFile(x['LogicalFileName'], checksums, x['FileSize'])
+
+    xml = spec.save()
+    return xml

@@ -92,7 +92,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.pollCounter = self.subFrequency - 1
 
         # retrieving the node mappings is fickle and can fail quite often
-        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
+        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl},
+                             "json", dbsUrl=self.dbsUrl)
         try:
             nodeMappings = self.phedex.getNodeMap()
         except:
@@ -598,9 +599,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         for subscription in subs.getSubscriptionList():
 
-            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, subscription.getDatasetPaths())
-            logging.debug("subscribeDatasets XMLData: %s", xmlData)
-
             logging.info("Subscribing: %s to %s, with options: Move: %s, Custodial: %s, Request Only: %s",
                          subscription.getDatasetPaths(),
                          subscription.getNodes(),
@@ -609,7 +607,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                          subscription.request_only)
 
             try:
-                self.phedex.subscribe(subscription, xmlData)
+                self.phedex.subscribe(subscription)
             except HTTPException as ex:
                 logging.error("PhEDEx dataset subscribe failed with HTTPException: %s %s", ex.status, ex.result)
             except Exception as ex:

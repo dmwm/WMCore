@@ -5,6 +5,7 @@ TaskArchiver test
 Tests both the archiving of tasks and the creation of the
 workloadSummary
 """
+from __future__ import division
 import json
 import logging
 import os.path
@@ -280,7 +281,7 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         for i in range(self.nJobs):
-            if i < self.nJobs / 2:
+            if i < self.nJobs // 2:
                 testJobGroup.jobs[i]['fwjr'] = report1
             else:
                 testJobGroup.jobs[i]['fwjr'] = report2
@@ -401,7 +402,7 @@ class TaskArchiverTest(unittest.TestCase):
             # Those should come from the config :
             if points[i] == 0:
                 continue
-            binSize = responseJSON["hist"]["xaxis"]["last"]["value"] / responseJSON["hist"]["xaxis"]["last"]["id"]
+            binSize = responseJSON["hist"]["xaxis"]["last"]["value"] // responseJSON["hist"]["xaxis"]["last"]["id"]
             # Fetching the important values
             instLuminosity = i * binSize
             timePerEvent = points[i]

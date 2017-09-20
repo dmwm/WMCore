@@ -3,6 +3,7 @@ Module accommodates base and/or general purpose classes for pollers
 within the Alert messaging framework.
 
 """
+from __future__ import division
 
 import sys
 import time

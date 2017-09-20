@@ -4,6 +4,7 @@ _EventBased_t_
 
 Event based splitting test.
 """
+from __future__ import division
 
 
 
@@ -78,7 +79,7 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileRunset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
-            newFile.addRun(Run(i/3, *[45]))
+            newFile.addRun(Run(i//3, *[45]))
             newFile.create()
             self.multipleFileRunset.addFile(newFile)
         self.multipleFileRunset.commit()

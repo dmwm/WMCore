@@ -2,6 +2,7 @@
 Module for all CouchDb related polling.
 
 """
+from __future__ import division
 
 import os
 import logging

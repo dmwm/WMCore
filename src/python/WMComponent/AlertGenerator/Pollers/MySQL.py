@@ -2,6 +2,7 @@
 Common module for all MySQL related checked metrics.
 
 """
+from __future__ import division
 
 import threading
 import logging

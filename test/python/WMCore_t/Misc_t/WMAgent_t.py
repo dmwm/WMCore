@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+from __future__ import division
 import os
 import time
 import shutil
@@ -585,7 +586,7 @@ class WMAgentTest(unittest.TestCase):
         for job in completeJobs:
             self.assertFalse(os.path.exists(job['fwjr_path']))
             jobFolder = 'JobCluster_%i' \
-                    % (int(job['id']/config.JobArchiver.numberOfJobsToCluster))
+                    % (int(job['id']//config.JobArchiver.numberOfJobsToCluster))
             jobPath = os.path.join(logDir, jobFolder, 'Job_%i.tar' %(job['id']))
             self.assertTrue(os.path.isfile(jobPath))
             self.assertTrue(os.path.getsize(jobPath) > 0)

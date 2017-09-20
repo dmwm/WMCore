@@ -6,6 +6,7 @@ _MathAlgos_
 Simple mathematical tools and tricks that might prove to
 be useful.
 """
+from __future__ import division
 
 import math
 import decimal
@@ -57,7 +58,7 @@ def getAverageStdDev(numList):
     if length < 1:
         return average, total
 
-    average = float(total)/length
+    average = float(total)//length
 
     for value in numList:
         tmpValue = value - average
@@ -127,7 +128,7 @@ def createHistogram(numList, nBins, limit):
         nBins = 1
         upperBound = upperBound + 1
         lowerBound = lowerBound - 1
-    binSize = float(upperBound - lowerBound)/nBins
+    binSize = float(upperBound - lowerBound)//nBins
     binSize = floorTruncate(binSize)
 
     for x in range(nBins):
@@ -184,7 +185,7 @@ def floorTruncate(value, precision = 3):
 
     prec = math.pow(10, precision)
 
-    return math.floor(float(value * prec))/float(prec)
+    return math.floor(float(value * prec))//float(prec)
 
 
 def sortDictionaryListByKey(dictList, key, reverse = False):

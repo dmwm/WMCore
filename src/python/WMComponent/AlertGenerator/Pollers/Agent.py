@@ -3,6 +3,7 @@ Module encapsulates agent-related tests, e.g. CPU, memory utilisation
 of agent's components, etc.
 
 """
+from __future__ import division
 
 # TODO
 # Should consider ProcessDetail and Measurement occupying a common

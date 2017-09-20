@@ -11,6 +11,7 @@ Created on Sep 25, 2012
 
 @author: dballest
 """
+from __future__ import division
 
 import logging
 import math
@@ -119,7 +120,7 @@ class EventAwareLumiBased(JobFactory):
 
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(f['events']) / f['lumiCount']
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']
@@ -168,7 +169,7 @@ class EventAwareLumiBased(JobFactory):
                     # Adapt the lumis per job to match the target conditions
                     if f['avgEvtsPerLumi']:
                         # If there are events in the file
-                        ratio = float(avgEventsPerJob) / f['avgEvtsPerLumi']
+                        ratio = avgEventsPerJob / f['avgEvtsPerLumi']
                         lumisPerJob = max(int(math.floor(ratio)), 1)
                     else:
                         # Zero event file, then the ratio goes to infinity. Computers don't like that
@@ -179,7 +180,7 @@ class EventAwareLumiBased(JobFactory):
                     updateSplitOnJobStop = True
                     eventsRemaining = max(avgEventsPerJob - currentJobAvgEventCount, 0)
                     if f['avgEvtsPerLumi']:
-                        lumisAllowed = int(math.floor(float(eventsRemaining) / f['avgEvtsPerLumi']))
+                        lumisAllowed = eventsRemaining) // f['avgEvtsPerLumi']
                     else:
                         lumisAllowed = f['lumiCount']
                     lumisPerJob = max(lumisInJob + lumisAllowed, 1)
@@ -270,7 +271,7 @@ class EventAwareLumiBased(JobFactory):
                                 # Reset calculations for this file
                                 updateSplitOnJobStop = False
                                 if f['avgEvtsPerLumi']:
-                                    ratio = float(avgEventsPerJob) / f['avgEvtsPerLumi']
+                                    ratio = avgEventsPerJob / f['avgEvtsPerLumi']
                                     lumisPerJob = max(int(math.floor(ratio)), 1)
                                 else:
                                     lumisPerJob = f['lumiCount']

@@ -4,6 +4,7 @@ _ReportEmu_
 
 Class for creating bogus framework job reports.
 """
+from __future__ import division
 
 
 

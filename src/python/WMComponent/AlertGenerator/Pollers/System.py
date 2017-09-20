@@ -4,6 +4,7 @@ CPU and memory utilisation, available disk space, CPU/mem
 utilisation by particular processes, etc.
 
 """
+from __future__ import division
 
 import logging
 import subprocess

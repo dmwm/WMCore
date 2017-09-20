@@ -11,7 +11,7 @@ import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-MAX_EVENT = 2**32 - 1
+MAX_EVENT = 2**31 - 1
 
 
 class Add(DBFormatter):
@@ -27,8 +27,8 @@ class Add(DBFormatter):
     assocSQL = ('INSERT INTO wmbs_frl_workunit_assoc (workunit, firstevent, lastevent, fileid, run, lumi)'
                 ' VALUES (LAST_INSERT_ID(), :firstevent, :lastevent, :fileid, :run, :lumi)')
 
-    def execute(self, taskid=None, retry_count=0, last_unit_count=0, last_submit_time=time.time(), status=0,
-                first_event=0, last_event=MAX_EVENT,
+    def execute(self, taskid=None, retry_count=0, last_unit_count=0, last_submit_time=time.time(),
+                status=0, first_event=0, last_event=MAX_EVENT,
                 fileid=None, run=None, lumi=None,
                 conn=None, transaction=False):
         """
@@ -36,9 +36,12 @@ class Add(DBFormatter):
         """
 
         # Add the part for the work unit table
-        binds = {'taskid': taskid, 'retry_count': retry_count, 'last_unit_count': last_unit_count,
-                 'last_submit_time': last_submit_time, 'status': status}
-        self.dbi.processData(self.wuSQL, binds, conn=conn, transaction=transaction)
+        if taskid:
+            binds = {'taskid': taskid, 'retry_count': retry_count, 'last_unit_count': last_unit_count,
+                     'last_submit_time': last_submit_time, 'status': status}
+            self.dbi.processData(self.wuSQL, binds, conn=conn, transaction=transaction)
+        else:
+            raise RuntimeError("No way to create work units without task ID or name")
 
         # And add the association information using the primary key from the first insertion
         binds = {'firstevent': first_event, 'lastevent': last_event, 'fileid': fileid, 'run': run, 'lumi': lumi}

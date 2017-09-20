@@ -17,6 +17,8 @@ from WMCore.WMBS.WorkUnit import WorkUnit
 from WMCore.WMBS.Workflow import Workflow
 from WMQuality.TestInit import TestInit
 
+WF_NAME = 'Test'
+
 
 class WMBSWorkUnitTest(unittest.TestCase):
     """
@@ -64,7 +66,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         Create a dummy workflow we can use later
         """
 
-        self.testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task='Test', wfType="ReReco")
+        self.testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task=WF_NAME, wfType="ReReco")
         self.testWorkflow.create()
 
         self.testFile = File(lfn="/this/is/a/test/file0", size=1024, events=10)
@@ -77,7 +79,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
-        Test the create(), delete() and exists() methods of the file class
+        Test the create(), delete() and exists() methods of the WorkUnit class
         by creating and deleting a WorkUnit.  The exists() method will be
         called before and after creation and after deletion.
         """

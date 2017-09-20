@@ -7,6 +7,7 @@ Unit tests for the WMBS JobGroup class.
 
 import threading
 import unittest
+from pprint import pformat as pretty
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -106,7 +107,7 @@ class JobGroupTest(unittest.TestCase):
 
         """
         testWorkflow = Workflow(spec="spec.xml", owner="Simon",
-                                name="wf001", task="Test")
+                                name="wf002", task="Test2")
         testWorkflow.create()
 
         testWMBSFileset = WMBSFileset(name="TestFileset")
@@ -172,18 +173,15 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         testJobGroup.delete()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after it was deleted"
+        self.assertFalse(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -210,21 +208,18 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         myThread.transaction.rollback()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after transaction was rolled back."
+        self.assertFalse(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -254,26 +249,22 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription=testSubscription)
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists before it was created"
+        self.assertFalse(testJobGroup.exists())
 
         testJobGroup.create()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after it was created"
+        self.assertTrue(testJobGroup.exists())
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         testJobGroup.delete()
 
-        assert testJobGroup.exists() == False, \
-            "ERROR: Job group exists after it was deleted"
+        self.assertFalse(testJobGroup.exists())
 
         myThread.transaction.rollback()
 
-        assert testJobGroup.exists() >= 0, \
-            "ERROR: Job group does not exist after transaction was rolled back."
+        self.assertTrue(testJobGroup.exists())
 
         testSubscription.delete()
         testFileset.delete()
@@ -294,23 +285,12 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupC = JobGroup(uid=testJobGroupA.uid)
         testJobGroupC.load()
 
-        assert type(testJobGroupB.id) == int, \
-            "ERROR: Job group id is not an int."
-
-        assert type(testJobGroupC.id) == int, \
-            "ERROR: Job group id is not an int."
-
-        assert type(testJobGroupB.subscription["id"]) == int, \
-            "ERROR: Job group subscription id is not an int."
-
-        assert type(testJobGroupC.subscription["id"]) == int, \
-            "ERROR: Job group subscription id is not an int."
-
-        assert type(testJobGroupB.output.id) == int, \
-            "ERROR: Job group output id is not an int."
-
-        assert type(testJobGroupC.output.id) == int, \
-            "ERROR: Job group output id is not an int."
+        self.assertIsInstance(testJobGroupB.id, int)
+        self.assertIsInstance(testJobGroupC.id, int)
+        self.assertIsInstance(testJobGroupB.subscription["id"], int)
+        self.assertIsInstance(testJobGroupC.subscription["id"], int)
+        self.assertIsInstance(testJobGroupB.output.id, int)
+        self.assertIsInstance(testJobGroupC.output.id, int)
 
         assert testJobGroupB.uid == testJobGroupA.uid, \
             "ERROR: Job group did not load uid correctly."
@@ -346,22 +326,25 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupB = JobGroup(id=testJobGroupA.id)
         testJobGroupB.loadData()
 
-        assert testJobGroupB.subscription["id"] == \
-               testJobGroupA.subscription["id"], \
-            "ERROR: Job group did not load subscription correctly"
+        self.assertEqual(testJobGroupB.subscription["id"], testJobGroupA.subscription["id"],
+                         "Job group did not load subscription correctly")
 
-        goldenJobs = testJobGroupA.getJobs(type="list")
+        # Build a tuple with important job information for each job group
+        goldenJobs = [(job['id'], job['name'],
+                       sorted([inp_file['lfn'] for inp_file in job['input_files']]))
+                      for job in testJobGroupA.getJobs(type="list")]
+        loadedJobs = [(job['id'], job['name'],
+                       sorted([inp_file['lfn'] for inp_file in job['input_files']]))
+                      for job in testJobGroupB.getJobs(type="list")]
 
-        for job in testJobGroupB.getJobs(type="list"):
-            assert job in goldenJobs, \
-                "ERROR: JobGroup loaded an unknown job: %s, %s" % (job, goldenJobs)
+        # Make sure each job from one group is in the other list
+        for job in loadedJobs:
+            self.assertIn(job, goldenJobs, "JobGroup loaded an unknown job: \n%s \nis not in  \n%s" %
+                          (pretty(job), pretty(goldenJobs)))
             goldenJobs.remove(job)
 
-        assert len(goldenJobs) == 0, \
-            "ERROR: JobGroup didn't load all jobs"
-
-        assert testJobGroupB.output.id == testJobGroupA.output.id, \
-            "ERROR: Output fileset didn't load properly"
+        self.assertFalse(goldenJobs, "JobGroup didn't load all jobs")
+        self.assertEqual(testJobGroupB.output.id, testJobGroupA.output.id, "Output fileset didn't load properly")
 
         return
 
@@ -449,7 +432,6 @@ class JobGroupTest(unittest.TestCase):
         For the JobCreator we have to be able to specify the site for a JobGroup.
         This function tests the accessors for that information.
         """
-        myThread = threading.currentThread()
 
         testJobGroup = self.createTestJobGroup()
         testJobGroup.setSite("site1")
@@ -465,8 +447,6 @@ class JobGroupTest(unittest.TestCase):
 
         Exactly the same as testCommit, but using commitBulk() instead of commit()
         """
-
-        myThread = threading.currentThread()
 
         testJobGroupA = self.createLargerTestJobGroup(commitFlag=False)
 
@@ -493,6 +473,56 @@ class JobGroupTest(unittest.TestCase):
 
         return
 
+    def testTwoJobGroups(self):
+        """
+        Test two job groups with a shared fileset. (Minimal part of testGetLocations which was failing)
+        """
+
+        testWorkflow1 = Workflow(spec="spec.xml", owner="Simon", name="wf001", task="Test1")
+        testWorkflow1.create()
+
+        testWMBSFileset1 = WMBSFileset(name="TestFileset1")
+        testWMBSFileset1.create()
+
+        testSubscription1 = Subscription(fileset=testWMBSFileset1, workflow=testWorkflow1)
+        testSubscription1.create()
+
+        testJobGroup1 = JobGroup(subscription=testSubscription1)
+        testJobGroup1.create()
+
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=10)
+        testFileA.addRun(Run(10, *[12312]))
+        testFileA.create()
+
+        testJobA = Job(name="TestJobA")
+        testJobA.addFile(testFileA)
+        testJobGroup1.add(testJobA)
+
+        testJobGroup1.commit()
+
+        testWorkflow2 = Workflow(spec="spec.xml", owner="Simon", name="wf002", task="Test2")
+        testWorkflow2.create()
+
+        testWMBSFileset2 = WMBSFileset(name="TestFileset1")
+        testWMBSFileset2.create()
+
+        testSubscription2 = Subscription(fileset=testWMBSFileset2, workflow=testWorkflow2)
+        testSubscription2.create()
+
+        testJobGroup2 = JobGroup(subscription=testSubscription2)
+        testJobGroup2.create()
+
+        testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=10)
+        testFileC.addRun(Run(10, *[12312]))
+
+        testFileC.create()
+
+        testJobA1 = Job(name="TestJobA1")
+        testJobA1.addFile(testFileC)
+
+        testJobGroup2.add(testJobA1)
+        testJobGroup2.commit()
+
     def testGetLocationsForJobs(self):
         """
         _testGetLocationsForJobs
@@ -500,8 +530,6 @@ class JobGroupTest(unittest.TestCase):
         Tests the functionality of grabbing locations for a single job
 
         """
-
-        myThread = threading.currentThread()
 
         testJobGroup = self.createTestJobGroup()
 

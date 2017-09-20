@@ -31,27 +31,26 @@ WMAgent deals with groups and calls group.status periodically
 """
 from __future__ import print_function
 
-
-
-
-from WMCore.DataStructs.WMObject import WMObject
-from WMCore.DataStructs.Fileset import Fileset
-
 import datetime
+
+from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.WMObject import WMObject
+
 
 class JobGroup(WMObject):
     """
     JobGroups are sets of jobs running on files who's output needs to be merged
     together.
     """
-    def __init__(self, subscription = None, jobs = None):
+
+    def __init__(self, subscription=None, jobs=None):
         self.jobs = []
         self.newjobs = []
         self.id = 0
 
-        if type(jobs) == list:
+        if isinstance(jobs, list):
             self.newjobs = jobs
-        elif jobs != None:
+        elif jobs is not None:
             self.newjobs = [jobs]
 
         self.subscription = subscription
@@ -94,7 +93,7 @@ class JobGroup(WMObject):
         self.output.addFile(file)
         self.output.commit()
 
-    def getJobs(self, type = "list"):
+    def getJobs(self, type="list"):
         """
         _getJobs_
 
@@ -116,22 +115,22 @@ class JobGroup(WMObject):
 
         return
 
-    def getOutput(self, type = "list"):
+    def getOutput(self, type="list"):
         """
         _getOutput_
 
         Retrieve all of the files that are in the JobGroup's output fileset.
         Type can be one of the following: list, set, lfn, id.
         """
-        return self.output.getFiles(type = type)
+        return self.output.getFiles(type=type)
 
     def getLength(self, obj):
         """
         This just gets a length for either dict or list objects
         """
-        if type(obj) == dict:
+        if isinstance(obj, dict):
             return len(obj.keys())
-        elif type(obj) == list:
+        elif isinstance(obj, list):
             return len(obj)
         else:
             return 0
@@ -142,4 +141,4 @@ class JobGroup(WMObject):
         """
         return self.getLength(self.jobs) + self.getLength(self.newjobs)
 
-        #return len(self.jobs.keys()) + len(self.newjobs.keys())
+        # return len(self.jobs.keys()) + len(self.newjobs.keys())

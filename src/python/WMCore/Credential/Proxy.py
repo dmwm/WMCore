@@ -210,7 +210,7 @@ class Proxy(Credential):
         if self.retcode:
             raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
 
-        daystoexp = int(timeleft / (60 * 60 * 24))
+        daystoexp = timeleft // (60 * 60 * 24)
         return daystoexp
 
     def getProxyDetails(self):

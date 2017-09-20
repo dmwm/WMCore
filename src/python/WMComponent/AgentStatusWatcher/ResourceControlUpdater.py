@@ -220,8 +220,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         for site in set(infoRC).intersection(set(infoSSB)):
             if self.tier0Mode and 'T1_' in site:
                 # T1 cores utilization for Tier0
-                infoSSB[site]['slotsCPU'] = infoSSB[site]['slotsCPU'] * self.t1SitesCores / 100
-                infoSSB[site]['slotsIO'] = infoSSB[site]['slotsIO'] * self.t1SitesCores / 100
+                infoSSB[site]['slotsCPU'] = infoSSB[site]['slotsCPU'] * self.t1SitesCores // 100
+                infoSSB[site]['slotsIO'] = infoSSB[site]['slotsIO'] * self.t1SitesCores // 100
 
             # round very small sites to the bare minimum
             if infoSSB[site]['slotsCPU'] < minCPUSlots:
@@ -231,9 +231,9 @@ class ResourceControlUpdater(BaseWorkerThread):
 
             CPUBound = infoSSB[site]['slotsCPU']
             IOBound = infoSSB[site]['slotsIO']
-            sitePending = max(int(CPUBound / agentsCount * self.pendingSlotsSitePercent / 100), minCPUSlots)
-            taskCPUPending = max(int(CPUBound / agentsCount * self.pendingSlotsTaskPercent / 100), minCPUSlots)
-            taskIOPending = max(int(IOBound / agentsCount * self.pendingSlotsTaskPercent / 100), minIOSlots)
+            sitePending = max(int(CPUBound / agentsCount * self.pendingSlotsSitePercent // 100), minCPUSlots)
+            taskCPUPending = max(int(CPUBound / agentsCount * self.pendingSlotsTaskPercent // 100), minCPUSlots)
+            taskIOPending = max(int(IOBound / agentsCount * self.pendingSlotsTaskPercent // 100), minIOSlots)
 
             if infoRC[site]['running_slots'] != CPUBound or infoRC[site]['pending_slots'] != sitePending:
                 # Update site running and pending slots
@@ -256,12 +256,12 @@ class ResourceControlUpdater(BaseWorkerThread):
             if self.tier0Mode:
                 # Set task thresholds for Tier0
                 logging.debug("Updating %s Express and Repack task thresholds.", site)
-                expressSlots = int(CPUBound * self.runningExpressPercent / 100)
-                pendingExpress = int(expressSlots * self.pendingSlotsTaskPercent / 100)
+                expressSlots = int(CPUBound * self.runningExpressPercent // 100)
+                pendingExpress = int(expressSlots * self.pendingSlotsTaskPercent // 100)
                 self.resourceControl.insertThreshold(site, 'Express', expressSlots, pendingExpress)
 
-                repackSlots = int(CPUBound * self.runningRepackPercent / 100)
-                pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent / 100)
+                repackSlots = int(CPUBound * self.runningRepackPercent // 100)
+                pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent // 100)
                 self.resourceControl.insertThreshold(site, 'Repack', repackSlots, pendingRepack)
 
     def thresholdsByVOName(self, sites, ssbSiteSlots, slotsType):

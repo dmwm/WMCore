@@ -161,7 +161,7 @@ class ContinuousSummaryHistogram(SummaryHistogram):
             lowerLimit = self.average - (stdDev * self.sigmaLimit)
 
         # Incremental delta
-        delta = abs(float(upperLimit - lowerLimit)) / nBins
+        delta = abs(upperLimit - lowerLimit) / nBins
 
         # Build the bins, it's a list of tuples for now
         bins = []

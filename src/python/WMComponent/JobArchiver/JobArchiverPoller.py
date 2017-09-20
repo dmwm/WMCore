@@ -245,7 +245,7 @@ class JobArchiverPoller(BaseWorkerThread):
             workflow = job['workflow']
             firstCharacter = workflow[0]
             jobFolder = 'JobCluster_%i' \
-                        % (int(job['id'] / self.numberOfJobsToCluster))
+                        % (job['id'] // self.numberOfJobsToCluster)
             logDir = os.path.join(self.logDir, firstCharacter,
                                   workflow, jobFolder)
             if not os.path.exists(logDir):

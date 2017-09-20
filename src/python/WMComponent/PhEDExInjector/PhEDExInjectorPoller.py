@@ -87,7 +87,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if getattr(config.PhEDExInjector, "subscribeDatasets", False):
             pollInterval = config.PhEDExInjector.pollInterval
             subInterval = config.PhEDExInjector.subscribeInterval
-            self.subFrequency = max(1, int(round(subInterval / pollInterval)))
+            self.subFrequency = max(1, subInterval // pollInterval)
             logging.info("SubscribeDataset and deleteBlocks will run every %d polling cycles", self.subFrequency)
             # subscribe on first cycle
             self.pollCounter = self.subFrequency - 1

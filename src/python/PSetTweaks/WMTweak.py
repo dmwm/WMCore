@@ -121,7 +121,7 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    lfnGroup = modifier + str(job.get("counter", 0) // 1000).zfill(4)
     return lfnGroup
 
 

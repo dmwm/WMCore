@@ -717,13 +717,13 @@ class CleanCouchPoller(BaseWorkerThread):
         workflowData['histograms'] = jsonHistograms
 
         # No easy way to get the memory footprint of a python object.
-        summarySize = len(json.dumps(workflowData)) / 1024
+        summarySize = len(json.dumps(workflowData)) // 1024
         if summarySize > 6 * 1024:  # 6MB
             msg = "Workload summary for %s is too big: %d Kb. " % (workflowName, summarySize)
             msg += "Wiping out the 'errors' section to make it smaller."
             logging.warning(msg)
             workflowData['errors'] = {}
-        summarySize = len(json.dumps(workflowData)) / 1024
+        summarySize = len(json.dumps(workflowData)) // 1024
 
         # Now we have the workflowData in the right format, time to push it
         logging.info("About to commit %d Kb of data for workflow summary for %s", summarySize, workflowName)

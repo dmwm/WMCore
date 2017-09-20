@@ -15,7 +15,7 @@ from WMCore.Lexicon import sanitizeURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements, WorkQueueError
 
 
 def formatReply(answer, *items):
@@ -61,6 +61,7 @@ class WorkQueueBackend(object):
         self.hostWithAuth = db_url
         self.inbox = self.server.connectDatabase(inbox_name, create=False, size=10000)
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
+        self.eleKey = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'
 
     def forceQueueSync(self):
         """Force a blocking replication - used only in tests"""
@@ -265,32 +266,32 @@ class WorkQueueBackend(object):
             self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         return result
 
+    def _raiseConflictErrorAndLog(self, conflictIDs, updatedParams, dbName="workqueue"):
+        errorMsg = "Need to update this element manually from %s\n ids:%s\n, parameters:%s\n" % (
+                                            dbName, conflictIDs, updatedParams)
+        self.logger.error(errorMsg)
+        raise WorkQueueError(errorMsg)
+
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
         if not elementIds:
             return
-        uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        optionsArg = {}
-        if "options" in updatedParams:
-            optionsArg.update(updatedParams.pop("options"))
-        data = {"updates": json.dumps(updatedParams),
-                "options": json.dumps(optionsArg)}
-        for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
-            self.db.makeRequest(uri=thisuri, type='PUT')
+        eleParams = {}
+        eleParams[self.eleKey] = updatedParams
+        conflictIDs = self.db.updateBulkDocumentsWithConflictHandle(elementIds, eleParams)
+        if conflictIDs:
+            self._raiseConflictErrorAndLog(conflictIDs, updatedParams)
         return
 
     def updateInboxElements(self, *elementIds, **updatedParams):
         """Update given inbox element's (identified by id) with new parameters"""
-        uri = "/" + self.inbox.name + "/_design/WorkQueue/_update/in-place/"
-        optionsArg = {}
-        if "options" in updatedParams:
-            optionsArg.update(updatedParams.pop("options"))
-        data = {"updates": json.dumps(updatedParams),
-                "options": json.dumps(optionsArg)}
-        for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
-            self.inbox.makeRequest(uri=thisuri, type='PUT')
+        if not elementIds:
+            return
+        eleParams = {}
+        eleParams[self.eleKey] = updatedParams
+        conflictIDs = self.inbox.updateBulkDocumentsWithConflictHandle(elementIds, eleParams)
+        if conflictIDs:
+            self._raiseConflictErrorAndLog(conflictIDs, updatedParams, "workqueue_inbox")
         return
 
     def deleteElements(self, *elements):

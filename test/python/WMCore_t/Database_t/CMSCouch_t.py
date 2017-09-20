@@ -5,17 +5,22 @@ CMSCouch library to work with CouchDB. It currently assumes you have a running
 CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
+from __future__ import print_function, division
 
-from WMCore.Database.CMSCouch import CouchServer, Document, Database, CouchInternalServerError, CouchNotFoundError
-import random
 import unittest
 import os
 import hashlib
 import base64
 import sys
+import time
+
+from WMCore.Database.CMSCouch import (CouchServer, Document, Database,
+                        CouchInternalServerError, CouchNotFoundError)
 
 class CMSCouchTest(unittest.TestCase):
+
     test_counter = 0
+
     def setUp(self):
         # Make an instance of the server
         self.server = CouchServer(os.getenv("COUCHURL", 'http://admin:password@localhost:5984'))
@@ -98,9 +103,6 @@ class CMSCouchTest(unittest.TestCase):
         all_docs = self.db.allDocs()
         self.assertEqual(0, len(all_docs['rows']))
 
-    def testWriteReadDocNoID(self):
-        doc = {}
-
     def testReplicate(self):
         repl_db = self.server.connectDatabase(self.db.name + 'repl')
 
@@ -110,6 +112,8 @@ class CMSCouchTest(unittest.TestCase):
         #replicate
         self.server.replicate(self.db.name, repl_db.name)
 
+        # wait for a few seconds to replication to be triggered.
+        time.sleep(1)
         self.assertEqual(self.db.document(doc_id), repl_db.document(doc_id))
         self.server.deleteDatabase(repl_db.name)
 
@@ -207,6 +211,7 @@ class CMSCouchTest(unittest.TestCase):
 
         #replicate
         self.server.replicate(self.db.name, repl_db.name)
+        time.sleep(1)
 
         doc_v2 = self.db.document(doc_id)
         doc_v2['bar'] = 456
@@ -220,6 +225,8 @@ class CMSCouchTest(unittest.TestCase):
 
         #replicate, creating the conflict
         self.server.replicate(self.db.name, repl_db.name)
+        time.sleep(1)
+
         conflict_view = {'map':"function(doc) {if(doc._conflicts) {emit(doc._conflicts, null);}}"}
         data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
 
@@ -271,7 +278,7 @@ class CMSCouchTest(unittest.TestCase):
         self.db.queue(Document(id = "1", inputDict = {'foo':1234, 'bar':456}))
         answer = self.db.commit()
         self.assertEqual(2, len(answer))
-        self.assertEqual(answer[0]['error'], 'conflict')
+        self.assertEqual(answer[0]['ok'], True)
         self.assertEqual(answer[1]['error'], 'conflict')
 
         # all_or_nothing mode ignores conflicts
@@ -362,6 +369,64 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(2, len(self.db.allDocs(keys = ["1", "3"])['rows']))
         self.assertEqual(1, len(self.db.allDocs({'limit':1}, ["1", "3"])['rows']))
         self.assertTrue('error' in self.db.allDocs(keys = ["1", "4"])['rows'][1])
+
+    def testUpdateBulkDocuments(self):
+        """
+        Test AllDocs with options
+        """
+        self.db.queue(Document(id="1", inputDict={'foo':123, 'bar':456}))
+        self.db.queue(Document(id="2", inputDict={'foo':123, 'bar':456}))
+        self.db.queue(Document(id="3", inputDict={'foo':123, 'bar':456}))
+        self.db.commit()
+
+        self.db.updateBulkDocumentsWithConflictHandle(["1", "2", "3"], {'foo': 333}, 2)
+        result = self.db.allDocs({"include_docs": True})['rows']
+        self.assertEqual(3, len(result))
+        for item in result:
+            self.assertEqual(333, item['doc']['foo'])
+
+        self.db.updateBulkDocumentsWithConflictHandle(["1", "2", "3"], {'foo': 222}, 10)
+        result = self.db.allDocs({"include_docs": True})['rows']
+        self.assertEqual(3, len(result))
+        for item in result:
+            self.assertEqual(222, item['doc']['foo'])
+
+    def testUpdateHandlerAndBulkUpdateProfile(self):
+        """
+        Test that update function support works
+        """
+        # for actual test increase the size value: For 10000 records, 96 sec vs 4 sec
+        size = 100
+        for i in range(size):
+            self.db.queue(Document(id="%s" % i, inputDict={'name':123, 'counter':0}))
+
+        update_doc = {
+            '_id':'_design/foo',
+            'language': 'javascript',
+            'updates':{
+                "change-counter" : """function(doc, req) { if (doc) { var data = JSON.parse(req.body);
+                                      for (var field in data) {doc.field = data.field;} return [doc, 'OK'];}}""",
+            }
+        }
+
+        self.db.commit(update_doc)
+        start = time.time()
+        for id in range(size):
+            doc_id = "%s" % id
+            self.db.updateDocument(doc_id, 'foo', 'change-counter', {'counter': 1}, useBody=True)
+        end = time.time()
+
+        print("update handler: %s sec" % (end - start))
+
+        start = time.time()
+        ids = []
+        for id in range(size):
+            doc_id = "%s" % id
+            ids.append(doc_id)
+        self.db.updateBulkDocumentsWithConflictHandle(ids, {'counter': 2}, 1000)
+        end = time.time()
+
+        print("bulk update: %s sec" % (end - start))
 
 if __name__ == "__main__":
     if len(sys.argv) >1 :

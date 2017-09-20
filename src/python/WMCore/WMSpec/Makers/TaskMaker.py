@@ -8,28 +8,20 @@ to start as a proper job.
 
 """
 from __future__ import print_function
-
-
-
-
-
-
 from builtins import object
+
+import logging
 import os.path
 import threading
-import inspect
-import logging
 
-from WMCore.WMSpec.WMWorkload        import WMWorkload, WMWorkloadHelper
-from WMCore.WMSpec.WMTask            import WMTask, WMTaskHelper
-from WMCore.WMFactory                import WMFactory
-from WMCore.WMBS.Subscription        import Subscription
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WMBS.Workflow            import Workflow
-from WMCore.WMBS.Fileset             import Fileset
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 
 
-#The class should carry the following variables:
+# The class should carry the following variables:
 #  self.workload = WMSpec.WMWorkloadHelper object, loaded by loadWorkload
 #  self.workdir  = string carrying the name of an open working directory, loaded by loadWorkdir
 #  self.workflowDict = dictionary of WMBS.Workflows keyed by task name;
@@ -43,16 +35,14 @@ class TaskMaker(object):
 
     """
 
-
-    def __init__(self, workload = None, workdir = None):
+    def __init__(self, workload=None, workdir=None):
         self.workload = None
-        self.workdir  = None
+        self.workdir = None
         self.skipSubscription = False
         self.workflowDict = {}
-        self.subDict      = {}
-        self.owner        = "unknown"
-        self.owner_dn     = "unknown"
-
+        self.subDict = {}
+        self.owner = "unknown"
+        self.owner_dn = "unknown"
 
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger()
@@ -62,15 +52,13 @@ class TaskMaker(object):
 
         return
 
-
-
     def loadWorkload(self, inputWorkload):
         """
         If workload is sane, then use it
 
         """
 
-        if inputWorkload == None:
+        if inputWorkload is None:
             self.workload = None
         if isinstance(inputWorkload, WMWorkload):
             self.workload = WMWorkloadHelper(inputWorkload)
@@ -80,7 +68,7 @@ class TaskMaker(object):
             return
 
         if not os.path.exists(inputWorkload):
-            raise Exception('Could not find %s in local file system' %(str(inputWorkload)))
+            raise Exception('Could not find %s in local file system' % (str(inputWorkload)))
 
         testWorkload = WMWorkloadHelper(WMWorkload("workload"))
         testWorkload.load(inputWorkload)
@@ -89,14 +77,13 @@ class TaskMaker(object):
 
         return
 
-
     def loadWorkdir(self, inputWorkdir):
         """
         If workdir is sane, use it
 
         """
 
-        if inputWorkdir == None:
+        if inputWorkdir is None:
             self.workdir = None
             return
 
@@ -104,14 +91,12 @@ class TaskMaker(object):
             try:
                 os.mkdir(inputWorkdir)
             except Exception as ex:
-                print('Caught exception %s in creating workdir %s' %(str(ex), inputWorkdir))
+                print('Caught exception %s in creating workdir %s' % (str(ex), inputWorkdir))
                 raise Exception(ex)
 
         self.workdir = inputWorkdir
 
         return
-
-
 
     def processWorkload(self):
         """
@@ -119,8 +104,9 @@ class TaskMaker(object):
 
         """
 
-        if self.workdir == None or self.workload == None:
-            raise Exception('Failure in processing workload %s in directory %s' %(str(self.workload), str(self.workdir)))
+        if self.workdir is None or self.workload is None:
+            raise Exception(
+                'Failure in processing workload %s in directory %s' % (str(self.workload), str(self.workdir)))
 
         if hasattr(self.workload, 'owner'):
             self.owner = self.workload.owner
@@ -128,17 +114,18 @@ class TaskMaker(object):
             self.owner_dn = self.workload.owner_dn
 
         for toptask in self.workload.taskIterator():
-            #for each task, build sandbox, register, and subscribe
+            # for each task, build sandbox, register, and subscribe
             for task in toptask.taskIterator():
                 if task.name() in self.workflowDict.keys():
-                    raise Exception('Duplicate task name for workload %s, task %s' %(self.workload.name(), task.name()))
+                    raise Exception(
+                        'Duplicate task name for workload %s, task %s' % (self.workload.name(), task.name()))
 
                 if not self.skipSubscription:
-                    subscribeInfo = self.subscribeWMBS(task)
+                    self.subscribeWMBS(task)
 
         sandboxCreator = SandboxCreator()
         sandboxCreator.makeSandbox(self.workdir, self.workload)
-        logging.info('Done processing workload %s' %(self.workload.name()))
+        logging.info('Done processing workload %s' % (self.workload.name()))
 
         return True
 
@@ -148,40 +135,35 @@ class TaskMaker(object):
 
         """
 
+        specURL = self.getWorkflowURL(task)
 
-        specURL  = self.getWorkflowURL(task)
-
-
-        fileSet = Fileset(name = self.getFilesetName(task), is_open = True)
+        fileSet = Fileset(name=self.getFilesetName(task), is_open=True)
         fileSet.create()
 
-        taskFlow = Workflow(spec = specURL, owner = self.owner, owner_dn = self.owner_dn,
-                                                name = self.getWorkflowName(task), task = task.name())
+        taskFlow = Workflow(spec=specURL, owner=self.owner, dn=self.owner_dn,
+                            name=self.getWorkflowName(task), task=task.name())
         taskFlow.create()
 
         self.workflowDict[task.name()] = taskFlow
 
-        #Insert workflow into task
+        # Insert workflow into task
         setattr(task.data.input.WMBS, 'WorkflowSpecURL', specURL)
 
-
-        #If the job is a merge job
-        #Find the task it merges from
-        #Then find the workflow for that task and assign it an output
+        # If the job is a merge job
+        # Find the task it merges from
+        # Then find the workflow for that task and assign it an output
         if hasattr(task.inputReference(), 'outputModule'):
-            stepName = task.inputReference().inputStep.split('/')[-1]
+            dummyStepName = task.inputReference().inputStep.split('/')[-1]
             taskName = task.inputReference().inputStep.split('/')[-2]
             outputModule = task.inputReference().outputModule
-            if not taskName in self.workflowDict.keys():
-                raise Exception ('I am being asked to chain output for a task %s which does not yet exist' %(taskName))
+            if taskName not in self.workflowDict.keys():
+                raise Exception('I am being asked to chain output for a task %s which does not yet exist' % taskName)
             outputWorkflow = self.workflowDict[taskName]
             outputWorkflow.addOutput(outputModule, fileSet)
 
-
-        logging.info('Registered workflow for step %s' %(task.name()))
+        logging.info('Registered workflow for step %s' % (task.name()))
 
         return taskFlow, fileSet
-
 
     def subscribeWMBS(self, task):
         """
@@ -200,22 +182,21 @@ class TaskMaker(object):
         elif task.name() == 'Merge':
             subType = 'Merge'
 
-        newSub   = Subscription(fileset = fileSet, workflow = workFlow, split_algo = 'FileBased', type = subType)
+        newSub = Subscription(fileset=fileSet, workflow=workFlow, split_algo='FileBased', type=subType)
         newSub.create()
 
-        #Add subscription to dictionary
+        # Add subscription to dictionary
         self.subDict[task.name()] = newSub
 
-        #Add subscription id to task
+        # Add subscription id to task
         setattr(task.data.input.WMBS, 'Subscription', newSub['id'])
 
         if not newSub.exists() >= 0:
             raise Exception("ERROR: Subscription does not exist after it was created")
 
-        logging.info('Created subscription for task %s' %(task.name()))
+        logging.info('Created subscription for task %s' % (task.name()))
 
         return
-
 
     def getFilesetName(self, task):
         """
@@ -223,10 +204,9 @@ class TaskMaker(object):
 
         """
 
-        filesetName = '%s/Fileset-%s-%s' %(self.workdir, self.workload.name(), task.name())
+        filesetName = '%s/Fileset-%s-%s' % (self.workdir, self.workload.name(), task.name())
 
         return filesetName
-
 
     def getWorkflowURL(self, task):
         """
@@ -234,8 +214,7 @@ class TaskMaker(object):
 
         """
 
-
-        workflowURL = '%s/%s' %(self.workdir, self.getWorkflowName(task))
+        workflowURL = '%s/%s' % (self.workdir, self.getWorkflowName(task))
 
         return workflowURL
 
@@ -245,6 +224,6 @@ class TaskMaker(object):
 
         """
 
-        workflowName = 'Workflow-%s-%s' %(self.workload.name(), task.name())
+        workflowName = 'Workflow-%s-%s' % (self.workload.name(), task.name())
 
         return workflowName

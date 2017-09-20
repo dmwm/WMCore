@@ -2,7 +2,7 @@
 """
 _DeleteCheckFileset_
 
-SQLite implementation of DeleteCheckFileset
+Oracle implementation of DeleteCheckFileset
 
 """
 __all__ = []

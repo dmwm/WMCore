@@ -326,7 +326,7 @@ def process_cli_args(args):
     if opts.json and not (opts.create_request or opts.assign_request or opts.all_tests):
         err_exit("--json only with --create_request, --assign_request or --all_tests", parser)
 
-    for action in filter(lambda name: getattr(opts, name), actions):
+    for action in [name for name in actions if getattr(opts, name)]:
         if opts.all_tests and action and action != "all_tests":
             err_exit("Arguments --all_tests and --%s mutually exclusive." % action, parser)
 
@@ -464,7 +464,7 @@ def main():
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None
     # config is all options for this script but also request creation parameters
-    actions = filter(lambda name: getattr(config, name), defined_actions)
+    actions = [name for name in defined_actions if getattr(config, name)]
     logging.info("Actions to perform: %s" % actions)
     for action in actions:
         logging.info("Performing '%s' ..." % action)

@@ -102,7 +102,7 @@ class SandboxCreator(object):
                 fetcherNames = commonFetchers[:]
                 taskFetchers = getattr(task.data, "fetchers", [])
                 fetcherNames.extend(taskFetchers)
-                fetcherInstances = map(getFetcher, fetcherNames)
+                fetcherInstances = list(map(getFetcher, fetcherNames))
 
                 taskPath = "%s/%s" % (path, task.name())
                 self._makePathonPackage(taskPath)

@@ -5,11 +5,6 @@ _Transaction_
 A simple wrapper around DBInterface to make working with transactions simpler
 
 On MySQL transactions only work for innodb tables.
-
-On SQLite transactions only work if isolation_level is not null. This can be set
-in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
-you set {'isolation_level':None} all sql will be implicitly committed and the
-Transaction object will be meaningless.
 """
 
 

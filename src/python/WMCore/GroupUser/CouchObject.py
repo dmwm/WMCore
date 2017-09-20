@@ -8,17 +8,15 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 from __future__ import print_function
 
-import sys
-import os
-import json
-
-
+import json as jsonlib
 
 import WMCore.Database.CMSCouch as CMSCouch
 import WMCore.GroupUser.Decorators as Decorators
 
+
 class CouchConnectionError(Exception):
     """docstring for CouchConnectionError"""
+
     def __init__(self, arg):
         super(CouchConnectionError, self).__init__()
         self.arg = arg
@@ -37,6 +35,7 @@ class CouchObject(dict):
     This class assumes some simple mapping is used to generate the document ID as a property, rather
     on doing anything too fancy
     """
+
     def __init__(self):
         dict.__init__(self)
         self.couch = None
@@ -46,9 +45,8 @@ class CouchObject(dict):
         self.cdb_document_id = None
         self.cdb_document_data = "CouchObject"
 
-
-    connected = property(lambda x: x.couch != None)
-    json = property(lambda x: json.dumps(dict(x)))
+    connected = property(lambda x: x.couch is not None)
+    json = property(lambda x: jsonlib.dumps(dict(x)))
     # doc_id default returns None, which signals use couch-generated doc id
     document_id = property(lambda x: None)
 
@@ -61,7 +59,6 @@ class CouchObject(dict):
         self.cdb_url = url
         self.cdb_database = database
 
-
     def connect(self):
         """
         _connect_
@@ -71,10 +68,10 @@ class CouchObject(dict):
         """
         if self.connected:
             return
-        if self.cdb_url == None:
+        if self.cdb_url is None:
             msg = "url for couch service not provided"
             raise CouchConnectionError(msg)
-        if self.cdb_database == None:
+        if self.cdb_database is None:
             msg = "database name for couch service not provided"
             raise CouchConnectionError(msg)
         try:
@@ -95,9 +92,8 @@ class CouchObject(dict):
         Create the couch document for this object.
         """
         if not self.couch.documentExists(self.document_id):
-            couchDoc =  CMSCouch.Document(self.document_id, { self.cdb_document_data : dict(self)})
+            couchDoc = CMSCouch.Document(self.document_id, {self.cdb_document_data: dict(self)})
             self.couch.commitOne(couchDoc)
-
 
     @Decorators.requireConnection
     def get(self):

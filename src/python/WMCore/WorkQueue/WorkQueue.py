@@ -193,10 +193,6 @@ class WorkQueue(WorkQueueBase):
         else:
             self.SiteDB = SiteDB()
 
-        if isinstance(self.params['Teams'], basestring):
-            self.params['Teams'] = [x.strip() for x in \
-                                    self.params['Teams'].split(',')]
-
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
                                                               sitedb=self.SiteDB,
@@ -321,7 +317,7 @@ class WorkQueue(WorkQueueBase):
         return self.backend.updateElements(*ids, Status='Available',
                                            ChildQueueUrl=None, WMBSUrl=None)
 
-    def getWork(self, jobSlots, siteJobCounts, excludeWorkflows=[]):
+    def getWork(self, jobSlots, siteJobCounts, excludeWorkflows=None):
         """
         Get available work from the queue, inject into wmbs & mark as running
 
@@ -330,6 +326,7 @@ class WorkQueue(WorkQueueBase):
 
         siteJobCounts is a dict format of {site: {prio: jobs}}
         """
+        excludeWorkflows = excludeWorkflows or []
         results = []
         numElems = self.params['WorkPerCycle']
         if not self.backend.isAvailable():
@@ -548,7 +545,10 @@ class WorkQueue(WorkQueueBase):
             self.logger.info("New list of cancelled requests: %s" % requestNames)
 
             # Don't update as fails sometimes due to conflicts (#3856)
-            [x.load().__setitem__('Status', 'Canceled') for x in inbox_elements if x['Status'] != 'Canceled']
+            for x in inbox_elements:
+                if x['Status'] != 'Canceled':
+                    x.load().__setitem__('Status', 'Canceled')
+
             self.backend.saveElements(*inbox_elements)
 
         # if global queue, update non-acquired to Canceled, update parent to CancelRequested
@@ -567,7 +567,8 @@ class WorkQueue(WorkQueueBase):
 
             if elements_not_requested:
                 # Don't update as fails sometimes due to conflicts (#3856)
-                [x.load().__setitem__('Status', 'CancelRequested') for x in elements_not_requested]
+                for x in elements_not_requested:
+                    x.load().__setitem__('Status', 'CancelRequested')
                 self.backend.saveElements(*elements_not_requested)
                 self.logger.info("CancelRequest-ed element(s) %s" % str([x.id for x in elements_not_requested]))
 
@@ -580,7 +581,9 @@ class WorkQueue(WorkQueueBase):
                 if (time.time() - last_update) > self.params['cancelGraceTime']:
                     self.logger.info("%s cancelation has stalled, mark as finished" % elements[0]['RequestName'])
                     # Don't update as fails sometimes due to conflicts (#3856)
-                    [x.load().__setitem__('Status', 'Canceled') for x in elements if not x.inEndState()]
+                    for x in elements:
+                        if not x.inEndState():
+                            x.load().__setitem__('Status', 'Canceled')
                     self.backend.saveElements(*[x for x in elements if not x.inEndState()])
 
         return [x.id for x in elements]
@@ -961,7 +964,8 @@ class WorkQueue(WorkQueueBase):
                     if not updated_elements and (
                         float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
                         self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
-                    [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
+                    for x in updated_elements:
+                        self.backend.updateElements(x.id, **x.statusMetrics())
             except Exception as ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
 

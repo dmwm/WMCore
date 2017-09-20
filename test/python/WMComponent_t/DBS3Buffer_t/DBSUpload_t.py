@@ -1,42 +1,40 @@
 #!/usr/bin/env python
-#pylint: disable=E1101, W6501, W0142, C0103, W0401, E1103
+# pylint: disable=E1101, C0103, W0401, E1103
 # W0401: I am not going to import all those functions by hand
 """
 
 DBSUpload test TestDBSUpload module and the harness
 
 """
+import json
 import os
 import threading
 import time
 import unittest
-import json
-
 from tempfile import mkstemp
-from nose.plugins.attrib import attr
 
 from dbs.apis.dbsClient import DbsApi
+from nose.plugins.attrib import attr
 
-from WMCore.DAOFactory      import DAOFactory
-from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUIDLib   import makeUUID
-
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
-
 from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
-
-from WMQuality.Emulators.DBSClient.DBS3API import DbsApi as MockDbsApi
-from WMQuality.TestInit     import TestInit
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.Services.UUIDLib import makeUUID
 from WMQuality.Emulators import EmulatorSetup
+from WMQuality.Emulators.DBSClient.DBS3API import DbsApi as MockDbsApi
+from WMQuality.TestInit import TestInit
+
 
 class DBSUploadTest(unittest.TestCase):
     """
     TestCase for DBSUpload module
 
     """
+
     def setUp(self):
         """
         _setUp_
@@ -48,20 +46,20 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
-                                useDefault = False)
-        self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
+        self.testInit.setSchema(customModules=["WMComponent.DBS3Buffer"],
+                                useDefault=False)
+        self.testDir = self.testInit.generateWorkDir(deleteOnDestruction=False)
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         myThread = threading.currentThread()
-        self.bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                         logger = myThread.logger,
-                                         dbinterface = myThread.dbi)
+        self.bufferFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
 
-        locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
-        locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")
-        locationAction.execute(siteName = "malpaquet")
+        locationAction = self.bufferFactory(classname="DBSBufferFiles.AddLocation")
+        locationAction.execute(siteName="se1.cern.ch")
+        locationAction.execute(siteName="se1.fnal.gov")
+        locationAction.execute(siteName="malpaquet")
         self.dbsUrl = "https://localhost:1443/dbs/dev/global/DBSWriter"
         self.dbsApi = None
         return
@@ -87,55 +85,55 @@ class DBSUploadTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
 
-        #First the general stuff
+        # First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", os.getcwd())
 
         config.section_("Agent")
         config.Agent.componentName = 'DBSUpload'
-        config.Agent.useHeartbeat  = False
+        config.Agent.useHeartbeat = False
 
-        #Now the CoreDatabase information
-        #This should be the dialect, dburl, etc
+        # Now the CoreDatabase information
+        # This should be the dialect, dburl, etc
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
 
         config.component_("DBS3Upload")
-        config.DBS3Upload.pollInterval     = 10
-        config.DBS3Upload.logLevel         = 'DEBUG'
-        #config.DBS3Upload.dbsUrl           = "https://cmsweb-testbed.cern.ch/dbs/dev/global/DBSWriter"
-        #config.DBS3Upload.dbsUrl           = "https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter"
-        config.DBS3Upload.dbsUrl           = self.dbsUrl
-        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBS3Upload'
-        config.DBS3Upload.componentDir     = os.path.join(os.getcwd(), 'Components')
-        config.DBS3Upload.nProcesses       = 1
-        config.DBS3Upload.dbsWaitTime      = 0.1
-        config.DBS3Upload.datasetType      = "VALID"
+        config.DBS3Upload.pollInterval = 10
+        config.DBS3Upload.logLevel = 'DEBUG'
+        # config.DBS3Upload.dbsUrl           = "https://cmsweb-testbed.cern.ch/dbs/dev/global/DBSWriter"
+        # config.DBS3Upload.dbsUrl           = "https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter"
+        config.DBS3Upload.dbsUrl = self.dbsUrl
+        config.DBS3Upload.namespace = 'WMComponent.DBS3Buffer.DBS3Upload'
+        config.DBS3Upload.componentDir = os.path.join(os.getcwd(), 'Components')
+        config.DBS3Upload.nProcesses = 1
+        config.DBS3Upload.dbsWaitTime = 0.1
+        config.DBS3Upload.datasetType = "VALID"
         return config
 
-    def createParentFiles(self, acqEra, nFiles = 10,
-                          workflowName = 'TestWorkload',
-                          taskPath = '/TestWorkload/DataTest'):
+    def createParentFiles(self, acqEra, nFiles=10,
+                          workflowName='TestWorkload',
+                          taskPath='/TestWorkload/DataTest'):
         """
         _createParentFiles_
 
         Create several parentless files in DBSBuffer.  This simulates raw files
         in the T0.
         """
-        workflowId = self.injectWorkflow(workflowName = workflowName,
-                                         taskPath = taskPath)
+        workflowId = self.injectWorkflow(workflowName=workflowName,
+                                         taskPath=taskPath)
         parentlessFiles = []
 
-        baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % (acqEra)
+        baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % acqEra
         for i in range(nFiles):
-            testFile = DBSBufferFile(lfn = baseLFN + makeUUID() + ".root", size = 1024,
-                                     events = 20, checksums = {"cksum": 1},
-                                     workflowId = workflowId)
-            testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                  appFam = "RAW", psetHash = "GIBBERISH",
-                                  configContent = "MOREGIBBERISH")
-            testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % (acqEra))
+            testFile = DBSBufferFile(lfn=baseLFN + makeUUID() + ".root", size=1024,
+                                     events=20, checksums={"cksum": 1},
+                                     workflowId=workflowId)
+            testFile.setAlgorithm(appName="cmsRun", appVer="CMSSW_3_1_1",
+                                  appFam="RAW", psetHash="GIBBERISH",
+                                  configContent="MOREGIBBERISH")
+            testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % acqEra)
 
             testFile['block_close_max_wait_time'] = 1000000
             testFile['block_close_max_events'] = 1000000
@@ -165,14 +163,14 @@ class DBSUploadTest(unittest.TestCase):
         parentFiles = []
         childFiles = []
 
-        baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % (acqEra)
+        baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % acqEra
         for i in range(10):
-            testFile = DBSBufferFile(lfn = baseLFN + makeUUID() + ".root", size = 1024,
-                                     events = 20, checksums = {"cksum": 1})
-            testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                  appFam = "RAW", psetHash = "GIBBERISH",
-                                  configContent = "MOREGIBBERISH")
-            testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % (acqEra))
+            testFile = DBSBufferFile(lfn=baseLFN + makeUUID() + ".root", size=1024,
+                                     events=20, checksums={"cksum": 1})
+            testFile.setAlgorithm(appName="cmsRun", appVer="CMSSW_3_1_1",
+                                  appFam="RAW", psetHash="GIBBERISH",
+                                  configContent="MOREGIBBERISH")
+            testFile.setDatasetPath("/Cosmics/%s-v1/RAW" % acqEra)
 
             testFile['block_close_max_wait_time'] = 1000000
             testFile['block_close_max_events'] = 1000000
@@ -191,14 +189,14 @@ class DBSUploadTest(unittest.TestCase):
             testFile.setLocation("malpaquet")
             parentFiles.append(testFile)
 
-        baseLFN = "/store/data/%s/Cosmics/RECO/v1/000/143/316/" % (acqEra)
+        baseLFN = "/store/data/%s/Cosmics/RECO/v1/000/143/316/" % acqEra
         for i in range(5):
-            testFile = DBSBufferFile(lfn = baseLFN + makeUUID() + ".root", size = 1024,
-                                     events = 20, checksums = {"cksum": 1})
-            testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                  appFam = "RECO", psetHash = "GIBBERISH",
-                                  configContent = "MOREGIBBERISH")
-            testFile.setDatasetPath("/Cosmics/%s-v1/RECO" % (acqEra))
+            testFile = DBSBufferFile(lfn=baseLFN + makeUUID() + ".root", size=1024,
+                                     events=20, checksums={"cksum": 1})
+            testFile.setAlgorithm(appName="cmsRun", appVer="CMSSW_3_1_1",
+                                  appFam="RECO", psetHash="GIBBERISH",
+                                  configContent="MOREGIBBERISH")
+            testFile.setDatasetPath("/Cosmics/%s-v1/RECO" % acqEra)
 
             testFile['block_close_max_wait_time'] = 1000000
             testFile['block_close_max_events'] = 1000000
@@ -221,7 +219,7 @@ class DBSUploadTest(unittest.TestCase):
                                  moreParentFiles[i * 2 + 1]["lfn"]])
             childFiles.append(testFile)
 
-        return (parentFiles, childFiles)
+        return parentFiles, childFiles
 
     def verifyData(self, datasetName, files):
         """
@@ -229,11 +227,11 @@ class DBSUploadTest(unittest.TestCase):
 
         Verify the data in DBS3 matches what was uploaded to it.
         """
-        (junk, primary, processed, tier) = datasetName.split("/")
-        (acqEra, procVer) = processed.split("-")
+        (dummy, dummyPrimary, processed, tier) = datasetName.split("/")
+        (acqEra, dummyProcVer) = processed.split("-")
 
-        result = self.dbsApi.listDatasets(dataset = datasetName, detail = True,
-                                          dataset_access_type = "VALID")
+        result = self.dbsApi.listDatasets(dataset=datasetName, detail=True,
+                                          dataset_access_type="VALID")
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["data_tier_name"], tier,
@@ -245,7 +243,7 @@ class DBSUploadTest(unittest.TestCase):
         self.assertEqual(result[0]["physics_group_name"], "NoGroup",
                          "Error: Wrong physics group name.")
 
-        results = self.dbsApi.listBlocks(dataset = datasetName, detail = True)
+        results = self.dbsApi.listBlocks(dataset=datasetName, detail=True)
         self.assertEqual(len(results), len(files) / 5,
                          "Error: Wrong number of blocks.")
         for result in results:
@@ -256,7 +254,7 @@ class DBSUploadTest(unittest.TestCase):
             self.assertEqual(result["open_for_writing"], 0,
                              "Error: Block should be closed.")
 
-        results = self.dbsApi.listFileArray(dataset = datasetName, detail = True)
+        results = self.dbsApi.listFileArray(dataset=datasetName, detail=True)
         for result in results:
             file = None
             for file in files:
@@ -265,13 +263,13 @@ class DBSUploadTest(unittest.TestCase):
             else:
                 file = None
 
-            self.assertTrue(file != None, "Error: File not found.")
+            self.assertTrue(file is not None, "Error: File not found.")
             self.assertEqual(file["size"], result["file_size"],
                              "Error: File size mismatch.")
             self.assertEqual(file["events"], result["event_count"],
                              "Error: Event count mismatch.")
 
-            dbsParents = self.dbsApi.listFileParents(logical_file_name = file["lfn"])
+            dbsParents = self.dbsApi.listFileParents(logical_file_name=file["lfn"])
             if len(dbsParents) == 0:
                 self.assertEqual(len(file["parents"]), 0,
                                  "Error: Missing parents.")
@@ -284,11 +282,11 @@ class DBSUploadTest(unittest.TestCase):
                     else:
                         fileParent = None
 
-                    self.assertTrue(fileParent != None, "Error: Missing parent.")
+                    self.assertTrue(fileParent is not None, "Error: Missing parent.")
                 self.assertEqual(len(file["parents"]), len(dbsParents[0]["parent_logical_file_name"]),
                                  "Error: Wrong number of parents.")
 
-            runLumis = self.dbsApi.listFileLumiArray(logical_file_name = file["lfn"])
+            runLumis = self.dbsApi.listFileLumiArray(logical_file_name=file["lfn"])
             for runLumi in runLumis:
                 fileRun = None
                 for fileRun in file["runs"]:
@@ -300,17 +298,17 @@ class DBSUploadTest(unittest.TestCase):
                 else:
                     fileRun = None
 
-                self.assertTrue(fileRun != None, "Error: Missing run.")
+                self.assertTrue(fileRun is not None, "Error: Missing run.")
 
         self.assertEqual(len(files), len(results), "Error: Files missing.")
         return
 
-    def injectWorkflow(self, workflowName = 'TestWorkflow',
-                       taskPath = '/TestWorkflow/ReadingEvents',
-                       MaxWaitTime  = 1,
-                       MaxFiles = 5,
-                       MaxEvents = 250000000,
-                       MaxSize = 99999000000999999):
+    def injectWorkflow(self, workflowName='TestWorkflow',
+                       taskPath='/TestWorkflow/ReadingEvents',
+                       MaxWaitTime=1,
+                       MaxFiles=5,
+                       MaxEvents=250000000,
+                       MaxSize=99999000000999999):
         """
         _injectWorklow_
 
@@ -331,9 +329,9 @@ class DBSUploadTest(unittest.TestCase):
         Verify that we can successfully upload to DBS3.  Also verify that the
         uploader correctly handles files parentage when uploading.
         """
-        self.dbsApi = DbsApi(url = self.dbsUrl)
+        self.dbsApi = DbsApi(url=self.dbsUrl)
         config = self.getConfig()
-        dbsUploader = DBSUploadPoller(config = config)
+        dbsUploader = DBSUploadPoller(config=config)
 
         # First test verifies that uploader will poll and then not do anything
         # as the database is empty.
@@ -356,7 +354,7 @@ class DBSUploadTest(unittest.TestCase):
         # Inject some more parent files and some child files into DBSBuffer.
         # Run the uploader twice, only the parent files should be added to DBS3.
         (moreParentFiles, childFiles) = \
-                          self.createFilesWithChildren(parentFiles, acqEra)
+            self.createFilesWithChildren(parentFiles, acqEra)
         dbsUploader.algorithm()
         time.sleep(5)
         dbsUploader.algorithm()
@@ -382,9 +380,9 @@ class DBSUploadTest(unittest.TestCase):
 
         Verify that the dual upload mode works correctly.
         """
-        self.dbsApi = DbsApi(url = self.dbsUrl)
+        self.dbsApi = DbsApi(url=self.dbsUrl)
         config = self.getConfig()
-        dbsUploader = DBSUploadPoller(config = config)
+        dbsUploader = DBSUploadPoller(config=config)
         dbsUtil = DBSBufferUtil()
 
         # First test verifies that uploader will poll and then not do anything
@@ -394,7 +392,7 @@ class DBSUploadTest(unittest.TestCase):
         acqEra = "Summer%s" % (int(time.time()))
         parentFiles = self.createParentFiles(acqEra)
         (moreParentFiles, childFiles) = \
-                          self.createFilesWithChildren(parentFiles, acqEra)
+            self.createFilesWithChildren(parentFiles, acqEra)
 
         allFiles = parentFiles + moreParentFiles
         allBlocks = []
@@ -402,12 +400,12 @@ class DBSUploadTest(unittest.TestCase):
             DBSBufferDataset(parentFiles[0]["datasetPath"]).create()
             blockName = parentFiles[0]["datasetPath"] + "#" + makeUUID()
             dbsBlock = DBSBufferBlock(blockName,
-                                      location = "malpaquet",
-                                      datasetpath =  None)
+                                      location="malpaquet",
+                                      datasetpath=None)
             dbsBlock.status = "Open"
             dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
-            for file in allFiles[i * 5 : (i * 5) + 5]:
+            for file in allFiles[i * 5: (i * 5) + 5]:
                 dbsBlock.addFile(file, 'data', 'VALID')
                 dbsUtil.setBlockFiles({"block": blockName, "filelfn": file["lfn"]})
                 if i < 2:
@@ -419,8 +417,8 @@ class DBSUploadTest(unittest.TestCase):
         DBSBufferDataset(childFiles[0]["datasetPath"]).create()
         blockName = childFiles[0]["datasetPath"] + "#" + makeUUID()
         dbsBlock = DBSBufferBlock(blockName,
-                                  location = "malpaquet",
-                                  datasetpath =  None)
+                                  location="malpaquet",
+                                  datasetpath=None)
         dbsBlock.status = "InDBS"
         dbsBlock.setDataset(childFiles[0]["datasetPath"], 'data', 'VALID')
         dbsUtil.createBlocks([dbsBlock])
@@ -471,10 +469,10 @@ class DBSUploadTest(unittest.TestCase):
 
             # Set the poller and the dbsUtil for verification
             myThread = threading.currentThread()
-            (_, dbsFilePath) = mkstemp(dir = self.testDir)
+            (_, dbsFilePath) = mkstemp(dir=self.testDir)
             self.dbsUrl = dbsFilePath
             config = self.getConfig()
-            dbsUploader = MockDBSUploadPoller.DBSUploadPoller(config = config)
+            dbsUploader = MockDBSUploadPoller.DBSUploadPoller(config=config)
             dbsUtil = DBSBufferUtil()
 
             # First test is event based limits and timeout with no new files.
@@ -483,11 +481,11 @@ class DBSUploadTest(unittest.TestCase):
             workflowName = 'TestWorkload%s' % (int(time.time()))
             taskPath = '/%s/TestProcessing' % workflowName
             self.injectWorkflow(workflowName, taskPath,
-                                MaxWaitTime = 2, MaxFiles = 100,
-                                MaxEvents = 150)
-            self.createParentFiles(acqEra, nFiles = 20,
-                                   workflowName = workflowName,
-                                   taskPath = taskPath)
+                                MaxWaitTime=2, MaxFiles=100,
+                                MaxEvents=150)
+            self.createParentFiles(acqEra, nFiles=20,
+                                   workflowName=workflowName,
+                                   taskPath=taskPath)
 
             # The algorithm needs to be run twice.  On the first iteration it will
             # create all the blocks and upload one with less than 150 events.
@@ -497,7 +495,8 @@ class DBSUploadTest(unittest.TestCase):
             openBlocks = dbsUtil.findOpenBlocks()
             self.assertEqual(len(openBlocks), 1)
             globalFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'InDBS'")[0].fetchall()
-            notUploadedFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'NOTUPLOADED'")[0].fetchall()
+            notUploadedFiles = myThread.dbi.processData("SELECT id FROM dbsbuffer_file WHERE status = 'NOTUPLOADED'")[
+                0].fetchall()
             self.assertEqual(len(globalFiles), 14)
             self.assertEqual(len(notUploadedFiles), 6)
             # Check the fake DBS for data
@@ -531,11 +530,11 @@ class DBSUploadTest(unittest.TestCase):
             workflowName = 'TestWorkload%s' % (int(time.time()))
             taskPath = '/%s/TestProcessing' % workflowName
             self.injectWorkflow(workflowName, taskPath,
-                                MaxWaitTime = 2, MaxFiles = 5,
-                                MaxEvents = 200000000)
-            self.createParentFiles(acqEra, nFiles = 16,
-                                   workflowName = workflowName,
-                                   taskPath = taskPath)
+                                MaxWaitTime=2, MaxFiles=5,
+                                MaxEvents=200000000)
+            self.createParentFiles(acqEra, nFiles=16,
+                                   workflowName=workflowName,
+                                   taskPath=taskPath)
             dbsUploader.algorithm()
             dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
@@ -554,9 +553,9 @@ class DBSUploadTest(unittest.TestCase):
             # Put more files, they will go into the same block and then it will be closed
             # after timeout
             time.sleep(3)
-            self.createParentFiles(acqEra, nFiles = 3,
-                                   workflowName = workflowName,
-                                   taskPath = taskPath)
+            self.createParentFiles(acqEra, nFiles=3,
+                                   workflowName=workflowName,
+                                   taskPath=taskPath)
             dbsUploader.algorithm()
             dbsUploader.checkBlocks()
             openBlocks = dbsUtil.findOpenBlocks()
@@ -580,11 +579,11 @@ class DBSUploadTest(unittest.TestCase):
             workflowName = 'TestWorkload%s' % (int(time.time()))
             taskPath = '/%s/TestProcessing' % workflowName
             self.injectWorkflow(workflowName, taskPath,
-                                MaxWaitTime = 1, MaxFiles = 500,
-                                MaxEvents = 200000000, MaxSize = 2048)
-            self.createParentFiles(acqEra, nFiles = 7,
-                                   workflowName = workflowName,
-                                   taskPath = taskPath)
+                                MaxWaitTime=1, MaxFiles=500,
+                                MaxEvents=200000000, MaxSize=2048)
+            self.createParentFiles(acqEra, nFiles=7,
+                                   workflowName=workflowName,
+                                   taskPath=taskPath)
             dbsUploader.algorithm()
             dbsUploader.checkBlocks()
             time.sleep(2)
@@ -604,12 +603,13 @@ class DBSUploadTest(unittest.TestCase):
                 self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['open_for_writing'], 0)
                 self.assertTrue('close_settings' not in block)
-        except:
+        except Exception:
             self.fail("We failed at some point in the test")
         finally:
             # We don't trust anyone else with _exit
             del os.environ["DONT_TRAP_EXIT"]
         return
+
 
 if __name__ == '__main__':
     unittest.main()

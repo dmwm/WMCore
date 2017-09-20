@@ -280,6 +280,8 @@ class SimpleCondorPlugin(BasePlugin):
                     condorOut = "condor.%s.out" % job['gridid']
                     condorErr = "condor.%s.err" % job['gridid']
                     condorLog = "condor.%s.log" % job['gridid']
+                    exitCode = 99303
+                    exitType = "NoJobReport"
                     for condorFile in [condorOut, condorErr, condorLog]:
                         condorFilePath = os.path.join(job['cache_dir'], condorFile)
                         if os.path.isfile(condorFilePath):
@@ -289,7 +291,17 @@ class SimpleCondorPlugin(BasePlugin):
                             logOutput += '\n\n'
                             for exMsg in listWMExceptionStr(condorFilePath):
                                 logOutput += "\n\n%s\n" % exMsg
-                    condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
+
+                            if condorFile == condorLog:
+                                for condorReason in BasicAlgos.findMagicStr(condorFilePath, '<a n="Reason">'):
+                                    logOutput += condorReason
+                                    if "SYSTEM_PERIODIC_REMOVE" in condorReason or "via condor_rm" in condorReason:
+                                        exitCode = 99400
+                                        exitType = "RemovedByGLIDEIN"
+                                    else:
+                                        exitCode = 99401
+                    logOutput += '\n\n'
+                    condorReport.addError(exitType, exitCode, exitType, logOutput)
                 else:
                     msg = "Serious Error in Completing condor job with id %s!\n" % job['id']
                     msg += "Could not find jobCache directory %s\n" % job['cache_dir']

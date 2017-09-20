@@ -7,22 +7,25 @@ Perform general agent monitoring, like:
 """
 __all__ = []
 
-import threading
-import logging
-import time
 import json
-from Utils.Utilities import timeit, numberCouchProcess
+import logging
+import threading
+import time
+
+from Utils.Timers import timeFunction
+from Utils.Utilities import numberCouchProcess
+from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import (DataUploadTime, WMAgentDBData,
+                                                               convertToAgentCouchDoc, initAgentInfo)
 from WMCore.Credential.Proxy import Proxy
-from WMCore.Lexicon import sanitizeURL
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, listDiskUsageOverThreshold
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
-    convertToAgentCouchDoc, initAgentInfo, DataUploadTime
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
-from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -131,7 +134,7 @@ class AgentStatusPoller(BaseWorkerThread):
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
 
-    @timeit
+    @timeFunction
     def collectWorkQueueInfo(self):
         """
         Collect information from local workqueue database
@@ -221,8 +224,7 @@ class AgentStatusPoller(BaseWorkerThread):
             if agentInfo.get('data_error', 'ok') != 'ok' or agentInfo.get('couch_process_warning', 0):
                 agentInfo['status'] = "error"
 
-        if agentInfo['down_components']:
-            logging.info("List of agent components down: %s", agentInfo['down_components'])
+        logging.info("List of agent components down: %s", agentInfo['down_components'])
 
         return agentInfo
 
@@ -231,7 +233,7 @@ class AgentStatusPoller(BaseWorkerThread):
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
         self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
 
-    @timeit
+    @timeFunction
     def collectWMBSInfo(self):
         """
         Fetches WMBS job information.

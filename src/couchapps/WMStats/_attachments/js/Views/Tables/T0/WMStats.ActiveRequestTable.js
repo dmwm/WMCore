@@ -63,7 +63,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
               	            if (type === "display") {
 	                            var currentTime = Math.round(new Date().getTime() / 1000);
 	                            var startTime = row.request_status[row.request_status.length -1].update_time;
-	                            return WMStats.Utils.foramtDuration(currentTime - startTime);
+	                            return WMStats.Utils.formatDuration(currentTime - startTime);
                             }
                             return row.request_status[row.request_status.length -1].update_time;
                           },

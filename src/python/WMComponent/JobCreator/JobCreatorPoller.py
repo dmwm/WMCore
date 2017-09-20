@@ -530,17 +530,19 @@ class JobCreatorPoller(BaseWorkerThread):
             splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
             logging.debug("Split Params: %s" % splitParams)
 
-            # My hope is that the job factory is smart enough only to split un-split jobs
+            # Load the proper job splitting module
             splitterFactory = SplitterFactory(splitParams.get('algo_package', "WMCore.JobSplitting"))
+            # and return an instance of the splitting algorithm
             wmbsJobFactory = splitterFactory(package = "WMCore.WMBS",
                                              subscription = wmbsSubscription,
                                              generators=seederList,
                                              limit = self.limit)
 
-            # Turn on the jobFactory
+            # Turn on the jobFactory --> get available files for that subscription, keep result proxies
             wmbsJobFactory.open()
 
-            # Create a function to hold it
+            # Create a function to hold it, calling __call__ from the JobFactory
+            # which then calls algorithm method of the job splitting algo instance
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
                                                splitParams = splitParams)
 
@@ -724,7 +726,7 @@ class JobCreatorPoller(BaseWorkerThread):
         try:
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
 
-            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
+            createFailedJobs = [x for x in wmbsJobGroup.jobs if x.get('failedOnCreation', False)]
             self.generateCreateFailedReports(createFailedJobs)
             self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:

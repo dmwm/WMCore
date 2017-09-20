@@ -25,6 +25,7 @@ from cherrypy.lib.static import serve_file
 
 # import WMCore itself to determine path of modules
 import WMCore
+# WMCore modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
@@ -32,9 +33,9 @@ from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
-# WMCore modules
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.Utils.url_utils import getdata
+from WMCore.Services.pycurl_manager import RequestHandler
+from Utils.CertTools import getKeyCertFromEnv
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import gen_color
@@ -44,6 +45,13 @@ from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
+
+def getdata(url, params, headers=None):
+    "Helper function to get data from the service"
+    ckey, cert = getKeyCertFromEnv()
+    mgr = RequestHandler()
+    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey, cert=cert)
+    return json.loads(res)
 
 def sort_bold(docs):
     "Return sorted list of bold items from provided doc list"
@@ -230,9 +238,9 @@ def toString(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(toString, data.iteritems()))
+        return dict(list(map(toString, data.iteritems())))
     elif isinstance(data, collections.Iterable):
-        return type(data)(map(toString, data))
+        return type(data)(list(map(toString, data)))
     else:
         return data
 
@@ -606,7 +614,8 @@ class ReqMgrService(TemplatedPage):
             return {'error': 'no input dataset'}
         url = 'https://cmsweb.cern.ch/reqmgr2/data/request?outputdataset=%s' % dataset
         params = {}
-        wdata = getdata(url, params)
+        headers = {'Accept': 'application/json'}
+        wdata = getdata(url, params, headers)
         wdict = dict(date=time.ctime(), team='Team-A', status='Running', ID=genid(wdata))
         winfo = self.templatepage('workflow', wdict=wdict,
                                   dataset=dataset, code=pprint.pformat(wdata))

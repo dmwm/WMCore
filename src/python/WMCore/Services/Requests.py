@@ -8,6 +8,7 @@ deserialising the response.
 
 The response from the remote server is cached if expires/etags are set.
 """
+from __future__ import division, print_function
 
 import base64
 import cStringIO as StringIO
@@ -25,6 +26,7 @@ import types
 from httplib import HTTPException
 from json import JSONEncoder, JSONDecoder
 
+from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -54,7 +56,6 @@ def check_server_url(srvurl):
         msg = "You must include "
         msg += "http(s):// in your server's address, %s doesn't" % srvurl
         raise ValueError(msg)
-
 
 class Requests(dict):
     """
@@ -99,6 +100,9 @@ class Requests(dict):
             cache_dir = (self.cachePath(idict.get('cachepath'), idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
+        self.setdefault("cert", None)
+        self.setdefault("key", None)
+        self.setdefault('capath', None)
         self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 
@@ -401,46 +405,18 @@ class Requests(dict):
        Get the user credentials if they exist, otherwise throw an exception.
        This code was modified from DBSAPI/dbsHttpService.py
         """
-        cert = None
-        key = None
+
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
-        if 'cert' in self and 'key' in self and self['cert'] and self['key']:
+        if self['cert'] and self['key']:
             key = self['key']
             cert = self['cert']
-
-        # Now we're trying to guess what the right cert/key combo is...
-        # First preference to HOST Certificate, This is how it set in Tier0
-        elif 'X509_HOST_CERT' in os.environ:
-            cert = os.environ['X509_HOST_CERT']
-            key = os.environ['X509_HOST_KEY']
-        # Second preference to User Proxy, very common
-        elif 'X509_USER_PROXY' in os.environ and os.path.exists(os.environ['X509_USER_PROXY']):
-            cert = os.environ['X509_USER_PROXY']
-            key = cert
-        # Third preference to User Cert/Proxy combinition
-        elif 'X509_USER_CERT' in os.environ:
-            cert = os.environ['X509_USER_CERT']
-            key = os.environ['X509_USER_KEY']
-        # TODO: only in linux, unix case, add other os case
-        # look for proxy at default location /tmp/x509up_u$uid
-        elif os.path.exists('/tmp/x509up_u' + str(os.getuid())):
-            cert = '/tmp/x509up_u' + str(os.getuid())
-            key = cert
-
-        # if interactive we can use an encrypted certificate
-        elif sys.stdin.isatty():
-            if os.path.exists(os.environ['HOME'] + '/.globus/usercert.pem'):
-                cert = os.environ['HOME'] + '/.globus/usercert.pem'
-                if os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem'):
-                    key = os.environ['HOME'] + '/.globus/userkey.pem'
-                else:
-                    key = cert
+        else:
+            key, cert = getKeyCertFromEnv()
 
         # Set but not found
-        if key and cert:
-            if not os.path.exists(cert) or not os.path.exists(key):
-                raise WMException('Request requires a host certificate and key',
+        if key is None or cert is None:
+            raise WMException('Request requires a host certificate and key',
                                   "WMCORE-11")
 
         # All looks OK, still doesn't guarantee proxy's validity etc.
@@ -454,12 +430,10 @@ class Requests(dict):
         is capath == None then the server identity is not verified. To enable this check
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
-        cacert = None
-        if 'capath' in self:
-            cacert = self['capath']
-        elif "X509_CERT_DIR" in os.environ:
-            cacert = os.environ["X509_CERT_DIR"]
-        return cacert
+        capath = self['capath']
+        if not capath:
+            capath = getCAPathFromEnv()
+        return capath
 
     def uploadFile(self, fileName, url, fieldName='file1', params=[], verb='POST'):
         """

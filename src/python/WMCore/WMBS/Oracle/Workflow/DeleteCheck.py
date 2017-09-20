@@ -2,7 +2,7 @@
 """
 _DeleteCheckWorkflow_
 
-SQLite implementation of DeleteCheckWorkflow
+Oracle implementation of DeleteCheckWorkflow
 
 """
 __all__ = []

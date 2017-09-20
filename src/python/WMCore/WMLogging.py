@@ -4,8 +4,9 @@ _WMLogging_
 
 Logging facilities used in WMCore.
 """
-
+import time
 import logging
+import codecs
 from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
 
 # a new log level which is lower than debug
@@ -37,13 +38,51 @@ def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
     """ Set the logger for time based lotaing.
     """
     logger = logging.getLogger(name)
-    handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)
+    if duration == 'midnight':
+        handler = MyTimedRotatingFileHandler(logFile, duration, backupCount = 10)
+    else:
+        handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
     return logger
+
+
+class MyTimedRotatingFileHandler(TimedRotatingFileHandler):
+    """
+    _MyTimedRotatingFileHandler_
+
+    Overwrite the standard filename functionality from
+    logging.handlers.MyTimedRotatingFileHandler
+    such that it mimics the same behaviour as rotatelogs tool.
+
+    Source code from:
+    https://stackoverflow.com/questions/338450/timedrotatingfilehandler-changing-file-name
+    """
+    def __init__(self, logName, interval, backupCount):
+        super(MyTimedRotatingFileHandler, self).__init__(logName, when=interval,
+                                                         backupCount=backupCount)
+
+    def doRollover(self):
+        """
+        _doRollover_
+
+        Rotate the log file and add the date between the log name
+        and its extension, e.g.:
+        reqmgr2.log becomes reqmgr2-20170815.log
+        """
+        self.stream.close()
+        # replace yesterday's date by today
+        yesterdayStr = time.strftime("%Y%m%d", time.localtime(time.time() - 7200))
+        self.baseFilename = self.baseFilename.replace(yesterdayStr, time.strftime("%Y%m%d"))
+        if self.encoding:
+            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
+        else:
+            self.stream = open(self.baseFilename, 'w')
+        self.rolloverAt = self.rolloverAt + self.interval
+
 
 class CouchHandler(logging.handlers.HTTPHandler):
     def __init__(self, host, database):

@@ -12,11 +12,9 @@ class DAOFactory(object):
         self.owner = owner
         #self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
         from WMCore.Database.Dialects import MySQLDialect
-        from WMCore.Database.Dialects import SQLiteDialect
         from WMCore.Database.Dialects import OracleDialect
         self.dialects = {"Oracle" : OracleDialect,
-                    "MySQL" : MySQLDialect,
-                    "SQLite" : SQLiteDialect}
+                    "MySQL" : MySQLDialect,}
 
     def __call__(self, classname):
         """

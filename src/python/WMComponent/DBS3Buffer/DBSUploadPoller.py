@@ -24,26 +24,24 @@ that is not in DBS, decide whether its components are in DBS,
 add them, and then add the files.  This is why everything is
 so convoluted.
 """
-
-import time
-import threading
-import logging
 import Queue
-import traceback
+import json
+import logging
 import multiprocessing
-
-from WMCore.DAOFactory import DAOFactory
-
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.UUIDLib               import makeUUID
-from WMCore.WMException                    import WMException
-from WMCore.Algorithms.MiscAlgos           import sortListByKey
-
-from WMComponent.DBS3Buffer.DBSBufferUtil  import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
+import threading
+import time
+import traceback
+import os.path
 
 from dbs.apis.dbsClient import DbsApi
 
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
+from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
+from WMCore.Algorithms.MiscAlgos import sortListByKey
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 def createConfigForJSON(config):
@@ -59,7 +57,6 @@ def createConfigForJSON(config):
             # Create a dictionary key for it
             final[sectionName] = createDictionaryFromConfig(section)
 
-
     return final
 
 
@@ -68,7 +65,6 @@ def createDictionaryFromConfig(configSection):
     Recursively create dictionaries from config
 
     """
-
 
     final = configSection.dictionary_()
 
@@ -90,8 +86,7 @@ def uploadWorker(workInput, results, dbsUrl):
 
     # Init DBS Stuff
     logging.debug("Creating dbsAPI with address %s", dbsUrl)
-    dbsApi = DbsApi(url = dbsUrl)
-
+    dbsApi = DbsApi(url=dbsUrl)
 
     while True:
 
@@ -107,13 +102,13 @@ def uploadWorker(workInput, results, dbsUrl):
             # Then halt the process
             break
 
-        name  = work.get('name', None)
+        name = work.get('name', None)
         block = work.get('block', None)
 
         # Do stuff with DBS
         try:
             logging.debug("About to call insert block with block: %s", block)
-            dbsApi.insertBulkBlock(blockDump = block)
+            dbsApi.insertBulkBlock(blockDump=block)
             results.put({'name': name, 'success': "uploaded"})
         except Exception as ex:
             exString = str(ex)
@@ -132,7 +127,7 @@ def uploadWorker(workInput, results, dbsUrl):
                 logging.error(str(traceback.format_exc()))
                 results.put({'name': name, 'success': "check"})
             else:
-                msg =  "Error trying to process block %s through DBS.\n" % name
+                msg = "Error trying to process block %s through DBS.\n" % name
                 msg += exString
                 logging.error(msg)
                 logging.error(str(traceback.format_exc()))
@@ -141,6 +136,7 @@ def uploadWorker(workInput, results, dbsUrl):
 
     return
 
+
 class DBSUploadException(WMException):
     """
     Holds the exception info for
@@ -148,12 +144,12 @@ class DBSUploadException(WMException):
 
     """
 
+
 class DBSUploadPoller(BaseWorkerThread):
     """
     Handles poll-based DBSUpload
 
     """
-
 
     def __init__(self, config):
         """
@@ -161,7 +157,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         logging.info("Running __init__ for DBS3 Uploader")
         BaseWorkerThread.__init__(self)
-        self.config     = config
+        self.config = config
 
         # This is slightly dangerous, but DBSUpload depends
         # on DBSInterface anyway
@@ -170,22 +166,22 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbsUtil = DBSBufferUtil()
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        self.pool   = []
+        self.pool = []
         self.blocksToCheck = []
-        self.workInput  = None
+        self.workInput = None
         self.workResult = None
-        self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
-        self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 2)
+        self.nProc = getattr(self.config.DBS3Upload, 'nProcesses', 4)
+        self.wait = getattr(self.config.DBS3Upload, 'dbsWaitTime', 2)
         self.nTries = getattr(self.config.DBS3Upload, 'dbsNTries', 300)
-        self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
-        self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
+        self.physicsGroup = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
+        self.datasetType = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
-        self.blockCount     = 0
-        self.dbsApi = DbsApi(url = self.dbsUrl)
+        self.blockCount = 0
+        self.dbsApi = DbsApi(url=self.dbsUrl)
 
         # List of blocks currently in processing
         self.queuedBlocks = []
@@ -198,9 +194,10 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.filesToUpdate = []
 
-        self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
-        self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
-                                   '/data/mnorman/block.json')
+        self.produceCopy = getattr(self.config.DBS3Upload, 'dumpBlock', False)
+
+        self.copyPath = os.path.join(getattr(self.config.DBS3Upload, 'componentDir', '/data/srv/'),
+                                     'dbsuploader_block.json')
 
         self.timeoutWaiver = 1
 
@@ -216,15 +213,15 @@ class DBSUploadPoller(BaseWorkerThread):
             # Then something already exists.  Continue
             return
 
-        self.workInput  = multiprocessing.Queue()
+        self.workInput = multiprocessing.Queue()
         self.workResult = multiprocessing.Queue()
 
         # Starting up the pool:
         for _ in range(self.nProc):
-            p = multiprocessing.Process(target = uploadWorker,
-                                        args = (self.workInput,
-                                                self.workResult,
-                                                self.dbsUrl))
+            p = multiprocessing.Process(target=uploadWorker,
+                                        args=(self.workInput,
+                                              self.workResult,
+                                              self.dbsUrl))
             p.start()
             self.pool.append(p)
 
@@ -253,7 +250,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # Something very strange happens here
                 # It's like it raises a blank exception
                 # Upon being told to return
-                msg =  "Hit some exception in deletion\n"
+                msg = "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.debug(msg)
                 terminate = True
@@ -273,8 +270,6 @@ class DBSUploadPoller(BaseWorkerThread):
         self.workResult = None
         return
 
-
-
     def terminate(self, params):
         """
         Do one more pass, then terminate
@@ -283,8 +278,7 @@ class DBSUploadPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
-
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         _algorithm_
 
@@ -307,7 +301,7 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             raise
         except Exception as ex:
-            msg =  "Unhandled Exception in DBSUploadPoller!\n"
+            msg = "Unhandled Exception in DBSUploadPoller!\n"
             msg += str(ex)
             msg += str(str(traceback.format_exc()))
             logging.error(msg)
@@ -336,27 +330,27 @@ class DBSUploadPoller(BaseWorkerThread):
         except WMException:
             raise
         except Exception as ex:
-            msg =  "Unhandled exception while loading blocks.\n"
+            msg = "Unhandled exception while loading blocks.\n"
             msg += str(ex)
             logging.error(msg)
             logging.debug("Blocks to load: %s\n", blocksToLoad)
             raise DBSUploadException(msg)
 
         for blockInfo in loadedBlocks:
-            block = DBSBufferBlock(name = blockInfo['block_name'],
-                                   location = blockInfo['origin_site_name'],
-                                   datasetpath = blockInfo['datasetpath'])
+            block = DBSBufferBlock(name=blockInfo['block_name'],
+                                   location=blockInfo['origin_site_name'],
+                                   datasetpath=blockInfo['datasetpath'])
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
             # Now we have to load files...
             try:
-                files = self.dbsUtil.loadFilesByBlock(blockname = blockname)
+                files = self.dbsUtil.loadFilesByBlock(blockname=blockname)
                 logging.info("Have %i files for block %s", len(files), blockname)
             except WMException:
                 raise
             except Exception as ex:
-                msg =  "Unhandled exception while loading files for existing blocks.\n"
+                msg = "Unhandled exception while loading files for existing blocks.\n"
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Blocks being loaded: %s\n", blockname)
@@ -387,11 +381,11 @@ class DBSUploadPoller(BaseWorkerThread):
 
             # Get the files
             try:
-                loadedFiles = self.dbsUtil.findUploadableFilesByDAS(datasetpath = datasetpath)
+                loadedFiles = self.dbsUtil.findUploadableFilesByDAS(datasetpath=datasetpath)
             except WMException:
                 raise
             except Exception as ex:
-                msg =  "Unhandled exception while loading uploadable files for DatasetPath.\n"
+                msg = "Unhandled exception while loading uploadable files for DatasetPath.\n"
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("DatasetPath being loaded: %s\n", datasetpath)
@@ -408,27 +402,27 @@ class DBSUploadPoller(BaseWorkerThread):
                 if len(files) > 0:
 
                     currentBlock = self.getBlock(files[0], location, True)
-                    currentBlock.setAcquisitionEra(era = dspInfo['AcquisitionEra'])
-                    currentBlock.setProcessingVer(procVer = dspInfo['ProcessingVer'])
+                    currentBlock.setAcquisitionEra(era=dspInfo['AcquisitionEra'])
+                    currentBlock.setProcessingVer(procVer=dspInfo['ProcessingVer'])
 
                     for newFile in files:
 
-                        if not newFile.get('block', 1) == None:
+                        if not newFile.get('block', 1) is None:
                             # Then this file already has a block
                             # It should be accounted for somewhere
                             # Or loaded with the block
                             continue
 
                         # Check if we can put files in this block
-                        if not self.isBlockOpen(newFile = newFile,
-                                                block = currentBlock):
+                        if not self.isBlockOpen(newFile=newFile,
+                                                block=currentBlock):
                             # Then we have to close the block and get a new one
                             currentBlock.setPendingAndCloseBlock()
                             readyBlocks.append(currentBlock)
-                            currentBlock = self.getBlock(newFile = newFile,
-                                                         location = location)
-                            currentBlock.setAcquisitionEra(era = dspInfo['AcquisitionEra'])
-                            currentBlock.setProcessingVer(procVer = dspInfo['ProcessingVer'])
+                            currentBlock = self.getBlock(newFile=newFile,
+                                                         location=location)
+                            currentBlock.setAcquisitionEra(era=dspInfo['AcquisitionEra'])
+                            currentBlock.setProcessingVer(procVer=dspInfo['ProcessingVer'])
 
                         # Now deal with the file
                         currentBlock.addFile(newFile, self.datasetType, self.primaryDatasetType)
@@ -451,12 +445,13 @@ class DBSUploadPoller(BaseWorkerThread):
         completedWorkflows = self.dbsUtil.getCompletedWorkflows()
         for block in self.blockCache.values():
             if block.status == "Open":
-                if ( block.getTime() > block.getMaxBlockTime() ) or any (key in completedWorkflows for key in block.workflows):
+                if (block.getTime() > block.getMaxBlockTime()) or any(
+                                key in completedWorkflows for key in block.workflows):
                     block.setPendingAndCloseBlock()
 
         return
 
-    def isBlockOpen(self, newFile, block, doTime = False):
+    def isBlockOpen(self, newFile, block, doTime=False):
         """
         _isBlockOpen_
 
@@ -468,7 +463,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
 
         if block.getMaxBlockFiles() is None or block.getMaxBlockNumEvents() is None or \
-            block.getMaxBlockSize() is None or block.getMaxBlockTime() is None:
+                        block.getMaxBlockSize() is None or block.getMaxBlockTime() is None:
             return True
         if block.status != 'Open':
             # Then somebody has dumped this already
@@ -486,7 +481,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         return True
 
-    def getBlock(self, newFile, location, skipOpenCheck = False):
+    def getBlock(self, newFile, location, skipOpenCheck=False):
         """
         _getBlock_
 
@@ -497,7 +492,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         for block in self.blockCache.values():
             if datasetpath == block.getDatasetPath() and location == block.getLocation():
-                if not self.isBlockOpen(newFile = newFile, block = block) and not skipOpenCheck:
+                if not self.isBlockOpen(newFile=newFile, block=block) and not skipOpenCheck:
                     # Block isn't open anymore.  Mark it as pending so that it gets uploaded.
                     block.setPendingAndCloseBlock()
                 else:
@@ -505,9 +500,9 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # A suitable open block does not exist.  Create a new one.
         blockname = "%s#%s" % (datasetpath, makeUUID())
-        newBlock = DBSBufferBlock(name = blockname,
-                                  location = location,
-                                  datasetpath = datasetpath)
+        newBlock = DBSBufferBlock(name=blockname,
+                                  location=location,
+                                  datasetpath=datasetpath)
         self.blockCache[blockname] = newBlock
         return newBlock
 
@@ -531,9 +526,9 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
-        createBlocksDAO = self.daoFactory(classname = "CreateBlocks")
-        updateBlocksDAO = self.daoFactory(classname = "UpdateBlocks")
-        setBlockFilesDAO = self.daoFactory(classname = "SetBlockFiles")
+        createBlocksDAO = self.daoFactory(classname="CreateBlocks")
+        updateBlocksDAO = self.daoFactory(classname="UpdateBlocks")
+        setBlockFilesDAO = self.daoFactory(classname="SetBlockFiles")
 
         createInDBS = []
         createInDBSBuffer = []
@@ -566,19 +561,19 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 myThread.transaction.begin()
                 if len(createInDBSBuffer) > 0:
-                    createBlocksDAO.execute(blocks = createInDBSBuffer,
-                                            conn = myThread.transaction.conn,
-                                            transaction = True)
+                    createBlocksDAO.execute(blocks=createInDBSBuffer,
+                                            conn=myThread.transaction.conn,
+                                            transaction=True)
                 if len(updateInDBSBuffer) > 0:
-                    updateBlocksDAO.execute(blocks = updateInDBSBuffer,
-                                            conn = myThread.transaction.conn,
-                                            transaction = True)
+                    updateBlocksDAO.execute(blocks=updateInDBSBuffer,
+                                            conn=myThread.transaction.conn,
+                                            transaction=True)
             except WMException:
                 myThread.transaction.rollback()
                 raise
             except Exception as ex:
                 myThread.transaction.rollback()
-                msg =  "Unhandled exception while writing new blocks into DBSBuffer\n"
+                msg = "Unhandled exception while writing new blocks into DBSBuffer\n"
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Blocks for DBSBuffer: %s\n", createInDBSBuffer)
@@ -596,16 +591,16 @@ class DBSUploadPoller(BaseWorkerThread):
         if len(self.filesToUpdate) > 0:
             try:
                 myThread.transaction.begin()
-                setBlockFilesDAO.execute(binds = self.filesToUpdate,
-                                         conn = myThread.transaction.conn,
-                                         transaction = True)
+                setBlockFilesDAO.execute(binds=self.filesToUpdate,
+                                         conn=myThread.transaction.conn,
+                                         transaction=True)
                 self.filesToUpdate = []
             except WMException:
                 myThread.transaction.rollback()
                 raise
             except Exception as ex:
                 myThread.transaction.rollback()
-                msg =  "Unhandled exception while setting blocks in files.\n"
+                msg = "Unhandled exception while setting blocks in files.\n"
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Files to Update: %s\n", self.filesToUpdate)
@@ -622,23 +617,21 @@ class DBSUploadPoller(BaseWorkerThread):
             if block.getDataset() == None:
                 # Then we have to fix the dataset
                 dbsFile = block.files[0]
-                block.setDataset(datasetName  = dbsFile['datasetPath'],
-                                 primaryType  = self.primaryDatasetType,
-                                 datasetType  = self.datasetType,
-                                 physicsGroup = dbsFile.get('physicsGroup', None),
-                                 prep_id = dbsFile.get('prep_id', None))
+                block.setDataset(datasetName=dbsFile['datasetPath'],
+                                 primaryType=self.primaryDatasetType,
+                                 datasetType=self.datasetType,
+                                 physicsGroup=dbsFile.get('physicsGroup', None),
+                                 prep_id=dbsFile.get('prep_id', None))
             logging.debug("Found block %s in blocks", block.getName())
-            block.setPhysicsGroup(group = self.physicsGroup)
+            block.setPhysicsGroup(group=self.physicsGroup)
 
             encodedBlock = block.convertToDBSBlock()
             logging.info("About to insert block %s", block.getName())
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
             self.blockCount += 1
             if self.produceCopy:
-                import json
-                f = open(self.copyPath, 'w')
-                f.write(json.dumps(encodedBlock))
-                f.close()
+                with open(self.copyPath, 'w') as jo:
+                    json.dump(encodedBlock, jo, indent=2)
             self.queuedBlocks.append(block.getName())
 
         # And all work is in and we're done for now
@@ -656,11 +649,11 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
-        updateBlocksDAO = self.daoFactory(classname = "UpdateBlocks")
-        updateFilesDAO = self.daoFactory(classname = "UpdateFiles")
+        updateBlocksDAO = self.daoFactory(classname="UpdateBlocks")
+        updateFilesDAO = self.daoFactory(classname="UpdateFiles")
 
         blocksToClose = []
-        emptyCount    = 0
+        emptyCount = 0
         while self.blockCount > 0:
             if emptyCount > self.nTries:
 
@@ -682,7 +675,7 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 # Get stuff out of the queue with a ridiculously
                 # short wait time
-                blockresult = self.workResult.get(timeout = self.wait)
+                blockresult = self.workResult.get(timeout=self.wait)
                 blocksToClose.append(blockresult)
                 self.blockCount -= 1
                 logging.debug("Got a block to close")
@@ -712,12 +705,12 @@ class DBSUploadPoller(BaseWorkerThread):
         if len(loadedBlocks) > 0:
             try:
                 myThread.transaction.begin()
-                updateFilesDAO.execute(blocks = loadedBlocks, status = "InDBS",
-                                       conn = myThread.transaction.conn,
-                                       transaction = True)
-                updateBlocksDAO.execute(blocks = loadedBlocks,
-                                        conn = myThread.transaction.conn,
-                                        transaction = True)
+                updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
+                                       conn=myThread.transaction.conn,
+                                       transaction=True)
+                updateBlocksDAO.execute(blocks=loadedBlocks,
+                                        conn=myThread.transaction.conn,
+                                        transaction=True)
             except Exception as ex:
                 myThread.transaction.rollback()
                 # possible deadlock with PhEDExInjector, retry once after 10s
@@ -725,15 +718,15 @@ class DBSUploadPoller(BaseWorkerThread):
                 time.sleep(10)
                 try:
                     myThread.transaction.begin()
-                    updateFilesDAO.execute(blocks = loadedBlocks, status = "InDBS",
-                                           conn = myThread.transaction.conn,
-                                           transaction = True)
-                    updateBlocksDAO.execute(blocks = loadedBlocks,
-                                            conn = myThread.transaction.conn,
-                                            transaction = True)
+                    updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
+                                           conn=myThread.transaction.conn,
+                                           transaction=True)
+                    updateBlocksDAO.execute(blocks=loadedBlocks,
+                                            conn=myThread.transaction.conn,
+                                            transaction=True)
                 except Exception as ex:
                     myThread.transaction.rollback()
-                    msg =  "Unhandled exception while finished closed blocks in DBSBuffer\n"
+                    msg = "Unhandled exception while finished closed blocks in DBSBuffer\n"
                     msg += str(ex)
                     logging.error(msg)
                     logging.debug("Blocks for Update: %s\n", loadedBlocks)
@@ -765,8 +758,8 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
-        updateBlocksDAO = self.daoFactory(classname = "UpdateBlocks")
-        updateFilesDAO = self.daoFactory(classname = "UpdateFiles")
+        updateBlocksDAO = self.daoFactory(classname="UpdateBlocks")
+        updateFilesDAO = self.daoFactory(classname="UpdateFiles")
 
         blocksUploaded = []
 
@@ -775,7 +768,7 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.debug("Checking block existence: %s", block)
             # Check in DBS if the block was really inserted
             try:
-                result = self.dbsApi.listBlocks(block_name = block)
+                result = self.dbsApi.listBlocks(block_name=block)
                 for blockResult in result:
                     if blockResult['block_name'] == block:
                         loadedBlock = self.blockCache.get(block)
@@ -784,7 +777,7 @@ class DBSUploadPoller(BaseWorkerThread):
                         break
             except Exception as ex:
                 exString = str(ex)
-                msg =  "Error trying to check block %s through DBS.\n" % block
+                msg = "Error trying to check block %s through DBS.\n" % block
                 msg += exString
                 logging.error(msg)
                 logging.error(str(traceback.format_exc()))
@@ -793,18 +786,18 @@ class DBSUploadPoller(BaseWorkerThread):
         if len(blocksUploaded) > 0:
             try:
                 myThread.transaction.begin()
-                updateBlocksDAO.execute(blocks = blocksUploaded,
-                                        conn = myThread.transaction.conn,
-                                        transaction = True)
-                updateFilesDAO.execute(blocks = blocksUploaded, status = "InDBS",
-                                       conn = myThread.transaction.conn,
-                                       transaction = True)
+                updateBlocksDAO.execute(blocks=blocksUploaded,
+                                        conn=myThread.transaction.conn,
+                                        transaction=True)
+                updateFilesDAO.execute(blocks=blocksUploaded, status="InDBS",
+                                       conn=myThread.transaction.conn,
+                                       transaction=True)
             except WMException:
                 myThread.transaction.rollback()
                 raise
             except Exception as ex:
                 myThread.transaction.rollback()
-                msg =  "Unhandled exception while finished closed blocks in DBSBuffer\n"
+                msg = "Unhandled exception while finished closed blocks in DBSBuffer\n"
                 msg += str(ex)
                 logging.error(msg)
                 logging.debug("Blocks for Update: %s\n", blocksUploaded)

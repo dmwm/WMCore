@@ -2,7 +2,7 @@
 """
 _GetJobGroups_
 
-Sqlite implementation of Subscription.GetJobGroups
+Oracle implementation of Subscription.GetJobGroups
 """
 
 __all__ = []

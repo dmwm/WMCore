@@ -10,6 +10,9 @@ import hashlib
 import logging
 import traceback
 import urllib
+from future.utils import with_metaclass
+
+from Utils.Patterns import Singleton
 
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.DataStructs.WMObject import WMObject
@@ -29,19 +32,9 @@ class ConfigCacheException(WMException):
 
     """
 
-class Singleton(type):
-    """Implementation of Singleton class"""
-    _instances = {}
 
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = \
-                    super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-class DocumentCache(object):
+class DocumentCache(with_metaclass(Singleton, object)):
     """DocumentCache holds config ids. Use this class as singleton"""
-    __metaclass__ = Singleton
     def __init__(self, database, detail = True):
         super(DocumentCache, self).__init__()
         self.cache = {}
@@ -93,6 +86,7 @@ class ConfigCache(WMObject):
     """
     def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False,
                  ckey = None, cert = None, capath = None, detail = True):
+        super(ConfigCache, self).__init__()
         self.dbname = couchDBName
         self.dburl  = dbURL
         self.detail = detail
@@ -329,7 +323,8 @@ class ConfigCache(WMObject):
 
         if len(viewRes['rows']) == 0:
             # Then we have a problem
-            logging.error("Unable to load using view %s and value %s" % (view, str(value)))
+            msg = "Unable to load using view %s and value %s" % (view, str(value))
+            logging.error(msg)
 
         self.unwrapView(viewRes)
         self.loadByID(self.document["_id"])

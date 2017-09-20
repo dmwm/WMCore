@@ -8,30 +8,25 @@ Unit tests for WorkerThreads.
 from __future__ import absolute_import
 from __future__ import print_function
 
-
-
-
-import unittest
+import logging
 import threading
 import time
-import logging
-import os
-
-from WMCore.Configuration import Configuration
-from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from .Dummy import Dummy
-
-from WMQuality.TestInit import TestInit
+import unittest
 
 # local import
 from WMCore_t.WorkerThreads_t.Dummy import Dummy
+
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
+from WMQuality.TestInit import TestInit
+
 
 class DummyWorker1(BaseWorkerThread):
     """
     Dummy class to implement a minimal worker object, used to check that all
     required worker methods get called
     """
+
     def __init__(self):
         """
         Get a callback to the test object used to access "thread doing stuff"
@@ -49,37 +44,47 @@ class DummyWorker1(BaseWorkerThread):
         """
         Check the worker setup method is called
         """
+        logging.info("DummyWorker1 setup called")
         self.dummySetupCallback()
 
     def algorithm(self, parameters):
         """
         Check the algorithm method is called
         """
+        logging.info("DummyWorker1 algorithm called")
         self.dummyAlgoCallback()
 
     def terminate(self, parameters):
         """
         Check the terminate method is called
         """
+        logging.info("DummyWorker1 terminate called")
         self.dummyTerminateCallback()
+        # FIXME why this call doesn't reach the parent class?!?!
+        super(DummyWorker1, self).terminate(parameters)
+
 
 class DummyWorker2(BaseWorkerThread):
     """
     A very basic dummy worker
     """
+
     def algorithm(self, parameters):
         pass
+
 
 class ErrorWorker(DummyWorker1):
     """
     A worker that throws an error
     """
+
     def algorithm(self, parameters):
         # workerThreadManager will be added by Harness
         # that isnt used here so add manually
         myThread = threading.currentThread()
         myThread.workerThreadManager = self.workerThreadManager
         raise RuntimeError("ErrorWorker throws errors")
+
 
 class WorkerThreadsTest(unittest.TestCase):
     """
@@ -158,22 +163,22 @@ class WorkerThreadsTest(unittest.TestCase):
         print('add worker')
         manager.addWorker(DummyWorker1(), 1)
         time.sleep(3)
-        self.assertEqual( WorkerThreadsTest._setupCalled ,  True )
+        self.assertEqual(WorkerThreadsTest._setupCalled, True)
         # Ensure the algo wasn't called whilst paused
-        self.assertEqual( WorkerThreadsTest._algoCalled ,  False )
+        self.assertEqual(WorkerThreadsTest._algoCalled, False)
 
         print('resume workers')
         # Run the workers, pause, and check algo method gets called
         manager.resumeWorkers()
         time.sleep(3)
         manager.pauseWorkers()
-        self.assertEqual( WorkerThreadsTest._algoCalled ,  True )
+        self.assertEqual(WorkerThreadsTest._algoCalled, True)
 
         print('terminate workers')
         # Terminate the workers, and check terminate method gets called
         manager.terminateWorkers()
         time.sleep(3)
-        self.assertEqual( WorkerThreadsTest._terminateCalled ,  True )
+        self.assertEqual(WorkerThreadsTest._terminateCalled, True)
 
     def testB(self):
         """
@@ -210,7 +215,6 @@ class WorkerThreadsTest(unittest.TestCase):
 
         # all threads should have ended after worker raised exception
         self.assertEqual(manager.activeThreadCount, 0)
-
 
 
 if __name__ == "__main__":

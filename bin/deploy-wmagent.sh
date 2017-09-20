@@ -25,7 +25,7 @@
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.4.patch2 -c HG1706e -t production -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.4.patch1 -c HG1706e -t testbed-cmssrv214 -p "7926" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.pre11 -c HG1709c -t testbed-cmssrv214 -p "7926" -s slc7_amd64_gcc630 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -269,12 +269,11 @@ echo "Done!" && echo
 # tweak configuration
 ### 
 echo "*** Tweaking configuration ***"
-sed -i "s+team1,team2,cmsdataops+$TEAMNAME+" $MANAGE/config.py
+sed -i "s+cmsdataops+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
-  sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == hlt ]]; then
   sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
   sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py

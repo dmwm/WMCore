@@ -17,15 +17,12 @@ function(doc, req) {
             doc.RequestTransition.push(statusObj);
         }
     }
-    
+
     function updateTeams(team) {
-        if (!doc.Teams) {
-            doc.Teams = new Array();
-            doc.Teams.push(team);
-        } else {
-            doc.Teams.push(team);
-        }
+        doc.Teams = new Array();
+        doc.Teams.push(team);
     }
+
     // req.query is dictionary fields into the 
     // CMSCouch.Database.updateDocument() method, which is a dictionary
     function isEmpty(obj) {
@@ -72,24 +69,24 @@ function(doc, req) {
                 key == "SiteBlacklist" ||
                 key == "BlockWhitelist" ||
                 key == "CMSSWVersion" ||
-                key == "InputDatasetTypes" ||
                 key == "InputDataset" ||
                 key == "OutputDatasets" ||
                 key == "CustodialSites" ||
                 key == "NonCustodialSites" ||
                 key == "AutoApproveSubscriptionSites" ||
-                key == "OutputModulesLFNBases" ||
-                key == "Teams") {
+                key == "OutputModulesLFNBases") {
 
                doc[key] = JSON.parse(newValues[key]);
            }
         }
 
+        doc[key] = newValues[key];
+
+        // FIXME keep updating Teams for now to make it easier to deprecate in HG1710
         if (key == "Team") {
             updateTeams(newValues[key]);
-        } else {
-            doc[key] = newValues[key];
         }
+
         // If key is RequestStatus, also update the transition
         if (key == "RequestStatus") {
             updateTransition();

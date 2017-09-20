@@ -698,7 +698,7 @@ class Proxy(Credential):
                                                 self.commandTimeout)
         if retcode == 0:
             if allAttributes:
-                return filter(bool, attribute.split('\n'))
+                return list(filter(bool, attribute.split('\n')))
             else:
                 return attribute.split('\n')[0]
         else:

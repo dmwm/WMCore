@@ -398,8 +398,6 @@ class Request(RESTEntity):
 
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['SoftTimeout'] = int(request_args['SoftTimeout'])
-            request_args['GracePeriod'] = int(request_args['GracePeriod'])
             request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
 
         # Only allow extra value update for assigned status
@@ -417,6 +415,11 @@ class Request(RESTEntity):
 
         # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area)
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
+
+        # FIXME: remove it on HG1710, when this #7355 is complete fixed
+        if not request_args['Team'] or not isinstance(request_args['Team'], basestring):
+            raise InvalidSpecParameterValue("Team MUST be a non-empty string")
+
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)
         # save the spec first before update the reqmgr request status to prevent race condition

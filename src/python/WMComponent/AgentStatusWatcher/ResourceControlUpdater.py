@@ -4,12 +4,12 @@ Perform cleanup actions
 __all__ = []
 
 import urllib2
-import threading
 import logging
 import traceback
 import json
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 
@@ -23,14 +23,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         Initialize
         """
         BaseWorkerThread.__init__(self)
-        # set the workqueue service for REST call
         self.config = config
-        self.setVariables(self.config)
 
-    def setVariables(self, config):
-        """
-        load all the variables from the config file
-        """
         # get dashboard url, set metric columns from config
         self.dashboard = config.AgentStatusWatcher.dashboard
         self.siteStatusMetric = config.AgentStatusWatcher.siteStatusMetric
@@ -46,8 +40,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         # sites forced to down
         self.forceSiteDown = getattr(config.AgentStatusWatcher, 'forceSiteDown', [])
 
-        # agent teams (for dynamic threshold) and queueParams (drain mode)
-        self.teamNames = config.Agent.teamName
+        # agent team (for dynamic threshold) and queueParams (drain mode)
+        self.teamName = config.Agent.teamName
         self.agentsNumByTeam = getattr(config.AgentStatusWatcher, 'defaultAgentsNumByTeam', 5)
 
         # only SSB sites
@@ -60,12 +54,6 @@ class ResourceControlUpdater(BaseWorkerThread):
         # switch this component on/off
         self.enabled = getattr(config.AgentStatusWatcher, 'enabled', True)
 
-    def setup(self, parameters):
-        """
-        Set db connection and prepare resource control
-        """
-        # Interface to WMBS/BossAir db
-        myThread = threading.currentThread()
         # set resource control
         self.resourceControl = ResourceControl(config=self.config)
 
@@ -85,8 +73,6 @@ class ResourceControlUpdater(BaseWorkerThread):
             5. Change site thresholds when needed (and task thresholds)
         Sites from SSB are validated with PhEDEx node names
         """
-        # set variables every polling cycle
-        self.setVariables(self.config)
         if not self.enabled:
             logging.info("This component is not enabled in the configuration. Doing nothing.")
             return
@@ -119,24 +105,21 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Get the WMStats view about agents and teams
         """
+        if isDrainMode(self.config):
+            # maximize pending thresholds to get this agent drained ASAP
+            self.agentsNumByTeam = 1
+            return
+
         agentsByTeam = {}
         try:
             agentsByTeam = self.centralCouchDBReader.agentsByTeam(filterDrain=True)
-        except Exception as ex:
+        except Exception:
             logging.error("WMStats is not available or is unresponsive.")
 
         if not agentsByTeam:
-            logging.debug("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
+            logging.warning("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
         else:
-            self.agentsByTeam = agentsByTeam
-            agentsCount = []
-            for team in self.teamNames.split(','):
-                if team not in self.agentsByTeam:
-                    agentsCount.append(1)
-                else:
-                    agentsCount.append(self.agentsByTeam[team])
-            # If agent is in several teams, we choose the team with less agents
-            self.agentsNumByTeam = min(agentsCount, self.agentsNumByTeam)
+            self.agentsNumByTeam = agentsByTeam.get(self.teamName, self.agentsNumByTeam)
             logging.debug("Agents connected to the same team (not in DrainMode): %d", self.agentsNumByTeam)
         return
 

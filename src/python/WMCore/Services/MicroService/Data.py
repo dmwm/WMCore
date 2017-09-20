@@ -2,6 +2,14 @@
 File       : Data.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: This module consists of all REST APIs required by MicroService
+
+Client may invoke GET/POST calls to MicroService, e.g.
+# return status of the MicroService
+curl http://localhost:8822/microservice/data/status
+# ping MicroService, i.e. return its default message
+curl http://localhost:8822/microservice/data
+# post data to MicroService
+curl -X POST -H "Content-type: application/json" -d '{"request":{"spec":"spec"}}' http://localhost:8822/microservice/data
 """
 # futures
 from __future__ import print_function, division
@@ -25,15 +33,11 @@ from WMCore.REST.Format import JSONFormat
 from WMCore.Services.MicroService.Manager import MicroServiceManager
 from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
 
-
-def results(result):
-    "Return results as a list data type. Set proper status in case of failures"
-    if 'status' in result and 'Not supported' in result['status']:
-        cherrypy.response.status = 406
-    if not isinstance(result, list):
-        return [result]
-    return result
-
+def results(res):
+    "Return results in a list format suitable by REST server"
+    if not isinstance(res, list):
+        return [res]
+    return res
 
 class Data(RESTEntity):
     "REST interface for MicroService"
@@ -60,22 +64,13 @@ class Data(RESTEntity):
 
         """
         if method == 'GET':
-
-            # Check for `performance` endpoint, documented in
-            # https://github.com/knly/MicroServiceAggregation
             if len(param.args) == 1 and param.args[0] == 'status':
                 safe.args.append(param.args[0])
                 param.args.remove(param.args[0])
-
-                validate_rx('request', param, safe, optional=True)
-                validate_str('_', param, safe, PAT_INFO, optional=True)
-
+#                 validate_rx('request', param, safe, optional=True)
+#                 validate_str('_', param, safe, PAT_INFO, optional=True)
                 return True
-
-            # test if user provided uid
-            if len(param.args) == 1 and PAT_UID.match(param.args[0]):
-                safe.args.append(param.args[0])
-                param.args.remove(param.args[0])
+            if len(param.args) == 0:
                 return True
         elif method == 'POST':
             if not param.args or not param.kwargs:
@@ -98,20 +93,16 @@ class Data(RESTEntity):
     def post(self):
         """
         Implement POST request API, all work is done by MicroServiceManager.
-        The request should either provide query to fetch results from back-end
-        or data to store to the back-end.
-
         The input HTTP request should be in the following form
-        {"data":some_data} for posting the data into service.
+        {"request":some_data} for posting the data into the service.
         """
-        msg = 'expect "data" attribute in your request'
-        result = {'status': 'Not supported, %s' % msg, 'data': []}
+        msg = 'expect "request" attribute in your request'
+        result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
-            request = json.load(cherrypy.request.body)
-            if 'data' in request.keys():
-                result = self.mgr.request(request['data'])
-            if isinstance(result, GeneratorType):
-                result = [r for r in result]
+            data = json.load(cherrypy.request.body)
+            if 'request' in data.keys():
+                kwargs = data['request']
+                result = self.mgr.request(**kwargs)
             return results(result)
         except cherrypy.HTTPError:
             raise

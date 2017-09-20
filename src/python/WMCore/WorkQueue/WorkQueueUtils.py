@@ -4,10 +4,12 @@
 __all__ = ['get_remote_queue', 'get_dbs',
            'queueConfigFromConfigObject', 'queueFromConfig']
 
-import os
 import logging
+import os
 
 __queues = {}
+
+
 def get_remote_queue(queue, logger):
     """
     Get an object to talk to a remote queue
@@ -20,10 +22,13 @@ def get_remote_queue(queue, logger):
         return __queues[queue]
     except KeyError:
         from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-        __queues[queue] = WorkQueueDS({'endpoint' : queue, 'logger' : logger})
+        __queues[queue] = WorkQueueDS({'endpoint': queue, 'logger': logger})
         return __queues[queue]
 
+
 __dbses = {}
+
+
 def get_dbs(url):
     """Return DBS object for url"""
     try:
@@ -33,8 +38,11 @@ def get_dbs(url):
         __dbses[url] = DBSReader(url)
         return __dbses[url]
 
+
 __sitedb = None
 __cmsSiteNames = []
+
+
 def cmsSiteNames():
     """Get all cms sites"""
     global __cmsSiteNames
@@ -46,9 +54,10 @@ def cmsSiteNames():
         __sitedb = SiteDB()
     try:
         __cmsSiteNames = __sitedb.getAllCMSNames()
-    except:
+    except Exception:
         pass
     return __cmsSiteNames
+
 
 def makeLocationsList(siteWhitelist, siteBlacklist):
     """
@@ -63,8 +72,9 @@ def makeLocationsList(siteWhitelist, siteBlacklist):
         sites = list(set(sites) & set(siteWhitelist))
     if siteBlacklist:
         # Get all CMS sites less the blacklist
-        sites = list(set(sites) - set (siteBlacklist))
+        sites = list(set(sites) - set(siteBlacklist))
     return sites
+
 
 def queueFromConfig(config):
     """Create a queue from the config object"""
@@ -78,6 +88,7 @@ def queueFromConfig(config):
     else:
         from WMCore.WorkQueue.WorkQueue import WorkQueue
         return WorkQueue(**config.WorkQueueManager.queueParams)
+
 
 def queueConfigFromConfigObject(config):
     """From a config object create a config dict suitable for a queue object"""
@@ -119,14 +130,14 @@ def queueConfigFromConfigObject(config):
         qConfig['Config'] = config.Alert
 
     if 'Teams' not in qConfig and hasattr(config.Agent, 'teamName'):
-        qConfig['Teams'] = config.Agent.teamName
-    if not 'logger' in qConfig:
+        qConfig['Teams'] = [config.Agent.teamName.strip()]
+    if 'logger' not in qConfig:
         import threading
         myThread = threading.currentThread()
         if not hasattr(myThread, 'logger'):
             loggingLevelName = getattr(wqManager, 'logLevel', 'INFO')
             logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(module)s: %(message)s',
-                                level = getattr(logging, loggingLevelName))
+                                level=getattr(logging, loggingLevelName))
             myThread.logger = logging.getLogger('workqueue')
         qConfig['logger'] = myThread.logger
 

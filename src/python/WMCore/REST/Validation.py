@@ -85,8 +85,7 @@ def _validate_one(argname, param, safe, checker, optional, *args):
         del param.kwargs[argname]
 
 def _validate_all(argname, param, safe, checker, *args):
-    safe.kwargs[argname] = map(lambda v: checker(argname, v, *args),
-                               _arglist(argname, param.kwargs))
+    safe.kwargs[argname] = [checker(argname, v, *args) for v in _arglist(argname, param.kwargs)]
     if argname in param.kwargs:
         del param.kwargs[argname]
 

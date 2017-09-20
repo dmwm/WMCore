@@ -483,7 +483,6 @@ class ReqMgrClient(RESTClient):
         # implement this check automatically without listing request arguments
         # TODO 2:
         # double list: OutputDatasets (ticket already filed ...)
-        # Oracle:InputDatasetTypes: '{u'/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN': u'source'}' != CouchDB:InputDatasetTypes: '{}'
         # Oracle:RequestNumEvents: '0' != CouchDB:RequestNumEvents: 'None'
         fields = """RequestStatus
             RequestSizeFiles
@@ -735,7 +734,7 @@ def processCmdLine(args):
     if (opts.json and not opts.createRequest) and (opts.json and not opts.allTests) \
         and (opts.json and not opts.assignRequests) and (opts.json and not opts.changeSplitting):
         errExit("--json only with --createRequest, --allTests, --assignRequest, --changeSplitting", parser)
-    for action in filter(lambda name: getattr(opts, name), actions):
+    for action in [name for name in actions if getattr(opts, name)]:
         if opts.allTests and action and action != "allTests":
             errExit("Arguments --allTests and --%s mutually exclusive." % action, parser)
     if opts.requestNames:
@@ -894,7 +893,7 @@ def main():
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None
     # config is all options for this script but also request creation parameters
-    actions = filter(lambda name: getattr(config, name), definedActions)
+    actions = [name for name in definedActions if getattr(config, name)]
     logging.info("Actions to perform: %s" % actions)
     for action in actions:
         logging.info("Performing '%s' ..." % action)

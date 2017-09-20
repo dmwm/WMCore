@@ -34,9 +34,10 @@ from WMCore.ACDC.DataCollectionService  import DataCollectionService
 
 from WMCore_t.WMSpec_t.TestSpec         import testWorkload
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class ErrorHandlerTest(unittest.TestCase):
+class ErrorHandlerTest(EmulatedUnitTestCase):
     """
     TestCase for TestErrorHandler module
     """
@@ -48,26 +49,26 @@ class ErrorHandlerTest(unittest.TestCase):
 
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
         self.testInit.setupCouch("errorhandler_t_jd/jobs", "JobDump")
         self.testInit.setupCouch("errorhandler_t_jd/fwjrs", "FWJRDump")
 
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
-        self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
-        locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "malpaquet", pnn = "T2_CH_CERN")
+        self.daofactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.getJobs = self.daofactory(classname="Jobs.GetAllJobs")
+        self.setJobTime = self.daofactory(classname="Jobs.SetStateTime")
+        locationAction = self.daofactory(classname="Locations.New")
+        locationAction.execute(siteName="malpaquet", pnn="T2_CH_CERN")
         self.testDir = self.testInit.generateWorkDir()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
 
-        self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
-                                            database = "errorhandler_t")
+        self.dataCS = DataCollectionService(url=self.testInit.couchUrl,
+                                            database="errorhandler_t")
 
         return
 
@@ -94,7 +95,7 @@ class ErrorHandlerTest(unittest.TestCase):
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
 
         config.component_("ErrorHandler")
         # The log level of the component.
@@ -102,7 +103,7 @@ class ErrorHandlerTest(unittest.TestCase):
         # The namespace of the component
         config.ErrorHandler.namespace = 'WMComponent.ErrorHandler.ErrorHandler'
         # maximum number of threads we want to deal
-        #config.ErrorHandler.maxThreads = 30
+        # config.ErrorHandler.maxThreads = 30
         # with messages per pool.
         config.ErrorHandler.maxProcessSize = 30
         config.ErrorHandler.readFWJR = True
@@ -110,11 +111,11 @@ class ErrorHandlerTest(unittest.TestCase):
         config.ErrorHandler.maxRetries = 5
         # The poll interval at which to look for failed jobs
         config.ErrorHandler.pollInterval = 60
-
+        # this will be overwritten in some unittests
         # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
-        config.JobStateMachine.couchDBName     = "errorhandler_t_jd"
+        config.JobStateMachine.couchurl = os.getenv('COUCHURL', None)
+        config.JobStateMachine.couchDBName = "errorhandler_t_jd"
 
 
         config.section_('ACDC')
@@ -124,7 +125,7 @@ class ErrorHandlerTest(unittest.TestCase):
         return config
 
 
-    def createWorkload(self, workloadName = 'Test'):
+    def createWorkload(self, workloadName='Test'):
         """
         _createTestWorkload_
 
@@ -136,7 +137,7 @@ class ErrorHandlerTest(unittest.TestCase):
         # Add RequestManager stuff
         workload.data.request.section_('schema')
         workload.data.request.schema.Requestor = 'nobody'
-        workload.data.request.schema.Group     = 'testers'
+        workload.data.request.schema.Group = 'testers'
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -146,10 +147,10 @@ class ErrorHandlerTest(unittest.TestCase):
 
 
 
-    def createTestJobGroup(self, nJobs = 10, retry_count = 1,
-                           workloadPath = 'test', fwjrPath = None,
-                           workloadName = makeUUID(),
-                           fileModifier = ''):
+    def createTestJobGroup(self, nJobs=10, retry_count=1,
+                           workloadPath='test', fwjrPath=None,
+                           workloadName=makeUUID(),
+                           fileModifier=''):
         """
         Creates a group of several jobs
         """
@@ -157,31 +158,31 @@ class ErrorHandlerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        testWorkflow = Workflow(spec = workloadPath, owner = "cmsdataops", group = "cmsdataops",
-                                name = workloadName, task="/TestWorkload/ReReco")
+        testWorkflow = Workflow(spec=workloadPath, owner="cmsdataops", group="cmsdataops",
+                                name=workloadName, task="/TestWorkload/ReReco")
         testWorkflow.create()
 
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name="TestFileset")
         testWMBSFileset.create()
 
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testWMBSFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
-        testFile0 = File(lfn = "/this/is/a/parent%s" % fileModifier, size = 1024, events = 10)
+        testFile0 = File(lfn="/this/is/a/parent%s" % fileModifier, size=1024, events=10)
         testFile0.addRun(Run(10, *[12312]))
         testFile0.setLocation('T2_CH_CERN')
 
-        testFileA = File(lfn = "/this/is/a/lfnA%s" % fileModifier, size = 1024, events = 10,
-                         first_event = 88)
+        testFileA = File(lfn="/this/is/a/lfnA%s" % fileModifier, size=1024, events=10,
+                         first_event=88)
         testFileA.addRun(Run(10, *[12312, 12313]))
         testFileA.setLocation('T2_CH_CERN')
 
-        testFileB = File(lfn = "/this/is/a/lfnB%s" % fileModifier, size = 1024, events = 10,
-                         first_event = 88)
+        testFileB = File(lfn="/this/is/a/lfnB%s" % fileModifier, size=1024, events=10,
+                         first_event=88)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('T2_CH_CERN')
 
@@ -189,20 +190,20 @@ class ErrorHandlerTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        testFileA.addParent(lfn = "/this/is/a/parent%s" % fileModifier)
-        testFileB.addParent(lfn = "/this/is/a/parent%s" % fileModifier)
+        testFileA.addParent(lfn="/this/is/a/parent%s" % fileModifier)
+        testFileB.addParent(lfn="/this/is/a/parent%s" % fileModifier)
 
         for i in range(0, nJobs):
-            testJob = Job(name = makeUUID())
+            testJob = Job(name=makeUUID())
             testJob['retry_count'] = retry_count
             testJob['retry_max'] = 10
-            testJob['mask'].addRunAndLumis(run = 10, lumis = [12312])
-            testJob['mask'].addRunAndLumis(run = 10, lumis = [12314, 12316])
+            testJob['mask'].addRunAndLumis(run=10, lumis=[12312])
+            testJob['mask'].addRunAndLumis(run=10, lumis=[12314, 12316])
             testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
             testJob['fwjr_path'] = fwjrPath
             os.mkdir(testJob['cache_dir'])
             testJobGroup.add(testJob)
-            testJob.create(group = testJobGroup)
+            testJob.create(group=testJobGroup)
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
             testJob.save()
@@ -211,7 +212,7 @@ class ErrorHandlerTest(unittest.TestCase):
         testJobGroup.commit()
 
 
-        testSubscription.acquireFiles(files = [testFileA, testFileB])
+        testSubscription.acquireFiles(files=[testFileA, testFileB])
         testSubscription.save()
         myThread.transaction.commit()
 
@@ -227,30 +228,32 @@ class ErrorHandlerTest(unittest.TestCase):
 
         workloadName = 'TestWorkload'
 
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath,
-                                               workloadName = workloadName)
+        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+                                               workloadPath=workloadPath,
+                                               workloadName=workloadName)
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'createfailed', 'created')
 
-        idList = self.getJobs.execute(state = 'CreateFailed')
+        idList = self.getJobs.execute(state='CreateFailed')
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'CreateFailed')
+        idList = self.getJobs.execute(state='CreateFailed')
         self.assertEqual(len(idList), 0)
 
-        #These should go directly to exhausted
-        idList = self.getJobs.execute(state = 'Exhausted')
+        # These should go directly to exhausted
+        idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
         # Check that it showed up in ACDC
@@ -281,29 +284,31 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath)
+        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+                                               workloadPath=workloadPath)
 
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
 
-        idList = self.getJobs.execute(state = 'SubmitFailed')
+        idList = self.getJobs.execute(state='SubmitFailed')
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'SubmitFailed')
+        idList = self.getJobs.execute(state='SubmitFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'SubmitCooloff')
+        idList = self.getJobs.execute(state='SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
         return
 
@@ -315,12 +320,12 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath)
+        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+                                               workloadPath=workloadPath)
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -329,17 +334,19 @@ class ErrorHandlerTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
 
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), self.nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'JobCooloff')
+        idList = self.getJobs.execute(state='JobCooloff')
         self.assertEqual(len(idList), self.nJobs)
         return
 
@@ -352,12 +359,12 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs, retry_count = 5,
-                                               workloadPath = workloadPath)
+        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs, retry_count=5,
+                                               workloadPath=workloadPath)
 
         config = self.getConfig()
         config.ErrorHandler.maxRetries = 1
@@ -367,7 +374,7 @@ class ErrorHandlerTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
 
-        testSubscription = Subscription(id = 1) # You should only have one
+        testSubscription = Subscription(id=1)  # You should only have one
         testSubscription.load()
         testSubscription.loadData()
 
@@ -376,16 +383,19 @@ class ErrorHandlerTest(unittest.TestCase):
 
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
 
-        idList = self.getJobs.execute(state = 'JobFailed')
+
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'JobCooloff')
+        idList = self.getJobs.execute(state='JobCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'Exhausted')
+        idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
 
@@ -402,7 +412,7 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
@@ -410,18 +420,17 @@ class ErrorHandlerTest(unittest.TestCase):
                                 "WMComponent_t/JobAccountant_t",
                                 "fwjrs/badBackfillJobReport.pkl")
 
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                               workloadPath = workloadPath,
-                                               fwjrPath = fwjrPath)
+        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+                                               workloadPath=workloadPath,
+                                               fwjrPath=fwjrPath)
 
-        badJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
-                                              workloadPath = workloadPath,
-                                              fwjrPath = None,
-                                              fileModifier = 'bad')
+        badJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+                                              workloadPath=workloadPath,
+                                              fwjrPath=None,
+                                              fileModifier='bad')
 
         config = self.getConfig()
-        config.ErrorHandler.readFWJR         = True
-        config.ErrorHandler.failureExitCodes = [8020]
+        config.ErrorHandler.readFWJR = True
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -433,21 +442,25 @@ class ErrorHandlerTest(unittest.TestCase):
         changer.propagate(badJobGroup.jobs, 'jobfailed', 'complete')
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
+        testErrorHandler.exitCodesNoRetry = [8020]
         testErrorHandler.algorithm(None)
 
         # This should exhaust all jobs due to exit code
         # Except those with no fwjr
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
-        idList = self.getJobs.execute(state = 'JobCooloff')
+        idList = self.getJobs.execute(state='JobCooloff')
         self.assertEqual(len(idList), self.nJobs)
-        idList = self.getJobs.execute(state = 'Exhausted')
+        idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
-        config.ErrorHandler.failureExitCodes = []
-        config.ErrorHandler.maxFailTime      = -10
+        config.ErrorHandler.maxFailTime = -10
         testErrorHandler2 = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler2.reqAuxDB = None
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -457,16 +470,18 @@ class ErrorHandlerTest(unittest.TestCase):
         testErrorHandler2.algorithm(None)
 
         # This should exhaust all jobs due to timeout
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
-        idList = self.getJobs.execute(state = 'JobCooloff')
+        idList = self.getJobs.execute(state='JobCooloff')
         self.assertEqual(len(idList), self.nJobs)
-        idList = self.getJobs.execute(state = 'Exhausted')
+        idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
 
-        config.ErrorHandler.maxFailTime      = 24 * 3600
-        config.ErrorHandler.passExitCodes    = [8020]
+        config.ErrorHandler.maxFailTime = 24 * 3600
+        config.ErrorHandler.passExitCodes = [8020]
         testErrorHandler3 = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler3.reqAuxDB = None
 
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -476,7 +491,7 @@ class ErrorHandlerTest(unittest.TestCase):
         testErrorHandler3.algorithm(None)
 
         # This should pass all jobs due to exit code
-        idList = self.getJobs.execute(state = 'Created')
+        idList = self.getJobs.execute(state='Created')
         self.assertEqual(len(idList), self.nJobs)
 
         return
@@ -492,11 +507,11 @@ class ErrorHandlerTest(unittest.TestCase):
 
         nJobs = 100
         workloadName = 'TestWorkload'
-        self.createWorkload(workloadName = workloadName)
+        self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs = nJobs, workloadPath = workloadPath)
+        testJobGroup = self.createTestJobGroup(nJobs=nJobs, workloadPath=workloadPath)
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -505,22 +520,25 @@ class ErrorHandlerTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
 
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
+
         startTime = time.time()
-        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename = "profStats.stat")
+        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename="profStats.stat")
         stopTime = time.time()
 
-        idList = self.getJobs.execute(state = 'CreateFailed')
+        idList = self.getJobs.execute(state='CreateFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'JobFailed')
+        idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'JobCooloff')
+        idList = self.getJobs.execute(state='JobCooloff')
         self.assertEqual(len(idList), nJobs)
 
         print("Took %f seconds to run polling algo" % (stopTime - startTime))

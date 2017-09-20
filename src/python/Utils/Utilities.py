@@ -1,7 +1,9 @@
 #! /usr/bin/env python
+
 from __future__ import division, print_function
-import time
+
 import subprocess
+
 
 def makeList(stringList):
     """
@@ -59,25 +61,6 @@ def safeStr(string):
     if not isinstance(string, (tuple, list, set, dict)):
         return str(string)
     raise ValueError("We're not supposed to convert %s to string." % string)
-
-
-def timeit(func):
-    """
-    source: https://www.andreas-jung.com/contents/a-python-decorator-for-measuring-the-execution-time-of-methods
-
-    Decorator function to measure how long a method/function takes to run
-    It returns a tuple with:
-      * wall clock time spent
-      * returned result of the function
-      * the function name
-    """
-    def wrapper(*arg, **kw):
-        t1 = time.time()
-        res = func(*arg, **kw)
-        t2 = time.time()
-        return (t2 - t1), res, func.__name__
-
-    return wrapper
 
 
 def diskUse():

@@ -6,8 +6,8 @@ Unittests for StepFactory module
 
 """
 
-
 import unittest
+
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 
@@ -18,7 +18,6 @@ class StepFactoryTest(unittest.TestCase):
 
     """
 
-
     def testA(self):
         """template"""
         try:
@@ -28,14 +27,10 @@ class StepFactoryTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-
-
-
     def testB(self):
         """bad template"""
         self.assertRaises(ImportError,
                           StepFactory.getStepTemplate, "UtterGuff")
-
 
     def testC(self):
         """builder"""
@@ -46,16 +41,12 @@ class StepFactoryTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-
-
-
     def testD(self):
         """bad buildere"""
         self.assertRaises(ImportError,
                           StepFactory.getStepBuilder, "UtterGuff")
 
-
-    def testC(self):
+    def testExecutor(self):
         """executor"""
         try:
             cmssw = StepFactory.getStepExecutor("CMSSW")
@@ -64,16 +55,12 @@ class StepFactoryTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-
-
-
-    def testD(self):
+    def testBadExecutor(self):
         """bad executor"""
         self.assertRaises(ImportError,
                           StepFactory.getStepExecutor, "UtterGuff")
 
-
-    def testC(self):
+    def testEmulator(self):
         """emulator"""
         try:
             cmssw = StepFactory.getStepEmulator("CMSSW")
@@ -82,22 +69,10 @@ class StepFactoryTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-
-
-
-    def testG(self):
+    def testBadEmulator(self):
         """bad emu"""
         self.assertRaises(ImportError,
                           StepFactory.getStepEmulator, "UtterGuff")
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

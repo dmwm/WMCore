@@ -60,7 +60,6 @@ class StoreResultsTest(unittest.TestCase):
         correctly.
         """
         arguments = StoreResultsWorkloadFactory.getTestArguments()
-        arguments.update({'CmsPath': "/uscmst1/prod/sw/cms"})
 
         factory = StoreResultsWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
@@ -135,7 +134,6 @@ class StoreResultsTest(unittest.TestCase):
                     'Merge')]
 
         testArguments = StoreResultsWorkloadFactory.getTestArguments()
-        testArguments.update({'CmsPath': "/uscmst1/prod/sw/cms"})
 
         factory = StoreResultsWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)

@@ -2,10 +2,11 @@
 """
 _RemoveDeuplicates_
 
-Oracle implementation of Workflow.RemoveDeuplicates
+Oracle implementation of Workflow.RemoveDuplicates
 """
 
-from WMCore.WMBS.MySQL.Workflow.RemoveDeuplicates import RemoveDeuplicates as WorkflowRemoveDeuplicatesMySQL
+from WMCore.WMBS.MySQL.Workflow.RemoveDuplicates import RemoveDuplicates as WorkflowRemoveDuplicatesMySQL
 
-class RemoveDeuplicates(WorkflowRemoveDeuplicatesMySQL):
+
+class RemoveDuplicates(WorkflowRemoveDuplicatesMySQL):
     pass

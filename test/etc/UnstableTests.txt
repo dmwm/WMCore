@@ -1,6 +1,7 @@
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testH_PauseAlgo
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testI_MultipleJobTypes
 WMCore_t.ACDC_t.CouchService_t.CouchService_t:testTimestampAccounting
+WMCore_t.JobSplitting_t.Harvest_t.HarvestTest:testPeriodicTrigger
 WMCore_t.Storage_t.Execute_t.ExecuteTest:testRunCommandWithOutput_error
 WMCore_t.Storage_t.Execute_t.ExecuteTest:testRunCommand_error
 WMCore_t.WebTools_t.NestedModel_t.NestedModelTest:testInnerPingPass

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable=W0142,R0903
+# pylint: disable=R0903
 """
 _StoreFail_
 
@@ -8,10 +8,8 @@ namespace
 
 """
 from __future__ import print_function
-
-
-
 from builtins import object
+
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutMgr import StageOutMgr
 
@@ -25,7 +23,7 @@ def modifyLFN(inputLfn):
     it with /store/unmerged/fail
 
     """
-    lfnSplit = [ x for x in inputLfn.split("/") if len(x) != 0 ]
+    lfnSplit = [x for x in inputLfn.split("/") if len(x) != 0]
     lfnSplit[1] = "unmerged/fail"
     newLfn = "/%s" % "/".join(lfnSplit)
     return newLfn
@@ -36,13 +34,11 @@ class StoreFailMgr(object):
     _StoreFailMgr_
 
     """
+
     def __init__(self, jobReport):
         self.report = jobReport
         self.mgr = StageOutMgr()
         self.failures = {}
-
-
-
 
     def __call__(self):
         """

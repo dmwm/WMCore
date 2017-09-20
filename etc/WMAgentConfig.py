@@ -7,12 +7,7 @@ WMAgent Configuration
 
 Sample WMAgent configuration.
 """
-
-__revision__ = "$Id: WMAgentConfig.py,v 1.2 2010/01/26 22:03:40 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
-
 import os
-
 from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.
@@ -42,13 +37,6 @@ workqueueInboxDbName = 'workqueue_inbox'
 # example of workloadSummary url
 workloadSummaryDB = "workloadsummary"
 workloadSummaryURL = couchURL
-
-# Information for the workqueue, email of the administrator and the team names
-# for this agent.
-userEmail = "cms-comp-ops-workflow-team@cern.ch"
-agentTeams = "team1,team2,cmsdataops"
-agentName = "WMAgentCommissioning"
-agentNumber = 0
 
 # List of BossAir plugins that this agent will use.
 bossAirPlugins = ["SimpleCondorPlugin"]
@@ -83,10 +71,10 @@ config = Configuration()
 
 config.section_("Agent")
 config.Agent.hostName = serverHostName
-config.Agent.contact = userEmail
-config.Agent.teamName = agentTeams
-config.Agent.agentName = agentName
-config.Agent.agentNumber = agentNumber
+config.Agent.contact = "cms-comp-ops-workflow-team@cern.ch"
+config.Agent.teamName = "cmsdataops"
+config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True
@@ -151,6 +139,7 @@ config.DBS3Upload.pollInterval = 100
 # "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
+config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
 
 config.section_("DBSInterface")
 config.DBSInterface.DBSUrl = globalDBSUrl
@@ -242,7 +231,6 @@ config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
-config.ErrorHandler.failureExitCodes = [8023, 8026, 50660, 50661, 50664, 71102]
 config.ErrorHandler.maxFailTime = 120000
 config.ErrorHandler.maxProcessSize = 30
 
@@ -287,8 +275,7 @@ config.TaskArchiver.requireCouch = True
 config.TaskArchiver.useReqMgrForCompletionCheck = True
 config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
 config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.TaskArchiver.localWMStatsURL = "%s/%s" % (
-config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.DataKeepDays = 0.125  # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20  # 20 min
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
@@ -460,16 +447,23 @@ config.AnalyticsDataCollector.logLevel = globalLogLevel
 config.AnalyticsDataCollector.pollInterval = 600
 config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (
 config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
-config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (
-config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (
-config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 
+config.component_("ArchiveDataReporter")
+config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
+config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
+config.ArchiveDataReporter.pollInterval = 300
+config.ArchiveDataReporter.WMArchiveURL = None
+config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
+config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive
+
+# AgentStatusWatcher has to be the last one in the config to avoid false alarms during startup
 config.component_("AgentStatusWatcher")
 config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
@@ -480,8 +474,8 @@ config.AgentStatusWatcher.cpuBoundMetric = 160  # [column number in SSB] The sou
 config.AgentStatusWatcher.ioBoundMetric = 161  # [column number in SSB] The source of the information in SSB for IOBound
 config.AgentStatusWatcher.dashboard = "Dashboard URL"
 config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
-config.AgentStatusWatcher.pendingSlotsSitePercent = 100  # [percent] Pending slots percent over site max running for a site
-config.AgentStatusWatcher.pendingSlotsTaskPercent = 90  # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.pendingSlotsSitePercent = 75  # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 70  # [percent] Pending slots percent over task max running for tasks
 config.AgentStatusWatcher.runningExpressPercent = 30  # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.runningRepackPercent = 10  # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.t1SitesCores = 30  # [percent] Only used for tier0 agent
@@ -492,11 +486,3 @@ config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.drainStatusPollInterval = 43200
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
 config.AgentStatusWatcher.jsonFile = config.AgentStatusWatcher.componentDir + "/WMA_monitoring.json"
-
-config.component_("ArchiveDataReporter")
-config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
-config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
-config.ArchiveDataReporter.pollInterval = 300
-config.ArchiveDataReporter.WMArchiveURL = None
-config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
-config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive

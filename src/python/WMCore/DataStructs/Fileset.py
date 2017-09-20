@@ -5,25 +5,26 @@ _Fileset_
 Data object that contains a set of files
 
 """
+
 from __future__ import print_function
+from operator import itemgetter
+from WMCore.DataStructs.WMObject import WMObject
 __all__ = []
 
-
-from WMCore.DataStructs.WMObject import WMObject
 
 class Fileset(WMObject):
     """
     _Fileset_
     Data object that contains a set of files
     """
-    def __init__(self, name=None, files = None):
+    def __init__(self, name=None, files=None):
         """
         Assume input files are new
         """
         self.name = name
         self.files = set()
 
-        if files == None:
+        if files is None:
             self.newfiles = set()
         else:
             self.newfiles = files
@@ -70,7 +71,7 @@ class Fileset(WMObject):
             files = list(self.getFiles(type='set'))
 
             try:
-                files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
+                files.sort(key=itemgetter('lfn'))
             except Exception as e:
                 print('Problem with listFiles for fileset:', self.name)
                 print(files.pop())
@@ -84,7 +85,7 @@ class Fileset(WMObject):
             """
             def getLFN(file):
                 return file["lfn"]
-            files = map(getLFN, self.getFiles(type='list'))
+            files = list(map(getLFN, self.getFiles(type='list')))
             return files
         elif type == 'id':
             """
@@ -93,7 +94,7 @@ class Fileset(WMObject):
             def getID(file):
                 return file["id"]
 
-            files = map(getID, self.getFiles(type='list'))
+            files = list(map(getID, self.getFiles(type='list')))
             return files
 
     def listNewFiles(self):
@@ -124,7 +125,6 @@ class Fileset(WMObject):
         representing whether or not the fileset is open.
         """
         self.open = isOpen
-
 
     def __str__(self):
         """

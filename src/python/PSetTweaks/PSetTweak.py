@@ -89,7 +89,7 @@ class PSetLister(object):
         self.psets.append(psetPath)
         params = childParameters(psetPath, pset)
         self.parameters[psetPath] = params
-        map(self, childPSets(pset))
+        list(map(self, childPSets(pset)))
         self.queue.pop(-1)
 
 

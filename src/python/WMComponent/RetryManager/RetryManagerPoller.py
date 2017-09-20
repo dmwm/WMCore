@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
+# pylint: disable=W0613
 """
 __RetryManagerPoller__
 
@@ -49,32 +49,30 @@ component won't crash but it won't do anything at all. All
 jobs that get in cooloff would stay there forever.
 Any parameter can be skipped and the component will use internal defaults.
 """
-__all__ = []
 
-
-
-import threading
-import logging
 import datetime
+import logging
+import threading
 import time
 import traceback
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
-from WMCore.WMBS.Job          import Job
-from WMCore.DAOFactory        import DAOFactory
-from WMCore.WMFactory         import WMFactory
-
+from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
-
+from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
+from WMCore.WMFactory import WMFactory
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
+__all__ = []
+
 
 def convertdatetime(t):
     """
     Convert dates into useable format.
     """
     return int(time.mktime(t.timetuple()))
+
 
 def timestamp():
     """
@@ -83,12 +81,14 @@ def timestamp():
     t = datetime.datetime.now()
     return convertdatetime(t)
 
+
 class RetryManagerException(WMException):
     """
     _RetryManagerException_
 
     It's totally awesome, except it's not.
     """
+
 
 class RetryManagerPoller(BaseWorkerThread):
     """
@@ -97,6 +97,7 @@ class RetryManagerPoller(BaseWorkerThread):
     Polls for Jobs in CoolOff State and attempts to retry them
     based on the requirements in the selected plugin
     """
+
     def __init__(self, config):
         """
         Initialise class members
@@ -106,19 +107,19 @@ class RetryManagerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
         pluginPath = getattr(self.config.RetryManager, "pluginPath",
                              "WMComponent.RetryManager.PlugIns")
         self.pluginFactory = WMFactory("plugins", pluginPath)
 
         self.changeState = ChangeState(self.config)
-        self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
 
         # initialize the alert framework (if available) (self.sendAlert())
-        self.initAlerts(compName = "RetryManager")
+        self.initAlerts(compName="RetryManager")
 
         # get needed plugins
         self.plugins = {}
@@ -128,14 +129,14 @@ class RetryManagerPoller(BaseWorkerThread):
 
         for pluginName in self.typePluginsAssoc.values():
             try:
-                plugin = self.pluginFactory.loadObject(classname = pluginName,
-                                                            args = config)
+                plugin = self.pluginFactory.loadObject(classname=pluginName,
+                                                       args=config)
                 self.plugins[pluginName] = plugin
             except Exception as ex:
-                msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
+                msg = "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
                 msg += str(ex)
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(6, msg=msg)
                 raise RetryManagerException(msg)
 
         return
@@ -148,8 +149,7 @@ class RetryManagerPoller(BaseWorkerThread):
         logging.debug("Terminating. doing one more pass before we die")
         self.algorithm(params)
 
-
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         Performs the doRetries method, loading the appropriate
         plugin for each job and handling it.
@@ -160,9 +160,9 @@ class RetryManagerPoller(BaseWorkerThread):
             myThread.transaction.begin()
             self.doRetries()
             myThread.transaction.commit()
-        except WMException as ex:
+        except WMException:
             if getattr(myThread, 'transaction', None) and \
-               getattr(myThread.transaction, 'transaction', None):
+                    getattr(myThread.transaction, 'transaction', None):
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
@@ -172,13 +172,12 @@ class RetryManagerPoller(BaseWorkerThread):
             msg += "\n\n"
             logging.error(msg)
             if hasattr(myThread, 'transaction') \
-                   and myThread.transaction != None \
-                   and hasattr(myThread.transaction, 'transaction') \
-                   and myThread.transaction.transaction != None:
+                    and myThread.transaction is not None \
+                    and hasattr(myThread.transaction, 'transaction') \
+                    and myThread.transaction.transaction is not None:
                 myThread.transaction.rollback()
-            self.sendAlert(6, msg = msg)
+            self.sendAlert(6, msg=msg)
             raise Exception(msg)
-
 
     def processRetries(self, jobs, cooloffType):
         """
@@ -192,17 +191,17 @@ class RetryManagerPoller(BaseWorkerThread):
             return
 
         transitions = Transitions()
-        oldstate = '%scooloff' % (cooloffType)
-        if not oldstate in transitions.keys():
-            msg = 'Unknown job type %s' % (cooloffType)
+        oldstate = '%scooloff' % cooloffType
+        if oldstate not in transitions.keys():
+            msg = 'Unknown job type %s' % cooloffType
             logging.error(msg)
-            self.sendAlert(6, msg = msg)
+            self.sendAlert(6, msg=msg)
             return
         propList = []
 
-        newJobState  = transitions[oldstate][0]
+        newJobState = transitions[oldstate][0]
 
-        jobList = self.loadJobsFromList(idList = jobs)
+        jobList = self.loadJobsFromList(idList=jobs)
 
         # Now we should have the jobs
         propList = self.selectRetryAlgo(jobList, cooloffType)
@@ -210,9 +209,7 @@ class RetryManagerPoller(BaseWorkerThread):
         if len(propList) > 0:
             self.changeState.propagate(propList, newJobState, oldstate)
 
-
         return
-
 
     def loadJobsFromList(self, idList):
         """
@@ -221,36 +218,33 @@ class RetryManagerPoller(BaseWorkerThread):
         Load jobs in bulk
         """
 
-        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
-        getTypeAction = self.daoFactory(classname = "Jobs.GetType")
-
+        loadAction = self.daoFactory(classname="Jobs.LoadFromID")
+        getTypeAction = self.daoFactory(classname="Jobs.GetType")
 
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
 
-        results = loadAction.execute(jobID = binds)
-        typeResults = getTypeAction.execute(jobID = idList)
+        results = loadAction.execute(jobID=binds)
+        typeResults = getTypeAction.execute(jobID=idList)
         subTypes = {}
 
         for typeEntry in typeResults:
             subTypes[typeEntry['id']] = typeEntry['type']
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
         for entry in results:
             # One job per entry
-            tmpJob = Job(id = entry['id'])
+            tmpJob = Job(id=entry['id'])
             tmpJob.update(entry)
             tmpJob['jobType'] = subTypes[entry['id']]
             listOfJobs.append(tmpJob)
 
-
         return listOfJobs
-
 
     def selectRetryAlgo(self, jobList, cooloffType):
         """
@@ -263,7 +257,6 @@ class RetryManagerPoller(BaseWorkerThread):
         if len(jobList) == 0:
             return result
 
-
         for job in jobList:
             try:
                 if job['jobType'] in self.typePluginsAssoc:
@@ -272,17 +265,16 @@ class RetryManagerPoller(BaseWorkerThread):
                     pluginName = self.typePluginsAssoc['default']
                 plugin = self.plugins[pluginName]
 
-                if plugin.isReady(job = job, cooloffType = cooloffType):
+                if plugin.isReady(job=job, cooloffType=cooloffType):
                     result.append(job)
             except Exception as ex:
-                msg =  "Exception while checking for cooloff timeout for job %i\n" % job['id']
+                msg = "Exception while checking for cooloff timeout for job %i\n" % job['id']
                 msg += str(ex)
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
-                logging.debug("Job: %s\n" % job)
-                logging.debug("cooloffType: %s\n" % cooloffType)
+                self.sendAlert(6, msg=msg)
+                logging.debug("Job: %s\n", job)
+                logging.debug("cooloffType: %s\n", cooloffType)
                 raise RetryManagerException(msg)
-
 
         return result
 
@@ -292,26 +284,26 @@ class RetryManagerPoller(BaseWorkerThread):
         available, create the subscriptions
         """
         # Discover the jobs that are in create cooloff
-        jobs = self.getJobs.execute(state = 'createcooloff')
-        logging.info("Found %s jobs in createcooloff" % len(jobs))
+        jobs = self.getJobs.execute(state='createcooloff')
+        logging.info("Found %s jobs in createcooloff", len(jobs))
         self.processRetries(jobs, 'create')
 
         # Discover the jobs that are in submit cooloff
-        jobs = self.getJobs.execute(state = 'submitcooloff')
-        logging.info("Found %s jobs in submitcooloff" % len(jobs))
+        jobs = self.getJobs.execute(state='submitcooloff')
+        logging.info("Found %s jobs in submitcooloff", len(jobs))
         self.processRetries(jobs, 'submit')
 
-            # Discover the jobs that are in run cooloff
-        jobs = self.getJobs.execute(state = 'jobcooloff')
-        logging.info("Found %s jobs in jobcooloff" % len(jobs))
+        # Discover the jobs that are in run cooloff
+        jobs = self.getJobs.execute(state='jobcooloff')
+        logging.info("Found %s jobs in jobcooloff", len(jobs))
         self.processRetries(jobs, 'job')
 
         # Discover the jobs that are in paused, logging only purpose:
-        jobs = self.getJobs.execute(state = 'jobpaused')
-        logging.info("Found %s jobs in jobpaused" % len(jobs))
+        jobs = self.getJobs.execute(state='jobpaused')
+        logging.info("Found %s jobs in jobpaused", len(jobs))
 
-        jobs = self.getJobs.execute(state = 'createpaused')
-        logging.info("Found %s jobs in createpaused" % len(jobs))
+        jobs = self.getJobs.execute(state='createpaused')
+        logging.info("Found %s jobs in createpaused", len(jobs))
 
-        jobs = self.getJobs.execute(state = 'submitpaused')
-        logging.info("Found %s jobs in submitpaused" % len(jobs))
+        jobs = self.getJobs.execute(state='submitpaused')
+        logging.info("Found %s jobs in submitpaused", len(jobs))

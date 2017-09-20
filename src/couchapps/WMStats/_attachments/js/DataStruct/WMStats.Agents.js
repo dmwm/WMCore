@@ -81,8 +81,8 @@ WMStats.Agents = function (couchData) {
                 report.message = "OK";
             };
             
-            report["agent_update"] =  WMStats.Utils.foramtDuration(lastUpdatedDuration);
-            report["data_update"] = WMStats.Utils.foramtDuration(dataUpdateDuration);
+            report["agent_update"] =  WMStats.Utils.formatDuration(lastUpdatedDuration);
+            report["data_update"] = WMStats.Utils.formatDuration(dataUpdateDuration);
             return report;
         };
         

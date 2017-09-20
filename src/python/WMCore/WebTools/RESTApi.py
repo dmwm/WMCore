@@ -8,10 +8,10 @@ application to point at this class, with a model and formatter class configured:
 active.section_('rest')
 active.rest.object = 'WMCore.WebTools.RESTApi'
 active.rest.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/')
-active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.database = 'MySQL connection string'
 active.rest.section_('model')
 active.rest.model.object = 'RESTModel'
-active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.model.database = 'MySQL connection string'
 active.rest.model.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/')
 active.rest.section_('formatter')
 active.rest.formatter.object = 'RESTFormatter'

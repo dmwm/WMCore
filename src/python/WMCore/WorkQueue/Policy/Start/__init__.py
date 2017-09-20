@@ -4,11 +4,10 @@ WorkQueue Start Policy
 
 """
 
-
-
 from WMCore.WMFactory import WMFactory
 
 startFac = WMFactory(__name__, __name__)
+
 
 def startPolicy(name, startMap):
     """Load a start policy"""
@@ -26,7 +25,8 @@ def startPolicy(name, startMap):
         args = {}
     return startFac.loadObject(policyName,
                                args,
-                               storeInCache = False,
+                               storeInCache=False,
                                )
 
-__all__ = [startPolicy]
+
+__all__ = []

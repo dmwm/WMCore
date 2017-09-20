@@ -1,21 +1,15 @@
 #!/usr/bin/env python
-#pylint: disable=W6501
-# W6501: pass information to logging using string arguments
 
 """
 Creates jobs for new subscriptions
 
 """
 
-
-
-
 import logging
 import threading
 
-from WMCore.Agent.Harness     import Harness
-
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+from WMCore.Agent.Harness import Harness
 
 
 class JobSubmitter(Harness):
@@ -42,7 +36,7 @@ class JobSubmitter(Harness):
         myThread = threading.currentThread()
 
         pollInterval = self.config.JobSubmitter.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        logging.info("Setting poll interval to %s seconds", pollInterval)
         myThread.workerThreadManager.addWorker(JobSubmitterPoller(self.config),
                                                pollInterval)
 

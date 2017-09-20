@@ -10,14 +10,13 @@ Created on Nov 2, 2012
 @author: dballest
 """
 
+import re
 import threading
 import traceback
-import re
-
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMException import WMException
 
 from WMComponent.AnalyticsDataCollector.Plugins.PluginInterface import PluginInterface
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 
@@ -30,23 +29,26 @@ def getTier0Regex():
     This are the uncompiled regular expressions in the correct
     order of the states
     """
-    regexDict = {'Repack' : [('Merge', [r'^/Repack_Run[0-9]+_Stream[\w]+/Repack$']),
-                             ('Processing Done', [r'^/Repack_Run[0-9]+_Stream[\w]+/Repack/RepackMerge[\w]+$'])],
+    regexDict = {'Repack': [('Merge', [r'^/Repack_Run[0-9]+_Stream[\w]+/Repack$']),
+                            ('Processing Done', [r'^/Repack_Run[0-9]+_Stream[\w]+/Repack/RepackMerge[\w]+$'])],
 
-                 'PromptReco' : [('AlcaSkim', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco$']),
-                                 ('Merge', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/AlcaSkim$']),
-                                 ('Harvesting', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/AlcaSkim/AlcaSkimMerge[\w]+$',
-                                                 r'^/PromptReco_Run[0-9]+_[\w]+/Reco/RecoMerge[\w]+$']),
-                                 ('Processing Done', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/RecoMerge[\w]+/RecoMerge[\w]+DQMHarvest[\w]+$'])
+                 'PromptReco': [('AlcaSkim', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco$']),
+                                ('Merge', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/AlcaSkim$']),
+                                ('Harvesting', [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/AlcaSkim/AlcaSkimMerge[\w]+$',
+                                                r'^/PromptReco_Run[0-9]+_[\w]+/Reco/RecoMerge[\w]+$']),
+                                ('Processing Done',
+                                 [r'^/PromptReco_Run[0-9]+_[\w]+/Reco/RecoMerge[\w]+/RecoMerge[\w]+DQMHarvest[\w]+$'])
                                 ],
 
-                 'Express' : [('Merge', [r'^/Express_Run[0-9]+_Stream[\w]+/Express$']),
-                              ('Harvesting', [r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressMerge[\w]+$',
-                                              r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressAlcaSkim[\w]+$']),
-                              ('Processing Done', [r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressMerge[\w]+/ExpressMerge[\w]+DQMHarvest[\w]+$',
-                                                   r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressAlcaSkim[\w]+/ExpressAlcaSkim[\w]+AlcaHarvest[\w]+$'])
+                 'Express': [('Merge', [r'^/Express_Run[0-9]+_Stream[\w]+/Express$']),
+                             ('Harvesting', [r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressMerge[\w]+$',
+                                             r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressAlcaSkim[\w]+$']),
+                             ('Processing Done', [
+                                 r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressMerge[\w]+/ExpressMerge[\w]+DQMHarvest[\w]+$',
+                                 r'^/Express_Run[0-9]+_Stream[\w]+/Express/ExpressAlcaSkim[\w]+/ExpressAlcaSkim[\w]+AlcaHarvest[\w]+$'])
                              ]}
     return regexDict
+
 
 class Tier0PluginError(WMException):
     """
@@ -64,6 +66,7 @@ class Tier0PluginError(WMException):
         WMException.__init__(self, msg)
         return
 
+
 class Tier0Plugin(PluginInterface):
     """
     _Tier0Plugin_
@@ -80,19 +83,19 @@ class Tier0Plugin(PluginInterface):
         PluginInterface.__init__(self)
 
         self.myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = 'WMCore.WMBS',
-                                     logger = self.myThread.logger,
-                                     dbinterface = self.myThread.dbi)
+        self.daoFactory = DAOFactory(package='WMCore.WMBS',
+                                     logger=self.myThread.logger,
+                                     dbinterface=self.myThread.dbi)
 
         self.logger = self.myThread.logger
 
         # To get finished subscriptions it needs the cleanout state index
-        getCleanoutState = self.daoFactory(classname = 'Jobs.GetStateID')
-        self.cleanoutState = getCleanoutState.execute(state = 'cleanout')
+        getCleanoutState = self.daoFactory(classname='Jobs.GetStateID')
+        self.cleanoutState = getCleanoutState.execute(state='cleanout')
 
         # Load the DAOs
-        self.getFinishedTasks = self.daoFactory(classname = 'Workflow.GetFinishedTasks')
-        self.getFinishedTasksNoInjection = self.daoFactory(classname = 'Subscriptions.GetSemiFinishedTasks')
+        self.getFinishedTasks = self.daoFactory(classname='Workflow.GetFinishedTasks')
+        self.getFinishedTasksNoInjection = self.daoFactory(classname='Subscriptions.GetSemiFinishedTasks')
 
         # To avoid doing many I/O operations, cache the list of tasks for each workflow
         self.taskCache = {}
@@ -140,8 +143,8 @@ class Tier0Plugin(PluginInterface):
         # Repack workflows are not marked injected and therefore its subscriptions
         # are not marked as finished until the injection happens (48h delay)
         # get those tasks with a looser criteria
-        finishedTasksNoInjection = self.getFinishedTasksNoInjection.execute(state = self.cleanoutState,
-                                                                       pattern = '%Repack%')
+        finishedTasksNoInjection = self.getFinishedTasksNoInjection.execute(state=self.cleanoutState,
+                                                                            pattern='%Repack%')
         self.logger.debug("Found %d finished Repack tasks" % len(finishedTasksNoInjection))
         # Get workflows which are not closed yet or completed
         notClosedWorkflows = centralRequestCouchDB.getRequestByStatus(['new'])
@@ -158,7 +161,7 @@ class Tier0Plugin(PluginInterface):
             workflows[workflowName].append(entry['task'])
 
         self.logger.info('Updating the status of %d workflows' % len(workflows))
-        #Go through the reported workflows
+        # Go through the reported workflows
         for workflowName in workflows:
             try:
                 if workflowName in notClosedWorkflows:
@@ -180,15 +183,14 @@ class Tier0Plugin(PluginInterface):
                 workflowStatus = self.determineCurrentStatus(workflowName, workflowType, completedTaskList)
                 if workflowStatus is not None:
                     centralRequestCouchDB.updateRequestStatus(workflowName, workflowStatus)
-
+            except Tier0PluginError as t0ex:
+                # More specific exception, just log it anyway
+                self.logger.error('Error ocurred while processing a doc:\n%s' % str(t0ex))
             except Exception as ex:
                 # Plugins are meant to be not-critical
                 # If something fails then just keep going
                 self.logger.error('Error occurred while processing docs:\n%s' % str(ex))
                 self.logger.error(traceback.format_exc())
-            except Tier0PluginError as t0ex:
-                # More specific exception, just log it anyway
-                self.logger.error('Error ocurred while processing a doc:\n%s' % str(t0ex))
 
         # Clean the task cache based on the documents we reported this cycle
         self.cleanTaskCache([x['workflow'] for x in requestDocs])
@@ -243,8 +245,8 @@ class Tier0Plugin(PluginInterface):
             completedTasksForStatus = 0
             totalTasksForStatus = 0
             for regex in pair[1]:
-                completedTasksForStatus += len(filter(regex, completedTasks))
-                totalTasksForStatus += len(filter(regex, fullTaskList))
+                completedTasksForStatus += len(list(filter(regex, completedTasks)))
+                totalTasksForStatus += len(list(filter(regex, fullTaskList)))
             if completedTasksForStatus == totalTasksForStatus:
                 currentStatus = pair[0]
             else:

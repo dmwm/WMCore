@@ -1,5 +1,5 @@
-from builtins import object
 from __future__ import (division, print_function)
+from builtins import object
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL
 

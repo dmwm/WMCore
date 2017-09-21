@@ -72,7 +72,7 @@ config = Configuration()
 config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = "cms-comp-ops-workflow-team@cern.ch"
-config.Agent.teamName = "cmsdataops"
+config.Agent.teamName = "REPLACE_TEAM_NAME"
 config.Agent.agentName = "WMAgentCommissioning"
 config.Agent.agentNumber = 0
 config.Agent.useMsgService = False

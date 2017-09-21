@@ -269,7 +269,7 @@ echo "Done!" && echo
 # tweak configuration
 ### 
 echo "*** Tweaking configuration ***"
-sed -i "s+cmsdataops+$TEAMNAME+" $MANAGE/config.py
+sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py

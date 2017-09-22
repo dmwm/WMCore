@@ -78,43 +78,61 @@ class StdBase(object):
 
         return
 
+    # static copy of the skim mapping
+    skimMap = {}
+
     @staticmethod
-    def skimToDataTier():
+    def skimToDataTier(cmsswVersion, skim):
         """
-        Map physics skim to a data tier
+        Start subprocess and call CMSSW python code to retrieve data tier for given skim
+
+        Detects a usable scram arch for this CMSSW release on this machine
+
+        Cache the results and use cache for lookup if possible
+
         """
-        skimMap = {'LogError': 'RAW-RECO',
-                   'LogErrorMonitor': 'USER',
-                   'ZElectron': 'RAW-RECO',
-                   'ZMu': 'RAW-RECO',
-                   'MuTau': 'RAW-RECO',
-                   'TopMuEG': 'RAW-RECO',
-                   'EcalActivity': 'RAW-RECO',
-                   'CosmicSP': 'RAW-RECO',
-                   'CosmicTP': 'RAW-RECO',
-                   'ZMM': 'RAW-RECO',
-                   'Onia': 'RECO',
-                   'HighPtJet': 'RAW-RECO',
-                   'D0Meson': 'RECO',
-                   'Photon': 'AOD',
-                   'ZEE': 'AOD',
-                   'BJet': 'AOD',
-                   'OniaCentral': 'RECO',
-                   'OniaPeripheral': 'RECO',
-                   'SingleTrack': 'AOD',
-                   'MinBias': 'AOD',
-                   'OniaUPC': 'RAW-RECO',
-                   'HighMET': 'RECO',
-                   'BPHSkim': 'USER',
-                   'PAMinBias': 'RAW-RECO',
-                   'PAZEE': 'RAW-RECO',
-                   'PAZMM': 'RAW-RECO',
-                   'EXONoBPTXSkim': 'USER'
-                   }
-        return skimMap
+        if not cmsswVersion:
+            return None
+
+        if cmsswVersion in StdBase.skimMap:
+            if skim in StdBase.skimMap[cmsswVersion]:
+                return StdBase.skimMap[cmsswVersion][skim]
+        else:
+            StdBase.skimMap[cmsswVersion] = {}
+
+        import glob
+        import subprocess
+
+        p = subprocess.Popen("/cvmfs/cms.cern.ch/common/cmsos", stdout=subprocess.PIPE, shell=True)
+        cmsos = p.communicate()[0].strip()
+
+        scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
+        if not scramBaseDirs:
+            scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms-patch/cmssw/%s" % (cmsos, cmsswVersion))
+            if not scramBaseDirs:
+                return None
+
+        command = "source /cvmfs/cms.cern.ch/cmsset_default.sh\n"
+        command += "cd %s\n" % scramBaseDirs[0]
+        command += "eval `scramv1 runtime -sh`\n"
+
+        command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        command += """dataTier = getSkimDataTier("%s")\n""" % skim
+        command += """if dataTier:\n\tprint dataTier.value()'"""
+
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+        dataTier = p.communicate()[0].strip()
+
+        if dataTier == "None":
+            dataTier = None
+
+        StdBase.skimMap[cmsswVersion][skim] = dataTier
+
+        return dataTier
 
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
-                               configDoc=None, couchDBName=None, configCacheUrl=None):
+                               configDoc=None, couchDBName=None,
+                               configCacheUrl=None, cmsswVersion=None):
         """
         _determineOutputModules_
 
@@ -148,10 +166,13 @@ class StdBase(object):
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
                 for physicsSkim in scenarioArgs.get('PhysicsSkims', []):
-                    dataTier = StdBase.skimToDataTier().get(physicsSkim, 'USER')
-                    moduleLabel = "SKIMStream%s" % physicsSkim
-                    outputModules[moduleLabel] = {'dataTier': dataTier,
-                                                  'filterName': physicsSkim}
+                    dataTier = StdBase.skimToDataTier(cmsswVersion, physicsSkim)
+                    if dataTier:
+                        moduleLabel = "SKIMStream%s" % physicsSkim
+                        outputModules[moduleLabel] = {'dataTier': dataTier,
+                                                      'filterName': physicsSkim}
+                    else:
+                        self.raiseValidationException("Can't find physics skim %s in %s" % (physicsSkim, cmsswVersion))
 
             elif scenarioFunc == "alcaSkim":
 
@@ -411,7 +432,7 @@ class StdBase(object):
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchDBName,
-                                                   configCacheUrl=configCacheUrl)
+                                                   configCacheUrl, cmsswVersion)
         outputModules = {}
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(procTask,

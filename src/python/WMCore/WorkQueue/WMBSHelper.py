@@ -387,7 +387,7 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = True  # file is not a parent
 
-        logging.info("WMBS File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.info("WMBS MC fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         self.wmbsFilesToCreate.append(wmbsFile)
 
@@ -447,15 +447,23 @@ class WMBSHelper(WMConnectionBase):
         as well as run lumi update
         """
 
+        logging.info("ZZZZZTopLevelTask %s, %s", self.topLevelTask.getInputACDC(), self.topLevelTask.getPathName())
+
         if self.topLevelTask.getInputACDC():
             self.isDBS = False
-            for acdcFile in self.validFiles(block['Files']):
+            blockFilesSet = set(block['Files'])
+            validFiles = self.validFiles(blockFilesSet)
+            logging.info("ZZZZacdc %s %s", len(validFiles), len(set(validFiles)))
+            logging.info("ZZZZblockacdc %s %s", len(block['Files']), len(set(block['Files'])))
+
+            for acdcFile in validFiles:
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, block['PhEDExNodeNames'])
 
+        logging.info("ZZZZZFileSize %s, %s", len(self.wmbsFilesToCreate), len(set(self.wmbsFilesToCreate)))
         # Add files to WMBS
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
@@ -676,7 +684,13 @@ class WMBSHelper(WMConnectionBase):
         adds the ACDC files into WMBS database
         """
         wmbsParents = []
+        logging.info("WMBS ACDC parent files (%s)", len(acdcFile["parents"]))
         for parent in acdcFile["parents"]:
+            logging.info("WMBS ACDC File parent PPPPP : %s len:%s\n lfn:%s on Location: %s", parent, len(acdcFile["parents"]), acdcFile["lfn"], acdcFile["locations"])
+            if parent == acdcFile["lfn"]:
+                logging.info("ZZZXXX %s", parent)
+            if parent in wmbsParents:
+                logging.info("ZZZTTT %s", parent)
             parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
                                                                 locations=acdcFile["locations"]),
                                                  inFileset=False)
@@ -694,14 +708,14 @@ class WMBSHelper(WMConnectionBase):
                         locations=acdcFile["locations"],
                         merged=acdcFile.get('merged', True))
 
-        ## TODO need to get the lumi lists
+        # # TODO need to get the lumi lists
         for run in acdcFile['runs']:
             wmbsFile.addRun(run)
 
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.info("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
 

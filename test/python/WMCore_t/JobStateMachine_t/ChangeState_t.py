@@ -1,29 +1,26 @@
-#/usr/bin/env python
+# /usr/bin/env python
 """
 _ChangeState_t_
 
 """
 
-import unittest
 import os
 import threading
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp
+import unittest
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
-
-from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
-
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
 
 class TestChangeState(unittest.TestCase):
     def setUp(self):
@@ -39,16 +36,16 @@ class TestChangeState(unittest.TestCase):
         self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")
         self.testInit.setupCouch("job_summary", "WMStats")
 
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
         couchurl = os.getenv("COUCHURL")
-        self.couchServer = CouchServer(dburl = couchurl)
+        self.couchServer = CouchServer(dburl=couchurl)
         self.config = self.testInit.getConfiguration()
         self.taskName = "/TestWorkflow/ReReco1"
         self.specGen = WMSpecGenerator()
@@ -105,10 +102,8 @@ class TestChangeState(unittest.TestCase):
                                         split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
-                         locations=set(["T2_CH_CERN"]))
-        testFileB = File(lfn="SomeLFNB", events=1025, size=2049,
-                         locations=set(["T2_CH_CERN"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048, locations={"T2_CH_CERN"})
+        testFileB = File(lfn="SomeLFNB", events=1025, size=2049, locations={"T2_CH_CERN"})
         testFileA.create()
         testFileB.create()
 
@@ -122,7 +117,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 2, \
-               "Error: Splitting should have created two jobs."
+            "Error: Splitting should have created two jobs."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -140,61 +135,61 @@ class TestChangeState(unittest.TestCase):
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(isinstance(transition["timestamp"], int) or 
+            self.assertTrue(isinstance(transition["timestamp"], int) or
                             isinstance(transition["timestamp"], long))
 
-        self.assertEqual(testJobADoc["jobid"] , testJobA["id"], "Error: ID parameter is incorrect.")
+        self.assertEqual(testJobADoc["jobid"], testJobA["id"], "Error: ID parameter is incorrect.")
         assert testJobADoc["name"] == testJobA["name"], \
-               "Error: Name parameter is incorrect."
+            "Error: Name parameter is incorrect."
         assert testJobADoc["jobgroup"] == testJobA["jobgroup"], \
-               "Error: Jobgroup parameter is incorrect."
+            "Error: Jobgroup parameter is incorrect."
         assert testJobADoc["workflow"] == testJobA["workflow"], \
-               "Error: Workflow parameter is incorrect."
+            "Error: Workflow parameter is incorrect."
         assert testJobADoc["task"] == testJobA["task"], \
-               "Error: Task parameter is incorrect."
+            "Error: Task parameter is incorrect."
         assert testJobADoc["owner"] == testJobA["owner"], \
-               "Error: Owner parameter is incorrect."
+            "Error: Owner parameter is incorrect."
 
         assert testJobADoc["mask"]["FirstEvent"] == testJobA["mask"]["FirstEvent"], \
-               "Error: First event in mask is incorrect."
+            "Error: First event in mask is incorrect."
         assert testJobADoc["mask"]["LastEvent"] == testJobA["mask"]["LastEvent"], \
-               "Error: Last event in mask is incorrect."
+            "Error: Last event in mask is incorrect."
         assert testJobADoc["mask"]["FirstLumi"] == testJobA["mask"]["FirstLumi"], \
-               "Error: First lumi in mask is incorrect."
+            "Error: First lumi in mask is incorrect."
         assert testJobADoc["mask"]["LastLumi"] == testJobA["mask"]["LastLumi"], \
-               "Error: First lumi in mask is incorrect."
+            "Error: First lumi in mask is incorrect."
         assert testJobADoc["mask"]["FirstRun"] == testJobA["mask"]["FirstRun"], \
-               "Error: First run in mask is incorrect."
+            "Error: First run in mask is incorrect."
         assert testJobADoc["mask"]["LastEvent"] == testJobA["mask"]["LastRun"], \
-               "Error: First event in mask is incorrect."
+            "Error: First event in mask is incorrect."
 
         assert len(testJobADoc["inputfiles"]) == 1, \
-               "Error: Input files parameter is incorrect."
+            "Error: Input files parameter is incorrect."
 
         testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
 
         assert testJobBDoc["jobid"] == testJobB["id"], \
-               "Error: ID parameter is incorrect."
+            "Error: ID parameter is incorrect."
         assert testJobBDoc["name"] == testJobB["name"], \
-               "Error: Name parameter is incorrect."
+            "Error: Name parameter is incorrect."
         assert testJobBDoc["jobgroup"] == testJobB["jobgroup"], \
-               "Error: Jobgroup parameter is incorrect."
+            "Error: Jobgroup parameter is incorrect."
 
         assert testJobBDoc["mask"]["FirstEvent"] == testJobB["mask"]["FirstEvent"], \
-               "Error: First event in mask is incorrect."
+            "Error: First event in mask is incorrect."
         assert testJobBDoc["mask"]["LastEvent"] == testJobB["mask"]["LastEvent"], \
-               "Error: Last event in mask is incorrect."
+            "Error: Last event in mask is incorrect."
         assert testJobBDoc["mask"]["FirstLumi"] == testJobB["mask"]["FirstLumi"], \
-               "Error: First lumi in mask is incorrect."
+            "Error: First lumi in mask is incorrect."
         assert testJobBDoc["mask"]["LastLumi"] == testJobB["mask"]["LastLumi"], \
-               "Error: First lumi in mask is incorrect."
+            "Error: First lumi in mask is incorrect."
         assert testJobBDoc["mask"]["FirstRun"] == testJobB["mask"]["FirstRun"], \
-               "Error: First run in mask is incorrect."
+            "Error: First run in mask is incorrect."
         assert testJobBDoc["mask"]["LastEvent"] == testJobB["mask"]["LastRun"], \
-               "Error: First event in mask is incorrect."
+            "Error: First event in mask is incorrect."
 
         assert len(testJobBDoc["inputfiles"]) == 1, \
-               "Error: Input files parameter is incorrect."
+            "Error: Input files parameter is incorrect."
 
         changeStateDB = self.couchServer.connectDatabase(dbname="changestate_t/jobs")
         allDocs = changeStateDB.document("_all_docs")
@@ -205,9 +200,9 @@ class TestChangeState(unittest.TestCase):
         couchJobDoc = changeStateDB.document("1")
 
         assert couchJobDoc["name"] == testJobA["name"], \
-               "Error: Name is wrong"
+            "Error: Name is wrong"
         assert len(couchJobDoc["inputfiles"]) == 1, \
-               "Error: Wrong number of input files."
+            "Error: Wrong number of input files."
 
         result = changeStateDB.loadView("JobDump", "jobsByWorkflowName")
 
@@ -235,15 +230,14 @@ class TestChangeState(unittest.TestCase):
         testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
                                 name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
         testSubscription = Subscription(fileset=testFileset,
                                         workflow=testWorkflow,
                                         split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
-                         locations=set(["T2_CH_CERN"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048, locations={"T2_CH_CERN"})
         testFileA.create()
         testFileset.addFile(testFileA)
         testFileset.commit()
@@ -284,7 +278,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations={"T2_CH_CERN"})
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -300,7 +294,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
-               "Error: Splitting should have created four jobs."
+            "Error: Splitting should have created four jobs."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -329,9 +323,8 @@ class TestChangeState(unittest.TestCase):
         jobCState = stateDAO.execute(id=testJobC["id"])
         jobDState = stateDAO.execute(id=testJobD["id"])
 
-        assert jobAState == "created" and jobBState =="created" and \
-               jobCState == "new" and jobDState == "new", \
-               "Error: Jobs didn't change state correctly."
+        self.assertTrue(jobAState == "created" and jobBState == "created" and jobCState == "new" and jobDState == "new",
+                        "Error: Jobs didn't change state correctly.")
 
         return
 
@@ -344,8 +337,8 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
         testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
                                 name="wf001", task=self.taskName)
@@ -354,7 +347,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations={"T2_CH_CERN"})
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -370,7 +363,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
-               "Error: Splitting should have created four jobs."
+            "Error: Splitting should have created four jobs."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -399,13 +392,13 @@ class TestChangeState(unittest.TestCase):
         testJobD.load()
 
         assert testJobA["retry_count"] == 1, \
-               "Error: Retry count is wrong."
+            "Error: Retry count is wrong."
         assert testJobB["retry_count"] == 1, \
-               "Error: Retry count is wrong."
+            "Error: Retry count is wrong."
         assert testJobC["retry_count"] == 0, \
-               "Error: Retry count is wrong."
+            "Error: Retry count is wrong."
         assert testJobD["retry_count"] == 0, \
-               "Error: Retry count is wrong."
+            "Error: Retry count is wrong."
 
         return
 
@@ -426,7 +419,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -441,7 +434,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
-               "Error: Splitting should have created one job."
+            "Error: Splitting should have created one job."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -457,7 +450,7 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'executing', 'created')
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        changeStateDB = self.couchServer.connectDatabase(dbname="changestate_t/fwjrs")
         allDocs = changeStateDB.document("_all_docs")
 
         self.assertEqual(len(allDocs["rows"]), 2,
@@ -477,14 +470,14 @@ class TestChangeState(unittest.TestCase):
                 break
 
         assert fwjrDoc["retrycount"] == 0, \
-               "Error: Retry count is wrong."
+            "Error: Retry count is wrong."
 
         assert len(fwjrDoc["fwjr"]["steps"].keys()) == 2, \
-               "Error: Wrong number of steps in FWJR."
+            "Error: Wrong number of steps in FWJR."
         assert "cmsRun1" in fwjrDoc["fwjr"]["steps"].keys(), \
-               "Error: cmsRun1 step is missing from FWJR."
+            "Error: cmsRun1 step is missing from FWJR."
         assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
-               "Error: stageOut1 step is missing from FWJR."
+            "Error: stageOut1 step is missing from FWJR."
 
         return
 
@@ -506,7 +499,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -521,7 +514,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
-               "Error: Splitting should have created one job."
+            "Error: Splitting should have created one job."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -551,7 +544,6 @@ class TestChangeState(unittest.TestCase):
 
         return
 
-
     def testJobKilling(self):
         """
         _testJobKilling_
@@ -570,7 +562,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations={"T2_CH_CERN"})
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -586,7 +578,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
-               "Error: Splitting should have created four jobs."
+            "Error: Splitting should have created four jobs."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -643,7 +635,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -698,7 +690,6 @@ class TestChangeState(unittest.TestCase):
 
         return
 
-
     def testJobSummary(self):
         """
         _testJobSummary_
@@ -717,7 +708,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -732,7 +723,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
-               "Error: Splitting should have created one job."
+            "Error: Splitting should have created one job."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "cinquo"
@@ -769,7 +760,6 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA], 'jobcooloff', 'jobfailed', updatesummary=True)
         return
 
-
     def testIndexConflict(self):
         """
         _testIndexConflict_
@@ -789,7 +779,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -804,7 +794,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
-               "Error: Splitting should have created one job."
+            "Error: Splitting should have created one job."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "dballest"
@@ -837,7 +827,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name="TestFilesetB")
         testFileset.create()
 
-        testFile = File(lfn="SomeLFNB", locations=set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNB", locations={"T2_CH_CERN"})
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -888,10 +878,8 @@ class TestChangeState(unittest.TestCase):
                                         split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
-                         locations=set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
-        testFileB = File(lfn="SomeLFNB", events=1025, size=2049,
-                         locations=set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048, locations={"T2_CH_CERN", "T1_US_FNAL_Disk"})
+        testFileB = File(lfn="SomeLFNB", events=1025, size=2049, locations={"T2_CH_CERN", "T1_US_FNAL_Disk"})
         testFileA.create()
         testFileB.create()
 
@@ -905,7 +893,7 @@ class TestChangeState(unittest.TestCase):
         jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 2, \
-               "Error: Splitting should have created two jobs."
+            "Error: Splitting should have created two jobs."
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -934,7 +922,7 @@ class TestChangeState(unittest.TestCase):
         transition = testJobBDoc["states"][maxKey]
         self.assertEqual(transition["location"], "site2")
 
-        jobs = [{'jobid' : 1, 'location' : 'site2'}]
+        jobs = [{'jobid': 1, 'location': 'site2'}]
 
         change.recordLocationChange(jobs)
 
@@ -945,12 +933,13 @@ class TestChangeState(unittest.TestCase):
         self.assertEqual(transition["location"], "site2")
 
         listJobsDAO = self.daoFactory(classname="Jobs.GetLocation")
-        jobid = [{'jobid' : 1}, {'jobid' : 2}]
+        jobid = [{'jobid': 1}, {'jobid': 2}]
         jobsLocation = listJobsDAO.execute(jobid)
         for job in jobsLocation:
             self.assertEqual(job['site_name'], 'site2')
 
         return
+
 
 if __name__ == "__main__":
     unittest.main()

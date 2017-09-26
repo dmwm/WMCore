@@ -219,7 +219,7 @@ class DashboardReporter(WMObject):
             for outputMod in outputModules:
 
                 # we don't report logArchive, LogCollect and Sqlite output
-                if outputMod in [ "logArchive", "LogCollect", "Sqlite" ]:
+                if outputMod in [ "logArchive", "LogCollect", "SqliteALCAPROMPT" ]:
                     continue
 
                 outFiles = fwjr.getFilesFromOutputModule(step = stepName,

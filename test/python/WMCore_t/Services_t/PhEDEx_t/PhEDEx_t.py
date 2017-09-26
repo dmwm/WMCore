@@ -61,9 +61,7 @@ class PhEDExTest(unittest.TestCase):
 
         testSub = PhEDExSubscription([datasetA, datasetB], "T1_UK_RAL_MSS",
                                      "Saturn")
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
-                                                   testSub.getDatasetPaths())
-        result = self.phedexApi.subscribe(testSub, xmlData)
+        result = self.phedexApi.subscribe(testSub)
         requestIDs = result["phedex"]["request_created"]
 
         self.assertEqual(len(requestIDs), 1,
@@ -106,7 +104,6 @@ class PhEDExTest(unittest.TestCase):
         blockA = "%s#%s" % (testDataset, makeUUID())
         blockB = "%s#%s" % (testDataset, makeUUID())
 
-        injectionSpec = XMLDrop.XMLInjectionSpec(self.dbsTestUrl)
         datasetSpec = injectionSpec.getDataset(testDataset)
         datasetSpec.getFileblock(blockA, 'y')
         datasetSpec.getFileblock(blockB, 'y')
@@ -116,14 +113,12 @@ class PhEDExTest(unittest.TestCase):
         # Create a dataset level subscription to a node
         testDatasetSub = PhEDExSubscription([testDataset], "T1_UK_RAL_MSS",
                                             "Saturn", request_only="n")
-        datasetSpec = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
-                                                       testDatasetSub.getDatasetPaths())
-        self.phedexApi.subscribe(testDatasetSub, datasetSpec)
+        self.phedexApi.subscribe(testDatasetSub)
 
         # Create a block level subscrtion to a different node
         testBlockSub = PhEDExSubscription([testDataset], "T1_DE_KIT_MSS", "Saturn",
                                           level="block", request_only="n")
-        self.phedexApi.subscribe(testBlockSub, blockSpec)
+        self.phedexApi.subscribe(testBlockSub)
 
         subs = self.phedexApi.getSubscriptionMapping(testDataset)
         self.assertEqual(subs[testDataset], {"T1_UK_RAL_MSS"}, "Error: Dataset subscription is wrong.")

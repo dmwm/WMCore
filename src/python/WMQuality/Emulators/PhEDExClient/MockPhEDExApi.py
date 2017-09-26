@@ -34,7 +34,9 @@ class MockPhEDExApi(object):
     Version of Services/PhEDEx intended to be used with mock or unittest.mock
     """
 
-    def __init__(self, dict=None, responseType="json", secure=True):
+    def __init__(self, dict=None, responseType="json", logger=None,
+                 dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
+        self.dbsUrl = dbsUrl
         dict = dict or {}
         self.dataBlocks = DataBlockGenerator()
         self.subRequests = {}

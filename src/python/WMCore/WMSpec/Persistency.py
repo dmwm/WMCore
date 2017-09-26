@@ -10,6 +10,7 @@ Placeholder for ideas at present....
 """
 from __future__ import print_function
 
+from builtins import object
 from urllib2 import urlopen, Request
 from urlparse import urlparse
 try:
@@ -17,7 +18,7 @@ try:
 except ImportError:
     import pickle
 
-class PersistencyHelper:
+class PersistencyHelper(object):
     """
     _PersistencyHelper_
 

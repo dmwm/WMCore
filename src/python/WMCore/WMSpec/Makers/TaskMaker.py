@@ -8,6 +8,7 @@ to start as a proper job.
 
 """
 from __future__ import print_function
+from builtins import object
 
 import logging
 import os.path
@@ -28,7 +29,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 #
 
 
-class TaskMaker:
+class TaskMaker(object):
     """
     Class for separating and starting all tasks in a WMWorkload
 

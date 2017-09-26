@@ -9,9 +9,10 @@ like the SQLAlchemy class to minimise the impact of adding this class.
 
 
 
+from builtins import object
 import threading
 
-class ResultSet:
+class ResultSet(object):
     def __init__(self):
         self.data = []
         self.keys = []

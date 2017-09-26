@@ -6,10 +6,11 @@
 """
 Couch DB command line admin tool
 """
+
 from __future__ import print_function
+from builtins import object
 
 __license__ = "GPL"
-
 __maintainer__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"
 __status__ = "Alpha"
@@ -26,7 +27,8 @@ import IPython.ipapi
 import __main__
 
 
-class PrintManager:
+class PrintManager(object):
+
     def __init__(self):
         from IPython import ColorANSI
         self.term = ColorANSI.TermColors

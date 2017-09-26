@@ -5,6 +5,7 @@ _BasePlugin_
 Base class for BossAir plugins
 """
 
+from builtins import object
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Tools.Scram import ARCH_TO_OS
 
@@ -21,7 +22,7 @@ class BossAirPluginException(WMException):
 
 
 
-class BasePlugin:
+class BasePlugin(object):
     """
     Base class for BossAir Plugins
 

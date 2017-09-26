@@ -2,6 +2,7 @@
 #pylint: disable=E1101,C0103,R0902
 
 
+from builtins import object
 import unittest
 
 from WMCore.Configuration import ConfigSection
@@ -142,7 +143,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(config.Section2.Tuple,
                          ("string", 123, 123.456, False))
 
-        class DummyObject:
+        class DummyObject(object):
             pass
         # unsupported parameter type
         self.assertRaises(

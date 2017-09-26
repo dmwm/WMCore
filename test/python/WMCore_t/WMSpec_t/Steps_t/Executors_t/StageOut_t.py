@@ -4,6 +4,7 @@ Created on Jun 18, 2009
 @author: meloam
 """
 from __future__ import print_function
+from builtins import object
 
 import copy
 import logging
@@ -24,6 +25,7 @@ import WMCore.WMSpec.Steps.Executors.StageOut as StageOutExecutor
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 import WMCore.WMSpec.Steps.Templates.StageOut as StageOutTemplate
 import WMCore_t.WMSpec_t.samples.BasicProductionWorkload as testWorkloads
+
 from WMCore.DataStructs.Job import Job
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -32,6 +34,7 @@ from WMQuality.TestInit import TestInit
 
 
 class StageOutTest(unittest.TestCase):
+
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testDir = self.testInit.generateWorkDir()
@@ -225,7 +228,7 @@ class StageOutTest(unittest.TestCase):
         step.override.__setattr__('phedex-node', 'DUMMYPNN')
 
 
-class otherStageOutTexst(unittest.TestCase):
+class otherStageOutTexst(object): #(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave

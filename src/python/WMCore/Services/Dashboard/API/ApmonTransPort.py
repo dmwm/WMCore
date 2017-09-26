@@ -11,6 +11,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 import random
 import time
 import sys
@@ -21,7 +22,7 @@ import os
 apmonLoggingLevel = apmon.Logger.INFO
 
 
-class ApmonTransPort:
+class ApmonTransPort(object):
 
     """ _ApmonTransPort_ """
 

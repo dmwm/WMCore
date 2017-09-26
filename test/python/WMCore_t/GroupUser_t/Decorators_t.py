@@ -7,10 +7,11 @@ Created by Dave Evans on 2010-07-29.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import object
 import unittest
 import WMCore.GroupUser.Decorators as Decs
 
-class CrashTestDummy:
+class CrashTestDummy(object):
 
     def __init__(self):
         self._connected = False

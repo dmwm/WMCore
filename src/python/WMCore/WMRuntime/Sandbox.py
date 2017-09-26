@@ -11,10 +11,11 @@ the module tree imposed by it
 
 """
 
+from builtins import object
 import os
 import inspect
 
-class Sandbox:
+class Sandbox(object):
     """
     _Sandbox_
 

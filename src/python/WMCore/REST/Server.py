@@ -1,3 +1,4 @@
+from builtins import object
 import cherrypy
 import inspect
 import os
@@ -40,7 +41,7 @@ RESTArgs = namedtuple("RESTArgs", ["args", "kwargs"])
 
 ######################################################################
 ######################################################################
-class RESTFrontPage:
+class RESTFrontPage(object):
     """Base class for a trivial front page intended to hand everything
     over to a javascript-based user interface implementation.
 
@@ -357,7 +358,7 @@ class RESTFrontPage:
 
 ######################################################################
 ######################################################################
-class MiniRESTApi:
+class MiniRESTApi(object):
     """Minimal base class for REST services.
 
     .. rubric:: Overview
@@ -2257,7 +2258,7 @@ class DatabaseRESTApi(RESTApi):
 
 ######################################################################
 ######################################################################
-class RESTEntity:
+class RESTEntity(object):
     """Base class for entities in :class:`~.RESTApi`-based interfaces.
 
     This class doesn't offer any service other than holding on to the

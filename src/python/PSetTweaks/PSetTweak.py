@@ -7,6 +7,7 @@ independent python structure
 
 """
 
+from builtins import object
 import StringIO
 import imp
 import inspect
@@ -61,7 +62,7 @@ def psetIterator(obj):
 
 
 
-class PSetLister:
+class PSetLister(object):
     """
     _PSetLister_
 
@@ -92,7 +93,7 @@ class PSetLister:
         self.queue.pop(-1)
 
 
-class JSONiser:
+class JSONiser(object):
     """
     _JSONiser_
 
@@ -152,7 +153,7 @@ class JSONiser:
 
 
 
-class PSetTweak:
+class PSetTweak(object):
     """
     _PSetTweak_
 

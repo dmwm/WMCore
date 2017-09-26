@@ -11,6 +11,7 @@ Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
 
+from builtins import object
 import os
 import os.path
 import threading
@@ -116,7 +117,7 @@ class CreateWorkAreaException(WMException):
 
 
 
-class CreateWorkArea:
+class CreateWorkArea(object):
     """
     Basic class for doing the JobMaker dirty work
 

@@ -19,7 +19,9 @@ including session objects and workflow entities.
 (6) Method to publish monitoring information
 
 """
+
 from __future__ import print_function
+from builtins import object
 
 import logging
 import os
@@ -27,6 +29,7 @@ import sys
 import threading
 import time
 import traceback
+
 from logging.handlers import RotatingFileHandler
 
 from WMCore import WMLogging
@@ -48,8 +51,8 @@ class HarnessException(WMException):
     Otherwise, it's just part of WMException.
     """
 
+class Harness(object):
 
-class Harness:
     """
     Harness class that wraps standard functionality used in all daemon
     components

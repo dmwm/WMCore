@@ -9,6 +9,7 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
+from builtins import object
 import os
 
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -29,7 +30,7 @@ class StageInSuccess(Exception):
 
 
 
-class StageInMgr:
+class StageInMgr(object):
     """
     _StageInMgr_
 

@@ -8,6 +8,7 @@ Used for the expat xml parsers
 
 """
 
+from builtins import object
 import os
 import re
 import xml.parsers.expat
@@ -16,7 +17,7 @@ import xml.parsers.expat
 
 
 
-class Node:
+class Node(object):
     """
     _Node_
 

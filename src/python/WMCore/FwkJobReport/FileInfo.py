@@ -11,13 +11,14 @@ Not in the Framework XML
 from __future__ import print_function
 
 
+from builtins import object
 import os
 import os.path
 import logging
 
 from WMCore.Algorithms.BasicAlgos import calculateChecksums
 
-class FileInfo:
+class FileInfo(object):
     """
 
     Package to hold all info regarding file

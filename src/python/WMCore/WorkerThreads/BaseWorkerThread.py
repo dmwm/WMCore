@@ -8,6 +8,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
+from builtins import object
+import threading
 import logging
 import sys
 import threading

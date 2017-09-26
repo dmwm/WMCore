@@ -10,6 +10,7 @@ of ConfigSections
 
 
 
+from builtins import object
 import types
 
 from WMCore.Configuration import ConfigSection
@@ -249,7 +250,7 @@ def formatNative(value):
     else:
         return format(value)
 
-class TreeHelper:
+class TreeHelper(object):
     """
     _TreeHelper_
 

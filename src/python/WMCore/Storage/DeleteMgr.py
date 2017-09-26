@@ -9,6 +9,7 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
+from builtins import object
 import os
 
 #from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -19,7 +20,7 @@ from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.Registry import retrieveStageOutImpl
 
 
-class DeleteMgr:
+class DeleteMgr(object):
     """
     _DeleteMgr_
 

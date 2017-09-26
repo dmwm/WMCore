@@ -13,9 +13,10 @@ complain that it doesnt make the events you ask for, I will kneecap you
 
 """
 
+from builtins import object
 import sys
 
-class CmsRun:
+class CmsRun(object):
     """
     _CmsRun_
 

@@ -6,6 +6,7 @@ A class used to manage regularly running worker threads.
 """
 from __future__ import print_function
 
+from builtins import object
 import threading
 import logging
 import time
@@ -16,7 +17,7 @@ from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 # keep track of a unique WTM number
 wtmcount = 0
 
-class WorkerThreadManager:
+class WorkerThreadManager(object):
     """
     Manages regular worker slave threads
     """

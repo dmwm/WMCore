@@ -8,9 +8,10 @@ A dummy class to mimic the component for tets.
 
 
 
+from builtins import object
 import logging
 
-class Dummy:
+class Dummy(object):
     """
     _Dummy_
 

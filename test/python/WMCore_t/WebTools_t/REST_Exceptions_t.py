@@ -1,3 +1,4 @@
+from builtins import object
 from WMCore.WebTools.RESTModel import RESTModel, restexpose
 from cherrypy import HTTPError
 import unittest, logging, json
@@ -59,7 +60,7 @@ test_config.Webtools.error_log_level = logging.WARNING
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 # Disabling tests because the decorator doesn't work right
-class RESTTestFAIL():
+class RESTTestFAIL(object):
 
     def setUp(self):
         self.config = test_config

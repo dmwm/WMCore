@@ -1,3 +1,4 @@
+from builtins import object
 from WMCore.WebTools.RESTModel import RESTModel, restexpose
 from cherrypy import HTTPError
 
@@ -5,21 +6,21 @@ DUMMY_ROLE = "dummy"
 DUMMY_GROUP = "dummies"
 DUMMY_SITE = "dummyHome"
 
-class DummyDAO1:
+class DummyDAO1(object):
     """
     A DAO that has no arguments and does nothing but return 123
     """
     def execute(self):
         return 123
 
-class DummyDAO2:
+class DummyDAO2(object):
     """
     A DAO that takes a single argument
     """
     def execute(self, num):
         return {'num': num}
 
-class DummyDAO3:
+class DummyDAO3(object):
     """
     A DAO with keyword arguments
     TODO: use this
@@ -27,7 +28,7 @@ class DummyDAO3:
     def execute(self, num, thing=None):
         return {'num': num, 'thing': thing}
 
-class DummyDAOFac:
+class DummyDAOFac(object):
     """
     Something that replicates a Factory that loads our dummy DAO classes
     """

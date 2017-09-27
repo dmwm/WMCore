@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 import os
 import logging
 logging.basicConfig(level = logging.DEBUG)
@@ -121,7 +122,7 @@ class SRMV2ImplTest(unittest.TestCase):
         moduleWeAreTesting.Popen = PopenStub
 
         # stub out the stdout
-        class tempPopenObjectType:
+        class tempPopenObjectType(object):
             stdout = tempfile.TemporaryFile()
 
         tempPopenObject = tempPopenObjectType()
@@ -194,7 +195,7 @@ class SRMV2ImplTest(unittest.TestCase):
         moduleWeAreTesting.Popen = PopenStub
 
         # stub out the stdout
-        class tempPopenObjectType:
+        class tempPopenObjectType(object):
             stdout = tempfile.TemporaryFile()
 
         tempPopenObject = tempPopenObjectType()

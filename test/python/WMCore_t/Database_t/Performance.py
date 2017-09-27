@@ -11,9 +11,10 @@ DB Performance Testcases
 """
 from __future__ import print_function
 
+from builtins import object
 import logging, time
 
-class Performance:
+class Performance(object):
     """
     __Performance__
 

@@ -5,7 +5,7 @@ acdcserver-tools
 Utility script for mantaining the acdcserver
 """
 
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 import os
 import sys
 import time
@@ -21,16 +21,15 @@ def createOptionParser():
     Create an option parser that knows the options
     available to this script.
     """
-    myOptParser = OptionParser()
-    myOptParser.add_option("--cleanup", dest = "cleanupAction",
-                           default = False, action = "store_true",
-                           help = "Cleanup old documents in ACDC database")
+    myOptParser = ArgumentParser()
+    myOptParser.add_argument("--cleanup", dest = "cleanupAction",
+                             default = False, action = "store_true",
+                             help = "Cleanup old documents in ACDC database")
 
-    group = OptionGroup(myOptParser, "General options.",
-                    "General options to direct behavior")
-    group.add_option("--config", dest = "config", help = "WMAgent config",
-                     default = os.environ.get("WMAGENT_CONFIG", None))
-    myOptParser.add_option_group(group)
+    group = myOptParser.add_argument_group("General options.",
+                                           "General options to direct behavior")
+    group.add_argument("--config", dest = "config", help = "WMAgent config",
+                       default = os.environ.get("WMAGENT_CONFIG", None))
 
     return myOptParser
 
@@ -48,7 +47,7 @@ def cleanupDocuments(config):
 
 def main():
     myOptParser = createOptionParser()
-    (options, args) = myOptParser.parse_args()
+    options = myOptParser.parse_args()
 
     if not options.config or not os.path.exists(options.config):
         msg = "No Config file provided\n"

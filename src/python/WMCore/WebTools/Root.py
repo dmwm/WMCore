@@ -20,7 +20,7 @@ from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Configuration import Configuration, ConfigSection
 from WMCore.Configuration import loadConfigurationFile
-from optparse import OptionParser
+from argparse import ArgumentParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
 # Logging
@@ -406,25 +406,25 @@ class Root(Harness):
             del cherrypy.servers[name]
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-i", "--ini", dest="inifile", default=False,
+    parser = ArgumentParser()
+    parser.add_argument("-i", "--ini", dest="inifile", default=False,
                       help="write the configuration to FILE", metavar="FILE")
-    parser.add_option("-v", "--verbose",
+    parser.add_argument("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="Be more verbose")
-    parser.add_option("-d", "--daemonise",
+    parser.add_argument("-d", "--daemonise",
                       action="store_true", dest="daemon", default=False,
                       help="Daemonise the cherrypy process, and return the PID")
-    parser.add_option("-s", "--status",
+    parser.add_argument("-s", "--status",
                       action="store_true", dest="status", default=False,
                       help="Return the status of the daemon")
-    parser.add_option("-k", "--kill",
+    parser.add_argument("-k", "--kill",
                       action="store_true", dest="kill", default=False,
                       help="Kill the daemon")
-    parser.add_option("-t", "--terminate",
+    parser.add_argument("-t", "--terminate",
                       action="store_true", dest="terminate", default=False,
                       help="Terminate the daemon (kill, wait, kill -9)")
-    opts, args = parser.parse_args()
+    opts = parser.parse_args()
 
     if not opts.inifile:
         sys.exit('No configuration specified')

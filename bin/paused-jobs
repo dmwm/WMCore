@@ -4,7 +4,7 @@ import re
 import sys
 import os
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.Configuration     import loadConfigurationFile
@@ -38,30 +38,30 @@ class PausedTool:
     def getOptions(self):
 
         usage = './config/tier0/manage  execute-agent paused-jobs [options] '
-        myOptParser = OptionParser(usage = usage)
-        myOptParser.add_option('-f', '--fail', dest = 'action',
-                               action = 'store_const', const = 'fail',
-                               help = 'Fail the jobs matching the filters')
-        myOptParser.add_option('-r', '--resume', dest = 'action',
-                               action = 'store_const', const = 'resume',
-                               help = 'Resume the jobs matching the filters')
-        myOptParser.add_option('-w', '--workflow', dest = 'workflow',
-                               help = 'Jobs belonging to WORKFLOW will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-s', '--site', dest = 'site',
-                               help = 'Only jobs that ran at SITE will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-t', '--task-type', dest = 'taskType',
-                               help = 'Only jobs of TYPE will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-j', '--job-id', dest = 'jobId',
-                               help = 'Only the pointed job will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-d', '--dry-run', dest = 'dryRun',
-                               help = "Don't make any changes, just print out what will happen",
-                               default = False, action = 'store_true')
+        myOptParser = ArgumentParser(usage = usage)
+        myOptParser.add_argument('-f', '--fail', dest = 'action',
+                                 action = 'store_const', const = 'fail',
+                                 help = 'Fail the jobs matching the filters')
+        myOptParser.add_argument('-r', '--resume', dest = 'action',
+                                 action = 'store_const', const = 'resume',
+                                 help = 'Resume the jobs matching the filters')
+        myOptParser.add_argument('-w', '--workflow', dest = 'workflow',
+                                 help = 'Jobs belonging to WORKFLOW will be resumed/failed',
+                                 default = None)
+        myOptParser.add_argument('-s', '--site', dest = 'site',
+                                 help = 'Only jobs that ran at SITE will be resumed/failed',
+                                 default = None)
+        myOptParser.add_argument('-t', '--task-type', dest = 'taskType',
+                                 help = 'Only jobs of TYPE will be resumed/failed',
+                                 default = None)
+        myOptParser.add_argument('-j', '--job-id', dest = 'jobId',
+                                 help = 'Only the pointed job will be resumed/failed',
+                                 default = None)
+        myOptParser.add_argument('-d', '--dry-run', dest = 'dryRun',
+                                 help = "Don't make any changes, just print out what will happen",
+                                 default = False, action = 'store_true')
 
-        (options, _) = myOptParser.parse_args()
+        options = myOptParser.parse_args()
 
         if not (options.workflow or options.site or options.taskType or options.jobId):
             myOptParser.error('At least a workflow, site, type or job-id must be specified')

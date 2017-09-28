@@ -2,7 +2,7 @@
 from __future__ import print_function
 import os
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Configuration import loadConfigurationFile
 
@@ -20,16 +20,15 @@ if __name__ == "__main__":
         print("AnalyticsDataCollector.centralWMStatsURL is not specified")
         sys.exit(1)
 
-    parser = OptionParser()
-    parser.set_usage("wmstats-request-status-chagne [agent_url:port]")
+    parser = ArgumentParser(usage="wmstats-request-status-chagne [agent_url:port]")
 
-    parser.add_option("-r", "--request", dest = "request",
-                      help = "resquest name")
+    parser.add_argument("-r", "--request", dest = "request",
+                        help = "resquest name")
 
-    parser.add_option("-s", "--status", dest = "newstatus",
-                      help = "set to new status")
+    parser.add_argument("-s", "--status", dest = "newstatus",
+                        help = "set to new status")
 
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
     if not options.request:
         print("request name needs to be set")

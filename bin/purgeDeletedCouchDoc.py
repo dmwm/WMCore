@@ -1,5 +1,5 @@
 from __future__ import print_function
-from optparse import OptionParser
+from argparse import ArgumentParser
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer
 
@@ -51,13 +51,13 @@ def deleteDoc(couchDB, data, cleanLimit):
     return couchDB.commit(doc)
 
 if __name__ == "__main__":
-    parser =  OptionParser()
-    parser.add_option("--url", dest = "url",
+    parser =  ArgumentParser()
+    parser.add_argument("--url", dest = "url",
                      help = "type couch db url")
-    parser.add_option("--type", dest = "type",
+    parser.add_argument("--type", dest = "type",
                      help = "type purge or delete url")
-    parser.add_option("--start", dest = "start",
+    parser.add_argument("--start", dest = "start",
                      help = "type last seq")
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
     if options.url:
         cleanDeletedDoc(options.url, -1, 'WMStats/deleteFilter', 1000, options.type, int(options.start))

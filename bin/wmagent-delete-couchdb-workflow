@@ -2,7 +2,7 @@
 
 import os
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Configuration import loadConfigurationFile
 
@@ -57,12 +57,11 @@ if __name__ == "__main__":
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
     
-    parser = OptionParser()
-    parser.set_usage("wmagent-delete-couchdb-worflow workflow1 workflow2 ...")
-    parser.add_option("-f", "--file", dest="filename",
-             help="get workflow list from file (separated white space)"
-             , metavar="FILE")
-    (options, args) = parser.parse_args()
+    parser = ArgumentParser(usage="wmagent-delete-couchdb-worflow workflow1 workflow2 ...")
+    parser.add_argument("-f", "--file", dest="filename",
+                        help="get workflow list from file (separated white space)"
+                        , metavar="FILE")
+    (options, args) = parser.parse_known_args()
     if (not options.filename and not args) or (options.filename and args):
         parser.error(" -h option for help")
     if args:

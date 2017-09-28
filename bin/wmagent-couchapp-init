@@ -8,7 +8,7 @@ import os
 import tempfile
 import sys
 import urllib
-import optparse
+import argparse
 import shutil
 from urlparse import urlsplit
 
@@ -272,11 +272,11 @@ files_needed_from_yui = [
 
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-    parser.add_option("--skip-cron", dest = "cron",
-                     default = True, action = "store_false",
-                     help = "Do not install maintenance cron jobs")
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skip-cron", dest = "cron",
+                        default = True, action = "store_false",
+                        help = "Do not install maintenance cron jobs")
+    options = parser.parse_args()
 
     if not os.environ.has_key("WMAGENT_CONFIG"):
         print "The WMAGENT_CONFIG environment variable needs to be set before"

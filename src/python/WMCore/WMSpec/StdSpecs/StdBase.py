@@ -171,12 +171,13 @@ class StdBase(object):
         _addDashboardMonitoring_
 
         Add dashboard monitoring for the given task.
+        Memory settings are defined in Megabytes and timing in seconds.
         """
-        # A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
-        gb = 1024.0 * 1024.0
-        # Default timeout defined in CMS policy
-        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
-        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
+        # Default settings defined by CMS policy
+        maxrss = 2.3 * 1024  # 2.3 GiB, but in MiB
+        vsize = 1 * 1024 * 1024  # 1 TiB, but in MiB
+        softTimeout = 47 * 3600  # 47h
+        hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 300
@@ -185,8 +186,8 @@ class StdBase(object):
         monitoring.DashboardMonitor.destinationHost = self.dashboardHost
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
-        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.maxRSS = maxrss
+        monitoring.PerformanceMonitor.maxVSize = vsize
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -347,11 +348,6 @@ class StdBase(object):
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
 
-        procTask.setPerformanceMonitor(taskConf.get("MaxRSS", None),
-                                       taskConf.get("MaxVSize", None),
-                                       taskConf.get("SoftTimeout", None),
-                                       taskConf.get("GracePeriod", None))
-
         if taskType in ["Production", 'PrivateMC'] and totalEvents is not None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalEvents=totalEvents)
@@ -382,7 +378,6 @@ class StdBase(object):
             multicore = taskConf['Multicore']
         if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
-
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
@@ -436,6 +431,12 @@ class StdBase(object):
         # only in the very end, in order to get it in for the children tasks as well
         prepID = taskConf.get("PrepID") or self.prepID
         procTask.setPrepID(prepID)
+
+        # has to be done in the very end such that child tasks are set too
+        procTask.setPerformanceMonitor(maxRSS=memoryReq,
+                                       maxVSize=self.maxVSize,
+                                       softTimeout=taskConf.get("SoftTimeout", None),
+                                       gracePeriod=taskConf.get("GracePeriod", None))
 
         return outputModules
 
@@ -1032,7 +1033,9 @@ class StdBase(object):
                       "RequestDate": {"optional": False, "type": list},
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
-                      "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
+                      "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
+                      "MaxRSS": {"default": 2300, "type": int, "validate": lambda x: x > 0},
+                      "MaxVSize": {"default": 1024 * 1024, "type": int, "validate": lambda x: x > 0}
                       }
 
         arguments.update(reqmgrArgs)
@@ -1101,8 +1104,8 @@ class StdBase(object):
                      "TrustPUSitelists": {"default": False, "type": strToBool},
                      "AllowOpportunistic": {"default": False, "type": strToBool},
                      # from assignment: performance monitoring data
-                     "MaxRSS": {"default": 2411724, "type": int, "validate": lambda x: x > 0},
-                     "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
+                     "MaxRSS": {"type": int, "null": True, "validate": lambda x: x > 0},
+                     "MaxVSize": {"type": int, "null": True, "validate": lambda x: x > 0},
                      "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
                      "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
                      # Block closing information

@@ -206,22 +206,22 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
     return docs
 
 if __name__ == "__main__":
-    from optparse import OptionParser
+    from argparse import ArgumentParser
     import json
     def parse_opts():
-        parser = OptionParser()
-        parser.add_option("-i", "--iterations",
+        parser = ArgumentParser()
+        parser.add_argument("-i", "--iterations",
                         dest="iterations",
                         default=ITERATIONS,
                         type="int",
                         help="The number of iterations to make, default=%s" % ITERATIONS)
-        parser.add_option("-r", "--requests",
+        parser.add_argument("-r", "--requests",
                         dest="requests",
                         default=NUM_OF_REQUEST,
                         type="int",
                         help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
 
-        return parser.parse_args()[0]
+        return parser.parse_args()
 
     options = parse_opts()
     reqmgr_requests = generate_reqmgr_requests(options.requests)

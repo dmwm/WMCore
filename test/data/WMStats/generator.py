@@ -5,7 +5,7 @@ import random, string
 import os
 
 from uuid import uuid1
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
@@ -46,61 +46,61 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
     return
 
 def parse_opts():
-    parser = OptionParser()
-    parser.add_option("-d", "--dburl",
+    parser = ArgumentParser()
+    parser.add_argument("-d", "--dburl",
                     dest="dburl",
                     help="CouchDB URL which data will be populated")
-    parser.add_option("-c", "--couchapp-base",
+    parser.add_argument("-c", "--couchapp-base",
                     dest="couchapp_base",
                     help="Couch sapp base path")
-    parser.add_option("--no-couchapp",
+    parser.add_argument("--no-couchapp",
                     action="store_false",
                     default=True,
                     dest="add_couchapp",
                     help="Don't update couchapp")
-    parser.add_option("--no-reqmgr-data",
+    parser.add_argument("--no-reqmgr-data",
                     action="store_false",
                     default=True,
                     dest="add_reqmgr_data",
                     help="Don't update reqmgr data")
-    parser.add_option("--no-agent-data",
+    parser.add_argument("--no-agent-data",
                     action="store_false",
                     default=True,
                     dest="add_agent_data",
                     help="Don't update reqmgr data")
-    parser.add_option("-u", "--users",
+    parser.add_argument("-u", "--users",
                     dest="users",
                     default=10,
                     type="int",
                     help="The number of users, default=10")
-    parser.add_option("-s", "--sites",
+    parser.add_argument("-s", "--sites",
                     dest="sites",
                     default=5,
                     type="int",
                     help="The number of sites, default=5")
-    parser.add_option("-a", "--agents",
+    parser.add_argument("-a", "--agents",
                     dest="agents",
                     default=2,
                     type="int",
                     help="The number of agents, default=2")
-    parser.add_option("-i", "--iterations",
+    parser.add_argument("-i", "--iterations",
                     dest="iterations",
                     default=ITERATIONS,
                     type="int",
                     help="The number of iterations to make, default=%s" % ITERATIONS)
-    parser.add_option("-r", "--requests",
+    parser.add_argument("-r", "--requests",
                     dest="requests",
                     default=NUM_OF_REQUEST,
                     type="int",
                     help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
-    parser.add_option("-w", "--wait",
+    parser.add_argument("-w", "--wait",
                     dest="wait",
                     default=0,
                     type="int",
                     help="Wait W seconds between iterations, default=0")
 
 
-    return parser.parse_args()[0]
+    return parser.parse_args()
 
 def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     """

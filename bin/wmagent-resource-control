@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import os
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -48,54 +48,54 @@ def createOptionParser():
     Create an option parser that knows about all the options for manipulating
     and accessing resource control.
     """
-    myOptParser = OptionParser()
-    myOptParser.add_option("-p", "--thresholds", dest="printThresholds",
+    myOptParser = ArgumentParser()
+    myOptParser.add_argument("-p", "--thresholds", dest="printThresholds",
                            default=False, action="store_true",
                            help="Print out all known thresholds and site information.")
-    myOptParser.add_option("--add-Test", dest="addTest", default=False, action="store_true",
+    myOptParser.add_argument("--add-Test", dest="addTest", default=False, action="store_true",
                            help="Add a fake test site to resource control.")
-    myOptParser.add_option("--add-T1s", dest="addT1s", default=False, action="store_true",
+    myOptParser.add_argument("--add-T1s", dest="addT1s", default=False, action="store_true",
                            help="Add all of the CMS T1 sites to resource control.")
-    myOptParser.add_option("--add-T2s", dest="addT2s", default=False, action="store_true",
+    myOptParser.add_argument("--add-T2s", dest="addT2s", default=False, action="store_true",
                            help="Add all of the CMS T2 sites to resource control.")
-    myOptParser.add_option("--add-T3s", dest="addT3s", default=False, action="store_true",
+    myOptParser.add_argument("--add-T3s", dest="addT3s", default=False, action="store_true",
                            help="Add all of the CMS T3 sites to resource control.")
-    myOptParser.add_option("--add-all-sites", dest="addAllSites", default=False,
+    myOptParser.add_argument("--add-all-sites", dest="addAllSites", default=False,
                            action="store_true",
                            help="Add all of the CMS sites to resource control.")
-    myOptParser.add_option("--add-one-site", dest="addOneSite",
+    myOptParser.add_argument("--add-one-site", dest="addOneSite",
                            help="Specify site name you want to add")
-    myOptParser.add_option("--site-name", dest="siteName",
+    myOptParser.add_argument("--site-name", dest="siteName",
                            help="Specify the unique name of the location")
-    myOptParser.add_option("--pending-slots", dest="pendingSlots",
+    myOptParser.add_argument("--pending-slots", dest="pendingSlots",
                            help="Specify the maximum number of pending slots to use at the site or task type")
-    myOptParser.add_option("--running-slots", dest="runningSlots",
+    myOptParser.add_argument("--running-slots", dest="runningSlots",
                            help="Specify the maximum number of running slots to use at the site or task type")
-    myOptParser.add_option("--apply-to-all-tasks", dest="allTasks", default=False, action="store_true",
+    myOptParser.add_argument("--apply-to-all-tasks", dest="allTasks", default=False, action="store_true",
                            help="Apply site running/pending threshold to all task types")
-    myOptParser.add_option("--ce-name", dest="ceName",
+    myOptParser.add_argument("--ce-name", dest="ceName",
                            help="Specify the CEName for the site")
-    myOptParser.add_option("--pnn", dest="pnn",
+    myOptParser.add_argument("--pnn", dest="pnn",
                            help="Specify the PNN for the site")
-    myOptParser.add_option("--cms-name", dest="cmsName",
+    myOptParser.add_argument("--cms-name", dest="cmsName",
                            help="Specify the name of the site in SiteDB")
-    myOptParser.add_option("--task-type", dest="taskType",
+    myOptParser.add_argument("--task-type", dest="taskType",
                            help="Specify the name of the task to add/modify")
-    myOptParser.add_option("--priority", dest="priority", default=None,
+    myOptParser.add_argument("--priority", dest="priority", default=None,
                            help="Specify the priority of the task across all sites (higher is better)")
-    myOptParser.add_option("--plugin", dest="plugin",
+    myOptParser.add_argument("--plugin", dest="plugin",
                            help="Specify submit plugin to use for specific site")
-    myOptParser.add_option("--drain", dest="state", action="store_const",
+    myOptParser.add_argument("--drain", dest="state", action="store_const",
                            const='Draining', help="Drain the site.")
-    myOptParser.add_option("--abort", dest="state", action="store_const",
+    myOptParser.add_argument("--abort", dest="state", action="store_const",
                            const='Aborted', help="Abort jobs at the site.")
-    myOptParser.add_option("--down", dest="state", action="store_const",
+    myOptParser.add_argument("--down", dest="state", action="store_const",
                            const='Down', help="Stop submission to the site.")
-    myOptParser.add_option("--normal", dest="state", action="store_const",
+    myOptParser.add_argument("--normal", dest="state", action="store_const",
                            const='Normal', help="Normal operation for the site.")
-    myOptParser.add_option("--emulator", dest="emulator", default=False, action="store_true",
+    myOptParser.add_argument("--emulator", dest="emulator", default=False, action="store_true",
                            help="Use SiteDB emulator for unittests")
-    myOptParser.add_option("--add-disk", dest="addDisk", default=True, action="store_false",
+    myOptParser.add_argument("--add-disk", dest="addDisk", default=True, action="store_false",
                            help="Use it to explicitly add the Disk endpoints together with the other T1s")
 
     return myOptParser
@@ -312,7 +312,7 @@ def setSiteState(resourceControl, siteName, state):
 
 
 myOptParser = createOptionParser()
-(options, args) = myOptParser.parse_args()
+options = myOptParser.parse_args()
 
 if options.emulator:  # emulate sitedb in unittests
     import mock

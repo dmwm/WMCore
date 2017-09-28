@@ -7,7 +7,7 @@ import sys
 import urllib
 import urllib2
 import httplib
-from optparse import OptionParser
+from argparse import ArgumentParser
 from urllib2 import HTTPError, URLError
 
 main_url = "https://cmsweb.cern.ch"
@@ -80,11 +80,11 @@ def main(argv=None):
     in PhEDEx and DBS
     """
     usage = "usage: %prog -d dataset_name -p proxy_location"
-    parser = OptionParser(usage=usage)
-    parser.add_option('-d', '--dataset', help='Dataset name', dest='dataset')
-    parser.add_option('-l', '--lfn', help='Logical file name', dest='lfn')
-    parser.add_option('-p', '--proxy', help='Path to your proxy or cert location', dest='proxy')
-    (options, _) = parser.parse_args()
+    parser = ArgumentParser(usage=usage)
+    parser.add_argument('-d', '--dataset', help='Dataset name', dest='dataset')
+    parser.add_argument('-l', '--lfn', help='Logical file name', dest='lfn')
+    parser.add_argument('-p', '--proxy', help='Path to your proxy or cert location', dest='proxy')
+    options = parser.parse_args()
     if not ((options.dataset or options.lfn) and options.proxy):
         parser.error("Please supply either dataset name or file name \
                       and certificate location")

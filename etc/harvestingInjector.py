@@ -9,17 +9,13 @@ import os
 import sys
 import threading
 import time
-from optparse import OptionParser, Option
-from copy import copy
+from argparse import ArgumentParser
 
 from WMCore.WMInit import connectToDB
-from WMCore.Configuration import loadConfigurationFile
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow import Workflow
-from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+
 
 from WMCore.DataStructs.Run import Run
 
@@ -32,33 +28,31 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 def check_list(option, opt, value):
     return value.split(",")
 
-class MyOption(Option):
-    TYPES = Option.TYPES + ("list",)
-    TYPE_CHECKER = copy(Option.TYPE_CHECKER)
-    TYPE_CHECKER["list"] = check_list
+def comma_separated_list(string):
+    return string.split(',')
 
 usage = "usage: %prog [options]"
-parser = OptionParser(usage=usage, option_class=MyOption)
-parser.add_option("-d", "--dataset", dest="InputDataset", type="string",
+parser = ArgumentParser(usage=usage)
+parser.add_argument("-d", "--dataset", dest="InputDataset",
                   action="store", help="Dataset to harvest",
                   metavar="DATASET")
-parser.add_option("-R", "--run", dest="RunWhitelist", type="list",
+parser.add_argument("-R", "--run", dest="RunWhitelist", type=comma_separated_list,
                   action="store", help="Comma separated list of runs",
                   metavar="RUN1,RUN2", default=[])
-parser.add_option("-r", "--release", dest="CMSSWVersion", type="string",
+parser.add_argument("-r", "--release", dest="CMSSWVersion",
                   action="store", help="CMSSW version to use for harvesting",
                   metavar="CMSSW_X_Y_Z")
-parser.add_option("-s", "--scenario", dest="Scenario", type="string",
+parser.add_argument("-s", "--scenario", dest="Scenario",
                   action="store", help="Configuration/DataProcessing scenario",
                   metavar="SCENARIO")
-parser.add_option("-t", "--global-tag", dest="GlobalTag", type="string",
+parser.add_argument("-t", "--global-tag", dest="GlobalTag",
                   action="store", help="Conditions global tag",
                   metavar="GLOBALTAG")
-parser.add_option("-f", "--reference", dest="RefHistogram", type="string",
+parser.add_argument("-f", "--reference", dest="RefHistogram",
                   action="store", help="Reference histogram",
                   metavar="LFN")
 
-(options, args) = parser.parse_args()
+options = parser.parse_args()
 
 missing = []
 mandatory = ["InputDataset", "CMSSWVersion", "Scenario", "GlobalTag"]

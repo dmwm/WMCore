@@ -3,7 +3,7 @@
 
 import os
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Configuration import loadConfigurationFile
 
@@ -15,10 +15,9 @@ if __name__ == "__main__":
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
     
-    parser = OptionParser()
-    parser.set_usage("wmagent-unregister-wmstats [agent_url]")
+    parser = ArgumentParser(usage="wmagent-unregister-wmstats [agent_url]")
     
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_known_args()
     if not args:
         agentUrl = ("%s" % wmagentConfig.Agent.hostName)
     else:

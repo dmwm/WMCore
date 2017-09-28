@@ -1646,8 +1646,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
-                                   gracePeriod):
+    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout, gracePeriod):
         """
         _setupPerformanceMonitoring_
 
@@ -1655,8 +1654,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         for task in self.getAllTasks():
             task.setPerformanceMonitor(maxRSS=maxRSS, maxVSize=maxVSize,
-                                       softTimeout=softTimeout,
-                                       gracePeriod=gracePeriod)
+                                       softTimeout=softTimeout, gracePeriod=gracePeriod)
 
         return
 
@@ -1742,8 +1740,8 @@ class WMWorkloadHelper(PersistencyHelper):
         if kwargs.get("ProcessingVersion") is not None:
             self.setProcessingVersion(kwargs["ProcessingVersion"])
 
-        self.setupPerformanceMonitoring(kwargs["MaxRSS"],
-                                        kwargs["MaxVSize"],
+        self.setupPerformanceMonitoring(kwargs.get("MaxRSS"),
+                                        kwargs.get("MaxVSize"),
                                         kwargs["SoftTimeout"],
                                         kwargs["GracePeriod"])
 

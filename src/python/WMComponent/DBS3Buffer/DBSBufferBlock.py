@@ -5,6 +5,7 @@ DBSBufferBlock
 This is a block object which will be uploaded to DBS
 """
 
+from builtins import object
 import time
 import logging
 import copy
@@ -24,7 +25,7 @@ class DBSBufferBlockException(WMException):
 
 
 
-class DBSBufferBlock:
+class DBSBufferBlock(object):
     """
     _DBSBufferBlock_
 

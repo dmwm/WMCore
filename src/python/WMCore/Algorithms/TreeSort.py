@@ -15,7 +15,8 @@ Caveats:
 
 
 
-class _SearchOp:
+from builtins import object
+class _SearchOp(object):
     """
     __SearchOp_
 
@@ -30,7 +31,7 @@ class _SearchOp:
             self.result = node
 
 
-class _OrderOp:
+class _OrderOp(object):
     """
     __OrderOp_
 
@@ -45,7 +46,7 @@ class _OrderOp:
 
 
 
-class _Node:
+class _Node(object):
     """
     Tree _Node container class for a generic object that allows
     building a tree of objects based on parentage information
@@ -94,7 +95,7 @@ class _Node:
             msg += "%s%s" % (padding, c.stringMe(indent+1))
         return msg
 
-class TreeSort:
+class TreeSort(object):
     """
     _TreeSort_
 

@@ -10,6 +10,7 @@ for each step
 
 
 
+from builtins import object
 import os
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -60,7 +61,7 @@ def initialiseWMTaskSpace(directory, taskName):
 
 
 
-class BuildMaster:
+class BuildMaster(object):
     """
     _BuildMaster_
 

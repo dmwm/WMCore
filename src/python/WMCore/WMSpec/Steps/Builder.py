@@ -7,6 +7,7 @@ Interface definition for Step Builder implementations
 """
 from __future__ import print_function
 
+from builtins import object
 import WMCore.WMSpec.Steps.BuildTools as BuildTools
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
@@ -28,7 +29,7 @@ args = {}
 """
 
 
-class Builder:
+class Builder(object):
     """
     _Builder_
 

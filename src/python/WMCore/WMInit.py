@@ -11,6 +11,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 import logging
 import threading
 import traceback
@@ -64,7 +65,7 @@ def connectToDB():
                                    socketLoc = socketLoc)
     return
 
-class WMInit:
+class WMInit(object):
 
     def __init__(self):
         return

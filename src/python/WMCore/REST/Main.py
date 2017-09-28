@@ -8,6 +8,7 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from builtins import object
 import sys, os, errno, re, os.path, subprocess, socket, time
 import cherrypy, logging, thread, traceback
 import WMCore.REST.Tools
@@ -109,7 +110,7 @@ class Logger(LogManager):
              'f': inheaders.get("Referer", ""),
              'a': inheaders.get("User-Agent", "") })
 
-class RESTMain:
+class RESTMain(object):
     """Base class for the core CherryPy main application object.
 
     The :class:`~.RESTMain` implements basic functionality of a CherryPy-based

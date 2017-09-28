@@ -9,6 +9,7 @@ Use _dict_ for all transportation
 
 
 
+from builtins import object
 import random
 import time
 import sys
@@ -17,7 +18,7 @@ import os
 import time
 
 
-class MSGTransPortAgent:
+class MSGTransPortAgent(object):
     """
     _MSGTransPortAgent_
 

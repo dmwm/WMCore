@@ -9,10 +9,11 @@ Handlers are mapped to messages in the component.
 
 
 
+from builtins import object
 import logging
 
 
-class BaseHandler:
+class BaseHandler(object):
     """
     A base handler from which all handlers inherit from.
     Handlers are mapped to messages in the component.

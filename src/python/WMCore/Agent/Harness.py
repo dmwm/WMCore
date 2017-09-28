@@ -21,6 +21,7 @@ including session objects and workflow entities.
 """
 from __future__ import print_function
 
+from builtins import object
 import logging
 import os
 import sys
@@ -49,7 +50,7 @@ class HarnessException(WMException):
     """
 
 
-class Harness:
+class Harness(object):
     """
     Harness class that wraps standard functionality used in all daemon
     components

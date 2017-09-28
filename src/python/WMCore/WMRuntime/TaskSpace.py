@@ -8,6 +8,7 @@ Runtime utils for a Task
 
 """
 
+from builtins import object
 import os
 import sys
 import inspect
@@ -31,7 +32,7 @@ def preloadWorkload(x):
         return x(self)
     return wrapper
 
-class TaskSpace:
+class TaskSpace(object):
     """
     _TaskSpace_
 

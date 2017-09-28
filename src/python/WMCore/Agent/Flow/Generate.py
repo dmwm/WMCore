@@ -13,6 +13,7 @@ from __future__ import print_function
 
 
 
+from builtins import object
 import os
 import sys
 try:
@@ -23,7 +24,7 @@ except ImportError:
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 
-class Generate:
+class Generate(object):
     """
     Generate
 

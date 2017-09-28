@@ -5,6 +5,7 @@ Utilities related to timing and performance testing
 
 from __future__ import print_function, division, absolute_import
 
+from builtins import object
 import time
 
 
@@ -28,7 +29,7 @@ def timeFunction(func):
     return wrapper
 
 
-class CodeTimer():
+class CodeTimer(object):
     """
     A context manager for timing function calls.
     Adapted from https://www.blog.pythonlibrary.org/2016/05/24/python-101-an-intro-to-benchmarking-your-code/

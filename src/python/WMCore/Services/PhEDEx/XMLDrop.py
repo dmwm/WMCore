@@ -8,6 +8,7 @@ Modified from ProdCommon.DataMgmt.PhEDEx.DropMaker.py
 TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuart
 """
 
+from builtins import object
 from xml.dom.minidom import getDOMImplementation
 
 class XMLFileblock(list):
@@ -118,7 +119,7 @@ class XMLDataset(list):
 
         return dataset
 
-class XMLInjectionSpec:
+class XMLInjectionSpec(object):
     """
     _XMLInjectionSpec_
     <data version='2'>

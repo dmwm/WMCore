@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from builtins import object
 import hashlib
 import json
 import types
@@ -410,7 +411,7 @@ class RawFormat(RESTFormat):
             etag.invalidate()
             raise
 
-class DigestETag:
+class DigestETag(object):
     """Compute hash digest over contents for ETag header."""
     algorithm = None
 

@@ -12,6 +12,7 @@ environment in which the Runtime Script implementation needs to be called.
 
 """
 
+from builtins import object
 import os
 import sys
 import traceback
@@ -19,7 +20,7 @@ import traceback
 from WMCore.WMRuntime.ScriptFactory import getScript
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 
-class ScriptInvoke:
+class ScriptInvoke(object):
     """
     _ScriptInvoke_
 

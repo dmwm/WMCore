@@ -1,8 +1,9 @@
 from __future__ import (division, print_function)
+from builtins import object
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL
 
-class FWJRDBAPI():
+class FWJRDBAPI(object):
 
     def __init__(self, couchURL, dbName=None):
         """

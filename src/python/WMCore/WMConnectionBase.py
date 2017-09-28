@@ -8,6 +8,8 @@ Generic methods used by all of the WMBS classes.
 
 
 
+# PY3 from builtins import object  Adding this breaks Python2 compatiblity
+
 import threading
 import copy
 
@@ -19,7 +21,7 @@ try:
 except (ImportError, NameError):
     pass
 
-class WMConnectionBase:
+class WMConnectionBase(object):
     """
     Generic db connection and transaction methods used by all of the WMCore classes.
     """

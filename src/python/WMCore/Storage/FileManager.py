@@ -7,6 +7,7 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 """
 
+from builtins import object
 import logging
 import time
 import traceback
@@ -22,7 +23,7 @@ from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 log = logging
 
 
-class FileManager:
+class FileManager(object):
     """
     _FileManager_
 

@@ -26,6 +26,7 @@ one long subscription can make the JobCreatorWorker
 wait for excessively long amounts of time while it runs.
 """
 
+from builtins import object
 import gc
 import logging
 import os
@@ -158,7 +159,7 @@ def doMemoryCheck(msgString):
     return
 
 
-class JobCreatorWorker:
+class JobCreatorWorker(object):
     """
     This is the ProcessPool worker function that actually
     runs the jobCreator

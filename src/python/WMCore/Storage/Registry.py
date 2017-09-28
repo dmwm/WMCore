@@ -9,6 +9,7 @@ rather than using the common implementation to avoid generating
 extra runtime dependencies.
 
 """
+from builtins import object
 import WMCore.WMFactory
 from WMCore.Storage.StageOutError import StageOutError
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -23,7 +24,7 @@ class RegistryError(StageOutError):
     pass
 
 
-class Registry:
+class Registry(object):
     """
     _Registry_
 

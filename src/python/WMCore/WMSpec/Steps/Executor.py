@@ -7,6 +7,7 @@ Interface definition for a step executor
 
 """
 
+from builtins import object
 import os
 import sys
 import json
@@ -51,7 +52,7 @@ def getStepSpace(stepName):
     return stepSpace
 
 
-class Executor:
+class Executor(object):
     """
     _Executor_
 

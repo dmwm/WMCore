@@ -10,6 +10,7 @@ use this class as a basic API
 from __future__ import print_function
 
 # If we don't import them, they cannot be ever used (bad PyCharm!)
+from builtins import object
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
@@ -21,7 +22,7 @@ from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 
 
-class StageOutMgr:
+class StageOutMgr(object):
     """
     _StageOutMgr_
 

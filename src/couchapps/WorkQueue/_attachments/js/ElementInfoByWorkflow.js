@@ -2,17 +2,15 @@ WQ.namespace("ElementInfoByWorkflow")
 
 WQ.ElementInfoByWorkflow.elementTable = function(args) {
 
-    var formatUrl = function(elCell, oRecord, oColumn, sData) {
-            var postfixLink = "/_design/WorkQueue/_rewrite/elementsInfo?request=";
+    var agentName = function(elCell, oRecord, oColumn, sData) {
 			var host;
             if (!sData) {
                 host = sData;
             } else {
-                host = sData.split('/')[2]
+                host = sData.split("//")[1]
+                host = host.split(":")[0]
             }
-            elCell.innerHTML = "<a href='" + sData
-                                 postfixLink + oRecord.getData("spec_name") +
-                                 "' target='_blank'>" + host + "</a>";
+            elCell.innerHTML = host;
         };
 
     var elementUrl = function(elCell, oRecord, oColumn, sData) {
@@ -46,13 +44,13 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
                 elCell.innerHTML = a;
             }
         }else {
-            elCell.innerHTML = "No Input"
+            elCell.innerHTML = "No Input";
         }
 
     }
 
     var siteFormatter= function(elCell, oRecord, oColumn, oData) {
-        var siteInfo = oRecord.getData('Inputs');
+        var siteInfo = oRecord.getData("Inputs");
         if (siteInfo) {
             for (a in siteInfo) {
                 //If there are more than one input data add
@@ -69,8 +67,9 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
                  {key: "TaskName", label: "Task Name"},
                  {key: "Inputs", formatter: inputFormatter},
                  {key: "Status"},
-                 {key: "ChildQueueUrl", label:"Child Service", formatter:formatUrl},
-                 {key: "Priority"}, {key: "Jobs", label: "jobs"},
+                 {key: "ChildQueueUrl", label:"Child Agent", formatter: agentName},
+                 {key: "Priority"},
+                 {key: "Jobs", label: "jobs"},
                  {key: "TeamName", label: "Team"},
                  {key: "PercentComplete", label: "Complete", formatter:percentFormat},
                  {key: "PercentSuccess", label: "Success", formatter:percentFormat},
@@ -89,7 +88,7 @@ WQ.ElementInfoByWorkflow.elementTable = function(args) {
 
     var tableConfig = WQ.createDefaultTableConfig();
 
-    tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
+    tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 25});
 
     var dataTable = WQ.createDataTable(args.divID, dataSource,
                          WQ.createDefaultTableDef(dataSchema.fields),

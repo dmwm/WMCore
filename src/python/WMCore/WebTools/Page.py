@@ -22,7 +22,8 @@ from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WMFactory import WMFactory
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
-DEFAULT_EXPIRE = 5*60
+DEFAULT_EXPIRE = 5 * 60
+
 
 class Page(WMObject):
     """
@@ -30,6 +31,7 @@ class Page(WMObject):
 
     Page is a base class that holds a configuration and provides a logger.
     """
+
     def warning(self, msg=None):
         """
         Log a warning
@@ -67,8 +69,9 @@ class Page(WMObject):
 
         if type(msg) != str:
             msg = str(msg)
-        if  msg:
+        if msg:
             cplog.error_log.log(severity, msg)
+
 
 class TemplatedPage(Page):
     """
@@ -76,7 +79,8 @@ class TemplatedPage(Page):
 
     TemplatedPage is a class that provides simple Cheetah templating
     """
-    def __init__(self, config = {}):
+
+    def __init__(self, config={}):
         """
         Configure the Page base class then add in the location of the templates. If
         this is not specified in the configuration take a guess based on the location
@@ -104,7 +108,7 @@ class TemplatedPage(Page):
         You should use cgi.escape to escape data going into the template if you are unsure
         of it's provenance.
         """
-        searchList=[]
+        searchList = []
         if len(args) > 0:
             searchList.append(args)
         if len(kwargs) > 0:
@@ -117,6 +121,7 @@ class TemplatedPage(Page):
             self.warning("Template %s not found at %s" % (file, self.templatedir))
             return "Template for page not found"
 
+
 def _setCherryPyHeaders(data, contentType, expires):
     """
     Convenience function to set headers appropriately
@@ -126,58 +131,68 @@ def _setCherryPyHeaders(data, contentType, expires):
         cherrypy.response.headers['Content-Length'] = len(data)
     else:
         cherrypy.response.headers['Content-Length'] = 0
-    cherrypy.lib.caching.expires(secs=expires, force = True)
-    #TODO: find a better way to generate Etag
+    cherrypy.lib.caching.expires(secs=expires, force=True)
+    # TODO: find a better way to generate Etag
     cherrypy.response.headers['ETag'] = data.__str__().__hash__()
 
-def exposeatom (func):
+
+def exposeatom(func):
     """
     Convenience decorator function to expose atom XML
     """
-    def wrapper (self, data, expires, contentType = "application/atom+xml"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="application/atom+xml"):
+        data = func(self, data)
         _setCherryPyHeaders(data, contentType, expires)
-        return self.templatepage('Atom', data = data,
-                                 config = self.config,
-                                 path = request.path_info)
+        return self.templatepage('Atom', data=data,
+                                 config=self.config,
+                                 path=request.path_info)
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposexml (func):
+
+def exposexml(func):
     """
     Convenience decorator function to expose XML
     """
-    def wrapper (self, data, expires, contentType = "application/xml"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="application/xml"):
+        data = func(self, data)
         _setCherryPyHeaders(data, contentType, expires)
-        return self.templatepage('XML', data = data,
-                                 config = self.config,
-                                 path = request.path_info)
+        return self.templatepage('XML', data=data,
+                                 config=self.config,
+                                 path=request.path_info)
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposedasplist (func):
+
+def exposedasplist(func):
     """
     Convenience decorator function to expose plist XML
     see http://docs.python.org/library/plistlib.html#module-plistlib
     """
-    def wrapper (self, data, expires, contentType = "application/xml"):
+
+    def wrapper(self, data, expires, contentType="application/xml"):
         import plistlib
         data_struct = runDas(self, func, data, expires)
         plist_str = plistlib.writePlistToString(data_struct)
         cherrypy.response.headers['ETag'] = data_struct['results'].__str__().__hash__()
         _setCherryPyHeaders(plist_str, contentType, expires)
         return plist_str
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposedasxml (func):
+
+def exposedasxml(func):
     """
     Convenience decorator function to expose DAS XML
 
@@ -189,7 +204,8 @@ def exposedasxml (func):
     result in an update in a cache
     TODO: "inherit" from the exposexml
     """
-    def wrapper (self, data, expires, contentType = "application/xml"):
+
+    def wrapper(self, data, expires, contentType="application/xml"):
         das = runDas(self, func, data, expires)
         header = "<?xml version='1.0' standalone='yes'?>"
         keys = das.keys()
@@ -201,68 +217,78 @@ def exposedasxml (func):
         xmldata = header + das['results'].__str__() + "</das>"
         _setCherryPyHeaders(xmldata, contentType, expires)
         return xmldata
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
 
-def exposetext (func):
+def exposetext(func):
     """
     Convenience decorator function to expose plain text
     """
-    def wrapper (self, data, expires, contentType = "text/plain"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="text/plain"):
+        data = func(self, data)
         data = str(data)
         _setCherryPyHeaders(data, contentType, expires)
         return data
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposejson (func):
+
+def exposejson(func):
     """
     Convenience decorator function to expose json
     """
-    def wrapper (self, data, expires, contentType = "application/json"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="application/json"):
+        data = func(self, data)
         try:
-#            jsondata = encoder.iterencode(data)
+            #            jsondata = encoder.iterencode(data)
             jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
-        except:
+        except Exception:
             raise
-            #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
-#        return data
+            # Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+        #        return data
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposejsonthunker (func):
+
+def exposejsonthunker(func):
     """
     Convenience decorator function to expose thunked json
     """
-    def wrapper (self, data, expires, contentType = "application/json+thunk"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="application/json+thunk"):
+        data = func(self, data)
         try:
             thunker = JSONThunker()
             data = thunker.thunk(data)
             jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
-        except:
+        except Exception:
             raise
-            #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
-#        return data
+            # Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+        #        return data
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposedasjson (func):
+
+def exposedasjson(func):
     """
     Convenience decorator function to expose DAS json
 
@@ -274,90 +300,98 @@ def exposedasjson (func):
     result in an update in a cache
     TODO: "inherit" from the exposejson
     """
-    def wrapper (self, data, expires, contentType = "application/json"):
+
+    def wrapper(self, data, expires, contentType="application/json"):
         data = runDas(self, func, data, expires)
 
         try:
             jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
-        except:
+        except Exception:
             raise
-            #Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
+            # Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
 
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposejs (func):
+
+def exposejs(func):
     """
     Convenience decorator function to expose javascript
     """
-    def wrapper (self, data, expires, contentType = "application/javascript"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="application/javascript"):
+        data = func(self, data)
         _setCherryPyHeaders(data, contentType, expires)
         return data
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
 
-def exposecss (func):
+
+def exposecss(func):
     """
     Convenience decorator function to expose css
     """
-    def wrapper (self, data, expires, contentType = "text/css"):
-        data = func (self, data)
+
+    def wrapper(self, data, expires, contentType="text/css"):
+        data = func(self, data)
         _setCherryPyHeaders(data, contentType, expires)
         return data
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
+
 
 def runDas(self, func, data, expires):
     """
     Run a query and produce a dictionary for DAS formatting
     """
     start_time = time.time()
-    results    = func(self, data)
-    call_time  = time.time() - start_time
+    results = func(self, data)
+    call_time = time.time() - start_time
     res_expire = make_timestamp(expires)
-    if  type(results) is list:
+    if type(results) is list:
         if len(results) > 0:
             row = results[0]
         else:
             row = None
     else:
         row = results
-    if  type(row) is str:
+    if type(row) is str:
         row = '"%s"' % row
     try:
         factory = WMFactory('webtools_factory')
-        object  = factory.loadObject(self.config.model.object, self.config)
-        res_version = object.version
-    except:
+        obj = factory.loadObject(self.config.model.object, self.config)
+        res_version = obj.version
+    except Exception:
         res_version = 'unknown'
 
     keyhash = hashlib.md5()
 
     keyhash.update(str(results))
     res_checksum = keyhash.hexdigest()
-    dasdata = {'application':'%s.%s' % (self.config.application, func.__name__),
+    dasdata = {'application': '%s.%s' % (self.config.application, func.__name__),
                'request_timestamp': start_time,
-               'request_url': request.base + request.path_info + '?' + \
-                                            request.query_string,
-               'request_method' : request.method,
-               'request_params' : request.params,
+               'request_url': request.base + request.path_info + '?' + request.query_string,
+               'request_method': request.method,
+               'request_params': request.params,
                'response_version': res_version,
                'response_expires': res_expire,
                'response_checksum': res_checksum,
                'request_call': func.__name__,
                'call_time': call_time,
                'results': results,
-              }
+               }
     return dasdata
+
 
 def make_timestamp(seconds=0):
     """
@@ -365,6 +399,7 @@ def make_timestamp(seconds=0):
     """
     then = datetime.now() + timedelta(seconds=seconds)
     return mktime(then.timetuple())
+
 
 def make_rfc_timestamp(seconds=0):
     """

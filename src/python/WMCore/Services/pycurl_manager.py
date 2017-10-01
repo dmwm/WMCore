@@ -164,7 +164,10 @@ class RequestHandler(object):
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
-        curl.setopt(pycurl.URL, url)
+        # we must pass url as a string data-type, otherwise pycurl will fail with error
+        # TypeError: invalid arguments to setopt
+        # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
+        curl.setopt(pycurl.URL, str(url))
         if  headers:
             curl.setopt(pycurl.HTTPHEADER, \
                     ["%s: %s" % (k, v) for k, v in headers.items()])

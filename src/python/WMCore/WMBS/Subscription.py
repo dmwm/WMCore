@@ -673,11 +673,11 @@ class Subscription(WMBSBase, WMSubscription):
         # Make a count of how many times each job appears in the list of jobFileRunLumis
         jobUnitCounts = Counter([jid for jid, _, _, _ in jobFileRunLumis])
 
-        for jid, fid, run, lumi in jobFileRunLumis:
-            wuAction.execute(taskid=wfid, fileid=fid, run=run, lumi=lumi, last_unit_count=jobUnitCounts[jid],
-                             conn=self.getDBConn(), transaction=self.existingTransaction())
-        wufAction.execute(jobFileRunLumis=jobFileRunLumis,
-                          conn=self.getDBConn(), transaction=self.existingTransaction())
+        # for jid, fid, run, lumi in jobFileRunLumis:
+        #     wuAction.execute(taskid=wfid, fileid=fid, run=run, lumi=lumi, last_unit_count=jobUnitCounts[jid],
+        #                      conn=self.getDBConn(), transaction=self.existingTransaction())
+        # wufAction.execute(jobFileRunLumis=jobFileRunLumis,
+        #                   conn=self.getDBConn(), transaction=self.existingTransaction())
 
         fileList = []
         for job in jobList:

@@ -1398,127 +1398,127 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(testJob1['mask']['FirstLumi'], 102)
         self.assertEqual(testJob1['mask']['LastLumi'], 102)
 
-        # Test that work units were created
-
-        testRunLumi = Run(1, 45)
-        loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=testRunLumi)
-        loadByFRL.load()
-
-        self.assertGreater(loadByFRL['id'], 0)
-        self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
-        self.assertEqual(loadByFRL['fileid'], testFileA['id'])
-        self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
-
-        testRunLumi = Run(2, 48)
-        loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileD['id'], runLumi=testRunLumi)
-        loadByFRL.load()
-
-        self.assertGreater(loadByFRL['id'], 0)
-        self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
-        self.assertEqual(loadByFRL['fileid'], testFileD['id'])
-        self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
-
-        return
-
-    def testBulkCommit2(self):
-        """
-        _testBulkCommit2_
-
-        Test committing everything in bulk with a different set of parameters,
-        making sure work units are done correctly
-        """
-
-        testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task="Test")
-        testWorkflow.create()
-
-        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20, locations={"goodse.cern.ch"})
-        testFileA.addRun(Run(1, *[45]))
-
-        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20, locations={"goodse.cern.ch"})
-        testFileB.addRun(Run(1, *[45]))
-
-        testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20, locations={"goodse.cern.ch"})
-        testFileC.addRun(Run(2, *[46, 48, 50]))
-
-        testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20, locations={"goodse.cern.ch"})
-        testFileD.addRun(Run(2, *[49, 51, 52]))
-
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        testFileD.create()
-
-        testFileset = Fileset(name="TestFileset")
-        testFileset.create()
-
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)
-        testFileset.addFile(testFileD)
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset=testFileset, workflow=testWorkflow)
-        testSubscription.create()
-
-        # Everything above here has to exist before we get started
-
-        testJobGroupA = JobGroup(subscription=testSubscription)
-        testJobGroupB = JobGroup(subscription=testSubscription)
-
-        testJobA = Job(name="TestJobA")
-        testJobA.addFile(testFileA)
-
-        testJobB = Job(name="TestJobB")
-        testJobB.addFile(testFileB)
-
-        testJobC = Job(name="TestJobC")
-        testJobC.addFile(testFileC)
-
-        testJobD = Job(name="TestJobD")
-        testJobD.addFile(testFileD)
-
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
-        testJobGroupB.add(testJobC)
-        testJobGroupB.add(testJobD)
-
-        testSubscription.bulkCommit(jobGroups=[testJobGroupA, testJobGroupB])
-
-        self.assertGreater(testJobA.exists(), 0)
-        self.assertGreater(testJobB.exists(), 0)
-        self.assertGreater(testJobC.exists(), 0)
-        self.assertGreater(testJobD.exists(), 0)
-        self.assertGreater(testJobGroupA.exists(), 0)
-        self.assertGreater(testJobGroupB.exists(), 0)
-
-        result = testSubscription.filesOfStatus(status="Acquired")
-        self.assertEqual(len(result), 4, 'Should have acquired 4 files, instead have %i' % len(result))
-        self.assertEqual(len(testJobGroupA.jobs), 2)
-
-        testJob1 = Job(id=testJobA.exists())
-        testJob1.loadData()
-
-        # Test that work units were created
-
-        testRunLumi = Run(1, 45)
-        loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=testRunLumi)
-        loadByFRL.load()
-
-        self.assertGreater(loadByFRL['id'], 0)
-        self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
-        self.assertEqual(loadByFRL['fileid'], testFileA['id'])
-        self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
-
-        testRunLumi = Run(2, 48)
-        loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileC['id'], runLumi=testRunLumi)
-        loadByFRL.load()
-
-        self.assertGreater(loadByFRL['id'], 0)
-        self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
-        self.assertEqual(loadByFRL['fileid'], testFileC['id'])
-        self.assertEqual(loadByFRL['last_unit_count'], 3)  # Three lumis in this job
+        # # Test that work units were created
+        #
+        # testRunLumi = Run(1, 45)
+        # loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=testRunLumi)
+        # loadByFRL.load()
+        #
+        # self.assertGreater(loadByFRL['id'], 0)
+        # self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
+        # self.assertEqual(loadByFRL['fileid'], testFileA['id'])
+        # self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
+        #
+        # testRunLumi = Run(2, 48)
+        # loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileD['id'], runLumi=testRunLumi)
+        # loadByFRL.load()
+        #
+        # self.assertGreater(loadByFRL['id'], 0)
+        # self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
+        # self.assertEqual(loadByFRL['fileid'], testFileD['id'])
+        # self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
 
         return
+
+    # def testBulkCommit2(self):
+    #     """
+    #     _testBulkCommit2_
+    #
+    #     Test committing everything in bulk with a different set of parameters,
+    #     making sure work units are done correctly
+    #     """
+    #
+    #     testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task="Test")
+    #     testWorkflow.create()
+    #
+    #     testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20, locations={"goodse.cern.ch"})
+    #     testFileA.addRun(Run(1, *[45]))
+    #
+    #     testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20, locations={"goodse.cern.ch"})
+    #     testFileB.addRun(Run(1, *[45]))
+    #
+    #     testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20, locations={"goodse.cern.ch"})
+    #     testFileC.addRun(Run(2, *[46, 48, 50]))
+    #
+    #     testFileD = File(lfn="/this/is/a/lfnD", size=1024, events=20, locations={"goodse.cern.ch"})
+    #     testFileD.addRun(Run(2, *[49, 51, 52]))
+    #
+    #     testFileA.create()
+    #     testFileB.create()
+    #     testFileC.create()
+    #     testFileD.create()
+    #
+    #     testFileset = Fileset(name="TestFileset")
+    #     testFileset.create()
+    #
+    #     testFileset.addFile(testFileA)
+    #     testFileset.addFile(testFileB)
+    #     testFileset.addFile(testFileC)
+    #     testFileset.addFile(testFileD)
+    #     testFileset.commit()
+    #
+    #     testSubscription = Subscription(fileset=testFileset, workflow=testWorkflow)
+    #     testSubscription.create()
+    #
+    #     # Everything above here has to exist before we get started
+    #
+    #     testJobGroupA = JobGroup(subscription=testSubscription)
+    #     testJobGroupB = JobGroup(subscription=testSubscription)
+    #
+    #     testJobA = Job(name="TestJobA")
+    #     testJobA.addFile(testFileA)
+    #
+    #     testJobB = Job(name="TestJobB")
+    #     testJobB.addFile(testFileB)
+    #
+    #     testJobC = Job(name="TestJobC")
+    #     testJobC.addFile(testFileC)
+    #
+    #     testJobD = Job(name="TestJobD")
+    #     testJobD.addFile(testFileD)
+    #
+    #     testJobGroupA.add(testJobA)
+    #     testJobGroupA.add(testJobB)
+    #     testJobGroupB.add(testJobC)
+    #     testJobGroupB.add(testJobD)
+    #
+    #     testSubscription.bulkCommit(jobGroups=[testJobGroupA, testJobGroupB])
+    #
+    #     self.assertGreater(testJobA.exists(), 0)
+    #     self.assertGreater(testJobB.exists(), 0)
+    #     self.assertGreater(testJobC.exists(), 0)
+    #     self.assertGreater(testJobD.exists(), 0)
+    #     self.assertGreater(testJobGroupA.exists(), 0)
+    #     self.assertGreater(testJobGroupB.exists(), 0)
+    #
+    #     result = testSubscription.filesOfStatus(status="Acquired")
+    #     self.assertEqual(len(result), 4, 'Should have acquired 4 files, instead have %i' % len(result))
+    #     self.assertEqual(len(testJobGroupA.jobs), 2)
+    #
+    #     testJob1 = Job(id=testJobA.exists())
+    #     testJob1.loadData()
+    #
+    #     # Test that work units were created
+    #
+    #     testRunLumi = Run(1, 45)
+    #     loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=testRunLumi)
+    #     loadByFRL.load()
+    #
+    #     self.assertGreater(loadByFRL['id'], 0)
+    #     self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
+    #     self.assertEqual(loadByFRL['fileid'], testFileA['id'])
+    #     self.assertEqual(loadByFRL['last_unit_count'], 1)  # One lumi in this job
+    #
+    #     testRunLumi = Run(2, 48)
+    #     loadByFRL = WorkUnit(taskID=testWorkflow.id, fileid=testFileC['id'], runLumi=testRunLumi)
+    #     loadByFRL.load()
+    #
+    #     self.assertGreater(loadByFRL['id'], 0)
+    #     self.assertEqual(loadByFRL['taskid'], testWorkflow.id)
+    #     self.assertEqual(loadByFRL['fileid'], testFileC['id'])
+    #     self.assertEqual(loadByFRL['last_unit_count'], 3)  # Three lumis in this job
+    #
+    #     return
 
     def testFilesOfStatusByLimit(self):
         """

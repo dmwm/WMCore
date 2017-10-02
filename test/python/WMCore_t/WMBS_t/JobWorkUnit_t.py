@@ -24,7 +24,7 @@ class JobWorkUnitTest(JobTestBase):
     Create jobs and test that associated WorkUnits are correct
     """
 
-    def testJobCreatesWorkUnits(self):
+    def notestJobCreatesWorkUnits(self):
         """
         Create a single jobs and test that both work units are created
         """
@@ -47,7 +47,7 @@ class JobWorkUnitTest(JobTestBase):
 
         return
 
-    def testCreateDeleteExists(self):
+    def notestCreateDeleteExists(self):
         """
         Create and then delete a job and workflow.  Use the workunit class's exists() method to
         determine if the workunit has been written to the database before the job is

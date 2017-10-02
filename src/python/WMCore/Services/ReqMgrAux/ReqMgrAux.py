@@ -143,10 +143,22 @@ def listDiskUsageOverThreshold(config, updateDB):
     if updateDB is True update the aux couch db value.
     This function contains both check an update to avoide multiple db calls.
     """
-    reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
-    agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
-    diskUseThreshold = agentConfig["DiskUseThreshold"]
-    ignoredDisks = agentConfig["IgnoreDisks"]
+    if hasattr(config, "Tier0Feeder"):
+        ignoredDisks = []
+        diskUseThreshold = 85
+        # get the value from config.
+        if hasattr(config.AgentStatusWatcher, "ignoreDisks"):
+            ignoredDisks = config.AgentStatusWatcher.ignoreDisks
+        if hasattr(config.AgentStatusWatcher, "diskUseThreshold"):
+            diskUseThreshold = config.AgentStatusWatcher.diskUseThreshold
+        t0Flag = True
+    else:
+        reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
+        agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
+        diskUseThreshold = agentConfig["DiskUseThreshold"]
+        ignoredDisks = agentConfig["IgnoreDisks"]
+        t0Flag = False
+
     # Disk space warning
     diskUseList = diskUse()
     overThresholdDisks = []
@@ -155,7 +167,7 @@ def listDiskUsageOverThreshold(config, updateDB):
                         disk['mounted'] not in ignoredDisks):
             overThresholdDisks.append(disk)
 
-    if updateDB:
+    if updateDB and not t0Flag:
         agentDrainMode = bool(len(overThresholdDisks))
         if agentDrainMode != agentConfig["AgentDrainMode"]:
             reqMgrAux.updateAgentDrainingMode(config.Agent.hostName, agentDrainMode)

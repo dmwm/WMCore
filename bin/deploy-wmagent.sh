@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.4.patch2 -c HG1706e -t production -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.pre11 -c HG1709c -t testbed-cmssrv214 -p "7926" -s slc7_amd64_gcc630 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.patch5 -c HG1710b -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.patch4 -c HG1709c -t testbed-cmssrv214 -p "8208 8209" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -37,7 +37,7 @@ OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
 HOSTNAME=`hostname -f`
 
 # These values may be overwritten by the arguments provided in the command line
-WMA_ARCH=slc6_amd64_gcc493
+WMA_ARCH=slc7_amd64_gcc630
 REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql

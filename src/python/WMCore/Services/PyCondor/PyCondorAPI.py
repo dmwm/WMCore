@@ -5,6 +5,7 @@ Class used to interact with Condor daemons on the agent
 """
 
 from __future__ import print_function, division
+
 import logging
 
 try:
@@ -15,7 +16,6 @@ except ImportError:
 
 
 class PyCondorAPI(object):
-
     def __init__(self):
         self.schedd = htcondor.Schedd()
         self.coll = htcondor.Collector()
@@ -55,3 +55,26 @@ class PyCondorAPI(object):
             isOverloaded = True
 
         return isOverloaded
+
+
+def getScheddParamValue(param):
+    """
+    _getScheddParamValue_
+
+    Given a schedd parameter, retrieve it's value with htcondor, e.g.:
+    MAX_JOBS_RUNNING, MAX_JOBS_PER_OWNER, etc
+    """
+    if isinstance(param, basestring):
+        logging.error("Parameter %s must be string type", param)
+        return
+
+    try:
+        paramResult = htcondor.param[param]
+    except Exception as ex:
+        msg = "Condor failed to fetch schedd parameter: %s" % param
+        msg += "Error message: %s" % str(ex)
+        logging.exception(msg)
+        # since it has failed, just return None (not sure it's good?!?)
+        paramResult = None
+
+    return paramResult

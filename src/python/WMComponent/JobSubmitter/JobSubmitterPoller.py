@@ -29,6 +29,7 @@ from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.PyCondor.PyCondorAPI import getScheddParamValue
 
 
 class JobSubmitterPollerException(WMException):
@@ -98,6 +99,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
 
         # Now the DAOs
+        self.countWMBSJobsByState = self.daoFactory(classname="Jobs.GetCountByState")
         self.listJobsAction = self.daoFactory(classname="Jobs.ListForSubmitter")
         self.setLocationAction = self.daoFactory(classname="Jobs.SetLocation")
         self.locationAction = self.daoFactory(classname="Locations.GetSiteInfo")
@@ -709,9 +711,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         2) Find jobs for all the necessary sites
         3) Submit the jobs to the plugin
         """
+        myThread = threading.currentThread()
+
+        if not self.passSubmitConditions:
+            msg = "JobSubmitter didn't pass the submit conditions. Skipping this cycle."
+            logging.warning(msg)
+            myThread.logdbClient.post("JobSubmitter_submitWork", msg, "warning")
+            return
 
         try:
-            myThread = threading.currentThread()
+            myThread.logdbClient.delete("JobSubmitter_submitWork", "warning", this_thread=True)
             self.getThresholds()
             self.refreshCache()
 
@@ -737,7 +746,27 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+    def passSubmitConditions(self):
+        """
+        _passSubmitConditions_
 
+        Check whether the component is allowed to submit
+        jobs to condor.
+
+        Initially it has only one condition, which is the total
+        amount of jobs we can have in condor (pending + running) per schedd,
+        set by MAX_JOBS_PER_OWNER.
+        """
+        passCond = True
+        # fetch idle + running jobs in condor
+        executingJobs = self.countWMBSJobsByState.execute("executing")
+        maxScheddJobs = getScheddParamValue("MAX_JOBS_PER_OWNER")
+        if maxScheddJobs is None:
+            passCond = False
+        elif int(executingJobs) + self.maxJobsPerPoll >= int(maxScheddJobs):
+            passCond = False
+
+        return passCond
 
     def terminate(self, params):
         """

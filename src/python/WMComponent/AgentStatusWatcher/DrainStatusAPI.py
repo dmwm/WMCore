@@ -4,7 +4,7 @@ API for querying the status of agent drain process
 
 from __future__ import division
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMCore.Services.Condor.CondorAPI import CondorAPI
+from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 
 
 class DrainStatusAPI(object):
@@ -14,7 +14,7 @@ class DrainStatusAPI(object):
     def __init__(self):
 
         self.dbsUtil = DBSBufferUtil()
-        self.condorAPI = CondorAPI()
+        self.condorAPI = PyCondorAPI()
 
     def collectDrainInfo(self):
         """
@@ -45,9 +45,9 @@ class DrainStatusAPI(object):
         queries = [["1", "idle"], ["2", "running"]]
 
         for query in queries:
-            error, jobs = self.condorAPI.getCondorJobs("JobStatus=="+query[0], [])
+            jobs = self.condorAPI.getCondorJobs("JobStatus=="+query[0], [])
             # if there is an error, report it instead of the length of an empty list
-            if error:
+            if jobs is None:
                 results[query[1]] = "unknown (schedd query error)"
             else:
                 results[query[1]] = len(jobs)

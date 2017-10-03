@@ -108,7 +108,7 @@ class StdBase(object):
 
         scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
         if not scramBaseDirs:
-            scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms-patch/cmssw/%s" % (cmsos, cmsswVersion))
+            scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw-patch/%s" % (cmsos, cmsswVersion))
             if not scramBaseDirs:
                 return None
 

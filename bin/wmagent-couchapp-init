@@ -367,6 +367,11 @@ if __name__ == "__main__":
     
     if hasattr(wmagentConfig, "Tier0Feeder"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
+        centralWMStatsURL = wmagentConfig.AgentStatusWatcher.centralWMStatsURL
+        # checks whether this is test agent. if T0 agent is setting local wmstats as central it creates the db
+        if "localhost:" in centralWMStatsURL:
+            wmstatsDBName = centralWMStatsURL.split("/")[-1].strip()
+            installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmstatsDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName)
     sys.exit(0)

@@ -387,7 +387,7 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = True  # file is not a parent
 
-        logging.info("WMBS File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.info("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         self.wmbsFilesToCreate.append(wmbsFile)
 
@@ -676,11 +676,19 @@ class WMBSHelper(WMConnectionBase):
         adds the ACDC files into WMBS database
         """
         wmbsParents = []
-        for parent in acdcFile["parents"]:
-            parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
-                                                                locations=acdcFile["locations"]),
-                                                 inFileset=False)
-            wmbsParents.append(parent)
+        # TODO:  this check can be removed when ErrorHandler filters parents file for unmerged data
+        # If files is merged and has unmerged parents skip the wmbs population
+        if acdcFile.get("merged", 0) and len(acdcFile["parents"]) and ("/store/unmerged/" in next(iter(acdcFile["parents"]))) :
+            # don't set the parents
+            pass
+        else:
+            # set the parentage for all the unmerged parents
+            for parent in acdcFile["parents"]:
+                logging.info("WMBS ACDC Parent File: %s", parent)
+                parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
+                                                                    locations=acdcFile["locations"]),
+                                                     inFileset=False)
+                wmbsParents.append(parent)
 
         # pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
@@ -701,7 +709,7 @@ class WMBSHelper(WMConnectionBase):
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.info("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
 

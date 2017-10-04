@@ -12,7 +12,6 @@ class ReqMgrAux(Service):
     API for dealing with retrieving information from RequestManager dataservice
 
     """
-
     def __init__(self, url, header=None, logger=None):
         """
         responseType will be either xml or json
@@ -102,7 +101,7 @@ class ReqMgrAux(Service):
     def postWMAgentConfig(self, agentName, agentConfig):
 
         return self["requests"].post('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
-    
+
     def updateAgentDrainingMode(self, agentName, drainFlag):
         # update config DB
         resp = self.updateRecords('wmagentconfig/%s' % agentName, {"AgentDrainMode": drainFlag})
@@ -115,6 +114,7 @@ class ReqMgrAux(Service):
                                 (drainFlag, resp))
             return False
 
+AUXDB_AGENT_CONFIG_CACHE = {}
 
 # function to check whether agent is should be in draining status.
 def isDrainMode(config):
@@ -125,11 +125,16 @@ def isDrainMode(config):
     if hasattr(config, "Tier0Feeder"):
         return False
 
+    global AUXDB_AGENT_CONFIG_CACHE
+
     reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
     agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
-
-    return agentConfig["UserDrainMode"] or agentConfig["AgentDrainMode"]
-
+    if "UserDrainMode" in agentConfig and "AgentDrainMode" in agentConfig:
+        AUXDB_AGENT_CONFIG_CACHE = agentConfig
+        return agentConfig["UserDrainMode"] or agentConfig["AgentDrainMode"]
+    else:
+        # if the cache is empty this will raise Key not exist exception.
+        return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
 
 def listDiskUsageOverThreshold(config, updateDB):
     """
@@ -138,10 +143,22 @@ def listDiskUsageOverThreshold(config, updateDB):
     if updateDB is True update the aux couch db value.
     This function contains both check an update to avoide multiple db calls.
     """
-    reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
-    agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
-    diskUseThreshold = agentConfig["DiskUseThreshold"]
-    ignoredDisks = agentConfig["IgnoreDisks"]
+    if hasattr(config, "Tier0Feeder"):
+        ignoredDisks = []
+        diskUseThreshold = 85
+        # get the value from config.
+        if hasattr(config.AgentStatusWatcher, "ignoreDisks"):
+            ignoredDisks = config.AgentStatusWatcher.ignoreDisks
+        if hasattr(config.AgentStatusWatcher, "diskUseThreshold"):
+            diskUseThreshold = config.AgentStatusWatcher.diskUseThreshold
+        t0Flag = True
+    else:
+        reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
+        agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
+        diskUseThreshold = agentConfig["DiskUseThreshold"]
+        ignoredDisks = agentConfig["IgnoreDisks"]
+        t0Flag = False
+
     # Disk space warning
     diskUseList = diskUse()
     overThresholdDisks = []
@@ -150,7 +167,7 @@ def listDiskUsageOverThreshold(config, updateDB):
                         disk['mounted'] not in ignoredDisks):
             overThresholdDisks.append(disk)
 
-    if updateDB:
+    if updateDB and not t0Flag:
         agentDrainMode = bool(len(overThresholdDisks))
         if agentDrainMode != agentConfig["AgentDrainMode"]:
             reqMgrAux.updateAgentDrainingMode(config.Agent.hostName, agentDrainMode)

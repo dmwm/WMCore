@@ -45,6 +45,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         """
         setup for test.
         """
+        super(ErrorHandlerTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInitCouchApp(__file__)

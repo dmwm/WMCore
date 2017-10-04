@@ -7,7 +7,7 @@ class MockReqMgrAux(object):
     """
 
     def __init__(self, *args, **kwargs):
-        pass
+        print("Using MockReqMgrAux")
 
     def getWMAgentConfig(self, agentName):
         """

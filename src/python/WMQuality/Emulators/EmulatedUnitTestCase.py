@@ -14,6 +14,9 @@ from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
+from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
+from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
+from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 
 
 class EmulatedUnitTestCase(unittest.TestCase):
@@ -23,11 +26,15 @@ class EmulatedUnitTestCase(unittest.TestCase):
     """
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
-                 mockSiteDB=True, mockReqMgrAux=True):
+                 mockSiteDB=True, mockReqMgrAux=True, mockLogDB=True,
+                 mockApMon=True, mockMemoryCache=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockSiteDB = mockSiteDB
         self.mockReqMgrAux = mockReqMgrAux
+        self.mockLogDB = mockLogDB
+        self.mockApMon = mockApMon
+        self.mockMemoryCache = mockMemoryCache
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -62,8 +69,29 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         if self.mockReqMgrAux:
             self.auxDBPatcher = mock.patch('WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
-                                                  new=MockReqMgrAux)
+                                            new=MockReqMgrAux)
             self.inUseAuxDB = self.auxDBPatcher.start()
             self.addCleanup(self.auxDBPatcher.stop)
+
+        if self.mockLogDB:
+            self.logDBPatcher = mock.patch('WMCore.Services.LogDB.LogDB.LogDB',
+                                            new=MockLogDB)
+            self.inUseLogDB = self.logDBPatcher.start()
+            self.addCleanup(self.logDBPatcher.stop)
+
+        if self.mockApMon:
+            self.apMonPatchers = []
+            patchApMonAt = ['WMCore.Services.Dashboard.apmon.ApMon',
+                            'WMCore.Services.Dashboard.DashboardAPI.apmon.ApMon']
+            for module in patchApMonAt:
+                self.apMonPatchers.append(mock.patch(module, new=MockApMon))
+                self.apMonPatchers[-1].start()
+                self.addCleanup(self.apMonPatchers[-1].stop)
+
+        if self.mockMemoryCache:
+            self.memoryCachePatcher = mock.patch('WMCore.Cache.GenericDataCache.MemoryCacheStruct',
+                                                 new=MockMemoryCacheStruct)
+            self.inUseMemoryCache = self.memoryCachePatcher.start()
+            self.addCleanup(self.memoryCachePatcher.stop)
 
         return

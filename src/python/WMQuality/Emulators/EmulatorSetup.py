@@ -23,6 +23,11 @@ def setupWMAgentConfig():
 
 def _wmAgentConfig(configFile):
     config = Configuration()
+    config.section_("General")
+    config.General.logdb_name = "unittest_logdb"
+    config.General.logdb_url = "http://localhost/logdb"
+    config.General.central_logdb_url = "http://localhost/central_logdb"
+
     config.section_("JobStateMachine")
     # Waring setting couchDB to None will cause the ERROR:
     # but that should be ignored, if you want to test couchDB

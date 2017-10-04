@@ -91,10 +91,16 @@ class DataCollectionService(CouchService):
             fileset = CouchFileset(database=self.database, url=self.url,
                                    name=taskName)
             coll.addFileset(fileset)
+            inputFiles = job['input_files']
+            for fInfo in inputFiles:
+                if fInfo["merged"] and ("parents" in fInfo) and \
+                   len(fInfo["parents"]) and ("/store/unmerged/" in next(iter(fInfo["parents"]))):
+                    # remove parents files from acdc doucment if they are unmerged files
+                    fInfo["parents"] = []
             if useMask:
-                fileset.add(files=job['input_files'], mask=job['mask'])
+                fileset.add(files=inputFiles, mask=job['mask'])
             else:
-                fileset.add(files=job['input_files'])
+                fileset.add(files=inputFiles)
 
         return
 

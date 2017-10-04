@@ -1,4 +1,63 @@
 1.1.6 to 1.1.6.patch5:
+  - Merge pull request #8230 from ticoann/1.1.6.patch5_wmagent
+  - make datatier retrieval for physicsskims work with patch releases
+  - 1.1.6.patch5
+  - Merge pull request #8218 from ticoann/1.1.6_wmagent_patch5
+  - handle tier0 test setting
+  - Automatically set MaxRSS according to Memory requirements
+  - fix t0 diskusage report
+  - filter WMArchive report for performance data
+  - use the cache for agent config to prevent crashing when cmsweb is down
+  - filter unmerged parent files for ACDC in ErrorHandler
+  - filter umerge parents for acdc in WorkQueueManager
+  - Merge pull request #8211 from amaltaro/deploy-slc7116
+  - Switch wmagent deployment script to slc7 arch
+  - 1.1.6.patch4
+  - Merge pull request #8197 from ticoann/1.1.6_wmagent_patch4
+  - add cpu performance params in wmarchive
+  - add 8001 in no retry exit code list
+  - adjust some tier0 workflows to automatic data tier in output module
+  - retrieve PromptReco PhysicsSkim data tier from CMSSW
+  - 1.1.6.patch3
+  - Merge pull request #8186 from ticoann/fix_deployment_wmagent_branch
+  - fix the deployment script
+  - 1.1.6.patch2
+  - Merge pull request #8175 from amaltaro/bundle-116patch1
+  - pylint and/or unit test fixes
+  - Report the skipped files when exit code 60450
+  - fix team retrieval
+  - Change default pending site thresholds configuration to 75%
+  - Maximize pending thresholds of agents in drain mode
+  - 1.1.6.patch1
+  - Merge pull request #8100 from ticoann/add_system_remove_exit_code
+  - 1.1.7.pre1
+  - Merge pull request #8110 from amaltaro/request-error-7829
+  - add new exit code for SYSTEM_PERIODIC_REMOVE
+  - Merge pull request #8136 from amaltaro/deploy-116pre11
+  - Merge pull request #8155 from ericvaandering/pylint_luke
+  - Merge pull request #8147 from vkuznet/fix-ReqMgr-getdata
+  - Merge pull request #8139 from ericvaandering/pylint_red3
+  - Merge pull request #8158 from ericvaandering/add_code_timer
+  - Fix a number of pylint-found true errors and reformat the changed code
+  - Merge pull request #8131 from ericvaandering/pylint_high2
+  - Merge pull request #8130 from ericvaandering/pylint_high
+  - Merge pull request #8145 from vkuznet/fix-jinja-quote
+  - Another round of serious pylint-found fixes
+  - Fix a few true errors turned up by pylint and all the small errors in that code:
+  - Fix a number of true errors turned up by pylint and (while we're at it) fix a bunch of minor stuff in the same files
+  - Improve request creation/assignment validation error messages
+  - Add timer context manager and refactor our existing timer decorator
+  - Merge pull request #8156 from amaltaro/creator-sitedb
+  - Remove unused JobCreator code
+  - Merge pull request #8154 from ticoann/missing_codec_import
+  - add missing codecs import
+  - Merge pull request #8143 from ericvaandering/kill_sqlite
+  - Remove files for SQLite
+  - Fix for #8141, add quote function definition for jinja templates
+  - Replace WMCore.ReqMgr.Utils.url_utils getdata with one from WMCore.Services.pycurl_manager and RequestHandler
+  - Update deployment script to 1.1.6 and fix team name matching
+
+1.1.6 to 1.1.6.patch5:
   - Merge pull request #8218 from ticoann/1.1.6_wmagent_patch5
   - handle tier0 test setting
   - Automatically set MaxRSS according to Memory requirements

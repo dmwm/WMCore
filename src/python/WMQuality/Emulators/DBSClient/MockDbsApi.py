@@ -38,6 +38,7 @@ mockData['https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
 
 class MockDbsApi(object):
     def __init__(self, url):
+        print("Using MockDBSApi")
         self.url = url.strip('/')
 
         # print("Initializing MockDBSApi")

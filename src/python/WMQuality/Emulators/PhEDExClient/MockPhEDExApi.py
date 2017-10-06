@@ -36,6 +36,7 @@ class MockPhEDExApi(object):
 
     def __init__(self, dict=None, responseType="json", logger=None,
                  dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
+        print("Using MockPhEDExApi")
         self.dbsUrl = dbsUrl
         dict = dict or {}
         self.dataBlocks = DataBlockGenerator()

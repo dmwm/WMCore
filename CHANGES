@@ -1,3 +1,112 @@
+1.1.6 to 1.1.7:
+  - Merge pull request #8228 from amaltaro/condor-maxjobs
+  - Add schedd max jobs per user constraint to JobSubmitter
+  - Merge CondorAPI and PyCondorAPI code
+  - Merge pull request #8232 from ticoann/mock_logdb
+  - add mock logdb
+  - Merge pull request #8229 from hufnagel/physicsskim-datatier-patch
+  - Merge pull request #8208 from ticoann/fix_datacache
+  - Merge pull request #8209 from ticoann/wmarchive_performance_report
+  - Merge pull request #8206 from ticoann/acdc_unmerged_filter
+  - Merge pull request #8217 from ticoann/fix_diskusage_t0
+  - Merge pull request #8223 from amaltaro/page-py26
+  - Merge pull request #8226 from ticoann/t0_testsetting
+  - handle tier0 test setting
+  - Merge pull request #8227 from amaltaro/deploy-slc7
+  - Switch wmagent deployment script to slc7 arch
+  - Merge pull request #8225 from dmwm/slc7
+  - Update deploy_unittest.sh
+  - Fix a python2.6 regression code
+  - 1.1.7.pre4
+  - Merge pull request #8204 from amaltaro/maxrss-memory
+  - Automatically set MaxRSS according to Memory requirements
+  - filter unmerged parent files for ACDC in ErrorHandler
+  - filter umerge parents for acdc in WorkQueueManager
+  - make datatier retrieval for physicsskims work with patch releases
+  - fix t0 diskusage report
+  - use the cache for agent config to prevent crashing when cmsweb is down
+  - filter WMArchive report for performance data
+  - Merge pull request #8210 from vkuznet/pycurl-fix-url
+  - Ensure that pycurl URL is string data type
+  - 1.1.7.pre3
+  - Merge pull request #8205 from ericvaandering/no_object_reuse
+  - Get rid of other instance of using object as a variable name
+  - Merge pull request #8201 from amaltaro/workqueue-summary-page
+  - Merge pull request #8203 from ericvaandering/remove_treesort
+  - Remove TreeSort which is unused
+  - Show agent name in workqueue elementsInfo
+  - 1.1.7.pre2
+  - Merge pull request #8195 from ticoann/cpu_perf
+  - Merge pull request #8164 from ticoann/fix-PhEDEx-subscription
+  - add cpu performance params in wmarchive
+  - Merge pull request #8187 from hufnagel/tier0-outputmodule-datatier
+  - Merge pull request #8183 from ticoann/remove_pycondor
+  - Merge pull request #8189 from ticoann/add_no_retry_exit_code
+  - Merge pull request #8101 from hufnagel/promtpreco-physicsskim-datatier
+  - retrieve PromptReco PhysicsSkim data tier from CMSSW
+  - add 8001 in no retry exit code list
+  - Merge pull request #8185 from ticoann/fix_deployment_script
+  - adjust some tier0 workflows to automatic data tier in output module
+  - fix the deployment script
+  - remove pycondor plugin
+  - Merge pull request #8150 from ticoann/bulk_update
+  - Merge pull request #7972 from ericvaandering/workunit_job_association
+  - Merge pull request #8182 from vkuznet/remove-dasrestformatter
+  - Remove obsolete code
+  - Add the code to associate jobs to work units as jobs are created
+  - Fix value of MAX_EVENT
+  - Pre-emptive pylint of files to be changed
+  - Merge pull request #8152 from amaltaro/60450-msg
+  - update unittest
+  - bulk update method
+  - Merge pull request #8177 from ticoann/team_fix
+  - fix unittest
+  - remove passing xml data to subscribe
+  - Merge pull request #8173 from amaltaro/deploy-75percent
+  - Merge pull request #8172 from amaltaro/RC-drain-8171
+  - fix team retrieval
+  - Merge pull request #8163 from ericvaandering/pylint_red6
+  - Update UnstableTests.txt
+  - More fixes of the worst pylint offenders
+  - Change default pending site thresholds configuration to 75%
+  - Maximize pending thresholds of agents in drain mode
+  - Merge pull request #8167 from ericvaandering/assert_fix
+  - Use 2to3 to remove deprecated unit test asserts
+  - Merge pull request #8162 from ericvaandering/delete_reqmgr1
+  - Also delete an unused client
+  - Delete some request manager 1 code
+  - Merge pull request #8142 from ericvaandering/pylint_red4
+  - Merge pull request #8100 from ticoann/add_system_remove_exit_code
+  - Another set of pylint found errors and Reformat code to be changed
+  - 1.1.7.pre1
+  - Merge pull request #8110 from amaltaro/request-error-7829
+  - add new exit code for SYSTEM_PERIODIC_REMOVE
+  - Merge pull request #8136 from amaltaro/deploy-116pre11
+  - Merge pull request #8155 from ericvaandering/pylint_luke
+  - Merge pull request #8147 from vkuznet/fix-ReqMgr-getdata
+  - Merge pull request #8139 from ericvaandering/pylint_red3
+  - Merge pull request #8158 from ericvaandering/add_code_timer
+  - Fix a number of pylint-found true errors and reformat the changed code
+  - Merge pull request #8131 from ericvaandering/pylint_high2
+  - Merge pull request #8130 from ericvaandering/pylint_high
+  - Merge pull request #8145 from vkuznet/fix-jinja-quote
+  - Another round of serious pylint-found fixes
+  - Fix a few true errors turned up by pylint and all the small errors in that code:
+  - Fix a number of true errors turned up by pylint and (while we're at it) fix a bunch of minor stuff in the same files
+  - Improve request creation/assignment validation error messages
+  - Add timer context manager and refactor our existing timer decorator
+  - Merge pull request #8156 from amaltaro/creator-sitedb
+  - Remove unused JobCreator code
+  - Merge pull request #8154 from ticoann/missing_codec_import
+  - add missing codecs import
+  - Merge pull request #8143 from ericvaandering/kill_sqlite
+  - Remove files for SQLite
+  - Fix for #8141, add quote function definition for jinja templates
+  - pylint and/or unit test fixes
+  - Report the skipped files when exit code 60450
+  - Replace WMCore.ReqMgr.Utils.url_utils getdata with one from WMCore.Services.pycurl_manager and RequestHandler
+  - Update deployment script to 1.1.6 and fix team name matching
+
 1.1.6 to 1.1.7.pre4:
   - Merge pull request #8204 from amaltaro/maxrss-memory
   - Automatically set MaxRSS according to Memory requirements

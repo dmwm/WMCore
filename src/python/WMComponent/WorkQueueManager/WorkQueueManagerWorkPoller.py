@@ -11,7 +11,7 @@ import traceback
 import threading
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.PyCondor.PyCondorAPI import isScheddOverloaded
+from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
@@ -25,6 +25,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.queue = queue
         self.config = config
+        self.condorAPI = PyCondorAPI()
 
     def setup(self, parameters):
         """
@@ -51,16 +52,23 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             self.queue.logger.error("Error in new work split loop: %s" % str(ex))
         return
 
-    def retrieveCondition(self):
+    def passRetrieveCondition(self):
         """
-        _retrieveCondition_
-        set true or false for given retrieve condion
-        TODO: only condition it checks now is schedd limit
-        But we can add other conditions.
-        i.e. user config for enabling schedd limit check or threshold on workqueue, etc
+        _passRetrieveCondition_
+        
+        Return true if the component can proceed with fetching work.
+        False if the component should skip pulling work this cycle.
+        
+        For now, it only checks whether the agent is in drain mode or
+        if the condor schedd is overloaded.
         """
+        passCond = True
+        if isDrainMode(self.config):
+            passCond = False
+        elif self.condorAPI.isScheddOverloaded():
+            passCond = False
 
-        return not (isDrainMode(self.config) or isScheddOverloaded())
+        return passCond
 
     def pullWork(self):
         """Get work from parent"""
@@ -70,7 +78,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         try:
-            if self.retrieveCondition():
+            if self.passRetrieveCondition():
                 work = self.queue.pullWork()
                 myThread.logdbClient.delete("LocalWorkQueue_pullWork", "warning", this_thread=True)
             else:

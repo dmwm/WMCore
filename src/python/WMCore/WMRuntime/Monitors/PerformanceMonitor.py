@@ -9,23 +9,23 @@ if it exceeds them.
 """
 from __future__ import division
 
-import os
-import signal
-import os.path
 import logging
-import traceback
+import os
+import os.path
+import signal
 import time
+import traceback
 
 import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
 import WMCore.FwkJobReport.Report        as Report
-
+from WMCore.WMException import WMException
 from WMCore.WMRuntime.Monitors.DashboardMonitor import getStepPID
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
-from WMCore.WMSpec.Steps.Executor               import getStepSpace
-from WMCore.WMSpec.WMStep                       import WMStepHelper
-from WMCore.WMException                         import WMException
+from WMCore.WMSpec.Steps.Executor import getStepSpace
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 getStepName = lambda step: WMStepHelper(step).name()
+
 
 def average(numbers):
     """
@@ -34,6 +34,7 @@ def average(numbers):
     """
     return float(sum(numbers)) / len(numbers)
 
+
 class PerformanceMonitorException(WMException):
     """
     _PerformanceMonitorException_
@@ -41,6 +42,7 @@ class PerformanceMonitorException(WMException):
     Just a performance monitor error...nothing to see here
     """
     pass
+
 
 class PerformanceMonitor(WMRuntimeMonitor):
     """
@@ -56,24 +58,24 @@ class PerformanceMonitor(WMRuntimeMonitor):
         in initMonitor
         """
 
-        self.pid              = None
-        self.uid              = os.getuid()
-        self.monitorBase      = "ps -p %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd -ww | grep %i"
-        self.monitorCommand   = None
+        self.pid = None
+        self.uid = os.getuid()
+        self.monitorBase = "ps -p %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd -ww | grep %i"
+        self.monitorCommand = None
         self.currentStepSpace = None
-        self.currentStepName  = None
+        self.currentStepName = None
 
-        self.rss   = []
+        self.rss = []
         self.vsize = []
-        self.pcpu  = []
-        self.pmem  = []
+        self.pcpu = []
+        self.pmem = []
 
-        self.maxRSS      = None
-        self.maxVSize    = None
+        self.maxRSS = None
+        self.maxVSize = None
         self.softTimeout = None
         self.hardTimeout = None
-        self.logPath     = None
-        self.startTime   = None
+        self.logPath = None
+        self.startTime = None
 
         self.watchStepTypes = []
 
@@ -83,19 +85,20 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         return
 
-    def initMonitor(self, task, job, logPath, args = {}):
+    def initMonitor(self, task, job, logPath, args=None):
         """
         _initMonitor_
 
         Puts together the information needed for the monitoring
         to actually find everything.
         """
+        args = args or {}
 
         # Set the steps we want to watch
         self.watchStepTypes = args.get('WatchStepTypes', ['CMSSW', 'PerfTest'])
 
-        self.maxRSS      = args.get('maxRSS', None)
-        self.maxVSize    = args.get('maxVSize', None)
+        self.maxRSS = args.get('maxRSS', None)
+        self.maxVSize = args.get('maxVSize', None)
         self.softTimeout = args.get('softTimeout', None)
         self.hardTimeout = args.get('hardTimeout', None)
 
@@ -121,19 +124,18 @@ class PerformanceMonitor(WMRuntimeMonitor):
         """
 
         self.stepHelper = WMStepHelper(step)
-        self.currentStepName  = getStepName(step)
+        self.currentStepName = getStepName(step)
         self.currentStepSpace = None
 
         if not self.stepHelper.stepType() in self.watchStepTypes:
             self.disableStep = True
-            logging.debug("PerformanceMonitor ignoring step of type %s" % self.stepHelper.stepType())
+            logging.debug("PerformanceMonitor ignoring step of type %s", self.stepHelper.stepType())
             return
         else:
             logging.debug("Beginning PeformanceMonitor step Initialization")
             self.disableStep = False
 
         return
-
 
     def stepEnd(self, step, stepReport):
         """
@@ -146,11 +148,10 @@ class PerformanceMonitor(WMRuntimeMonitor):
             # No information to correlate
             return
 
-        self.currentStepName  = None
+        self.currentStepName = None
         self.currentStepSpace = None
 
         return
-
 
     def periodicUpdate(self):
         """
@@ -160,27 +161,27 @@ class PerformanceMonitor(WMRuntimeMonitor):
         killProc = False
         killHard = False
         reason = ''
-        errorCodeLookup = {'RSS' : 50660,
-                           'VSZ' : 50661,
-                           'Wallclock time' : 50664,
-                           '' : 99999}
+        errorCodeLookup = {'RSS': 50660,
+                           'VSZ': 50661,
+                           'Wallclock time': 50664,
+                           '': 99999}
 
         if self.disableStep:
             # Then we aren't doing CPU monitoring
             # on this step
             return
 
-        if self.currentStepName == None:
+        if self.currentStepName is None:
             # We're between steps
             return
 
-        if self.currentStepSpace == None:
+        if self.currentStepSpace is None:
             # Then build the step space
             self.currentStepSpace = getStepSpace(self.stepHelper.name())
 
         stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
 
-        if stepPID == None:
+        if stepPID is None:
             # Then we have no step PID, we can do nothing
             return
 
@@ -191,7 +192,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         output = stdout.split()
         if not len(output) > 7:
             # Then something went wrong in getting the ps data
-            msg =  "Error when grabbing output from process ps\n"
+            msg = "Error when grabbing output from process ps\n"
             msg += "output = %s\n" % output
             msg += "command = %s\n" % self.monitorCommand
             logging.error(msg)
@@ -202,7 +203,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
             rss = int(output[2])
             vsize = int(output[3])
         else:
-            rss   = int(output[2]) // 1024  # convert it to MiB
+            rss = int(output[2]) // 1024  # convert it to MiB
             vsize = int(output[3]) // 1024  # convert it to MiB
         logging.info("Retrieved following performance figures:")
         logging.info("RSS: %s;  VSize: %s; PCPU: %s; PMEM: %s", output[2], output[3],
@@ -232,7 +233,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         if killProc:
             logging.error(msg)
-            report  = Report.Report()
+            report = Report.Report()
             # Find the global report
             logPath = os.path.join(self.currentStepSpace.location,
                                    '../../../',
@@ -244,15 +245,15 @@ class PerformanceMonitor(WMRuntimeMonitor):
                     logging.debug("Found pre-existant error report in PerformanceMonitor termination.")
                     report.load(logPath)
                 # Create a new step that won't be overridden by an exiting CMSSW
-                if not report.retrieveStep(step = "PerformanceError"):
-                    report.addStep(reportname = "PerformanceError")
-                report.addError(stepName = "PerformanceError", exitCode = errorCodeLookup[reason],
-                                errorType = "PerformanceKill", errorDetails = msg)
+                if not report.retrieveStep(step="PerformanceError"):
+                    report.addStep(reportname="PerformanceError")
+                report.addError(stepName="PerformanceError", exitCode=errorCodeLookup[reason],
+                                errorType="PerformanceKill", errorDetails=msg)
                 report.save(logPath)
             except Exception as ex:
                 # Basically, we can't write a log report and we're hosed
                 # Kill anyway, and hope the logging file gets written out
-                msg2 =  "Exception while writing out jobReport.\n"
+                msg2 = "Exception while writing out jobReport.\n"
                 msg2 += "Aborting job anyway: unlikely you'll get any error report.\n"
                 msg2 += str(ex)
                 msg2 += str(traceback.format_exc()) + '\n'

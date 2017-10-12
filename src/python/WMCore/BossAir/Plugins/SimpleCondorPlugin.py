@@ -22,7 +22,7 @@ from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
-from WMCore.WMException import listWMExceptionStr
+from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 
 
 class SimpleCondorPlugin(BasePlugin):
@@ -277,29 +277,43 @@ class SimpleCondorPlugin(BasePlugin):
                 logOutput = 'Could not find jobReport\n'
 
                 if os.path.isdir(job['cache_dir']):
-                    condorOut = "condor.%s.out" % job['gridid']
                     condorErr = "condor.%s.err" % job['gridid']
+                    condorOut = "condor.%s.out" % job['gridid']
                     condorLog = "condor.%s.log" % job['gridid']
                     exitCode = 99303
                     exitType = "NoJobReport"
-                    for condorFile in [condorOut, condorErr, condorLog]:
+                    for condorFile in [condorErr, condorOut, condorLog]:
                         condorFilePath = os.path.join(job['cache_dir'], condorFile)
+                        logOutput += "\n========== %s ==========\n" % condorFile
                         if os.path.isfile(condorFilePath):
                             logTail = BasicAlgos.tail(condorFilePath, 50)
                             logOutput += 'Adding end of %s to error message:\n\n' % condorFile
                             logOutput += logTail
                             logOutput += '\n\n'
-                            for exMsg in listWMExceptionStr(condorFilePath):
-                                logOutput += "\n\n%s\n" % exMsg
 
                             if condorFile == condorLog:
-                                for condorReason in BasicAlgos.findMagicStr(condorFilePath, '<a n="Reason">'):
-                                    logOutput += condorReason
-                                    if "SYSTEM_PERIODIC_REMOVE" in condorReason or "via condor_rm" in condorReason:
-                                        exitCode = 99400
-                                        exitType = "RemovedByGLIDEIN"
+                                # for condor log, search for the information
+                                for matchObj in getIterMatchObjectOnRegexp(condorFilePath, CONDOR_LOG_FILTER_REGEXP):
+                                    condorReason = matchObj.group("Reason")
+                                    if condorReason:
+                                        logOutput += condorReason
+                                        if "SYSTEM_PERIODIC_REMOVE" in condorReason or "via condor_rm" in condorReason:
+                                            exitCode = 99400
+                                            exitType = "RemovedByGLIDEIN"
+                                        else:
+                                            exitCode = 99401
+
+                                    siteName = matchObj.group("Site")
+                                    if siteName:
+                                        condorReport.data.siteName = siteName
                                     else:
-                                        exitCode = 99401
+                                        condorReport.data.siteName = "NoReportedSite"
+                            else:
+                                for matchObj in getIterMatchObjectOnRegexp(condorFilePath, WMEXCEPTION_REGEXP):
+                                    errMsg = matchObj.group('WMException')
+                                    if errMsg:
+                                        logOutput += "\n\n%s\n" % errMsg
+
                     logOutput += '\n\n'
                     condorReport.addError(exitType, exitCode, exitType, logOutput)
                 else:

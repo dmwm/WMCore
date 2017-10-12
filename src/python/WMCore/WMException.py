@@ -15,16 +15,6 @@ import re
 
 WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
 WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
-WMEXCEPTION_REGEXP = re.compile(r"\%s.*?\%s" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR), re.DOTALL)
-
-
-def listWMExceptionStr(filename):
-
-    with open(filename, 'r') as logfile:
-        # TODO: can we avoid reading the whole file
-        wholefile = logfile.read()
-        for b in WMEXCEPTION_REGEXP.finditer(wholefile):
-            yield b.group()
 
 
 class WMException(exceptions.Exception):

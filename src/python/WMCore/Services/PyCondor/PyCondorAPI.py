@@ -64,7 +64,7 @@ def getScheddParamValue(param):
     Given a schedd parameter, retrieve it's value with htcondor, e.g.:
     MAX_JOBS_RUNNING, MAX_JOBS_PER_OWNER, etc
     """
-    if isinstance(param, basestring):
+    if not isinstance(param, basestring):
         logging.error("Parameter %s must be string type", param)
         return
 

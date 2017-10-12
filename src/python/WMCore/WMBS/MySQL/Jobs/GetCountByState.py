@@ -23,6 +23,4 @@ class GetCountByState(DBFormatter):
         result = self.dbi.processData(self.sql, {'state': state},
                                       conn=conn,
                                       transaction=transaction)
-        result = self.formatDict(result)
-
-        return result[state]
+        return self.format(result)[0][0]

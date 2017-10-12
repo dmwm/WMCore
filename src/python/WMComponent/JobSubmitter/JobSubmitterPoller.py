@@ -69,6 +69,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.packageSize = getattr(self.config.JobSubmitter, 'packageSize', 500)
         self.collSize = getattr(self.config.JobSubmitter, 'collectionSize', self.packageSize * 1000)
         self.maxTaskPriority = getattr(self.config.BossAir, 'maxTaskPriority', 1e7)
+        self.condorFraction = float(getattr(self.config.JobSubmitter, 'condorJobsFraction', 1))
 
         # Additions for caching-based JobSubmitter
         self.cachedJobIDs = set()
@@ -713,7 +714,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
-        if not self.passSubmitConditions:
+        if not self.passSubmitConditions():
             msg = "JobSubmitter didn't pass the submit conditions. Skipping this cycle."
             logging.warning(msg)
             myThread.logdbClient.post("JobSubmitter_submitWork", msg, "warning")
@@ -760,10 +761,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         passCond = True
         # fetch idle + running jobs in condor
         executingJobs = self.countWMBSJobsByState.execute("executing")
-        maxScheddJobs = getScheddParamValue("MAX_JOBS_PER_OWNER")
+        maxScheddJobs = int(getScheddParamValue("MAX_JOBS_PER_OWNER"))
         if maxScheddJobs is None:
             passCond = False
-        elif int(executingJobs) + self.maxJobsPerPoll >= int(maxScheddJobs):
+        elif int(executingJobs) + self.maxJobsPerPoll >= int(maxScheddJobs * self.condorFraction):
             passCond = False
 
         return passCond

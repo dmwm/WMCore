@@ -68,6 +68,17 @@ dependencies = {
                     'src/html/ReqMgr+'
                     ],
     },
+    'reqmgr2ms': {
+        'packages': ['WMCore.Services.MicroService+','WMCore.Services.PhEDEx+','Utils'],
+        'modules': ['WMCore.Services.__init__', 'WMCore.Services.Service',
+            'WMCore.Services.Requests',
+            'WMCore.Wrappers.__init__',
+            'WMCore.Wrappers.JsonWrapper.__init__',
+            'WMCore.Wrappers.JsonWrapper.JSONThunker',
+            'WMCore.Services.pycurl_manager'],
+        'systems': ['wmc-rest', 'wmc-runtime'],
+        'statics': [],
+    },
     'workqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
                      'WMCore.Wrappers+', 'WMCore.Services+',

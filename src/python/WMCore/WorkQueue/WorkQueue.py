@@ -791,7 +791,11 @@ class WorkQueue(WorkQueueBase):
         if (resources, jobCounts) == (False, False):
             return 0
 
-        self.logger.info("Pull work for sites %s: " % str(resources))
+        # FIXME temporary fix/hack to avoid too many queued jobs in created
+        for site, slots in resources.iteritems():
+            resources[site] = slots // 2
+
+        self.logger.info("Pull work for sites (half thresholds) %s: " % str(resources))
         work = self.getAvailableWorkfromParent(resources, jobCounts)
         if not work:
             return 0

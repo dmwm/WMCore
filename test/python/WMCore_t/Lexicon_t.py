@@ -7,7 +7,8 @@ General test of Lexicon
 """
 
 import unittest
-
+import os
+from WMCore.WMBase import getTestBase
 from WMCore.Lexicon import *
 
 
@@ -836,6 +837,37 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(physicsgroup('Trigger'))
         return
 
+    def testGetStringsBetween(self):
+        start = '<a n="MachineAttrGLIDEIN_CMSSite0"><s>'
+        end = '</s></a>'
+        source = '<a n="MachineAttrGLIDEIN_CMSSite0"><s>T2_US_Florida</s></a>'
+        result = getStringsBetween(start, end, source)
+        self.assertEqual(result, 'T2_US_Florida')
+
+    def testGetIterMatchObjectOnRegex(self):
+        count = 0
+        logPath = os.path.join(getTestBase(), "WMCore_t/test_condor.log")
+        for mo in getIterMatchObjectOnRegexp(logPath, WMEXCEPTION_REGEXP):
+            errMsg = mo.group("WMException")
+            if errMsg:
+                count += 1
+
+        self.assertEqual(count, 4)
+
+        rcount = 0
+        scount = 0
+        for mo in getIterMatchObjectOnRegexp(logPath, CONDOR_LOG_FILTER_REGEXP):
+            if mo.group("Reason"):
+                reason = mo.group("Reason")
+                rcount += 1
+            if mo.group("Site"):
+                site = mo.group("Site")
+                scount += 1
+
+        self.assertEqual(rcount, 1)
+        self.assertEqual(scount, 2)
+        self.assertEqual(site, 'T1_US_FNAL')
+        self.assertEqual(reason, 'via condor_rm (by user cmst1)')
 
 if __name__ == "__main__":
     unittest.main()

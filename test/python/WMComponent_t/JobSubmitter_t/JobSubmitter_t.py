@@ -36,7 +36,6 @@ from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
 
-
 class JobSubmitterTest(EmulatedUnitTestCase):
     """
     _JobSubmitterTest_
@@ -244,6 +243,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
         config.General.central_logdb_url = "http://localhost/testlogdb"
+        config.General.ReqMgr2ServiceURL = "http://localhost/reqmgr2"
 
         # Now the CoreDatabase information
         config.section_("CoreDatabase")
@@ -280,10 +280,6 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config.JobStateMachine.couchurl = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName = "jobsubmitter_t"
         config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
-
-        # TaskArchive setup (JobSubmitter needs this)
-        config.component_("TaskArchiver")
-        config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         # Needed, because this is a test
         try:

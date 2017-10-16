@@ -13,5 +13,4 @@ class MockReqMgrAux(object):
         """
         macking getWMAgentConfig returns default config.
         """
-
         return DEFAULT_AGENT_CONFIG

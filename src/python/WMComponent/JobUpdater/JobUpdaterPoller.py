@@ -46,7 +46,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         self.config = config
 
         self.bossAir = BossAirAPI(config=self.config)
-        self.reqmgr2 = ReqMgr(self.config.JobUpdater.reqMgr2Url)
+        self.reqmgr2 = ReqMgr(self.config.General.ReqMgr2ServiceURL)
         self.workqueue = WorkQueue(self.config.WorkQueueManager.couchurl,
                                    self.config.WorkQueueManager.dbname)
 

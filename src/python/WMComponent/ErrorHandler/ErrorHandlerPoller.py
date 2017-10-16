@@ -86,7 +86,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         if hasattr(self.config, "Tier0Feeder"):
             self.reqAuxDB = None
         else:
-            self.reqAuxDB = ReqMgrAux(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
 
         return
 

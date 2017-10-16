@@ -127,7 +127,7 @@ def isDrainMode(config):
 
     global AUXDB_AGENT_CONFIG_CACHE
 
-    reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
+    reqMgrAux = ReqMgrAux(config.General.ReqMgr2ServiceURL)
     agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
     if "UserDrainMode" in agentConfig and "AgentDrainMode" in agentConfig:
         AUXDB_AGENT_CONFIG_CACHE = agentConfig
@@ -153,7 +153,7 @@ def listDiskUsageOverThreshold(config, updateDB):
             diskUseThreshold = config.AgentStatusWatcher.diskUseThreshold
         t0Flag = True
     else:
-        reqMgrAux = ReqMgrAux(config.TaskArchiver.ReqMgr2ServiceURL)
+        reqMgrAux = ReqMgrAux(config.General.ReqMgr2ServiceURL)
         agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
         diskUseThreshold = agentConfig["DiskUseThreshold"]
         ignoredDisks = agentConfig["IgnoreDisks"]

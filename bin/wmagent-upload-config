@@ -12,6 +12,6 @@ def insertWMAgentConfig(reqmgrURL, hostName, agentConfig):
 if __name__ == "__main__":
     wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
     
-    insertWMAgentConfig(wmConfig.TaskArchiver.ReqMgr2ServiceURL,
+    insertWMAgentConfig(wmConfig.General.ReqMgr2ServiceURL,
                         wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
     

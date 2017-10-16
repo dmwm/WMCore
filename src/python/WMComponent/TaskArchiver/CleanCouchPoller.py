@@ -105,7 +105,7 @@ class CleanCouchPoller(BaseWorkerThread):
             self.deletableState = "announced"
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL,
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
-            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
         else:
             # Tier0 case
             self.deletableState = "completed"

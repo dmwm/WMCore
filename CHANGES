@@ -1,3 +1,11 @@
+1.1.7 to 1.1.8.pre1:
+  - Merge pull request #8246 from vkuznet/reqmgr2-ms
+  - Add reqmgr2-ms into setup
+  - Merge pull request #8122 from vkuznet/unified-migration2
+  - Add initial port of unified scripts: utils and transferor (DO NOT MERGE)
+  - Merge pull request #8235 from amaltaro/watchdog-pylint
+  - Pylint fixes on PerformanceMonitor
+
 1.1.6 to 1.1.7:
   - Merge pull request #8228 from amaltaro/condor-maxjobs
   - Add schedd max jobs per user constraint to JobSubmitter

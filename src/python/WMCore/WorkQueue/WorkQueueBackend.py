@@ -416,7 +416,7 @@ class WorkQueueBackend(object):
                 siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
                                                     element['Jobs'] * element.get('blowupFactor', 1.0)
             else:
-                self.logger.info("No available resources for %s with doc id %s", element['RequestName'], element.id)
+                self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
         return elements, thresholds, siteJobCounts
 

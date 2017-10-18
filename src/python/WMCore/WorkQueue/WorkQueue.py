@@ -412,6 +412,16 @@ class WorkQueue(WorkQueueBase):
                                            acdcInfo['fileset'],
                                            splitedBlockName['Offset'],
                                            splitedBlockName['NumOfFiles'])
+            ### FIXME temporary debugging  ###
+            self.logger.info("AMR processing %d non-unique files for fileset %s",
+                             len(fileLists), acdcInfo['fileset'])
+            lumisPerRun = {}
+            for entry in fileLists:
+                for run in entry['runs']:
+                    lumisPerRun.setdefault(run.run, 0)
+                    lumisPerRun[run.run] += len(run.lumis)
+            self.logger.info("AMR run and # of lumis to be recovered: %s", lumisPerRun)
+            ### done with debugging
 
             block = {}
             block["Files"] = fileLists

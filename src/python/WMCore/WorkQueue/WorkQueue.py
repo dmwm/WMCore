@@ -949,7 +949,7 @@ class WorkQueue(WorkQueueBase):
 
                     if result.inEndState():
                         if elements:
-                            self.logger.info(
+                            self.logger.debug(
                                 "Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
                             finished_elements.extend(result['Elements'])
                         else:

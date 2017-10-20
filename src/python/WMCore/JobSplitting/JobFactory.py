@@ -51,7 +51,7 @@ class JobFactory(WMObject):
             self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                          logger=myThread.logger,
                                          dbinterface=myThread.dbi)
-            self.getParentInfoAction = self.daoFactory(classname="Files.GetParentInfo")
+            self.getParentInfoAction = self.daoFactory(classname="Files.GetParentAndGrandParentInfo")
 
             self.pnn_to_psn = self.daoFactory(classname="Locations.GetPNNtoPSNMapping").execute()
 

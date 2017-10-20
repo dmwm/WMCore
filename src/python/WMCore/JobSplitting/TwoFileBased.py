@@ -49,7 +49,7 @@ class TwoFileBased(JobFactory):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        self.getParentInfoAction     = self.daoFactory(classname = "Files.GetParentInfo")
+        self.getParentInfoAction     = self.daoFactory(classname = "Files.GetParentAndGrandParentInfo")
 
 
 

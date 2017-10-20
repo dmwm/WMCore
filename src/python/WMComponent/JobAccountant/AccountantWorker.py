@@ -62,7 +62,7 @@ class AccountantWorker(WMConnectionBase):
         self.bulkAddToFilesetAction = self.daofactory(classname="Fileset.BulkAddByLFN")
         self.bulkParentageAction = self.daofactory(classname="Files.AddBulkParentage")
         self.getJobTypeAction = self.daofactory(classname="Jobs.GetType")
-        self.getParentInfoAction = self.daofactory(classname="Files.GetParentInfo")
+        self.getParentInfoAction = self.daofactory(classname="Files.GetParentAndGrandParentInfo")
         self.setParentageByJob = self.daofactory(classname="Files.SetParentageByJob")
         self.setParentageByMergeJob = self.daofactory(classname="Files.SetParentageByMergeJob")
         self.setFileRunLumi = self.daofactory(classname="Files.AddRunLumi")

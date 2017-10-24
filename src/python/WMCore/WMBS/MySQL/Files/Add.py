@@ -13,7 +13,7 @@ class Add(DBFormatter):
                  first_event = 0, merged = False):
         # Can't use self.dbi.buildbinds here...
         binds = {}
-        if type(files) != list:
+        if not isinstance(files, list):
             binds = {'lfn': files,
                      'filesize': size,
                      'events': events,
@@ -26,9 +26,9 @@ class Add(DBFormatter):
                 binds.append({'lfn': f[0],
                               'filesize': f[1],
                               'events': f[2],
-                              'first_event' : f[4],
-                              'merged' : int(f[5])
-                                })
+                              'first_event': f[4],
+                              'merged': int(f[5])
+                               })
         return binds
 
     def execute(self, files = None, size = 0, events = 0, cksum = 0,

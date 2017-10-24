@@ -15,7 +15,7 @@ class GetLocation(DBFormatter):
                INNER JOIN wmbs_location ON wmbs_location.id = wls.location
                INNER JOIN wmbs_file_location wfl ON wfl.location = wmbs_location.id
                INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
-               WHERE wfd.lfn = :lfn"""
+               WHERE wfd.lfn = :lfn GROUP BY wls.pnn"""
 
 
     def getBinds(self, file=None):

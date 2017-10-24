@@ -18,7 +18,7 @@ class SetLocationByLFN(DBFormatter):
                AND wmbs_file_details.lfn = :lfn"""
 
     def getBinds(self, lfn = None, location = None):
-        if type(lfn) == type('string'):
+        if isinstance(lfn, basestring):
             return {'lfn': lfn, 'location': location}
         elif isinstance(lfn, (list, set)):
             binds = []
@@ -34,6 +34,5 @@ class SetLocationByLFN(DBFormatter):
         """
         binds = self.getBinds(lfn, location)
 
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn, transaction = transaction)
         return

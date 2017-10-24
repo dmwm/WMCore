@@ -560,7 +560,19 @@ class JSONRequests(Requests):
         encoder = JSONEncoder()
         thunker = JSONThunker()
         thunked = thunker.thunk(data)
-        return encoder.encode(thunked)
+        try:
+            return encoder.encode(thunked)
+        except:
+            for i in thunked['docs']:
+                try:
+                    encoder.encode(i['fwjr'])
+                except:
+                    step = i['fwjr']['steps']
+                    for key in step:
+                        for i in step[key]["errors"]:
+                            i["details"] = str(unicode(i["details"], errors='ignore'))
+            return encoder.encode(thunked)
+
 
     def decode(self, data):
         """

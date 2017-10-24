@@ -84,6 +84,7 @@ config.General.workDir = workDirectory
 config.General.logdb_name = logDBName
 config.General.logdb_url = "%s/%s" % (couchURL, config.General.logdb_name)
 config.General.central_logdb_url = "need to get from secrets file"
+config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -222,8 +223,6 @@ config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
-# reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
-config.JobUpdater.reqMgr2Url = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
@@ -279,7 +278,6 @@ config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
 config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.DataKeepDays = 0.125  # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20  # 20 min
-config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.TaskArchiver.archiveDelayHours = 24  # delay the archiving so monitor can still show. default 24 hours
 
 # Alert framework configuration

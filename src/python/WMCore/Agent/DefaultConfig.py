@@ -9,6 +9,8 @@ DEFAULT_AGENT_CONFIG = {
     "DiskUseThreshold": 85,
      # list of disks which shouldn't be included in monitoring for the Threshold
     "IgnoreDisks": ["/lustre/unmerged"],
+    # fraction of condor schedd limit, used for job submission
+    "CondorJobsFraction": 0.75,
     # ExitCodes returned by jobs which doesn't need to be retried
     "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 50660, 50661, 50664, 71102]
 }

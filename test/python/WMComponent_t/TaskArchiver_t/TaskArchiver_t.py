@@ -116,6 +116,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         config.section_("General")
         config.General.workDir = "."
+        config.General.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
@@ -145,7 +146,6 @@ class TaskArchiverTest(unittest.TestCase):
                                                          config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.workloadSummaryCouchURL = config.JobStateMachine.couchurl
         config.TaskArchiver.requireCouch = True
-        config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         config.component_("AnalyticsDataCollector")
         config.AnalyticsDataCollector.centralRequestDBURL = '%s/reqmgrdb_t' % config.JobStateMachine.couchurl

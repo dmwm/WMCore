@@ -30,6 +30,7 @@ from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.PyCondor.PyCondorAPI import getScheddParamValue
+from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 
 class JobSubmitterPollerException(WMException):
@@ -62,13 +63,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
         self.bossAir = BossAirAPI(config=self.config)
 
+        self.hostName = self.config.Agent.hostName
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
         self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
+        self.maxJobsThisCycle = self.maxJobsPerPoll  # changes as per schedd limit
         self.cacheRefreshSize = int(getattr(self.config.JobSubmitter, 'cacheRefreshSize', 30000))
         self.skipRefreshCount = int(getattr(self.config.JobSubmitter, 'skipRefreshCount', 20))
         self.packageSize = getattr(self.config.JobSubmitter, 'packageSize', 500)
         self.collSize = getattr(self.config.JobSubmitter, 'collectionSize', self.packageSize * 1000)
         self.maxTaskPriority = getattr(self.config.BossAir, 'maxTaskPriority', 1e7)
+        self.condorFraction = None  # update during every algorithm cycle
 
         # Additions for caching-based JobSubmitter
         self.cachedJobIDs = set()
@@ -113,8 +117,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         if self.useReqMgrForCompletionCheck:
             # only set up this when reqmgr is used (not Tier0)
-            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
             self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
+            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
         else:
             # Tier0 Case - just for the clarity (This private variable shouldn't be used
             self.abortedAndForceCompleteWorkflowCache = None
@@ -449,13 +454,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                                          ": file locations: " + ', '.join(job['fileLocations']) +
                                          ": site white list: " + ', '.join(job['siteWhitelist']) +
                                          ": site black list: " + ', '.join(job['siteBlacklist']))
-                else:
-                    # This is temporary addition if this is patched for existing agent.
-                    # If jobs are created before the patch is applied fileLocations is not set.
-                    # TODO. remove this later for new agent
-                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  +
-                                         ": Job is created before this patch. Please check this input for the jobs: %s " %
-                                         job['fwjr'].getAllInputFiles())
 
             else:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode])
@@ -618,7 +616,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     break
 
                 # set the flag and get out of the job iteration
-                if jobsCount >= self.maxJobsPerPoll:
+                if jobsCount >= self.maxJobsThisCycle:
+                    logging.info("Submitter reached limit of submit slots for this cycle: %i", self.maxJobsThisCycle)
                     exitLoop = True
                     break
 
@@ -713,7 +712,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
-        if not self.passSubmitConditions:
+        if not self.passSubmitConditions():
             msg = "JobSubmitter didn't pass the submit conditions. Skipping this cycle."
             logging.warning(msg)
             myThread.logdbClient.post("JobSubmitter_submitWork", msg, "warning")
@@ -750,23 +749,39 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         _passSubmitConditions_
 
-        Check whether the component is allowed to submit
-        jobs to condor.
+        Check whether the component is allowed to submit jobs to condor.
 
-        Initially it has only one condition, which is the total
-        amount of jobs we can have in condor (pending + running) per schedd,
-        set by MAX_JOBS_PER_OWNER.
+        Initially it has only one condition, which is the total number of
+        jobs we can have in condor (pending + running) per schedd, set by
+        MAX_JOBS_PER_OWNER.
         """
-        passCond = True
-        # fetch idle + running jobs in condor
-        executingJobs = self.countWMBSJobsByState.execute("executing")
-        maxScheddJobs = getScheddParamValue("MAX_JOBS_PER_OWNER")
-        if maxScheddJobs is None:
-            passCond = False
-        elif int(executingJobs) + self.maxJobsPerPoll >= int(maxScheddJobs):
-            passCond = False
+        if not self.reqAuxDB:
+            return False
 
-        return passCond
+        agentAuxConfig = self.reqAuxDB.getWMAgentConfig(self.hostName)
+        self.condorFraction = agentAuxConfig.get('CondorJobsFraction')
+        if self.condorFraction is None:
+            logging.warning("Failed to retrieve 'CondorJobsFraction' from auxiliar DB")
+            return False
+        else:
+            self.condorFraction = float(self.condorFraction)
+
+        maxScheddJobs = int(getScheddParamValue("MAX_JOBS_PER_OWNER"))
+        if maxScheddJobs is None:
+            logging.warning("Failed to retrieve 'MAX_JOBS_PER_OWNER' from HTCondor")
+            return False
+
+        # fetch idle + running jobs in condor
+        executingJobs = int(self.countWMBSJobsByState.execute("executing"))
+        if executingJobs >= int(maxScheddJobs * self.condorFraction):
+            logging.info("There are way too many jobs in HTCondor already. Limit is: %s",
+                         int(maxScheddJobs * self.condorFraction))
+            return False
+
+        freeSubmitSlots = int(maxScheddJobs * self.condorFraction) - executingJobs
+        self.maxJobsThisCycle = min(freeSubmitSlots, self.maxJobsPerPoll)
+
+        return True
 
     def terminate(self, params):
         """

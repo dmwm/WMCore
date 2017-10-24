@@ -22,7 +22,7 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.queue = queue
         self.config = config
-        self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+        self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
         # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
         self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache(expire=120)
 

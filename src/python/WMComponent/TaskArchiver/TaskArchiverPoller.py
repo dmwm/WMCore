@@ -98,7 +98,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
 
-            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
 
         # Load the cleanout state ID and save it
         stateIDDAO = self.daoFactory(classname="Jobs.GetStateID")

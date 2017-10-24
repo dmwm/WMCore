@@ -42,6 +42,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
     def setUp(self):
         """
         Start the various mocked versions and add cleanups in case of exceptions
+        Note: patch has to be applied to where the object is loaded/imported, not
+        to its origin location.
 
         TODO: parameters to turn off emulators individually
         """
@@ -70,10 +72,13 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.addCleanup(self.siteDBPatcher.stop)
 
         if self.mockReqMgrAux:
-            self.auxDBPatcher = mock.patch('WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
-                                           new=MockReqMgrAux)
-            self.inUseAuxDB = self.auxDBPatcher.start()
-            self.addCleanup(self.auxDBPatcher.stop)
+            self.reqMgrAuxPatchers = []
+            patchReqMgrAuxAt = ['WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
+                                'WMComponent.JobSubmitter.JobSubmitterPoller.ReqMgrAux']
+            for module in patchReqMgrAuxAt:
+                self.reqMgrAuxPatchers.append(mock.patch(module, new=MockReqMgrAux))
+                self.reqMgrAuxPatchers[-1].start()
+                self.addCleanup(self.reqMgrAuxPatchers[-1].stop)
 
         if self.mockLogDB:
             self.logDBPatcher = mock.patch('WMCore.Services.LogDB.LogDB.LogDB',

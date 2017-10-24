@@ -537,21 +537,10 @@ class WMTaskHelper(TreeHelper):
             performanceParams.timePerEvent = timePerEvent or getattr(performanceParams, "timePerEvent")
         if sizePerEvent or getattr(performanceParams, "sizePerEvent", None):
             performanceParams.sizePerEvent = sizePerEvent or getattr(performanceParams, "sizePerEvent")
-
-        # special handling for memory overwrite during assignment
-        if isinstance(memoryReq, dict):
-            taskMemory = memoryReq.get(self.name())
-        else:
-            taskMemory = memoryReq
-
-        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
-            # we don't want to touch memory for these task types
-            pass
-        elif taskMemory or getattr(performanceParams, "memoryRequirement", None):
-            performanceParams.memoryRequirement = taskMemory or getattr(performanceParams, "memoryRequirement")
-
-        for task in self.childTaskIterator():
-            task.setJobResourceInformation(memoryReq=memoryReq)
+        if memoryReq or getattr(performanceParams, "memoryRequirement", None):
+            performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
+            # if we change memory requirements, then we must change MaxRSS as well
+            self.setMaxRSS(performanceParams.memoryRequirement)
 
         return
 
@@ -1145,6 +1134,16 @@ class WMTaskHelper(TreeHelper):
         return
 
     def setMaxRSS(self, maxRSS):
+        """
+        _setMaxRSS_
+
+        Set MaxRSS performance monitoring for this task.
+        :param maxRSS: maximum RSS memory comsumption in MiB
+        """
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+            # keep the default settings (from StdBase) for these task types
+            return
+
         if isinstance(maxRSS, dict):
             maxRSS = maxRSS.get(self.name(), None)
 
@@ -1156,6 +1155,16 @@ class WMTaskHelper(TreeHelper):
         return
 
     def setMaxVSize(self, maxVSize):
+        """
+        _setMaxVSize_
+
+        Set maxVSize performance monitoring for this task.
+        :param maxVSize: maximum VSize memory comsumption in MiB
+        """
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+            # keep the default settings (from StdBase) for these task types
+            return
+
         if isinstance(maxVSize, dict):
             maxVSize = maxVSize.get(self.name(), None)
 
@@ -1173,17 +1182,18 @@ class WMTaskHelper(TreeHelper):
 
         Set/Update the performance monitor options for the task
         """
-        if not maxRSS and not maxVSize and not softTimeout and not gracePeriod:
-            # if no values is specified do nothing
-            return
+        # make sure there is a PerformanceMonitor section in the task
+        self._setPerformanceMonitorConfig()
 
-        self.setMaxRSS(maxRSS)
-        self.setMaxVSize(maxVSize)
+        if maxRSS:
+            self.setMaxRSS(maxRSS)
+        if maxVSize:
+            self.setMaxVSize(maxVSize)
         if softTimeout:
-            self._setPerformanceMonitorConfig()
             self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
             if gracePeriod:
                 self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)
+
         return
 
     def getSwVersion(self):
@@ -1380,7 +1390,6 @@ class WMTaskHelper(TreeHelper):
         :param keyDict: a dict with either AcqEra/ProcStr/ProcVer key/value pairs,
         where the key corresponds to the StepName
         """
-        value = None
         if self.taskType() == "Merge":
             extractedTaskName = self.name().split("Merge")[0]
             value = keyDict.get(extractedTaskName)

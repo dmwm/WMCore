@@ -7,6 +7,7 @@ Monitor object which checks the job to ensure it is working inside
 the agreed limits of virtual memory and wallclock time, and terminate it
 if it exceeds them.
 """
+from __future__ import division
 
 import os
 import signal
@@ -195,28 +196,31 @@ class PerformanceMonitor(WMRuntimeMonitor):
             msg += "command = %s\n" % self.monitorCommand
             logging.error(msg)
             return
-        rss   = float(output[2])
-        vsize = float(output[3])
+        # FIXME: making it backwards compatible. Keep only the "else" block in HG1801
+        if self.maxRSS is not None and self.maxRSS >= (1024 * 1024):
+            # then workload value is still in KiB (old way)
+            rss = int(output[2])
+            vsize = int(output[3])
+        else:
+            rss   = int(output[2]) // 1024  # convert it to MiB
+            vsize = int(output[3]) // 1024  # convert it to MiB
         logging.info("Retrieved following performance figures:")
-        logging.info("RSS: %s;  VSize: %s; PCPU: %s; PMEM: %s" % (output[2], output[3],
-                                                                  output[4], output[5]))
+        logging.info("RSS: %s;  VSize: %s; PCPU: %s; PMEM: %s", output[2], output[3],
+                     output[4], output[5])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
-        if self.maxRSS != None and rss >= self.maxRSS:
+        if self.maxRSS is not None and rss >= self.maxRSS:
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
             msg += "Job has RSS: %s\n" % rss
             killProc = True
             reason = 'RSS'
-        if self.maxVSize != None and vsize >= self.maxVSize:
+        elif self.maxVSize is not None and vsize >= self.maxVSize:
             msg += "Job has exceeded maxVSize: %s\n" % self.maxVSize
             msg += "Job has VSize: %s\n" % vsize
             killProc = True
             reason = 'VSZ'
-
-        #Let's check the running time
-        currentTime = time.time()
-
-        if self.hardTimeout != None and self.softTimeout != None:
+        elif self.hardTimeout is not None and self.softTimeout is not None:
+            currentTime = time.time()
             if (currentTime - self.startTime) > self.softTimeout:
                 killProc = True
                 reason = 'Wallclock time'

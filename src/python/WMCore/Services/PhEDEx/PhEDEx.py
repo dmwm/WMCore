@@ -307,27 +307,6 @@ class PhEDEx(Service):
         """
         return self._getResult("nodes", args=None)
 
-    def getBestNodeName(self, se, nodeNameMap=None):
-        """
-        _getBestNodeName_
-
-        Convert SE to Name giving back one of the following types:
-        Buffer, MSS, and Disk (in order). See 2817
-        """
-        if nodeNameMap == None:
-            nodeNameMap = self.getNodeMap()
-        nodeList = nodeNameMap['phedex']['node']
-        ret = None
-        for node in nodeList:
-            if node['se'] == unicode(se):
-                if node['kind'] == 'Buffer':
-                    return node['name']
-                elif node['kind'] == 'MSS':
-                    ret = node['name']
-                elif node['kind'] == 'Disk' and ret == None:
-                    ret = node['name']
-        return ret
-
     def getNodeNames(self, se):
         """
         _getNodeName_

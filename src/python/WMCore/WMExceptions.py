@@ -135,46 +135,46 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       8031: "Exceeded maximum allowed RSS (ExceededResourceRSS).",
                       8032: "Exceeded maximum allowed time (ExceededResourceTime).",
                       9000: "cmsRun caught (SIGINT and SIGUSR2) signal.",
-                      10031: "Directory VO_CMS_SW_DIR not found. ", # (CRAB3)
-                      10032: "Failed to source CMS Environment setup script such as cmssset_default.sh, grid system or site equivalent script.", # (CRAB3)
-                      10034: "Required application version is not found at the site.", # (CRAB3)
-                      10040: "failed to generate cmsRun cfg file at runtime.", # (CRAB3)
-                      10042: "Unable to stage-in wrapper tarball.", # (CRAB3)
-                      10043: "Unable to bootstrap WMCore libraries (most likely site python is broken).", # (CRAB3)
-                      50110: "Executable file is not found.", # (WMA)
-                      50111: "Executable file has no exe permissions.", # (WMA)
-                      50113: "Executable did not get enough arguments.", # (CRAB3)
-                      50115: "cmsRun did not produce a valid job report at runtime (often means cmsRun segfaulted).", # (WMA, CRAB3)
-                      50116: "Could not determine exit code of cmsRun executable at runtime.", # (WMA)
-                      50513: "Failure to run SCRAM setup scripts.", # (WMA, CRAB3)
-                      50660: "Application terminated by wrapper because using too much RAM (RSS).", # (WMA, CRAB3)
-                      50661: "Application terminated by wrapper because using too much Virtual Memory (VSIZE).", # (WMA)
-                      50662: "Application terminated by wrapper because using too much disk.", # (CRAB3)
-                      50664: "Application terminated by wrapper because using too much Wall Clock time.", # (WMA, CRAB3)
-                      50665: "Application terminated by wrapper because it stay idle too long.", # (CRAB3)
-                      50669: "Application terminated by wrapper for not defined reason.", # (CRAB3)
-                      60302: "Output file(s) not found.", # (CRAB3)
-                      60307: "General failure during files stage out.", # (WMA, CRAB3)
-                      60311: "Local Stage Out Failure using site specific plugin.", # (WMA, CRAB3)
-                      60312: "Failure in staging in log files during log collection (WMAgent).", # (WMA)
-                      60315: "StageOut initialisation error (Due to TFC, SITECONF etc).", # (WMA)
-                      60317: "Forced timeout for stuck stage out.", # (To be used in CRAB3/ASO)
-                      60318: "Internal error in Crab cmscp.py stageout script.", # (CRAB3)
-                      60319: "Failed to do AlcaHarvest stageout.", # (WMA)
-                      60320: "Failure to communicate with ASO server.", # (CRAB3)
-                      60321: "Site related issue: no space, SE down, refused connection.", # (To be used in CRAB3/ASO)
-                      60322: "User is not authorized to write to destination site.", # (To be used in CRAB3/ASO)
-                      60323: "User quota exceeded.", # (To be used in CRAB3/ASO)
-                      60324: "Other stageout exception.", # (To be used in CRAB3/ASO)
-                      60401: "Failure to assemble LFN in direct-to-merge (WMAgent).", # (WMA)
-                      60403: "Timeout during files stage out.", # (WMA, CRAB3)
-                      60404: "Timeout during staging of log archives- status unknown (WMAgent).", # (WMA)
-                      60405: "General failure to stage out log archives (WMAgent).", # (WMA)
-                      60407: "Timeout in staging in log files during log collection (WMAgent).", # (WMA)
-                      60408: "Failure to stage out of log files during log collection (WMAgent).", # (WMA)
-                      60409: "Timeout in stage out of log files during log collection (WMAgent).", # (WMA)
-                      60450: "No output files present in the report", # (WMA)
-                      60451: "Output file lacked adler32 checksum (WMAgent).", # (WMA)
+                      10031: "Directory VO_CMS_SW_DIR not found. ",  # (CRAB3)
+                      10032: "Failed to source CMS Environment setup script such as cmssset_default.sh, grid system or site equivalent script.",  # (CRAB3)
+                      10034: "Required application version is not found at the site.",  # (CRAB3)
+                      10040: "failed to generate cmsRun cfg file at runtime.",  # (CRAB3)
+                      10042: "Unable to stage-in wrapper tarball.",  # (CRAB3)
+                      10043: "Unable to bootstrap WMCore libraries (most likely site python is broken).",  # (CRAB3)
+                      50110: "Executable file is not found.",  # (WMA)
+                      50111: "Executable file has no exe permissions.",  # (WMA)
+                      50113: "Executable did not get enough arguments.",  # (CRAB3)
+                      50115: "cmsRun did not produce a valid job report at runtime (often means cmsRun segfaulted).",  # (WMA, CRAB3)
+                      50116: "Could not determine exit code of cmsRun executable at runtime.",  # (WMA)
+                      50513: "Failure to run SCRAM setup scripts.",  # (WMA, CRAB3)
+                      50660: "Application terminated by wrapper because using too much RAM (RSS).",  # (WMA, CRAB3)
+                      50661: "Application terminated by wrapper because using too much Virtual Memory (VSIZE).",  # (WMA)
+                      50662: "Application terminated by wrapper because using too much disk.",  # (CRAB3)
+                      50664: "Application terminated by wrapper because using too much Wall Clock time.",  # (WMA, CRAB3)
+                      50665: "Application terminated by wrapper because it stay idle too long.",  # (CRAB3)
+                      50669: "Application terminated by wrapper for not defined reason.",  # (CRAB3)
+                      60302: "Output file(s) not found.",  # (CRAB3)
+                      60307: "General failure during files stage out.",  # (WMA, CRAB3)
+                      60311: "Local Stage Out Failure using site specific plugin.",  # (WMA, CRAB3)
+                      60312: "Failure in staging in log files during log collection (WMAgent).",  # (WMA)
+                      60315: "StageOut initialisation error (Due to TFC, SITECONF etc).",  # (WMA)
+                      60317: "Forced timeout for stuck stage out.",  # (To be used in CRAB3/ASO)
+                      60318: "Internal error in Crab cmscp.py stageout script.",  # (CRAB3)
+                      60319: "Failed to do AlcaHarvest stageout.",  # (WMA)
+                      60320: "Failure to communicate with ASO server.",  # (CRAB3)
+                      60321: "Site related issue: no space, SE down, refused connection.",  # (To be used in CRAB3/ASO)
+                      60322: "User is not authorized to write to destination site.",  # (To be used in CRAB3/ASO)
+                      60323: "User quota exceeded.",  # (To be used in CRAB3/ASO)
+                      60324: "Other stageout exception.",  # (To be used in CRAB3/ASO)
+                      60401: "Failure to assemble LFN in direct-to-merge (WMAgent).",  # (WMA)
+                      60403: "Timeout during files stage out.",  # (WMA, CRAB3)
+                      60404: "Timeout during staging of log archives- status unknown (WMAgent).",  # (WMA)
+                      60405: "General failure to stage out log archives (WMAgent).",  # (WMA)
+                      60407: "Timeout in staging in log files during log collection (WMAgent).",  # (WMA)
+                      60408: "Failure to stage out of log files during log collection (WMAgent).",  # (WMA)
+                      60409: "Timeout in stage out of log files during log collection (WMAgent).",  # (WMA)
+                      60450: "No output files present in the report",  # (WMA)
+                      60451: "Output file lacked adler32 checksum (WMAgent).",  # (WMA)
                       70318: "Failure in DQM upload.",
                       70452: "No run/lumi information in file (WMAgent).",
                       71101: "No sites are available to submit the job because the location of its input(s) do not pass the site whitelist/blacklist restrictions (WMAgent).",
@@ -189,11 +189,13 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       71305: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Pending.",
                       71306: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Error.",
                       71307: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Unkown.",
-                      80000: "Internal error in CRAB job wrapper.", # CRAB3
-                      80001: "No exit code set by job wrapper.", # CRAB3
+                      80000: "Internal error in CRAB job wrapper.",  # CRAB3
+                      80001: "No exit code set by job wrapper.",  # CRAB3
                       80453: "Unable to determine pset hash from output file (CRAB3).",
-                      90000: "Error in CRAB3 post-processing step (includes basically errors in stage out and file metadata upload).", # CRAB3 TODO: Need to separate. new stageout errors are 60321-60324 and other needed for file metadata.
-                      99109: "Uncaught exception in WMAgent step executor." # WMA TODO: Maybe move to 7****?
+                      90000: "Error in CRAB3 post-processing step (includes basically errors in stage out and file metadata upload).",  # CRAB3 TODO: Need to separate. new stageout errors are 60321-60324 and other needed for file metadata.
+                      99109: "Uncaught exception in WMAgent step executor.",  # WMA TODO: Maybe move to 7****?
+                      99400: "Job is killed by condor_rm or SYSTEM_PERIODIC_REMOVE",
+                      99401: "Job is killed by unknown reason "
                      }
 
 # ======================================================================

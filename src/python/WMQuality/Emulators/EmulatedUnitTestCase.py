@@ -10,13 +10,14 @@ import unittest
 import mock
 
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
-from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
-from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
-from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
-from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
-from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
+from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
+from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
+from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
+from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
+from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
+from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 
 
 class EmulatedUnitTestCase(unittest.TestCase):
@@ -27,7 +28,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
                  mockSiteDB=True, mockReqMgrAux=True, mockLogDB=True,
-                 mockApMon=True, mockMemoryCache=True):
+                 mockApMon=True, mockMemoryCache=True, mockPyCondor=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockSiteDB = mockSiteDB
@@ -35,6 +36,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
         self.mockLogDB = mockLogDB
         self.mockApMon = mockApMon
         self.mockMemoryCache = mockMemoryCache
+        self.mockPyCondor = mockPyCondor
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -69,13 +71,13 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         if self.mockReqMgrAux:
             self.auxDBPatcher = mock.patch('WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
-                                            new=MockReqMgrAux)
+                                           new=MockReqMgrAux)
             self.inUseAuxDB = self.auxDBPatcher.start()
             self.addCleanup(self.auxDBPatcher.stop)
 
         if self.mockLogDB:
             self.logDBPatcher = mock.patch('WMCore.Services.LogDB.LogDB.LogDB',
-                                            new=MockLogDB)
+                                           new=MockLogDB)
             self.inUseLogDB = self.logDBPatcher.start()
             self.addCleanup(self.logDBPatcher.stop)
 
@@ -93,5 +95,11 @@ class EmulatedUnitTestCase(unittest.TestCase):
                                                  new=MockMemoryCacheStruct)
             self.inUseMemoryCache = self.memoryCachePatcher.start()
             self.addCleanup(self.memoryCachePatcher.stop)
+
+        if self.mockPyCondor:
+            self.condorPatcher = mock.patch('WMCore.Services.PyCondor.PyCondorAPI.PyCondorAPI',
+                                            new=MockPyCondorAPI)
+            self.condorPatcher.start()
+            self.addCleanup(self.condorPatcher.stop)
 
         return

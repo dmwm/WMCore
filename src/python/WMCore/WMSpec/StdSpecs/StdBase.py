@@ -669,9 +669,12 @@ class StdBase(object):
                                         max_wait_time=self.maxWaitTime,
                                         initial_lfn_counter=lfn_counter)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMIO":
+        if dataTier == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO=True)
+        elif dataTier in ("NANOAOD", "NANOAODSIM"):
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
+                                                         mergeNANO=True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 

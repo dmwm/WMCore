@@ -1,3 +1,31 @@
+1.1.7 to 1.1.8.pre3:
+  - Merge pull request #8266 from ticoann/fix_dbs_parent
+  - fix dbs parentage
+  - Merge pull request #8274 from amaltaro/nanoaod
+  - Use special merge output module for NANOAOD{SIM} tier
+  - Merge pull request #8272 from ticoann/exit_code_update
+  - Merge pull request #8250 from amaltaro/condor-fraction-flexible
+  - update exitcode explanation
+  - Unit tests and pylint fixes
+  - Push CondorJobsFraction parameter to reqmgrAuxDB
+  - Set a configurable fraction of the condor schedd job limit
+  - 1.1.8.pre2
+  - Merge pull request #8248 from amaltaro/wq-queueDepth
+  - Merge pull request #8261 from amaltaro/make-it-debug
+  - Merge pull request #8255 from amaltaro/mock-condor
+  - Merge pull request #8268 from amaltaro/create-store-results
+  - Script to migrate input dataset and create a StoreResults request
+  - Dont log No available resources in WorkQueue
+  - Mock PyCondorAPI
+  - 1.1.8.pre1
+  - Use half of the resources for pulling work from GQ
+  - Merge pull request #8246 from vkuznet/reqmgr2-ms
+  - Add reqmgr2-ms into setup
+  - Merge pull request #8122 from vkuznet/unified-migration2
+  - Add initial port of unified scripts: utils and transferor (DO NOT MERGE)
+  - Merge pull request #8235 from amaltaro/watchdog-pylint
+  - Pylint fixes on PerformanceMonitor
+
 1.1.7 to 1.1.8.pre2:
   - Merge pull request #8248 from amaltaro/wq-queueDepth
   - Merge pull request #8261 from amaltaro/make-it-debug

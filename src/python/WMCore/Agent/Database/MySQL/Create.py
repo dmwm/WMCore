@@ -30,4 +30,5 @@ class Create(CreateAgentBase):
             self.create[i] = self.create[i] + " ENGINE=InnoDB"
             self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
 
+
         return CreateAgentBase.execute(self, conn, transaction)

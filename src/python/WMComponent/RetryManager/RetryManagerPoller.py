@@ -55,7 +55,7 @@ import logging
 import threading
 import time
 import traceback
-
+from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
@@ -149,6 +149,7 @@ class RetryManagerPoller(BaseWorkerThread):
         logging.debug("Terminating. doing one more pass before we die")
         self.algorithm(params)
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the doRetries method, loading the appropriate

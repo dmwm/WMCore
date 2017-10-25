@@ -14,6 +14,7 @@ import threading
 from collections import defaultdict
 
 from Utils.IteratorTools import flattenList
+from Utils.Timers import timeFunction
 from WMCore.WMException                    import WMException
 from WMCore.WMExceptions                   import WM_JOB_ERROR_CODES
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -56,6 +57,7 @@ class StatusPoller(BaseWorkerThread):
         self.initAlerts(compName="StatusPoller")
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

@@ -28,7 +28,6 @@ class HeartbeatTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.Agent.Database"],
                                 useDefault = False)
-        self.heartbeat = HeartbeatAPI("testComponent")
 
     def tearDown(self):
         """
@@ -41,6 +40,7 @@ class HeartbeatTest(unittest.TestCase):
 
     def testHeartbeat(self):
         testComponent = HeartbeatAPI("testComponent")
+        testComponent.pollInterval = 10
         testComponent.registerComponent()
         self.assertEqual(testComponent.getHeartbeatInfo(), [])
 
@@ -63,6 +63,7 @@ class HeartbeatTest(unittest.TestCase):
 
 
         testComponent = HeartbeatAPI("test2Component")
+        testComponent.pollInterval = 20
         testComponent.registerComponent()
         time.sleep(1)
         testComponent.updateWorkerHeartbeat("test2Worker")

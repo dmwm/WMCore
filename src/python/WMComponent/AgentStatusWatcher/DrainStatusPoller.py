@@ -8,6 +8,7 @@ from __future__ import division
 __all__ = []
 
 import logging
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
@@ -27,6 +28,7 @@ class DrainStatusPoller(BaseWorkerThread):
         self.config = config
         self.drainAPI = DrainStatusAPI()
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Update drainStats if agent is in drain mode

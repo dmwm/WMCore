@@ -26,7 +26,7 @@ import logging
 import os.path
 import threading
 from httplib import HTTPException
-
+from Utils.Timers import timeFunction
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -367,6 +367,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         return listOfJobs
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the handleErrors method, looking for each type of failure

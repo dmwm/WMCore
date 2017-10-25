@@ -9,6 +9,7 @@ import threading
 import logging
 
 from Utils.IteratorTools import grouper
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.DAOFactory import DAOFactory
@@ -49,6 +50,7 @@ class JobAccountantPoller(BaseWorkerThread):
         self.getJobsAction = daoFactory(classname="Jobs.GetFWJRByState")
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

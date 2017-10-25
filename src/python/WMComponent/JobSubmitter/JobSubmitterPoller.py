@@ -18,6 +18,7 @@ try:
 except ImportError:
     import pickle
 
+from Utils.Timers import timeFunction
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMExceptions      import WM_JOB_ERROR_CODES
 
@@ -701,6 +702,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 self.locationDict[jobSite].get('plugin'),
                 self.locationDict[jobSite].get('cms_name'))
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

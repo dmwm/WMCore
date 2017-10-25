@@ -46,7 +46,7 @@ import logging
 import traceback
 import time
 from httplib import HTTPException
-
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -151,6 +151,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         _algorithm_

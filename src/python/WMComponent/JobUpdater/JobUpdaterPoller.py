@@ -11,7 +11,7 @@ Created on Apr 16, 2013
 
 import logging
 import threading
-
+from Utils.Timers import timeFunction
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -74,6 +74,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         """
         pass
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_

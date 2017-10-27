@@ -12,10 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocationByLFN(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (fileid, location)
-             SELECT wmbs_file_details.id, wls.location
-               FROM wmbs_location_pnns wls, wmbs_file_details
-               WHERE wls.pnn = :location
-               AND wmbs_file_details.lfn = :lfn"""
+             VALUES ((SELECT id FROM wmbs_file_details where lfn = :lfn), :location)"""
 
     def getBinds(self, lfn = None, location = None):
         if isinstance(lfn, basestring):

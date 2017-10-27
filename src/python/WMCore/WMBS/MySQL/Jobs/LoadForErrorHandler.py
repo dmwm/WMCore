@@ -36,17 +36,13 @@ class LoadForErrorHandler(DBFormatter):
                  wmbs_job.state = wmbs_job_state.id
              WHERE wmbs_job.id = :jobid"""
 
-
     fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
                    wfd.merged, wja.job jobid,
-                   wls.pnn pnn
+                   wfl.location pnn
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
-                 INNER JOIN wmbs_location wl ON wl.id = wfl.location
-                 INNER JOIN wmbs_location_pnns wls ON wls.location = wfl.location
                  WHERE wja.job = :jobid"""
-
 
     parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
                      FROM wmbs_file_parent wfp

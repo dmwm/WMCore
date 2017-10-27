@@ -20,7 +20,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
     sql = """SELECT wmbs_file_details.id,
                     wmbs_file_details.events,
                     wmbs_file_details.lfn,
-                    wmbs_location_pnns.pnn AS pnn
+                    wmbs_file_location.location AS pnn
              FROM (
                SELECT wmbs_sub_files_available.fileid
                FROM wmbs_sub_files_available
@@ -40,8 +40,6 @@ class SiblingSubscriptionsComplete(DBFormatter):
                wmbs_file_details.id = available_files.fileid
              INNER JOIN wmbs_file_location ON
                wmbs_file_location.fileid = available_files.fileid
-             INNER JOIN wmbs_location_pnns ON
-               wmbs_location_pnns.location = wmbs_file_location.location
              """
 
     def execute(self, subscription, conn = None, transaction = False):

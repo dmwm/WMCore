@@ -21,10 +21,7 @@ class SetLocationForWorkQueue(DBFormatter):
                      WHERE fileid = (SELECT wfd.id FROM wmbs_file_details wfd WHERE wfd.lfn = :lfn)"""
 
     insertSQL = """INSERT IGNORE INTO wmbs_file_location (fileid, location)
-                     SELECT wmbs_file_details.id, wls.location
-                       FROM wmbs_location_pnns wls, wmbs_file_details
-                       WHERE wls.pnn = :location
-                       AND wmbs_file_details.lfn = :lfn"""
+                   VALUES ((SELECT id FROM wmbs_file_details WHERE lfn = :lfn ), :location)"""
 
 
     def execute(self, lfns, locations, isDBS = True, conn = None, transaction = None):

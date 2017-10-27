@@ -14,7 +14,8 @@ from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
 class GetFailedFiles(GetAvailableFiles):
     sql = """SELECT wmsff.fileid, wl.site_name FROM wmbs_sub_files_failed wmsff
              INNER JOIN wmbs_file_location wfl ON wfl.fileid = wmsff.fileid
-             INNER JOIN wmbs_location wl ON wl.id = wfl.location
+             INNER JOIN wmbs_location_pnns wlpnn ON wlpnn.id = wfl.location
+             INNER JOIN wmbs_location wl ON wl.id = wlpnn.pnn
              WHERE wmsff.subscription = :subscription
              """
 

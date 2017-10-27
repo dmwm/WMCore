@@ -11,11 +11,10 @@ MySQL implementation of File.GetLocationBulk
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocationBulk(DBFormatter):
-    sql = """SELECT wls.pnn AS pnn, wfl.fileid AS id FROM wmbs_location wl
-                INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
-                INNER JOIN wmbs_location_pnns wls ON wls.location = wl.id
-                WHERE wfl.fileid = :id
-                """
+    sql = """SELECT wfl.location as pnn, wfl.fileid as id
+               FROM wmbs_file_location wfl
+               WHERE wfl.fileid = :id
+            """
 
 
     def format(self, rawResults):

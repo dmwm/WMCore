@@ -42,16 +42,18 @@ class ListThresholdsForCreate(DBFormatter):
                      wls.name, runjob.status, wmbs_location.plugin,
                      wmbs_workflow.priority"""
 
-    unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.pending_slots,
-                              wmbs_location.cms_name, wls.name AS state,
+    unassignedSQL = """SELECT wl.site_name, wl.pending_slots,
+                              wl.cms_name, wls.name AS state,
                               COUNT(unassigned_jobs.job) AS job_count, unassigned_jobs.priority
-                              FROM wmbs_location
+                              FROM wmbs_location wl
                          LEFT OUTER JOIN
-                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_file_location.location,
+                           (SELECT DISTINCT wmbs_job_assoc.job, wmbs_location_pnns.location,
                                             wmbs_workflow.priority
                               FROM wmbs_job_assoc
-                              INNER JOIN wmbs_file_location ON
-                                wmbs_job_assoc.fileid = wmbs_file_location.fileid
+                              INNER JOIN wmbs_file_location wfl ON
+                                wmbs_job_assoc.fileid = wfl.fileid
+                              INNER JOIN wmbs_location_pnns ON
+                                wmbs_location_pnns.pnn = wfl.pnn
                               INNER JOIN wmbs_job ON
                                 wmbs_job_assoc.job = wmbs_job.id
                               INNER JOIN wmbs_job_state ON
@@ -63,7 +65,7 @@ class ListThresholdsForCreate(DBFormatter):
                               INNER JOIN wmbs_workflow ON
                                 wmbs_workflow.id = wmbs_subscription.workflow
                               LEFT OUTER JOIN wmbs_subscription_validation wsv
-                                ON wsv.location_id = wmbs_file_location.location
+                                ON wsv.location_id = wmbs_location_pnns.location
                                 AND wsv.subscription_id = wmbs_jobgroup.subscription
                             WHERE wmbs_job.location IS NULL AND
                                   wmbs_job_state.name != 'killed' AND
@@ -73,11 +75,11 @@ class ListThresholdsForCreate(DBFormatter):
                                     (SELECT wsv2.valid FROM wmbs_subscription_validation wsv2
                                      WHERE wsv2.subscription_id = wmbs_jobgroup.subscription
                                      AND wsv2.valid = 1)))) unassigned_jobs ON
-                            wmbs_location.id = unassigned_jobs.location
-                          INNER JOIN wmbs_location_state wls ON
-                            wls.id = wmbs_location.state
-                            GROUP BY wmbs_location.site_name, wmbs_location.pending_slots,
-                            wmbs_location.cms_name, wls.name, unassigned_jobs.priority"""
+                            wl.id = unassigned_jobs.location
+                         INNER JOIN wmbs_location_state wls ON
+                            wls.id = wl.state
+                            GROUP BY wl.site_name, wl.pending_slots,
+                            wl.cms_name, wls.name, unassigned_jobs.priority"""
 
     def format(self, assignedResults, unassignedResults):
         """

@@ -34,8 +34,10 @@ class ResourceControl(WMConnectionBase):
         """
         _insertSite_
 
-        Insert a site into WMBS.  The site must be inserted before any
-        thresholds can be added.
+        Insert a site into WMBS tables, in the following order:
+         1. first add PSN/site info into wmbs_location
+         2. then add PNNs into wmbs_pnns
+         3. at last, create a mapping of PSN/PNN in wmbs_location_pnns
         """
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
         insertAction.execute(siteName = siteName, pendingSlots = pendingSlots,

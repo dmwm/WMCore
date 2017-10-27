@@ -20,12 +20,11 @@ class SetLocationForWorkQueue(DBFormatter):
     deleteSQL = """DELETE FROM wmbs_file_location
                      WHERE fileid = (SELECT wfd.id FROM wmbs_file_details wfd WHERE wfd.lfn = :lfn)"""
 
-    insertSQL = """INSERT IGNORE INTO wmbs_file_location (fileid, location)
-                     SELECT wmbs_file_details.id, wls.location
-                       FROM wmbs_location_pnns wls, wmbs_file_details
-                       WHERE wls.pnn = :location
-                       AND wmbs_file_details.lfn = :lfn"""
-
+    insertSQL = """INSERT IGNORE INTO wmbs_file_location (fileid, pnn)
+                     SELECT wfd.id, wpnn.id
+                     FROM wmbs_pnns wpnn, wmbs_file_details wfd
+                     WHERE wpnn.pnn = :location
+                     AND wfd.lfn = :lfn"""
 
     def execute(self, lfns, locations, isDBS = True, conn = None, transaction = None):
         """

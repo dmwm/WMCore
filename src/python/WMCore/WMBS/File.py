@@ -205,7 +205,7 @@ class File(WMBSBase, WMFile):
         _loadData_
 
         Load all information about a file.  This currently includes meta data,
-        the run and lumi information, all the locations that where the file
+        the run and lumi information, all the locations where the file
         is stored and any parentage information.  The parentage parameter to
         this method will determine how many generations to load.
         """
@@ -383,7 +383,7 @@ class File(WMBSBase, WMFile):
         # Add new locations if required
         if len(self["newlocations"]) > 0:
             addAction = self.daofactory(classname = "Files.SetLocation")
-            addAction.execute(file = self["id"], location = self["newlocations"],
+            addAction.execute(file = self["id"], pnn = self["newlocations"],
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 

@@ -22,7 +22,8 @@ class GetLocationsForJobs(DBFormatter):
     run at by selecting them from the files.
     """
     sql = """SELECT DISTINCT site_name FROM wmbs_location wl
-          INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
+          INNER JOIN wmbs_location_pnns wlpnn ON wlpnn.location = wl.id
+          INNER JOIN wmbs_file_location wfl ON wfl.pnn = wlpnn.pnn
           INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfl.fileid
           INNER JOIN wmbs_job wj ON wj.id = wja.job
           WHERE wj.jobgroup = :jobgroup"""

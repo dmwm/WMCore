@@ -55,11 +55,14 @@ class ListThresholdsForSubmit(DBFormatter):
                   wmbs_location.id = job_count.location AND
                   wmbs_sub_types.id = job_count.subtype
                ORDER BY wmbs_sub_types.priority DESC"""
+
     seSql = """SELECT wl.site_name AS site_name,
-                      wls.pnn AS pnn
+                      wpnn.pnn AS pnn
                FROM wmbs_location wl
                       INNER JOIN wmbs_location_pnns wls ON
                           wls.location = wl.id
+                      INNER JOIN wmbs_pnns wpnn ON
+                          wpnn.id = wls.pnn
             """
 
 

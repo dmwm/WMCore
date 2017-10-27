@@ -19,7 +19,7 @@ class GetFilesForMerge(DBFormatter):
       Runs in file (file_run)
       Lumi sections in file (file_lumi)
       MIN(ID) of the file's parent (file_parent)
-      Location
+      PNN
 
     A file is deemed mergeable if:
       - The file is in the input fileset for the merging subscription
@@ -34,7 +34,7 @@ class GetFilesForMerge(DBFormatter):
                     wmbs_file_details.first_event AS file_first_event,
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
-                    wls.pnn AS pnn
+                    wmbs_pnns.pnn
              FROM (
                SELECT wmbs_sub_files_available.fileid AS fileid,
                       MIN(wmbs_file_parent.parent) AS parent,
@@ -68,12 +68,12 @@ class GetFilesForMerge(DBFormatter):
                wmbs_file_runlumi_map.fileid = merge_files.fileid
              INNER JOIN wmbs_file_location ON
                wmbs_file_details.id = wmbs_file_location.fileid
-             INNER JOIN wmbs_location_pnns wls ON
-               wmbs_file_location.location = wls.location
+             INNER JOIN wmbs_pnns ON
+               wmbs_file_location.pnn = wmbs_pnns.id
              GROUP BY merge_files.fileid, merge_files.parent,
                       wmbs_file_details.events, wmbs_file_details.filesize,
                       wmbs_file_details.lfn, wmbs_file_details.first_event,
-                      wls.pnn"""
+                      wmbs_pnns.pnn"""
 
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"p_1": subscription}, conn = conn,

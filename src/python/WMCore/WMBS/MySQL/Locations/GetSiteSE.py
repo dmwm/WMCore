@@ -17,9 +17,10 @@ class GetSiteSE(DBFormatter):
     Usually useful only in the submitter
     """
 
-    sql = """SELECT wls.pnn AS pnn FROM wmbs_location_pnns wls
-             INNER JOIN wmbs_location ON wls.location = wmbs_location.id
-             WHERE wmbs_location.ce_name = :site"""
+    sql = """SELECT wpnn.pnn FROM wmbs_location_pnns wlpnn
+               INNER JOIN wmbs_location wl ON wlpnn.location = wl.id
+               INNER JOIN wmbs_pnns wpnn ON wlpnn.pnn = wpnn.id
+             WHERE wl.ce_name = :site"""
 
 
     def execute(self, cesite = None, conn = None, transaction = False):

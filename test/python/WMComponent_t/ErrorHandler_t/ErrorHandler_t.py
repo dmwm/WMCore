@@ -178,12 +178,12 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         testFile0.setLocation('T2_CH_CERN')
 
         testFileA = File(lfn="/this/is/a/lfnA%s" % fileModifier, size=1024, events=10,
-                         first_event=88)
+                         first_event=88, merged=False)
         testFileA.addRun(Run(10, *[12312, 12313]))
         testFileA.setLocation('T2_CH_CERN')
 
         testFileB = File(lfn="/this/is/a/lfnB%s" % fileModifier, size=1024, events=10,
-                         first_event=88)
+                         first_event=88, merged=False)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
         testFileB.setLocation('T2_CH_CERN')
 
@@ -272,8 +272,8 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
                 self.assertEqual(f['parents'], [u'/this/is/a/parent'])
                 self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
                                 "Unknown lumi %s" % f['runs'][0]['lumis'])
-                self.assertTrue(f['merged'], 1)
-                self.assertTrue(f['first_event'], 88)
+                self.assertEqual(f['merged'], 0)
+                self.assertEqual(f['first_event'], 88)
             self.assertEqual(counter, 20)
         return
 

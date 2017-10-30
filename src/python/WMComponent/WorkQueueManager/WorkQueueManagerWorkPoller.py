@@ -13,6 +13,8 @@ from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
+from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
+
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
@@ -56,18 +58,22 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
     def passRetrieveCondition(self):
         """
         _passRetrieveCondition_
-        
         Return true if the component can proceed with fetching work.
         False if the component should skip pulling work this cycle.
-        
+
         For now, it only checks whether the agent is in drain mode or
-        if the condor schedd is overloaded.
+        MAX_JOBS_PER_OWNER is reached or if the condor schedd is overloaded.
         """
-        passCond = True
+
+        passCond = "OK"
+        myThread = threading.currentThread()
         if isDrainMode(self.config):
+            passCond = "No work will be pulled: Agent is in drain"
+        elif availableScheddSlots(myThread.dbi) <= 0:
             passCond = False
+            passCond = "No work will be pulled: schedd slot is maxed: MAX_JOBS_PER_OWNER"
         elif self.condorAPI.isScheddOverloaded():
-            passCond = False
+            passCond = "No work will be pulled: shedd is overloaded"
 
         return passCond
 
@@ -79,13 +85,13 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         try:
-            if self.passRetrieveCondition():
+            cond = self.passRetrieveCondition()
+            if cond == "OK":
                 work = self.queue.pullWork()
                 myThread.logdbClient.delete("LocalWorkQueue_pullWork", "warning", this_thread=True)
             else:
-                msg = "Workqueue didn't pass the retrieve condition: NOT pulling work"
-                self.queue.logger.warning(msg)
-                myThread.logdbClient.post("LocalWorkQueue_pullWork", msg, "warning")
+                self.queue.logger.warning(cond)
+                myThread.logdbClient.post("LocalWorkQueue_pullWork", cond, "warning")
         except IOError as ex:
             self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
                                     (str(ex), traceback.format_exc()))

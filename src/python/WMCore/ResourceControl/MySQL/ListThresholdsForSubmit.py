@@ -18,6 +18,7 @@ class ListThresholdsForSubmit(DBFormatter):
                     wmbs_sub_types.name AS task_type,
                     job_count.job_status,
                     job_count.jobs,
+                    job_count.wf_highest_priority,
                     wmbs_sub_types.priority,
                     wmbs_location_state.name AS state,
                     wmbs_location.plugin AS plugin
@@ -32,6 +33,7 @@ class ListThresholdsForSubmit(DBFormatter):
                  (SELECT wmbs_job.location AS location,
                          wmbs_subscription.subtype AS subtype,
                          COUNT(wmbs_job.id) as jobs,
+                         MAX(wmbs_workflow.priority) as wf_highest_priority,
                          bl_status.name as job_status
                          FROM wmbs_job
                     INNER JOIN wmbs_jobgroup ON
@@ -44,6 +46,8 @@ class ListThresholdsForSubmit(DBFormatter):
                       bl_runjob.wmbs_id = wmbs_job.id
                     INNER JOIN bl_status ON
                       bl_status.id = bl_runjob.sched_status
+                    INNER JOIN wmbs_workflow ON
+                      wmbs_workflow.id = wmbs_subscription.workflow
                   WHERE wmbs_job_state.name = 'executing' AND
                         bl_runjob.status = '1'
                   GROUP BY wmbs_job.location, wmbs_subscription.subtype,
@@ -98,6 +102,7 @@ class ListThresholdsForSubmit(DBFormatter):
                 siteInfo['state']                = result['state']
                 siteInfo['total_pending_slots']  = result['pending_slots']
                 siteInfo['total_running_slots']  = result['running_slots']
+                siteInfo['wf_highest_priority'] = result['wf_highest_priority']
                 siteInfo['total_pending_jobs']   = task_pending_jobs
                 siteInfo['total_running_jobs']   = task_running_jobs
                 siteInfo['thresholds']           = {}

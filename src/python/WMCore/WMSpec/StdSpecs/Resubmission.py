@@ -43,6 +43,8 @@ class ResubmissionWorkloadFactory(StdBase):
             helper.setPriority(arguments["RequestPriority"])
         if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
             helper.setMemory(arguments['Memory'])
+        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
+            helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
         if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
             helper.setTimePerEvent(arguments.get("TimePerEvent"))
 

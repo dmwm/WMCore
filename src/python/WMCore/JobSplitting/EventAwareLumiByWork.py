@@ -76,6 +76,10 @@ class EventAwareLumiByWork(JobFactory):
         self.deterministicPU = kwargs.get('deterministicPileup', False)
         self.perfParameters = kwargs.get('performance', {})
 
+        if avgEventsPerJob <= 0:
+            msg = "events_per_job parameter must be positive. Its value is: %d" % avgEventsPerJob
+            raise RuntimeError(msg)
+
         # Set the lumi mask for the fileset based on ACDC or runs & lumis and/or runWhitelist
         lumiMask = LumiList()
         if self.collectionName:

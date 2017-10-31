@@ -162,6 +162,10 @@ class LumiBased(JobFactory):
         applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
         eventsPerLumiInDataset = 0
 
+        if lumisPerJob <= 0:
+            msg = "lumis_per_job parameter must be positive. Its value is: %d" % lumisPerJob
+            raise RuntimeError(msg)
+
         if self.package == 'WMCore.WMBS':
             self.loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
             if deterministicPileup:

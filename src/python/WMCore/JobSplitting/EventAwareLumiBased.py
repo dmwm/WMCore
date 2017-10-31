@@ -63,6 +63,10 @@ class EventAwareLumiBased(JobFactory):
 
         eventsPerLumiInDataset = 0
 
+        if avgEventsPerJob <= 0:
+            msg = "events_per_job parameter must be positive. Its value is: %d" % avgEventsPerJob
+            raise RuntimeError(msg)
+
         if self.package == 'WMCore.WMBS':
             self.loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
             if deterministicPileup:

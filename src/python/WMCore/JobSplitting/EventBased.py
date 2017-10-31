@@ -37,6 +37,11 @@ class EventBased(JobFactory):
         acdcFileList = []
         deterministicPileup = kwargs.get('deterministicPileup', False)
 
+        if eventsPerJob <= 0 or eventsPerLumi <= 0:
+            msg = "events_per_job and events_per_lumi must be positive. Their values are: "
+            msg += "events_per_job: %d, events_per_lumi: %d" % (eventsPerJob, eventsPerLumi)
+            raise RuntimeError(msg)
+
         if deterministicPileup and self.package == 'WMCore.WMBS':
             getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
             self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)

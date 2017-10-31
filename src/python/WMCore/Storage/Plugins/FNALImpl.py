@@ -74,7 +74,6 @@ class FNALImpl(StageOutImplV2):
 
         # Create and hold onto a srm implementation in case we need it
         self.srmImpl = LCGImpl()
-        self.cpImpl = CPImpl()
 
     def storageMethod(self, PFN):
         """

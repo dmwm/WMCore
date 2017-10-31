@@ -104,7 +104,7 @@ class FileManagerTest(unittest.TestCase):
                            'PNN': None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(**{
-            'command': 'cp',
+            'command': 'test-copy',
             'option': '',
             'phedex-node': 'test-win',
             'lfn-prefix': self.testDir})
@@ -160,7 +160,7 @@ class FileManagerTest(unittest.TestCase):
                            'StageOutCommand': None}
 
         wrapper = StageInMgr(**{
-            'command': 'cp',
+            'command': 'test-copy',
             'option': '',
             'phedex-node': 'test-win',
             'lfn-prefix': self.testDir})
@@ -190,14 +190,14 @@ class FileManagerTest(unittest.TestCase):
                            'StageOutCommand': None}
 
         wrapper = StageInMgr(**{
-            'command': 'cp',
+            'command': 'test-copy',
             'option': '',
             'phedex-node': 'test-win',
             'lfn-prefix': self.testDir})
         retval = wrapper(fileForTransfer)
         print("got the retval %s" % retval)
         wrapper = DeleteMgr(**{
-            'command': 'cp',
+            'command': 'test-copy',
             'option': '',
             'phedex-node': 'test-win',
             'lfn-prefix': self.testDir})

@@ -17,7 +17,7 @@ from WMCore.Storage.StageOutImpl import StageOutImpl
 
 class TestFallbackToOldBackendImpl(StageOutImpl):
     """
-    _CPImpl_
+    _TestFallbackToOldBackendImpl_
 
     Implement interface for plain cp command
 

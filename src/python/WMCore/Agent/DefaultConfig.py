@@ -11,6 +11,8 @@ DEFAULT_AGENT_CONFIG = {
     "IgnoreDisks": ["/lustre/unmerged"],
     # fraction of condor schedd limit, used for job submission
     "CondorJobsFraction": 0.75,
+    # In JobSumitter, submit jobs over the threshold if the priority is higher than current pending/running jobs
+    "CondorOverflowFraction": 0.2,  # default 20% over threshold
     # ExitCodes returned by jobs which doesn't need to be retried
     "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 50660, 50661, 50664, 71102]
 }

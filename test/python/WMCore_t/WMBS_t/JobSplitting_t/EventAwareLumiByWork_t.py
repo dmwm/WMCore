@@ -832,13 +832,15 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(len(jobs), 2)
         self.assertEqual(len(jobs[0]['input_files']), 3)
         self.assertEqual(len(jobs[1]['input_files']), 1)
-        try:
-            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]], 1: [[2, 3]], 2: [[4, 4]]})
-            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[5, 5]]})
-        except AssertionError:
-            # weird order
-            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]], 1: [[2, 2]], 2: [[4, 5]]})
-            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[3, 3]]})
+        # run:lumis job distribution change from time to time
+        runs, lumis = [], []
+        for jobNum in range(2):
+            runs.extend(jobs[jobNum]['mask'].getRunAndLumis().keys())
+            for listLumi in jobs[jobNum]['mask'].getRunAndLumis().values():
+                for l in listLumi:
+                    lumis.extend(range(l[0], l[1] + 1))
+        self.assertItemsEqual(set(runs), [0, 1, 2])
+        self.assertItemsEqual(lumis, [0, 1, 2, 3, 4, 5])
 
         # Test fileset with a single run and splitOnRun=True
         testFileset = Fileset(name="FilesetA")

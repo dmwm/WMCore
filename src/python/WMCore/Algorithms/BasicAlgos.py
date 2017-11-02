@@ -59,22 +59,20 @@ def tail(filename, nLines = 20):
     A version of tail
     Adapted from code on http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
     """
-    # make sure only valid utf8 encoded chars will be passed along
-    f = io.open(filename, 'r', encoding='utf8', errors='ignore')
-
     assert nLines >= 0
     pos, lines = nLines+1, []
-    while len(lines) <= nLines:
-        try:
-            f.seek(-pos, 2)
-        except IOError:
-            f.seek(0)
-            break
-        finally:
-            lines = list(f)
-        pos *= 2
 
-    f.close()
+    # make sure only valid utf8 encoded chars will be passed along
+    with io.open(filename, 'r', encoding='utf8', errors='ignore') as f:
+        while len(lines) <= nLines:
+            try:
+                f.seek(-pos, 2)
+            except IOError:
+                f.seek(0)
+                break
+            finally:
+                lines = list(f)
+            pos *= 2
 
     text = "".join(lines[-nLines:])
 
@@ -99,8 +97,11 @@ def getFileInfo(filename):
 
 def findMagicStr(filename, matchString):
     """
+    _findMagicStr_
+
+    Parse a log file looking for a pattern string
     """
-    with open(filename, 'r') as logfile:
+    with io.open(filename, 'r', encoding='utf8', errors='ignore') as logfile:
         # TODO: can we avoid reading the whole file
         for line in logfile:
             if matchString in line:

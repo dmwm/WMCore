@@ -9,9 +9,10 @@ Python implementations of basic Linux functionality
 import io
 import os
 import stat
+import subprocess
 import time
 import zlib
-import subprocess
+
 
 def calculateChecksums(filename):
     """
@@ -28,13 +29,13 @@ def calculateChecksums(filename):
     to calculate the adler32 checksum.
 
     """
-    adler32Checksum = 1 # adler32 of an empty string
-    cksumProcess = subprocess.Popen("cksum", stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+    adler32Checksum = 1  # adler32 of an empty string
+    cksumProcess = subprocess.Popen("cksum", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     # the lambda basically creates an iterator function with zero
     # arguments that steps through the file in 4096 byte chunks
     with open(filename, 'rb') as f:
-        for chunk in iter((lambda:f.read(4096)),''):
+        for chunk in iter((lambda: f.read(4096)), ''):
             adler32Checksum = zlib.adler32(chunk, adler32Checksum)
             cksumProcess.stdin.write(chunk)
 
@@ -52,29 +53,27 @@ def calculateChecksums(filename):
     return ("%x" % (adler32Checksum & 0xffffffff), "%s" % cksumStdout[0])
 
 
-def tail(filename, nLines = 20):
+def tail(filename, nLines=20):
     """
     _tail_
 
     A version of tail
     Adapted from code on http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
     """
-    # make sure only valid utf8 encoded chars will be passed along
-    f = io.open(filename, 'r', encoding='utf8', errors='ignore')
-
     assert nLines >= 0
-    pos, lines = nLines+1, []
-    while len(lines) <= nLines:
-        try:
-            f.seek(-pos, 2)
-        except IOError:
-            f.seek(0)
-            break
-        finally:
-            lines = list(f)
-        pos *= 2
+    pos, lines = nLines + 1, []
 
-    f.close()
+    # make sure only valid utf8 encoded chars will be passed along
+    with io.open(filename, 'r', encoding='utf8', errors='ignore') as f:
+        while len(lines) <= nLines:
+            try:
+                f.seek(-pos, 2)
+            except IOError:
+                f.seek(0)
+                break
+            finally:
+                lines = list(f)
+            pos *= 2
 
     text = "".join(lines[-nLines:])
 
@@ -92,15 +91,18 @@ def getFileInfo(filename):
 
     fileInfo = {'Name': filename,
                 'Size': filestats[stat.ST_SIZE],
-                'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_MTIME])),
-                'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p",time.localtime(filestats[stat.ST_ATIME]))}
+                'LastModification': time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_MTIME])),
+                'LastAccess': time.strftime("%m/%d/%Y %I:%M:%S %p", time.localtime(filestats[stat.ST_ATIME]))}
     return fileInfo
 
 
 def findMagicStr(filename, matchString):
     """
+    _findMagicStr_
+
+    Parse a log file looking for a pattern string
     """
-    with open(filename, 'r') as logfile:
+    with io.open(filename, 'r', encoding='utf8', errors='ignore') as logfile:
         # TODO: can we avoid reading the whole file
         for line in logfile:
             if matchString in line:

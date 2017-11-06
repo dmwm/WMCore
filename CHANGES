@@ -1,3 +1,60 @@
+1.1.7 to 1.1.8:
+  - Merge pull request #8296 from amaltaro/fix-8159
+  - Merge pull request #8298 from vkuznet/ms-arch-diagram
+  - Fix EventAwareLumiByWork unstable test
+  - Add MicroService architecture diagram
+  - 1.1.8.pre6
+  - Merge pull request #8295 from amaltaro/more-bad-bytes
+  - Merge pull request #8294 from amaltaro/maxrss-acdc
+  - pylint fixes
+  - Drop bytes that cannot be encoded with utf-8
+  - Couple MaxRSS/MaxVSize to Memory updates for Resubmission
+  - 1.1.8.pre5
+  - Merge pull request #8291 from ticoann/update_aux_db
+  - add config to control higher priority workflow
+  - Merge pull request #8286 from amaltaro/multicore-acdc
+  - Merge pull request #8290 from amaltaro/splitting-loop
+  - Merge pull request #8184 from ticoann/add_simplecondor_test
+  - Merge pull request #8287 from amaltaro/cp-plugin
+  - Make sure job splitting parameters are positive
+  - Remove unit tests
+  - Remove cp plugin
+  - Support Multicore changes during Resubmission creation
+  - 1.1.8.pre4
+  - Merge pull request #8277 from amaltaro/couch-based-monitor
+  - Merge pull request #8165 from amaltaro/workerThreads-monitor
+  - Remove CouchDB-based agent monitoring - unused code
+  - 1.1.8.pre3
+  - Merge pull request #8266 from ticoann/fix_dbs_parent
+  - fix dbs parentage
+  - Merge pull request #8274 from amaltaro/nanoaod
+  - Use special merge output module for NANOAOD{SIM} tier
+  - Merge pull request #8272 from ticoann/exit_code_update
+  - Merge pull request #8250 from amaltaro/condor-fraction-flexible
+  - update exitcode explanation
+  - Unit tests and pylint fixes
+  - Push CondorJobsFraction parameter to reqmgrAuxDB
+  - Set a configurable fraction of the condor schedd job limit
+  - 1.1.8.pre2
+  - Merge pull request #8248 from amaltaro/wq-queueDepth
+  - Merge pull request #8261 from amaltaro/make-it-debug
+  - Merge pull request #8255 from amaltaro/mock-condor
+  - Merge pull request #8268 from amaltaro/create-store-results
+  - Script to migrate input dataset and create a StoreResults request
+  - Dont log No available resources in WorkQueue
+  - Mock PyCondorAPI
+  - 1.1.8.pre1
+  - Use half of the resources for pulling work from GQ
+  - Merge pull request #8246 from vkuznet/reqmgr2-ms
+  - Add reqmgr2-ms into setup
+  - Merge pull request #8122 from vkuznet/unified-migration2
+  - Add initial port of unified scripts: utils and transferor (DO NOT MERGE)
+  - Merge pull request #8235 from amaltaro/watchdog-pylint
+  - Pylint fixes on PerformanceMonitor
+  - add simple condor plugin test
+  - Fixed 2 unit tests and pylint fixes
+  - Store each worker thread cycle elapsed time and polling cycle
+
 1.1.7 to 1.1.8.pre6:
   - Merge pull request #8295 from amaltaro/more-bad-bytes
   - Merge pull request #8294 from amaltaro/maxrss-acdc

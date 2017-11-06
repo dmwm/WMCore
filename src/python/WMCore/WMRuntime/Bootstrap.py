@@ -224,6 +224,21 @@ def createInitialReport(job, logLocation):
     report.data.siteName = getattr(siteCfg, 'siteName', 'Unknown')
     report.data.hostName = socket.gethostname()
     report.data.ceName = getSyncCE()
+
+
+    # TODO: need to check what format it returns and what features need to extract.
+    # currently
+    # $MACHINEFEATURES/hs06: HS06 score of the host
+    # $MACHINEFEATURES/total_cpu: number of configured job slots
+    # $JOBFEATURES/hs06_job: HS06 score available to your job
+    # $JOBFEATURES/allocated_cpu: number of allocated slots (=8 in case of a multicore job
+    report.data.machineFeatures = {}
+    report.data.machineFeatures['HS06_SCORE_HOST'] = os.environ.get('MACHINEFEATURES/hs06')
+    report.data.machineFeatures['TOTAL_CPU'] = os.environ.get('MACHINEFEATURES/total_cpu')
+    report.data.jobFeatures = {}
+    report.data.jobFeatures['HS06_SCORE_JOB'] = os.environ.get('JOBFEATURES/hs06_job')
+    report.data.jobFeatures['ALLOCATED_CPU'] = os.environ.get('JOBFEATURES/allocated_cpu')
+
     report.data.completed = False
     report.setTaskName(taskName=job.get('task', 'TaskNotFound'))
 

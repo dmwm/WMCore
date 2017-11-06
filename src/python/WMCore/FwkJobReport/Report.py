@@ -223,6 +223,7 @@ class Report(object):
         Create a JSON version of the Report.
         """
         jsonReport = {}
+        jsonReport["WorkerNodeInfo"] = self.getWorkerNodeInfo()
         jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
         jsonReport["skippedFiles"] = self.getAllSkippedFiles()
@@ -1529,3 +1530,10 @@ class Report(object):
                     delattr(source.files, "file%d" % fileNum)
                 source.files.fileCount = 0
         return
+
+    def getWorkerNodeInfo(self):
+        wnInfo = {"HostName": self.data.hostName,
+                  "MachineFeatures": self.data.machineFeatures,
+                  "JobFeatures": self.data.jobFeatures}
+
+        return wnInfo

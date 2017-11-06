@@ -12,11 +12,13 @@ class GetSiteInfo(DBFormatter):
     Grab all the relevant information for a given site.
     Usually useful only in the submitter
     """
-    sql = """SELECT site_name, wls.pnn AS pnn, ce_name, pending_slots, running_slots,
-                    plugin, cms_name, wlst.name AS state FROM wmbs_location
-               INNER JOIN wmbs_location_pnns wls ON wls.location = wmbs_location.id
-               INNER JOIN wmbs_location_state wlst ON wlst.id = wmbs_location.state
-               WHERE wmbs_location.site_name = :site"""
+    sql = """SELECT wl.site_name, wpnn.pnn, wl.ce_name, wl.pending_slots,
+                    wl.running_slots, wl.plugin, wl.cms_name, wlst.name AS state
+               FROM wmbs_location wl
+                 INNER JOIN wmbs_location_pnns wls ON wls.location = wl.id
+                 INNER JOIN wmbs_pnns wpnn ON wpnn.id = wls.pnn
+                 INNER JOIN wmbs_location_state wlst ON wlst.id = wl.state
+               WHERE wl.site_name = :site"""
 
 
     def execute(self, siteName = None, conn = None, transaction = False):

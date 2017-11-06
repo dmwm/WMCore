@@ -17,10 +17,14 @@ class New(NewLocationMySQL):
              WHERE NOT EXISTS (SELECT site_name FROM wmbs_location
                                WHERE site_name = :location)"""
 
-    seSQL = """INSERT INTO wmbs_location_pnns (location, pnn)
-                 SELECT wl.id, :pnn FROM wmbs_location wl
-                 WHERE wl.site_name = :location
-                 AND NOT EXISTS (SELECT null FROM wmbs_location_pnns wls2 WHERE
-                                  wls2.pnn = :pnn
-                                  AND wls2.location = wl.id)
-                 """
+    pnnSQL = """INSERT INTO wmbs_pnns (id, pnn)
+                  SELECT wmbs_pnns_SEQ.nextval, :pnn
+                  FROM DUAL WHERE NOT EXISTS
+                (SELECT pnn FROM wmbs_pnns where pnn = :pnn)"""
+
+    mapSQL = """INSERT INTO wmbs_location_pnns (location, pnn)
+                  SELECT wl.id, wpnn.id FROM wmbs_location wl, wmbs_pnns wpnn
+                  WHERE wl.site_name = :location AND wpnn.pnn = :pnn
+                FROM DUAL WHERE NOT EXISTS
+                (SELECT wl.site_name, wpnn.pnn FROM wmbs_location wl, wmbs_pnns wpnn
+                WHERE wl.site_name = :location AND wpnn.pnn = :pnn)"""

@@ -18,7 +18,7 @@ class GetFilesForParentlessMerge(DBFormatter):
       First event in file (file_first_event)
       Runs in file (file_run)
       Lumi sections in file (file_lumi)
-      Location
+      PNN
     """
 
     sql = """SELECT wmbs_file_details.id AS file_id,
@@ -28,7 +28,7 @@ class GetFilesForParentlessMerge(DBFormatter):
                     wmbs_file_details.first_event AS file_first_event,
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
-                    wmbs_file_location.location AS pnn,
+                    wmbs_pnns.pnn,
                     wmbs_fileset_files.insert_time AS insert_time,
                     wmbs_workflow.injected AS injected
              FROM wmbs_sub_files_available
@@ -38,6 +38,8 @@ class GetFilesForParentlessMerge(DBFormatter):
                  wmbs_file_details.id = wmbs_file_runlumi_map.fileid
                INNER JOIN wmbs_file_location ON
                  wmbs_file_details.id = wmbs_file_location.fileid
+               INNER JOIN wmbs_pnns ON
+                 wmbs_file_location.pnn = wmbs_pnns.id
                INNER JOIN wmbs_subscription ON
                  wmbs_subscription.id = wmbs_sub_files_available.subscription
                INNER JOIN wmbs_fileset_files ON
@@ -51,7 +53,7 @@ class GetFilesForParentlessMerge(DBFormatter):
                       wmbs_file_details.filesize,
                       wmbs_file_details.lfn,
                       wmbs_file_details.first_event,
-                      wmbs_file_location.location,
+                      wmbs_pnns.pnn,
                       wmbs_fileset_files.insert_time,
                       wmbs_workflow.injected
              """

@@ -803,7 +803,7 @@ class AccountantWorker(WMConnectionBase):
                 if self.pnn_to_psn.get(outpnn, None):
                     fileLocations.append({'lfn': lfn, 'location': outpnn})
                 else:
-                    msg = "PNN doesn't exist in wmbs_location_pnns table: %s (investigate)" % outpnn
+                    msg = "PNN doesn't exist in wmbs_pnns table: %s (investigate)" % outpnn
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
 

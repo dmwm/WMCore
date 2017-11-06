@@ -17,8 +17,9 @@ class GetPNNtoPSNMapping(DBFormatter):
     processing site names.
     """
 
-    sql = """SELECT wls.pnn AS pnn, wl.site_name AS psn FROM wmbs_location_pnns wls
-             INNER JOIN wmbs_location wl ON wls.location = wl.id"""
+    sql = """SELECT wpnn.pnn AS pnn, wl.site_name AS psn FROM wmbs_location_pnns wlpnn
+             INNER JOIN wmbs_location wl ON wlpnn.location = wl.id
+             INNER JOIN wmbs_pnns wpnn ON wlpnn.pnn = wpnn.id"""
 
 
     def execute(self, conn = None, transaction = False):

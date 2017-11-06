@@ -11,8 +11,9 @@ MySQL implementation of File.GetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocation(DBFormatter):
-    sql = """SELECT DISTINCT wfl.location AS pnn FROM wmbs_file_location wfl
+    sql = """SELECT DISTINCT wpnn.pnn AS pnn FROM wmbs_file_location wfl
                INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
+               INNER JOIN wmbs_pnns wpnn ON wfl.pnn = wpnn.id
                WHERE wfd.lfn = :lfn"""
 
     def getBinds(self, file=None):

@@ -419,6 +419,7 @@ def createArchiverDoc(job, version=None):
     # append meta data in fwjr
     newfwjr['meta_data'] = {'agent_ver': version,
                          'host': socket.gethostname().lower(),
+                         'wn_info': fwjr["WorkerNodeInfo"],
                          'fwjr_id': job_id,
                          'jobtype': jobtype,
                          'jobstate': jobstate,

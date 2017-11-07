@@ -95,7 +95,7 @@ WMStats.namespace('JobDetailList');
                     htmlstr += "<ul>";
                     htmlstr += "<li><b>" + jobDoc.errors[errorType][i].type +" (Exit Code: " + jobDoc.errors[errorType][i].exitCode + ")</b></li>";
                     htmlstr += "<ul>";
-                    htmlstr += "<li><pre>" + jobDoc.errors[errorType][i].details +"</pre></li>";
+                    htmlstr += "<li><pre>" + WMStats.Utils.escapeHtml(jobDoc.errors[errorType][i].details) +"</pre></li>";
                     htmlstr += "</ul>";
                     htmlstr += "</ul>";
                 }

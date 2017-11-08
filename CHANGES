@@ -1,3 +1,19 @@
+1.1.8 to 1.1.9.pre1:
+  - Merge pull request #8299 from ticoann/add_core_info
+  - Merge pull request #8247 from ticoann/wmstats_site_fix
+  - Merge pull request #8307 from amaltaro/wmstats-cleanuptask
+  - add unittest
+  - fix site report in wmstats
+  - Merge pull request #8302 from amaltaro/wmbs-daos-unused
+  - Handle workflows with None data
+  - Unit test and pylint fixes
+  - Removed unused WMBS DAOs
+  - Merge pull request #8303 from ticoann/escape_html
+  - Merge pull request #8282 from ticoann/add_diagnosis_parenge
+  - escape html in error detail
+  - add diagnosis for parentage
+  - add number of core info in performance error message
+
 1.1.7 to 1.1.8:
   - Merge pull request #8296 from amaltaro/fix-8159
   - Merge pull request #8298 from vkuznet/ms-arch-diagram

@@ -6,12 +6,14 @@ A set of regular expressions  and other tests that we can use to validate input
 to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
-
+from __future__ import print_function, division
+import io
 import re
 import string
 import urlparse
+import mmap
 
-from WMCore.WMException import WMException
+from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
 # restriction enforced by DBS. for different types blocks.
 # It could have a strict restriction
@@ -43,6 +45,16 @@ userProcDSParts = {
 }
 
 STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
+
+# condor log filtering lexicons
+WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_REGEXP = re.compile(r"%s" % WMEXCEPTION_FILTER, re.DOTALL)
+
+CONDOR_LOG_REASON_FILTER = '<a n="Reason"><s>(?P<Reason>(?!</s></a>).*?)</s></a>'
+CONDOR_LOG_SITE_FILTER = '<a n="MachineAttrGLIDEIN_CMSSite0"><s>(?P<Site>(?!</s></a>).*?)</s></a>'
+
+CONDOR_LOG_FILTER_REGEXP = re.compile(r"%s|%s" % (CONDOR_LOG_REASON_FILTER, CONDOR_LOG_SITE_FILTER),
+                                      re.DOTALL)
 
 
 def DBSUser(candidate):
@@ -656,3 +668,24 @@ def activity(candidate):
     if candidate in dashboardActivities:
         return True
     raise AssertionError("Invalid dashboard activity: %s should 'test'" % candidate)
+
+
+def getStringsBetween(start, end, source):
+    """
+    get the string between start string and end string for given source string
+    source string is one line string (no new line charactor in it)
+    """
+    regex = r"\%s(.*?)\%s" % (start, end)
+    result = re.match(regex, source)
+    if result:
+        return result.group(1).strip()
+    else:
+        return None
+
+
+def getIterMatchObjectOnRegexp(filePath, regexp):
+    with io.open(filePath, 'r', encoding='utf8', errors='ignore') as f:
+        mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+        for m in re.finditer(regexp, mm):
+            yield m
+        mm.close()

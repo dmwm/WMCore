@@ -702,9 +702,9 @@ class FileTest(unittest.TestCase):
 
         return
 
-    def testGetBulkLocations(self):
+    def testGetLocationBulk(self):
         """
-        _testGetBulkLocations_
+        _testGetLocationBulk_
 
         Checks to see whether the code that we have will enable us to get the locations
         of all files at once
@@ -744,9 +744,11 @@ class FileTest(unittest.TestCase):
         testFileF.create()
 
         files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
+        # get the file ids only
+        ids = [f['id'] for f in files]
 
-        locationFac = daoFactory(classname="Files.GetBulkLocation")
-        location = locationFac.execute(files=files)
+        locationFac = daoFactory(classname="Files.GetLocationBulk")
+        location = locationFac.execute(files=ids)
 
         for f in files:
             self.assertEqual(location[f.exists()], list(f['locations']))

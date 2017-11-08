@@ -906,89 +906,6 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
-    def testSubscriptionCompleteStatusByRun(self):
-        """
-        _testSubscriptionCompleteStatusByRun_
-
-        test status for a given subscription and given run
-        testFileA, testFileB is in run 1
-        testFileC is in run 2
-        """
-        (testSubscription, dummyTestFileset, dummyTestWorkflow,
-         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
-        testSubscription.create()
-
-        files = testSubscription.filesOfStatusByRun("Available", 1)
-        self.assertEqual(len(files), 2, "2 files should be available for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Available", 2)
-        self.assertEqual(len(files), 1, "1 file should be available for run 2")
-        self.assertEqual(files[0], testFileC, "That file shoulb be testFileC")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 1)
-        self.assertEqual(len(files), 0, "No files shouldn't be completed for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 2)
-        self.assertEqual(len(files), 0, "No files shouldn't be completed for run 2")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 1)
-        self.assertEqual(len(files), 0, "No files shouldn't be failed for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 2)
-        self.assertEqual(len(files), 0, "No files shouldn't be failed for run 2")
-
-        self.assertFalse(testSubscription.isCompleteOnRun(1), "Run 1 shouldn't be completed.")
-
-        self.assertFalse(testSubscription.isCompleteOnRun(2), "Run 2 shouldn't be completed.")
-
-        testSubscription.completeFiles([testFileA, testFileB])
-
-        files = testSubscription.filesOfStatusByRun("Available", 1)
-        self.assertEqual(len(files), 0, "0 files should be available for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Available", 2)
-        self.assertEqual(len(files), 1, "1 file should be available for run 2")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 1)
-        self.assertEqual(len(files), 2, "2 files should completed for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 2)
-        self.assertEqual(len(files), 0, "No files shouldn't be completed for run 2")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 1)
-        self.assertEqual(len(files), 0, "No files shouldn't be failed for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 2)
-        self.assertEqual(len(files), 0, "No files shouldn't be failed for run 2")
-
-        self.assertTrue(testSubscription.isCompleteOnRun(1), "Run 1 should be completed.")
-
-        self.assertFalse(testSubscription.isCompleteOnRun(2), "Run 2 shouldn't be completed.")
-
-        testSubscription.failFiles([testFileA, testFileC])
-
-        files = testSubscription.filesOfStatusByRun("Available", 1)
-        self.assertEqual(len(files), 0, "0 files should be available for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Available", 2)
-        self.assertEqual(len(files), 0, "0 file should be available for run 2")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 1)
-        self.assertEqual(len(files), 1, "1 file should be completed for run 1")
-        self.assertEqual(files[0], testFileB, "That file shoulb be testFileB")
-
-        files = testSubscription.filesOfStatusByRun("Completed", 2)
-        self.assertEqual(len(files), 0, "No files shouldn't be completed for run 2")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 1)
-        self.assertEqual(len(files), 1, "1 file should be failed for run 1")
-
-        files = testSubscription.filesOfStatusByRun("Failed", 2)
-        self.assertEqual(len(files), 1, "1 files should be failed for run 2")
-
-        self.assertTrue(testSubscription.isCompleteOnRun(1), "Run 1 should be completed.")
-        self.assertTrue(testSubscription.isCompleteOnRun(2), "Run 2 should be completed.")
-
     def testGetNumberOfJobsPerSite(self):
         """
         Test for a JobCreator specific function
@@ -1568,40 +1485,21 @@ class SubscriptionTest(unittest.TestCase):
 
         availableFiles = testSubscription.filesOfStatus("Available")
         self.assertEqual(len(availableFiles), 6)
-        availableFiles = testSubscription.filesOfStatus("Available", 0)
-        self.assertEqual(len(availableFiles), 6)
-        availableFiles = testSubscription.filesOfStatus("Available", 3)
-        self.assertEqual(len(availableFiles), 3)
-        availableFiles = testSubscription.filesOfStatus("Available", 7)
-        self.assertEqual(len(availableFiles), 6)
 
         testSubscription.acquireFiles([testFileA, testFileB, testFileC, testFileD])
-        availableFiles = testSubscription.filesOfStatus("Available", 6)
+        availableFiles = testSubscription.filesOfStatus("Available")
         self.assertEqual(len(availableFiles), 2)
 
-        files = testSubscription.filesOfStatus("Acquired", 0)
-        self.assertEqual(len(files), 4)
-        files = testSubscription.filesOfStatus("Acquired", 2)
-        self.assertEqual(len(files), 2)
-        files = testSubscription.filesOfStatus("Acquired", 6)
+        files = testSubscription.filesOfStatus("Acquired")
         self.assertEqual(len(files), 4)
 
         testSubscription.completeFiles([testFileB, testFileC])
 
-        files = testSubscription.filesOfStatus("Completed", 0)
-        self.assertEqual(len(files), 2)
-        files = testSubscription.filesOfStatus("Completed", 1)
-        self.assertEqual(len(files), 1)
-        files = testSubscription.filesOfStatus("Completed", 6)
-        self.assertEqual(len(files), 2)
+        files = testSubscription.filesOfStatus("Completed")
 
         testSubscription.failFiles([testFileA, testFileE])
 
-        files = testSubscription.filesOfStatus("Failed", 0)
-        self.assertEqual(len(files), 2)
-        files = testSubscription.filesOfStatus("Failed", 1)
-        self.assertEqual(len(files), 1)
-        files = testSubscription.filesOfStatus("Failed", 6)
+        files = testSubscription.filesOfStatus("Failed")
         self.assertEqual(len(files), 2)
 
         testSubscription.delete()

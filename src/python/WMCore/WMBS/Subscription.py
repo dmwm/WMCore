@@ -171,7 +171,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return result
 
-    def filesOfStatus(self, status, limit=0, loadChecksums=True, doingJobSplitting=False):
+    def filesOfStatus(self, status, loadChecksums=True, doingJobSplitting=False):
         """
         _filesOfStatus_
 
@@ -182,14 +182,9 @@ class Subscription(WMBSBase, WMSubscription):
 
         status = status.title()
         files = set()
-        if limit > 0:
-            action = self.daofactory(classname="Subscriptions.Get%sFilesByLimit" % status)
-            fileList = action.execute(self["id"], limit, conn=self.getDBConn(),
-                                      transaction=self.existingTransaction())
-        else:
-            action = self.daofactory(classname="Subscriptions.Get%sFiles" % status)
-            fileList = action.execute(self["id"], conn=self.getDBConn(),
-                                      transaction=self.existingTransaction())
+        action = self.daofactory(classname="Subscriptions.Get%sFiles" % status)
+        fileList = action.execute(self["id"], conn=self.getDBConn(),
+                                  transaction=self.existingTransaction())
 
         if doingJobSplitting:
             fileInfoAct = self.daofactory(classname="Files.GetForJobSplittingByID")
@@ -321,26 +316,6 @@ class Subscription(WMBSBase, WMSubscription):
             return True
         else:
             return False
-
-    def filesOfStatusByRun(self, status, runID):
-        """
-        _filesOfStatusByRun_
-
-        Return all the files in the given subscription and the given run which
-        have the given status.
-        """
-        existingTransaction = self.beginTransaction()
-
-        files = []
-        action = self.daofactory(classname="Subscriptions.Get%sFilesByRun" % status)
-        for f in action.execute(self["id"], runID, conn=self.getDBConn(),
-                                transaction=self.existingTransaction()):
-            fl = File(id=f["file"])
-            fl.load()
-            files.append(fl)
-
-        self.commitTransaction(existingTransaction)
-        return files
 
     def getNumberOfJobsPerSite(self, location, state):
         """

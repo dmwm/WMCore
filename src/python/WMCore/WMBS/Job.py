@@ -222,20 +222,6 @@ class Job(WMBSBase, WMJob):
         self.commitTransaction(existingTransaction)
         return WMJob.getFiles(self, type)
 
-    def getFileLocations(self):
-        """
-        _getFileLocations_
-
-        Assuming that all files have the same locations, this grabs the locations that the
-        files are at.
-        """
-
-        locAction = self.daofactory(classname="Jobs.LoadFileLocations")
-        locations = locAction.execute(self["id"], conn=self.getDBConn(),
-                                      transaction=self.existingTransaction())
-
-        return locations
-
     def getWorkflow(self):
         """
         _getWorkflow_

@@ -621,9 +621,9 @@ class WMBSWorkUnitTest(unittest.TestCase):
         #
         #     return
         #
-        # def testGetBulkLocations(self):
+        # def testGetLocationBulk(self):
         #     """
-        #     _testGetBulkLocations_
+        #     _testGetLocationBulk_
         #
         #     Checks to see whether the code that we have will enable us to get the locations
         #     of all files at once
@@ -664,7 +664,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         #
         #     files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
         #
-        #     locationFac = daoFactory(classname="Files.GetBulkLocation")
+        #     locationFac = daoFactory(classname="Files.GetLocationBulk")
         #     location = locationFac.execute(files=files)
         #
         #     for f in files:

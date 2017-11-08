@@ -101,6 +101,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.maxVSize = args.get('maxVSize', None)
         self.softTimeout = args.get('softTimeout', None)
         self.hardTimeout = args.get('hardTimeout', None)
+        self.numOfCores = args.get('cores', None)
 
         self.logPath = os.path.join(logPath)
 
@@ -210,6 +211,8 @@ class PerformanceMonitor(WMRuntimeMonitor):
                      output[4], output[5])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
+        msg += 'Number of Cores: %s\n' % self.numberOfCores
+
         if self.maxRSS is not None and rss >= self.maxRSS:
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
             msg += "Job has RSS: %s\n" % rss

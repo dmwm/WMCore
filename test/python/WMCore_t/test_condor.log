@@ -15499,7 +15499,22 @@ Short exit status: 151
 ======== Finished condor_chirp -ing the exit code of the job. Exit code of condor_chirp: 0 ========
 Job Running time in seconds:  312
 Job runtime is less than 20minutes. Sleeping  1
+//== Test for condor error ==//
+INFO:root:Executing CMSSW. args: ['/bin/bash', '/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMTaskSpace/cmsRun1/cmsRun1-main.sh', '', 'slc6_amd64_gcc481', 'scramv1', 'CMSSW', 'CMSSW_7_1_25_patch3', 'FrameworkJobReport.xml', 'cmsRun', 'PSet.py', '', '', '']
+INFO:root:Retrieved following performance figures:
+INFO:root:RSS: 690400;  VSize: 1259272; PCPU: 58.4; PMEM: 0.5
+ERROR:root:Error in periodicUpdate for monitor class WMCore.WMRuntime.Monitors.PerformanceMonitor.PerformanceMonitor in Watchdog:
+PerformanceMonitor instance has no attribute 'numberOfCores'Traceback (most recent call last):
+  File "/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMCore.zip/WMCore/WMRuntime/Watchdog.py", line 307, in run
+    monitor.periodicUpdate()
+  File "/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMCore.zip/WMCore/WMRuntime/Monitors/PerformanceMonitor.py", line 214, in periodicUpdate
+    msg += 'Number of Cores: %s\n' % self.numberOfCores
+AttributeError: PerformanceMonitor instance has no attribute 'numberOfCores'
+This is a CRITICAL error because this kills the monitoring.
+Terminate thread and retry.
 
+/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/condor_exec.exe: line 172: 1016411 Aborted                 (core dumped) $pythonCommand Startup.py
+cp: cannot stat `WMTaskSpace/Report*.pkl': No such file or directory
 //== Test for condor log ==//
 450 <c>
 451     <a n="Proc"><i>2</i></a>

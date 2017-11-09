@@ -23,7 +23,7 @@ def timeFunction(func):
         t1 = time.time()
         res = func(*arg, **kw)
         t2 = time.time()
-        return (t2 - t1), res, func.__name__
+        return round((t2 - t1), 4), res, func.__name__
 
     return wrapper
 

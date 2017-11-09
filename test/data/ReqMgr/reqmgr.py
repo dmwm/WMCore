@@ -38,7 +38,7 @@ import sys
 from httplib import HTTPSConnection, HTTPConnection
 import urllib
 import logging
-from optparse import OptionParser, TitledHelpFormatter
+from argparse import ArgumentParser
 import json
 import copy
 
@@ -704,12 +704,11 @@ def processCmdLine(args):
         print("\n\n%s" % msg)
         sys.exit(1)
 
-    form = TitledHelpFormatter(width=78)
-    parser = OptionParser(usage="usage: %prog options", formatter=form, add_help_option=None)
+    parser = ArgumentParser(usage="usage: %prog options", add_help=False)
     actions = defineCmdLineOptions(parser)
     # opts - new processed options
     # args - remainder of the input array
-    opts, args = parser.parse_args(args=args)
+    opts = parser.parse_args(args=args)
     # check command line arguments validity
     if not opts.reqMgrUrl:
         errExit("Missing mandatory --reqMgrUrl.", parser)
@@ -747,45 +746,45 @@ def defineCmdLineOptions(parser):
     actions = []
     # "-h" ------------------------------------------------------------------
     help = "Display this help"
-    parser.add_option("-h", "--help", help=help, action='help')
+    parser.add_argument("-h", "--help", help=help, action='help')
     # "-c" ------------------------------------------------------------------
     help = ("User cert file (or cert proxy file). "
             "If not defined, tries X509_USER_CERT then X509_USER_PROXY env. "
             "variables. And lastly /tmp/x509up_uUID.")
-    parser.add_option("-c", "--cert", help=help)
+    parser.add_argument("-c", "--cert", help=help)
     # "-k" ------------------------------------------------------------------
     help = ("User key file (or cert proxy file). "
             "If not defined, tries X509_USER_KEY then X509_USER_PROXY env. "
             "variables. And lastly /tmp/x509up_uUID.")
-    parser.add_option("-k", "--key", help=help)
+    parser.add_argument("-k", "--key", help=help)
     # -u --------------------------------------------------------------------
     help = ("Request Manager service address (if not options is supplied, "
             "returns a list of the requests in ReqMgr) "
             "e.g.: https://maxareqmgr01.cern.ch")
-    parser.add_option("-u", "--reqMgrUrl", help=help)
+    parser.add_argument("-u", "--reqMgrUrl", help=help)
     # -f --------------------------------------------------------------------
     help = "Request create and/or assign arguments config file."
-    parser.add_option("-f", "--configFile", help=help)
+    parser.add_argument("-f", "--configFile", help=help)
     # -j --------------------------------------------------------------------
     help = ("JSON string to override values from --configFile. "
             "e.g. --json=\'{\"createRequest\": {\"Requestor\": \"efajardo\"}, "
             "\"assignRequest\": {\"FirstLumi\": 1}}\' "
             "e.g. --json=`\"cat alan.json\"`")
-    parser.add_option("-j", "--json", help=help)
+    parser.add_argument("-j", "--json", help=help)
     # -r --------------------------------------------------------------------
     help = ("Request name or list of comma-separated names to perform "
             "actions upon.")
-    parser.add_option("-r", "--requestNames", help=help)
+    parser.add_argument("-r", "--requestNames", help=help)
     # -q --------------------------------------------------------------------
     help = "Action: Query request(s) specified by --requestNames."
     action = "queryRequests"
     actions.append(action)
-    parser.add_option("-q", "--" + action, action="store_true", help=help)
+    parser.add_argument("-q", "--" + action, action="store_true", help=help)
     # -d --------------------------------------------------------------------
     help = "Action: Delete request(s) specified by --requestNames."
     action = "deleteRequests"
     actions.append(action)
-    parser.add_option("-d", "--" + action, action="store_true", help=help)
+    parser.add_argument("-d", "--" + action, action="store_true", help=help)
     # -i --------------------------------------------------------------------
     help = ("Action: Create and inject a request. Whichever from the config "
             "file defined arguments can be overridden from "
@@ -794,7 +793,7 @@ def defineCmdLineOptions(parser):
             "This request can be 'approved' and 'assigned' if --assignRequests.")
     action = "createRequest"
     actions.append(action)
-    parser.add_option("-i", "--" + action, action="store_true", help=help)
+    parser.add_argument("-i", "--" + action, action="store_true", help=help)
     # TODO
     # once ReqMgr has proper REST API for assign, then implement --setStates
     # taking a list of states to route requests through
@@ -802,7 +801,7 @@ def defineCmdLineOptions(parser):
     help = "Action: Change splitting parameters for tasks in a request."
     action = "changeSplitting"
     actions.append(action)
-    parser.add_option("-p", "--" + action, action="store_true", help=help)
+    parser.add_argument("-p", "--" + action, action="store_true", help=help)
     # -s --------------------------------------------------------------------
     help = ("Action: Approve and assign request(s) specified by --requestNames "
             "or a new request when used with --createRequest. "
@@ -810,19 +809,19 @@ def defineCmdLineOptions(parser):
             "--createRequest")
     action = "assignRequests"
     actions.append(action)
-    parser.add_option("-g", "--" + action, action="store_true", help=help)
+    parser.add_argument("-g", "--" + action, action="store_true", help=help)
     # -l --------------------------------------------------------------------
     help = "Action: Clone request, the request name is mandatory argument."
     action = "cloneRequest"
     actions.append(action)
-    parser.add_option("-l", "--" + action, help=help)
+    parser.add_argument("-l", "--" + action, help=help)
     # -a --------------------------------------------------------------------
     help = ("Action: Perform all operations this script allows. "
             "--configFile and possibly --json must be present for initial "
             "request injection and assignment.")
     action = "allTests"
     actions.append(action)
-    parser.add_option("-a", "--" + action, action="store_true", help=help)
+    parser.add_argument("-a", "--" + action, action="store_true", help=help)
     # -s --------------------------------------------------------------------
     # TODO
     # this will be removed once ReqMgr takes this internal user management
@@ -830,15 +829,15 @@ def defineCmdLineOptions(parser):
     help = "Action: List groups and users registered with ReqMgr instance."
     action = "userGroup"
     actions.append(action)
-    parser.add_option("-s", "--" + action,  action="store_true", help=help)
+    parser.add_argument("-s", "--" + action,  action="store_true", help=help)
     # -t --------------------------------------------------------------------
     help = "Action: List teams registered with a Request Manager instance."
     action = "team"
     actions.append(action)
-    parser.add_option("-t", "--" + action,  action="store_true", help=help)
+    parser.add_argument("-t", "--" + action,  action="store_true", help=help)
     # -v ---------------------------------------------------------------------\
     help = "Verbose console output."
-    parser.add_option("-v", "--verbose",  action="store_true", help=help)
+    parser.add_argument("-v", "--verbose",  action="store_true", help=help)
     return actions
 
 def processRequestArgs(intputConfigFile, commandLineJson):

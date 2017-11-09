@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from optparse import OptionParser
+from argparse import ArgumentParser
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 def updateRequestStatus(couchURL, requestList, status):
@@ -10,13 +10,13 @@ def updateRequestStatus(couchURL, requestList, status):
         print("%s is udated to %s" % (request, status))
 
 if __name__ == "__main__":
-    parser =  OptionParser()
-    parser.add_option("--url", dest = "url",
+    parser =  ArgumentParser()
+    parser.add_argument("--url", dest = "url",
                      help = "type couch db url")
-    parser.add_option("--status", dest = "status",
+    parser.add_argument("--status", dest = "status",
                      help = "type purge or delete url")
-    parser.add_option("--requests", dest = "requests",
+    parser.add_argument("--requests", dest = "requests",
                      help = "type last seq")
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
     if options.url:
         updateRequestStatus(options.url, options.requests, options.status)

@@ -28,7 +28,7 @@ from __future__ import print_function
 
 
 import os
-import optparse
+import argparse
 
 
 # automodule options
@@ -241,17 +241,17 @@ def main():
     """
     Parse and check the command line arguments.
     """
-    parser = optparse.OptionParser(usage="""usage: %prog [options] <package path> [exclude paths, ...]
+    parser = argparse.ArgumentParser(usage="""usage: %prog [options] <package path> [exclude paths, ...]
 
 Note: By default this script will not overwrite already created files.""")
-    parser.add_option("-n", "--doc-header", action="store", dest="header", help="Documentation Header (default=Project)", default="Project")
-    parser.add_option("-d", "--dest-dir", action="store", dest="destdir", help="Output destination directory", default="")
-    parser.add_option("-s", "--suffix", action="store", dest="suffix", help="module suffix (default=txt)", default="txt")
-    parser.add_option("-m", "--maxdepth", action="store", dest="maxdepth", help="Maximum depth of submodules to show in the TOC (default=4)", type="int", default=4)
-    parser.add_option("-r", "--dry-run", action="store_true", dest="dryrun", help="Run the script without creating the files")
-    parser.add_option("-f", "--force", action="store_true", dest="force", help="Overwrite all the files")
-    parser.add_option("-t", "--no-toc", action="store_true", dest="notoc", help="Don't create the table of content file")
-    (opts, args) = parser.parse_args()
+    parser.add_argument("-n", "--doc-header", action="store", dest="header", help="Documentation Header (default=Project)", default="Project")
+    parser.add_argument("-d", "--dest-dir", action="store", dest="destdir", help="Output destination directory", default="")
+    parser.add_argument("-s", "--suffix", action="store", dest="suffix", help="module suffix (default=txt)", default="txt")
+    parser.add_argument("-m", "--maxdepth", action="store", dest="maxdepth", help="Maximum depth of submodules to show in the TOC (default=4)", type="int", default=4)
+    parser.add_argument("-r", "--dry-run", action="store_true", dest="dryrun", help="Run the script without creating the files")
+    parser.add_argument("-f", "--force", action="store_true", dest="force", help="Overwrite all the files")
+    parser.add_argument("-t", "--no-toc", action="store_true", dest="notoc", help="Don't create the table of content file")
+    (opts, args) = parser.parse_known_args()
     if not args:
         parser.error("package path is required.")
     else:

@@ -314,6 +314,10 @@ class SimpleCondorPlugin(BasePlugin):
                                     if errMsg:
                                         logOutput += "\n\n%s\n" % errMsg
 
+                                    errMsg = matchObj.group('ERROR')
+                                    if errMsg:
+                                        logOutput += "\n\n%s\n" % errMsg
+
                     logOutput += '\n\n'
                     condorReport.addError(exitType, exitCode, exitType, logOutput)
                 else:

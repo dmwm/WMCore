@@ -50,8 +50,6 @@ def createOptionParser():
     myOptParser.add_option("-p", "--thresholds", dest = "printThresholds",
                            default = False, action = "store_true",
                            help = "Print out all known thresholds and site information.")
-    myOptParser.add_option("--add-T0", dest = "addT0", default = False, action = "store_true",
-                           help = "Add the CMS Tier-0 site to resource control.")
     myOptParser.add_option("--add-T1s", dest = "addT1s", default = False, action = "store_true",
                            help = "Add all of the CMS T1 sites to resource control.")
     myOptParser.add_option("--add-T2s", dest = "addT2s", default = False, action = "store_true",
@@ -295,16 +293,6 @@ if options.printThresholds:
 else:
     if options.priority:
         updateTaskPriority(myResourceControl, options.taskType, options.priority)
-    elif options.addT0 == True:
-        t0Sites = {'CERN' : ['srm-cms.cern.ch', 'srm-eoscms.cern.ch']}
-        cmsName = 'T0_CH_CERN'
-        ceName = 'CERN'
-        plugin = 'LsfPlugin'
-        runningSlots = -1
-        pendingSlots = 500
-        addSites(myResourceControl, t0Sites, ceName or options.ceName, plugin or options.plugin,
-                 pendingSlots or options.pendingSlots, runningSlots or options.runningSlots, True,
-                 cmsName or options.cmsName)
     elif options.addT1s == True:
         t1Sites = getCMSSiteInfo("T1*")
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,

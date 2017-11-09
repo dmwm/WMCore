@@ -211,7 +211,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
                      output[4], output[5])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
-        msg += 'Number of Cores: %s\n' % self.numberOfCores
+        msg += 'Number of Cores: %s\n' % self.numOfCores
 
         if self.maxRSS is not None and rss >= self.maxRSS:
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS

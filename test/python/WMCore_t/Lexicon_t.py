@@ -846,13 +846,17 @@ class LexiconTest(unittest.TestCase):
 
     def testGetIterMatchObjectOnRegex(self):
         count = 0
+        ecount = 0
         logPath = os.path.join(getTestBase(), "WMCore_t/test_condor.log")
         for mo in getIterMatchObjectOnRegexp(logPath, WMEXCEPTION_REGEXP):
             errMsg = mo.group("WMException")
             if errMsg:
                 count += 1
-
+            error = mo.group("ERROR")
+            if error:
+                ecount += 1
         self.assertEqual(count, 4)
+        self.assertEqual(ecount, 1)
 
         rcount = 0
         scount = 0

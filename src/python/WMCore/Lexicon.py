@@ -47,7 +47,7 @@ userProcDSParts = {
 STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
 
 # condor log filtering lexicons
-WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
 WMEXCEPTION_REGEXP = re.compile(r"%s" % WMEXCEPTION_FILTER, re.DOTALL)
 
 CONDOR_LOG_REASON_FILTER = '<a n="Reason"><s>(?P<Reason>(?!</s></a>).*?)</s></a>'

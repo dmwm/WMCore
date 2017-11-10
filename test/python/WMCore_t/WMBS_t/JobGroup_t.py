@@ -473,7 +473,7 @@ class JobGroupTest(unittest.TestCase):
 
         return
 
-    def notestTwoJobGroups(self):
+    def testTwoJobGroups(self):
         """
         Test two job groups with a shared fileset. (Minimal part of testGetLocations which was failing)
         """

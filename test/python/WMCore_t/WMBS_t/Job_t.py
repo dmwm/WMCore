@@ -51,15 +51,15 @@ class JobTest(JobTestBase):
         testFileB.create()
 
         testJob = Job(name="TestJob", files=[testFileA, testFileB])
-        # testWU = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=Run(1, *[44]))
+        testWU = WorkUnit(taskID=testWorkflow.id, fileid=testFileA['id'], runLumi=Run(1, *[44]))
 
         self.assertFalse(testJob.exists(), "Job exists before it was created")
-        # self.assertFalse(testWU.exists(), "WorkUnit exists before it was created")
+        self.assertFalse(testWU.exists(), "WorkUnit exists before it was created")
 
         testJob.create(group=testJobGroup)
 
         self.assertTrue(testJob.exists(), "Job does not exist after it was created")
-        # self.assertFalse(testWU.exists(), "WorkUnit exists when there is no work")
+        self.assertFalse(testWU.exists(), "WorkUnit exists when there is no work")
 
         # Test the getWorkflow method
         workflow = testJob.getWorkflow()
@@ -69,7 +69,7 @@ class JobTest(JobTestBase):
         testJob.delete()
 
         self.assertFalse(testJob.exists(), "Job exists after it was deleted")
-        # self.assertFalse(testWU.exists(), "WorkUnit exists after job is deleted")
+        self.assertFalse(testWU.exists(), "WorkUnit exists after job is deleted")
 
         return
 

@@ -207,6 +207,13 @@ for step in prep sw post; do
 done
 set +e
 
+# XXX: update the PR number below, if needed :-)
+echo -e "\n*** Applying database schema patches ***"
+cd $CURRENT
+#  wget -nv https://github.com/dmwm/WMCore/pull/8315.patch -O - | patch -d apps/wmagent/bin -p 2
+cd -
+echo "Done!" && echo
+
 echo -e "\n*** Activating the agent ***"
 cd $MANAGE
 ./manage activate-agent

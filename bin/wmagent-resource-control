@@ -313,6 +313,9 @@ else:
                  options.pendingSlots, options.runningSlots, state=options.state)
     elif options.addAllSites:
         allSites = getCMSSiteInfo("*")
+        # FIXME temporary fix while #8280 doesn't get merged
+        allSites.pop('T3_UK_London_QMUL', None)
+        allSites.pop('T3_UK_ScotGrid_GLA', None)
         addSites(myResourceControl, allSites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
     elif options.addOneSite:

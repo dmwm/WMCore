@@ -59,7 +59,7 @@ class CreateAgentBase(DBCreator):
              pid           INTEGER,
              poll_interval INTEGER      NOT NULL,
              last_error    INTEGER,
-             cycle_time    DECIMAL(6,4) DEFAULT 0 NOT NULL,
+             cycle_time    DECIMAL(9,4) DEFAULT 0 NOT NULL,
              outcome       VARCHAR(1000),
              error_message VARCHAR(1000),
              UNIQUE (component_id, name))"""

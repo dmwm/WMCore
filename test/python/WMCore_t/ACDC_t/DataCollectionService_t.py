@@ -163,7 +163,7 @@ class DataCollectionService_t(unittest.TestCase):
                         break
 
                 self.assertIsNotNone(foundFile, "Error: Missing chunk file: %s, %s" % (chunkFiles, goldenChunkFiles))
-                self.assertEqual(foundFile["parents"], chunkFile["parents"], "Error: File parents should match.")
+                self.assertEqual(set(foundFile["parents"]), chunkFile["parents"], "Error: File parents should match.")
                 self.assertEqual(foundFile["merged"], chunkFile["merged"], "Error: File merged status should match.")
                 self.assertEqual(foundFile["locations"], chunkFile["locations"], "Error: File locations should match.")
                 self.assertEqual(foundFile["events"], chunkFile["events"])
@@ -276,7 +276,7 @@ class DataCollectionService_t(unittest.TestCase):
 
         return
 
-    def notestMergeFakeFiles(self):
+    def testMergeFakeFiles(self):
         """
         _testMergeFakeFiles_
 

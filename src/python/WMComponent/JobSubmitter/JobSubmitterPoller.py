@@ -7,7 +7,7 @@ _JobSubmitterPoller_t_
 
 Submit jobs for execution.
 """
-
+from __future__ import print_function, division
 import logging
 import threading
 import os.path
@@ -30,8 +30,18 @@ from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.Services.PyCondor.PyCondorAPI import getScheddParamValue
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
+
+from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
+
+
+def jobSubmitCondition(jobStats):
+
+    for jobInfo in jobStats:
+        if jobInfo["Current"] >= jobInfo["Threshold"]:
+            return jobInfo["Condition"]
+
+    return "JobSubmitReady"
 
 
 class JobSubmitterPollerException(WMException):
@@ -73,7 +83,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.packageSize = getattr(self.config.JobSubmitter, 'packageSize', 500)
         self.collSize = getattr(self.config.JobSubmitter, 'collectionSize', self.packageSize * 1000)
         self.maxTaskPriority = getattr(self.config.BossAir, 'maxTaskPriority', 1e7)
-        self.condorFraction = None  # update during every algorithm cycle
+        self.condorFraction = 0.75  # update during every algorithm cycle
+        self.condorOverflowFraction = 0.2
 
         # Additions for caching-based JobSubmitter
         self.cachedJobIDs = set()
@@ -102,9 +113,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.debug("Config: %s", config)
             raise JobSubmitterPollerException(msg)
 
-
         # Now the DAOs
-        self.countWMBSJobsByState = self.daoFactory(classname="Jobs.GetCountByState")
         self.listJobsAction = self.daoFactory(classname="Jobs.ListForSubmitter")
         self.setLocationAction = self.daoFactory(classname="Jobs.SetLocation")
         self.locationAction = self.daoFactory(classname="Locations.GetSiteInfo")
@@ -513,6 +522,69 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+    def _getJobSubmitCondition(self, jobPrio, siteName, jobType):
+        """
+        returns the string describing whether a job is ready to be submitted or the reason can't be submitted
+        Only jobs with "JobSubmitReady" return value will be added to submit job.
+        Other return values will indicate the reason jobs cannot be submitted.
+        i.e. "NoPendingSlot"  - pending slot is full with pending job
+        """
+        try:
+            totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
+            totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
+            totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
+            totalRunningJobs = self.currentRcThresholds[siteName]["total_running_jobs"]
+            highestPriorityInJobs = self.currentRcThresholds[siteName]['wf_highest_priority']
+
+            taskPendingSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["pending_slots"]
+            taskPendingJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"]
+            taskRunningSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["max_slots"]
+            taskRunningJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_running_jobs"]
+
+            # set the initial totalPendingJobs since it increases in every cycle when a job is submitted
+            self.currentRcThresholds[siteName].setdefault("init_total_pending_jobs", totalPendingJobs)
+
+            # set the initial taskPendingJobs since it increases in every cycle when a job is submitted
+            self.currentRcThresholds[siteName]['thresholds'][jobType].setdefault("init_task_pending_jobs", taskPendingJobs)
+
+            initTotalPending = self.currentRcThresholds[siteName]["init_total_pending_jobs"]
+            initTaskPending = self.currentRcThresholds[siteName]['thresholds'][jobType]["init_task_pending_jobs"]
+
+        except KeyError as ex:
+            msg = "Invalid key for site %s and job type %s\n" % (siteName, jobType)
+            logging.exception(msg)
+            return "NoJobType_%s_%s" % (siteName, jobType)
+
+        if highestPriorityInJobs is None or jobPrio <= highestPriorityInJobs:
+            # there is no pending or running jobs in the system (None case) or
+            # priority of the job is lower or equal don't allow overflow
+            totalPendingThreshold = totalPendingSlots
+            taskPendingThreshold = taskPendingSlots
+            totalJobThreshold = totalPendingSlots + totalRunningSlots
+            totalTaskTheshold = taskPendingSlots + taskRunningSlots
+        else:
+            # In case the priority of the job is higher than any of currently pending or running jobs.
+            # Then increase the threshold by condorOverflowFraction * original pending slot.
+            totalPendingThreshold = max(totalPendingSlots, initTotalPending) + (
+                                    totalPendingSlots * self.condorOverflowFraction)
+            taskPendingThreshold = max(taskPendingSlots, initTaskPending) + (
+                                    taskPendingSlots * self.condorOverflowFraction)
+            totalJobThreshold = totalPendingThreshold + totalRunningSlots
+            totalTaskTheshold = taskPendingThreshold + taskRunningSlots
+
+        jobStats = [{"Condition": "NoPendingSlot",
+                     "Current": totalPendingJobs,
+                     "Threshold": totalPendingThreshold},
+                    {"Condition": "NoTaskPendingSlot",
+                     "Current": taskPendingJobs,
+                     "Threshold": taskPendingThreshold},
+                    {"Condition": "NoRunningSlot",
+                     "Current": totalPendingJobs + totalRunningJobs,
+                     "Threshold": totalJobThreshold},
+                    {"Condition": "NoTaskRunningSlot",
+                     "Current": taskPendingJobs + taskRunningJobs,
+                     "Threshold": totalTaskTheshold}]
+        return jobSubmitCondition(jobStats)
 
     def assignJobLocations(self):
         """
@@ -554,42 +626,17 @@ class JobSubmitterPoller(BaseWorkerThread):
                         logging.warn("Have a job for %s which is not in the resource control", siteName)
                         continue
 
-                    try:
-                        totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
-                        totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
-                        totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
-                        totalRunningJobs = self.currentRcThresholds[siteName]["total_running_jobs"]
+                    condition = self._getJobSubmitCondition(jobPrio, siteName, jobType)
 
-                        taskPendingSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["pending_slots"]
-                        taskPendingJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"]
-                        taskRunningSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["max_slots"]
-                        taskRunningJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_running_jobs"]
-                        taskPriority = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
-                    except KeyError as ex:
-                        msg = "Invalid key for site %s and job type %s\n" % (siteName, jobType)
-                        msg += str(ex)
-                        logging.error(msg)
-                        continue
-
-                    # check if site has free pending slots AND free pending task slots
-                    if totalPendingJobs >= totalPendingSlots or taskPendingJobs >= taskPendingSlots:
-                        jobSubmitLogBySites[siteName]["NoPendingSlot"] += 1
-                        logging.debug("Found a job for %s which has no free pending slots", siteName)
-                        continue
-                    # check if site overall thresholds have free slots
-                    if totalPendingJobs + totalRunningJobs >= totalPendingSlots + totalRunningSlots:
-                        jobSubmitLogBySites[siteName]["NoRunningSlot"] += 1
-                        logging.debug("Found a job for %s which has no free overall slots", siteName)
-                        continue
-                    # finally, check whether task has free overall slots
-                    if taskPendingJobs + taskRunningJobs >= taskPendingSlots + taskRunningSlots:
-                        jobSubmitLogBySites[siteName]["NoTaskSlot"] += 1
-                        logging.debug("Found a job for %s which has no free task slots", siteName)
+                    if condition != "JobSubmitReady":
+                        jobSubmitLogBySites[siteName][condition] += 1
+                        logging.debug("Found a job for %s : %s", siteName, condition)
                         continue
 
                     # otherwise, update the site/task thresholds and the component job counter
                     self.currentRcThresholds[siteName]["total_pending_jobs"] += 1
                     self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"] += 1
+
                     jobsCount += 1
 
                     # load (and remove) the job dictionary object from jobDataCache
@@ -606,7 +653,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Now update the job dictionary object
                     cachedJob['custom'] = {'location': siteName}
-                    cachedJob['taskPriority'] = taskPriority
+                    cachedJob['taskPriority'] = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
 
                     # Get this job in place to be submitted by the plugin
                     jobsToSubmit[package].append(cachedJob)
@@ -633,7 +680,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         logging.info("Have %s jobs to submit.", jobsCount)
         logging.info("Done assigning site locations.")
         return jobsToSubmit
-
 
     def submitJobs(self, jobsToSubmit):
         """
@@ -687,7 +733,6 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
-
     def getSiteInfo(self, jobSite):
         """
         _getSiteInfo_
@@ -714,6 +759,17 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
 
+        if self.useReqMgrForCompletionCheck:
+            # only runs when reqmgr is used (not Tier0)
+            self.removeAbortedForceCompletedWorkflowFromCache()
+            agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+            self.condorFraction = agentConfig.get('CondorJobsFraction', 0.75)
+            self.condorOverflowFraction = agentConfig.get("CondorOverflowFraction", 0.2)
+        else:
+            # For Tier0 agent
+            self.condorFraction = 1
+            self.condorOverflowFraction = 0
+
         if not self.passSubmitConditions():
             msg = "JobSubmitter didn't pass the submit conditions. Skipping this cycle."
             logging.warning(msg)
@@ -724,10 +780,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             myThread.logdbClient.delete("JobSubmitter_submitWork", "warning", this_thread=True)
             self.getThresholds()
             self.refreshCache()
-
-            if self.useReqMgrForCompletionCheck:
-                # only runs when reqmgr is used (not Tier0)
-                self.removeAbortedForceCompletedWorkflowFromCache()
 
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
@@ -757,33 +809,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobs we can have in condor (pending + running) per schedd, set by
         MAX_JOBS_PER_OWNER.
         """
-        if not self.reqAuxDB:
-            return False
 
-        agentAuxConfig = self.reqAuxDB.getWMAgentConfig(self.hostName)
-        self.condorFraction = agentAuxConfig.get('CondorJobsFraction')
-        if self.condorFraction is None:
-            logging.warning("Failed to retrieve 'CondorJobsFraction' from auxiliar DB")
-            return False
-        else:
-            self.condorFraction = float(self.condorFraction)
-
-        maxScheddJobs = int(getScheddParamValue("MAX_JOBS_PER_OWNER"))
-        if maxScheddJobs is None:
-            logging.warning("Failed to retrieve 'MAX_JOBS_PER_OWNER' from HTCondor")
-            return False
-
-        # fetch idle + running jobs in condor
-        executingJobs = int(self.countWMBSJobsByState.execute("executing"))
-        if executingJobs >= int(maxScheddJobs * self.condorFraction):
-            logging.info("There are way too many jobs in HTCondor already. Limit is: %s",
-                         int(maxScheddJobs * self.condorFraction))
-            return False
-
-        freeSubmitSlots = int(maxScheddJobs * self.condorFraction) - executingJobs
+        myThread = threading.currentThread()
+        freeSubmitSlots = availableScheddSlots(dbi=myThread.dbi, logger=logging,
+                                               condorFraction=self.condorFraction)
         self.maxJobsThisCycle = min(freeSubmitSlots, self.maxJobsPerPoll)
 
-        return True
+        return (freeSubmitSlots > 0)
 
     def terminate(self, params):
         """

@@ -136,7 +136,8 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             name = makeUUID()
 
         testWorkflow = Workflow(spec=workloadSpec, owner="tapas",
-                                name=name, task="basicWorkload/Production")
+                                name=name, task="basicWorkload/Production",
+                                priority=1)
         testWorkflow.create()
 
         # Create subscriptions
@@ -495,13 +496,13 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             jobSubmitter.algorithm()
 
         result = getJobsAction.execute(state='Executing', jobType='Processing')
-        self.assertEqual(len(result), 240)
+        self.assertEqual(len(result), 238)
         result = getJobsAction.execute(state='Created', jobType='Processing')
-        self.assertEqual(len(result), 110)
+        self.assertEqual(len(result), 112)
         result = getJobsAction.execute(state='Executing', jobType='Merge')
-        self.assertEqual(len(result), 30)
+        self.assertEqual(len(result), 32)
         result = getJobsAction.execute(state='Created', jobType='Merge')
-        self.assertEqual(len(result), 280)
+        self.assertEqual(len(result), 278)
 
         return
 

@@ -22,26 +22,36 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMException import WMException
 
 
-def mergeFakeFiles(chunkFiles):
+def mergeSameFiles(chunkFiles):
     """
-    _mergeFakeFiles_
+    _mergeSameFiles_
 
     Receive a list of dicts with acdc files info and merge them together
-    (sum up events) belonging to the same MCFakeFile.
+    (sum up events) belonging to the same File.
     """
-    # do not do anything for real files
-    if not chunkFiles[0]['lfn'].startswith('MCFakeFile'):
-        return chunkFiles
-
-    logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
+    originalLen = len(chunkFiles)
+    logging.info("Merging %d ACDC files with the same lfn...", originalLen)
     mergedFiles = {}
     for acdcFile in chunkFiles:
         if acdcFile['lfn'] not in mergedFiles:
             mergedFiles[acdcFile['lfn']] = acdcFile
         else:
-            mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
-            mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
-    logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
+            # if it is fake file events add up for real file don't add up.
+            if chunkFiles[0]['lfn'].startswith('MCFakeFile'):
+                mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
+
+            for runLumi in acdcFile['runs']:
+                containRunNum = False
+                for mRunLumi in mergedFiles[acdcFile['lfn']]['runs']:
+                    if runLumi['run_number'] == mRunLumi['run_number']:
+                        mRunLumi['lumis'].extend(runLumi['lumis'])
+                        containRunNum = True
+                        break
+                # if files contains 2 different runs
+                if not containRunNum:
+                    mergedFiles[acdcFile['lfn']]['runs'].extend(runLumi)
+
+    logging.info("%d files merged.", (originalLen - len(mergedFiles)))
 
     return mergedFiles.values()
 
@@ -255,7 +265,7 @@ class DataCollectionService(CouchService):
         chunkFiles = []
         files = self._getFilesetInfo(collectionName, filesetName, chunkOffset, chunkSize)
 
-        files = mergeFakeFiles(files)
+        files = mergeSameFiles(files)
         for fileInfo in files:
             newFile = File(lfn=fileInfo["lfn"], size=fileInfo["size"],
                            events=fileInfo["events"], parents=set(fileInfo["parents"]),

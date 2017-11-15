@@ -9,7 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
-from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
+from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeSameFiles
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
@@ -343,7 +343,7 @@ class DataCollectionService_t(unittest.TestCase):
                                     'run_number': 1}],
                           'size': 0}]
 
-        mergedFiles = mergeFakeFiles(originalFiles)
+        mergedFiles = mergeSameFiles(originalFiles)
         self.assertEqual(len(mergedFiles), 3, "Error: wrong number of files.")
 
         totalEvents = 0

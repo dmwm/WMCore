@@ -51,6 +51,8 @@ def createOptionParser():
     myOptParser.add_option("-p", "--thresholds", dest="printThresholds",
                            default=False, action="store_true",
                            help="Print out all known thresholds and site information.")
+    myOptParser.add_option("--add-Test", dest="addTest", default=False, action="store_true",
+                           help="Add a fake test site to resource control.")
     myOptParser.add_option("--add-T1s", dest="addT1s", default=False, action="store_true",
                            help="Add all of the CMS T1 sites to resource control.")
     myOptParser.add_option("--add-T2s", dest="addT2s", default=False, action="store_true",
@@ -303,6 +305,10 @@ if options.printThresholds:
 else:
     if options.priority:
         updateTaskPriority(myResourceControl, options.taskType, options.priority)
+    elif options.addTest:
+        testSite = {'CERN': ['T0_CH_CERN_Disk', 'T2_CH_CERN']}
+        addSites(myResourceControl, testSite, "CERN", "SimpleCondorPlugin",
+                 500, 1, state=options.state)
     elif options.addT1s:
         t1Sites = getCMSSiteInfo("T1*")
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,

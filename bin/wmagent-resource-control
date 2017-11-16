@@ -171,7 +171,7 @@ def printThresholds(resourceControl, desiredSiteName):
             siteName, runningJobs, pendingJobs, runningSlots, pendingSlots, stateMsg))
 
         for task, thres in siteThresholds['thresholds'].iteritems():
-            print("  %s - %d running, %d pending, %d max running, %d max pending, priority %s" % \
+            print("  %s - %d running, %d pending, %d max running, %d max pending, priority %s" %
                   (task, thres["task_running_jobs"], thres['task_pending_jobs'], thres["max_slots"],
                    thres["pending_slots"], str(thres.get("priority", 1))))
             if thres["task_running_jobs"] > 0:
@@ -213,7 +213,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots=None,
 
         return
 
-    if pendingSlots != None or runningSlots != None:
+    if pendingSlots is not None or runningSlots is not None:
         resourceControl.setJobSlotsForSite(siteName=siteName,
                                            pendingJobSlots=pendingSlots,
                                            runningJobSlots=runningSlots)
@@ -222,12 +222,12 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots=None,
             for task in tasksWithPriorities:
                 updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
 
-    if pnn != None:
+    if pnn is not None:
         print("It's not possible to change a site's SE name after the site has")
         print("been added to the database.")
         sys.exit(1)
 
-    if ceName != None:
+    if ceName is not None:
         print("It's not possible to change a site's CE name after the site has")
         print("been added to the database.")
         sys.exit(1)

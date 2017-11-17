@@ -95,12 +95,16 @@ class DataCollectionService(CouchService):
             coll.addFileset(fileset)
             inputFiles = job['input_files']
             for fInfo in inputFiles:
-                if fInfo["merged"]:
+                if int(fInfo["merged"]) == 1:  # Looks like Oracle and MySQL return diff type
                     fInfo["parents"] = []
-                elif ("parents" in fInfo) and len(fInfo["parents"]) and ("/store/unmerged/" in next(iter(fInfo["parents"]))):
-                    # parents are umerged files and input files are unmerged files - need to find merged ascendant
-                    fInfo["parents"] = list(getMergedParents(fInfo["parents"]))
-                # other case, fInfo["parents"] all or merged parents
+                elif fInfo.get("parents", []):
+                    firstParent = next(iter(fInfo["parents"]))
+                    if "/store/unmerged/" in firstParent:
+                        # parents and input files are unmerged files - need to find merged ascendant
+                        fInfo["parents"] = list(getMergedParents(fInfo["parents"]))
+                    elif "MCFakeFile" in firstParent:
+                        fInfo["parents"] = []
+                    # other case, fInfo["parents"] all or merged parents
             if useMask:
                 fileset.add(files=inputFiles, mask=job['mask'])
             else:

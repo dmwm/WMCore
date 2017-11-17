@@ -678,13 +678,16 @@ class WMBSHelper(WMConnectionBase):
         wmbsParents = []
         # TODO:  this check can be removed when ErrorHandler filters parents file for unmerged data
         # If files is merged and has unmerged parents skip the wmbs population
-        if acdcFile.get("merged", 0) and len(acdcFile["parents"]) and ("/store/unmerged/" in next(iter(acdcFile["parents"]))) :
+        firstParent = ""
+        if acdcFile["parents"]:
+            firstParent = next(iter(acdcFile["parents"]))
+        if acdcFile.get("merged", 0) and ("/store/unmerged/" in firstParent or "MCFakeFile" in firstParent):
             # don't set the parents
             pass
         else:
             # set the parentage for all the unmerged parents
             for parent in acdcFile["parents"]:
-                logging.info("WMBS ACDC Parent File: %s", parent)
+                logging.debug("WMBS ACDC Parent File: %s", parent)
                 parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
                                                                     locations=acdcFile["locations"]),
                                                      inFileset=False)
@@ -709,7 +712,7 @@ class WMBSHelper(WMConnectionBase):
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.info("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
 

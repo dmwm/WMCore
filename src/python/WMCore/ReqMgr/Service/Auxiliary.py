@@ -10,8 +10,7 @@ import json
 import cherrypy
 
 import WMCore
-from WMCore.Database.CMSCouch import Document
-from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Database.CMSCouch import Document, CouchNotFoundError, CouchError
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
@@ -184,10 +183,10 @@ class AuxBaseAPI(RESTEntity):
             
         return rows([sw])
     
-    @restcall
+    @restcall(formats=[('application/json', JSONFormat())])
     def post(self, subName=None):
         """
-        post sofware version doucment
+        If the document already exists, replace it with a new one.
         """
         data = cherrypy.request.body.read()
         if not data:
@@ -198,6 +197,7 @@ class AuxBaseAPI(RESTEntity):
             docName = "%s_%s" % (self.name, subName)
         else:
             docName = self.name
+
         doc = Document(docName, doc)
         result = self.reqmgr_aux_db.commitOne(doc)
         return result
@@ -229,6 +229,19 @@ class AuxBaseAPI(RESTEntity):
             raise NoSuchInstance
 
         return result
+
+    @restcall(formats=[('application/json', JSONFormat())])
+    def delete(self, subName):
+        """
+        Delete a document from ReqMgrAux
+        """
+        docName = "%s_%s" % (self.name, subName)
+        try:
+            self.reqmgr_aux_db.delete_doc(docName)
+        except (CouchError, CouchNotFoundError) as ex:
+            msg = "ERROR: failed to delete document: %s\nReason: %s" % (docName, str(ex))
+            cherrypy.log(msg)
+
 
 class CMSSWVersions(AuxBaseAPI):
     """

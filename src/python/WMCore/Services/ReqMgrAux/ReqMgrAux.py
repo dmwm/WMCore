@@ -99,8 +99,15 @@ class ReqMgrAux(Service):
         return agentConfig[0]
 
     def postWMAgentConfig(self, agentName, agentConfig):
-
+        """
+        Create a new WMAgent configuration file in ReqMgrAux.
+        If document already exists, nothing happens.
+        """
         return self["requests"].post('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
+
+    def deleteWMAgentConfig(self, agentName):
+        """Mind your own business. Delete the agent config from ReqMgrAux"""
+        self["requests"].delete('wmagentconfig/%s' % agentName)
 
     def updateAgentDrainingMode(self, agentName, drainFlag):
         # update config DB

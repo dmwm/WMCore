@@ -100,7 +100,7 @@ class ReqMgrAux(Service):
 
     def postWMAgentConfig(self, agentName, agentConfig):
 
-        return self["requests"].post('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
+        return self["requests"].put('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
 
     def updateAgentDrainingMode(self, agentName, drainFlag):
         # update config DB

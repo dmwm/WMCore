@@ -102,7 +102,6 @@ class ListThresholdsForSubmit(DBFormatter):
                 siteInfo['state']                = result['state']
                 siteInfo['total_pending_slots']  = result['pending_slots']
                 siteInfo['total_running_slots']  = result['running_slots']
-                siteInfo['wf_highest_priority'] = result['wf_highest_priority']
                 siteInfo['total_pending_jobs']   = task_pending_jobs
                 siteInfo['total_running_jobs']   = task_running_jobs
                 siteInfo['thresholds']           = {}
@@ -117,6 +116,7 @@ class ListThresholdsForSubmit(DBFormatter):
                 threshold[taskType]['max_slots']         = result['max_slots']
                 threshold[taskType]['pending_slots']     = result['task_pending_slots']
                 threshold[taskType]['priority']          = result['priority']
+                threshold[taskType]['wf_highest_priority'] = result['wf_highest_priority']
                 threshold[taskType]['task_running_jobs'] = task_running_jobs
                 threshold[taskType]['task_pending_jobs'] = task_pending_jobs
                 formattedResults[siteName]['thresholds'].update(threshold)

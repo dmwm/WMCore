@@ -4,14 +4,16 @@ import json
 import logging
 
 from Utils.Utilities import diskUse
-from WMCore.Services.Service import Service
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
+from WMCore.Services.Service import Service
+
 
 class ReqMgrAux(Service):
     """
     API for dealing with retrieving information from RequestManager dataservice
 
     """
+
     def __init__(self, url, header=None, logger=None):
         """
         responseType will be either xml or json
@@ -55,7 +57,7 @@ class ReqMgrAux(Service):
 
     def _getDataFromMemoryCache(self, callname):
         cache = MemoryCacheStruct(expire=0, func=self._getResult, initCacheValue={},
-                                 kwargs={'callname': callname, "verb": "GET"})
+                                  kwargs={'callname': callname, "verb": "GET"})
         return cache.getData()
 
     def getCMSSWVersion(self):
@@ -99,8 +101,15 @@ class ReqMgrAux(Service):
         return agentConfig[0]
 
     def postWMAgentConfig(self, agentName, agentConfig):
-
+        """
+        Create a new WMAgent configuration file in ReqMgrAux.
+        If document already exists, nothing happens.
+        """
         return self["requests"].post('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
+
+    def deleteWMAgentConfig(self, agentName):
+        """Mind your own business. Delete the agent config from ReqMgrAux"""
+        self["requests"].delete('wmagentconfig/%s' % agentName)
 
     def updateAgentDrainingMode(self, agentName, drainFlag):
         # update config DB
@@ -111,10 +120,12 @@ class ReqMgrAux(Service):
             return True
         else:
             self["logger"].warning("update agent drain mode failed: it should be %s, response: %s" %
-                                (drainFlag, resp))
+                                   (drainFlag, resp))
             return False
 
+
 AUXDB_AGENT_CONFIG_CACHE = {}
+
 
 # function to check whether agent is should be in draining status.
 def isDrainMode(config):
@@ -135,6 +146,7 @@ def isDrainMode(config):
     else:
         # if the cache is empty this will raise Key not exist exception.
         return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
+
 
 def listDiskUsageOverThreshold(config, updateDB):
     """
@@ -164,7 +176,7 @@ def listDiskUsageOverThreshold(config, updateDB):
     overThresholdDisks = []
     for disk in diskUseList:
         if (float(disk['percent'].strip('%')) >= diskUseThreshold and
-                        disk['mounted'] not in ignoredDisks):
+                    disk['mounted'] not in ignoredDisks):
             overThresholdDisks.append(disk)
 
     if updateDB and not t0Flag:

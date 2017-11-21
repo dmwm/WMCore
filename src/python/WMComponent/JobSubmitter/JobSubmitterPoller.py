@@ -85,6 +85,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.maxTaskPriority = getattr(self.config.BossAir, 'maxTaskPriority', 1e7)
         self.condorFraction = 0.75  # update during every algorithm cycle
         self.condorOverflowFraction = 0.2
+        self.ioboundTypes = ('LogCollect', 'Merge', 'Cleanup', 'Harvesting')
 
         # Additions for caching-based JobSubmitter
         self.cachedJobIDs = set()
@@ -337,7 +338,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             # try to remove draining sites if possible, this is needed to stop
             # jobs that could run anywhere blocking draining sites
             # if the job type is Merge, LogCollect or Cleanup this is skipped
-            if newJob['type'] not in ('LogCollect', 'Merge', 'Cleanup', 'Harvesting'):
+            if newJob['type'] not in self.ioboundTypes:
                 nonDrainingSites = [x for x in possibleLocations if x not in self.drainSites]
                 if nonDrainingSites: # if >1 viable non-draining site remove draining ones
                     possibleLocations = nonDrainingSites
@@ -534,12 +535,12 @@ class JobSubmitterPoller(BaseWorkerThread):
             totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
             totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
             totalRunningJobs = self.currentRcThresholds[siteName]["total_running_jobs"]
-            highestPriorityInJobs = self.currentRcThresholds[siteName]['wf_highest_priority']
 
             taskPendingSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["pending_slots"]
             taskPendingJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"]
             taskRunningSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["max_slots"]
             taskRunningJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_running_jobs"]
+            highestPriorityInJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]['wf_highest_priority']
 
             # set the initial totalPendingJobs since it increases in every cycle when a job is submitted
             self.currentRcThresholds[siteName].setdefault("init_total_pending_jobs", totalPendingJobs)
@@ -555,9 +556,10 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.exception(msg)
             return "NoJobType_%s_%s" % (siteName, jobType)
 
-        if highestPriorityInJobs is None or jobPrio <= highestPriorityInJobs:
+        if (highestPriorityInJobs is None) or (jobPrio <= highestPriorityInJobs) or (jobType in self.ioboundTypes):
             # there is no pending or running jobs in the system (None case) or
             # priority of the job is lower or equal don't allow overflow
+            # Also if jobType is in ioboundTypes don't allow overflow
             totalPendingThreshold = totalPendingSlots
             taskPendingThreshold = taskPendingSlots
             totalJobThreshold = totalPendingSlots + totalRunningSlots

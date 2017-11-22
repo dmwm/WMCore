@@ -18,7 +18,7 @@ Expected input json file like:
 
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import httplib
 import json

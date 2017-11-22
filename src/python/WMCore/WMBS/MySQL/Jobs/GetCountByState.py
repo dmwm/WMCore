@@ -4,6 +4,7 @@ _GetCountByState_
 
 MySQL implementation of GetCountByState
 """
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
 

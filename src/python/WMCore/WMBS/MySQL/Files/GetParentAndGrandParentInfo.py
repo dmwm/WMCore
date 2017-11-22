@@ -7,9 +7,7 @@ information about a file's parent and it's grand parent such as the
 lfn, id and whether or not the file is merged.  This will also determine
 whether or not the file is a redneck parent or redneck child.
 """
-
-
-
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
 

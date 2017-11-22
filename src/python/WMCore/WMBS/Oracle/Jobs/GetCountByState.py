@@ -4,6 +4,7 @@ _GetCountByState_
 
 Oracle implementation of Jobs.GetCountByState
 """
+from __future__ import division
 
 from WMCore.WMBS.MySQL.Jobs.GetCountByState import GetCountByState as MySQLGetCountByState
 

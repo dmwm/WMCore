@@ -8,15 +8,16 @@ This cleverly named object is the thread that handles the monitoring of individu
 from __future__ import division
 from __future__ import print_function
 
+import logging
 import os
 import os.path
 import threading
-import logging
 import traceback
 
-from WMCore.WMFactory   import WMFactory
-from WMCore.WMException import WMException
 from PSetTweaks.WMTweak import resizeResources
+from WMCore.WMException import WMException
+from WMCore.WMFactory import WMFactory
+
 
 class WatchdogException(WMException):
     """
@@ -36,38 +37,35 @@ class Watchdog(threading.Thread):
     Or possibly monitors them and records what they do.  It's a bit of a crapshoot at this point.
     """
 
-
-
-    def __init__(self, logPath = None, config = None):
+    def __init__(self, logPath=None, config=None):
         threading.Thread.__init__(self)
         self.doMonitoring = True
-        self._Finished    = threading.Event()
-        self._EndOfJob    = threading.Event()
-        self._NewTask     = threading.Event()
-        self._JobKilled   = threading.Event()
-        self._RunUpdate   = threading.Event()
-        self._Interval    = 120.0
-        self._Monitors    = []
+        self._Finished = threading.Event()
+        self._EndOfJob = threading.Event()
+        self._NewTask = threading.Event()
+        self._JobKilled = threading.Event()
+        self._RunUpdate = threading.Event()
+        self._Interval = 120.0
+        self._Monitors = []
 
         # Right now we join this, because we don't know
         # Where we'll be when we need this.
-        self.logPath      = os.path.join(os.getcwd(), logPath)
+        self.logPath = os.path.join(os.getcwd(), logPath)
 
-        self.factory      = WMFactory(self.__class__.__name__,
-                                      "WMCore.WMRuntime.Monitors")
-
+        self.factory = WMFactory(self.__class__.__name__,
+                                 "WMCore.WMRuntime.Monitors")
 
     def setupMonitors(self, task, wmbsJob):
         logging.info("In Watchdog.setupMonitors")
         if not hasattr(task.data, 'watchdog'):
             msg = "Could not find watchdog in spec"
             logging.error(msg)
-            #I don't think this is necessarily fatal
+            # I don't think this is necessarily fatal
             return
         if not hasattr(task.data.watchdog, 'monitors'):
             msg = "Watchdog has no monitors"
             logging.error(msg)
-            #Probably not fatal either
+            # Probably not fatal either
             return
         if hasattr(task.data.watchdog, 'interval'):
             # Set the interval off the config
@@ -77,8 +75,9 @@ class Watchdog(threading.Thread):
             logging.info(msg)
             mon = self.loadMonitor(monitor)
             args = {}
-            if hasattr(task.data.watchdog, monitor):
-                #This should be a config section
+            if hasattr(task.data.watchdog, monitor) and monitor == 'PerformanceMonitor':
+                # Apply tweaks to PerformanceMonitor only.
+                # This should be a config section
                 monitorArgs = getattr(task.data.watchdog, monitor)
                 args = monitorArgs.dictionary_()
                 # Scale resources according to the HTCondor runtime environment.
@@ -103,8 +102,8 @@ class Watchdog(threading.Thread):
                 # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
                 # Add the new number of cores to the args such that DashboardInterface can see it
+                args['cores'] = resources['cores']
                 if changedCores:
-                    args['cores'] = resources['cores']
                     if origMaxRSS:
                         args.pop('maxVSize', None)
                         args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
@@ -113,17 +112,16 @@ class Watchdog(threading.Thread):
                 for k, v in args.iteritems():
                     logging.info("  %s: %r", k, v)
             # Actually initialize the monitor variables
-            mon.initMonitor(task = task, job = wmbsJob,
-                            logPath = self.logPath, args = args)
+            mon.initMonitor(task=task, job=wmbsJob,
+                            logPath=self.logPath, args=args)
             self._Monitors.append(mon)
 
         return
 
-
     def loadMonitor(self, monitorName):
         try:
             return self.factory.loadObject(monitorName)
-        except WMException as wmEx:
+        except WMException:
             msg = "WatchdogFactory Unable to load Object: %s" % monitorName
             logging.error(msg)
             raise WatchdogException(msg)
@@ -133,12 +131,11 @@ class Watchdog(threading.Thread):
             logging.error(msg)
             raise WatchdogException(msg)
 
-
     def setInterval(self, interval):
         """
         Set the monitor interval
         """
-        logging.info("Set Watchdog interval to %s" % interval)
+        logging.info("Set Watchdog interval to %s", interval)
         self._Interval = interval
 
     def disableMonitoring(self):
@@ -150,9 +147,6 @@ class Watchdog(threading.Thread):
         """
         self.doMonitoring = False
 
-
-
-
     def shutdown(self):
         """
         Shutdown the monitor.
@@ -163,10 +157,10 @@ class Watchdog(threading.Thread):
 
     #  //=========notify Methods called by the ExecutionManager====
     # //
-    #//  Start notification from the exe thread, this starts the
+    # //  Start notification from the exe thread, this starts the
     #  //periodic updates of the monitor thread
     # //
-    #//
+    # //
     def notifyJobStart(self, task):
         """
         Start the job.
@@ -185,9 +179,10 @@ class Watchdog(threading.Thread):
                 logging.error(msg)
                 raise WatchdogException(msg)
         return
+
     #  //
     # // notify Monitors of new task start up
-    #//
+    # //
     def notifyStepStart(self, step):
         """
         notify Monitors of new task start up.
@@ -206,28 +201,28 @@ class Watchdog(threading.Thread):
 
     #  //
     # // notify Monitors of task completion
-    #//
-    def notifyStepEnd(self, step, exitCode = 0, stepReport = None):
+    # //
+    def notifyStepEnd(self, step, exitCode=0, stepReport=None):
         """
         notify Monitors of task completion.
         """
         self._RunUpdate.clear()
         for monitor in self._Monitors:
             try:
-                monitor.stepEnd(step = step, stepReport = stepReport)
+                monitor.stepEnd(step=step, stepReport=stepReport)
             except Exception as ex:
                 msg = "Error in notifyTaskEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
                 raise WatchdogException(msg)
-        #print "Task Ended: %s with Exit Code:%s" % (task, exitCode)
-        #self._MonMgr.taskEnd(task, exitCode)
+        # print "Task Ended: %s with Exit Code:%s" % (task, exitCode)
+        # self._MonMgr.taskEnd(task, exitCode)
         return
 
     #  //
     # // notify monitors of Job Completion, stops the periodic
-    #//  updating
+    # //  updating
     def notifyJobEnd(self, task):
         """
         notify monitors of Job Completion, stops the periodic
@@ -242,12 +237,13 @@ class Watchdog(threading.Thread):
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
-        #self._MonMgr.jobEnd()
+        # self._MonMgr.jobEnd()
         self.shutdown()
         return
+
     #  //
     # //  Interrupt Notifiers
-    #//   Job has been killed
+    # //   Job has been killed
     def notifyKillJob(self):
         """
         Interrupt Notifiers, Job has been killed.
@@ -262,12 +258,13 @@ class Watchdog(threading.Thread):
                 msg += str(traceback.format_exc())
                 logging.error(msg)
                 raise WatchdogException(msg)
-        #self._MonMgr.jobKilled()
+        # self._MonMgr.jobKilled()
         self.shutdown()
+
     #  //
     # //  Task has been killed
-    #//
-    def notifyKillStep(self, step = None):
+    # //
+    def notifyKillStep(self, step=None):
         """
         Task has been killed.
         """
@@ -281,11 +278,11 @@ class Watchdog(threading.Thread):
                 msg += str(traceback.format_exc())
                 logging.error(msg)
                 raise WatchdogException(msg)
-        #self._MonMgr.taskKilled()
+                # self._MonMgr.taskKilled()
 
-    #  //
+    # //
     # // Override Thread.run() to do the periodic update
-    #//  of the MonitorState object and dispatch it to the monitors
+    # //  of the MonitorState object and dispatch it to the monitors
     def run(self):
         """
         Override Thread.run() to do the periodic update
@@ -294,13 +291,13 @@ class Watchdog(threading.Thread):
         while True:
             #  //
             # // shutdown signal
-            #//
+            # //
             if self._Finished.isSet():
                 return
 
-            #  //
+            # //
             # // Update State information only during a running task
-            #//
+            # //
             if self._RunUpdate.isSet():
                 for monitor in self._Monitors:
                     try:
@@ -312,19 +309,18 @@ class Watchdog(threading.Thread):
                         msg += "This is a CRITICAL error because this kills the monitoring.\n"
                         msg += "Terminate thread and retry.\n"
                         logging.error(msg)
-                        #raise WatchdogException(msg)
+                        # raise WatchdogException(msg)
                         # This one needs to be killed by itself
                         # since it's run by thread
                         os.abort()
-                #self._MonMgr.periodicUpdate()
+                        # self._MonMgr.periodicUpdate()
 
-            #time.sleep(self._Interval)
+            # time.sleep(self._Interval)
             self._Finished.wait(self._Interval)
 
-
-    #  //
+    # //
     # // Load Monitor Objects based on Cfg settings passed
-    #//  from Executor
+    # //  from Executor
     def initMonitorFwk(self, monitorCfg, updatorCfg):
         """
         _initMonitorFwk_
@@ -333,8 +329,8 @@ class Watchdog(threading.Thread):
         called from the Execution thread
         Load Monitor Objects based on Cfg settings passed from Executor.
         """
-        #self._MonMgr.monitorConfig = monitorCfg
-        #self._MonMgr.updatorConfig = updatorCfg
-        #self._MonMgr.loadMonitors()
-        #self._MonMgr.loadUpdators()
+        # self._MonMgr.monitorConfig = monitorCfg
+        # self._MonMgr.updatorConfig = updatorCfg
+        # self._MonMgr.loadMonitors()
+        # self._MonMgr.loadUpdators()
         return

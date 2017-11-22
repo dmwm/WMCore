@@ -14,22 +14,26 @@ import unittest
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.MicroService.Unified.Transferor import \
         RequestStore, RequestManager
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-
-class TransferorTest(unittest.TestCase):
+class TransferorTest(EmulatedUnitTestCase):
     "Unit test for Transferor module"
     def setUp(self):
         "init test class"
+        super(TransferorTest, self).setUp()
         self.group = 'DataOps'
         self.interval = 2
+        self.phedex = MockPhEDExApi()
         self.rmgr = RequestManager(group=self.group, interval=self.interval, verbose=True)
-        self.phedex = PhEDEx()
 
         # get some subscriptions from PhEDEx to play with
         data = self.phedex.subscriptions(group=self.group)
+        print("### data", data)
         for datasetInfo in data['phedex']['dataset']:
             dataset = datasetInfo.get('name')
-            print("### dataset info from phedex, #files %s" % datasetInfo.get('files', 0))
+            print("### dataset info from phedex, dataset %s #files %s" \
+                    % (dataset, datasetInfo.get('files', 0)))
             # now use the same logic in as in Transferor, i.e. look-up dataset/group subscription
             data = self.phedex.subscriptions(dataset=dataset, group=self.group)
             if not data['phedex']['dataset']:
@@ -41,6 +45,7 @@ class TransferorTest(unittest.TestCase):
             rdict1 = dict(datasets=[dataset], sites=nodes, name='req1')
             rdict2 = dict(datasets=[dataset], sites=nodes, name='req2')
             self.requests = {'req1': rdict1, 'req2': rdict2}
+            print("+++ stored requests", self.rmgr.info())
             break
 
     def tearDown(self):
@@ -50,7 +55,9 @@ class TransferorTest(unittest.TestCase):
     def testRequestManager(self):
         "Test function for RequestManager class"
         # add requests to RequestManager
+        print("+++ store", self.requests)
         self.rmgr.add(self.requests)
+        print("+++ store", self.rmgr.info())
         # check their status
         for request in self.requests.keys():
             # after fetch request info here it will be gone from store
@@ -68,7 +75,9 @@ class TransferorTest(unittest.TestCase):
     def testRequestManagerAutomation(self):
         "Test function for RequestManager class which check status of request automatically"
         # add requests to RequestManager
+        print("+++ store", self.requests)
         self.rmgr.add(self.requests)
+        print("+++ store", self.rmgr.info())
         # we'll sleep and allow RequestManager thread to check status of requests
         # and wipe out them from internal store
         time.sleep(self.interval+1)

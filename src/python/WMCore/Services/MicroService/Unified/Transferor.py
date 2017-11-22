@@ -109,6 +109,8 @@ class RequestManager(object):
         "Send request to Phedex and return status of request subscription"
         sdict = {}
         rdict = self.store.get(request)
+        if not rdict: # request is gone
+            return 100
         for dataset in rdict.get('datasets'):
             data = self.phedex.subscriptions(dataset=dataset, group=self.group)
             if self.verbose:

@@ -213,6 +213,9 @@ class MockPhEDExApi(object):
             _blockInfoGenerator(blockList)
         elif 'block' in args and args['block']:
             _blockInfoGenerator(args['block'])
+        elif 'group' in args and args['group']:
+            blockList = self.dataBlocks.getBlocks('/a/b-%s/c' % args['group'])
+            _blockInfoGenerator(blockList)
 
         return data
 

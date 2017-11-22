@@ -11,6 +11,7 @@ from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetParentAndGrandParentInfo(DBFormatter):
     sql = """SELECT wfp.id, wfp.lfn, wfp.merged,
                     wfgp.lfn AS gplfn, wfgp.merged AS gpmerged
@@ -22,13 +23,11 @@ class GetParentAndGrandParentInfo(DBFormatter):
              WHERE wfd.lfn = :child_lfn
     """
 
-
-
-    def execute(self, childLFNs, conn = None, transaction = False):
+    def execute(self, childLFNs, conn=None, transaction=False):
         bindVars = []
         for childLFN in childLFNs:
             bindVars.append({"child_lfn": childLFN})
 
         result = self.dbi.processData(self.sql, bindVars,
-                         conn = conn, transaction = transaction)
+                                      conn=conn, transaction=transaction)
         return self.formatDict(result)

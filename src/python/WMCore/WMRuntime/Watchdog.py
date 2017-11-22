@@ -77,8 +77,9 @@ class Watchdog(threading.Thread):
             logging.info(msg)
             mon = self.loadMonitor(monitor)
             args = {}
-            if hasattr(task.data.watchdog, monitor):
-                #This should be a config section
+            if hasattr(task.data.watchdog, monitor) and monitor == 'PerformanceMonitor':
+                # Apply tweaks to PerformanceMonitor only.
+                # This should be a config section
                 monitorArgs = getattr(task.data.watchdog, monitor)
                 args = monitorArgs.dictionary_()
                 # Scale resources according to the HTCondor runtime environment.
@@ -103,8 +104,8 @@ class Watchdog(threading.Thread):
                 # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
                 # Add the new number of cores to the args such that DashboardInterface can see it
+                args['cores'] = resources['cores']
                 if changedCores:
-                    args['cores'] = resources['cores']
                     if origMaxRSS:
                         args.pop('maxVSize', None)
                         args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB

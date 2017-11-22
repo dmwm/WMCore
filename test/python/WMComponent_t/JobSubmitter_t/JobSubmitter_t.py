@@ -496,13 +496,13 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             jobSubmitter.algorithm()
 
         result = getJobsAction.execute(state='Executing', jobType='Processing')
-        self.assertEqual(len(result), 238)
+        self.assertEqual(len(result), 240)
         result = getJobsAction.execute(state='Created', jobType='Processing')
-        self.assertEqual(len(result), 112)
+        self.assertEqual(len(result), 110)
         result = getJobsAction.execute(state='Executing', jobType='Merge')
-        self.assertEqual(len(result), 32)
+        self.assertEqual(len(result), 30)
         result = getJobsAction.execute(state='Created', jobType='Merge')
-        self.assertEqual(len(result), 278)
+        self.assertEqual(len(result), 280)
 
         return
 

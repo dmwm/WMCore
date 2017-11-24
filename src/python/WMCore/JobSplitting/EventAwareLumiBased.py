@@ -72,6 +72,8 @@ class EventAwareLumiBased(JobFactory):
             if deterministicPileup:
                 getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
                 self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
+                logging.info('Creating jobs in DeterministicPileup mode for %s',
+                             self.subscription.workflowName())
 
         goodRunList = {}
         if runs and lumis:

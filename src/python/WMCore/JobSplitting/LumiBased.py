@@ -171,6 +171,8 @@ class LumiBased(JobFactory):
             if deterministicPileup:
                 getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
                 self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
+                logging.info('Creating jobs in DeterministicPileup mode for %s',
+                             self.subscription.workflowName())
 
         timePerEvent, sizePerEvent, memoryRequirement = \
             self.getPerformanceParameters(kwargs.get('performance', {}))

@@ -45,7 +45,8 @@ class EventBased(JobFactory):
         if deterministicPileup and self.package == 'WMCore.WMBS':
             getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
             self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
-            logging.info('Creating %d jobs in DeterministicPileup mode', self.nJobs)
+            logging.info('Creating jobs in DeterministicPileup mode for %s',
+                         self.subscription.workflowName())
 
         # If we have runLumi info, we need to load it from couch
         if collectionName:
@@ -246,7 +247,7 @@ class EventBased(JobFactory):
                                                          disk=diskRequired)
                     if deterministicPileup:
                         self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                    logging.info("ACDC job created with %s", self.currentJob)
+                    logging.debug("ACDC job created with %s", self.currentJob)
                     eventsToRun -= eventsPerJob
                     currentEvent += eventsPerJob
                     currentLumi += lumisPerJob

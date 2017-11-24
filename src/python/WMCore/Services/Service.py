@@ -338,7 +338,7 @@ class Service(dict):
                         msg = msg % (cachefile, url)
                         if hasattr(he, 'status') and hasattr(he, 'reason'):
                             msg += ' is unavailable - it returned %s because %s'
-                            msg += 'Status: %s \nReason: %s' % (he.status, he.reason)
+                            msg += msg % (he.status, he.reason)
                         else:
                             msg += ' raised a %s when accessed' % he.__repr__()
                         self['logger'].warning(msg)

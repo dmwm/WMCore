@@ -99,6 +99,8 @@ class EventAwareLumiByWork(JobFactory):
             if self.deterministicPU:
                 getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
                 self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
+                logging.info('Creating jobs in DeterministicPileup mode for %s',
+                             self.subscription.workflowName())
 
         filesByLocation = self.getFilesSortedByLocation(avgEventsPerJob)
         if not filesByLocation:

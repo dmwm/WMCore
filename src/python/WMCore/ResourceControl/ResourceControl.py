@@ -184,7 +184,6 @@ class ResourceControl(WMConnectionBase):
           state               - State of the site
           total_pending_slots - Total number of pending slots available at the site
           total_running_slots - Total number of running slots available at the site
-          wf_highest_priority - highest priority value among pending and running joba
           total_pending_jobs  - Total jobs pending at the site
           total_running_jobs  - Total jobs running at the site
           thresholds          - List of dictionaries with threshold information ordered by descending priority
@@ -195,6 +194,7 @@ class ResourceControl(WMConnectionBase):
           task_running_jobs   - Running jobs for the task type
           task_pending_jobs   - Pending jobs for the task type
           priority            - Priority assigned to the task type
+          wf_highest_priority - highest priority value among pending and running joba
         """
         listAction = self.daofactory(classname = "ListThresholdsForSubmit")
         return listAction.execute(conn = self.getDBConn(),

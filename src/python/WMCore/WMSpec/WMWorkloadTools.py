@@ -139,7 +139,7 @@ def validateInputDatasSetAndParentFlag(arguments):
     inputdataset = _getChainKey(arguments, "InputDataset")
     mcpileup = _getChainKey(arguments, "MCPileup")
     datapileup = _getChainKey(arguments, "DataPileup")
-    includeParents = strToBool(arguments.get("IncludeParents", False))
+    includeParents = _getChainKey(arguments, "IncludeParents")
     dbsURL = arguments.get("DbsUrl")
 
     if includeParents and not inputdataset:
@@ -191,12 +191,12 @@ def _getChainKey(arguments, keyName):
     value regardless of the request type.
     """
     if "TaskChain" in arguments:
-        inputDataset = arguments['Task1'].get(keyName)
+        value = arguments['Task1'].get(keyName)
     elif "StepChain" in arguments:
-        inputDataset = arguments['Step1'].get(keyName)
+        value = arguments['Step1'].get(keyName)
     else:
-        inputDataset = arguments.get(keyName)
-    return inputDataset
+        value = arguments.get(keyName)
+    return value
 
 
 def validatePhEDExSubscription(arguments):

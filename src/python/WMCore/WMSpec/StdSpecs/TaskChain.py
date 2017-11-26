@@ -502,6 +502,8 @@ class TaskChainWorkloadFactory(StdBase):
         elif taskConf["SplittingAlgo"] == "FileBased":
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
+        taskConf["SplittingArguments"].setdefault("include_parents", taskConf['IncludeParents'])
+
         taskConf["PileupConfig"] = parsePileupConfig(taskConf.get("MCPileup"),
                                                      taskConf.get("DataPileup"))
         # Adjust the pileup splitting

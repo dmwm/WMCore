@@ -13,7 +13,22 @@ import json
 import tempfile
 import traceback
 from collections import defaultdict
-from future.utils import with_metaclass
+try:
+    from future.utils import with_metaclass
+except:
+    # copy from Python 2.7.14 future/utils/__init__.py
+    def with_metaclass(meta, *bases):
+        "Helper function to provide metaclass for singleton definition"
+        class metaclass(meta):
+            "Metaclass for singleton definition"
+            __call__ = type.__call__
+            __init__ = type.__init__
+            def __new__(cls, name, this_bases, d):
+                "Return new class instance"
+                if this_bases is None:
+                    return type.__new__(cls, name, (), d)
+                return meta(name, bases, d)
+        return metaclass('temporary_class', None, {})
 
 # WMCore modules
 from Utils.Patterns import Singleton

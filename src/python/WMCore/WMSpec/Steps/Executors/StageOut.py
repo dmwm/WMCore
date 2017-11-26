@@ -149,18 +149,20 @@ class StageOut(Executor):
                 #  - are we over the size threshold
                 #  - are we over the event threshold ?
                 straightToMerge = False
-                if not getattr(fileName, 'merged', False) and hasattr(self.step.output, 'minMergeSize'):
-                    if fileName.module_label not in getattr(self.step.output, 'forceUnmergedOutputs', []):
-                        if getattr(fileName, 'size', 0) >= self.step.output.minMergeSize:
+                if not getattr(fileName, 'merged', False):
+                    if hasattr(fileName, 'dataset') and fileName.dataset.get('dataTier', "") in ["NANOAOD", "NANOAODSIM"]:
+                        logging.info("NANOAOD and NANOAODSIM files never go straight to merge!")
+                    elif fileName.module_label not in getattr(self.step.output, 'forceUnmergedOutputs', []):
+                        if hasattr(self.step.output, 'minMergeSize') and getattr(fileName, 'size', 0) >= self.step.output.minMergeSize:
+                            logging.info("Sending %s straight to merge due to minMergeSize", fileName.lfn)
                             straightToMerge = True
-                        if getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxsize):
+                        elif getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxsize):
+                            logging.info("Sending %s straight to merge due to maxMergeEvents", fileName.lfn)
                             straightToMerge = True
 
                 if straightToMerge:
-
                     try:
-                        fileName = self.handleLFNForMerge(mergefile = fileName,
-                                                          step = step)
+                        fileName = self.handleLFNForMerge(mergefile=fileName, step=step)
                     except Exception as ex:
                         logging.info("minMergeSize: %s", getattr(self.step.output, 'minMergeSize', None))
                         logging.info("maxMergeEvents: %s", getattr(self.step.output, 'maxMergeEvents', None))
@@ -172,7 +174,7 @@ class StageOut(Executor):
                 # Save the input PFN in case we need it
                 # Undecided whether to move fileName.pfn to the output PFN
                 fileName.InputPFN = fileName.pfn
-                lfn = getattr(fileName, 'lfn')
+                lfn = fileName.lfn
                 fileSource = getattr(fileName, 'Source', None)
                 if fileSource in ['TFileService', 'UserDefined']:
                     userLfnRegEx(lfn)

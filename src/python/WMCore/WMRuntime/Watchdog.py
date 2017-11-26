@@ -75,11 +75,12 @@ class Watchdog(threading.Thread):
             logging.info(msg)
             mon = self.loadMonitor(monitor)
             args = {}
-            if hasattr(task.data.watchdog, monitor) and monitor == 'PerformanceMonitor':
-                # Apply tweaks to PerformanceMonitor only.
+            if hasattr(task.data.watchdog, monitor):
                 # This should be a config section
                 monitorArgs = getattr(task.data.watchdog, monitor)
                 args = monitorArgs.dictionary_()
+            if monitor == 'PerformanceMonitor' and args:
+                # Apply tweaks to PerformanceMonitor only.
                 # Scale resources according to the HTCondor runtime environment.
                 origCores = 1
                 for stepName in task.listAllStepNames():

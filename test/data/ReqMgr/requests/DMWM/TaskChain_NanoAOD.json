@@ -21,9 +21,9 @@
     }, 
     "createRequest": {
         "AcquisitionEra": {
-            "NANOAODMC2017": "CMSSW_9_4_0_pre3"
+            "NANOAODMC2017": "CMSSW_9_4_0_patch1"
         }, 
-        "CMSSWVersion": "CMSSW_9_4_0_pre3", 
+        "CMSSWVersion": "CMSSW_9_4_0_patch1",
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": "Create NANOAOD with MinMergeSize=1, though straight to merge must be false",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
@@ -32,7 +32,7 @@
         "GlobalTag": "94X_mc2017_realistic_v4", 
         "Memory": 1900, 
         "Multicore": 1, 
-        "PrepID": "TEST-CMSSW_9_4_0_pre3__NANO_test-1508878744-TTbar_13_94XNanoAODINPUT", 
+        "PrepID": "TEST-CMSSW_9_4_0_patch1__NANO_test-1508878744-TTbar_13_94XNanoAODINPUT",
         "ProcessingString": {
             "NANOAODMC2017": "94X_mc2017_realistic_v4_RelVal_nanoaod94X"
         }, 
@@ -44,8 +44,8 @@
         "SizePerEvent": 1234, 
         "SubRequestType": "RelVal", 
         "Task1": {
-            "AcquisitionEra": "CMSSW_9_4_0_pre3", 
-            "Campaign": "CMSSW_9_4_0_pre3__NANO_test-1508878744", 
+            "AcquisitionEra": "CMSSW_9_4_0_patch1",
+            "Campaign": "CMSSW_9_4_0_patch1__NANO_test-1508878744",
             "ConfigCacheID": "361c7404430e851518b338c052b97cfb", 
             "GlobalTag": "94X_mc2017_realistic_v4", 
             "InputDataset": "/RelValTTbar_13/CMSSW_9_4_0_pre1-PU25ns_93X_mc2017_realistic_v3-v1/MINIAODSIM", 

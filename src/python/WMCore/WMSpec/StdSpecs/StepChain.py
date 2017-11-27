@@ -344,6 +344,7 @@ class StepChainWorkloadFactory(StdBase):
         elif taskConf["SplittingAlgo"] == "FileBased":
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
+        taskConf["SplittingArguments"].setdefault("include_parents", taskConf['IncludeParents'])
         taskConf["SplittingArguments"].setdefault("deterministicPileup", self.deterministicPileup)
 
         return

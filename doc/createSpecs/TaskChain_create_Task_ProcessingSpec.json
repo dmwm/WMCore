@@ -68,7 +68,12 @@
         "default": null, 
         "optional": true, 
         "type": "<type 'str'>"
-    }, 
+    },
+    "IncludeParents": {
+        "default": false,
+        "optional": true,
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    },
     "InputDataset": {
         "default": null, 
         "optional": true, 

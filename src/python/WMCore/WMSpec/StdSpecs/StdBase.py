@@ -1183,6 +1183,7 @@ class StdBase(object):
                      'FilterEfficiency': {'default': 1.0, 'null': False, 'optional': True, 'type': float,
                                           'validate': lambda x: x > 0.0},
                      'GlobalTag': {'optional': False, 'type': str},
+                     "IncludeParents": {"null": False, "default": False, "type": strToBool},
                      'InputDataset': {'null': False, 'optional': generator or not firstTask, 'validate': dataset},
                      'InputFromOutputModule': {'default': None, 'null': False, 'optional': firstTask},
                      'KeepOutput': {'default': True, 'null': False, 'optional': True, 'type': strToBool},

@@ -1,0 +1,65 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "DQMHLTonRAWAOD_2017": "AcquisitionEra-OVERRIDE-ME"
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "ProcessingString": {
+            "DQMHLTonRAWAOD_2017": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "TrustSitelists": true,
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": {
+            "DQMHLTonRAWAOD_2017": "CMSSW_9_4_0"
+        }, 
+        "CMSSWVersion": "CMSSW_9_4_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "Task1 with IncludeParents and LumiList (28 lumis), single run (1 blocks); 8 cores; TrustSitelists True", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "GlobalTag": "94X_dataRun2_PromptLike_v5", 
+        "Multicore": 1, 
+        "PrepID": "TEST-CMSSW_9_4_0__test2inwf-1510737328-RunHLTPhy2017B_RAWAOD", 
+        "ProcessingString": {
+            "DQMHLTonRAWAOD_2017": "94X_dataRun2_PromptLike_v5_RelVal_hltPhy2017Brawaod"
+        }, 
+        "ProcessingVersion": 18, 
+        "RequestPriority": 160000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "slc6_amd64_gcc630"
+        ], 
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_9_4_0", 
+            "Campaign": "CMSSW_9_4_0__test2inwf-1510737328", 
+            "ConfigCacheID": "d0bff75e6c119de01942c9a5304629a7", 
+            "GlobalTag": "94X_dataRun2_PromptLike_v5", 
+            "IncludeParents": true, 
+            "InputDataset": "/HLTPhysics/Run2017B-PromptReco-v1/AOD", 
+            "KeepOutput": true, 
+            "LumiList": {"297557": [[60, 80], [173, 180]]}, 
+            "LumisPerJob": 10, 
+            "Memory": 13500, 
+            "Multicore": 8, 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DQMHLTonRAWAOD_2017"
+        }, 
+        "TaskChain": 1, 
+        "TimePerEvent": 0.10000000000000001
+    }
+}

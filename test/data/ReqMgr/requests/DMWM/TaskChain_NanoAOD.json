@@ -1,0 +1,62 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "NANOAODMC2017": "AcquisitionEra-OVERRIDE-ME"
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1",
+        "MinMergeSize": 1,
+        "ProcessingString": {
+            "NANOAODMC2017": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": {
+            "NANOAODMC2017": "CMSSW_9_4_0_patch1"
+        }, 
+        "CMSSWVersion": "CMSSW_9_4_0_patch1",
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "Create NANOAOD with MinMergeSize=1, though straight to merge must be false",
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "GlobalTag": "94X_mc2017_realistic_v4", 
+        "Memory": 1900, 
+        "Multicore": 1, 
+        "PrepID": "TEST-CMSSW_9_4_0_patch1__NANO_test-1508878744-TTbar_13_94XNanoAODINPUT",
+        "ProcessingString": {
+            "NANOAODMC2017": "94X_mc2017_realistic_v4_RelVal_nanoaod94X"
+        }, 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 800000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": "slc6_amd64_gcc630",
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_9_4_0_patch1",
+            "Campaign": "CMSSW_9_4_0_patch1__NANO_test-1508878744",
+            "ConfigCacheID": "361c7404430e851518b338c052b97cfb", 
+            "GlobalTag": "94X_mc2017_realistic_v4", 
+            "InputDataset": "/RelValTTbar_13/CMSSW_9_4_0_pre1-PU25ns_93X_mc2017_realistic_v3-v1/MINIAODSIM", 
+            "LumisPerJob": 10, 
+            "Memory": 2000, 
+            "Multicore": 8, 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "NANOAODMC2017"
+        }, 
+        "TaskChain": 1, 
+        "TimePerEvent": 0.10000000000000001
+    }
+}

@@ -8,6 +8,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import logging
+import threading
+from WMCore.DAOFactory import DAOFactory
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 import WMCore.Database.CouchUtils as CouchUtils
@@ -93,10 +95,16 @@ class DataCollectionService(CouchService):
             coll.addFileset(fileset)
             inputFiles = job['input_files']
             for fInfo in inputFiles:
-                if fInfo["merged"] and ("parents" in fInfo) and \
-                   len(fInfo["parents"]) and ("/store/unmerged/" in next(iter(fInfo["parents"]))):
-                    # remove parents files from acdc doucment if they are unmerged files
+                if int(fInfo["merged"]) == 1:  # Looks like Oracle and MySQL return diff type
                     fInfo["parents"] = []
+                elif fInfo.get("parents", []):
+                    firstParent = next(iter(fInfo["parents"]))
+                    if "/store/unmerged/" in firstParent:
+                        # parents and input files are unmerged files - need to find merged ascendant
+                        fInfo["parents"] = list(getMergedParents(fInfo["parents"]))
+                    elif "MCFakeFile" in firstParent:
+                        fInfo["parents"] = []
+                    # other case, fInfo["parents"] all or merged parents
             if useMask:
                 fileset.add(files=inputFiles, mask=job['mask'])
             else:
@@ -350,3 +358,30 @@ class DataCollectionService(CouchService):
 
         lumiList = LumiList(compactList=self.getLumiWhitelist(collectionID, taskName))
         return lumiList
+
+
+def getMergedParents(childLFNs):
+
+    myThread = threading.currentThread()
+    daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+
+    getParentInfoAction = daoFactory(classname="Files.GetParentInfo")
+
+    parentsInfo = getParentInfoAction.execute(childLFNs)
+    newParents = set()
+    unmergedParents = set()
+    for parentInfo in parentsInfo:
+        # This will catch straight to merge files that do not have redneck
+        # parents.  We will mark the straight to merge file from the job
+        # as a child of the merged parent.
+        if int(parentInfo["merged"]) == 1:
+            newParents.add(parentInfo["lfn"])
+        else:
+            unmergedParents.add(parentInfo["lfn"])
+
+    if len(unmergedParents) > 0:
+        grandParentSet = getMergedParents(unmergedParents)
+        newParents.union(grandParentSet)
+
+    return newParents

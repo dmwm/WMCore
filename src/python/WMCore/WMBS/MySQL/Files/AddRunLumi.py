@@ -4,7 +4,7 @@ _AddRunLumi_
 
 MySQL implementation of AddRunLumi
 """
-
+import logging
 from Utils.IteratorTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -47,7 +47,9 @@ class AddRunLumi(DBFormatter):
         return True
 
     def execute(self, file=None, runs=None, conn=None, transaction=False):
+        logging.info("AMR received %i file entries", len(file))
         for sliceBinds in grouper(self.getBinds(file, runs), 10000):
+            logging.info("AMR inserting %i lumis from sliceBinds", len(sliceBinds))
             result = self.dbi.processData(self.sql, sliceBinds, conn=conn,
                                           transaction=transaction)
         return self.format(result)

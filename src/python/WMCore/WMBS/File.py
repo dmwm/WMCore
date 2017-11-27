@@ -615,6 +615,17 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
                                 conn = conn,
                                 transaction = transaction)
     if len(runLumiBinds) > 0:
+        ### FIXME temporary debugging  ###
+        logging.info("AMR about to add %i non-unique files for fileset %i",
+                     len(runLumiBinds), filesetId)
+        lumisPerRun = {}
+        for entry in runLumiBinds:
+            if isinstance(entry['runs'], set):
+                for run in entry['runs']:
+                    lumisPerRun.setdefault(run.run, 0)
+                    lumisPerRun[run.run] += len(run.lumis)
+        logging.info("AMR run and # of lumis to be recovered: %s", lumisPerRun)
+        ### done debugging  ###
         setFileRunLumi.execute(file = runLumiBinds,
                                conn = conn,
                                transaction = transaction)

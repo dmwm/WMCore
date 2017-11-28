@@ -23,8 +23,9 @@ class New(NewLocationMySQL):
                 (SELECT pnn FROM wmbs_pnns where pnn = :pnn)"""
 
     mapSQL = """INSERT INTO wmbs_location_pnns (location, pnn)
-                  SELECT wl.id, wpnn.id FROM wmbs_location wl, wmbs_pnns wpnn
-                  WHERE wl.site_name = :location AND wpnn.pnn = :pnn
-                AND NOT EXISTS
-                  (SELECT null FROM wmbs_location wl2, wmbs_pnns wpnn2
-                  WHERE wl2.site_name = :location AND wpnn2.pnn = :pnn)"""
+                  SELECT (SELECT id from wmbs_location WHERE site_name = :location),
+                         (SELECT id from wmbs_pnns WHERE pnn = :pnn) FROM DUAL
+                WHERE NOT EXISTS
+                    (SELECT * FROM wmbs_location_pnns WHERE
+                      location = (SELECT id from wmbs_location WHERE site_name = :location) AND
+                      pnn = (SELECT id from wmbs_pnns WHERE pnn = :pnn))"""

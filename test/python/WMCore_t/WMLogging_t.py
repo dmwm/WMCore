@@ -40,7 +40,7 @@ class WMLoggingTest(unittest.TestCase):
             my_logger.info('Jackdaws love my big sphinx of quartz.')
             my_logger.error('HOLLY CRAP!')
         logs = self.db.allDocs()['rows']
-        self.assertEqual(30, len(logs))
+        self.assertEqual(20, len(logs))
 
 if __name__ == "__main__":
     unittest.main()

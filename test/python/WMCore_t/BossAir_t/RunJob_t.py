@@ -140,7 +140,7 @@ class RunJobTest(unittest.TestCase):
         statusDAO.execute(states = ['New', 'Gone', 'Dead'])
 
         result = myThread.dbi.processData("SELECT name FROM bl_status")[0].fetchall()
-        self.assertEqual(result, [('Dead',), ('Gone',), ('New',)])
+        self.assertItemsEqual(result, [('Dead',), ('Gone',), ('New',)])
 
 
         newJobDAO = self.daoFactory(classname = "NewJobs")

@@ -27,7 +27,7 @@ class WMInit_t(unittest.TestCase):
         """
         _Database_
 
-        Testing the database stuff.
+        Testing the database stuff. Only works for MySQL backend
         """
 
         init = WMInit()

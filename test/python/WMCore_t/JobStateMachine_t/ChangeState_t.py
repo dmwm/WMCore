@@ -776,7 +776,7 @@ class TestChangeState(unittest.TestCase):
 
         Verify that in case of conflict in the job index
         we discard the old document and replace with a new
-        one
+        one. Only works for MySQL backend
         """
         change = ChangeState(self.config, "changestate_t")
 

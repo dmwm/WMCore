@@ -31,9 +31,10 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobCreatorTest(unittest.TestCase):
+class JobCreatorTest(EmulatedUnitTestCase):
     """
     Test case for the JobCreator
 
@@ -48,6 +49,7 @@ class JobCreatorTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
+        super(JobCreatorTest, self).setUp()
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()

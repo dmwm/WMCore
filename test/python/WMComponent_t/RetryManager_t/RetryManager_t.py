@@ -28,9 +28,10 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class RetryManagerTest(unittest.TestCase):
+class RetryManagerTest(EmulatedUnitTestCase):
     """
     TestCase for TestRetryManager module
     """
@@ -39,6 +40,7 @@ class RetryManagerTest(unittest.TestCase):
         """
         setup for test.
         """
+        super(RetryManagerTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)

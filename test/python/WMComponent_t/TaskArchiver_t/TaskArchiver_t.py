@@ -37,9 +37,10 @@ from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMQuality.Emulators.WMSpecGenerator.ReqMgrDocGenerator import generate_reqmgr_schema
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class TaskArchiverTest(unittest.TestCase):
+class TaskArchiverTest(EmulatedUnitTestCase):
     """
     TestCase for TestTaskArchiver module
     """
@@ -53,7 +54,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
         setup for test.
         """
-
+        super(TaskArchiverTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)

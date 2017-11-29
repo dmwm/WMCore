@@ -14,7 +14,6 @@ import logging
 import threading
 import unittest
 import stat
-import shutil
 import subprocess
 import getpass
 import time
@@ -23,8 +22,6 @@ import pstats
 from nose.plugins.attrib import attr
 
 import WMCore.WMInit
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUIDLib import makeUUID
 
@@ -37,12 +34,12 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.JobTracker.JobTracker       import JobTracker
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
 from WMCore.ResourceControl.ResourceControl  import ResourceControl
 from WMCore.JobStateMachine.ChangeState      import ChangeState
-
-from WMCore.Agent.Configuration import Configuration
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
 def createJDL(id, directory, jobCE):
@@ -53,7 +50,6 @@ def createJDL(id, directory, jobCE):
     """
 
     jdl = []
-
 
     jdl.append("universe = globus\n")
     jdl.append("should_transfer_executable = TRUE\n")
@@ -67,8 +63,6 @@ def createJDL(id, directory, jobCE):
     jdl.append("+WMAgent_JobID = %s\n" % id)
     jdl.append("+WMAgent_AgentName = testAgent\n")
     jdl.append("Queue 1")
-
-
     return jdl
 
 
@@ -120,8 +114,7 @@ def getCondorRunningJobs(user):
     return nJobs
 
 
-
-class JobTrackerTest(unittest.TestCase):
+class JobTrackerTest(EmulatedUnitTestCase):
     """
     TestCase for TestJobTracker module
     """
@@ -132,7 +125,7 @@ class JobTrackerTest(unittest.TestCase):
         """
         setup for test.
         """
-
+        super(JobTrackerTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)
@@ -180,7 +173,6 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)
         return
-
 
     def getConfig(self):
         """

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 _Lexicon_
 
@@ -12,6 +12,7 @@ import re
 import string
 import urlparse
 import mmap
+import logging
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
@@ -685,7 +686,11 @@ def getStringsBetween(start, end, source):
 
 def getIterMatchObjectOnRegexp(filePath, regexp):
     with io.open(filePath, 'r', encoding='utf8', errors='ignore') as f:
-        mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        for m in re.finditer(regexp, mm):
-            yield m
-        mm.close()
+        try:
+            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+        except ValueError:
+            logging.warning("Cannot mmap empty file: %s", filePath)
+        else:
+            for m in re.finditer(regexp, mm):
+                yield m
+            mm.close()

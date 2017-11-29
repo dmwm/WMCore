@@ -7,9 +7,8 @@ MySQL implementation of Locations.GetSiteSE
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetSiteSE(DBFormatter):
     """
@@ -22,8 +21,6 @@ class GetSiteSE(DBFormatter):
                INNER JOIN wmbs_pnns wpnn ON wlpnn.pnn = wpnn.id
              WHERE wl.ce_name = :site"""
 
-
-    def execute(self, cesite = None, conn = None, transaction = False):
-
-        results = self.dbi.processData(self.sql, {'site': cesite}, conn = conn, transaction = transaction)
+    def execute(self, cesite=None, conn=None, transaction=False):
+        results = self.dbi.processData(self.sql, {'site': cesite}, conn=conn, transaction=transaction)
         return self.formatDict(results)

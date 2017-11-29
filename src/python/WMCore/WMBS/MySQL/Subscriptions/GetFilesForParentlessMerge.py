@@ -7,6 +7,7 @@ MySQL implementation of Subscription.GetFilesForParentlessMerge
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetFilesForParentlessMerge(DBFormatter):
     """
     This query needs to return the following for any files that is deemed
@@ -58,7 +59,7 @@ class GetFilesForParentlessMerge(DBFormatter):
                       wmbs_workflow.injected
              """
 
-    def execute(self, subscription = None, conn = None, transaction = False):
-        results = self.dbi.processData(self.sql, {"p_1": subscription}, conn = conn,
-                                      transaction = transaction)
+    def execute(self, subscription=None, conn=None, transaction=False):
+        results = self.dbi.processData(self.sql, {"p_1": subscription}, conn=conn,
+                                       transaction=transaction)
         return self.formatDict(results)

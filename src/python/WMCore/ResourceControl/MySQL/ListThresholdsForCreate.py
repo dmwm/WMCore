@@ -8,6 +8,7 @@ determine whether or not to task for more work.
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class ListThresholdsForCreate(DBFormatter):
     assignedSQL = """SELECT wmbs_location.site_name, wmbs_location.pending_slots,
                             wmbs_location.cms_name, wmbs_location.plugin,
@@ -98,15 +99,15 @@ class ListThresholdsForCreate(DBFormatter):
             siteName = result["site_name"]
 
             if not siteName in results:
-                results[siteName] = {"cms_name" : result["cms_name"],
-                                     "state" : result["state"],
-                                     "pending_jobs" : {},
-                                     "total_slots" : result["pending_slots"]}
+                results[siteName] = {"cms_name": result["cms_name"],
+                                     "state": result["state"],
+                                     "pending_jobs": {},
+                                     "total_slots": result["pending_slots"]}
 
             countJobs = True
             if result['job_status']:
                 module = __import__("WMCore.BossAir.Plugins.%s" % result['plugin'],
-                                globals(), locals(), [result['plugin']])
+                                    globals(), locals(), [result['plugin']])
                 plugIn = getattr(module, result['plugin'])
                 status = plugIn.stateMap().get(result['job_status'])
                 if status == 'Running':
@@ -129,7 +130,7 @@ class ListThresholdsForCreate(DBFormatter):
                 results[siteName] = {"total_slots": result["pending_slots"],
                                      "pending_jobs": {},
                                      "cms_name": result["cms_name"],
-                                     "state" : result["state"]}
+                                     "state": result["state"]}
             priority = result["priority"] or 0
 
             if priority not in results[siteName]['pending_jobs']:
@@ -150,11 +151,11 @@ class ListThresholdsForCreate(DBFormatter):
             results.append(item)
         return results
 
-    def execute(self, conn = None, transaction = False, tableFormat = False):
-        assignedResults = self.dbi.processData(self.assignedSQL, conn = conn,
-                                               transaction = transaction)
-        unassignedResults = self.dbi.processData(self.unassignedSQL, conn = conn,
-                                                 transaction = transaction)
+    def execute(self, conn=None, transaction=False, tableFormat=False):
+        assignedResults = self.dbi.processData(self.assignedSQL, conn=conn,
+                                               transaction=transaction)
+        unassignedResults = self.dbi.processData(self.unassignedSQL, conn=conn,
+                                                 transaction=transaction)
         results = self.format(assignedResults, unassignedResults)
         if tableFormat:
             return self.formatTable(results)

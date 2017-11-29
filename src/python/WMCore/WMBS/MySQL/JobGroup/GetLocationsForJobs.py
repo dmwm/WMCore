@@ -7,11 +7,10 @@ MySQL implementation of JobGroup.GetLocationsForJobs
 
 __all__ = []
 
-
-
 import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetLocationsForJobs(DBFormatter):
     """
@@ -28,24 +27,21 @@ class GetLocationsForJobs(DBFormatter):
           INNER JOIN wmbs_job wj ON wj.id = wja.job
           WHERE wj.jobgroup = :jobgroup"""
 
-
-
     def format(self, result):
 
         newResult = []
-        #First, actually get something useful
+        # First, actually get something useful
         modifiedResult = result[0].fetchall()
 
         for res in modifiedResult:
-            #Should only have one entry (one site_name per site)
+            # Should only have one entry (one site_name per site)
             tmp = res.values()[0]
             if not tmp in newResult:
                 newResult.append(tmp)
 
         return newResult
 
-
-    def execute(self, id, conn = None, transaction = False):
+    def execute(self, id, conn=None, transaction=False):
         """
         _execute_
 
@@ -57,8 +53,7 @@ class GetLocationsForJobs(DBFormatter):
             logging.error("JobGroup.GetLocationsForJobs got unspecified jobGroup ID")
             return []
 
-        result = self.dbi.processData(self.sql, {"jobgroup": id}, conn = conn,
-                                      transaction = transaction)
-
+        result = self.dbi.processData(self.sql, {"jobgroup": id}, conn=conn,
+                                      transaction=transaction)
 
         return self.format(result)

@@ -7,6 +7,7 @@ MySQL implementation of Locations.GetSiteInfo
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetSiteInfo(DBFormatter):
     """
     Grab all the relevant information for a given site.
@@ -20,9 +21,8 @@ class GetSiteInfo(DBFormatter):
                  INNER JOIN wmbs_location_state wlst ON wlst.id = wl.state
                WHERE wl.site_name = :site"""
 
-
-    def execute(self, siteName = None, conn = None, transaction = False):
+    def execute(self, siteName=None, conn=None, transaction=False):
         results = self.dbi.processData(self.sql, {'site': siteName},
-                                       conn = conn, transaction = transaction)
+                                       conn=conn, transaction=transaction)
         formatted = self.formatDict(results)
         return formatted

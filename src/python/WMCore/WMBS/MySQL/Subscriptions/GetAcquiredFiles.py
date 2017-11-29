@@ -7,9 +7,8 @@ MySQL implementation of Subscription.GetAcquiredFiles
 
 __all__ = []
 
-
-
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
+
 
 class GetAcquiredFiles(GetAvailableFiles):
     sql = """SELECT wmsfa.fileid, wl.site_name FROM wmbs_sub_files_acquired wmsfa
@@ -19,7 +18,7 @@ class GetAcquiredFiles(GetAvailableFiles):
              WHERE wmsfa.subscription = :subscription
              """
 
-    def execute(self, subscription = None, conn = None, transaction = False):
+    def execute(self, subscription=None, conn=None, transaction=False):
         results = self.dbi.processData(self.sql, {"subscription": subscription},
-                                       conn = conn, transaction = transaction)
+                                       conn=conn, transaction=transaction)
         return self.formatDict(results)

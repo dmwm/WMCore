@@ -7,6 +7,7 @@ MySQL implementation of Subscription.SiblingSubscriptionsComplete
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class SiblingSubscriptionsComplete(DBFormatter):
     """
     For each file in the input fileset count the number of subscriptions
@@ -44,9 +45,8 @@ class SiblingSubscriptionsComplete(DBFormatter):
                  wmbs_file_location.pnn = wmbs_pnns.id
              """
 
-    def execute(self, subscription, conn = None, transaction = False):
-
-        results = self.dbi.processData(self.sql, { 'subscription' : subscription },
-                                       conn = conn, transaction = transaction)
+    def execute(self, subscription, conn=None, transaction=False):
+        results = self.dbi.processData(self.sql, {'subscription': subscription},
+                                       conn=conn, transaction=transaction)
 
         return self.formatDict(results)

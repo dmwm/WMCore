@@ -7,6 +7,7 @@ Oracle implementation of Jobs.LoadForErrorHandler.
 
 from WMCore.WMBS.MySQL.Jobs.LoadForErrorHandler import LoadForErrorHandler as MySQLLoadForErrorHandler
 
+
 class LoadForErrorHandler(MySQLLoadForErrorHandler):
     """
     _LoadForErrorHandler_

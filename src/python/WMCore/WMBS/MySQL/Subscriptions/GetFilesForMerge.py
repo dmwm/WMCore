@@ -7,6 +7,7 @@ MySQL implementation of Subscription.GetFilesForMerge
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetFilesForMerge(DBFormatter):
     """
     This query needs to return the following for any files that is deemed
@@ -75,9 +76,9 @@ class GetFilesForMerge(DBFormatter):
                       wmbs_file_details.lfn, wmbs_file_details.first_event,
                       wmbs_pnns.pnn"""
 
-    def execute(self, subscription = None, conn = None, transaction = False):
-        results = self.dbi.processData(self.sql, {"p_1": subscription}, conn = conn,
-                                      transaction = transaction)
+    def execute(self, subscription=None, conn=None, transaction=False):
+        results = self.dbi.processData(self.sql, {"p_1": subscription}, conn=conn,
+                                       transaction=transaction)
 
         ungroupedResult = self.formatDict(results)
         result = {}

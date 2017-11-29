@@ -9,6 +9,7 @@ For WorkQueue only
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class SetLocationForWorkQueue(DBFormatter):
     """
     _SetLocationForWorkQueue_
@@ -26,7 +27,7 @@ class SetLocationForWorkQueue(DBFormatter):
                      WHERE wpnn.pnn = :location
                      AND wfd.lfn = :lfn"""
 
-    def execute(self, lfns, locations, isDBS = True, conn = None, transaction = None):
+    def execute(self, lfns, locations, isDBS=True, conn=None, transaction=None):
         """
         If files are from DBS:
         First, delete all file_location references with that lfn.
@@ -40,9 +41,9 @@ class SetLocationForWorkQueue(DBFormatter):
             binds.append({'lfn': lfn})
 
         if isDBS:
-            self.dbi.processData(self.deleteSQL, binds, conn = conn,
-                                 transaction = transaction)
+            self.dbi.processData(self.deleteSQL, binds, conn=conn,
+                                 transaction=transaction)
 
-        self.dbi.processData(self.insertSQL, locations, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.insertSQL, locations, conn=conn,
+                             transaction=transaction)
         return

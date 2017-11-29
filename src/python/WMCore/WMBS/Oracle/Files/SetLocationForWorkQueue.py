@@ -9,6 +9,7 @@ For WorkQueue only
 
 from WMCore.WMBS.MySQL.Files.SetLocationForWorkQueue import SetLocationForWorkQueue as MySQLSetLocationForWorkQueue
 
+
 class SetLocationForWorkQueue(MySQLSetLocationForWorkQueue):
     """
     Oracle version

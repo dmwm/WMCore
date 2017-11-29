@@ -7,14 +7,13 @@ Created by Dave Evans on 2011-05-20.
 Copyright (c) 2011 Fermilab. All rights reserved.
 """
 import os
-import unittest
 import threading
-
+import unittest
 
 from WMCore.WMInit import WMInit, getWMBASE
 
-class WMInit_t(unittest.TestCase):
 
+class WMInit_t(unittest.TestCase):
     def testA(self):
 
         try:
@@ -22,18 +21,17 @@ class WMInit_t(unittest.TestCase):
         except:
             self.fail("Error calling WMInit.getWMBASE")
 
-
     def testB_Database(self):
         """
         _Database_
 
-        Testing the database stuff.
+        Testing the database stuff. Only works for MySQL backend
         """
 
         init = WMInit()
-        url     = os.environ.get("DATABASE")
+        url = os.environ.get("DATABASE")
         dialect = os.environ.get("DIALECT")
-        sock    = os.environ.get("DBSOCK", None)
+        sock = os.environ.get("DBSOCK", None)
 
         init.setDatabaseConnection(url, dialect, sock)
 
@@ -43,9 +41,9 @@ class WMInit_t(unittest.TestCase):
             init.clearDatabase()
 
             # Clear one after another should work
-            init.setSchema(modules = ['WMCore.WMBS'])
+            init.setSchema(modules=['WMCore.WMBS'])
             init.clearDatabase()
-            init.setSchema(modules = ['WMCore.WMBS'])
+            init.setSchema(modules=['WMCore.WMBS'])
             init.clearDatabase()
 
             # Clear non-existant DB should work
@@ -59,15 +57,14 @@ class WMInit_t(unittest.TestCase):
             dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
             self.assertEqual(dbName, a)
 
-
-            init.setSchema(modules = ['WMCore.WMBS'])
+            init.setSchema(modules=['WMCore.WMBS'])
             myThread.transaction.begin()
             myThread.transaction.processData("SELECT * FROM wmbs_job")
             init.clearDatabase()
             dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
             self.assertEqual(dbName, a)
             myThread.transaction.begin()
-            init.setSchema(modules = ['WMCore.WMBS'])
+            init.setSchema(modules=['WMCore.WMBS'])
             myThread.transaction.commit()
         except:
             init.clearDatabase()
@@ -76,6 +73,7 @@ class WMInit_t(unittest.TestCase):
         init.clearDatabase()
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

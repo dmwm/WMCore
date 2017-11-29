@@ -7,6 +7,7 @@ MySQL implementation of Locations.New
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class New(DBFormatter):
     sql = """INSERT IGNORE INTO wmbs_location (site_name, ce_name,
                                                pending_slots, running_slots,
@@ -26,8 +27,8 @@ class New(DBFormatter):
                   WHERE wl.site_name = :location AND wpnn.pnn = :pnn"""
 
     def execute(self, siteName, cmsName=None, ceName=None, pnn="None",
-                runningSlots = 0, pendingSlots = 0, plugin = None,
-                conn = None, transaction = False):
+                runningSlots=0, pendingSlots=0, plugin=None,
+                conn=None, transaction=False):
         """
         _execute_
 
@@ -36,14 +37,14 @@ class New(DBFormatter):
         binds = {"location": siteName, "cmsname": cmsName, "cename": ceName,
                  "running_slots": runningSlots, "pending_slots": pendingSlots,
                  "plugin": plugin}
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn,
+                             transaction=transaction)
 
         binds = {'pnn': pnn}
-        self.dbi.processData(self.pnnSQL, binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.pnnSQL, binds, conn=conn,
+                             transaction=transaction)
 
         binds = {'location': siteName, 'pnn': pnn}
-        self.dbi.processData(self.mapSQL, binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.mapSQL, binds, conn=conn,
+                             transaction=transaction)
         return

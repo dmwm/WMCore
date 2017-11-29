@@ -5,10 +5,10 @@ _LoadForErrHandler_
 MySQL implementation of Jobs.LoadForErrorHandler.
 """
 
-from WMCore.Database.DBFormatter import DBFormatter
-
-from WMCore.WMBS.File       import File
 from WMCore.DataStructs.Run import Run
+from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.File import File
+
 
 class LoadForErrorHandler(DBFormatter):
     """
@@ -52,7 +52,6 @@ class LoadForErrorHandler(DBFormatter):
     runLumiSQL = """SELECT fileid, run, lumi, num_events FROM wmbs_file_runlumi_map
                      WHERE fileid = :fileid"""
 
-
     def formatJobs(self, result):
         """
         _formatJobs_
@@ -76,8 +75,8 @@ class LoadForErrorHandler(DBFormatter):
 
         return formattedResult
 
-    def execute(self, jobID, fileSelection = None,
-                conn = None, transaction = False):
+    def execute(self, jobID, fileSelection=None,
+                conn=None, transaction=False):
         """
         _execute_
 
@@ -93,14 +92,14 @@ class LoadForErrorHandler(DBFormatter):
         else:
             binds = {"jobid": jobID}
 
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        result = self.dbi.processData(self.sql, binds, conn=conn,
+                                      transaction=transaction)
 
         jobList = self.formatJobs(result)
 
-        filesResult = self.dbi.processData(self.fileSQL, binds, conn = conn,
-                                           transaction = transaction)
-        fileList  = self.formatDict(filesResult)
+        filesResult = self.dbi.processData(self.fileSQL, binds, conn=conn,
+                                           transaction=transaction)
+        fileList = self.formatDict(filesResult)
         fileBinds = []
         if fileSelection:
             fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
@@ -113,12 +112,12 @@ class LoadForErrorHandler(DBFormatter):
 
         parentList = []
         if len(fileBinds) > 0:
-            parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn = conn,
-                                                transaction = transaction)
-            parentList   = self.formatDict(parentResult)
+            parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn=conn,
+                                                transaction=transaction)
+            parentList = self.formatDict(parentResult)
 
-            lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn = conn,
-                                              transaction = transaction)
+            lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
+                                              transaction=transaction)
             lumiList = self.formatDict(lumiResult)
             lumiDict = {}
             for l in lumiList:
@@ -130,14 +129,14 @@ class LoadForErrorHandler(DBFormatter):
                 fileRuns = {}
                 if f['id'] in lumiDict.keys():
                     for l in lumiDict[f['id']]:
-                        run  = l['run']
+                        run = l['run']
                         lumi = l['lumi']
                         numEvents = l['num_events']
                         fileRuns.setdefault(run, [])
                         fileRuns[run].append((lumi, numEvents))
 
                 for r in fileRuns.keys():
-                    newRun = Run(runNumber = r)
+                    newRun = Run(runNumber=r)
                     newRun.lumis = fileRuns[r]
                     f['newRuns'].append(newRun)
 
@@ -147,7 +146,7 @@ class LoadForErrorHandler(DBFormatter):
             if not jobid in filesForJobs.keys():
                 filesForJobs[jobid] = {}
             if f['id'] not in filesForJobs[jobid].keys():
-                wmbsFile = File(id = f['id'])
+                wmbsFile = File(id=f['id'])
                 wmbsFile.update(f)
                 wmbsFile['locations'].add(f['pnn'])
                 for r in wmbsFile['newRuns']:

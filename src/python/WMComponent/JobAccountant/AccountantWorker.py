@@ -471,10 +471,12 @@ class AccountantWorker(WMConnectionBase):
             elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
                 pass
             elif jobType == "Merge" and set(outputMap.keys()) == set(
-                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(['MergedRAW', 'logArchive']):
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedRAW', 'logArchive']):
                 pass
             elif jobType == "Merge" and set(outputMap.keys()) == set(
-                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(['MergedErrorRAW', 'logArchive']):
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedErrorRAW', 'logArchive']):
                 pass
             elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAWRAW']):
                 pass

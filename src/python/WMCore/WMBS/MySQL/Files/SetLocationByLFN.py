@@ -5,10 +5,8 @@ _SetLocationByLFN_
 MySQL implementation of Files.SetLocationByLFN
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class SetLocationByLFN(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (fileid, pnn)
@@ -17,8 +15,7 @@ class SetLocationByLFN(DBFormatter):
                  WHERE wpnn.pnn = :location
                  AND wfd.lfn = :lfn"""
 
-
-    def getBinds(self, lfn = None, location = None):
+    def getBinds(self, lfn=None, location=None):
         if isinstance(lfn, basestring):
             return {'lfn': lfn, 'location': location}
         elif isinstance(lfn, (list, set)):
@@ -27,13 +24,12 @@ class SetLocationByLFN(DBFormatter):
                 binds.append(bind)
             return binds
 
-
-    def execute(self, lfn, location = None, conn = None, transaction = None):
+    def execute(self, lfn, location=None, conn=None, transaction=None):
         """
         Set location PNN by LFN
 
         """
         binds = self.getBinds(lfn, location)
 
-        self.dbi.processData(self.sql, binds, conn=conn, transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn, transaction=transaction)
         return

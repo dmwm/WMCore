@@ -1,14 +1,13 @@
 {
     "assignRequest": {
         "AcquisitionEra": {
-            "NANOAODMC2017": "AcquisitionEra-OVERRIDE-ME"
+            "RunIIFall17NanoAOD": "AcquisitionEra-OVERRIDE-ME"
         }, 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
         "MergedLFNBase": "/store/backfill/1",
-        "MinMergeSize": 1,
         "ProcessingString": {
-            "NANOAODMC2017": "ProcessingString-OVERRIDE-ME"
+            "RunIIFall17NanoAOD": "ProcessingString-OVERRIDE-ME"
         }, 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
@@ -21,40 +20,37 @@
     }, 
     "createRequest": {
         "AcquisitionEra": {
-            "NANOAODMC2017": "CMSSW_9_4_0_patch1"
+            "RunIIFall17NanoAOD": "RunIIFall17NanoAOD"
         }, 
-        "CMSSWVersion": "CMSSW_9_4_0_patch1",
+        "CMSSWVersion": "CMSSW_9_4_2",
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Create NANOAOD with MinMergeSize=1, though straight to merge must be false",
+        "Comments": "Process MINIAOD to NANO with EventAware; Multicore 8; Memory 4000",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
-        "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
-        "GlobalTag": "94X_mc2017_realistic_v4", 
-        "Memory": 1900, 
-        "Multicore": 1, 
-        "PrepID": "TEST-CMSSW_9_4_0_patch1__NANO_test-1508878744-TTbar_13_94XNanoAODINPUT",
+        "GlobalTag": "94X_mcRun2_asymptotic_v2",
+        "Memory": 4000,
+        "Multicore": 8,
+        "PrepID": "TEST-task_SUS-RunIIFall17NanoAOD-00019",
         "ProcessingString": {
-            "NANOAODMC2017": "94X_mc2017_realistic_v4_RelVal_nanoaod94X"
+            "RunIIFall17NanoAOD": "PUMoriond17_94X_mcRun2_asymptotic_v2_ext1"
         }, 
         "ProcessingVersion": 2, 
         "RequestPriority": 800000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "TaskChain", 
         "ScramArch": "slc6_amd64_gcc630",
-        "SizePerEvent": 1234, 
-        "SubRequestType": "RelVal", 
+        "SizePerEvent": 5.25,
+        "TimePerEvent": 4.5,
+        "SubRequestType": "Alan",
         "Task1": {
-            "AcquisitionEra": "CMSSW_9_4_0_patch1",
-            "Campaign": "CMSSW_9_4_0_patch1__NANO_test-1508878744",
-            "ConfigCacheID": "361c7404430e851518b338c052b97cfb", 
-            "GlobalTag": "94X_mc2017_realistic_v4", 
-            "InputDataset": "/RelValTTbar_13/CMSSW_9_4_0_pre1-PU25ns_93X_mc2017_realistic_v3-v1/MINIAODSIM", 
-            "LumisPerJob": 10, 
-            "Memory": 2000, 
-            "Multicore": 8, 
+            "AcquisitionEra": "RunIIFall17NanoAOD",
+            "Campaign": "RunIIFall17NanoAOD",
+            "ConfigCacheID": "2a58f56f5ee74ecc34c76d1bce3d1268",
+            "GlobalTag": "94X_mcRun2_asymptotic_v2",
+            "InputDataset": "/WJetsToLNu_HT-200To400_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM",
             "ProcessingString": "Task1_WMCore_TEST", 
-            "SplittingAlgo": "LumiBased", 
-            "TaskName": "NANOAODMC2017"
+            "SplittingAlgo": "EventAwareLumiBased",
+            "TaskName": "RunIIFall17NanoAOD"
         }, 
         "TaskChain": 1, 
         "TimePerEvent": 0.10000000000000001

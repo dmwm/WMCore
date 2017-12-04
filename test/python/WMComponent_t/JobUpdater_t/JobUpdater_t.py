@@ -10,7 +10,6 @@ Created on Apr 16, 2013
 import logging
 import os
 import threading
-import unittest
 
 from WMComponent.JobUpdater.JobUpdaterPoller import JobUpdaterPoller
 from WMCore.DAOFactory import DAOFactory

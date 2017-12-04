@@ -384,8 +384,6 @@ class JobAccountantTest(EmulatedUnitTestCase):
         testJob = Job(id=jobID)
         testJob.loadData()
 
-        myThread = threading.currentThread()
-
         inputLFNs = []
         for inputFile in testJob["input_files"]:
             inputLFNs.append(inputFile["lfn"])
@@ -486,7 +484,6 @@ class JobAccountantTest(EmulatedUnitTestCase):
         dictionary would contain keys for each of the files produced by the
         job.  Each value would be a list of the parent LFNs.
         """
-        myThread = threading.currentThread()
 
         for fwkJobReportFile in fwkJobReportFiles:
             if fwkJobReportFile["merged"] != True and subType != "Merge":
@@ -1281,14 +1278,13 @@ class JobAccountantTest(EmulatedUnitTestCase):
         inputFileset.commit()
         return
 
-    @attr('performance')
+    @attr('performance', 'integration')
     def testOneProcessLoadTest(self):
         """
         _testOneProcessLoadTest_
 
         Run the load test using one worker process.
         """
-        return
         print("  Filling DB...")
         self.setupDBForLoadTest()
 
@@ -1338,7 +1334,7 @@ class JobAccountantTest(EmulatedUnitTestCase):
 
         try:
             accountant.algorithm()
-        except Exception as ex:
+        except Exception:
             pass
 
         sql = "SELECT COUNT(*) FROM wmbs_file_details"

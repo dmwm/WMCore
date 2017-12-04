@@ -39,6 +39,8 @@ class CreateWMBSBase(DBCreator):
                                "05wmbs_file_runlumi_map",
                                "05wmbs_location_state",
                                "06wmbs_location",
+                               "06wmbs_pnns",
+                               "07wmbs_location_pnns",
                                "07wmbs_file_location",
                                "07wmbs_users",
                                "07wmbs_workflow",
@@ -57,7 +59,6 @@ class CreateWMBSBase(DBCreator):
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
                                "19wmbs_file_checksums",
-                               "20wmbs_location_pnns",
                                "21wmbs_workunit",
                                "22wmbs_job_workunit_assoc",
                                "23wmbs_frl_workunit_assoc",
@@ -126,6 +127,22 @@ class CreateWMBSBase(DBCreator):
                UNIQUE(site_name),
                FOREIGN KEY (state) REFERENCES wmbs_location_state(id))"""
 
+        self.create["06wmbs_pnns"] = \
+            """CREATE TABLE wmbs_pnns (
+                 id   INTEGER      PRIMARY KEY AUTO_INCREMENT,
+                 pnn    VARCHAR(255),
+                 UNIQUE(pnn))"""
+
+        self.create["07wmbs_location_pnns"] = \
+            """CREATE TABLE wmbs_location_pnns (
+                 location   INTEGER,
+                 pnn    INTEGER,
+                 UNIQUE(location, pnn),
+                 FOREIGN KEY (location) REFERENCES wmbs_location(id)
+                   ON DELETE CASCADE,
+                 FOREIGN KEY (pnn) REFERENCES wmbs_pnns(id)
+                   ON DELETE CASCADE)"""
+
         self.create["07wmbs_users"] = \
             """CREATE TABLE wmbs_users (
                id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
@@ -140,11 +157,11 @@ class CreateWMBSBase(DBCreator):
         self.create["07wmbs_file_location"] = \
             """CREATE TABLE wmbs_file_location (
                fileid   INTEGER NOT NULL,
-               location INTEGER NOT NULL,
-               UNIQUE(fileid, location),
+               pnn      INTEGER NOT NULL,
+               UNIQUE(fileid, pnn),
                FOREIGN KEY(fileid)   REFERENCES wmbs_file_details(id)
                  ON DELETE CASCADE,
-               FOREIGN KEY(location) REFERENCES wmbs_location(id)
+               FOREIGN KEY(pnn) REFERENCES wmbs_pnns(id)
                  ON DELETE CASCADE)"""
 
         self.create["07wmbs_workflow"] = \
@@ -335,14 +352,6 @@ class CreateWMBSBase(DBCreator):
                 FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                   ON DELETE CASCADE)"""
 
-        self.create["20wmbs_location_pnns"] = \
-            """CREATE TABLE wmbs_location_pnns (
-                 location   INTEGER,
-                 pnn    VARCHAR(255),
-                 UNIQUE(location, pnn),
-                 FOREIGN KEY (location) REFERENCES wmbs_location(id)
-                   ON DELETE CASCADE)"""
-
         # Workunit table for tracking individual lumis
         self.create["21wmbs_workunit"] = (
             'CREATE TABLE wmbs_workunit('
@@ -405,7 +414,7 @@ class CreateWMBSBase(DBCreator):
             """CREATE INDEX wmbs_file_location_fileid ON wmbs_file_location(fileid) %s""" % tablespaceIndex
 
         self.constraints["02_idx_wmbs_file_location"] = \
-            """CREATE INDEX wmbs_file_location_location ON wmbs_file_location(location) %s""" % tablespaceIndex
+            """CREATE INDEX wmbs_file_location_pnn ON wmbs_file_location(pnn) %s""" % tablespaceIndex
 
         self.constraints["01_idx_wmbs_file_parent"] = \
             """CREATE INDEX wmbs_file_parent_parent ON wmbs_file_parent(parent) %s""" % tablespaceIndex

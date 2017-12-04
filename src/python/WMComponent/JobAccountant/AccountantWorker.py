@@ -115,7 +115,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsFilesToCreate = []
         self.wmbsFilesToBuild = []
         self.wmbsMergeFilesToBuild = []
-        self.fileLocation = None
         self.mergedOutputFiles = []
         self.listOfJobsToSave = []
         self.listOfJobsToFail = []
@@ -144,7 +143,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsFilesToCreate = []
         self.wmbsFilesToBuild = []
         self.wmbsMergeFilesToBuild = []
-        self.fileLocation = None
         self.mergedOutputFiles = []
         self.listOfJobsToSave = []
         self.listOfJobsToFail = []
@@ -441,11 +439,6 @@ class AccountantWorker(WMConnectionBase):
 
         return wmbsFile
 
-    def _mapLocation(self, fwkJobReport):
-        for file in fwkJobReport.getAllFileRefs():
-            if file and hasattr(file, 'location'):
-                file.location = self.phedex.getBestNodeName(file.location, self.locLists)
-
     def handleJob(self, jobID, fwkJobReport):
         """
         _handleJob_
@@ -478,10 +471,12 @@ class AccountantWorker(WMConnectionBase):
             elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
                 pass
             elif jobType == "Merge" and set(outputMap.keys()) == set(
-                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(['MergedRAW', 'logArchive']):
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedRAW', 'logArchive']):
                 pass
             elif jobType == "Merge" and set(outputMap.keys()) == set(
-                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(['MergedErrorRAW', 'logArchive']):
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedErrorRAW', 'logArchive']):
                 pass
             elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAWRAW']):
                 pass
@@ -582,8 +577,6 @@ class AccountantWorker(WMConnectionBase):
                 if skippedFiles and jobType not in ['LogCollect', 'Cleanup']:
                     self.jobsWithSkippedFiles[jobID] = skippedFiles
 
-            # Only save once job is done, and we're sure we made it through okay
-            self._mapLocation(wmbsJob['fwjr'])
             if jobSuccess:
                 self.listOfJobsToSave.append(wmbsJob)
             else:
@@ -812,7 +805,7 @@ class AccountantWorker(WMConnectionBase):
                 if self.pnn_to_psn.get(outpnn, None):
                     fileLocations.append({'lfn': lfn, 'location': outpnn})
                 else:
-                    msg = "PNN doesn't exist in wmbs_location_sename table: %s (investigate)" % outpnn
+                    msg = "PNN doesn't exist in wmbs_pnns table: %s (investigate)" % outpnn
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
 
@@ -849,7 +842,6 @@ class AccountantWorker(WMConnectionBase):
                                             transaction=self.existingTransaction())
 
             self.setFileLocation.execute(lfn=fileLocations,
-                                         location=self.fileLocation,
                                          conn=self.getDBConn(),
                                          transaction=self.existingTransaction())
 

@@ -7,6 +7,7 @@ MySQL implementation of Locations.New
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class New(DBFormatter):
     sql = """INSERT IGNORE INTO wmbs_location (site_name, ce_name,
                                                pending_slots, running_slots,
@@ -19,24 +20,31 @@ class New(DBFormatter):
                       :cmsname AS cms_name,
                       (SELECT id FROM wmbs_location_state WHERE name = 'Normal') AS state"""
 
-    seSQL = """INSERT IGNORE INTO wmbs_location_pnns (location, pnn)
-                 SELECT id, :pnn FROM wmbs_location WHERE site_name = :location """
+    pnnSQL = "INSERT IGNORE INTO wmbs_pnns (pnn) VALUES (:pnn)"
 
-    def execute(self, siteName, runningSlots = 0, pendingSlots = 0,
-                pnn = "None",
-                ceName = None, plugin = None, cmsName = None,
-                conn = None, transaction = False):
+    mapSQL = """INSERT IGNORE INTO wmbs_location_pnns (location, pnn)
+                 SELECT wl.id, wpnn.id FROM wmbs_location wl, wmbs_pnns wpnn
+                  WHERE wl.site_name = :location AND wpnn.pnn = :pnn"""
+
+    def execute(self, siteName, cmsName=None, ceName=None, pnn="None",
+                runningSlots=0, pendingSlots=0, plugin=None,
+                conn=None, transaction=False):
         """
         _execute_
 
         Now with 100% more plugin support
         """
-        binds = {"location": siteName, "pending_slots": pendingSlots,
-                 "running_slots": runningSlots, "cename": ceName,
-                 "plugin": plugin, "cmsname": cmsName}
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+        binds = {"location": siteName, "cmsname": cmsName, "cename": ceName,
+                 "running_slots": runningSlots, "pending_slots": pendingSlots,
+                 "plugin": plugin}
+        self.dbi.processData(self.sql, binds, conn=conn,
+                             transaction=transaction)
+
+        binds = {'pnn': pnn}
+        self.dbi.processData(self.pnnSQL, binds, conn=conn,
+                             transaction=transaction)
+
         binds = {'location': siteName, 'pnn': pnn}
-        self.dbi.processData(self.seSQL, binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.mapSQL, binds, conn=conn,
+                             transaction=transaction)
         return

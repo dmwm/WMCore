@@ -5,18 +5,15 @@ _GetLocationBulk_
 MySQL implementation of File.GetLocationBulk
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetLocationBulk(DBFormatter):
-    sql = """SELECT wls.pnn AS pnn, wfl.fileid AS id FROM wmbs_location wl
-                INNER JOIN wmbs_file_location wfl ON wfl.location = wl.id
-                INNER JOIN wmbs_location_pnns wls ON wls.location = wl.id
-                WHERE wfl.fileid = :id
-                """
 
+class GetLocationBulk(DBFormatter):
+    sql = """SELECT wpnn.pnn as pnn, wfl.fileid as id
+               FROM wmbs_file_location wfl
+               INNER JOIN wmbs_pnns wpnn ON wfl.pnn = wpnn.id
+             WHERE wfl.fileid = :id
+            """
 
     def format(self, rawResults):
         """
@@ -25,7 +22,7 @@ class GetLocationBulk(DBFormatter):
         Group files into single entries
         """
 
-        results    = {}
+        results = {}
 
         for raw in rawResults:
             if not raw['id'] in results.keys():
@@ -34,10 +31,8 @@ class GetLocationBulk(DBFormatter):
 
         return results
 
-
-
-    def execute(self, files = [], conn = None, transaction = False):
-
+    def execute(self, files=None, conn=None, transaction=False):
+        files = files or []
         if len(files) == 0:
             # Nothing to do
             return
@@ -47,6 +42,6 @@ class GetLocationBulk(DBFormatter):
             binds.append({'id': fid})
 
         result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+                                      conn=conn, transaction=transaction)
 
         return self.format(self.formatDict(result))

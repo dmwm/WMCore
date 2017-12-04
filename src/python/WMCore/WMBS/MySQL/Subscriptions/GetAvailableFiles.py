@@ -10,14 +10,12 @@ Available means not acquired, complete or failed.
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wmbs_sub_files_available.fileid, wls.pnn AS pnn
-                    FROM wmbs_sub_files_available
-               INNER JOIN wmbs_file_location ON
-                 wmbs_sub_files_available.fileid = wmbs_file_location.fileid
-               INNER JOIN wmbs_location_pnns wls ON
-                 wmbs_file_location.location = wls.location
-             WHERE wmbs_sub_files_available.subscription = :subscription"""
+    sql = """SELECT wsfa.fileid, wpnn.pnn FROM wmbs_sub_files_available wsfa
+               INNER JOIN wmbs_file_location wfl ON wsfa.fileid = wfl.fileid
+               INNER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
+             WHERE wsfa.subscription = :subscription"""
 
     def formatDict(self, results):
         """
@@ -35,7 +33,7 @@ class GetAvailableFiles(DBFormatter):
             else:
                 formattedResult["file"] = int(formattedResult["fileid"])
 
-        #Now the tricky part
+        # Now the tricky part
         tempResults = {}
         for formattedResult in formattedResults:
             fileID = formattedResult['file']
@@ -54,12 +52,12 @@ class GetAvailableFiles(DBFormatter):
 
         return finalResults
 
-    def execute(self, subscription, conn = None, transaction = False, returnCursor = False):
+    def execute(self, subscription, conn=None, transaction=False, returnCursor=False):
         if returnCursor:
             return self.dbi.processData(self.sql, {"subscription": subscription},
-                                        conn = conn, transaction = transaction,
-                                        returnCursor = returnCursor)
+                                        conn=conn, transaction=transaction,
+                                        returnCursor=returnCursor)
 
         results = self.dbi.processData(self.sql, {"subscription": subscription},
-                                       conn = conn, transaction = transaction)
+                                       conn=conn, transaction=transaction)
         return self.formatDict(results)

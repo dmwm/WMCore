@@ -5,18 +5,14 @@ _GetLocation_
 MySQL implementation of File.GetLocation
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetLocation(DBFormatter):
-    sql = """SELECT wls.pnn AS pnn FROM wmbs_location_pnns wls
-               INNER JOIN wmbs_location ON wmbs_location.id = wls.location
-               INNER JOIN wmbs_file_location wfl ON wfl.location = wmbs_location.id
-               INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
-               WHERE wfd.lfn = :lfn"""
 
+class GetLocation(DBFormatter):
+    sql = """SELECT DISTINCT wpnn.pnn AS pnn FROM wmbs_file_location wfl
+               INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
+               INNER JOIN wmbs_pnns wpnn ON wfl.pnn = wpnn.id
+               WHERE wfd.lfn = :lfn"""
 
     def getBinds(self, file=None):
         binds = []
@@ -34,9 +30,9 @@ class GetLocation(DBFormatter):
             r.close()
         return out
 
-    def execute(self, file=None, conn = None, transaction = False):
+    def execute(self, file=None, conn=None, transaction=False):
         binds = self.getBinds(file)
 
         result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+                                      conn=conn, transaction=transaction)
         return self.format(result)

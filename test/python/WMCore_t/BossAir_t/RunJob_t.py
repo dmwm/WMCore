@@ -4,24 +4,18 @@
 BossAir preliminary test
 """
 
-import unittest
 import threading
+import unittest
 
-
-import WMCore.WMInit
-from WMQuality.TestInit             import TestInit
-from WMCore.DAOFactory              import DAOFactory
-
-from WMCore.WMBS.Job          import Job
-from WMCore.WMBS.JobGroup     import JobGroup
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow     import Workflow
-
-
-from WMCore.BossAir.RunJob    import RunJob
-
+from WMCore.BossAir.RunJob import RunJob
+from WMCore.DAOFactory import DAOFactory
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMQuality.TestInit import TestInit
 
 
 class RunJobTest(unittest.TestCase):
@@ -140,7 +134,7 @@ class RunJobTest(unittest.TestCase):
         statusDAO.execute(states = ['New', 'Gone', 'Dead'])
 
         result = myThread.dbi.processData("SELECT name FROM bl_status")[0].fetchall()
-        self.assertEqual(result, [('Dead',), ('Gone',), ('New',)])
+        self.assertItemsEqual(result, [('Dead',), ('Gone',), ('New',)])
 
 
         newJobDAO = self.daoFactory(classname = "NewJobs")

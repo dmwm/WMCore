@@ -5,34 +5,31 @@ _SetLocation_
 MySQL implementation of Files.SetLocation
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
-class SetLocation(DBFormatter):
-    sql = """INSERT INTO wmbs_file_location (fileid, location)
-             SELECT :fileid, wmbs_location.id FROM wmbs_location
-             INNER JOIN wmbs_location_pnns wls ON wls.location = wmbs_location.id
-             WHERE wls.pnn = :location"""
 
-    def getBinds(self, file = None, location = None):
-        if type(location) == type('string'):
+class SetLocation(DBFormatter):
+    sql = """INSERT INTO wmbs_file_location (fileid, pnn)
+                 SELECT :fileid, wpnn.id FROM wmbs_pnns wpnn
+                 WHERE wpnn.pnn = :pnn"""
+
+    def getBinds(self, file=None, pnn=None):
+        if isinstance(pnn, basestring):
             return self.dbi.buildbinds(self.dbi.makelist(file), 'fileid',
-                   self.dbi.buildbinds(self.dbi.makelist(location), 'location'))
-        elif isinstance(location, (list, set)):
+                                       self.dbi.buildbinds(self.dbi.makelist(pnn), 'pnn'))
+        elif isinstance(pnn, (list, set)):
             binds = []
-            for l in location:
+            for l in pnn:
                 binds.extend(self.dbi.buildbinds(self.dbi.makelist(file), 'fileid',
-                   self.dbi.buildbinds(self.dbi.makelist(l), 'location')))
+                                                 self.dbi.buildbinds(self.dbi.makelist(l), 'pnn')))
             return binds
         else:
-            raise Exception("Type of location argument is not allowed: %s" \
-                                % type(location))
+            raise Exception("Type of pnn argument is not allowed: %s" \
+                            % type(pnn))
 
-    def execute(self, file, location, conn = None, transaction = None):
-        binds = self.getBinds(file, location)
+    def execute(self, file, pnn, conn=None, transaction=None):
+        binds = self.getBinds(file, pnn)
 
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        result = self.dbi.processData(self.sql, binds, conn=conn,
+                                      transaction=transaction)
         return

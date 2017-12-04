@@ -34,7 +34,7 @@ except:
 from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.Services.MicroService.Unified.Common import agentInfoUrl, \
+from WMCore.MicroService.Unified.Common import agentInfoUrl, \
         phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
         dashboardUrl
 

@@ -34,10 +34,10 @@ app.title = "CMS MicroService"
 views = config.section_("views")
 # web UI interface
 ui = views.section_('web') # was section 'ui'
-ui.object = 'WMCore.Services.MicroService.FrontPage.FrontPage'
+ui.object = 'WMCore.MicroService.WebGui.FrontPage.FrontPage'
 ui.static = ROOTDIR
 
 # REST interface
 data = views.section_('data')
-data.object = 'WMCore.Services.MicroService.RestApi.RestInterface'
-data.manager = 'WMCore.Services.MicroService.UnifiedTransferor.UnifiedTransferorManager'
+data.object = 'WMCore.MicroService.RestApiHub.RestApiHub'
+data.manager = 'WMCore.MicroService.Unified.Transferor.UnifiedTransferorManager'

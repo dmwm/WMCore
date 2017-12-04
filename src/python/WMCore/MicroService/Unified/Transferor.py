@@ -13,10 +13,11 @@ import shelve
 import tempfile
 
 # WMCore modules
-from WMCore.Services.MicroService.Unified.RequestInfo import requestsInfo
-from WMCore.Services.MicroService.Unified.TaskManager import start_new_thread, TaskManager
+from WMCore.MicroService.Unified.RequestInfo import requestsInfo
+from WMCore.MicroService.Unified.TaskManager import start_new_thread, TaskManager
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
+from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 
 class RequestStore(object):
@@ -191,6 +192,7 @@ class UnifiedTransferorManager(object):
     """
     def __init__(self, config=None):
         self.config = config
+        self.reqmgrAux = ReqMgrAux(self.config.reqmgr2_url)
         self.requests = {}
         self.reqManager = RequestManager()
         self.taskManager = TaskManager(nworkers=3)
@@ -215,5 +217,6 @@ class UnifiedTransferorManager(object):
 
     def process(self, state='assignment-approved'):
         "Process request for a given state"
-        requests = requestsInfo(state)
+        reqmgrAuxSvc = self.reqmgrAux
+        requests = requestsInfo(reqmgrAuxSvc, state)
         self.reqManager.add(requests)

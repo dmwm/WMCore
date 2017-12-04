@@ -69,7 +69,7 @@ dependencies = {
                     ],
     },
     'reqmgr2ms': {
-        'packages': ['WMCore.Services.MicroService+','WMCore.Services.PhEDEx+','Utils'],
+        'packages': ['WMCore.MicroService+', 'WMCore.Services.PhEDEx+', 'Utils'],
         'modules': ['WMCore.Services.__init__', 'WMCore.Services.Service',
             'WMCore.Services.Requests',
             'WMCore.Wrappers.__init__',

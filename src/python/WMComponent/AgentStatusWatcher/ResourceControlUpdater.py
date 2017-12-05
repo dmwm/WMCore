@@ -12,6 +12,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.Services.SSB.SSB import SSB
 
 
 class ResourceControlUpdater(BaseWorkerThread):
@@ -31,6 +32,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         self.siteStatusMetric = config.AgentStatusWatcher.siteStatusMetric
         self.cpuBoundMetric = config.AgentStatusWatcher.cpuBoundMetric
         self.ioBoundMetric = config.AgentStatusWatcher.ioBoundMetric
+        self.ssb = SSB(self.dashboard)
 
         # set pending percentages from config
         self.pendingSlotsSitePercent = config.AgentStatusWatcher.pendingSlotsSitePercent
@@ -133,23 +135,9 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Returns a dict of dicts where the first key is the site name.
         """
-        # urls from site status board
-        urlSiteState = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.siteStatusMetric)
-        urlCpuBound = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.cpuBoundMetric)
-        urlIoBound = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.ioBoundMetric)
-
-        # get info from dashboard
-        sites = urllib2.urlopen(urlSiteState).read()
-        cpuBound = urllib2.urlopen(urlCpuBound).read()
-        ioBound = urllib2.urlopen(urlIoBound).read()
-
-        # parse from json format to dictionary, get only 'csvdata'
-        ssbSiteState = json.loads(sites)['csvdata']
-        ssbCpuSlots = json.loads(cpuBound)['csvdata']
-        ssbIoSlots = json.loads(ioBound)['csvdata']
+        ssbSiteState = self.ssb.getMetric(self.siteStatusMetric)
+        ssbCpuSlots = self.ssb.getMetric(self.cpuBoundMetric)
+        ssbIoSlots = self.ssb.getMetric(self.ioBoundMetric)
 
         # dict updated by these methods with status/thresholds info keyed by the site name
         ssbSiteSlots = {}

@@ -149,23 +149,14 @@ class ResourceControl(WMConnectionBase):
 
         subTypeAction = self.wmbsDAOFactory(classname="Subscriptions.InsertType")
         insertAction = self.daofactory(classname="InsertThreshold")
-        if isinstance(taskType, list):
-            for singleTask in taskType:
-                subTypeAction.execute(subType=singleTask,
-                                      conn=self.getDBConn(),
-                                      transaction=self.existingTransaction())
-                insertAction.execute(siteName=siteName,
-                                     taskType=singleTask,
-                                     maxSlots=maxSlots,
-                                     pendingSlots=pendingSlots,
-                                     conn=self.getDBConn(),
-                                     transaction=self.existingTransaction())
-        else:
-            subTypeAction.execute(subType=taskType,
+        if isinstance(taskType, basestring):
+            taskType = [taskType]
+        for singleTask in taskType:
+            subTypeAction.execute(subType=singleTask,
                                   conn=self.getDBConn(),
                                   transaction=self.existingTransaction())
             insertAction.execute(siteName=siteName,
-                                 taskType=taskType,
+                                 taskType=singleTask,
                                  maxSlots=maxSlots,
                                  pendingSlots=pendingSlots,
                                  conn=self.getDBConn(),
@@ -257,44 +248,3 @@ class ResourceControl(WMConnectionBase):
         return listActions.execute(site=siteName,
                                    conn=self.getDBConn(),
                                    transaction=self.existingTransaction())
-
-    def insertAllSEs(self, siteName, pendingSlots=0, runningSlots=0,
-                     ceName=None, plugin=None,
-                     taskList=[]):
-        """
-        _insertAllSEs_
-
-        Insert all SEs into WMBS ResourceControl
-        This uses the Services.SiteDB to insert all PNNs under a common
-        CE.  It is meant to be used with WMS submission.
-
-        Sites will be named siteName_PNN
-
-        It expects a taskList of the following form:
-
-        [{'taskType': taskType, 'priority': priority, 'maxSlots': maxSlots, 'pendingSlots' : pendingSlots}]
-
-        for each entry in the taskList, a threshold is inserted into the database
-        for EVERY SE
-        """
-
-        from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-        siteDB = SiteDBJSON()
-
-        cmsNames = siteDB.getAllCMSNames()
-        for cmsName in cmsNames:
-            pnns = siteDB.cmsNametoPhEDExNode(cmsName)
-            for pnn in pnns:
-                sName = '%s_%s' % (siteName, pnn)
-                self.insertSite(siteName=sName, pendingSlots=pendingSlots,
-                                pnn=pnn, runningSlots=runningSlots,
-                                ceName=ceName, cmsName=cmsName, plugin=plugin)
-                for task in taskList:
-                    if 'maxSlots' not in task or 'taskType' not in task:
-                        msg = "Incomplete task in taskList for ResourceControl.insertAllSEs\n"
-                        msg += task
-                        raise ResourceControlException(msg)
-                    self.insertThreshold(siteName=sName, taskType=task['taskType'],
-                                         maxSlots=task['maxSlots'], pendingSlots=task['pendingSlots'])
-
-        return

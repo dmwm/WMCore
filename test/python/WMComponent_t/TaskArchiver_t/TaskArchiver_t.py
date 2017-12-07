@@ -37,9 +37,10 @@ from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMQuality.Emulators.WMSpecGenerator.ReqMgrDocGenerator import generate_reqmgr_schema
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class TaskArchiverTest(unittest.TestCase):
+class TaskArchiverTest(EmulatedUnitTestCase):
     """
     TestCase for TestTaskArchiver module
     """
@@ -53,7 +54,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
         setup for test.
         """
-
+        super(TaskArchiverTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)
@@ -98,7 +99,6 @@ class TaskArchiverTest(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
 
         self.testInit.clearDatabase(modules=["WMCore.WMBS"])
         self.testInit.delWorkDir()
@@ -170,14 +170,14 @@ class TaskArchiverTest(unittest.TestCase):
 
         return config
 
-    def createWorkload(self, workloadName='Test', emulator=True):
+    def createWorkload(self, workloadName):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
+        workload = testWorkload(workloadName)
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -193,13 +193,11 @@ class TaskArchiverTest(unittest.TestCase):
                            filesetName="TestFileset",
                            specLocation="spec.xml", error=False,
                            task="/TestWorkload/ReReco",
-                           type="Processing"):
+                           jobType="Processing"):
         """
         Creates a group of several jobs
 
         """
-
-        myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec=specLocation, owner=self.OWNERDN,
                                 name=name, task=task, owner_vogroup="", owner_vorole="")
@@ -239,7 +237,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         testSubscription = Subscription(fileset=testWMBSFileset,
                                         workflow=testWorkflow,
-                                        type=type)
+                                        type=jobType)
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription=testSubscription)
@@ -462,7 +460,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -584,8 +582,6 @@ class TaskArchiverTest(unittest.TestCase):
         Test with a failed FWJR
         """
 
-        myThread = threading.currentThread()
-
         config = self.getConfig()
         workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
         workload = self.createWorkload(workloadName=workloadPath)
@@ -599,7 +595,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -669,8 +665,6 @@ class TaskArchiverTest(unittest.TestCase):
         DON'T RUN THIS!
         """
         import cProfile, pstats
-
-        myThread = threading.currentThread()
 
         name = makeUUID()
 
@@ -763,7 +757,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         # Adding request type as ReReco, real ReqMgr requests have it
         workload.data.request.section_("schema")

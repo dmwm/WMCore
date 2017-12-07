@@ -31,9 +31,10 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobCreatorTest(unittest.TestCase):
+class JobCreatorTest(EmulatedUnitTestCase):
     """
     Test case for the JobCreator
 
@@ -48,6 +49,7 @@ class JobCreatorTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
+        super(JobCreatorTest, self).setUp()
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -150,14 +152,14 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-    def createWorkload(self, workloadName='Test', emulator=True, priority=1):
+    def createWorkload(self, workloadName='Test'):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
+        workload = testWorkload(workloadName)
         rereco = workload.getTask("ReReco")
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         rereco.addGenerator("PresetSeeder", **seederDict)
@@ -297,10 +299,7 @@ class JobCreatorTest(unittest.TestCase):
         """
         Profile your performance
         You shouldn't be running this normally because it doesn't do anything
-
         """
-
-        myThread = threading.currentThread()
 
         name = makeUUID()
         nSubs = 5
@@ -336,8 +335,6 @@ class JobCreatorTest(unittest.TestCase):
         Profile where the work actually gets done
         You shouldn't be running this one either, since it doesn't test anything.
         """
-
-        myThread = threading.currentThread()
 
         name = makeUUID()
         nSubs = 5

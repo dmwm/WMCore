@@ -10,7 +10,6 @@ Created on Apr 16, 2013
 import logging
 import os
 import threading
-import unittest
 
 from WMComponent.JobUpdater.JobUpdaterPoller import JobUpdaterPoller
 from WMCore.DAOFactory import DAOFactory
@@ -20,9 +19,10 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobUpdaterTest(unittest.TestCase):
+class JobUpdaterTest(EmulatedUnitTestCase):
     """
     _JobUpdaterTest_
 
@@ -35,6 +35,7 @@ class JobUpdaterTest(unittest.TestCase):
 
         Set up test environment
         """
+        super(JobUpdaterTest, self).setUp()
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()

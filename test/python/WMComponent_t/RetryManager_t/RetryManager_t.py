@@ -12,6 +12,7 @@ import os.path
 import threading
 import time
 import unittest
+from nose.plugins.attrib import attr
 
 import WMCore.WMBase
 from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
@@ -28,9 +29,10 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class RetryManagerTest(unittest.TestCase):
+class RetryManagerTest(EmulatedUnitTestCase):
     """
     TestCase for TestRetryManager module
     """
@@ -39,6 +41,7 @@ class RetryManagerTest(unittest.TestCase):
         """
         setup for test.
         """
+        super(RetryManagerTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)
@@ -884,14 +887,13 @@ class RetryManagerTest(unittest.TestCase):
 
         return
 
+    @attr('integration')
     def testZ_Profile(self):
         """
         _Profile_
 
         Do a basic profiling of the algo
         """
-
-        return
 
         import pstats
 

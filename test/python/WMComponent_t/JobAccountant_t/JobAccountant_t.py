@@ -32,9 +32,10 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobAccountantTest(unittest.TestCase):
+class JobAccountantTest(EmulatedUnitTestCase):
     """
     _JobAccountantTest_
 
@@ -48,6 +49,7 @@ class JobAccountantTest(unittest.TestCase):
         Create the database connections, install the schemas and create the
         DAO objects.
         """
+        super(JobAccountantTest, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -382,8 +384,6 @@ class JobAccountantTest(unittest.TestCase):
         testJob = Job(id=jobID)
         testJob.loadData()
 
-        myThread = threading.currentThread()
-
         inputLFNs = []
         for inputFile in testJob["input_files"]:
             inputLFNs.append(inputFile["lfn"])
@@ -484,7 +484,6 @@ class JobAccountantTest(unittest.TestCase):
         dictionary would contain keys for each of the files produced by the
         job.  Each value would be a list of the parent LFNs.
         """
-        myThread = threading.currentThread()
 
         for fwkJobReportFile in fwkJobReportFiles:
             if fwkJobReportFile["merged"] != True and subType != "Merge":
@@ -1279,14 +1278,13 @@ class JobAccountantTest(unittest.TestCase):
         inputFileset.commit()
         return
 
-    @attr('performance')
+    @attr('performance', 'integration')
     def testOneProcessLoadTest(self):
         """
         _testOneProcessLoadTest_
 
         Run the load test using one worker process.
         """
-        return
         print("  Filling DB...")
         self.setupDBForLoadTest()
 
@@ -1336,7 +1334,7 @@ class JobAccountantTest(unittest.TestCase):
 
         try:
             accountant.algorithm()
-        except Exception as ex:
+        except Exception:
             pass
 
         sql = "SELECT COUNT(*) FROM wmbs_file_details"

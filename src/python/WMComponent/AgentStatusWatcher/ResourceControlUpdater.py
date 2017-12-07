@@ -5,12 +5,13 @@ __all__ = []
 
 import logging
 import traceback
+
 from Utils.Timers import timeFunction
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.Dashboard.Dashboard import Dashboard
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
-from WMCore.Services.Dashboard.Dashboard import Dashboard
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class ResourceControlUpdater(BaseWorkerThread):
@@ -191,7 +192,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         If site slots are updated, then updates the task level too.
         """
         logging.debug("Settings for site and task pending slots: %s%% and %s%%", self.pendingSlotsSitePercent,
-                                                                                 self.pendingSlotsTaskPercent)
+                      self.pendingSlotsTaskPercent)
 
         for site in set(infoRC).intersection(set(infoSSB)):
             if self.tier0Mode and site.startswith('T1_'):
@@ -205,7 +206,8 @@ class ResourceControlUpdater(BaseWorkerThread):
             CPUBound = infoSSB[site]['slotsCPU']
             IOBound = infoSSB[site]['slotsIO']
 
-            sitePending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsSitePercent / 100), self.minCPUSlots)
+            sitePending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsSitePercent / 100),
+                              self.minCPUSlots)
 
             # update site slots, if needed
             if infoRC[site]['running_slots'] != CPUBound or infoRC[site]['pending_slots'] != sitePending:
@@ -305,7 +307,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         Update the CPU and IOBound slots for a given site.
         """
         siteTaskSlots = self.resourceControl.thresholdBySite(siteName)
-        taskCPUPending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100), self.minCPUSlots)
+        taskCPUPending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100),
+                             self.minCPUSlots)
         taskIOPending = max(int(IOBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100), self.minIOSlots)
 
         updateTasks = False
@@ -316,11 +319,11 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         if updateTasks:
             logging.info("Updating %s CPU tasks thresholds for pend/runn: %d/%d", siteName,
-                          taskCPUPending, CPUBound)
+                         taskCPUPending, CPUBound)
             self.resourceControl.insertThreshold(siteName, taskType=self.tasksCPU, maxSlots=CPUBound,
                                                  pendingSlots=taskCPUPending)
             logging.info("Updating %s IO tasks thresholds for pend/runn: %d/%d", siteName,
-                          taskIOPending, IOBound)
+                         taskIOPending, IOBound)
             self.resourceControl.insertThreshold(siteName, taskType=self.tasksIO, maxSlots=IOBound,
                                                  pendingSlots=taskIOPending)
 

@@ -5,9 +5,8 @@ _Dashboard_
 Service class to be used for fetching site status and metrics
 """
 
-
-import logging
 import json
+import logging
 
 from WMCore.Services.Service import Service
 

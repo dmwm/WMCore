@@ -4,10 +4,11 @@ _Subscription_t_
 
 Unit tests for the WMBS Subscription class and all it's DAOs.
 """
-
+from __future__ import division, print_function
 import threading
 import time
 import unittest
+from functools import reduce
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -18,7 +19,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.WorkUnit import WorkUnit
 from WMQuality.TestInit import TestInit
 
 
@@ -1722,6 +1722,14 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(len(finishedSubs), 4,
                          "Wrong number of finished subscriptions.")
 
+        finishedWorkflowCheckDAO = daoFactory(classname="Subscriptions.CountFinishedSubscriptionsByWorkflow")
+        finishedWfs = [testWorkflow1.name, testWorkflow2.name, testWorkflow3.name, testWorkflow4.name]
+        result = finishedWorkflowCheckDAO.execute(workflowNames=finishedWfs)
+        self.assertEqual(len(result), 4)
+        count = reduce(lambda x, y: {'finished': (x['finished'] + y['finished']),
+                                     'open': (x['open'] + y['open'])}, result)
+        self.assertEqual(count['finished'], 4)
+        self.assertEqual(count['open'], 0)
         return
 
     def testMarkNewFinishedSubscriptionsTimeout(self):

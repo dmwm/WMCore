@@ -2,6 +2,7 @@ import json
 import logging
 
 from WMCore.Services.Service import Service
+from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
 
 class ReqMgr(Service):
@@ -210,12 +211,14 @@ class ReqMgr(Service):
         """
         _getAbortedAndForceCompleteRequestsFromMemoryCache_
         """
-        # imports here to avoid the dependency not using this function
-        from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
         maskStates = ["aborted", "aborted-completed", "force-complete"]
+        return self.getRequestByStatusFromMemoryCache(maskStates, expire)
+
+    def getRequestByStatusFromMemoryCache(self, statusList, expire=0):
+
         return MemoryCacheStruct(expire=expire, func=self.getRequestByStatus, initCacheValue=[],
-                                 kwargs={'statusList': maskStates, "detail": False})
+                                 kwargs={'statusList': statusList, "detail": False})
 
     def cloneRequest(self, requestName, overwrittenParams=None):
         """

@@ -23,10 +23,10 @@ histogramLimit: Limit in terms of number of standard deviations from the
   average at which you cut the histogram off.  All points outside of that
   go into overflow and underflow.
 """
-__all__ = []
 import logging
 import threading
 import traceback
+
 from Utils.Timers import timeFunction
 from WMComponent.TaskArchiver.DataCache import DataCache
 from WMCore.DAOFactory import DAOFactory
@@ -77,7 +77,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.config = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
 
-        if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
+        if not getattr(self.config.TaskArchiver, "useWorkQueue", False):
             # Get workqueue setup from config unless overridden
             if hasattr(self.config.TaskArchiver, 'WorkQueueParams'):
                 self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
@@ -192,7 +192,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         if isinstance(statusList, basestring):
             statusList = [statusList]
         reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
-        logging.info("There are %d requests in 'aborted' status in central couch.", len(reqNames))
+        logging.info("There are %d requests in %s status in central couch.", len(reqNames), statusList)
         for wf in reqNames:
             self.workQueue.killWMBSWorkflow(wf)
         return reqNames
@@ -214,8 +214,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         centralCouchAlive = True
         try:
-            abortedWorkflows = self.killCondorJobsByWFStatus(["aborted"])
-            self.killCondorJobsByWFStatus(["force-complete"])
+            self.killCondorJobsByWFStatus(["force-complete", "aborted"])
         except Exception as ex:
             centralCouchAlive = False
             logging.error("we will try again when remote couch server comes back\n%s", str(ex))
@@ -224,7 +223,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             for workflow in finishedwfs:
                 try:
                     # Notify the WorkQueue, if there is one
-                    if self.workQueue != None:
+                    if self.workQueue is not None:
                         subList = []
                         logging.info("Marking subscriptions as Done ...")
                         for l in finishedwfs[workflow]["workflows"].values():

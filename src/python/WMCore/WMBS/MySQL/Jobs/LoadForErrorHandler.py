@@ -84,7 +84,7 @@ class LoadForErrorHandler(DBFormatter):
         the result.
         """
 
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             if len(jobID) < 1:
                 # Nothing to do
                 return []

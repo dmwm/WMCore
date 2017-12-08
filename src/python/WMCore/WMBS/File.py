@@ -28,7 +28,7 @@ class File(WMBSBase, WMFile):
         if locations == None:
             self.setdefault("newlocations", set())
         else:
-            if type(locations) == str:
+            if isinstance(locations, str):
                 self.setdefault("newlocations", set())
                 self['newlocations'].add(locations)
             else:
@@ -104,10 +104,9 @@ class File(WMBSBase, WMFile):
 
         def _getAncestorIDs(ids, level):
             action = self.daofactory(classname="Files.GetParentIDsByID")
-            parentIDs = action.execute(ids, conn=self.getDBConn(),
-                                       transaction=self.existingTransaction())
+            parentIDs = sorted(action.execute(ids, conn=self.getDBConn(),
+                                       transaction=self.existingTransaction()))
 
-            parentIDs.sort()
             if level == 1 or len(parentIDs) == 0:
                 return parentIDs
             else:
@@ -146,10 +145,9 @@ class File(WMBSBase, WMFile):
 
         def _getDescendantIDs(ids, level):
             action = self.daofactory(classname="Files.GetChildIDsByID")
-            childIDs = action.execute(ids, conn=self.getDBConn(),
-                                      transaction=self.existingTransaction())
+            childIDs = sorted(action.execute(ids, conn=self.getDBConn(),
+                                      transaction=self.existingTransaction()))
 
-            childIDs.sort()
             if level == 1 or len(childIDs) == 0:
                 return childIDs
             else:
@@ -465,10 +463,10 @@ class File(WMBSBase, WMFile):
         # parents should be set of wmbs files in WMBS File class
         self["parents"] = set()
 
-        if type(file["locations"]) == set:
+        if isinstance(file["locations"], set):
             s = file["locations"].copy()
             pnn = s.pop()
-        elif type(file["locations"]) == list:
+        elif isinstance(file["locations"], list):
             pnn = file["locations"][0]
         else:
             pnn = file["locations"]

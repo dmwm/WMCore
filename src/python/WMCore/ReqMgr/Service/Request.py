@@ -20,7 +20,7 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
                                        REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-        validate_clone_create_args, loadRequestSchema, validateOutputDatasets)
+        validate_clone_create_args, validateOutputDatasets)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -420,8 +420,6 @@ class Request(RESTEntity):
         if not request_args['Team'] or not isinstance(request_args['Team'], basestring):
             raise InvalidSpecParameterValue("Team MUST be a non-empty string")
 
-        # legacy update schema to support ops script
-        loadRequestSchema(workload, request_args)
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
@@ -543,9 +541,6 @@ class Request(RESTEntity):
         out = []
         for workload, request_args in workload_pair_list:
             self._update_additional_request_args(workload, request_args)
-
-            # legacy update schema to support ops script
-            loadRequestSchema(workload, request_args)
 
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],

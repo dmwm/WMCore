@@ -46,7 +46,6 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
-        self.schema = None
         self.config_cache = {}
 
         return
@@ -59,7 +58,6 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
-        self.schema = {}
         argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             try:
@@ -69,11 +67,9 @@ class StdBase(object):
                     else:
                         value = arguments[arg]
                         setattr(self, argumentDefinition[arg]["attr"], value)
-                        self.schema[arg] = value
                 elif argumentDefinition[arg]["optional"]:
                     defaultValue = argumentDefinition[arg]["default"]
                     setattr(self, argumentDefinition[arg]["attr"], defaultValue)
-                    self.schema[arg] = defaultValue
             except Exception as ex:
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
 
@@ -269,6 +265,7 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
+        workload.setDbsUrl(self.dbsUrl)
         workload.setPrepID(self.prepID)
         return workload
 
@@ -935,9 +932,6 @@ class StdBase(object):
             return configCache.validate(configID)
         except ConfigCacheException as ex:
             self.raiseValidationException(str(ex))
-
-    def getSchema(self):
-        return self.schema
 
     @staticmethod
     def getWorkloadCreateArgs():

@@ -420,7 +420,7 @@ class WorkQueue(WorkQueueBase):
             dbs = get_dbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
-            elif wmspec.requestType() == 'StoreResults':
+            elif wmspec.getRequestType() == 'StoreResults':
                 dbsBlockDict = dbs.getFileBlock(blockName, dbsOnly=True)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)

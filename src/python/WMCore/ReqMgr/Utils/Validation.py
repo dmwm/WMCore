@@ -21,44 +21,6 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
 
 
-def loadRequestSchema(workload, requestSchema):
-    """
-    _loadRequestSchema_
-    Legacy code to support ops script
-
-    Does modifications to the workload I don't understand
-    Takes a WMWorkloadHelper, operates on it directly with the schema
-    """
-    schema = workload.data.request.section_('schema')
-    for key, value in requestSchema.iteritems():
-        if isinstance(value, dict) and key == 'LumiList':
-            value = json.dumps(value)
-        try:
-            setattr(schema, key, value)
-        except Exception as ex:
-            # Attach TaskChain tasks
-            if isinstance(value, dict) and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
-                newSec = schema.section_(key)
-                for k, v in requestSchema[key].iteritems():
-                    if isinstance(value, dict) and key == 'LumiList':
-                        value = json.dumps(value)
-                    try:
-                        setattr(newSec, k, v)
-                    except Exception as ex:
-                        # this logging need to change to cherry py logging
-                        logging.error("Invalid Value: %s", str(ex))
-            else:
-                # this logging need to change to cherry py logging
-                logging.error("Invalid Value: %s", str(ex))
-
-    schema.timeStamp = int(time.time())
-    schema = workload.data.request.schema
-
-    # might belong in another method to apply existing schema
-    workload.data.owner.Group = schema.Group
-    workload.data.owner.Requestor = schema.Requestor
-
-
 def workqueue_stat_validation(request_args):
     stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
     return set(request_args.keys()) == set(stat_keys)
@@ -88,7 +50,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     # if the status is not set only ReqMgr Admin can change the values
     # TODO for each step, assigned, approved, announce find out what other values
     # can be set
-    request_args["RequestType"] = workload.requestType()
+    request_args["RequestType"] = workload.getRequestType()
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
     del request_args["RequestType"]

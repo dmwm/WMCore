@@ -4,6 +4,7 @@ import logging
 from WMCore.Services.Service import Service
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
+
 class ReqMgr(Service):
     """
     API for dealing with retrieving information from RequestManager dataservice
@@ -210,7 +211,6 @@ class ReqMgr(Service):
         """
         _getAbortedAndForceCompleteRequestsFromMemoryCache_
         """
-
 
         maskStates = ["aborted", "aborted-completed", "force-complete"]
         return self.getRequestByStatusFromMemoryCache(maskStates, expire)

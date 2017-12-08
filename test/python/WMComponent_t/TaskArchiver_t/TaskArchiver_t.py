@@ -129,7 +129,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
 
         config.component_("TaskArchiver")
         config.TaskArchiver.componentDir = self.testDir
-        config.TaskArchiver.WorkQueueParams = {}
+        config.TaskArchiver.WorkQueueParams = {'CacheDir': config.JobCreator.jobCacheDir}
         config.TaskArchiver.pollInterval = 60
         config.TaskArchiver.logLevel = 'INFO'
         config.TaskArchiver.timeOut = 0
@@ -664,7 +664,8 @@ class TaskArchiverTest(EmulatedUnitTestCase):
 
         DON'T RUN THIS!
         """
-        import cProfile, pstats
+        import cProfile
+        import pstats
 
         name = makeUUID()
 
@@ -724,20 +725,20 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         listRunsWorkflow = self.dbsDaoFactory(classname="ListRunsWorkflow")
 
         # Didn't like to have done that, but the test doesn't provide all info I need in the system, so faking it:
-        myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')"""
-                                 , transaction=False)
+        myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')""",
+                                 transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (1, '/store/t/e/s/t.test', 1, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (1, '/store/t/e/s/t.test', 1, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (2, '/store/t/e/s/t.test2', 1, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (2, '/store/t/e/s/t.test2', 1, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207214, 100, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207214, 100, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207215, 200, 2)"""
-            , transaction=False)
+            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207215, 200, 2)""",
+            transaction=False)
 
         config = self.getConfig()
 
@@ -793,7 +794,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         self.assertFalse(isPromptReco)
 
         # We are not interested if it's not a PromptReco or a ReReco
-        if (isReReco or isPromptReco) == False:
+        if not (isReReco or isPromptReco):
             return
         if isReReco:
             release = getattr(workload.data.request.schema, "CMSSWVersion")
@@ -819,7 +820,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
                     self.filterInterestingPerfPoints(responseJSON, perfDashBoardMinLumi, perfDashBoardMaxLumi))
 
             # Publish dataset performance to DashBoard.
-            if self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints) == False:
+            if not self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints):
                 logging.info("something went wrong when publishing dataset %s to DashBoard", dataset)
 
         return

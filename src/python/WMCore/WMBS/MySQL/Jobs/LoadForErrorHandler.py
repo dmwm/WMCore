@@ -143,7 +143,7 @@ class LoadForErrorHandler(DBFormatter):
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
-            if not jobid in filesForJobs.keys():
+            if jobid not in filesForJobs.keys():
                 filesForJobs[jobid] = {}
             if f['id'] not in filesForJobs[jobid].keys():
                 wmbsFile = File(id=f['id'])

@@ -25,7 +25,7 @@ class File(WMBSBase, WMFile):
         WMFile.__init__(self, lfn=lfn, size=size, events=events,
                         checksums=checksums, parents=parents, merged=merged)
 
-        if locations == None:
+        if locations is None:
             self.setdefault("newlocations", set())
         else:
             if isinstance(locations, str):
@@ -53,7 +53,7 @@ class File(WMBSBase, WMFile):
             action = self.daofactory(classname="Files.Exists")
             result = action.execute(lfn=self["lfn"], conn=self.getDBConn(),
                                     transaction=self.existingTransaction())
-            if result != False:
+            if result:
                 self["id"] = result
 
         return result
@@ -62,9 +62,9 @@ class File(WMBSBase, WMFile):
         """
         Return the files attributes as a tuple
         """
-        return self['lfn'], self['id'], self['size'], self['events'], \
-               self['checksums'], list(self['runs']), list(self['locations']), \
-               list(self['parents'])
+        return (self['lfn'], self['id'], self['size'], self['events'],
+                self['checksums'], list(self['runs']), list(self['locations']),
+                list(self['parents']))
 
     def getLocations(self):
         """
@@ -104,8 +104,7 @@ class File(WMBSBase, WMFile):
 
         def _getAncestorIDs(ids, level):
             action = self.daofactory(classname="Files.GetParentIDsByID")
-            parentIDs = sorted(action.execute(ids, conn=self.getDBConn(),
-                                       transaction=self.existingTransaction()))
+            parentIDs = sorted(action.execute(ids, conn=self.getDBConn(), transaction=self.existingTransaction()))
 
             if level == 1 or len(parentIDs) == 0:
                 return parentIDs
@@ -145,8 +144,7 @@ class File(WMBSBase, WMFile):
 
         def _getDescendantIDs(ids, level):
             action = self.daofactory(classname="Files.GetChildIDsByID")
-            childIDs = sorted(action.execute(ids, conn=self.getDBConn(),
-                                      transaction=self.existingTransaction()))
+            childIDs = sorted(action.execute(ids, conn=self.getDBConn(), transaction=self.existingTransaction()))
 
             if level == 1 or len(childIDs) == 0:
                 return childIDs
@@ -245,7 +243,7 @@ class File(WMBSBase, WMFile):
         """
         existingTransaction = self.beginTransaction()
 
-        if self.exists() != False:
+        if self.exists():
             self.commitTransaction(existingTransaction)
             self.load()
             # assume if the file already exist, parentage is already set.
@@ -327,8 +325,7 @@ class File(WMBSBase, WMFile):
         if not self["id"] > 0:
             raise Exception("Child file doesn't have an id %s" % self["lfn"])
         if not parent["id"] > 0:
-            raise Exception("Parent file doesn't have an id %s" % \
-                            parent["lfn"])
+            raise Exception("Parent file doesn't have an id %s" % parent["lfn"])
 
         action = self.daofactory(classname="Files.Heritage")
         action.execute(child=self["id"], parent=parent["id"],
@@ -428,7 +425,7 @@ class File(WMBSBase, WMFile):
         existingTransaction = self.beginTransaction()
 
         action = self.daofactory(classname="Files.AddChecksum")
-        action.execute(fileid=self['id'], cktype=cktype, cksum=cksum, \
+        action.execute(fileid=self['id'], cktype=cktype, cksum=cksum,
                        conn=self.getDBConn(), transaction=existingTransaction)
 
         self.commitTransaction(existingTransaction)
@@ -543,7 +540,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         lfnList.append(lfn)
 
         if wmbsFile.get('inFileset', True):
-            if not lfn in fileLFNs:
+            if lfn not in fileLFNs:
                 fileLFNs.append(lfn)
         for parent in wmbsFile['parents']:
             parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})

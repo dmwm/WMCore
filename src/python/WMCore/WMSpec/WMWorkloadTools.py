@@ -15,6 +15,7 @@ import inspect
 from Utils.Utilities import makeList, strToBool
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 
 
 def makeLumiList(lumiDict):
@@ -209,7 +210,7 @@ def validatePhEDExSubscription(arguments):
     for site in arguments.get("AutoApproveSubscriptionSites", []):
         if site.endswith('_MSS'):
             raise WMSpecFactoryException("Auto-approval to MSS endpoint is not allowed: %s" % site)
-    if arguments.get("SubscriptionPriority", "Low") not in ["Low", "Normal", "High"]:
+    if arguments.get("SubscriptionPriority", "Low").lower() not in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES:
         raise WMSpecFactoryException("Invalid subscription priority: %s" % arguments["SubscriptionPriority"])
     if arguments.get("CustodialSubType", "Replica") not in ["Move", "Replica"]:
         raise WMSpecFactoryException("Invalid custodial subscription type: %s" % arguments["CustodialSubType"])

@@ -14,6 +14,7 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
@@ -1114,7 +1115,7 @@ class StdBase(object):
                      "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
-                                              "validate": lambda x: x in ["Low", "Normal", "High"]},
+                                              "validate": lambda x: x.lower() in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES},
                      "DeleteFromSource": {"default": False, "type": strToBool},
                      # merge settings
                      "UnmergedLFNBase": {"assign_optional": True},

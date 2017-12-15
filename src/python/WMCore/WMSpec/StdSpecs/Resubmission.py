@@ -83,9 +83,6 @@ class ResubmissionWorkloadFactory(StdBase):
         Since we skip the master validation for Resubmission specs, we better have
         some specific validation
         """
-        if schema.get('OriginalRequestType') == 'Resubmission':
-            # we cannot validate such schema
-            return
 
         # load assignment + creation + resubmission creation args definition
         argumentDefinition = self.getWorkloadAssignArgs()

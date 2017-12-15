@@ -159,6 +159,7 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         # ACDC of ACDC, we can't validate this case
         # simply copy the whole original dictionary over and accept all args
         createArgs = originalArgs
+        request_args["OriginalRequestType"] = originalArgs["OriginalRequestType"]
     else:
         # load arguments definition from the proper/original spec factory
         parentClass = loadSpecClassByType(originalArgs["RequestType"])
@@ -166,8 +167,8 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
             chainArgs = parentClass.getChainCreateArgs()
         createArgs.update(parentClass.getWorkloadCreateArgs())
+        request_args["OriginalRequestType"] = originalArgs["RequestType"]
 
-    request_args['OriginalRequestType'] = originalArgs["RequestType"]
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
 
@@ -196,7 +197,6 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
     if originalArgs["RequestType"] == 'Resubmission':
         # cloning an ACDC, nothing that we can validate
         # simply copy the whole original dictionary over and accept all args
-        request_args['OriginalRequestType'] = originalArgs["RequestType"]
         createArgs = originalArgs
     else:
         # load arguments definition from the proper/original spec factory

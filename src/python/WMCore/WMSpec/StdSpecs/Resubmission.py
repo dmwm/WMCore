@@ -41,13 +41,13 @@ class ResubmissionWorkloadFactory(StdBase):
         # override a couple of parameters, if provided by user
         if 'RequestPriority' in arguments:
             helper.setPriority(arguments["RequestPriority"])
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
+        if arguments['TopLevelOriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
             helper.setMemory(arguments['Memory'])
             helper.setupPerformanceMonitoring(arguments['Memory'], arguments.get("MaxVSize"),
                                               arguments.get("SoftTimeout"), arguments.get("GracePeriod"))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
+        if arguments['TopLevelOriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
             helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
+        if arguments['TopLevelOriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
             helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
         return helper
@@ -60,6 +60,7 @@ class ResubmissionWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadCreateArgs():
         specArgs = {"RequestType": {"default": "Resubmission"},
+                    "TopLevelOriginalRequestType": {"null": False},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
                     "InitialTaskPath": {"optional": False,

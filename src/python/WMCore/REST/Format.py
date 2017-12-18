@@ -49,7 +49,7 @@ class RESTFormat(object):
         elif isinstance(stream, basestring):
             stream = [stream]
         elif isinstance(stream, types.FileType):
-            stream = cherrypy.lib.file_generator(stream, 512*1024)
+            stream = cherrypy.lib.file_generator(stream, 512 * 1024)
 
         return self.stream_chunked(stream, etag, *self.chunk_args(stream))
 
@@ -317,6 +317,7 @@ class PrettyJSONHTMLFormat(PrettyJSONFormat):
         if isinstance(obj, type(None)):
             result = ""
         elif isinstance(obj, (unicode, str)):
+            obj = xml.sax.saxutils.quoteattr(obj)
             result = "<pre>%s</pre>" % obj if '\n' in obj else obj
         elif isinstance(obj, (int, float, bool)):
             result = "%s" % obj
@@ -414,7 +415,7 @@ class DigestETag:
     """Compute hash digest over contents for ETag header."""
     algorithm = None
 
-    def __init__(self, algorithm = None):
+    def __init__(self, algorithm=None):
         """Prepare ETag computer."""
         self.digest = hashlib.new(algorithm or self.algorithm)
 
@@ -471,7 +472,7 @@ def _stream_compress_deflate(reply, compress_level, max_chunk):
     if npending:
         yield z.compress("".join(pending)) + z.flush(zlib.Z_FINISH)
 
-#: Stream compression methods.
+# : Stream compression methods.
 _stream_compressor = {
   'identity': _stream_compress_identity,
   'deflate': _stream_compress_deflate

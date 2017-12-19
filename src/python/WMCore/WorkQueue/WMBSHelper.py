@@ -689,7 +689,8 @@ class WMBSHelper(WMConnectionBase):
             for parent in acdcFile["parents"]:
                 logging.debug("WMBS ACDC Parent File: %s", parent)
                 parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
-                                                                    locations=acdcFile["locations"]),
+                                                                    locations=acdcFile["locations"],
+                                                                    merged=True),
                                                      inFileset=False)
                 wmbsParents.append(parent)
 

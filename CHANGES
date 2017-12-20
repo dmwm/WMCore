@@ -1,3 +1,67 @@
+1.1.8 to 1.1.18.patch3:
+  - Merge pull request #8397 from ticoann/fix_acdc_parentage_wmagent
+  - fix acdc parentage
+  - Merge pull request #8389 from ticoann/1.1.8_wmagent_reserved
+  - temp fix for phedex priority
+  - Merge pull request #8373 from amaltaro/mmap-empty-118
+  - Trap mmap.ing empty file exception
+  - 1.1.8.patch2
+  - Merge pull request #8362 from amaltaro/118-patch2-bundle
+  - fix the priority handling
+  - Make sure NANOAOD files go straight to UNmerged
+  - Skip MCFakeFile parentage
+  - Log workflows going through DeterministicPileup job creation
+  - Mistakenly disabled dashboard monitor in 8358
+  - Fix for printing number of cores in performance kills
+  - Fix Services service is unavailable error message
+  - Add WorkQueue debugging for ACDC
+  - Merge pull request #8351 from amaltaro/put-agentConfig
+  - Overwrite default WMAgent config couch doc - wmagent version
+  - Merge pull request #8335 from ticoann/fix_chmod_resource
+  - fix the file permission
+  - 1.1.8.patch1
+  - Merge pull request #8319 from ticoann/temp_patch
+  - Temporary fix for sites with multi-pnns
+  - Merge pull request #8216 from ericvaandering/disable_wu
+  - Merge pull request #8317 from ticoann/increase_decimal
+  - Merge pull request #8265 from ticoann/acdc_parentage
+  - Merge pull request #8313 from ticoann/extract_error
+  - Merge pull request #8314 from amaltaro/dump-t3-multipnn
+  - Merge pull request #8288 from ticoann/priority_job_submit
+  - need to increase at least hold 7200
+  - Merge pull request #8316 from amaltaro/deploy-patchbin
+  - Update deploy script to support patching non-standard locations
+  - pylint fixes
+  - Remove T0 legacy setup and option from resource-control insertion
+  - add unittest
+  - extract error message if it fails before WMAgent exception occurs
+  - Merge pull request #8312 from ticoann/fix_multi_core_report
+  - fix typo
+  - Merge pull request #8311 from amaltaro/thread-timeout-bump
+  - Bump worker thread heartbeat to 2h
+  - Merge pull request #8310 from ticoann/fix_timer
+  - fix unittest
+  - submit higher priority jobs regardless threshold
+  - set timer precision
+  - 1.1.9.pre1
+  - Merge pull request #8299 from ticoann/add_core_info
+  - Merge pull request #8247 from ticoann/wmstats_site_fix
+  - Merge pull request #8307 from amaltaro/wmstats-cleanuptask
+  - add unittest
+  - fix site report in wmstats
+  - Merge pull request #8302 from amaltaro/wmbs-daos-unused
+  - Handle workflows with None data
+  - Unit test and pylint fixes
+  - Removed unused WMBS DAOs
+  - Merge pull request #8303 from ticoann/escape_html
+  - Merge pull request #8282 from ticoann/add_diagnosis_parenge
+  - escape html in error detail
+  - add diagnosis for parentage
+  - add number of core info in performance error message
+  - fix unittest
+  - Comment out workunit code and tests
+  - fix the acdc parentage
+
 1.1.8 to 1.1.8.patch2:
   - Merge pull request #8362 from amaltaro/118-patch2-bundle
   - fix the priority handling

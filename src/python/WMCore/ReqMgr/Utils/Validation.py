@@ -159,6 +159,13 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         # ACDC of ACDC, we can't validate this case
         # simply copy the whole original dictionary over and accept all args
         createArgs = originalArgs
+        # TODO: This code can cause the problem when ACDC is created before this update which
+        # TODO: doesn't contain "TopLevelOriginalRequestType" so only uncomment this all the acdc are created after this updated
+        #request_args["TopLevelOriginalRequestType"] = originalArgs["TopLevelOriginalRequestType"]
+
+        # TODO: Remove this line when all the acdc are created after this patch is applied and uncomment above line.
+        # WARNING: This doesn't solve the problem when when this is ACDC of ACDC or more. ( > 2 level ACDC)
+        request_args["TopLevelOriginalRequestType"] = originalArgs.get("TopLevelOriginalRequestType") or originalArgs["OriginalRequestType"]
     else:
         # load arguments definition from the proper/original spec factory
         parentClass = loadSpecClassByType(originalArgs["RequestType"])
@@ -166,6 +173,7 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
             chainArgs = parentClass.getChainCreateArgs()
         createArgs.update(parentClass.getWorkloadCreateArgs())
+        request_args["TopLevelOriginalRequestType"] = originalArgs["RequestType"]
 
     request_args['OriginalRequestType'] = originalArgs["RequestType"]
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)

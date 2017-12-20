@@ -35,6 +35,8 @@ class EventAwareLumiBased(JobFactory):
 
         self.loadRunLumi = None  # Placeholder for DAO factory if needed
         self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
+        #TODO this might need to be configurable instead of being hardcoded
+        self.defaultJobTimeLimit = 48 * 3600 # 48 hours
 
     def algorithm(self, *args, **kwargs):
         """
@@ -46,7 +48,7 @@ class EventAwareLumiBased(JobFactory):
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
         jobLimit = int(kwargs.get('job_limit', 0))
-        eventLimit = int(kwargs.get('max_events_per_lumi', 20000))
+        jobTimeLimit = int(kwargs.get('job_time_limit', self.defaultJobTimeLimit))
         totalEvents = int(kwargs.get('total_events', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         self.collectionName = kwargs.get('collectionName', None)
@@ -161,9 +163,10 @@ class EventAwareLumiBased(JobFactory):
                 lumisInJobInFile = 0
                 updateSplitOnJobStop = False
                 failNextJob = False
-                # If the number of events per lumi is higher than the limit
+                # If estimated job time is higher the job time limit (condor limit)
                 # and it's only one lumi then ditch that lumi
-                if f['avgEvtsPerLumi'] > eventLimit and f['lumiCount'] == 1:
+                timePerLumi = f['avgEvtsPerLumi'] * timePerEvent
+                if timePerLumi > jobTimeLimit and f['lumiCount'] == 1:
                     failNextJob = True
                     stopJob = True
                     lumisPerJob = 1
@@ -249,9 +252,8 @@ class EventAwareLumiBased(JobFactory):
                                 self.currentJob.addResourceEstimates(jobTime=runAddedTime, disk=runAddedSize)
                             msg = None
                             if failNextJob:
-                                msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
-                                                                                          f['events'],
-                                                                                          f['lumiCount'])
+                                msg = "File %s has a single lumi with too many events (%d) and it woud take %d sec to run" % (
+                                                                f['lfn'], f['events'], timePerLumi)
                             self.lumiChecker.closeJob(self.currentJob)
                             self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=msg)
                             if deterministicPileup:

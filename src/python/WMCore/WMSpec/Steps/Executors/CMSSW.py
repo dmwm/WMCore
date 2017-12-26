@@ -358,6 +358,9 @@ shift;shift;shift;shift;
 # Can only do nine parameters at a time
 USER_FILES=$1
 shift;
+echo "Setting up Frontier log level"
+export FRONTIER_LOG_LEVEL=warning
+
 echo "Beginning CMSSW wrapper script"
 echo "$SCRAM_SETUP $SCRAM_ARCHIT $SCRAM_COMMAND $SCRAM_PROJECT"
 

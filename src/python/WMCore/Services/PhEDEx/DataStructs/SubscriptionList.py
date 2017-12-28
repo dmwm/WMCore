@@ -8,6 +8,9 @@ import logging
 
 from WMCore.WMException import WMException
 
+PhEDEx_VALID_SUBSCRIPTION_PRIORITIES = ['low', 'normal', 'high', 'reserved']
+
+
 class PhEDExSubscriptionException(WMException):
     """
     _PhEDExSubscriptionException_
@@ -57,7 +60,7 @@ class PhEDExSubscription(object):
             # Validation checks on the subscription
             for option in (self.static, self.custodial, self.request_only, self.move):
                 assert option in ('y', 'n')
-            assert self.priority in ('low', 'normal', 'high')
+            assert self.priority in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
             assert self.level in ('dataset', 'block')
             if self.level == 'block':
                 assert self.blocks is not None

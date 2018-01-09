@@ -53,7 +53,7 @@ class WorkerThreadManager:
             self.activeThreadCount -= 1
         self.lock.release()
 
-    def prepareWorker(self, worker, idleTime):
+    def prepareWorker(self, worker, idleTime, heartbeatTimeout):
         """
         Prepares a worker thread before running
         """
@@ -73,10 +73,11 @@ class WorkerThreadManager:
         worker.notifyResume = self.resumeSlaves
         if hasattr(self.component.config, "Agent"):
             if getattr(self.component.config.Agent, "useHeartbeat", True):
-                worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName, idleTime)
+                worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName,
+                                                   idleTime, heartbeatTimeout)
 
 
-    def addWorker(self, worker, idleTime = 60, parameters = None):
+    def addWorker(self, worker, idleTime = 60, hbTimeout=None, parameters = None):
         """
         Adds a worker object and sets it running. Worker thread will sleep for
         idleTime seconds between runs. Parameters, if present, are passed into
@@ -90,7 +91,7 @@ class WorkerThreadManager:
             return
 
         # Prepare the new worker thread
-        self.prepareWorker(worker, idleTime)
+        self.prepareWorker(worker, idleTime, hbTimeout)
         workerThread = threading.Thread(target = worker, args = (parameters,))
         msg = "Created worker thread %s" % str(worker)
         logging.info(msg)

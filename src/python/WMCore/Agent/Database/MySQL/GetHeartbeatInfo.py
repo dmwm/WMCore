@@ -1,7 +1,8 @@
 """
 _GetHeartbeatInfo_
 
-MySQL implementation of GetHeartbeatInfo
+Fetches the hearbeat info for all worker threads associated to
+the component name passed in.
 """
 
 __all__ = []
@@ -18,15 +19,13 @@ class GetHeartbeatInfo(DBFormatter):
                     worker.last_error, worker.error_message
              FROM wm_workers worker
              INNER JOIN wm_components comp ON comp.id = worker.component_id
-             INNER JOIN (SELECT component_id, MAX(last_updated) AS last_updated FROM wm_workers
-                         GROUP BY component_id) max_result
-                        ON (worker.last_updated = max_result.last_updated
-                           AND max_result.component_id = comp.id)
+             WHERE comp.name = :component_name
              ORDER BY worker.last_updated ASC
              """
 
-    def execute(self, conn = None, transaction = False):
+    def execute(self, compName, conn = None, transaction = False):
+        bind = {"component_name": compName}
 
-        result = self.dbi.processData(self.sql, conn = conn,
+        result = self.dbi.processData(self.sql, bind, conn = conn,
                              transaction = transaction)
         return self.formatDict(result)

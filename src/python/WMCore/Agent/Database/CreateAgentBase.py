@@ -59,10 +59,10 @@ class CreateAgentBase(DBCreator):
              pid           INTEGER,
              poll_interval INTEGER      NOT NULL,
              last_error    INTEGER,
-             cycle_time    DECIMAL(9,4) DEFAULT 0 NOT NULL,
+             cycle_time    FLOAT DEFAULT 0 NOT NULL,
              outcome       VARCHAR(1000),
              error_message VARCHAR(1000),
-             UNIQUE (component_id, name))"""
+             UNIQUE (name))"""
 
         self.constraints["FK_wm_component_worker"] = \
               """ALTER TABLE wm_workers ADD CONSTRAINT FK_wm_component_worker

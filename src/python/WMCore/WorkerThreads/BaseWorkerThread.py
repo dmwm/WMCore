@@ -156,7 +156,7 @@ class BaseWorkerThread(object):
                 myThread.logdbClient = None
 
             if self.useHeartbeat:
-                self.heartbeatAPI.updateWorkerHeartbeat(self.workerName)
+                self.heartbeatAPI.registerWorker(self.workerName)
 
             # Run event loop while termination is not flagged
             while not self.notifyTerminate.isSet():

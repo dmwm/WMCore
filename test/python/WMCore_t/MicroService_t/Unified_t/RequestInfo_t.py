@@ -7,7 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.Services.MicroService.Unified.RequestInfo import findParent
+from WMCore.MicroService.Unified.RequestInfo import findParent
 
 
 class RequestInfoTest(unittest.TestCase):

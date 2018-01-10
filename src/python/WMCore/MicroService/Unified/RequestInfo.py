@@ -17,51 +17,12 @@ import pickle
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
-from WMCore.Services.MicroService.Unified.Common import uConfig, cert, ckey,\
+from WMCore.MicroService.Unified.Common import uConfig, cert, ckey,\
         reqmgrCacheUrl, dbsUrl, eventsLumisInfo, workflowsInfo,\
         dbsInfo, phedexInfo, reqmgrUrl, elapsedTime, getComputingTime,\
         getNCopies, teraBytes, workqueueView
-from WMCore.Services.MicroService.Unified.SiteInfo import SiteInfo
+from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 
-
-class CampaignInfo(object):
-    """
-    CampaignInfo class provides information about campains.
-    Class should be initialized with appropriate JSON files for campaigns, see
-    WmAgentScripts/campaigns.json and WmAgentScripts/campaigns.relval.json
-    """
-    def __init__(self):
-        fname = '/'.join(__file__.split('/')[:-1] + ['campaigns.json'])
-        campaigns = os.getenv('UNIFIED_CAMPAIGNS', fname)
-        fname = '/'.join(__file__.split('/')[:-1] + ['campaigns.relval.json'])
-        campaignsRelVal = os.getenv('UNIFIED_CAMPAIGNS_RELVAL', fname)
-        self.campaigns = json.loads(open(campaigns).read())
-        self.campaigns.update(json.loads(open(campaignsRelVal).read()))
-        siteInfo = SiteInfo()
-        for camp in self.campaigns:
-            if 'parameters' in self.campaigns[camp]:
-                if 'SiteBlacklist' in self.campaigns[camp]['parameters']:
-                    siteBlackList = \
-                        copy.deepcopy(self.campaigns[camp]['parameters']['SiteBlacklist'])
-                    for black in siteBlackList:
-                        if black.endswith('*'):
-                            self.campaigns[camp]['parameters']['SiteBlacklist'].remove(black)
-                            reg = black[0:-1]
-                            self.campaigns[camp]['parameters']['SiteBlacklist'].extend(\
-                                [s for s in siteInfo.all_sites if s.startswith(reg)])
-
-    def get(self, camp, key, default):
-        "Get certain campaign from campaign list"
-        if camp in self.campaigns:
-            if key in self.campaigns[camp]:
-                return copy.deepcopy(self.campaigns[camp][key])
-        return copy.deepcopy(default)
-
-    def parameters(self, camp):
-        "Return parameters dict of given campaign"
-        if camp in self.campaigns and 'parameters' in self.campaigns[camp]:
-            return self.campaigns[camp]['parameters']
-        return {}
 
 def findParent(dataset):
     "Helper function to find a parent of the dataset"
@@ -293,7 +254,7 @@ def getMulticore(request):
         mcores.extend([int(v) for v in mcoresCol.values()])
     return max(mcores)
 
-def getSiteWhiteList(request, siteInfo, reqSpecs=None, pickone=False, verbose=True):
+def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=False, verbose=True):
     "Return site list for given request"
     lheinput, primary, parent, secondary = getIO(request)
     allowedSites = []
@@ -329,10 +290,9 @@ def getSiteWhiteList(request, siteInfo, reqSpecs=None, pickone=False, verbose=Tr
                 print("restricting site white list because of blow-up factor",\
                         minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
 
-    campaignInfo = CampaignInfo()
     for campaign in getCampaigns(request):
-        campSites = campaignInfo.get(campaign, 'SiteWhitelist', [])
-        campSites.extend(campaignInfo.parameters(campaign).get('SiteWhitelist', []))
+        campaignConfig = reqmgrAuxSvc.getCampaignConfig(campaign)
+        campSites = campaignConfig.get('SiteWhitelist', [])
         if campSites:
             if verbose:
                 print("Using site whitelist restriction by campaign,",\
@@ -341,8 +301,7 @@ def getSiteWhiteList(request, siteInfo, reqSpecs=None, pickone=False, verbose=Tr
             if not allowedSites:
                 allowedSites = list(campSites)
 
-        campBlackList = campaignInfo.get(campaign, 'SiteBlacklist', [])
-        campBlackList.extend(campaignInfo.parameters(campaign).get('SiteBlacklist', []))
+        campBlackList = campaignConfig.get('SiteBlacklist', [])
         if campBlackList:
             if verbose:
                 print("Reducing the whitelist due to black list in campaign configuration")
@@ -376,7 +335,7 @@ def workqueueRequests(state=None):
         rdict[row['key']] = row['value']
     return rdict
 
-def requestsInfo(state='assignment-approved'):
+def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
     """
     Helper function to get information about all requests
     in assignment-approved state in ReqMgr
@@ -457,7 +416,7 @@ def requestsInfo(state='assignment-approved'):
             # find out which site can serve given workflow request
             t0 = time.time()
             lheInput, primary, parent, secondary, allowedSites \
-                    = getSiteWhiteList(wspec, siteInfo, reqSpecs)
+                    = getSiteWhiteList(wspec, siteInfo, reqmgrAuxSvc, reqSpecs)
             rdict = dict(name=wname, datasets=datasets, blocks=datasetBlocks,\
                     npileups=npileups, size=size, njobs=njobs,\
                     nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies,\

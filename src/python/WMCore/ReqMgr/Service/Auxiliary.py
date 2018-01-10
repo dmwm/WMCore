@@ -197,6 +197,7 @@ class AuxBaseAPI(RESTEntity):
         else:
             docName = self.name
 
+        doc["ConfigType"] = self.name
         doc = Document(docName, doc)
         result = self.reqmgr_aux_db.commitOne(doc)
         return result
@@ -261,10 +262,19 @@ class WMAgentConfig(AuxBaseAPI):
         self.name = "WMAGENT_CONFIG"
 
 
-class PermissionsConig(AuxBaseAPI):
+class PermissionsConfig(AuxBaseAPI):
     """
     Pemissions' config for REST call, i.e. certain group and role can only update specific data.
     """
 
     def setName(self):
         self.name = "PERMISSION_BY_REQUEST_TYPE"
+
+
+class CampaignConfig(AuxBaseAPI):
+    """
+    Config which used for Agent
+    """
+
+    def setName(self):
+        self.name = "CAMPAIGN_CONFIG"

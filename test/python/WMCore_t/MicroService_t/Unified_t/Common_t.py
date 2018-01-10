@@ -7,7 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.Services.MicroService.Unified.Common import dbsInfo, getEventsLumis,\
+from WMCore.MicroService.Unified.Common import dbsInfo, getEventsLumis, \
         workflowsInfo, getWorkflows, workqueueView
 
 

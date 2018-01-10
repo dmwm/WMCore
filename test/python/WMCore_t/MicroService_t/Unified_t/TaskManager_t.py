@@ -8,7 +8,7 @@ from __future__ import division, print_function
 import time
 import unittest
 
-from WMCore.Services.MicroService.Unified.TaskManager import \
+from WMCore.MicroService.Unified.TaskManager import \
         TaskManager, genkey, UidSet
 
 

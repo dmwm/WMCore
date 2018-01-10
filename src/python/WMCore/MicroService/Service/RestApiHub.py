@@ -13,10 +13,10 @@ import cherrypy
 # WMCore modules
 from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
-from WMCore.Services.MicroService.Data import Data
+from WMCore.MicroService.Service.Data import Data
 
 
-class RestInterface(RESTApi):
+class RestApiHub(RESTApi):
     """
     RestInterface defines REST APIs for MicroService.
     They are mounted to entry point defined in _add method.

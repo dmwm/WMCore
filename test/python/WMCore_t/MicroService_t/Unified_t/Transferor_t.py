@@ -12,7 +12,7 @@ import unittest
 
 # WMCore modules
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.MicroService.Unified.Transferor import \
+from WMCore.MicroService.Unified.Transferor import \
         RequestStore, RequestManager
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase

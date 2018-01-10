@@ -9,8 +9,8 @@ from __future__ import division, print_function
 import unittest
 
 # WMCore modules
-# from WMCore.Services.MicroService.Unified.Common import elapsedTime
-from WMCore.Services.MicroService.Unified.SiteInfo import getNodes, SiteInfo
+# from WMCore.MicroService.Unified.Common import elapsedTime
+from WMCore.MicroService.Unified.SiteInfo import getNodes, SiteInfo
 
 
 class SiteInfoTest(unittest.TestCase):

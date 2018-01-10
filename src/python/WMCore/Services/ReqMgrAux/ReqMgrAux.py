@@ -123,6 +123,59 @@ class ReqMgrAux(Service):
                                    (drainFlag, resp))
             return False
 
+    def getCampaignConfig(self, campaignName):
+        """
+        get campaign config for transferor function in unified ReqMgr2MS.
+        """
+        return self._getDataFromMemoryCache('campaignconfig/%s' % campaignName)
+
+    def postCampaignConfig(self, campaignName, campaignConfig):
+        """
+
+        :param campaignName
+        :type basestringg
+        :param campaignConfig:
+        :type dict - only can replace whole campaign  no partial parameters
+
+        campaignName: "HIRun2015":
+        campaignConfig: {
+            "go": true,
+            "labels" : ["02May2016","25Aug2016"],
+            "overflow" : {"PRIM" : {}},
+            "DDMcopies": {
+                         "all" : { "N" : 2 }
+            },
+            "custodial_override" : ["DQMIO"],
+            "fractionpass": 1.0,
+            "lumisize" : -1,
+            "maxcopies" : 1,
+            "custodial": "T1_FR_CCIN2P3_MSS",
+            "parameters" :{
+              "NonCustodialSites" : ["T2_US_Vanderbilt"],
+              "SiteBlacklist": [
+              "T1_US_FNAL",
+              "T2_US_Purdue",
+              "T2_US_Caltech",
+              "T2_US_Florida",
+              "T2_US_Nebraska",
+              "T2_US_UCSD",
+              "T2_US_Wisconsin"
+             ]
+           }
+          }
+
+        :return: None
+        """
+        return self["requests"].post('campaignconfig/%s' % campaignName, campaignConfig)[0]['result']
+
+    def updateCampaignConfig(self, campaignName, propDict):
+        # update config DB
+        resp = self.updateRecords('campaignconfig/%s' % campaignName, propDict)
+
+        if len(resp) == 1 and resp[0].get("ok", False):
+            return True
+        else:
+            return False
 
 AUXDB_AGENT_CONFIG_CACHE = {}
 

@@ -30,8 +30,8 @@ from WMCore.REST.Tools import tools
 from WMCore.REST.Format import JSONFormat
 
 # MicroService modules
-from WMCore.Services.MicroService.Manager import MicroServiceManager
-# from WMCore.Services.MicroService.Regexp import PAT_INFO, PAT_UID
+from WMCore.MicroService.Manager import MicroServiceManager
+# from WMCore.MicroService.Regexp import PAT_INFO, PAT_UID
 
 def results(res):
     "Return results in a list format suitable by REST server"

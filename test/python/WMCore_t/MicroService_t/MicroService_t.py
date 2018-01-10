@@ -10,9 +10,9 @@ import json
 import cherrypy
 import unittest
 
-from WMCore_t.Services_t.MicroService_t import TestConfig
-from WMCore.Services.MicroService.RestApi import RestInterface
-from WMCore.Services.MicroService.Unified.Common import cert, ckey
+from WMCore_t.MicroService_t import TestConfig
+from WMCore.MicroService.Service.RestApiHub import RestApiHub
+from WMCore.MicroService.Unified.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
 
 
@@ -50,7 +50,7 @@ class MicroServiceTest(unittest.TestCase):
         self.port = config.main.port
         self.url = 'http://localhost:%s%s/data' % (self.port, mount)
         cherrypy.config["server.socket_port"] = self.port
-        self.server = RestInterface(self.app, config, mount)
+        self.server = RestApiHub(self.app, config, mount)
         cherrypy.tree.mount(self.server, mount)
         cherrypy.engine.start()
 

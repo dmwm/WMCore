@@ -6,20 +6,22 @@ A class used to manage regularly running worker threads.
 """
 from __future__ import print_function
 
-import threading
 import logging
+import threading
 import time
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 # keep track of a unique WTM number
 wtmcount = 0
 
-class WorkerThreadManager:
+
+class WorkerThreadManager(object):
     """
     Manages regular worker slave threads
     """
+
     def __init__(self, component):
         """
         Set up the events used to pause, resume and terminate worker threads
@@ -65,7 +67,6 @@ class WorkerThreadManager:
         worker.slaveid = "%s-%s" % (self.wtmnumber, self.slavecounter)
         self.lock.release()
 
-
         # Thread synchronisation
         worker.notifyTerminate = self.terminateSlaves
         worker.terminateCallback = self.slaveTerminateCallback
@@ -76,8 +77,7 @@ class WorkerThreadManager:
                 worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName,
                                                    idleTime, heartbeatTimeout)
 
-
-    def addWorker(self, worker, idleTime = 60, hbTimeout=None, parameters = None):
+    def addWorker(self, worker, idleTime=60, hbTimeout=None, parameters=None):
         """
         Adds a worker object and sets it running. Worker thread will sleep for
         idleTime seconds between runs. Parameters, if present, are passed into
@@ -92,7 +92,7 @@ class WorkerThreadManager:
 
         # Prepare the new worker thread
         self.prepareWorker(worker, idleTime, hbTimeout)
-        workerThread = threading.Thread(target = worker, args = (parameters,))
+        workerThread = threading.Thread(target=worker, args=(parameters,))
         msg = "Created worker thread %s" % str(worker)
         logging.info(msg)
 
@@ -122,16 +122,15 @@ class WorkerThreadManager:
         finished = False
         while not finished:
             self.lock.acquire()
-            msg = "Waiting for %s worker threads to terminate"
-            logging.info(msg % self.activeThreadCount)
-            logging.debug("\n slavelist is %s" % self.slavelist)
-            logging.debug("\n threadlist is %s" % threading.enumerate())
+            logging.info("Waiting for %s worker threads to terminate", self.activeThreadCount)
+            logging.debug("\n slavelist is %s", self.slavelist)
+            logging.debug("\n threadlist is %s", threading.enumerate())
 
             if self.activeThreadCount == 0:
                 finished = True
             else:
                 # check to make sure we aren't waiting on dead threads
-                threadlist  = threading.enumerate()
+                threadlist = threading.enumerate()
                 # we want to look for all the slavenames
                 #  that correspond to nonexistant or dead threads
                 # also, I realize this is O(N^2), but my brain hurts too hard
@@ -143,19 +142,17 @@ class WorkerThreadManager:
                 # everywhere else that tries to modify active thread count
                 # also does it with a try-except-else around removing from
                 # slavelist. Slavelist becomes our synchronization
-                toRemove = []
                 for slavename in self.slavelist:
                     found = False
                     for threadobj in threadlist:
-                        if ((hasattr(threadobj, 'name')) and (slavename == threadobj.name) and (threadobj.isAlive())):
+                        if hasattr(threadobj, 'name') and (slavename == threadobj.name) and (threadobj.isAlive()):
                             found = True
-                    if found == False:
+                    if found is False:
                         # the slave we wanted wasn't running
                         try:
                             self.slavelist.remove(slavename)
                         except Exception as ex:
                             print("couldn't remove thread.. %s " % ex)
-                            pass
                         else:
                             self.activeThreadCount -= 1
             self.lock.release()

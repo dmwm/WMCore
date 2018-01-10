@@ -7,12 +7,10 @@ the component name passed in.
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetHeartbeatInfo(DBFormatter):
 
+class GetHeartbeatInfo(DBFormatter):
     sql = """SELECT comp.name as name, comp.pid, worker.name as worker_name,
                     worker.state, worker.last_updated, comp.update_threshold,
                     worker.poll_interval, worker.cycle_time, worker.outcome,
@@ -23,9 +21,9 @@ class GetHeartbeatInfo(DBFormatter):
              ORDER BY worker.last_updated ASC
              """
 
-    def execute(self, compName, conn = None, transaction = False):
+    def execute(self, compName, conn=None, transaction=False):
         bind = {"component_name": compName}
 
-        result = self.dbi.processData(self.sql, bind, conn = conn,
-                             transaction = transaction)
+        result = self.dbi.processData(self.sql, bind, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

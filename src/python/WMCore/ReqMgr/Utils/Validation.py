@@ -4,10 +4,6 @@ ReqMgr request handling.
 """
 from __future__ import print_function
 
-import json
-import logging
-import time
-
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.Auth import getWritePermission

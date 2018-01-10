@@ -16,13 +16,14 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, 
-                                       REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
+from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
+                                                     REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-        validate_clone_create_args, validateOutputDatasets)
+                                            validate_clone_create_args, validateOutputDatasets)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+
 
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
@@ -161,7 +162,7 @@ class Request(RESTEntity):
 
             if method == 'PUT':
                 args_length = len(param.args)
-                
+
                 if args_length == 1:
                     requestName = param.args[0]
                     param.args.pop()

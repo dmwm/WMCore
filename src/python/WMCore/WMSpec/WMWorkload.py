@@ -6,15 +6,16 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 from __future__ import print_function
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
-from WMCore.WMSpec.ConfigSectionTree import findTop
-from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
-                                           setAssignArgumentsWithDefault)
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
+from WMCore.WMSpec.ConfigSectionTree import findTop
+from WMCore.WMSpec.Persistency import PersistencyHelper
+from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+                                           setAssignArgumentsWithDefault)
 
 parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
 
@@ -1573,7 +1574,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setCMSSWVersions(self, cmsswVersion=None, globalTag=None,
-                       scramArch=None, initialTask=None):
+                         scramArch=None, initialTask=None):
         """
         _setCMSSWVersions_
 
@@ -1642,7 +1643,7 @@ class WMWorkloadHelper(PersistencyHelper):
                    'input': [],
                    'output': [],
                    'owner': {},
-                  }
+                   }
 
         summary['tasks'] = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()

@@ -1,3 +1,35 @@
+1.1.9 to 1.1.10.pre3:
+  - Merge pull request #8379 from ticoann/move_unified_config_aux
+  - get campaign info from reqmgr aux db
+  - 1.1.10.pre2
+  - Merge pull request #8390 from ticoann/add_reserved_subscription
+  - Merge pull request #8394 from ticoann/fix_acdc_multi_core_setting2
+  - Merge pull request #8401 from ticoann/add_frontier_log
+  - add Frontier evn variable
+  - Merge pull request #8396 from ticoann/acdc_parentage_fix
+  - fix acdc parentage
+  - Merge pull request #8386 from ticoann/fix_pretty_json
+  - fix multicore setting for acdc of acdc
+  - add reserved to PhEDEx Subscription validation
+  - fix special charater in html format
+  - Merge pull request #8354 from ticoann/kill_all_jobs
+  - fix unittest, pylint
+  - Merge pull request #8381 from amaltaro/asw-metrics
+  - Remove deprecated unit tests
+  - Decouple site status from site thresholds update
+  - SSB service created for site status and metrics
+  - kill orphan jobs
+  - 1.1.10.pre1
+  - Merge pull request #8367 from ticoann/use_mock_for_component_test
+  - Merge pull request #8380 from amaltaro/workerThreads-unstable
+  - Added WorkerThreads.testWorkerError to unstable tests
+  - fix pylint
+  - Merge pull request #8280 from amaltaro/file-location-worker
+  - Fix a few last unittests, none related to these changes though
+  - Set PNN as file location
+  - Just some minor improvements to file location handling
+  - use mock for apmon to speed up the test
+
 1.1.9 to 1.1.10.pre2:
   - Merge pull request #8390 from ticoann/add_reserved_subscription
   - Merge pull request #8394 from ticoann/fix_acdc_multi_core_setting2

@@ -77,7 +77,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.config = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
 
-        if not getattr(self.config.TaskArchiver, "useWorkQueue", False):
+        if getattr(self.config.TaskArchiver, "useWorkQueue", False):
             # Get workqueue setup from config unless overridden
             if hasattr(self.config.TaskArchiver, 'WorkQueueParams'):
                 self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
@@ -220,12 +220,12 @@ class TaskArchiverPoller(BaseWorkerThread):
             logging.error("we will try again when remote couch server comes back\n%s", str(ex))
 
         if centralCouchAlive:
+            logging.info("Marking subscriptions as Done ...")
             for workflow in finishedwfs:
                 try:
                     # Notify the WorkQueue, if there is one
                     if self.workQueue is not None:
                         subList = []
-                        logging.info("Marking subscriptions as Done ...")
                         for l in finishedwfs[workflow]["workflows"].values():
                             subList.extend(l)
                         self.notifyWorkQueue(subList)

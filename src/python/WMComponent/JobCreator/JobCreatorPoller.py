@@ -93,13 +93,13 @@ def runSplitter(jobFactory, splitParams):
             break
 
 
-def capResourceEstimates(jobGroups, nCores, constraints):
+def capResourceEstimates(jobGroups, constraints):
     """
     _capResourceEstimates_
 
     Checks the current job resource estimates and cap
     them based on the limits defined in the agent
-    config file (also take into account nCores).
+    config file.
     """
     for jobGroup in jobGroups:
         for j in jobGroup.jobs:
@@ -108,15 +108,9 @@ def capResourceEstimates(jobGroups, nCores, constraints):
             if not j['estimatedDiskUsage'] or j['estimatedDiskUsage'] < constraints['MinRequestDiskKB']:
                 j['estimatedDiskUsage'] = constraints['MinRequestDiskKB']
 
-            if nCores == 1:
-                j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
-                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
-            else:
-                # we assume job efficiency as nCores * 0.8 for multicore
-                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
-                                            constraints['MaxWallTimeSecs'])
-                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
-                                              constraints['MaxRequestDiskKB'] * nCores)
+            j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
+            j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
+
     return
 
 
@@ -604,7 +598,7 @@ class JobCreatorPoller(BaseWorkerThread):
 
                 # if we have glideinWMS constraints, then adapt all jobs
                 if self.glideinLimits:
-                    capResourceEstimates(wmbsJobGroups, processDict['numberOfCores'], self.glideinLimits)
+                    capResourceEstimates(wmbsJobGroups, self.glideinLimits)
 
                 nameDictList = []
                 for wmbsJobGroup in wmbsJobGroups:

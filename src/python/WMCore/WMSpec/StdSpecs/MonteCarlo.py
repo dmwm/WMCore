@@ -12,6 +12,7 @@ fetches from DBS the information about pileup input.
 """
 
 import math
+
 from Utils.Utilities import strToBool
 from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -154,15 +155,14 @@ class MonteCarloWorkloadFactory(StdBase):
                                   "null": False},
                     "MCPileup": {"validate": dataset, "attr": "mcPileup", "null": True},
                     "DataPileup": {"validate": dataset, "attr": "dataPileup", "null": True},
-                    "SplittingAlgo" : {"default" : "EventBased", "null" : False,
-                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                    "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "prodJobSplitAlgo"},
+                    "SplittingAlgo": {"default": "EventBased", "null": False,
+                                      "validate": lambda x: x in ["EventBased"],
+                                      "attr": "prodJobSplitAlgo"},
                     "DeterministicPileup": {"default": False, "type": strToBool, "null": False},
                     "EventsPerJob": {"type": int, "validate": lambda x: x > 0, "null": True},
                     "EventsPerLumi": {"type": int, "validate": lambda x: x > 0, "null": True},
                     "LheInputFiles": {"default": False, "type": strToBool, "null": False}
-                   }
+                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

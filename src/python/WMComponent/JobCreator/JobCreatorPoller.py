@@ -4,33 +4,32 @@ The JobCreator Poller for the JSM
 """
 __all__ = []
 
-
+import logging
 import os
 import os.path
-import logging
-import traceback
 import threading
+import traceback
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 from Utils.Timers import timeFunction
-from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
-from WMCore.DAOFactory                      import DAOFactory
-from WMCore.WMException                     import WMException
-
+from WMComponent.JobCreator.CreateWorkArea import CreateWorkArea
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
 from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
-from WMCore.JobStateMachine.ChangeState     import ChangeState
-from WMComponent.JobCreator.CreateWorkArea  import CreateWorkArea
-from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
-from WMCore.WMBS.Subscription               import Subscription
-from WMCore.WMBS.Workflow                   import Workflow
-from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.FwkJobReport.Report             import Report
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
+from WMCore.FwkJobReport.Report import Report
 
 
-def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
+def retrieveWMSpec(workflow=None, wmWorkloadURL=None):
     """
     _retrieveWMSpec_
 
@@ -40,7 +39,7 @@ def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
         wmWorkloadURL = workflow.spec
 
     if not wmWorkloadURL or not os.path.isfile(wmWorkloadURL):
-        logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
+        logging.error("WMWorkloadURL %s is empty", wmWorkloadURL)
         return None
 
     wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
@@ -61,7 +60,6 @@ def retrieveJobSplitParams(wmWorkload, task):
         max_merge_size
         max_merge_events
     """
-
 
     # This function has to find the WMSpec, and get the parameters from the spec
     # I don't know where the spec is, but I'll have to find it.
@@ -89,7 +87,7 @@ def runSplitter(jobFactory, splitParams):
         groups = jobFactory(**splitParams)
         yield groups
         # Dump it after one go if we're not grabbing by proxy
-        if jobFactory.grabByProxy == False:
+        if jobFactory.grabByProxy is False:
             break
 
 
@@ -114,31 +112,31 @@ def capResourceEstimates(jobGroups, constraints):
     return
 
 
-def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            owner = None, ownerDN = None, ownerGroup = '', ownerRole = '',
-            scramArch = None, swVersion = None, agentNumber = 0, numberOfCores = 1,
-            inputDataset = None, inputDatasetLocations = None, allowOpportunistic=False):
+def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
+            owner=None, ownerDN=None, ownerGroup='', ownerRole='',
+            scramArch=None, swVersion=None, agentNumber=0, numberOfCores=1,
+            inputDataset=None, inputDatasetLocations=None, allowOpportunistic=False):
     """
     _saveJob_
 
     Actually do the mechanics of saving the job to a pickle file
     """
     if wmTask:
-            # If we managed to load the task,
-            # so the url should be valid
-        job['spec']     = workflow.spec
-        job['task']     = wmTask
-        if job.get('sandbox', None) == None:
+        # If we managed to load the task,
+        # so the url should be valid
+        job['spec'] = workflow.spec
+        job['task'] = wmTask
+        if job.get('sandbox', None) is None:
             job['sandbox'] = sandbox
 
-    job['counter']   = jobNumber
+    job['counter'] = jobNumber
     job['agentNumber'] = agentNumber
-    cacheDir         = job.getCache()
+    cacheDir = job.getCache()
     job['cache_dir'] = cacheDir
-    job['owner']     = owner
-    job['ownerDN']   = ownerDN
-    job['ownerGroup']   = ownerGroup
-    job['ownerRole']   = ownerRole
+    job['owner'] = owner
+    job['ownerDN'] = ownerDN
+    job['ownerGroup'] = ownerGroup
+    job['ownerRole'] = ownerRole
     job['scramArch'] = scramArch
     job['swVersion'] = swVersion
     job['numberOfCores'] = numberOfCores
@@ -150,7 +148,6 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
     output.close()
 
-
     return
 
 
@@ -160,71 +157,70 @@ def creatorProcess(work, jobCacheDir):
 
     Creator work areas and pickle job objects
     """
-    createWorkArea  = CreateWorkArea()
+    createWorkArea = CreateWorkArea()
 
     try:
         wmbsJobGroup = work.get('jobGroup')
-        workflow     = work.get('workflow')
-        wmWorkload   = work.get('wmWorkload')
-        wmTaskName   = work.get('wmTaskName')
-        sandbox      = work.get('sandbox')
-        owner        = work.get('owner')
-        ownerDN      = work.get('ownerDN',None)
-        ownerGroup   = work.get('ownerGroup','')
-        ownerRole    = work.get('ownerRole','')
-        scramArch    = work.get('scramArch', None)
-        swVersion    = work.get('swVersion', None)
-        agentNumber  = work.get('agentNumber', 0)
+        workflow = work.get('workflow')
+        wmWorkload = work.get('wmWorkload')
+        wmTaskName = work.get('wmTaskName')
+        sandbox = work.get('sandbox')
+        owner = work.get('owner')
+        ownerDN = work.get('ownerDN', None)
+        ownerGroup = work.get('ownerGroup', '')
+        ownerRole = work.get('ownerRole', '')
+        scramArch = work.get('scramArch', None)
+        swVersion = work.get('swVersion', None)
+        agentNumber = work.get('agentNumber', 0)
         numberOfCores = work.get('numberOfCores', 1)
         inputDataset = work.get('inputDataset', None)
         inputDatasetLocations = work.get('inputDatasetLocations', None)
         allowOpportunistic = work.get('allowOpportunistic', False)
 
-        if ownerDN == None:
+        if ownerDN is None:
             ownerDN = owner
 
-        jobNumber    = work.get('jobNumber', 0)
+        jobNumber = work.get('jobNumber', 0)
     except KeyError as ex:
-        msg =  "Could not find critical key-value in work input.\n"
+        msg = "Could not find critical key-value in work input.\n"
         msg += str(ex)
         logging.error(msg)
         raise JobCreatorException(msg)
     except Exception as ex:
-        msg =  "Exception in opening work package.\n"
+        msg = "Exception in opening work package.\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
         logging.error(msg)
         raise JobCreatorException(msg)
 
-
     try:
-        createWorkArea.processJobs(jobGroup = wmbsJobGroup,
-                                   startDir = jobCacheDir,
-                                   workflow = workflow,
-                                   wmWorkload = wmWorkload,
-                                   cache = False)
+        createWorkArea.processJobs(jobGroup=wmbsJobGroup,
+                                   startDir=jobCacheDir,
+                                   workflow=workflow,
+                                   wmWorkload=wmWorkload,
+                                   cache=False)
 
         for job in wmbsJobGroup.jobs:
             jobNumber += 1
-            saveJob(job = job, workflow = workflow,
-                    wmTask = wmTaskName,
-                    jobNumber = jobNumber,
-                    sandbox = sandbox,
-                    owner = owner,
-                    ownerDN = ownerDN,
-                    ownerGroup = ownerGroup,
-                    ownerRole = ownerRole,
-                    scramArch = scramArch,
-                    swVersion = swVersion,
-                    agentNumber = agentNumber,
-                    numberOfCores = numberOfCores,
-                    inputDataset = inputDataset,
-                    inputDatasetLocations = inputDatasetLocations,
-                    allowOpportunistic = allowOpportunistic)
+            saveJob(job=job, workflow=workflow,
+                    wmTask=wmTaskName,
+                    jobNumber=jobNumber,
+                    sandbox=sandbox,
+                    owner=owner,
+                    ownerDN=ownerDN,
+                    ownerGroup=ownerGroup,
+                    ownerRole=ownerRole,
+                    scramArch=scramArch,
+                    swVersion=swVersion,
+                    agentNumber=agentNumber,
+                    numberOfCores=numberOfCores,
+                    inputDataset=inputDataset,
+                    inputDatasetLocations=inputDatasetLocations,
+                    allowOpportunistic=allowOpportunistic)
 
     except Exception as ex:
         # Register as failure; move on
-        msg =  "Exception in processing wmbsJobGroup %i\n" % wmbsJobGroup.id
+        msg = "Exception in processing wmbsJobGroup %i\n" % wmbsJobGroup.id
         msg += str(ex)
         msg += str(traceback.format_exc())
         logging.error(msg)
@@ -233,13 +229,12 @@ def creatorProcess(work, jobCacheDir):
     return wmbsJobGroup
 
 
-
 # This is the code for the multiprocessing based creator
 # It's kept around so I can remember how I arranged the exception tree
 # Keep this until we make a decision about large-scale transactions
 # in the JobCreator.
 
-#def creatorProcess(input, result, jobCacheDir):
+# def creatorProcess(input, result, jobCacheDir):
 #    """
 #    _creatorProcess_
 #
@@ -338,15 +333,12 @@ class JobCreatorException(WMException):
     """
 
 
-
 class JobCreatorPoller(BaseWorkerThread):
-
     """
     Poller that does the work of job creation.
     Polls active subscriptions, asks for more work, and checks with local sites.
 
     """
-
 
     def __init__(self, config):
         """
@@ -357,28 +349,28 @@ class JobCreatorPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        #DAO factory for WMBS objects
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = logging,
-                                     dbinterface = myThread.dbi)
+        # DAO factory for WMBS objects
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=logging,
+                                     dbinterface=myThread.dbi)
 
-        self.setBulkCache     = self.daoFactory(classname = "Jobs.SetCache")
-        self.countJobs        = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
-        self.subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
-        self.setFWJRPath      = self.daoFactory(classname = "Jobs.SetFWJRPath")
+        self.setBulkCache = self.daoFactory(classname="Jobs.SetCache")
+        self.countJobs = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
+        self.subscriptionList = self.daoFactory(classname="Subscriptions.ListIncomplete")
+        self.setFWJRPath = self.daoFactory(classname="Jobs.SetFWJRPath")
 
-        #information
+        # information
         self.config = config
 
-        #Variables
+        # Variables
         self.defaultJobType = config.JobCreator.defaultJobType
-        self.limit          = getattr(config.JobCreator, 'fileLoadLimit', 500)
-        self.agentNumber    = int(getattr(config.Agent, 'agentNumber', 0))
-        self.glideinLimits  = getattr(config.JobCreator, 'GlideInRestriction', None)
+        self.limit = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.agentNumber = int(getattr(config.Agent, 'agentNumber', 0))
+        self.glideinLimits = getattr(config.JobCreator, 'GlideInRestriction', None)
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
-        self.initAlerts(compName = "JobCreator")
+        self.initAlerts(compName="JobCreator")
 
         try:
             self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
@@ -387,12 +379,11 @@ class JobCreatorPoller(BaseWorkerThread):
         except WMException:
             raise
         except Exception as ex:
-            msg =  "Unhandled exception while setting up jobCacheDir!\n"
+            msg = "Unhandled exception while setting up jobCacheDir!\n"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg = msg)
+            self.sendAlert(6, msg=msg)
             raise JobCreatorException(msg)
-
 
         self.changeState = ChangeState(self.config)
 
@@ -410,10 +401,10 @@ class JobCreatorPoller(BaseWorkerThread):
             else:
                 msg = "Assigned a pre-existant cache object %s.  Failing!" \
                       % (self.jobCacheDir)
-                raise JobCreatorException (msg)
+                raise JobCreatorException(msg)
 
     @timeFunction
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         Actually runs the code
         """
@@ -421,23 +412,24 @@ class JobCreatorPoller(BaseWorkerThread):
         try:
             self.pollSubscriptions()
         except WMException:
-            #self.close()
+            # self.close()
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
-                   and getattr(myThread.transaction, 'transaction', False):
+                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
-            #self.close()
+            # self.close()
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
-                   and getattr(myThread.transaction, 'transaction', False):
+                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             # Handle temporary connection problems (Temporary)
             if "(InterfaceError) not connected" in str(ex):
-                logging.error('There was a connection problem during the JobCreator algorithm, I will try again next cycle')
+                logging.error(
+                    'There was a connection problem during the JobCreator algorithm, I will try again next cycle')
             else:
-                msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex,traceback.format_exc())
+                msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex, traceback.format_exc())
                 logging.error(msg)
                 raise JobCreatorException(msg)
 
@@ -450,7 +442,6 @@ class JobCreatorPoller(BaseWorkerThread):
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
-
     def pollSubscriptions(self):
         """
         Poller for looking in all active subscriptions for jobs that need to be made.
@@ -459,12 +450,12 @@ class JobCreatorPoller(BaseWorkerThread):
         logging.info("Beginning JobCreator.pollSubscriptions() cycle.")
         myThread = threading.currentThread()
 
-        #First, get list of Subscriptions
-        subscriptions    = self.subscriptionList.execute()
+        # First, get list of Subscriptions
+        subscriptions = self.subscriptionList.execute()
 
         # Okay, now we have a list of subscriptions
         for subscriptionID in subscriptions:
-            wmbsSubscription = Subscription(id = subscriptionID)
+            wmbsSubscription = Subscription(id=subscriptionID)
             try:
                 wmbsSubscription.load()
             except IndexError:
@@ -474,13 +465,13 @@ class JobCreatorPoller(BaseWorkerThread):
                 # Ignore this subscription
                 msg = "JobCreator cannot load subscription %i" % subscriptionID
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(6, msg=msg)
                 continue
 
-            workflow         = Workflow(id = wmbsSubscription["workflow"].id)
+            workflow = Workflow(id=wmbsSubscription["workflow"].id)
             workflow.load()
             wmbsSubscription['workflow'] = workflow
-            wmWorkload       = retrieveWMSpec(workflow = workflow)
+            wmWorkload = retrieveWMSpec(workflow=workflow)
 
             if not workflow.task or not wmWorkload:
                 # Then we have a problem
@@ -492,13 +483,13 @@ class JobCreatorPoller(BaseWorkerThread):
                 msg = "Have no task for workflow %i\n" % (workflow.id)
                 msg += "Aborting Subscription %i" % (subscriptionID)
                 logging.error(msg)
-                self.sendAlert(1, msg = msg)
+                self.sendAlert(1, msg=msg)
                 continue
 
-            logging.debug("Have loaded subscription %i with workflow %i\n" % (subscriptionID, workflow.id))
+            logging.debug("Have loaded subscription %i with workflow %i\n", subscriptionID, workflow.id)
 
             # retrieve information from the workload to propagate down to the job configuration
-            allowOpport =  wmWorkload.getAllowOpportunistic()
+            allowOpport = wmWorkload.getAllowOpportunistic()
 
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
@@ -507,46 +498,46 @@ class JobCreatorPoller(BaseWorkerThread):
             # If you fail to load the generators, pass on the job
             try:
                 if hasattr(wmTask.data, 'generators'):
-                    manager    = GeneratorManager(wmTask)
+                    manager = GeneratorManager(wmTask)
                     seederList = manager.getGeneratorList()
                 else:
                     seederList = []
             except Exception as ex:
-                msg =  "Had failure loading generators for subscription %i\n" % (subscriptionID)
+                msg = "Had failure loading generators for subscription %i\n" % (subscriptionID)
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Passing over this error.  It will reoccur next interation!\n"
                 msg += "Please check or remove this subscription!\n"
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(6, msg=msg)
                 continue
 
-            logging.debug("Going to call wmbsJobFactory for sub %i with limit %i" % (subscriptionID, self.limit))
+            logging.debug("Going to call wmbsJobFactory for sub %i with limit %i", subscriptionID, self.limit)
 
             splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
-            logging.debug("Split Params: %s" % splitParams)
+            logging.debug("Split Params: %s", splitParams)
 
             # Load the proper job splitting module
             splitterFactory = SplitterFactory(splitParams.get('algo_package', "WMCore.JobSplitting"))
             # and return an instance of the splitting algorithm
-            wmbsJobFactory = splitterFactory(package = "WMCore.WMBS",
-                                             subscription = wmbsSubscription,
+            wmbsJobFactory = splitterFactory(package="WMCore.WMBS",
+                                             subscription=wmbsSubscription,
                                              generators=seederList,
-                                             limit = self.limit)
+                                             limit=self.limit)
 
             # Turn on the jobFactory --> get available files for that subscription, keep result proxies
             wmbsJobFactory.open()
 
             # Create a function to hold it, calling __call__ from the JobFactory
             # which then calls algorithm method of the job splitting algo instance
-            jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
-                                               splitParams = splitParams)
+            jobSplittingFunction = runSplitter(jobFactory=wmbsJobFactory,
+                                               splitParams=splitParams)
 
             # Now we get to find out how many jobs there are.
-            jobNumber = self.countJobs.execute(workflow = workflow.id,
-                                               conn = myThread.transaction.conn,
-                                               transaction = True)
+            jobNumber = self.countJobs.execute(workflow=workflow.id,
+                                               conn=myThread.transaction.conn,
+                                               transaction=True)
             jobNumber += splitParams.get('initial_lfn_counter', 0)
-            logging.debug("Have %i jobs for workflow %s already in database." % (jobNumber, workflow.name))
+            logging.debug("Have %i jobs for workflow %s already in database.", jobNumber, workflow.name)
 
             continueSubscription = True
             while continueSubscription:
@@ -558,21 +549,20 @@ class JobCreatorPoller(BaseWorkerThread):
                 myThread.transaction.begin()
                 try:
                     wmbsJobGroups = next(jobSplittingFunction)
-                    logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
+                    logging.info("Retrieved %i jobGroups from jobSplitter", len(wmbsJobGroups))
                 except StopIteration:
                     # If you receive a stopIteration, we're done
-                    logging.info("Completed iteration over subscription %i" % (subscriptionID))
+                    logging.info("Completed iteration over subscription %i", subscriptionID)
                     continueSubscription = False
                     myThread.transaction.commit()
                     break
 
                 # If we have no jobGroups, we're done
                 if len(wmbsJobGroups) == 0:
-                    logging.info("Found end in iteration over subscription %i" % (subscriptionID))
+                    logging.info("Found end in iteration over subscription %i", subscriptionID)
                     continueSubscription = False
                     myThread.transaction.commit()
                     break
-
 
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
@@ -590,11 +580,11 @@ class JobCreatorPoller(BaseWorkerThread):
                     for stepName in stepNames:
                         sh = wmTask.getStep(stepName)
                         maxCores = max(maxCores, sh.getNumberOfCores())
-                    processDict.update({'numberOfCores' : maxCores})
+                    processDict.update({'numberOfCores': maxCores})
                 except AttributeError:
-                    logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
+                    logging.info("Failed to read multicore settings from task %s", wmTask.getPathName())
 
-                tempSubscription = Subscription(id = wmbsSubscription['id'])
+                tempSubscription = Subscription(id=wmbsSubscription['id'])
 
                 # if we have glideinWMS constraints, then adapt all jobs
                 if self.glideinLimits:
@@ -608,7 +598,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     wmbsJobGroup.subscription = tempSubscription
                     tempDict = {}
                     tempDict.update(processDict)
-                    tempDict['jobGroup']  = wmbsJobGroup
+                    tempDict['jobGroup'] = wmbsJobGroup
                     tempDict['swVersion'] = wmTask.getSwVersion()
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
@@ -616,40 +606,39 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
                     tempDict['allowOpportunistic'] = allowOpport
 
-                    jobGroup = creatorProcess(work = tempDict,
-                                              jobCacheDir = self.jobCacheDir)
+                    jobGroup = creatorProcess(work=tempDict,
+                                              jobCacheDir=self.jobCacheDir)
                     jobNumber += jobsInGroup
 
                     # Set jobCache for group
                     for job in jobGroup.jobs:
-                        nameDictList.append({'jobid':job['id'],
-                                             'cacheDir':job['cache_dir']})
+                        nameDictList.append({'jobid': job['id'],
+                                             'cacheDir': job['cache_dir']})
                         job["user"] = wmWorkload.getOwner()["name"]
                         job["group"] = wmWorkload.getOwner()["group"]
                 # Set the caches in the database
                 try:
                     if len(nameDictList) > 0:
-                        self.setBulkCache.execute(jobDictList = nameDictList,
-                                                  conn = myThread.transaction.conn,
-                                                  transaction = True)
+                        self.setBulkCache.execute(jobDictList=nameDictList,
+                                                  conn=myThread.transaction.conn,
+                                                  transaction=True)
                 except WMException:
                     raise
                 except Exception as ex:
-                    msg =  "Unknown exception while setting the bulk cache:\n"
+                    msg = "Unknown exception while setting the bulk cache:\n"
                     msg += str(ex)
                     logging.error(msg)
-                    self.sendAlert(6, msg = msg)
-                    logging.debug("Error while setting bulkCache with following values: %s\n" % nameDictList)
+                    self.sendAlert(6, msg=msg)
+                    logging.debug("Error while setting bulkCache with following values: %s\n", nameDictList)
                     raise JobCreatorException(msg)
 
                 # Advance the jobGroup in changeState
                 for wmbsJobGroup in wmbsJobGroups:
-                    self.advanceJobGroup(wmbsJobGroup = wmbsJobGroup)
+                    self.advanceJobGroup(wmbsJobGroup=wmbsJobGroup)
 
                 # Now end the transaction so that everything is wrapped
                 # in a single rollback
                 myThread.transaction.commit()
-
 
             # END: While loop over jobFactory
 
@@ -658,58 +647,57 @@ class JobCreatorPoller(BaseWorkerThread):
 
         return
 
+    # This is the code for the multiprocessing based queue retrieval system
+    # I'm keeping this here because I hope to go back and re-instate this once
+    # I figure out how to deal with the transaction problems.
+    # Keep until we can assure ourselves that what we're doing now presents no problems.
 
-# This is the code for the multiprocessing based queue retrieval system
-# I'm keeping this here because I hope to go back and re-instate this once
-# I figure out how to deal with the transaction problems.
-# Keep until we can assure ourselves that what we're doing now presents no problems.
-
-#        while True:
-#            try:
-#                # Get stuff out of the queue with a ridiculously
-#                # short wait time
-#                startTime = time.time()
-#                entry = self.result.get(timeout = self.wait)
-#
-#                if not entry.get('success', False):
-#                    msg =  "Encountered exception processing jobGroup\n"
-#                    msg += entry.get('msg', '')
-#                    logging.error(msg)
-#                    continue
-#                else:
-#                    wmbsJobGroup = entry.get('jobGroup')
-#            except Queue.Empty:
-#                # This means the queue has no current results
-#                stopTime  = time.time()
-#                logging.error("Found empty queue after %f seconds" % (stopTime - startTime))
-#                break
-#
-#            # Set the cache dir
-#            nameDictList = []
-#            for job in wmbsJobGroup.jobs:
-#                nameDictList.append({'jobid':job['id'], 'cacheDir':job['cache_dir']})
-#
-#
-#            try:
-#                myThread.transaction.begin()
-#                self.setBulkCache.execute(jobDictList = nameDictList,
-#                                          conn = myThread.transaction.conn,
-#                                          transaction = True)
-#                myThread.transaction.commit()
-#            except Exception, ex:
-#                msg =  "Unhandled exception while setting jobCache for jobGroup %i\n" % wmbsJobGroup.id
-#                msg += str(ex)
-#                logging.error(msg)
-#                raise JobCreatorException(msg)
-#
-#            self.advanceJobGroup(wmbsJobGroup = wmbsJobGroup)
-#
-#            logging.debug("Finished call for jobGroup %i" \
-#                          % (wmbsJobGroup.id))
-#
-#        #END: While loop over wmbsJob
-#
-#        return
+    #        while True:
+    #            try:
+    #                # Get stuff out of the queue with a ridiculously
+    #                # short wait time
+    #                startTime = time.time()
+    #                entry = self.result.get(timeout = self.wait)
+    #
+    #                if not entry.get('success', False):
+    #                    msg =  "Encountered exception processing jobGroup\n"
+    #                    msg += entry.get('msg', '')
+    #                    logging.error(msg)
+    #                    continue
+    #                else:
+    #                    wmbsJobGroup = entry.get('jobGroup')
+    #            except Queue.Empty:
+    #                # This means the queue has no current results
+    #                stopTime  = time.time()
+    #                logging.error("Found empty queue after %f seconds" % (stopTime - startTime))
+    #                break
+    #
+    #            # Set the cache dir
+    #            nameDictList = []
+    #            for job in wmbsJobGroup.jobs:
+    #                nameDictList.append({'jobid':job['id'], 'cacheDir':job['cache_dir']})
+    #
+    #
+    #            try:
+    #                myThread.transaction.begin()
+    #                self.setBulkCache.execute(jobDictList = nameDictList,
+    #                                          conn = myThread.transaction.conn,
+    #                                          transaction = True)
+    #                myThread.transaction.commit()
+    #            except Exception, ex:
+    #                msg =  "Unhandled exception while setting jobCache for jobGroup %i\n" % wmbsJobGroup.id
+    #                msg += str(ex)
+    #                logging.error(msg)
+    #                raise JobCreatorException(msg)
+    #
+    #            self.advanceJobGroup(wmbsJobGroup = wmbsJobGroup)
+    #
+    #            logging.debug("Finished call for jobGroup %i" \
+    #                          % (wmbsJobGroup.id))
+    #
+    #        #END: While loop over wmbsJob
+    #
+    #        return
 
 
     def advanceJobGroup(self, wmbsJobGroup):
@@ -730,11 +718,10 @@ class JobCreatorPoller(BaseWorkerThread):
             msg = "Unhandled exception while calling changeState.\n"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg = msg)
-            logging.debug("Error while using changeState on the following jobs: %s\n" % wmbsJobGroup.jobs)
+            self.sendAlert(6, msg=msg)
+            logging.debug("Error while using changeState on the following jobs: %s\n", wmbsJobGroup.jobs)
 
-        logging.info("JobCreator has finished creating jobGroup %i.\n" \
-                     % (wmbsJobGroup.id))
+        logging.info("JobCreator has finished creating jobGroup %i.\n", wmbsJobGroup.id)
         return
 
     def generateCreateFailedReports(self, createFailedJobs):
@@ -759,9 +746,9 @@ class JobCreatorPoller(BaseWorkerThread):
                 fjrsToSave.append({"jobid": failedJob["id"], "fwjrpath": fjrPath})
                 failedJob["fwjr"] = report
             except Exception:
-                logging.error("Something went wrong while saving the report for  job %s" % failedJob["id"])
+                logging.error("Something went wrong while saving the report for  job %s", failedJob["id"])
 
         myThread = threading.currentThread()
-        self.setFWJRPath.execute(binds = fjrsToSave, conn = myThread.transaction.conn, transaction = True)
+        self.setFWJRPath.execute(binds=fjrsToSave, conn=myThread.transaction.conn, transaction=True)
 
         return

@@ -125,7 +125,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
         self.procJobSplitArgs = {}
-        if self.procJobSplitAlgo == "EventBased" or self.procJobSplitAlgo == "EventAwareLumiBased":
+        if self.procJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
@@ -136,7 +136,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
         elif self.procJobSplitAlgo == "FileBased":
             self.procJobSplitArgs["files_per_job"] = self.filesPerJob
         self.skimJobSplitArgs = {}
-        if self.skimJobSplitAlgo == "EventBased" or self.skimJobSplitAlgo == "EventAwareLumiBased":
+        if self.skimJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
             self.skimJobSplitArgs["events_per_job"] = self.eventsPerJob

@@ -332,12 +332,6 @@ class StdBase(object):
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
-        # FIXME (Alan on 27/Mar/17): can we remove it? (I guess T0 needs it...?)
-        # if applySiteLists:
-        #    procTask.setSiteWhitelist(self.siteWhitelist)
-        #    procTask.setSiteBlacklist(self.siteBlacklist)
-        #    procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
-
         newSplitArgs = {}
         for argName in splitArgs.keys():
             newSplitArgs[str(argName)] = splitArgs[argName]

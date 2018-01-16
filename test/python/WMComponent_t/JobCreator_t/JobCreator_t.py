@@ -15,9 +15,10 @@ import threading
 import time
 import unittest
 
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
-from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
+from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller, capResourceEstimates
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -28,10 +29,9 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from WMQuality.Emulators import EmulatorSetup
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
 class JobCreatorTest(EmulatedUnitTestCase):
@@ -512,6 +512,40 @@ class JobCreatorTest(EmulatedUnitTestCase):
 
         result = getJobsAction.execute(state='Created', jobType="Merge")
         self.assertEqual(len(result), 0)
+
+        return
+
+    def testCapResourceEstimates(self):
+        """
+        _testCapResourceEstimates_
+
+        Test capResourceEstimates function to make sure the glideinwms
+        constraints are being properly considered.
+        """
+
+        class JobGroup(object):
+            """Dummy object holding a jobs attr full of jobs"""
+
+            def __init__(self):
+                self.jobs = []
+
+        constraints = {'MaxRequestDiskKB': 20971520, 'MinRequestDiskKB': 1048576,
+                       'MaxWallTimeSecs': 162000, 'MinWallTimeSecs': 3600}
+
+        jobGroups = []
+        jobGroup = JobGroup()
+        jobGroup.jobs.append({'estimatedJobTime': None, 'estimatedDiskUsage': None})
+        jobGroup.jobs.append({'estimatedJobTime': 0, 'estimatedDiskUsage': 0})
+        jobGroup.jobs.append({'estimatedJobTime': 10000, 'estimatedDiskUsage': 10 * 1000 * 1000})
+        jobGroup.jobs.append({'estimatedJobTime': 200000, 'estimatedDiskUsage': 100 * 1000 * 1000})
+        jobGroups.append(jobGroup)
+
+        capResourceEstimates(jobGroups, constraints)
+
+        self.assertItemsEqual(jobGroup.jobs[0], {'estimatedJobTime': 3600, 'estimatedDiskUsage': 1048576})
+        self.assertItemsEqual(jobGroup.jobs[1], {'estimatedJobTime': 3600, 'estimatedDiskUsage': 1048576})
+        self.assertItemsEqual(jobGroup.jobs[2], {'estimatedJobTime': 10000, 'estimatedDiskUsage': 10 * 1000 * 1000})
+        self.assertItemsEqual(jobGroup.jobs[3], {'estimatedJobTime': 162000, 'estimatedDiskUsage': 20971520})
 
         return
 

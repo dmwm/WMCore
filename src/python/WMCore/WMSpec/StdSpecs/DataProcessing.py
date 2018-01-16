@@ -21,8 +21,8 @@ class DataProcessing(StdBase):
         StdBase.__call__(self, workloadName, arguments)
 
         # Handle the default of the various splitting algorithms
-        self.procJobSplitArgs = {"include_parents" : self.includeParents}
-        if self.procJobSplitAlgo == "EventBased" or self.procJobSplitAlgo == "EventAwareLumiBased":
+        self.procJobSplitArgs = {"include_parents": self.includeParents}
+        if self.procJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
@@ -38,28 +38,28 @@ class DataProcessing(StdBase):
     @staticmethod
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
-        specArgs = {"InputDataset" : {"optional": False, "validate" : dataset, "null" : False},
-                    "Scenario" : {"optional": True, "null": True, "attr": "procScenario"},
+        specArgs = {"InputDataset": {"optional": False, "validate": dataset, "null": False},
+                    "Scenario": {"optional": True, "null": True, "attr": "procScenario"},
                     "PrimaryDataset": {"optional": True, "validate": primdataset,
                                        "attr": "inputPrimaryDataset", "null": True},
-                    "RunBlacklist" : {"default" : [], "type" : makeList, "null" : False,
-                                      "validate" : lambda x: all([int(y) > 0 for y in x])},
-                    "RunWhitelist" : {"default" : [], "type" : makeList, "null" : False,
-                                      "validate" : lambda x: all([int(y) > 0 for y in x])},
+                    "RunBlacklist": {"default": [], "type": makeList, "null": False,
+                                     "validate": lambda x: all([int(y) > 0 for y in x])},
+                    "RunWhitelist": {"default": [], "type": makeList, "null": False,
+                                     "validate": lambda x: all([int(y) > 0 for y in x])},
                     "BlockBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([block(y) for y in x])},
                     "BlockWhitelist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([block(y) for y in x])},
-                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "null" : False,
-                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                    "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "procJobSplitAlgo"},
-                    "EventsPerJob" : {"type" : int, "validate" : lambda x : x > 0, "null" : True},
-                    "LumisPerJob" : {"default" : 8, "type" : int, "null" : False,
-                                     "validate" : lambda x : x > 0},
-                    "FilesPerJob" : {"default" : 1, "type" : int, "null" : False,
-                                     "validate" : lambda x : x > 0}
-                   }
+                    "SplittingAlgo": {"default": "EventAwareLumiBased", "null": False,
+                                      "validate": lambda x: x in ["EventBased", "LumiBased",
+                                                                  "EventAwareLumiBased", "FileBased"],
+                                      "attr": "procJobSplitAlgo"},
+                    "EventsPerJob": {"type": int, "validate": lambda x: x > 0, "null": True},
+                    "LumisPerJob": {"default": 8, "type": int, "null": False,
+                                    "validate": lambda x: x > 0},
+                    "FilesPerJob": {"default": 1, "type": int, "null": False,
+                                    "validate": lambda x: x > 0}
+                    }
 
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

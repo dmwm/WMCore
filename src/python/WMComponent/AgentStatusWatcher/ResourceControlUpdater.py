@@ -230,21 +230,22 @@ class ResourceControlUpdater(BaseWorkerThread):
         ssbSiteSlots = {}
         for entry in infoCpu:
             if entry['Value'] is None:
-                logging.warn('Site %s has invalid thresholds in SSB. Taking no action', entry['VOName'])
-                continue
-            ssbSiteSlots[entry['VOName']] = {'slotsCPU': int(entry['Value'])}
+                logging.warn('Site %s has invalid CPU thresholds in SSB. Taking no action', entry['VOName'])
+            else:
+                ssbSiteSlots[entry['VOName']] = {'slotsCPU': int(entry['Value'])}
 
         # then iterate over the IO slots
         for entry in infoIo:
-            if entry['VOName'] not in ssbSiteSlots:
-                logging.warn('Site %s does not have CPU thresholds in SSB. Taking no action', entry['VOName'])
-                ssbSiteSlots.pop(entry['VOName'], None)
-                continue
             if entry['Value'] is None:
-                logging.warn('Site %s has invalid thresholds in SSB. Taking no action', entry['VOName'])
-                ssbSiteSlots.pop(entry['VOName'], None)
-                continue
-            ssbSiteSlots[entry['VOName']]['slotsIO'] = int(entry['Value'])
+                logging.warn('Site %s has invalid IO thresholds in SSB. Taking no action', entry['VOName'])
+            else:
+                ssbSiteSlots[entry['VOName']]['slotsIO'] = int(entry['Value'])
+
+        # Before proceeding, remove sites without both metrics
+        for site in ssbSiteSlots.keys():
+            if len(ssbSiteSlots[site]) != 2:
+                logging.warn("Site: %s has incomplete SSB metrics, see %s", site, ssbSiteSlots[site])
+                ssbSiteSlots.pop(site)
 
         return ssbSiteSlots
 

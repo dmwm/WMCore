@@ -17,6 +17,7 @@ import traceback
 from WMCore.Alerts import API as alertAPI
 from WMCore.Database.Transaction import Transaction
 
+
 class BaseWorkerThread(object):
     """
     A base class for worker threads, used for work that needs to occur at
@@ -107,7 +108,7 @@ class BaseWorkerThread(object):
         # Now we're in our own thread, set the logger
         myThread.logger = self.logger
 
-        (connectDialect, junk) = self.component.config.CoreDatabase.connectUrl.split(":", 1)
+        (connectDialect, _junk) = self.component.config.CoreDatabase.connectUrl.split(":", 1)
 
         if connectDialect.lower() == "mysql":
             myThread.dialect = "MySQL"
@@ -156,7 +157,7 @@ class BaseWorkerThread(object):
                 myThread.logdbClient = None
 
             if self.useHeartbeat:
-                self.heartbeatAPI.updateWorkerHeartbeat(self.workerName)
+                self.heartbeatAPI.registerWorker(self.workerName)
 
             # Run event loop while termination is not flagged
             while not self.notifyTerminate.isSet():

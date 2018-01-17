@@ -14,6 +14,7 @@ import threading
 import time
 import traceback
 
+from Utils.DecoratorUtils import db_exception_handler
 from WMCore.Alerts import API as alertAPI
 from WMCore.Database.Transaction import Transaction
 
@@ -170,29 +171,22 @@ class BaseWorkerThread(object):
                     if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
-                            try:
-                                # heartbeat needed to be called after self.initInThread
-                                # to get the right name
-                                if self.useHeartbeat:
-                                    self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
-                            except Exception as ex:
-                                msg = " Failed to update heartbeat for worker %s" % str(self)
-                                msg += ":\n %s" % str(ex)
-                                msg += "\n Skipping worker algorithm!"
-                                logging.error(msg)
-                            else:
-                                tSpent, results, _ = self.algorithm(parameters)
-                                if tSpent and self.useHeartbeat:
-                                    logging.info("%s took %.3f secs to execute", self.workerName, tSpent)
-                                    self.heartbeatAPI.updateWorkerCycle(self.workerName, tSpent, results)
+                            if self.useHeartbeat:
+                                self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
 
-                                # Catch if someone forgets to commit/rollback
-                                if myThread.transaction.transaction is not None:
-                                    msg = """ Thread %s:  Transaction reached
-                                              end of poll loop.""" % self.workerName
-                                    msg += " Raise a bug against me. Rollback."
-                                    logging.error(msg)
-                                    myThread.transaction.rollback()
+                            algorithmWithDBExceptionHandler = db_exception_handler(self.algorithm)
+                            tSpent, results, _ = algorithmWithDBExceptionHandler(parameters)
+                            if tSpent and self.useHeartbeat:
+                                logging.info("%s took %.3f secs to execute", self.workerName, tSpent)
+                                self.heartbeatAPI.updateWorkerCycle(self.workerName, tSpent, results)
+
+                            # Catch if someone forgets to commit/rollback
+                            if myThread.transaction.transaction is not None:
+                                msg = """ Thread %s:  Transaction reached
+                                          end of poll loop.""" % self.workerName
+                                msg += " Raise a bug against me. Rollback."
+                                logging.error(msg)
+                                myThread.transaction.rollback()
                         except Exception as ex:
                             if myThread.transaction.transaction is not None:
                                 myThread.transaction.rollback()

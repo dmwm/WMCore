@@ -6,6 +6,7 @@ A simple object representing a file in WMBS.
 
 import os
 
+from Utils.DecoratorUtils import db_exception_handler
 from WMCore.WMConnectionBase import WMConnectionBase
 
 
@@ -76,8 +77,9 @@ class HeartbeatAPI(WMConnectionBase):
             self.updateWorker.execute(workerName, state, conn=self.getDBConn(),
                                       transaction=self.existingTransaction())
         except Exception as ex:
-            logging.warning("Heartbeat update failed! Wait for the next time...:\n%s", str(ex))
+            self.logger.warning("Heartbeat update failed! Wait for the next time...:\n%s", str(ex))
 
+    @db_exception_handler
     def updateWorkerCycle(self, workerName, timeSpent, results):
         """
         Update a worker's heartbeat as well as the time spent on that
@@ -87,6 +89,7 @@ class HeartbeatAPI(WMConnectionBase):
                                   conn=self.getDBConn(),
                                   transaction=self.existingTransaction())
 
+    @db_exception_handler
     def updateWorkerError(self, workerName, errorMessage):
 
         self.updateErrorWorker.execute(self.componentName, workerName, errorMessage,

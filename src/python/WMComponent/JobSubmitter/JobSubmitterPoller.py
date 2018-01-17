@@ -817,7 +817,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                condorFraction=self.condorFraction)
         self.maxJobsThisCycle = min(freeSubmitSlots, self.maxJobsPerPoll)
 
-        return (freeSubmitSlots > 0)
+        return (self.maxJobsThisCycle > 0)
 
     def terminate(self, params):
         """

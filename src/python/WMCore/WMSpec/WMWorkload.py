@@ -6,15 +6,16 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 from __future__ import print_function
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
-from WMCore.WMSpec.ConfigSectionTree import findTop
-from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
-                                           setAssignArgumentsWithDefault)
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
+from WMCore.WMSpec.ConfigSectionTree import findTop
+from WMCore.WMSpec.Persistency import PersistencyHelper
+from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+                                           setAssignArgumentsWithDefault)
 
 parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
 
@@ -92,9 +93,6 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data._internal_name = workloadName
         return
-
-    def requestType(self):
-        return self.data.requestType
 
     def setRequestType(self, requestType):
         self.data.requestType = requestType
@@ -914,16 +912,27 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'prepID', None)
 
+    def setDbsUrl(self, dbsUrl):
+        """
+        _setDbsUrl_
+
+        Set the workload level DbsUrl.
+        """
+        self.data.dbsUrl = dbsUrl
+
     def getDbsUrl(self):
         """
         _getDbsUrl_
 
         Get the DbsUrl specified for the input dataset.
         """
-        if not getattr(self.data.request, "schema", None):
-            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-        elif not getattr(self.data.request.schema, "DbsUrl", None):
-            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        if getattr(self.data, 'dbsUrl', None):
+            return getattr(self.data, "dbsUrl")
+
+        if hasattr(self.data, "request"):
+            if hasattr(self.data.request, "schema"):
+                if not getattr(self.data.request.schema, "DbsUrl", None):
+                    return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
         return getattr(self.data.request.schema, "DbsUrl")
 
@@ -1565,7 +1574,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setCMSSWVersions(self, cmsswVersion=None, globalTag=None,
-                       scramArch=None, initialTask=None):
+                         scramArch=None, initialTask=None):
         """
         _setCMSSWVersions_
 
@@ -1634,7 +1643,7 @@ class WMWorkloadHelper(PersistencyHelper):
                    'input': [],
                    'output': [],
                    'owner': {},
-                  }
+                   }
 
         summary['tasks'] = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()
@@ -1701,7 +1710,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return {'trustlists': False, 'trustPUlists': False}
 
     def validateArgumentForAssignment(self, schema):
-        specClass = loadSpecClassByType(self.requestType())
+        specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         validateArgumentsUpdate(schema, argumentDefinition)
         return
@@ -1715,7 +1724,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Input data should have been validated already using
         validateArgumentForAssignment.
         """
-        specClass = loadSpecClassByType(self.requestType())
+        specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         setAssignArgumentsWithDefault(kwargs, argumentDefinition)
 
@@ -1762,7 +1771,7 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 
         # MUST be set after AcqEra/ProcStr/ProcVer
-        if self.requestType() == "StepChain":
+        if self.getRequestType() == "StepChain":
             self.setStepProperties(kwargs)
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
@@ -1865,9 +1874,9 @@ class WMWorkload(ConfigSection):
         self.section_("tasks")
         self.tasks.tasklist = []
 
-        #  worklaod spec type
-        self.section_("request_type")
+        #  workload spec type
         self.requestType = ""
+        self.dbsUrl = None
 
         self.sandbox = None
         self.initialJobCount = 0

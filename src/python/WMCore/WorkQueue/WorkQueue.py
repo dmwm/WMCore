@@ -51,9 +51,9 @@ def globalQueue(logger=None, dbi=None, **kwargs):
                 'SplittingMapping': {'DatasetBlock':
                                          {'name': 'Block',
                                           'args': {}}
-                                    },
+                                     },
                 'TrackLocationOrSubscription': 'location'
-               }
+                }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 
@@ -153,23 +153,23 @@ class WorkQueue(WorkQueueBase):
         self.params['SplittingMapping'].setdefault('DatasetBlock',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('MonteCarlo',
                                                    {'name': 'MonteCarlo',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('Dataset',
                                                    {'name': 'Dataset',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('Block',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('ResubmitBlock',
                                                    {'name': 'ResubmitBlock',
                                                     'args': {}}
-                                                  )
+                                                   )
 
         self.params.setdefault('EndPolicySettings', {})
 
@@ -420,7 +420,7 @@ class WorkQueue(WorkQueueBase):
             dbs = get_dbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
-            elif wmspec.requestType() == 'StoreResults':
+            elif wmspec.getRequestType() == 'StoreResults':
                 dbsBlockDict = dbs.getFileBlock(blockName, dbsOnly=True)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
@@ -962,7 +962,7 @@ class WorkQueue(WorkQueueBase):
                     for x in updated_elements:
                         self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
                     if not updated_elements and (
-                        float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
+                                float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
                         self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
                     for x in updated_elements:
                         self.backend.updateElements(x.id, **x.statusMetrics())
@@ -1090,7 +1090,7 @@ class WorkQueue(WorkQueueBase):
                         for unit in work:
                             processedInputs.extend(unit['Inputs'].keys())
                         self.backend.updateInboxElements(inbound.id, ProcessedInputs=processedInputs,
-                                                                 RejectedInputs=rejectedWork)
+                                                         RejectedInputs=rejectedWork)
                         # if global queue, then update workflow stats to request mgr couch doc
                         # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
                         if not self.params.get("UnittestFlag", False):

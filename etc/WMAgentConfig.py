@@ -56,7 +56,7 @@ diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
 
 # Job retry information.  This includes the number of times a job will be retried and
 # for how long it will sit in cool off.
-maxJobRetries = {'default': 3, 'Merge': 4, 'LogCollect': 1, 'Cleanup': 2, 'Harvesting': 2}
+maxJobRetries = {'default': 3, 'Merge': 4, 'LogCollect': 2, 'Cleanup': 2, 'Harvesting': 2}
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.

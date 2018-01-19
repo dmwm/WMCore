@@ -20,7 +20,7 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
                                                      REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-                                            validate_clone_create_args, validateOutputDatasets)
+                                            validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -375,25 +375,32 @@ class Request(RESTEntity):
 
     def _handleNoStatusUpdate(self, workload, request_args):
         """
-        only few values can be updated without state transition involved
-        currently 'RequestPriority' and 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'
+        For no-status update, we only support the following parameters:
+         1. RequestPriority
+         2. Global workqueue statistics, while acquiring a workflow
         """
-        if 'RequestPriority' in request_args:
+        if 'RequestPriority' in request_args and len(request_args) == 1:
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-        elif "total_jobs" in request_args:
-            # only GQ update this stats
-            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
+        elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         else:
-            raise InvalidSpecParameterValue("can't update value without state transition: %s" % request_args)
+            msg = "There are invalid arguments for no-status update: %s" % request_args
+            raise InvalidSpecParameterValue(msg)
 
         return report
 
     def _handleAssignmentApprovedTransition(self, workload, request_args, dn):
+        """
+        Allows only two arguments: RequestStatus and RequestPriority
+        """
+        if "RequestPriority" not in request_args:
+            msg = "There are invalid arguments for assignment-approved transition: %s" % request_args
+            raise InvalidSpecParameterValue(msg)
+
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
 
@@ -417,10 +424,6 @@ class Request(RESTEntity):
         # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area)
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
 
-        # FIXME: remove it on HG1710, when this #7355 is complete fixed
-        if not request_args['Team'] or not isinstance(request_args['Team'], basestring):
-            raise InvalidSpecParameterValue("Team MUST be a non-empty string")
-
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
@@ -430,7 +433,7 @@ class Request(RESTEntity):
 
     def _handleOnlyStateTransition(self, workload, request_args, dn):
         """
-        It handles only the state transition, ignoring all the other arguments.
+        It handles only the state transition.
         Special handling needed if a request is aborted or force completed.
         """
         req_status = request_args["RequestStatus"]
@@ -455,7 +458,6 @@ class Request(RESTEntity):
             report = self._handleNoStatusUpdate(workload, request_args)
         else:
             req_status = request_args["RequestStatus"]
-            # assignment-approved only allow Priority update
             if len(request_args) == 2 and req_status == "assignment-approved":
                 report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
             elif len(request_args) > 1 and req_status == "assigned":
@@ -463,8 +465,8 @@ class Request(RESTEntity):
             elif len(request_args) == 1 or (len(request_args) == 2 and "cascade" in request_args):
                 report = self._handleOnlyStateTransition(workload, request_args, dn)
             else:
-                raise InvalidSpecParameterValue(
-                    "can't update value except transition to assigned status: %s" % request_args)
+                msg = "There are invalid arguments with this status transition: %s" % request_args
+                raise InvalidSpecParameterValue(msg)
 
         if report == 'OK':
             return {workload.name(): "OK"}

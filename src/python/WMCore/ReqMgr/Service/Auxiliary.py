@@ -278,3 +278,12 @@ class CampaignConfig(AuxBaseAPI):
 
     def setName(self):
         self.name = "CAMPAIGN_CONFIG"
+
+class UnifiedConfig(AuxBaseAPI):
+    """
+    CMSSWVersions - handle CMSSW versions and scram architectures.
+    Stored in stored in the ReqMgr reqmgr_auxiliary database,
+    """
+
+    def setName(self):
+        self.name = "UNIFIED_CONFIG"

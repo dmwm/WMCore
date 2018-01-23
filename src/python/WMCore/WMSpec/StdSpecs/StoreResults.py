@@ -10,8 +10,8 @@ _StoreResults_
 Standard StoreResults workflow.
 """
 
-from Utils.Utilities import makeList
-from WMCore.Lexicon import dataset, block, physicsgroup
+from Utils.Utilities import makeList, makeNonEmptyList
+from WMCore.Lexicon import dataset, block, physicsgroup, cmsname
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -105,6 +105,9 @@ class StoreResultsWorkloadFactory(StdBase):
                     "MergedLFNBase": {"default": "/store/results", "type": str,
                                       "optional": True, "validate": None,
                                       "attr": "mergedLFNBase", "null": False},
+                    # site whitelist shouldn't be allowed, but let's make an exception for StoreResults
+                    "SiteWhitelist": {"default": [], "type": makeNonEmptyList, "assign_optional": False,
+                                      "validate": lambda x: all([cmsname(y) for y in x])},
                     "BlockBlacklist": {"default": [], "type": makeList,
                                        "optional": True, "validate": lambda x: all([block(y) for y in x]),
                                        "attr": "blockBlacklist", "null": False},

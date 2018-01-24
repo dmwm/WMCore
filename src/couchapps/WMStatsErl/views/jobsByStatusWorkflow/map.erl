@@ -25,7 +25,7 @@ fun({Doc}) ->
                OutAcc ++ [Type]
             end, [], StepVal)
           end, [], E)),
-          Emit([Workflow, Task, State, ExitCode, Site, AcdcUrl, AgentName, ListErrors], {[{id,Id},{rev,Rev}]})
+          Emit([Workflow, Task, State, ExitCode, Site, AgentName, AcdcUrl, ListErrors], {[{id,Id},{rev,Rev}]})
       end;
     _ -> ok
   end

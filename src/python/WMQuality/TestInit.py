@@ -270,6 +270,10 @@ class TestInit(object):
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 
+        config.component_("AnalyticsDataCollector")
+        config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        config.AnalyticsDataCollector.centralWMStatsURL = config.AnalyticsDataCollector.localWMStatsURL
+
         return config
 
     def clearDatabase(self, modules = []):

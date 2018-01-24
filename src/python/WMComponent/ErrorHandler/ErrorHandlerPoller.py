@@ -35,6 +35,7 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 
@@ -83,11 +84,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
                                                     database=config.ACDC.database)
+
         if hasattr(self.config, "Tier0Feeder"):
             self.reqAuxDB = None
         else:
             self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
 
+        self.wmstats = WMStatsReader(config.AnalyticsDataCollector.centralWMStatsURL)
         return
 
     def setup(self, parameters=None):
@@ -231,6 +234,17 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     job["location"] = locationFromFWJR
                     job["site_cms_name"] = locationFromFWJR
 
+                # if config contains log location.
+                # get the taskname, site name, exit code. and check whehter log file is ready archived.
+                agentConfig = self.reqMgrAux.getWMAgentConfig(self.config.Agent.hostName)
+                logDir = agentConfig.get("LogDiectoryByExitCode")
+                if logDir:
+                    numUpdated = self.wmstats.getNumberOfJobsByExitCodeSiteTask(job["workflow"], job["task"], 
+                                                                                job["state"], report.getExitCodes(), 
+                                                                                job["location"], self.config.Agent.hostName)
+                    if numUpdated <= agentConfig["MaxLogSampleCount"]:
+                        copyLogToDir(logDir, job, report.getExitCodes(), self.config.Agent.hostName)
+                        
                 if startTime is None or stopTime is None:
                     # We have no information to make a decision, keep going.
                     logging.debug("No start, stop times for steps for job %i", job['id'])
@@ -391,3 +405,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
             msg += str(ex)
             logging.exception(msg)
             raise ErrorHandlerException(msg)
+
+
+def copyLogToDir(logDir, job, exitCode, agentName):
+    #cp job condor log from job["fwjr_dir"] to given logDir.
+    # data structure for report is need to defined
+    
+    pass

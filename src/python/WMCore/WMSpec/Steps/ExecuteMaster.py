@@ -138,6 +138,7 @@ class ExecuteMaster:
             executionObject.execute()
         except WMExecutionFailure as ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
+            executor.report.addError(executor.stepName, ex.code, "WMAgentStepExecutionError", str(ex))
             error = True
         except Exception as ex:
             logging.error("Exception occured when executing step")
@@ -145,6 +146,7 @@ class ExecuteMaster:
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
             executor.diagnostic(99109, executor, ex=ex)
+            executor.report.addError(executor.stepName, 99109, "WMAgentStepExecutionError", str(ex))
             error = True
         executor.report.setStepStopTime(stepName=executor.stepName)
         # TODO: Handle generic Exception that indicates development/code errors

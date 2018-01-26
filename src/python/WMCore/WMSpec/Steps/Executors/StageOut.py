@@ -195,13 +195,11 @@ class StageOut(Executor):
                     logging.error(msg)
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60403, "StageOutTimeout", msg)
-                    stepReport.setStepStatus(self.stepName, 1)
                     # well, if it fails for one file, it fails for the whole job...
                     break
                 except Exception as ex:
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307, "StageOutFailure", str(ex))
-                    stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist(reportLocation)
                     raise
 

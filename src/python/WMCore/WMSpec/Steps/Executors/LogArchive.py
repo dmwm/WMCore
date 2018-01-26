@@ -146,12 +146,10 @@ class LogArchive(Executor):
             raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
         except WMException as ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
-            self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             raise ex
         except Exception as ex:
             self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
-            self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             msg = "Failure in transferring logArchive tarball\n"
             msg += str(ex) + "\n"

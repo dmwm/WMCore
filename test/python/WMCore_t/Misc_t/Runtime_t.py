@@ -82,21 +82,19 @@ def miniStartup(dir = os.getcwd()):
 
     """
 
+    Bootstrap.setupLogging(dir)
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
     Bootstrap.createInitialReport(job = job,
-                                  task = task,
-                                  logLocation = "Report.0.pkl")
-    monitor = Bootstrap.setupMonitoring(logPath = "Report.0.pkl")
-
-    Bootstrap.setupLogging(dir)
+                                  reportName = "Report.0.pkl")
+    monitor = Bootstrap.setupMonitoring(logName = "Report.0.pkl")
 
 
     task.build(dir)
     task.execute(job)
 
     task.completeTask(jobLocation = os.path.join(dir, 'WMTaskSpace'),
-                      logLocation = "Report.0.pkl")
+                      reportName = "Report.0.pkl")
 
     if monitor.isAlive():
         monitor.shutdown()

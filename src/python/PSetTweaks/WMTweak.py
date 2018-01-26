@@ -10,7 +10,6 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 from __future__ import print_function
 import logging
 import pickle
-import traceback
 import os
 
 from PSetTweaks.PSetTweak import PSetTweak
@@ -191,7 +190,7 @@ def setParameter(process, param, value):
         if lastPSet == None:
             msg = "Cannot find attribute named: %s\n" % pset
             msg += "Cannot set value: %s" % param
-            print(msg)
+            logging.error(msg)
             return
 
     lastPSet.setValue(value)
@@ -545,10 +544,10 @@ def readAdValues(attrs, adname, castInt=False):
     elif adname == 'machine':
         adfile = os.environ.get("_CONDOR_MACHINE_AD")
     else:
-        print("Invalid ad name requested for parsing: %s" % adname)
+        logging.warning("Invalid ad name requested for parsing: %s" % adname)
         return retval
     if not adfile:
-        print("%s adfile is not set in environment." % adname)
+        logging.warning("%s adfile is not set in environment." % adname)
         return retval
     attrs = [i.lower() for i in attrs]
 
@@ -565,12 +564,11 @@ def readAdValues(attrs, adname, castInt=False):
                         try:
                             retval[attr] = int(val)
                         except ValueError:
-                            print("Error parsing %s's %s value: %s", (adname, attr, val))
+                            logging.warning("Error parsing %s's %s value: %s", adname, attr, val)
                     else:
                         retval[attr] = val
     except IOError:
-        print("Error opening %s ad:" % adname)
-        print(traceback.format_exc())
+        logging.exception("Error opening %s ad:", adname)
         return {}
 
     return retval
@@ -596,10 +594,10 @@ def resizeResources(resources):
     is printed out.
     """
     if readAdValues(['wmcore_resizejob'], 'job').get('wmcore_resizejob', 'false').lower() != "true":
-        print("Not resizing job")
+        logging.info("Not resizing job")
         return
 
-    print("Resizing job.  Initial resources: %s" % resources)
+    logging.info("Resizing job.  Initial resources: %s" % resources)
     adValues = readAdValues(['memory', 'cpus'], 'machine', castInt=True)
     machineCpus = adValues.get('cpus', 0)
     machineMemory = adValues.get('memory', 0)
@@ -607,4 +605,4 @@ def resizeResources(resources):
         resources['cores'] = machineCpus
     if machineMemory > 0 and 'memory' in resources:
         resources['memory'] = machineMemory
-    print("Resizing job.  Resulting resources: %s" % resources)
+    logging.info("Resizing job.  Resulting resources: %s" % resources)

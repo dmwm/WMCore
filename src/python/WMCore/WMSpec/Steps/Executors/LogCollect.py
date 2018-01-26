@@ -44,7 +44,7 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        print("Steps.Executors.LogCollect.pre called")
+        logging.info("Steps.Executors.LogCollect.pre called")
         return None
 
     def execute(self, emulator=None):
@@ -292,5 +292,5 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print("Steps.Executors.LogCollect.post called")
+        logging.info("Steps.Executors.LogCollect.post called")
         return None

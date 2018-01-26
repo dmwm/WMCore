@@ -10,6 +10,7 @@ Equivalent of a WorkflowSpec in the ProdSystem.
 
 import os.path
 import time
+import logging
 
 import WMCore.WMSpec.Utilities as SpecUtils
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -1053,7 +1054,7 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.taskType
 
-    def completeTask(self, jobLocation, logLocation):
+    def completeTask(self, jobLocation, reportName):
         """
         _completeTask_
 
@@ -1061,32 +1062,39 @@ class WMTaskHelper(TreeHelper):
 
         If necessary, output to Dashboard
         """
-        import WMCore.FwkJobReport.Report as Report
+        from WMCore.FwkJobReport.Report import Report
 
-        finalReport = Report.Report()
-        # We left the master report somewhere way up at the top
-        testPath = os.path.join(jobLocation, '../../', logLocation)
+        finalReport = Report()
+        # We left the master report at the pilot scratch area level
+        testPath = os.path.join(jobLocation, '../../', reportName)
+        logging.info("Looking for master report at %s", testPath)
         if os.path.exists(testPath):
+            logging.info("  found it!")
             # If a report already exists, we load it and
             # append our steps to it
             finalReport.load(testPath)
         taskSteps = self.listAllStepNames()
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
+            logging.info("Looking for a taskStep report at %s", reportPath)
             if os.path.isfile(reportPath):
-                stepReport = Report.Report()
+                logging.info("  found it!")
+                stepReport = Report()
                 stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
             else:
+                msg = "  failed to find it."
+                msg += "Files in the directory are:\n%s" % os.listdir(os.path.join(jobLocation, taskStep))
+                logging.error(msg)
                 # Then we have a missing report
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname=taskStep, status=1)
-                finalReport.addError(stepName=taskStep, exitCode=99999, errorType="ReportManipulatingError",
-                                     errorDetails="Could not find report file for step %s!" % taskStep)
+                finalReport.addError(stepName=taskStep, exitCode=99996, errorType="ReportManipulatingError",
+                                     errorDetails="Failed to find a step report for %s!" % taskStep)
 
         finalReport.data.completed = True
-        finalReport.persist(logLocation)
+        finalReport.persist(reportName)
 
         return
 

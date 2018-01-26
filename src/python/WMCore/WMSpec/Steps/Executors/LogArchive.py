@@ -69,19 +69,20 @@ class LogArchive(Executor):
         self.altLFN = overrides.get('altLFN', None)
 
         logging.info("Beginning Steps.Executors.LogArchive.Execute")
-        logging.info("Using the following overrides: %s " % overrides)
-        logging.info("Step is: %s" % self.step)
-        # Wait timout for stageOut
+        logging.info("Using the following overrides: %s ", overrides)
+        logging.info("Step is: %s", self.step)
+        # Wait timeout for stageOut
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
         matchFiles = [
-            ".log$",
-            "FrameworkJobReport",
+            ".log$",  # matches the scram, wmagent and cmsRun logs
+            "FrameworkJobReport.xml",
             "Report.pkl",
-            "Report.pcl",
             "^PSet.py$",
-            "^PSet.pkl$"
+            "^PSet.pkl$",
+            "_condor_std*",  # condor wrapper logs at the pilot top level
             ]
+        ignoredDirs = ['Utils', 'WMCore', 'WMSandbox']
 
         #Okay, we need a stageOut Manager
         useNewStageOutCode = False
@@ -101,24 +102,27 @@ class LogArchive(Executor):
                                 numberOfRetries = self.step.retryCount,
                                 **overrides)
 
-        #Now we need to find all the reports
-        logFilesForTransfer = []
-        #Look in the taskSpace first
-        logFilesForTransfer.extend(self.findFilesInDirectory(self.stepSpace.taskSpace.location, matchFiles))
+        # Now we need to find all the reports
+        # The log search follows this structure: ~pilotArea/jobArea/WMTaskSpaceArea/StepsArea
+        # Start looking at the pilot scratch area first, such that we find the condor logs
+        # Then look at the job area in order to find the wmagentJob log
+        # Finally, at the taskspace area to find the cmsRun/FWJR/PSet files
+        pilotScratchDir = os.path.join(self.stepSpace.taskSpace.location, '../../')
+        logFilesToArchive = self.findFilesInDirectory(pilotScratchDir, matchFiles, ignoredDirs)
 
-        #What if it's empty?
-        if len(logFilesForTransfer) == 0:
-            msg = "Could find no log files in job"
+        # What if it's empty?
+        if len(logFilesToArchive) == 0:
+            msg = "Couldn't find any log files in the job"
             logging.error(msg)
-            return logFilesForTransfer
+            return logFilesToArchive
 
         #Now that we've gone through all the steps, we have to tar it out
         tarName         = 'logArchive.tar.gz'
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
-        tarBall         = tarfile.open(tarBallLocation, 'w:gz')
-        for f in logFilesForTransfer:
-            tarBall.add(name  = f,
-                        arcname = f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
+        tarBall = tarfile.open(tarBallLocation, 'w:gz')
+        for f in logFilesToArchive:
+            tarBall.add(name=f,
+                        arcname=f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
         tarBall.close()
 
 
@@ -180,20 +184,22 @@ class LogArchive(Executor):
         return None
 
 
-    def findFilesInDirectory(self, dirName, matchFiles):
+    def findFilesInDirectory(self, dirName, matchFiles, ignoredDirs):
         """
         _findFilesInDirectory_
 
-        Given a directory, it matches the files to the specified patterns
+        Given a directory - usually the task space directory - it matches
+        the files to the specified patterns.
         """
-
-
         logFiles = []
         for f in os.listdir(dirName):
+            if f in ignoredDirs:
+                continue
+
             fileName = os.path.join(dirName, f)
             if os.path.isdir(fileName):
                 #If directory, use recursion
-                logFiles.extend(self.findFilesInDirectory(fileName, matchFiles))
+                logFiles.extend(self.findFilesInDirectory(fileName, matchFiles, ignoredDirs))
             else:
                 for match in matchFiles:
                     #Go through each type of match

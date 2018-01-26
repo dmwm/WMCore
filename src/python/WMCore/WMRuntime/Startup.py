@@ -2,35 +2,45 @@
 """
 _Startup_
 
-Runtime environment startup script
+Runtime environment startup script.
+Just a FYI, there are basically 3 important directories:
+ 1. the pilot home area, where the condor wrapper logs are
+ 2. the job space area, where the sandbox and the runtime log is created
+ 3. the task space area, where the steps and cmsRun logs are
 """
 from __future__ import print_function
 
 import os
-import time
+import logging
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 
 if __name__ == '__main__':
-    print("Startup.py : %s : loading job definition" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+    logging.info("This log line goes to a parallel universe, but ... setting up logging")
+    # WMAgent log has to be written to the pilot area in order to be transferred back
+    Bootstrap.setupLogging(os.path.join(os.getcwd(), '../'))
+    logging.info("Process id: %s\tCurrent working directory: %s", os.getpid(), os.getcwd())
+
+    logging.info("Loading job definition")
     job = Bootstrap.loadJobDefinition()
-    print("Startup.py : %s : loading task" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+
+    logging.info("Loading task")
     task = Bootstrap.loadTask(job)
-    print("Startup.py : %s : setting up monitoring" % time.strftime("%Y-%m-%dT%H:%M:%S"))
-    logLocation = "Report.%i.pkl" % job['retry_count']
-    Bootstrap.createInitialReport(job=job, logLocation=logLocation)
-    monitor = Bootstrap.setupMonitoring(logPath=logLocation)
 
-    print("Startup.py : %s : setting up logging" % time.strftime("%Y-%m-%dT%H:%M:%S"))
-    Bootstrap.setupLogging(os.getcwd())
+    logging.info("Setting up monitoring")
+    reportName = "Report.%i.pkl" % job['retry_count']
 
-    print("Startup.py : %s : building task" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+    Bootstrap.createInitialReport(job=job, reportName=reportName)
+    monitor = Bootstrap.setupMonitoring(logName=reportName)
+
+    logging.info("Building task at directory: %s", os.getcwd())
     task.build(os.getcwd())
-    print("Startup.py : %s : executing task" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+
+    logging.info("Executing task at directory: %s", os.getcwd())
     task.execute(job)
-    print("Startup.py : %s : completing task" % time.strftime("%Y-%m-%dT%H:%M:%S"))
-    task.completeTask(jobLocation=os.getcwd(),
-                      logLocation=logLocation)
-    print("Startup.py : %s : shutting down monitor" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+
+    logging.info("Completing task at directory: %s", os.getcwd())
+    task.completeTask(jobLocation=os.getcwd(), reportName=reportName)
+    logging.info("Shutting down monitor")
     os.fchmod(1, 0o664)
     os.fchmod(2, 0o664)
     if monitor.isAlive():

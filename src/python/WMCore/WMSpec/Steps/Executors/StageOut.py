@@ -44,9 +44,7 @@ class StageOut(Executor):
         if (emulator != None):
             return emulator.emulatePre( self.step )
 
-
-
-        print("Steps.Executors.StageOut.pre called")
+        logging.info("Steps.Executors.StageOut.pre called")
         return None
 
 
@@ -100,7 +98,6 @@ class StageOut(Executor):
         else:
             # new style
             logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
-            print("STAGEOUT IS USING NEW STAGEOUT CODE")
             manager = FMStageOutMgr(retryPauseTime  = self.step.retryDelay,
                                     numberOfRetries = self.step.retryCount,
                                     **stageOutCall)
@@ -265,7 +262,7 @@ class StageOut(Executor):
 
             stepReport.persist(reportLocation)
 
-        print("Steps.Executors.StageOut.post called")
+        logging.info("Steps.Executors.StageOut.post called")
         return None
 
 

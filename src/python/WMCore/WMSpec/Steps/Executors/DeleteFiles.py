@@ -156,9 +156,6 @@ class DeleteFiles(Executor):
             logging.error(msg)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
-            self.report.addError(self.stepName, 1, "StageOutFailure", str(msg))
-            self.report.setStepStatus(self.stepName, 1)
-            self.report.persist("Report.pkl")
             raise
 
         signal.alarm(0)

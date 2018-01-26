@@ -569,7 +569,6 @@ class Report(object):
             self.addStep(stepName, status=1)
 
         stepSection = self.retrieveStep(stepName)
-
         errorCount = getattr(stepSection.errors, "errorCount", 0)
         errEntry = "error%s" % errorCount
         stepSection.errors.section_(errEntry)
@@ -579,6 +578,7 @@ class Report(object):
         errDetails.details = errorDetails
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
+        self.setStepStatus(stepName=stepName, status=exitCode)
         return
 
     def addSkippedFile(self, lfn, pfn):

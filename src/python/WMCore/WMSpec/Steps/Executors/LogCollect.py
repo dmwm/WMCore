@@ -2,7 +2,7 @@
 """
 _Step.Executor.LogCollect_
 
-Implementation of an Executor for a LogCollect step.
+Implementation of an Executor for a  LogCollect step.
 """
 from __future__ import print_function
 

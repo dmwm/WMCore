@@ -507,15 +507,16 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(halt_job_on_file_boundaries=True,
                                splitOnRun=True,
                                events_per_job=550,
-                               max_events_per_lumi=800,
+                               job_time_limit=9600,
                                performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
         self.assertTrue(jobs[3]['failedOnCreation'], "The job processing the second file should me marked for failure")
-        self.assertEqual(jobs[3]['failedReason'], "File /this/is/file2 has too many events (1000) in 1 lumi(s)",
-                         "The reason for the failure is not accurate")
+        self.assertEqual(jobs[3]['failedReason'],
+                "File /this/is/file2 has a single lumi with too many events (1000) and it woud take 12000 sec to run",
+                "The reason for the failure is not accurate")
 
         return
 
@@ -548,7 +549,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobGroups = jobFactory(halt_job_on_file_boundaries=True,
                                splitOnRun=True,
                                events_per_job=550,
-                               max_events_per_lumi=800,
+                               job_time_limit=9600,
                                performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
@@ -558,8 +559,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
             self.assertTrue(jobs[i - 1]['failedOnCreation'],
                             "The job processing the second file should me marked for failure")
             self.assertEqual(jobs[i - 1]['failedReason'],
-                             "File /this/is/file%d has too many events (1000) in 1 lumi(s)" % i,
-                             "The reason for the failure is not accurate")
+                    "File /this/is/file%d has a single lumi with too many events (1000) and it woud take 12000 sec to run" % i,
+                    "The reason for the failure is not accurate")
 
         return
 

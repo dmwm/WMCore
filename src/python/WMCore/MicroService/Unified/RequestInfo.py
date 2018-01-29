@@ -194,12 +194,12 @@ def getSplittings(request, reqSpecs=None):
     for task in getWorkTasks(request, reqSpecs=reqSpecs):
         tsplit = task.input.splitting
         spl.append({"splittingAlgo": tsplit.algorithm, "splittingTask": task.pathName})
-        get_those = ['events_per_lumi', 'events_per_job', 'lumis_per_job',\
-                     'halt_job_on_file_boundaries', 'max_events_per_lumi',\
+        get_those = ['events_per_lumi', 'events_per_job', 'lumis_per_job',
+                     'halt_job_on_file_boundaries', 'job_time_limit',
                      'halt_job_on_file_boundaries_event_aware']
         translate = {'EventAwareLumiBased': [('events_per_job', 'avg_events_per_job')]}
-        include = {'EventAwareLumiBased': {'halt_job_on_file_boundaries_event_aware': 'True'},\
-            'LumiBased': {'halt_job_on_file_boundaries': 'True'}}
+        include = {'EventAwareLumiBased': {'halt_job_on_file_boundaries_event_aware': 'True'},
+                   'LumiBased': {'halt_job_on_file_boundaries': 'True'}}
         if tsplit.algorithm in include:
             for key, val in include[tsplit.algorithm].items():
                 spl[-1][key] = val

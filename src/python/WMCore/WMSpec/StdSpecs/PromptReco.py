@@ -130,18 +130,19 @@ class PromptRecoWorkloadFactory(DataProcessing):
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
             if self.procJobSplitAlgo == "EventAwareLumiBased":
-                self.procJobSplitArgs["max_events_per_lumi"] = 100000
+                self.procJobSplitArgs["job_time_limit"] = 96 * 3600  # 4 days in seconds
         elif self.procJobSplitAlgo == "LumiBased":
             self.procJobSplitArgs["lumis_per_job"] = self.lumisPerJob
         elif self.procJobSplitAlgo == "FileBased":
             self.procJobSplitArgs["files_per_job"] = self.filesPerJob
+
         self.skimJobSplitArgs = {}
         if self.skimJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
-            self.skimJobSplitArgs["events_per_job"] = self.eventsPerJob
             if self.skimJobSplitAlgo == "EventAwareLumiBased":
-                self.skimJobSplitArgs["max_events_per_lumi"] = 20000
+                self.skimJobSplitArgs["job_time_limit"] = 48 * 3600  # 2 days
+            self.skimJobSplitArgs["events_per_job"] = self.eventsPerJob
         elif self.skimJobSplitAlgo == "LumiBased":
             self.skimJobSplitArgs["lumis_per_job"] = self.lumisPerJob
         elif self.skimJobSplitAlgo == "FileBased":

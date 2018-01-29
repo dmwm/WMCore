@@ -35,7 +35,7 @@ class EventAwareLumiBased(JobFactory):
 
         self.loadRunLumi = None  # Placeholder for DAO factory if needed
         self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
-        #TODO this might need to be configurable instead of being hardcoded
+        # TODO this might need to be configurable instead of being hardcoded
         self.defaultJobTimeLimit = 48 * 3600 # 48 hours
 
     def algorithm(self, *args, **kwargs):
@@ -252,8 +252,9 @@ class EventAwareLumiBased(JobFactory):
                                 self.currentJob.addResourceEstimates(jobTime=runAddedTime, disk=runAddedSize)
                             msg = None
                             if failNextJob:
-                                msg = "File %s has a single lumi with too many events (%d) and it woud take %d sec to run" % (
-                                                                f['lfn'], f['events'], timePerLumi)
+                                msg = "File %s has a single lumi %s, in run %s " % (f['lfn'], lumi, run.run)
+                                msg += "with too many events %d and it woud take %d sec to run" \
+                                       % (f['events'], timePerLumi)
                             self.lumiChecker.closeJob(self.currentJob)
                             self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=msg)
                             if deterministicPileup:

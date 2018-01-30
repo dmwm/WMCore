@@ -8,20 +8,18 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 from __future__ import print_function, division
 
 # system modules
-import os
 import json
-import time
-import copy
 import pickle
+import time
 
+from WMCore.MicroService.Unified.Common import uConfig, cert, ckey, \
+    reqmgrCacheUrl, dbsUrl, eventsLumisInfo, workflowsInfo, \
+    dbsInfo, phedexInfo, reqmgrUrl, elapsedTime, getComputingTime, \
+    getNCopies, teraBytes, workqueueView
+from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
-from WMCore.MicroService.Unified.Common import uConfig, cert, ckey,\
-        reqmgrCacheUrl, dbsUrl, eventsLumisInfo, workflowsInfo,\
-        dbsInfo, phedexInfo, reqmgrUrl, elapsedTime, getComputingTime,\
-        getNCopies, teraBytes, workqueueView
-from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 
 
 def findParent(dataset):
@@ -32,6 +30,7 @@ def findParent(dataset):
     mgr = RequestHandler()
     data = mgr.getdata(url, params=params, headers=headers, cert=cert(), ckey=ckey())
     return [str(i['parent_dataset']) for i in json.loads(data)]
+
 
 def ioForTask(request):
     "Return lfn, primary, parent and secondary datasets for given request"
@@ -53,6 +52,7 @@ def ioForTask(request):
         lhe = True
     return lhe, primary, parent, secondary
 
+
 def getIO(request):
     "Get input/output info about given request"
     lhe = False
@@ -64,7 +64,7 @@ def getIO(request):
         item = 1
         while '%s%d' % (base, item) in request:
             alhe, aprimary, aparent, asecondary = \
-                    ioForTask(request['%s%d' % (base, item)])
+                ioForTask(request['%s%d' % (base, item)])
             if alhe:
                 lhe = True
             primary.update(aprimary)
@@ -75,26 +75,29 @@ def getIO(request):
         lhe, primary, parent, secondary = ioForTask(request)
     return lhe, primary, parent, secondary
 
+
 def isRelval(request):
     "Return if given request is RelVal sample"
     if 'SubRequestType' in request and 'RelVal' in request['SubRequestType']:
         return True
     return False
 
+
 def collectionHelper(request, member, func=None, default=None, base=None):
     "Helper function to return uhm chain as a dictionary"
     coll = {}
     item = 1
     while '%s%d' % (base, item) in request:
-        if member in request['%s%d'%(base, item)]:
+        if member in request['%s%d' % (base, item)]:
             if func:
                 coll[request['%s%d' % (base, item)]['%sName' % base]] = \
-                        func(request['%s%d' % (base, item)][member])
+                    func(request['%s%d' % (base, item)][member])
             else:
                 coll[request['%s%d' % (base, item)]['%sName' % base]] = \
-                        request['%s%d' % (base, item)].get(member, default)
+                    request['%s%d' % (base, item)].get(member, default)
         item += 1
     return coll
+
 
 def collectinchain(request, member, func=None, default=None):
     "Helper function to return dictionary of collection chain"
@@ -105,11 +108,13 @@ def collectinchain(request, member, func=None, default=None):
     else:
         raise Exception("should not call collectinchain on non-chain request")
 
+
 def getCampaigns(request):
     "Return campaigns of given request"
     if 'Chain' in request['RequestType'] and not isRelval(request):
         return list(set(collectinchain(request, 'AcquisitionEra').values()))
     return [request['Campaign']]
+
 
 def heavyRead(request):
     """
@@ -123,6 +128,7 @@ def heavyRead(request):
         response = False
     return response
 
+
 def taskDescending(node, select=None):
     "Helper function to walk through task nodes in descending order"
     allTasks = []
@@ -131,7 +137,7 @@ def taskDescending(node, select=None):
     else:
         for key, value in select.items():
             if (isinstance(value, list) and getattr(node, key) in value) or \
-                (not isinstance(value, list) and getattr(node, key) == value):
+                    (not isinstance(value, list) and getattr(node, key) == value):
                 allTasks.append(node)
                 break
 
@@ -139,6 +145,7 @@ def taskDescending(node, select=None):
         chItem = getattr(node.tree.children, child)
         allTasks.extend(taskDescending(chItem, select))
     return allTasks
+
 
 def getRequestWorkflows(requestNames):
     "Helper function to get all specs for given set of request names"
@@ -149,11 +156,12 @@ def getRequestWorkflows(requestNames):
         req = row['url'].split('/')[-1]
         try:
             data = json.loads(row['data'])
-            rdict[req] = data['result'][0] # we get back {'result': [workflow]} dict
+            rdict[req] = data['result'][0]  # we get back {'result': [workflow]} dict
         except Exception as exp:
             print("ERROR: fail to load data as json record, error=%s" % str(exp))
             print(row)
     return rdict
+
 
 def getRequestSpecs(requestNames):
     "Helper function to get all specs for given set of request names"
@@ -165,6 +173,7 @@ def getRequestSpecs(requestNames):
         rdict[req] = pickle.loads(row['data'])
     return rdict
 
+
 def getSpec(request, reqSpecs=None):
     "Get request from workload cache"
     if reqSpecs and request['RequestName'] in reqSpecs:
@@ -173,6 +182,7 @@ def getSpec(request, reqSpecs=None):
     mgr = RequestHandler()
     data = mgr.getdata(url, params={}, cert=cert(), ckey=ckey())
     return pickle.loads(data)
+
 
 def getAllTasks(request, select=None, reqSpecs=None):
     "Return all task for given request"
@@ -183,10 +193,12 @@ def getAllTasks(request, select=None, reqSpecs=None):
         allTasks.extend(taskDescending(node, select))
     return allTasks
 
+
 def getWorkTasks(request, reqSpecs=None):
     "Return work tasks for given request"
-    return getAllTasks(request, select={'taskType': ['Production', 'Processing', 'Skim']},\
-            reqSpecs=reqSpecs)
+    return getAllTasks(request, select={'taskType': ['Production', 'Processing', 'Skim']}, \
+                       reqSpecs=reqSpecs)
+
 
 def getSplittings(request, reqSpecs=None):
     "Return splittings for given request"
@@ -214,6 +226,7 @@ def getSplittings(request, reqSpecs=None):
                 spl[-1][setTo] = getattr(tsplit, get)
     return spl
 
+
 def getBlowupFactors(request, reqSpecs=None):
     "Return blowup factors for given request"
     if request['RequestType'] != 'TaskChain':
@@ -230,7 +243,7 @@ def getBlowupFactors(request, reqSpecs=None):
             if key in item:
                 cSize = item[key]
         parents = [s for s in splits \
-                if task.startswith(s['splittingTask']) and task != s['splittingTask']]
+                   if task.startswith(s['splittingTask']) and task != s['splittingTask']]
         if parents:
             for parent in parents:
                 for key in ['events_per_job', 'avg_events_per_job']:
@@ -241,10 +254,11 @@ def getBlowupFactors(request, reqSpecs=None):
         else:
             rootJobPerEvent = cSize
         if cSize and pSize:
-            blowUp = float(pSize)/cSize
+            blowUp = float(pSize) / cSize
             if blowUp > maxBlowUp:
                 maxBlowUp = blowUp
     return minChildJobPerEvent, rootJobPerEvent, maxBlowUp
+
 
 def getMulticore(request):
     "Return max number of cores for a given request"
@@ -253,6 +267,7 @@ def getMulticore(request):
         mcoresCol = collectinchain(request, 'Multicore', default=1)
         mcores.extend([int(v) for v in mcoresCol.values()])
     return max(mcores)
+
 
 def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=False, verbose=True):
     "Return site list for given request"
@@ -276,27 +291,27 @@ def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=Fal
     # do further restrictions based on memory
     # do further restrictions based on blow-up factor
     minChildJobPerEvent, rootJobPerEvent, blowUp = \
-            getBlowupFactors(request, reqSpecs=reqSpecs)
+        getBlowupFactors(request, reqSpecs=reqSpecs)
     maxBlowUp, neededCores = uConfig.get('blow_up_limits', (0, 0))
     if blowUp > maxBlowUp:
         ## then restrict to only sites with >4k slots
-        newAllowedSites = list(set(allowedSites) &\
-                                 set([site for site in allowedSites \
-                                        if siteInfo.cpu_pledges[site] > neededCores]))
+        newAllowedSites = list(set(allowedSites) & \
+                               set([site for site in allowedSites \
+                                    if siteInfo.cpu_pledges[site] > neededCores]))
         if newAllowedSites:
             allowedSites = newAllowedSites
             print("swaping", verbose)
             if verbose:
-                print("restricting site white list because of blow-up factor",\
-                        minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
+                print("restricting site white list because of blow-up factor", \
+                      minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
 
     for campaign in getCampaigns(request):
         campaignConfig = reqmgrAuxSvc.getCampaignConfig(campaign)
         campSites = campaignConfig.get('SiteWhitelist', [])
         if campSites:
             if verbose:
-                print("Using site whitelist restriction by campaign,",\
-                        campaign, "configuration", sorted(campSites))
+                print("Using site whitelist restriction by campaign,", \
+                      campaign, "configuration", sorted(campSites))
             allowedSites = list(set(allowedSites) & set(campSites))
             if not allowedSites:
                 allowedSites = list(campSites)
@@ -313,18 +328,19 @@ def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=Fal
     if memAllowed != None:
         if verbose:
             print("sites allowing", request['Memory'], "MB and", ncores, \
-                    "core are", sorted(memAllowed))
+                  "core are", sorted(memAllowed))
         ## mask to sites ready for mcore
-        if  ncores > 1:
+        if ncores > 1:
             memAllowed = list(set(memAllowed) & set(siteInfo.sites_mcore_ready))
         allowedSites = list(set(allowedSites) & set(memAllowed))
     return lheinput, list(primary), list(parent), list(secondary), list(sorted(allowedSites))
+
 
 def workqueueRequests(state=None):
     "Helper functions to get requests from WorkQueue"
     url = workqueueView('jobsByRequest')
     if state:
-        pass # we may need to use state when we'll query WorkQueue
+        pass  # we may need to use state when we'll query WorkQueue
     params = {}
     headers = {'Accept': 'application/json'}
     mgr = RequestHandler()
@@ -334,6 +350,7 @@ def workqueueRequests(state=None):
     for row in data.get('rows', []):
         rdict[row['key']] = row['value']
     return rdict
+
 
 def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
     """
@@ -350,9 +367,9 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
     workflows = requestWorkflows.values()
     elapsedTime(time0, "### getWorkflows")
 
-#     time0 = orig = time.time()
-#     workflows = getWorkflows(state)
-#     elapsedTime(time0, "### getWorkflows")
+    #     time0 = orig = time.time()
+    #     workflows = getWorkflows(state)
+    #     elapsedTime(time0, "### getWorkflows")
 
     # get workflows info summaries and collect datasets we need to process
     winfo = workflowsInfo(workflows)
@@ -401,7 +418,7 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
                         nodes.add(node)
                 nblocks += len(blocks)
                 size += datasetSizes[dataset]
-                edata = eventsLumis.get(dataset, {'num_event':0, 'num_lumi':0})
+                edata = eventsLumis.get(dataset, {'num_event': 0, 'num_lumi': 0})
                 nevts += edata['num_event']
                 nlumis += edata['num_lumi']
             totBlocks += nblocks
@@ -412,31 +429,33 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
             njobs = requestJobs[wname]
             print("\n### %s" % wname)
             print("%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s" \
-                    % (ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites))
+                  % (ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites))
             # find out which site can serve given workflow request
             t0 = time.time()
             lheInput, primary, parent, secondary, allowedSites \
-                    = getSiteWhiteList(wspec, siteInfo, reqmgrAuxSvc, reqSpecs)
-            rdict = dict(name=wname, datasets=datasets, blocks=datasetBlocks,\
-                    npileups=npileups, size=size, njobs=njobs,\
-                    nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies,\
-                    sites=sites, allowedSites=allowedSites, parent=parent,\
-                    lheInput=lheInput, primary=primary, secondary=secondary)
+                = getSiteWhiteList(wspec, siteInfo, reqmgrAuxSvc, reqSpecs)
+            rdict = dict(name=wname, datasets=datasets, blocks=datasetBlocks, \
+                         npileups=npileups, size=size, njobs=njobs, \
+                         nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies, \
+                         sites=sites, allowedSites=allowedSites, parent=parent, \
+                         lheInput=lheInput, primary=primary, secondary=secondary)
             requests[wname] = rdict
             print("sites", allowedSites)
             elapsedTime(t0, "getSiteWhiteList")
     print("\ntotal # of workflows %s, datasets %s, blocks %s, evts %s, size %s (%s TB), cput %s (hours)" \
-            % (len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT))
+          % (len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT))
     elapsedTime(tst0, 'workflows info')
     elapsedTime(orig)
     return requests
 
+
 if __name__ == '__main__':
-    import cProfile # python profiler
-    import pstats   # profiler statistics
+    import cProfile  # python profiler
+    import pstats  # profiler statistics
+
     cmd = 'requestsInfo()'
     cProfile.runctx(cmd, globals(), locals(), 'profile.dat')
     stats = pstats.Stats('profile.dat')
     stats.sort_stats('cumulative')
     stats.print_stats()
-#     requestsInfo()
+# requestsInfo()

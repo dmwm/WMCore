@@ -36,7 +36,7 @@ class EventAwareLumiBased(JobFactory):
         self.loadRunLumi = None  # Placeholder for DAO factory if needed
         self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
         # TODO this might need to be configurable instead of being hardcoded
-        self.defaultJobTimeLimit = 48 * 3600 # 48 hours
+        self.defaultJobTimeLimit = 48 * 3600  # 48 hours
 
     def algorithm(self, *args, **kwargs):
         """
@@ -102,7 +102,6 @@ class EventAwareLumiBased(JobFactory):
         if not lDict:
             logging.info("There are not enough events/files to be splitted. Trying again next cycle")
             return
-
 
         locationDict = {}
         for key in lDict.keys():

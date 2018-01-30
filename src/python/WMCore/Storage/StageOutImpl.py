@@ -7,9 +7,11 @@ inherit this object and implement the methods accordingly
 
 """
 from __future__ import print_function
-import time
-import os
+
 import logging
+import os
+import time
+
 from WMCore.Storage.Execute import runCommandWithOutput
 from WMCore.Storage.StageOutError import StageOutError
 
@@ -88,7 +90,7 @@ class StageOutImpl(object):
 
         if exitCode:
             msg = "Command exited non-zero, ExitCode:%s\nOutput: %s " % (exitCode, output)
-            logging.error("Exception During Stage Out:\n%s" % msg)
+            logging.error("Exception During Stage Out:\n%s", msg)
             raise StageOutError(msg, Command=command, ExitCode=exitCode)
         return
 

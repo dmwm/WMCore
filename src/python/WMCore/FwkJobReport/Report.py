@@ -36,16 +36,6 @@ class FwkJobReportException(WMException):
     pass
 
 
-def checkFileForCompletion(aFile):
-    """
-    _checkFileForCompletion_
-
-    Takes a DataStucts/File object (or derivative) and checks to see that the
-    file is ready for transfer.
-    """
-    return True
-
-
 def addBranchNamesToFile(fileSection, branchNames):
     """
     _addBranchNamesToFile_
@@ -415,11 +405,6 @@ class Report(object):
         """
 
         aFile = aFile or {}
-
-        if not checkFileForCompletion(aFile):
-            # Then the file is not complete, and should not be added
-            print("ERROR")
-            return None
 
         # Now load the output module and create the file object
         outMod = getattr(self.report.output, outputModule, None)

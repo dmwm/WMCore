@@ -8,8 +8,9 @@ Builder implementation for DQMUpload
 from __future__ import print_function
 
 import logging
-from WMCore.WMSpec.Steps.Builder import Builder
+
 from WMCore.WMSpec.ConfigSectionTree import nodeName
+from WMCore.WMSpec.Steps.Builder import Builder
 
 
 class DQMUpload(Builder):

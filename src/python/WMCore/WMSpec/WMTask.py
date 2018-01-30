@@ -8,21 +8,20 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
+import logging
 import os.path
 import time
-import logging
 
-import WMCore.WMSpec.Utilities as SpecUtils
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
+import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.Configuration import ConfigSection
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
-from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
-from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
-from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
-from WMCore.DataStructs.LumiList import LumiList
+from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 
 
 def getTaskFromStep(stepRef):
@@ -62,7 +61,8 @@ def buildLumiMask(runs, lumis):
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
-    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])))) for x
+    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))))
+                 for x
                  in lumis]
     strRuns = [str(run) for run in runs]
 
@@ -377,8 +377,9 @@ class WMTaskHelper(TreeHelper):
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
-        [setattr(self.data.input, key, val)
-         for key, val in extras.items()]
+        for key, val in extras.items():
+            setattr(self.data.input, key, val)
+
         return
 
     def setInputStep(self, stepName):
@@ -449,8 +450,9 @@ class WMTaskHelper(TreeHelper):
 
         Set the job splitting parameters.
         """
-        [setattr(self.data.input.splitting, key, val)
-         for key, val in params.items()]
+        for key, val in params.items():
+            setattr(self.data.input.splitting, key, val)
+
         return
 
     def setSplittingAlgorithm(self, algoName, **params):
@@ -1375,7 +1377,6 @@ class WMTaskHelper(TreeHelper):
 
         return versions
 
-
     def setNumberOfCores(self, cores, nStreams):
         """
         _setNumberOfCores_
@@ -1514,7 +1515,7 @@ class WMTaskHelper(TreeHelper):
                    "ProcessingString": self.setProcessingString,
                    "MaxRSS": self.setMaxRSS,
                    "MaxVSize": self.setMaxVSize
-                  }
+                   }
         return propMap
 
     def setProperties(self, properties):

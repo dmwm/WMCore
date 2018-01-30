@@ -8,12 +8,12 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 
 """
 from __future__ import print_function
+
 import logging
-import pickle
 import os
+import pickle
 
 from PSetTweaks.PSetTweak import PSetTweak
-from PSetTweaks.PSetTweak import parameterIterator, psetIterator
 
 # params to be extracted from an output module
 _TweakOutputModules = [
@@ -119,8 +119,8 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
-    return lfnGroup
+    jobLfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    return jobLfnGroup
 
 
 def hasParameter(pset, param, nopop=False):
@@ -243,7 +243,7 @@ def expandParameter(process, param):
 listParams = lambda x: [y for y in x.parameters_()]
 
 
-class TweakMaker:
+class TweakMaker(object):
     """
     _TweakMaker_
 
@@ -254,9 +254,9 @@ class TweakMaker:
 
     """
 
-    def __init__(self, processParams=_TweakParams,
-                 outmodParams=_TweakOutputModules):
-
+    def __init__(self, processParams=None, outmodParams=None):
+        processParams = processParams or _TweakParams
+        outmodParams = outmodParams or _TweakOutputModules
         self.processLevel = processParams
         self.outModLevel = outmodParams
 
@@ -264,11 +264,12 @@ class TweakMaker:
         tweak = PSetTweak()
         # handle process parameters
         processParams = []
-        [processParams.extend(expandParameter(process, param).keys())
-         for param in self.processLevel]
+        for param in self.processLevel:
+            processParams.extend(expandParameter(process, param).keys())
 
-        [tweak.addParameter(param, getParameter(process, param))
-         for param in processParams if hasParameter(process, param)]
+        for param in processParams:
+            if hasParameter(process, param):
+                tweak.addParameter(param, getParameter(process, param))
 
         # output modules
         tweak.addParameter('process.outputModules_', [])
@@ -278,11 +279,7 @@ class TweakMaker:
             for param in self.outModLevel:
                 fullParam = "process.%s.%s" % (outMod, param)
                 if hasParameter(outModRef, param, True):
-                    tweak.addParameter(
-                        fullParam,
-                        getParameter(outModRef,
-                                     param,
-                                     True))
+                    tweak.addParameter(fullParam, getParameter(outModRef, param, True))
 
         return tweak
 
@@ -323,7 +320,7 @@ childParameters = lambda p, x: [i for i in x._internal_settings if i not in x._i
 childSections = lambda s: [getattr(s, x) for x in s._internal_children]
 
 
-class ConfigSectionDecomposer:
+class ConfigSectionDecomposer(object):
     """
     _ConfigSectionDecomposer_
 
@@ -544,10 +541,10 @@ def readAdValues(attrs, adname, castInt=False):
     elif adname == 'machine':
         adfile = os.environ.get("_CONDOR_MACHINE_AD")
     else:
-        logging.warning("Invalid ad name requested for parsing: %s" % adname)
+        logging.warning("Invalid ad name requested for parsing: %s", adname)
         return retval
     if not adfile:
-        logging.warning("%s adfile is not set in environment." % adname)
+        logging.warning("%s adfile is not set in environment.", adname)
         return retval
     attrs = [i.lower() for i in attrs]
 
@@ -597,7 +594,7 @@ def resizeResources(resources):
         logging.info("Not resizing job")
         return
 
-    logging.info("Resizing job.  Initial resources: %s" % resources)
+    logging.info("Resizing job.  Initial resources: %s", resources)
     adValues = readAdValues(['memory', 'cpus'], 'machine', castInt=True)
     machineCpus = adValues.get('cpus', 0)
     machineMemory = adValues.get('memory', 0)
@@ -605,4 +602,4 @@ def resizeResources(resources):
         resources['cores'] = machineCpus
     if machineMemory > 0 and 'memory' in resources:
         resources['memory'] = machineMemory
-    logging.info("Resizing job.  Resulting resources: %s" % resources)
+    logging.info("Resizing job.  Resulting resources: %s", resources)

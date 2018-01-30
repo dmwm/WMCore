@@ -6,23 +6,23 @@ Implementation of an Executor for a LogCollect step.
 """
 from __future__ import print_function
 
+import datetime
+import logging
 import os
 import re
-import logging
 import signal
-import tarfile
-import datetime
 import socket
+import tarfile
 
 from Utils.IteratorTools import grouper
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-from WMCore.WMSpec.Steps.Executor import Executor
-from WMCore.Storage.StageOutMgr import StageOutMgr
-from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.DeleteMgr import DeleteMgr
+from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.StageOutError import StageOutFailure
+from WMCore.Storage.StageOutMgr import StageOutMgr
 from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch
+from WMCore.WMSpec.Steps.Executor import Executor
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
 class LogCollect(Executor):

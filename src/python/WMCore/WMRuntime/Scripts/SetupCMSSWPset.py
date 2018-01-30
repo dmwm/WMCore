@@ -7,11 +7,11 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 from __future__ import print_function
 
 import json
+import logging
 import os
 import pickle
 import random
 import socket
-import logging
 
 import FWCore.ParameterSet.Config as cms
 
@@ -476,8 +476,10 @@ class SetupCMSSWPset(ScriptInterface):
                             # For deterministic pileup, we want to shuffle the list the
                             # same for every job in the task and skip events
                             random.seed(self.job['task'])
-                            logging.info("Skipping %d pileup events for deterministic data mixing", baggage.skipPileupEvents)
-                            inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
+                            logging.info("Skipping %d pileup events for deterministic data mixing",
+                                         baggage.skipPileupEvents)
+                            inputTypeAttrib.skipEvents = cms.untracked.uint32(
+                                int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
                     # Shuffle according to the seed above or randomly
                     random.shuffle(inputTypeAttrib.fileNames)
@@ -582,7 +584,7 @@ class SetupCMSSWPset(ScriptInterface):
             cms.Service("SiteLocalConfigService",
                         overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
                         )
-            )
+        )
 
         return
 
@@ -707,7 +709,8 @@ class SetupCMSSWPset(ScriptInterface):
                 resizeResources(resources)
                 numCores = resources['cores']
                 if numCores != origCores:
-                    logging.info("Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
+                    logging.info(
+                        "Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
                     eventStreams = 0
                 options = getattr(self.process, "options", None)
                 if options is None:

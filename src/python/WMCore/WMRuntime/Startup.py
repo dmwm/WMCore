@@ -10,8 +10,9 @@ Just a FYI, there are basically 3 important directories:
 """
 from __future__ import print_function
 
-import os
 import logging
+import os
+
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 
 if __name__ == '__main__':

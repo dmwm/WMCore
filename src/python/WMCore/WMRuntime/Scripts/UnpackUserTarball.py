@@ -6,6 +6,7 @@ Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
 
+import logging
 import os
 import re
 import shutil
@@ -14,8 +15,6 @@ import sys
 import tempfile
 import urllib
 import urlparse
-import logging
-
 from urllib import URLopener
 
 try:

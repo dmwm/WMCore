@@ -6,23 +6,22 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
 import inspect
-import pickle
+import logging
 import os
 import os.path
-import threading
+import pickle
 import socket
-import logging
+import threading
 from logging.handlers import RotatingFileHandler
 
-from WMCore.WMException import WMException
-from WMCore.WMRuntime import TaskSpace
-from WMCore.WMRuntime import StepSpace
-from WMCore.WMRuntime.Watchdog import Watchdog
-
-from WMCore.DataStructs.JobPackage import JobPackage
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.FwkJobReport.Report as Report
+from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
+from WMCore.WMException import WMException
+from WMCore.WMRuntime import StepSpace
+from WMCore.WMRuntime import TaskSpace
+from WMCore.WMRuntime.Watchdog import Watchdog
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 
 class BootstrapException(WMException):

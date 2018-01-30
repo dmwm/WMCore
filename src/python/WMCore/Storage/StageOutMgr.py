@@ -14,12 +14,15 @@ import logging
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
-from WMCore.WMException import WMException
-from WMCore.Storage.StageOutError import StageOutFailure
-from WMCore.Storage.StageOutError import StageOutInitError
+from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
-from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
+from WMCore.Storage.StageOutError import StageOutFailure
+from WMCore.Storage.StageOutError import StageOutInitError
+from WMCore.WMException import WMException
+
+
+# If we don't import them, they cannot be ever used (bad PyCharm!)
 
 
 class StageOutMgr:

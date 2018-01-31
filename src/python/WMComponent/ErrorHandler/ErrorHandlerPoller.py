@@ -65,7 +65,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                      dbinterface=myThread.dbi)
         self.changeState = ChangeState(self.config)
 
-        self.maxRetries = self.config.ErrorHandler.maxRetries
+        if hasattr(self.config, "Tier0Feeder"):
+            self.reqAuxDB = None
+            self.maxRetries = self.config.ErrorHandler.maxRetries
+        else:
+            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+            self.maxRetries = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("MaxRetries")
+
         if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default': self.maxRetries}
         if 'default' not in self.maxRetries:
@@ -83,10 +89,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
                                                     database=config.ACDC.database)
-        if hasattr(self.config, "Tier0Feeder"):
-            self.reqAuxDB = None
-        else:
-            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
 
         return
 
@@ -137,6 +139,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
         retrydoneJobs = []
         cooloffJobs = []
         passJobs = []
+
+        # Query auxiliary db for current state of maxRetries
+        if self.reqAuxDB:
+            self.maxRetries = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("MaxRetries", self.maxRetries)
+
+        if not isinstance(self.maxRetries, dict):
+            self.maxRetries = {'default': self.maxRetries}
+        if 'default' not in self.maxRetries:
+            raise ErrorHandlerException('Max retries for the default job type must be specified')
 
         # Retries < max retry count
         for job in jobList:

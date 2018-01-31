@@ -334,10 +334,10 @@ class StepChainWorkloadFactory(StdBase):
         taskConf["SplittingArguments"] = {}
         if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
-            if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
-                taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
-            else:
+            if taskConf["SplittingAlgo"] == "EventBased":
                 taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]
+            else:
+                taskConf["SplittingArguments"]["job_time_limit"] = 48 * 3600  # 2 days
             taskConf["SplittingArguments"]["lheInputFiles"] = taskConf["LheInputFiles"]
         elif taskConf["SplittingAlgo"] == "LumiBased":
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]

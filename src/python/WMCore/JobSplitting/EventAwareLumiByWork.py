@@ -40,6 +40,8 @@ class EventAwareLumiByWork(JobFactory):
         self.deterministicPU = False
         self.maxLumis = 1  # Maximum lumis seen in a job (needed for deterministic pileup only)
         self.maxEvents = 1  # Maximum events seen in a lumi (needed for deterministic pileup only)
+        # TODO this might need to be configurable instead of being hardcoded
+        self.defaultJobTimeLimit = 48 * 3600 # 48 hours
 
         # Job accumulators
         self.eventsInJob = 0
@@ -64,7 +66,7 @@ class EventAwareLumiByWork(JobFactory):
         # TODO: split across sites two different jobs will read the same lumi
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
-        lumiEventLimit = int(kwargs.get('max_events_per_lumi', 20000))
+        jobTimeLimit = int(kwargs.get('job_time_limit', self.defaultJobTimeLimit))
         totalEventLimit = int(kwargs.get('total_events', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         self.collectionName = kwargs.get('collectionName', None)
@@ -75,6 +77,10 @@ class EventAwareLumiByWork(JobFactory):
         lumis = kwargs.get('lumis', None)
         self.deterministicPU = kwargs.get('deterministicPileup', False)
         self.perfParameters = kwargs.get('performance', {})
+
+        # Calculate and add performance information
+        self.timePerEvent, self.sizePerEvent, self.memoryRequirement = \
+            self.getPerformanceParameters(self.perfParameters)
 
         if avgEventsPerJob <= 0:
             msg = "events_per_job parameter must be positive. Its value is: %d" % avgEventsPerJob
@@ -137,10 +143,12 @@ class EventAwareLumiByWork(JobFactory):
 
                     totalEvents += self.eventsInLumi
                     self.maxEvents = max(self.maxEvents, self.eventsInLumi)
-                    if self.eventsInLumi > lumiEventLimit:
+                    timePerLumi = self.eventsInLumi * self.timePerEvent
+                    if timePerLumi > jobTimeLimit and len(lumisByFile[lfn].getLumis()):
                         # This lumi has too many events. Output this job and a new one with just that lumi
-                        failReason = 'Too many (estimated) events (%s) in run %s, lumi %s' % \
-                                     (self.eventsInLumi, run, lumi)
+                        failReason = "File %s has a single lumi %s, in run %s " % (lfn, lumi, run)
+                        failReason += "with too many events %d and it woud take %d sec to run" \
+                                      % (self.eventsInLumi, timePerLumi)
                         self.stopAndMakeJob(reason='Lumi too big', runLumi=(run, lumi),
                                             failNextJob=True, failReason=failReason)
                     elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(
@@ -228,10 +236,9 @@ class EventAwareLumiByWork(JobFactory):
         else:
             self.newJob()
 
-        # Calculate and add performance information
-        timePerEvent, sizePerEvent, memoryRequirement = self.getPerformanceParameters(self.perfParameters)
-        self.currentJob.addResourceEstimates(jobTime=events * timePerEvent, disk=events * sizePerEvent,
-                                             memory=memoryRequirement)
+        self.currentJob.addResourceEstimates(jobTime=events * self.timePerEvent,
+                                             disk=events * self.sizePerEvent,
+                                             memory=self.memoryRequirement)
         # Add job mask information
         for run, lumiRanges in lumiList.iteritems():
             for lumiRange in lumiRanges:

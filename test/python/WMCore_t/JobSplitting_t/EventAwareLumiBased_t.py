@@ -14,10 +14,9 @@ import unittest
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.Run import Run
 from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
-from WMCore.DataStructs.Run import Run
-
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUIDLib import makeUUID
 
@@ -513,10 +512,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
-        self.assertTrue(jobs[3]['failedOnCreation'], "The job processing the second file should me marked for failure")
-        self.assertEqual(jobs[3]['failedReason'],
-                "File /this/is/file2 has a single lumi with too many events (1000) and it woud take 12000 sec to run",
-                "The reason for the failure is not accurate")
+        failedJobs = [job for job in jobs if job.get('failedOnCreation', False)]
+        self.assertEqual(len(failedJobs), 1)
+        self.assertEqual(failedJobs[0]['failedReason'],
+                         'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it woud take 12000 sec to run')
 
         return
 
@@ -555,12 +554,23 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3, "Three jobs must be in the jobgroup")
-        for i in range(1, 4):
-            self.assertTrue(jobs[i - 1]['failedOnCreation'],
-                            "The job processing the second file should me marked for failure")
-            self.assertEqual(jobs[i - 1]['failedReason'],
-                    "File /this/is/file%d has a single lumi with too many events (1000) and it woud take 12000 sec to run" % i,
-                    "The reason for the failure is not accurate")
+        for i in range(0, 3):
+            self.assertTrue(jobs[i]['failedOnCreation'], "It should have been marked as failed")
+
+            runNums = jobs[i]['mask']['runAndLumis'].keys()
+            self.assertEqual(len(runNums), 1)
+
+            lumiNums = jobs[i]['mask']['runAndLumis'].values()[0]
+            self.assertEqual(len(lumiNums), 1)
+
+            finalLumi = []
+            for pair in lumiNums:
+                finalLumi.extend(range(pair[0], pair[1] + 1))
+            self.assertEqual(len(finalLumi), 1)
+
+            self.assertEqual(jobs[i]['failedReason'],
+                             "File /this/is/file%d has a single lumi %s, in run %s with too many events 1000 and it woud take 12000 sec to run" % (
+                             i + 1, finalLumi[0], runNums[0]))
 
         return
 
@@ -648,7 +658,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
                                splitOnRun=False,
                                performance=self.performanceParams,
                                applyLumiCorrection=False
-                              )
+                               )
 
         # The splitting algorithm will assume 75 events per lumi.
         # We will have one job per lumi

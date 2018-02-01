@@ -14,5 +14,5 @@ DEFAULT_AGENT_CONFIG = {
     # In JobSumitter, submit jobs over the threshold if the priority is higher than current pending/running jobs
     "CondorOverflowFraction": 0.2,  # default 20% over threshold
     # ExitCodes returned by jobs which doesn't need to be retried
-    "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 50660, 50661, 50664, 71102]
+    "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 8501, 50660, 50661, 50664, 71102]
 }

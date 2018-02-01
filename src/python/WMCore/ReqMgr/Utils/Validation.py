@@ -118,6 +118,7 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         # simply copy the whole original dictionary over and accept all args
         createArgs = originalArgs
         request_args["OriginalRequestType"] = originalArgs["OriginalRequestType"]
+        request_args["ResubmissionCount"] = originalArgs.get("ResubmissionCount", 1) + 1
     else:
         # load arguments definition from the proper/original spec factory
         parentClass = loadSpecClassByType(originalArgs["RequestType"])

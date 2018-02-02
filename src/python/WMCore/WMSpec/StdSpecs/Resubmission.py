@@ -60,6 +60,7 @@ class ResubmissionWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadCreateArgs():
         specArgs = {"RequestType": {"default": "Resubmission"},
+                    "ResubmissionCount": {"default": 1, "type": int},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
                     "InitialTaskPath": {"optional": False,
@@ -83,6 +84,14 @@ class ResubmissionWorkloadFactory(StdBase):
         Since we skip the master validation for Resubmission specs, we better have
         some specific validation
         """
+        #TODO: for the legacy code if ACDC is created before the updated. remove in next release (Mar 2018)
+        if schema.get('OriginalRequestType') == 'Resubmission':
+            # we cannot validate such schema
+            return
+
+        if schema.get("ResubmissionCount", 1) > 1:
+            # we cannot validate such schema
+            return
 
         # load assignment + creation + resubmission creation args definition
         argumentDefinition = self.getWorkloadAssignArgs()

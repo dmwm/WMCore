@@ -19,17 +19,17 @@ from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_E
 # restriction enforced by DBS. for different types blocks.
 # It could have a strict restriction
 # i.e production should end with v[number]
-PRIMARY_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 99}
+PRIMARY_DS = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 99}
 PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
 TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
 BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
 
 lfnParts = {
     'era': '([a-zA-Z0-9\-_]+)',
-    'primDS': '(%(re)s)' % PRIMARY_DS,
+    'primDS': '([a-zA-Z][a-zA-Z0-9\-_]*)',
     'tier': '(%(re)s)' % TIER,
     'version': '([a-zA-Z0-9\-_]+)',
-    'secondary': '([a-zA-Z0-9\-_]+)',
+    'procDS': '([a-zA-Z0-9\-_]+)',  # Processed dataset = Processing string + Processing version
     'counter': '([0-9]+)',
     'root': '([a-zA-Z0-9\-_]+).root',
     'hnName': '([a-zA-Z0-9\.]+)',
@@ -45,7 +45,7 @@ userProcDSParts = {
     'psethash': '([a-f0-9]){32}'
 }
 
-STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
+STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(procDS)s' % lfnParts
 
 # condor log filtering lexicons
 WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
@@ -307,9 +307,7 @@ def primdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and
-            check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate))
-
+    return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
 
 def hnName(candidate):
     """
@@ -332,74 +330,91 @@ def lfn(candidate):
 
     Add for LHE files: /data/lhe/...
     """
-    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp1 = '/([a-z]+)/([a-z0-9]+)/(%(era)s)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root' % lfnParts
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(procDS)s/%(version)s/%(counter)s/%(root)s' % lfnParts
     regexp4 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/(%(subdir)s/)+%(root)s' % lfnParts
 
     oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s(/%(counter)s)?/%(root)s' % lfnParts
 
-    storeMcLFN = '/store/mc/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root'
+    storeMcLFN = '/store/mc/(%(era)s)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root' % lfnParts
 
-    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
+    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(procDS)s/%(primDS)s/%(tier)s/%(procDS)s/%(counter)s/%(root)s' % lfnParts
 
     storeResultRootPart = '%(counter)s/%(root)s' % lfnParts
     storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
 
     lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
     # This is for future lhe LFN structure. Need to be tested.
-    lheLFN2 = '/store/lhe/%(primDS)s/%(secondary)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+    lheLFN2 = '/store/lhe/%(era)s/%(primDS)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+
+    errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
     try:
         return check(regexp1, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp1
         pass
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp2
         pass
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp3
         pass
 
     try:
         return check(regexp4, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp4
         pass
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % tier0LFN
         pass
 
     try:
         return check(oldStyleTier0LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % oldStyleTier0LFN
         pass
 
     try:
         return check(storeMcLFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % storeMcLFN
         pass
 
     try:
         return check(lheLFN1, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % lheLFN1
         pass
 
     try:
         return check(lheLFN2, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % lheLFN2
         pass
 
     try:
         return check(storeResults2LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % storeResults2LFN
+
+    try:
         return check(storeResultsLFN, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % storeResultsLFN
+        raise AssertionError(errorMsg)
 
 
 def lfnBase(candidate):
@@ -409,29 +424,41 @@ def lfnBase(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
-    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(procDS)s/%(version)s' % lfnParts
 
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
+
+    errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
     try:
         return check(regexp1, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp1
         pass
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp2
         pass
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % regexp3
         pass
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % tier0LFN
+        pass
+
+    try:
         return check(STORE_RESULTS_LFN, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % STORE_RESULTS_LFN
+        raise AssertionError(errorMsg)
 
 
 def userLfn(candidate):

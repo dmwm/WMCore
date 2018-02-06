@@ -16,6 +16,7 @@ except ImportError:
     import pickle
 
 from Utils.Timers import timeFunction
+from Utils.MathUtils import quantize
 from WMComponent.JobCreator.CreateWorkArea import CreateWorkArea
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.DAOFactory import DAOFactory
@@ -108,6 +109,10 @@ def capResourceEstimates(jobGroups, constraints):
 
             j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
             j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
+
+            # finally, quantize those
+            j['estimatedJobTime'] = quantize(j['estimatedJobTime'], constraints['MinWallTimeSecs'])
+            j['estimatedDiskUsage'] = quantize(j['estimatedDiskUsage'], constraints['MinRequestDiskKB'])
 
     return
 

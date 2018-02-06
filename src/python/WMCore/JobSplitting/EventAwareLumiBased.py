@@ -35,6 +35,7 @@ class EventAwareLumiBased(JobFactory):
 
         self.loadRunLumi = None  # Placeholder for DAO factory if needed
         self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
+        self.defaultJobTimeLimit = 48 * 3600  # 48 hours
 
     def algorithm(self, *args, **kwargs):
         """
@@ -46,7 +47,7 @@ class EventAwareLumiBased(JobFactory):
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
         jobLimit = int(kwargs.get('job_limit', 0))
-        eventLimit = int(kwargs.get('max_events_per_lumi', 20000))
+        eventLimit = int(kwargs.get('max_events_per_lumi', 0))
         totalEvents = int(kwargs.get('total_events', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
         self.collectionName = kwargs.get('collectionName', None)
@@ -58,10 +59,17 @@ class EventAwareLumiBased(JobFactory):
         applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
         deterministicPileup = kwargs.get('deterministicPileup', False)
 
+        if not eventLimit:
+            jobTimeLimit = int(kwargs.get('job_time_limit', self.defaultJobTimeLimit))
+        else:
+            jobTimeLimit = None
+
         timePerEvent, sizePerEvent, memoryRequirement = \
             self.getPerformanceParameters(kwargs.get('performance', {}))
 
         eventsPerLumiInDataset = 0
+
+
 
         if avgEventsPerJob <= 0:
             msg = "events_per_job parameter must be positive. Its value is: %d" % avgEventsPerJob
@@ -163,10 +171,20 @@ class EventAwareLumiBased(JobFactory):
                 failNextJob = False
                 # If the number of events per lumi is higher than the limit
                 # and it's only one lumi then ditch that lumi
-                if f['avgEvtsPerLumi'] > eventLimit and f['lumiCount'] == 1:
+                timePerLumi = f['avgEvtsPerLumi'] * timePerEvent
+                if eventLimit and f['avgEvtsPerLumi'] > eventLimit and f['lumiCount'] == 1:
                     failNextJob = True
                     stopJob = True
                     lumisPerJob = 1
+                    failMsg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
+                                                                                  f['events'],
+                                                                                  f['lumiCount'])
+                elif jobTimeLimit and timePerLumi > jobTimeLimit and f['lumiCount'] == 1:
+                    failNextJob = True
+                    stopJob = True
+                    lumisPerJob = 1
+                    failMsg = "File %s has a single lumi %s, in run %s " % (f['lfn'], lumi, run.run)
+                    failMsg += "with too many events %d and it woud take %d sec to run" % (f['events'], timePerLumi)
                 elif splitOnFile:
                     # Then we have to split on every boundary
                     stopJob = True
@@ -247,13 +265,11 @@ class EventAwareLumiBased(JobFactory):
                                 runAddedTime = eventsAdded * timePerEvent
                                 runAddedSize = eventsAdded * sizePerEvent
                                 self.currentJob.addResourceEstimates(jobTime=runAddedTime, disk=runAddedSize)
-                            msg = None
-                            if failNextJob:
-                                msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
-                                                                                          f['events'],
-                                                                                          f['lumiCount'])
+                            if not failNextJob:
+                                failMsg = None
+
                             self.lumiChecker.closeJob(self.currentJob)
-                            self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=msg)
+                            self.newJob(name=self.getJobName(), failedJob=failNextJob, failedReason=failMsg)
                             if deterministicPileup:
                                 skipEvents = (self.nJobs - 1) * lumisPerJob * eventsPerLumiInDataset
                                 self.currentJob.addBaggageParameter("skipPileupEvents", skipEvents)

@@ -24,7 +24,7 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.8.patch2 -c HG1712a -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.8.patch3 -c HG1712a -t production -n 2 -p "8404 8416"
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.patch4 -c HG1709c -t testbed-cmssrv214 -p "8208 8209" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
@@ -279,14 +279,10 @@ echo "*** Tweaking configuration ***"
 sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
-  sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
-elif [[ "$TEAMNAME" == hlt ]]; then
-  sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
-  sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py
+  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 2, 'Harvesting': 2}+0+" $MANAGE/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
 fi
@@ -323,6 +319,12 @@ echo "*** Upload WMAgentConfig to AuxDB ***"
 cd $MANAGE
 ./manage execute-agent wmagent-upload-config
 echo "Done!" && echo
+
+if [[ "$TEAMNAME" == production ]]; then
+  echo "Agent connected to the production team, setting it to drain mode"
+  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"UserDrainMode":true}' https://cmsweb.cern.ch/reqmgr2/data/wmagentconfig/$HOSTNAME
+  echo "Done!" && echo
+fi
 
 ###
 # set scripts and specific cronjobs

@@ -150,7 +150,7 @@ else
     echo "WMAgent bootstrap: found $pythonCommand at.."
     echo `which $pythonCommand`
 fi
-echo -e "======== WMAgent Python boostrap finished at $(TZ=GMT date) ========\n"
+echo -e "======== WMAgent Python bootstrap finished at $(TZ=GMT date) ========\n"
 
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
@@ -175,8 +175,10 @@ echo -e "======== WMAgent Run the job FINISH at $(TZ=GMT date) ========\n"
 
 
 echo "WMAgent bootstrap: WMAgent finished the job, it's copying the pickled report"
+set -x
 cp WMTaskSpace/Report*.pkl ../
 ls -l WMTaskSpace
 ls -l WMTaskSpace/*
+set +x
 echo -e "======== WMAgent bootstrap FINISH at $(TZ=GMT date) ========\n"
 exit 0

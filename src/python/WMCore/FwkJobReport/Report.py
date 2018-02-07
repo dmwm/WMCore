@@ -36,16 +36,6 @@ class FwkJobReportException(WMException):
     pass
 
 
-def checkFileForCompletion(aFile):
-    """
-    _checkFileForCompletion_
-
-    Takes a DataStucts/File object (or derivative) and checks to see that the
-    file is ready for transfer.
-    """
-    return True
-
-
 def addBranchNamesToFile(fileSection, branchNames):
     """
     _addBranchNamesToFile_
@@ -357,9 +347,9 @@ class Report(object):
 
         Pickle this object and save it to disk.
         """
-        handle = open(filename, 'w')
-        pickle.dump(self.data, handle)
-        handle.close()
+        with open(filename, 'w') as handle:
+            pickle.dump(self.data, handle)
+
         return
 
     def unpersist(self, filename, reportname=None):
@@ -368,9 +358,8 @@ class Report(object):
 
         Load a pickled FWJR from disk.
         """
-        handle = open(filename, 'r')
-        self.data = pickle.load(handle)
-        handle.close()
+        with open(filename, 'r') as handle:
+            self.data = pickle.load(handle)
 
         # old self.report (if it existed) became unattached
         if reportname:
@@ -416,11 +405,6 @@ class Report(object):
         """
 
         aFile = aFile or {}
-
-        if not checkFileForCompletion(aFile):
-            # Then the file is not complete, and should not be added
-            print("ERROR")
-            return None
 
         # Now load the output module and create the file object
         outMod = getattr(self.report.output, outputModule, None)

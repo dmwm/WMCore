@@ -542,7 +542,7 @@ class SimpleCondorPlugin(BasePlugin):
                                                    'JobPackage.pkl', self.unpacker)
             ad['Arguments'] = "%s %i" % (os.path.basename(job['sandbox']), job['id'])
 
-            ad['TransferOutput'] = "Report.%i.pkl" % job["retry_count"]
+            ad['TransferOutput'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['DESIRED_Sites'] = sites

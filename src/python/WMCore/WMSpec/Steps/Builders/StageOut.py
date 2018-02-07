@@ -6,11 +6,11 @@ Builder implementation for StageOut
 
 """
 from __future__ import print_function
-from WMCore.WMSpec.Steps.Builder import Builder
+
+import logging
+
 from WMCore.WMSpec.ConfigSectionTree import nodeName
-
-
-
+from WMCore.WMSpec.Steps.Builder import Builder
 
 
 class StageOut(Builder):
@@ -31,4 +31,4 @@ class StageOut(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print("Builders.StageOut.build called on %s" % stepName)
+        logging.info("Builders.StageOut.build called on %s", stepName)

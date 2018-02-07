@@ -8,20 +8,20 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
+import logging
 import os.path
 import time
 
-import WMCore.WMSpec.Utilities as SpecUtils
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
+import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.Configuration import ConfigSection
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
-from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
-from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
-from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
-from WMCore.DataStructs.LumiList import LumiList
+from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 
 
 def getTaskFromStep(stepRef):
@@ -61,7 +61,8 @@ def buildLumiMask(runs, lumis):
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
-    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])))) for x
+    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))))
+                 for x
                  in lumis]
     strRuns = [str(run) for run in runs]
 
@@ -376,8 +377,9 @@ class WMTaskHelper(TreeHelper):
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
-        [setattr(self.data.input, key, val)
-         for key, val in extras.items()]
+        for key, val in extras.items():
+            setattr(self.data.input, key, val)
+
         return
 
     def setInputStep(self, stepName):
@@ -448,8 +450,9 @@ class WMTaskHelper(TreeHelper):
 
         Set the job splitting parameters.
         """
-        [setattr(self.data.input.splitting, key, val)
-         for key, val in params.items()]
+        for key, val in params.items():
+            setattr(self.data.input.splitting, key, val)
+
         return
 
     def setSplittingAlgorithm(self, algoName, **params):
@@ -1053,7 +1056,7 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.taskType
 
-    def completeTask(self, jobLocation, logLocation):
+    def completeTask(self, jobLocation, reportName):
         """
         _completeTask_
 
@@ -1061,32 +1064,39 @@ class WMTaskHelper(TreeHelper):
 
         If necessary, output to Dashboard
         """
-        import WMCore.FwkJobReport.Report as Report
+        from WMCore.FwkJobReport.Report import Report
 
-        finalReport = Report.Report()
-        # We left the master report somewhere way up at the top
-        testPath = os.path.join(jobLocation, '../../', logLocation)
+        finalReport = Report()
+        # We left the master report at the pilot scratch area level
+        testPath = os.path.join(jobLocation, '../../', reportName)
+        logging.info("Looking for master report at %s", testPath)
         if os.path.exists(testPath):
+            logging.info("  found it!")
             # If a report already exists, we load it and
             # append our steps to it
             finalReport.load(testPath)
         taskSteps = self.listAllStepNames()
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
+            logging.info("Looking for a taskStep report at %s", reportPath)
             if os.path.isfile(reportPath):
-                stepReport = Report.Report()
+                logging.info("  found it!")
+                stepReport = Report()
                 stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
             else:
+                msg = "  failed to find it."
+                msg += "Files in the directory are:\n%s" % os.listdir(os.path.join(jobLocation, taskStep))
+                logging.error(msg)
                 # Then we have a missing report
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname=taskStep, status=1)
-                finalReport.addError(stepName=taskStep, exitCode=99999, errorType="ReportManipulatingError",
-                                     errorDetails="Could not find report file for step %s!" % taskStep)
+                finalReport.addError(stepName=taskStep, exitCode=99996, errorType="ReportManipulatingError",
+                                     errorDetails="Failed to find a step report for %s!" % taskStep)
 
         finalReport.data.completed = True
-        finalReport.persist(logLocation)
+        finalReport.persist(reportName)
 
         return
 
@@ -1367,7 +1377,6 @@ class WMTaskHelper(TreeHelper):
 
         return versions
 
-
     def setNumberOfCores(self, cores, nStreams):
         """
         _setNumberOfCores_
@@ -1506,7 +1515,7 @@ class WMTaskHelper(TreeHelper):
                    "ProcessingString": self.setProcessingString,
                    "MaxRSS": self.setMaxRSS,
                    "MaxVSize": self.setMaxVSize
-                  }
+                   }
         return propMap
 
     def setProperties(self, properties):

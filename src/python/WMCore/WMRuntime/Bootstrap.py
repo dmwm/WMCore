@@ -6,23 +6,22 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
 import inspect
-import pickle
+import logging
 import os
 import os.path
-import threading
+import pickle
 import socket
-import logging
+import threading
 from logging.handlers import RotatingFileHandler
 
-from WMCore.WMException import WMException
-from WMCore.WMRuntime import TaskSpace
-from WMCore.WMRuntime import StepSpace
-from WMCore.WMRuntime.Watchdog import Watchdog
-
-from WMCore.DataStructs.JobPackage import JobPackage
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.FwkJobReport.Report as Report
+from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
+from WMCore.WMException import WMException
+from WMCore.WMRuntime import StepSpace
+from WMCore.WMRuntime import TaskSpace
+from WMCore.WMRuntime.Watchdog import Watchdog
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 
 class BootstrapException(WMException):
@@ -200,7 +199,7 @@ def loadTask(job):
     return task
 
 
-def createInitialReport(job, logLocation):
+def createInitialReport(job, reportName):
     """
     _createInitialReport_
 
@@ -230,7 +229,7 @@ def createInitialReport(job, logLocation):
     # Not so fond of this, but we have to put the master
     # report way up at the top so it's returned if the
     # job fails early
-    reportPath = os.path.join(os.getcwd(), '../', logLocation)
+    reportPath = os.path.join(os.getcwd(), '../', reportName)
     report.save(reportPath)
 
     return
@@ -279,7 +278,7 @@ def setupLogging(logDir):
     log file.
     """
     try:
-        logFile = "%s/jobLog.%s.log" % (logDir, os.getpid())
+        logFile = "%s/wmagentJob.log" % logDir
 
         logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
         logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
@@ -299,14 +298,14 @@ def setupLogging(logDir):
     return
 
 
-def setupMonitoring(logPath):
+def setupMonitoring(logName):
     """
     Setup the basics of the watchdog monitoring.
     Attach it to a thread.
 
     """
     try:
-        monitor = Watchdog(logPath=logPath)
+        monitor = Watchdog(logPath=logName)
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor

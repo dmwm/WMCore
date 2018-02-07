@@ -6,8 +6,11 @@ Builder implementation for DQMUpload
 
 """
 from __future__ import print_function
-from WMCore.WMSpec.Steps.Builder import Builder
+
+import logging
+
 from WMCore.WMSpec.ConfigSectionTree import nodeName
+from WMCore.WMSpec.Steps.Builder import Builder
 
 
 class DQMUpload(Builder):
@@ -28,4 +31,4 @@ class DQMUpload(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print("Builders.DQMUpload.build called on %s" % stepName)
+        logging.info("Builders.DQMUpload.build called on %s", stepName)

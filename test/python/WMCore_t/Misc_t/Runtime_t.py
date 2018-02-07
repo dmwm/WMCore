@@ -6,56 +6,37 @@ WorkerNode unittest for WMRuntime/WMSpec
 """
 from __future__ import print_function
 
-
-
-
-# Basic libraries
-import unittest
-import threading
-import logging
 import os
 import os.path
-import shutil
-import re
 import random
-import inspect
-import sys
+import shutil
 import socket
+import sys
+# Basic libraries
+import unittest
 
+# from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
-# Init junk
-from WMQuality.TestInit import TestInit
-from WMCore.WMInit      import getWMBASE
-
-# Builders
-from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-#from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
-from WMCore_t.WMSpec_t.TestSpec     import testWorkload
-from WMCore.DataStructs.JobPackage  import JobPackage
-
+import WMCore.WMRuntime.Bootstrap as Bootstrap
+# DataStructs
+from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.JobPackage import JobPackage
+from WMCore.DataStructs.Subscription import Subscription
+from WMCore.FwkJobReport.Report import Report
 # Factories
 from WMCore.JobSplitting.Generators.GeneratorFactory import GeneratorFactory
-from WMCore.JobSplitting.SplitterFactory             import SplitterFactory
-
-
-# DataStructs
-from WMCore.DataStructs.File         import File
-from WMCore.DataStructs.Fileset      import Fileset
-from WMCore.DataStructs.Workflow     import Workflow
-from WMCore.DataStructs.Subscription import Subscription
-from WMCore.DataStructs.JobGroup     import JobGroup
-from WMCore.DataStructs.Job          import Job
-
-
-#WMRuntime
-from WMCore.WMRuntime.Unpacker import runUnpacker as RunUnpacker
-import WMCore.WMRuntime.Bootstrap as Bootstrap
-
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 # Misc WMCore
-from WMCore.DataStructs.Run     import Run
-from WMCore.Services.UUIDLib       import makeUUID
-from WMCore.FwkJobReport.Report import Report
+from WMCore.Services.UUIDLib import makeUUID
+# WMRuntime
+from WMCore.WMRuntime.Unpacker import runUnpacker as RunUnpacker
+# Builders
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+# Init junk
+from WMQuality.TestInit import TestInit
 
 
 def getListOfTasks(workload):
@@ -74,7 +55,7 @@ def getListOfTasks(workload):
     return listOfTasks
 
 
-def miniStartup(dir = os.getcwd()):
+def miniStartup(thisDir=os.getcwd()):
     """
     This is an imitation of the startup script
     I don't want to try sourcing the main() of the startup
@@ -82,28 +63,23 @@ def miniStartup(dir = os.getcwd()):
 
     """
 
+    Bootstrap.setupLogging(thisDir)
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
-    Bootstrap.createInitialReport(job = job,
-                                  task = task,
-                                  logLocation = "Report.0.pkl")
-    monitor = Bootstrap.setupMonitoring(logPath = "Report.0.pkl")
+    Bootstrap.createInitialReport(job=job,
+                                  reportName="Report.0.pkl")
+    monitor = Bootstrap.setupMonitoring(logName="Report.0.pkl")
 
-    Bootstrap.setupLogging(dir)
-
-
-    task.build(dir)
+    task.build(thisDir)
     task.execute(job)
 
-    task.completeTask(jobLocation = os.path.join(dir, 'WMTaskSpace'),
-                      logLocation = "Report.0.pkl")
+    task.completeTask(jobLocation=os.path.join(thisDir, 'WMTaskSpace'),
+                      reportName="Report.0.pkl")
 
     if monitor.isAlive():
         monitor.shutdown()
 
-
     return
-
 
 
 class RuntimeTest(unittest.TestCase):
@@ -113,10 +89,8 @@ class RuntimeTest(unittest.TestCase):
     A unittest to test the WMRuntime/WMSpec/Storage/etc tree
     """
 
-
     # This is an integration test
     __integration__ = "Any old bollocks"
-
 
     def setUp(self):
         """
@@ -128,21 +102,18 @@ class RuntimeTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-
         self.testDir = self.testInit.generateWorkDir()
 
         # Random variables
         self.workloadDir = None
-        self.unpackDir   = None
-        self.initialDir  = os.getcwd()
-        self.origPath    = sys.path
-
+        self.unpackDir = None
+        self.initialDir = os.getcwd()
+        self.origPath = sys.path
 
         # Create some dirs
         os.makedirs(os.path.join(self.testDir, 'packages'))
 
         return
-
 
     def tearDown(self):
         """
@@ -159,11 +130,9 @@ class RuntimeTest(unittest.TestCase):
         if 'WMSandbox.JobIndex' in sys.modules.keys():
             del sys.modules['WMSandbox.JobIndex']
 
-
         return
 
-
-    def createTestWorkload(self, workloadName = 'Test', emulator = True):
+    def createTestWorkload(self, workloadName='Test', emulator=True):
         """
         _createTestWorkload_
 
@@ -172,12 +141,12 @@ class RuntimeTest(unittest.TestCase):
 
         workloadDir = os.path.join(self.testDir, workloadName)
 
-        #arguments = getTestArguments()
+        # arguments = getTestArguments()
 
-        #workload = rerecoWorkload("Tier1ReReco", arguments)
-        #rereco = workload.getTask("ReReco")
+        # workload = rerecoWorkload("Tier1ReReco", arguments)
+        # rereco = workload.getTask("ReReco")
 
-        workload = testWorkload(emulation = emulator)
+        workload = testWorkload(emulation=emulator)
         rereco = workload.getTask("ReReco")
 
         # Set environment and site-local-config
@@ -196,8 +165,6 @@ class RuntimeTest(unittest.TestCase):
 
         return workload
 
-
-
     def unpackComponents(self, workload):
         """
         Run the unpacker to build the directories
@@ -209,7 +176,7 @@ class RuntimeTest(unittest.TestCase):
 
         """
 
-        listOfTasks = getListOfTasks(workload = workload)
+        listOfTasks = getListOfTasks(workload=workload)
 
         self.unpackDir = os.path.join(self.testDir, 'unpack')
 
@@ -218,32 +185,30 @@ class RuntimeTest(unittest.TestCase):
 
         os.chdir(self.unpackDir)
 
-        sandbox  = workload.data.sandbox
+        sandbox = workload.data.sandbox
 
         for task in listOfTasks:
             # We have to create a directory, unpack in it, and then get out
             taskName = task.name()
             taskDir = os.path.join(self.unpackDir, taskName)
             if not os.path.exists(taskDir):
-            # Well then we have to make it
+                # Well then we have to make it
                 os.makedirs(taskDir)
             os.chdir(taskDir)
             # Now that we're here, run the unpacker
 
-            package  = os.path.join(self.testDir, 'packages', '%sJobPackage.pkl' % (taskName))
+            package = os.path.join(self.testDir, 'packages', '%sJobPackage.pkl' % (taskName))
             jobIndex = 1
 
-            RunUnpacker(sandbox = sandbox, package = package,
-                        jobIndex = jobIndex, jobname = taskName)
+            RunUnpacker(sandbox=sandbox, package=package,
+                        jobIndex=jobIndex, jobname=taskName)
 
             # And go back to where we started
             os.chdir(self.unpackDir)
 
-
         os.chdir(self.initialDir)
 
         return
-
 
     def createWMBSComponents(self, workload):
         """
@@ -252,27 +217,17 @@ class RuntimeTest(unittest.TestCase):
         """
 
         listOfTasks = []
-        listOfSubs  = []
-
-        rerecoTask  = None
 
         for primeTask in workload.taskIterator():
-            # There should only be one prime task, and it should be the rerecoTask
-            rerecoTask = primeTask
             for task in primeTask.taskIterator():
                 listOfTasks.append(task)
 
         for task in listOfTasks:
             fileset = self.getFileset()
-            sub = self.createSubscriptions(task = task,
-                                           fileset = fileset)
-            #listOfSubs.append(sub)
-
-
+            sub = self.createSubscriptions(task=task,
+                                           fileset=fileset)
 
         return
-
-
 
     def createSubscriptions(self, task, fileset):
         """
@@ -280,25 +235,22 @@ class RuntimeTest(unittest.TestCase):
 
 
         """
-        type = task.taskType()
+        taskType = task.taskType()
         work = task.makeWorkflow()
 
-        sub = Subscription(fileset = fileset,
-                           workflow = work,
-                           split_algo = "FileBased",
-                           type = type)
+        sub = Subscription(fileset=fileset,
+                           workflow=work,
+                           split_algo="FileBased",
+                           type=taskType)
 
-        package = self.createWMBSJobs(subscription = sub,
-                                      task = task)
+        package = self.createWMBSJobs(subscription=sub,
+                                      task=task)
 
         packName = os.path.join(self.testDir, 'packages',
-                                '%sJobPackage.pkl' %(task.name()))
+                                '%sJobPackage.pkl' % (task.name()))
         package.save(packName)
 
         return sub
-
-
-
 
     def createWMBSJobs(self, subscription, task):
         """
@@ -308,10 +260,10 @@ class RuntimeTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
-        geneFac  = GeneratorFactory()
-        jobfactory = splitter(subscription = subscription,
-                              package = "WMCore.DataStructs",
-                              generators = geneFac.makeGenerators(task))
+        geneFac = GeneratorFactory()
+        jobfactory = splitter(subscription=subscription,
+                              package="WMCore.DataStructs",
+                              generators=geneFac.makeGenerators(task))
         params = task.jobSplittingParameters()
         jobGroups = jobfactory(**params)
 
@@ -325,30 +277,23 @@ class RuntimeTest(unittest.TestCase):
 
         return package
 
-
-
-
     def getFileset(self):
         """
         Get a fileset based on the task
 
         """
 
-        fileset = Fileset(name = 'Merge%s' %(type))
+        fileset = Fileset(name='Merge%s' % (type))
 
-
-        for i in range(0, random.randint(15,25)):
+        for i in range(0, random.randint(15, 25)):
             # Use the testDir to generate a random lfn
-            inpFile = File(lfn = "%s/%s.root" %(self.testDir, makeUUID()),
-                           size = random.randint(200000, 1000000),
-                           events = random.randint(1000,2000) )
+            inpFile = File(lfn="%s/%s.root" % (self.testDir, makeUUID()),
+                           size=random.randint(200000, 1000000),
+                           events=random.randint(1000, 2000))
             inpFile.setLocation('Megiddo')
             fileset.addFile(inpFile)
 
-
         return fileset
-
-
 
     def runJobs(self, workload):
         """
@@ -362,7 +307,6 @@ class RuntimeTest(unittest.TestCase):
             listOfTasks.append(primeTask)
             # Only run primeTasks for now
 
-
         for task in listOfTasks:
             jobName = task.name()
             taskDir = os.path.join(self.unpackDir, jobName, 'job')
@@ -372,17 +316,13 @@ class RuntimeTest(unittest.TestCase):
             # Scream, run around in panic, blow up machine
             print("About to run jobs")
             print(taskDir)
-            miniStartup(dir = taskDir)
-
+            miniStartup(dir=taskDir)
 
             # When exiting, go back to where you started
             os.chdir(self.initialDir)
             sys.path.remove(taskDir)
 
         return
-
-
-
 
     @attr('integration')
     def testA_CreateWorkload(self):
@@ -395,17 +335,16 @@ class RuntimeTest(unittest.TestCase):
         """
 
         workloadName = 'basicWorkload'
-        workload     = self.createTestWorkload(workloadName = workloadName)
+        workload = self.createTestWorkload(workloadName=workloadName)
 
-        self.createWMBSComponents(workload = workload)
+        self.createWMBSComponents(workload=workload)
 
         taskNames = []
-        for task in getListOfTasks(workload = workload):
+        for task in getListOfTasks(workload=workload):
             taskNames.append(task.name())
 
-        workloadPath  = os.path.join(self.testDir, workloadName, "TestWorkload")
+        workloadPath = os.path.join(self.testDir, workloadName, "TestWorkload")
         siteConfigDir = os.path.join(self.testDir, workloadName, 'SITECONF/local/JobConfig/')
-
 
         # Pre-run checks
 
@@ -420,15 +359,11 @@ class RuntimeTest(unittest.TestCase):
         for task in taskNames:
             self.assertTrue('%sJobPackage.pkl' % (task) in os.listdir(os.path.join(self.testDir, 'packages')))
 
-
         # Does it have the SITECONF?
         self.assertTrue('site-local-config.xml' in os.listdir(siteConfigDir))
 
-
-
         # Now actually see if you can unpack it.
-        self.unpackComponents(workload = workload)
-
+        self.unpackComponents(workload=workload)
 
         # Check for proper unpacking
         # Check the the task has the right directories,
@@ -437,7 +372,7 @@ class RuntimeTest(unittest.TestCase):
         taskContents = ['WMSandbox', 'WMCore', 'PSetTweaks']
         PSetContents = ['PSetTweak.pyc', 'CVS', 'PSetTweak.py',
                         '__init__.pyc', 'WMTweak.py', '__init__.py']
-        taskSandbox  = ['JobPackage.pcl', 'JobIndex.py', '__init__.py', 'WMWorkload.pkl']
+        taskSandbox = ['JobPackage.pcl', 'JobIndex.py', '__init__.py', 'WMWorkload.pkl']
         taskSandbox.extend(taskNames)  # Should have a directory for each task
 
         for task in taskNames:
@@ -450,15 +385,14 @@ class RuntimeTest(unittest.TestCase):
             self.assertEqual(os.listdir(os.path.join(taskDir, 'PSetTweaks')).sort(),
                              PSetContents.sort())
 
-
         # And we're done.
         # Assume if we got this far everything is good
 
 
         # At the end, copy the directory
-        #if os.path.exists('tmpDir'):
+        # if os.path.exists('tmpDir'):
         #    shutil.rmtree('tmpDir')
-        #shutil.copytree(self.testDir, 'tmpDir')
+        # shutil.copytree(self.testDir, 'tmpDir')
 
         return
 
@@ -473,25 +407,21 @@ class RuntimeTest(unittest.TestCase):
         This requires...uh...emulator emulation.
         """
 
-
         # Assume all this works, because we tested it in testA
         workloadName = 'basicWorkload'
-        workload     = self.createTestWorkload(workloadName = workloadName)
+        workload = self.createTestWorkload(workloadName=workloadName)
 
-        self.createWMBSComponents(workload = workload)
+        self.createWMBSComponents(workload=workload)
 
-        self.unpackComponents(workload = workload)
+        self.unpackComponents(workload=workload)
 
-
-        self.runJobs(workload = workload)
+        self.runJobs(workload=workload)
 
         # Check the report
         taskDir = os.path.join(self.testDir, 'unpack/ReReco/job/WMTaskSpace')
         report = Report()
         report.load(os.path.join(taskDir, 'Report.0.pkl'))
         cmsReport = report.data.cmsRun1
-
-
 
         # Now validate the report
         self.assertEqual(report.data.ceName, socket.gethostname())
@@ -514,14 +444,12 @@ class RuntimeTest(unittest.TestCase):
 
 
         # At the end, copy the directory
-        #if os.path.exists('tmpDir'):
+        # if os.path.exists('tmpDir'):
         #    shutil.rmtree('tmpDir')
-        #shutil.copytree(self.testDir, 'tmpDir')
+        # shutil.copytree(self.testDir, 'tmpDir')
 
         return
 
 
-
 if __name__ == "__main__":
-
     unittest.main()

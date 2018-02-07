@@ -6,11 +6,11 @@ Builder implementation for CMSSW
 
 """
 from __future__ import print_function
-from WMCore.WMSpec.Steps.Builder import Builder
+
+import logging
+
 from WMCore.WMSpec.ConfigSectionTree import nodeName
-
-
-
+from WMCore.WMSpec.Steps.Builder import Builder
 
 
 class CMSSW(Builder):
@@ -31,4 +31,4 @@ class CMSSW(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print("Builders.CMSSW.build called on %s" % stepName)
+        logging.info("Builders.CMSSW.build called on %s", stepName)

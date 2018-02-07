@@ -9,16 +9,20 @@ use this class as a basic API
 """
 from __future__ import print_function
 
+import logging
 # If we don't import them, they cannot be ever used (bad PyCharm!)
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
-from WMCore.WMException import WMException
-from WMCore.Storage.StageOutError import StageOutFailure
-from WMCore.Storage.StageOutError import StageOutInitError
+from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
-from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
+from WMCore.Storage.StageOutError import StageOutFailure
+from WMCore.Storage.StageOutError import StageOutInitError
+from WMCore.WMException import WMException
+
+
+# If we don't import them, they cannot be ever used (bad PyCharm!)
 
 
 class StageOutMgr:
@@ -31,19 +35,19 @@ class StageOutMgr:
     """
 
     def __init__(self, **overrideParams):
-        print("StageOutMgr::__init__()")
+        logging.info("StageOutMgr::__init__()")
         self.overrideConf = overrideParams
 
         # Figure out if any of the override parameters apply to stage-out
         self.override = False
         if overrideParams != {}:
-            print("StageOutMgr::__init__(): Override: %s" % overrideParams)
+            logging.info("StageOutMgr::__init__(): Override: %s", overrideParams)
             checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
             for param in checkParams:
                 if param in self.overrideConf.keys():
                     self.override = True
             if not self.override:
-                print("=======StageOut Override: These are not the parameters you are looking for")
+                logging.info("=======StageOut Override: These are not the parameters you are looking for")
 
         self.substituteGUID = True
         self.fallbacks = []
@@ -134,9 +138,9 @@ class StageOutMgr:
                 raise StageOutInitError(msg)
             msg += "\tFallback to : %s using: %s \n" % (pnn, command)
 
-        print("==== Stageout configuration start ====")
-        print(msg)
-        print("==== Stageout configuration finish ====")
+        logging.info("==== Stageout configuration start ====")
+        logging.info(msg)
+        logging.info("==== Stageout configuration finish ====")
         return
 
     def initialiseOverride(self):
@@ -172,7 +176,7 @@ class StageOutMgr:
         for key, val in overrideParams.items():
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
-        print(msg)
+        logging.info(msg)
         self.fallbacks = []
         self.fallbacks.append(overrideParams)
         return
@@ -186,7 +190,7 @@ class StageOutMgr:
         """
         lastException = ""
 
-        print("==>Working on file: %s" % fileToStage['LFN'])
+        logging.info("==>Working on file: %s", fileToStage['LFN'])
         lfn = fileToStage['LFN']
 
         fileToStage['StageOutReport'] = []
@@ -194,7 +198,7 @@ class StageOutMgr:
         # // No override => use local-stage-out from site conf
         # //  invoke for all files and check failures/successes
         if not self.override:
-            print("===> Attempting Local Stage Out.")
+            logging.info("===> Attempting Local Stage Out.")
             try:
                 pfn = self.localStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
@@ -202,27 +206,27 @@ class StageOutMgr:
                 fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
-                print("===> Stage Out Successful: %s" % fileToStage)
+                logging.info("===> Stage Out Successful: %s", fileToStage)
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'LOCAL', 0)
                 return fileToStage
             except WMException as ex:
                 lastException = ex
-                print("===> Local Stage Out Failure for file:")
-                print("======>  %s\n" % fileToStage['LFN'])
+                logging.info("===> Local Stage Out Failure for file:")
+                logging.info("======>  %s\n", fileToStage['LFN'])
                 fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut.get('phedex-node', None),
                                                    self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
             except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
                                                 error=str(ex))
-                print("===> Local Stage Out Failure for file:\n")
-                print("======>  %s\n" % fileToStage['LFN'])
+                logging.info("===> Local Stage Out Failure for file:\n")
+                logging.info("======>  %s\n", fileToStage['LFN'])
                 fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut.get('phedex-node', None),
                                                    self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
 
         # //
         # // Still here => failure, start using the fallback stage outs
         # //  If override is set, then that will be the only fallback available
-        print("===> Attempting %s Fallback Stage Outs" % len(self.fallbacks))
+        logging.info("===> Attempting %s Fallback Stage Outs", len(self.fallbacks))
         for fallback in self.fallbacks:
             try:
                 pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
@@ -230,12 +234,12 @@ class StageOutMgr:
                 fileToStage['PFN'] = pfn
                 fileToStage['PNN'] = fallback['phedex-node']
                 fileToStage['StageOutCommand'] = fallback['command']
-                print("attempting fallback")
+                logging.info("attempting fallback")
                 self.completedFiles[fileToStage['LFN']] = fileToStage
                 if lfn in self.failed:
                     del self.failed[lfn]
 
-                print("===> Stage Out Successful: %s" % fileToStage)
+                logging.info("===> Stage Out Successful: %s", fileToStage)
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'FALLBACK', 0)
                 return fileToStage
             except Exception as ex:
@@ -341,14 +345,14 @@ class StageOutMgr:
             msg = "Cleaning out file: %s\n" % lfn
             msg += "Removing PFN: %s" % pfn
             msg += "Using command implementation: %s\n" % command
-            print(msg)
+            logging.info(msg)
             delManager = DeleteMgr(**self.overrideConf)
             try:
                 delManager.deletePFN(pfn, lfn, command)
             except StageOutFailure as ex:
                 msg = "Failed to cleanup staged out file after error:"
                 msg += " %s\n%s" % (lfn, str(ex))
-                print(msg)
+                logging.error(msg)
 
     def searchTFC(self, lfn):
         """
@@ -361,13 +365,13 @@ class StageOutMgr:
         if self.tfc == None:
             msg = "Trivial File Catalog not available to match LFN:\n"
             msg += lfn
-            print(msg)
+            logging.error(msg)
             return None
         if self.tfc.preferredProtocol == None:
             msg = "Trivial File Catalog does not have a preferred protocol\n"
             msg += "which prevents local stage out for:\n"
             msg += lfn
-            print(msg)
+            logging.error(msg)
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
@@ -378,5 +382,5 @@ class StageOutMgr:
 
         msg = "LFN to PFN match made:\n"
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print(msg)
+        logging.info(msg)
         return pfn

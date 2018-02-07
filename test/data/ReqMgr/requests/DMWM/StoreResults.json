@@ -24,6 +24,7 @@
     "ProcessingVersion": 1,
     "RequestType": "StoreResults",
     "ScramArch": "slc6_amd64_gcc530",
+    "SiteWhitelist": "T2_DE_RWTH",
     "SizePerEvent": 512.0,
     "TimePerEvent": 1,
     "UnmergedLFNBase": "/store/unmerged"

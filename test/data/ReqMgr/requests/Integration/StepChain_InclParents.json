@@ -1,0 +1,50 @@
+{
+  "createRequest": {
+    "Comments": "StepChain single step and LumiList (29 lumis); single run; 8 cores; Trust enabled to read the parent blocks",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_9_4_0",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DeterministicPileup": true,
+    "GlobalTag": "94X_dataRun2_PromptLike_v5",
+    "AcquisitionEra": "CMSSW_9_4_0",
+    "ProcessingString": "TEST_StepChain_WMCore_TEST",
+    "PrepID": "PrepID-test2inwf-1510737328-RunHLTPhy2017B_RAWAOD",
+    "ProcessingVersion": 21,
+    "RequestPriority": 420000,
+    "RequestType": "StepChain",
+    "ScramArch": "slc6_amd64_gcc630",
+    "Memory": 6000,
+    "SizePerEvent": 2600,
+    "TimePerEvent": 14.4,
+    "Step1": {
+      "ConfigCacheID": "d0bff75e6c119de01942c9a5304629a7",
+      "GlobalTag": "94X_dataRun2_PromptLike_v5",
+      "IncludeParents": true,
+      "InputDataset": "/HLTPhysics/Run2017B-PromptReco-v1/AOD",
+      "LumiList": {
+        "297557": [[60, 80], [173, 180]]
+      },
+      "Multicore": 8,
+      "StepName": "DQMHLTonRAWAOD_2017"
+    },
+    "StepChain": 1
+  },
+  "assignRequest": {
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "TrustSitelists" : true,
+    "UnmergedLFNBase": "/store/unmerged"
+  }
+}

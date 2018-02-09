@@ -16,9 +16,6 @@ except ImportError:
 
 
 class PyCondorAPI(object):
-    def __init__(self):
-        self.schedd = htcondor.Schedd()
-        self.coll = htcondor.Collector()
 
     def getCondorJobs(self, constraint, attr_list):
         """
@@ -27,6 +24,8 @@ class PyCondorAPI(object):
         Given a job/schedd constraint, return a list of jobs attributes
         or None if the query to condor fails.
         """
+        self.schedd = htcondor.Schedd()
+
         try:
             jobs = self.schedd.query(constraint, attr_list)
         except Exception as ex:
@@ -44,6 +43,8 @@ class PyCondorAPI(object):
         ( ShadowsRunning > 9.700000000000000E-01 * MAX_RUNNING_JOBS) )
         || ( RecentDaemonCoreDutyCycle > 9.800000000000000E-01 )
         """
+        self.coll = htcondor.Collector()
+
         try:
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
             isOverloaded = scheddAd['CurbMatchmaking'].eval()

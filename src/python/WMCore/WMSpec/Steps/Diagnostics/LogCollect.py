@@ -65,8 +65,8 @@ class LCExceptionHandler(DiagnosticHandler):
                 msg = "Job Report contains no error report, but LogCollect exited non-zero: %s" % errCode
                 executor.report.addError(executor.step._internal_name, 50116, "MissingErrorReport", msg)
 
-        executor.report.addError(executor.step._internal_name,
-                                 errCode, description, msg)
+            executor.report.addError(executor.step._internal_name,
+                                    errCode, description, msg)
         return
 
 class LogCollect(Diagnostic):

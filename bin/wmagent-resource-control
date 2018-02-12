@@ -57,6 +57,8 @@ def createOptionParser():
                            help="Add all of the CMS T1 sites to resource control.")
     myOptParser.add_option("--add-T2s", dest="addT2s", default=False, action="store_true",
                            help="Add all of the CMS T2 sites to resource control.")
+    myOptParser.add_option("--add-T3s", dest="addT3s", default=False, action="store_true",
+                           help="Add all of the CMS T3 sites to resource control.")
     myOptParser.add_option("--add-all-sites", dest="addAllSites", default=False,
                            action="store_true",
                            help="Add all of the CMS sites to resource control.")
@@ -316,6 +318,10 @@ else:
     elif options.addT2s:
         t2Sites = getCMSSiteInfo("T2*")
         addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
+                 options.pendingSlots, options.runningSlots, state=options.state)
+    elif options.addT3s:
+        t3Sites = getCMSSiteInfo("T3*")
+        addSites(myResourceControl, t3Sites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
     elif options.addAllSites:
         allSites = getCMSSiteInfo("*")

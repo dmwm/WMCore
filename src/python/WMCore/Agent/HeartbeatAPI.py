@@ -6,7 +6,7 @@ A simple object representing a file in WMBS.
 
 import os
 
-from Utils.DecoratorUtils import db_exception_handler
+from WMCore.Database.DBExceptionHandler import db_exception_handler
 from WMCore.WMConnectionBase import WMConnectionBase
 
 

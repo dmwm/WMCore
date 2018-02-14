@@ -4,7 +4,7 @@ from functools import wraps
 import logging
 
 DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135",
-                           "MySQL server has gone away"]
+                           "MySQL server has gone away", "Lock wait timeout exceeded"]
 
 def db_exception_handler(f):
     """

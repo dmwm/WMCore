@@ -58,7 +58,7 @@ export JOBSTARTDIR=$PWD
 
 if [ "X$_CONDOR_JOB_AD" != "X" ];
 then
-   outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g'`
+   outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g' | sed 's/,/ /g'`
    WMA_SiteName=`grep '^MachineAttrGLIDEIN_CMSSite0 =' $_CONDOR_JOB_AD | tr -d '"' | awk '{print $NF;}'`
    echo "Site name:  $WMA_SiteName"
    echo "======== HTCondor jobAds start at $(TZ=GMT date) ========"
@@ -71,7 +71,7 @@ fi
 # We need to create the expected output files in advance just in case
 # some problem happens during the job bootstrap
 if [ -z "$outputFile" ]; then
-    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl"
+    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl wmagentJob.log"
 fi
 touch $outputFile
 

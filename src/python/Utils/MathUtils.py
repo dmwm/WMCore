@@ -15,11 +15,11 @@ def quantize(inputVal, quanta):
     """
     if isinstance(inputVal, basestring):
         inputVal = float(inputVal)
-    elif not isinstance(inputVal, (int, float)):
+    elif not isinstance(inputVal, (int, float, long)):
         msg = "Input value has to be either int or float, not %s" % (type(inputVal))
         raise ValueError(msg)
 
-    if isinstance(quanta, (basestring, float)):
+    if isinstance(quanta, (basestring, float, long)):
         quanta = int(float(quanta))
     elif not isinstance(quanta, int):
         msg = "Quanta value has to be either int or float, not %s" % (type(quanta))

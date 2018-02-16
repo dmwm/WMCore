@@ -429,7 +429,7 @@ WMStats.ViewModel = (function (){
 
             //TODO get the site white list from acdc db. (site might be overflowed)
             // assign more value for acdc assignment
-            summary.Team = requestInfo.Teams[0];
+            summary.Team = requestInfo.Team;
             summary.TrustPUSitelists = false;
             summary.TrustSitelists = false;
 

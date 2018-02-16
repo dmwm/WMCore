@@ -18,11 +18,6 @@ function(doc, req) {
         }
     }
 
-    function updateTeams(team) {
-        doc.Teams = new Array();
-        doc.Teams.push(team);
-    }
-
     // req.query is dictionary fields into the 
     // CMSCouch.Database.updateDocument() method, which is a dictionary
     function isEmpty(obj) {
@@ -81,11 +76,6 @@ function(doc, req) {
         }
 
         doc[key] = newValues[key];
-
-        // FIXME keep updating Teams for now to make it easier to deprecate in HG1710
-        if (key == "Team") {
-            updateTeams(newValues[key]);
-        }
 
         // If key is RequestStatus, also update the transition
         if (key == "RequestStatus") {

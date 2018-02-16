@@ -25,7 +25,7 @@ WMStats.Globals = function($){
 		   "OutputDatasets": "outputdatasets",
 		   "RequestTransition": "request_status", // Status: status,  UpdateTime: update_time
 		   "SiteWhitelist": "site_white_list",
-		   "Teams": "teams",
+		   "Team": "team",
 		   "TotalEstimatedJobs": "total_jobs",
 		   "TotalInputEvents": "input_events",
 		   "TotalInputLumis": "input_lumis",

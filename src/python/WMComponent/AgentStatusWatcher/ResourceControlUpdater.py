@@ -81,6 +81,7 @@ class ResourceControlUpdater(BaseWorkerThread):
             5. Change site thresholds when needed (and task thresholds)
         Sites from SSB are validated with PhEDEx node names
         """
+        logging.info("AMR starting Resource control cycle")
         if not self.enabled:
             logging.info("This component is not enabled in the configuration. Doing nothing.")
             return
@@ -90,10 +91,12 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.debug("Info from resource control: %s", sitesRC)
             # first, update site status
             ssbSiteStatus = self.getSiteStatus()
+            logging.info("AMR fetched SSB site status")
             self.checkStatusChanges(sitesRC, ssbSiteStatus)
 
             # now fetch site slots thresholds
             sitesSSB = self.getInfoFromSSB()
+            logging.info("AMR fetched other SSB info")
             if not sitesSSB:
                 logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
                 return
@@ -102,6 +105,7 @@ class ResourceControlUpdater(BaseWorkerThread):
 
             # get number of agents working in the same team (not in DrainMode)
             self.getAgentsByTeam()
+            logging.info("AMR fetched agents by team")
 
             # Check which site slots need to be updated in the database
             self.checkSlotsChanges(sitesRC, sitesSSB)
@@ -216,6 +220,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                 self.resourceControl.setJobSlotsForSite(site, pendingJobSlots=sitePending,
                                                         runningJobSlots=CPUBound)
 
+            logging.info("AMR checking task slot changes for site %s", site)
             # now handle the task level thresholds
             self.checkTaskSlotsChanges(site, CPUBound, IOBound)
 
@@ -308,6 +313,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         Update the CPU and IOBound slots for a given site.
         """
         siteTaskSlots = self.resourceControl.thresholdBySite(siteName)
+        logging.info("AMR I'm getting stuck at this thresholdBySite DAO, I think...")
         taskCPUPending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100),
                              self.minCPUSlots)
         taskIOPending = max(int(IOBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100), self.minIOSlots)
@@ -318,6 +324,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         elif siteTaskSlots[0]['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
             updateTasks = True
 
+        logging.info("AMR am I going to update tasks? %s", updateTasks)
         if updateTasks:
             logging.info("Updating %s CPU tasks thresholds for pend/runn: %d/%d", siteName,
                          taskCPUPending, CPUBound)

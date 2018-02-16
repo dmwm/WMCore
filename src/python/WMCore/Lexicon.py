@@ -7,12 +7,12 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
 from __future__ import print_function, division
+
 import io
-import re
-import string
-import urlparse
-import mmap
 import logging
+import mmap
+import re
+import urlparse
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
@@ -48,7 +48,8 @@ userProcDSParts = {
 STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(procDS)s' % lfnParts
 
 # condor log filtering lexicons
-WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_FILTER += "|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))"
 WMEXCEPTION_REGEXP = re.compile(r"%s" % WMEXCEPTION_FILTER, re.DOTALL)
 
 CONDOR_LOG_REASON_FILTER = '<a n="Reason"><s>(?P<Reason>(?!</s></a>).*?)</s></a>'
@@ -71,15 +72,22 @@ def DBSUser(candidate):
     r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_\']*$'
     r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
 
+    errorMsg = "DBSUser candidate: %s doesn't match any of the following regular expressions:\n" % candidate
     try:
         return check(r1, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % r1
 
     try:
         return check(r2, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % r2
+
+    try:
         return check(r3, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % r3
+        raise AssertionError(errorMsg)
 
 
 def searchblock(candidate):
@@ -291,6 +299,7 @@ def acqname(candidate):
     else:
         return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
+
 def campaign(candidate):
     """
     Check for Campaign name.
@@ -300,6 +309,7 @@ def campaign(candidate):
         return True
     return check(r'^[a-zA-Z0-9-_]{1,80}$', candidate)
 
+
 def primdataset(candidate):
     """
     Check for primary dataset name.
@@ -308,6 +318,7 @@ def primdataset(candidate):
     if candidate == '' or not candidate:
         return candidate
     return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
+
 
 def hnName(candidate):
     """
@@ -355,55 +366,46 @@ def lfn(candidate):
         return check(regexp1, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp1
-        pass
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp2
-        pass
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp3
-        pass
 
     try:
         return check(regexp4, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp4
-        pass
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % tier0LFN
-        pass
 
     try:
         return check(oldStyleTier0LFN, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % oldStyleTier0LFN
-        pass
 
     try:
         return check(storeMcLFN, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % storeMcLFN
-        pass
 
     try:
         return check(lheLFN1, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % lheLFN1
-        pass
 
     try:
         return check(lheLFN2, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % lheLFN2
-        pass
 
     try:
         return check(storeResults2LFN, candidate)
@@ -434,25 +436,21 @@ def lfnBase(candidate):
         return check(regexp1, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp1
-        pass
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp2
-        pass
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % regexp3
-        pass
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
         errorMsg += "  %s\n" % tier0LFN
-        pass
 
     try:
         return check(STORE_RESULTS_LFN, candidate)
@@ -521,6 +519,7 @@ def parseLFN(candidate):
 
     Take an LFN, return the component parts
     """
+    separator = "/"
 
     # First, make sure what we've gotten is a real LFN
     lfn(candidate)
@@ -532,10 +531,10 @@ def parseLFN(candidate):
         parts.remove('')
     if 'user' in parts[1:3] or 'group' in parts[1:3]:
         if parts[1] in ['user', 'group']:
-            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:2])
             parts = parts[2:]
         else:
-            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:3])
             parts = parts[3:]
 
         final['hnName'] = parts[0]
@@ -549,10 +548,10 @@ def parseLFN(candidate):
 
     if len(parts) == 8:
         # Then we have only two locations
-        final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:2])
         parts = parts[2:]
     elif len(parts) == 9:
-        final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:3])
         parts = parts[3:]
     else:
         # How did we end up here?
@@ -580,6 +579,7 @@ def parseLFNBase(candidate):
 
     Return a meaningful dictionary with info from an LFNBase
     """
+    separator = "/"
 
     # First, make sure what we've gotten is a real LFNBase
     lfnBase(candidate)
@@ -592,10 +592,10 @@ def parseLFNBase(candidate):
 
     if 'user' in parts[1:3] or 'group' in parts[1:3]:
         if parts[1] in ['user', 'group']:
-            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:2])
             parts = parts[2:]
         else:
-            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:3])
             parts = parts[3:]
 
         final['hnName'] = parts[0]
@@ -607,10 +607,10 @@ def parseLFNBase(candidate):
 
     if len(parts) == 6:
         # Then we have only two locations
-        final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:2])
         parts = parts[2:]
     elif len(parts) == 7:
-        final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:3])
         parts = parts[3:]
     else:
         # How did we end up here?
@@ -646,12 +646,12 @@ def sanitizeURL(url):
 
     # Build a URL without the username/password information
     url = urlparse.urlunparse(
-            [endpoint_components.scheme,
-             netloc,
-             endpoint_components.path,
-             endpoint_components.params,
-             endpoint_components.query,
-             endpoint_components.fragment])
+        [endpoint_components.scheme,
+         netloc,
+         endpoint_components.path,
+         endpoint_components.params,
+         endpoint_components.query,
+         endpoint_components.fragment])
 
     return {'url': url, 'username': endpoint_components.username,
             'password': endpoint_components.password}

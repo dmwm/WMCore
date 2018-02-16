@@ -139,7 +139,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('WMBSUrl', None)  # this will only be set on local Queue
         if self.params.get('WMBSUrl'):
             self.params['WMBSUrl'] = Lexicon.sanitizeURL(self.params['WMBSUrl'])['url']
-        self.params.setdefault('Teams', [])
+        self.params.setdefault('Team', "")
 
         if self.params.get('CacheDir'):
             try:
@@ -770,7 +770,7 @@ class WorkQueue(WorkQueueBase):
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
         numElems = self.params['WorkPerCycle']
-        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Teams'], numElems=numElems)
+        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
 
         if not work:
             msg = 'No available work in parent queue.'

@@ -23,7 +23,7 @@ REQUEST_PROPERTY_MAP = {
     "OutputDatasets": "outputdatasets",
     "RequestTransition": "request_status",  # Status: status,  UpdateTime: update_time
     "SiteWhitelist": "site_white_list",
-    "Teams": "teams",
+    "Team": "team",
     "TotalEstimatedJobs": "total_jobs",
     "TotalInputEvents": "input_events",
     "TotalInputLumis": "input_lumis",
@@ -259,18 +259,17 @@ class WMStatsReader(object):
 
         for agentInfo in result["rows"]:
             #filtering empty string
-            orgteams = agentInfo['value']['agent_team'].split(',')
-            teams = [t for t in orgteams if t]
-            for team in teams:
-                response.setdefault(team, 0)
+            team = agentInfo['value']['agent_team']
+            if not team:
+                continue
 
+            response.setdefault(team, 0)
             if filterDrain:
                 if not agentInfo['value'].get('drain_mode', False):
-                    for team in teams:
-                        response[team] += 1
-            else:
-                for team in teams:
                     response[team] += 1
+            else:
+                response[team] += 1
+
         return response
 
     def getServerInstance(self):

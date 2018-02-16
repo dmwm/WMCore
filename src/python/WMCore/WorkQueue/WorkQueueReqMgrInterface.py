@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Helper class for RequestManager interaction
+"""
+Helper class for RequestManager interaction
 """
 import os
 import time
@@ -215,9 +216,9 @@ class WorkQueueReqMgrInterface(object):
             for request in requests.values():
                 filteredResults.append(request)
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
-        filteredResults.sort(key=lambda r: r["Teams"][0])
+        filteredResults.sort(key=lambda r: r["Team"])
 
-        results = [(x["Teams"][0], x["RequestName"], x["RequestWorkflow"]) for x in filteredResults]
+        results = [(x["Team"], x["RequestName"], x["RequestWorkflow"]) for x in filteredResults]
 
         return results
 

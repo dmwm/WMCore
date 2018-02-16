@@ -4,7 +4,7 @@ _ResourceControl_
 
 Library from manipulating and querying the resource control database.
 """
-
+import logging
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -244,7 +244,10 @@ class ResourceControl(WMConnectionBase):
 
         List the thresholds of a single site
         """
+        logging.info("AMR going to execute thresholdBySite")
         listActions = self.daofactory(classname="ThresholdBySite")
-        return listActions.execute(site=siteName,
+        data = listActions.execute(site=siteName,
                                    conn=self.getDBConn(),
                                    transaction=self.existingTransaction())
+        logging.info("AMR done executing thresholdBySite")
+        return data

@@ -379,7 +379,9 @@ class Request(RESTEntity):
          1. RequestPriority
          2. Global workqueue statistics, while acquiring a workflow
         """
-        if 'RequestPriority' in request_args and len(request_args) == 1:
+        if 'RequestPriority' in request_args:
+            # Yes, we completely ignore any other arguments posted by the user (web UI case)
+            request_args = {'RequestPriority': request_args['RequestPriority']}
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)

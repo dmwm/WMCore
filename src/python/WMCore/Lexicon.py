@@ -7,29 +7,29 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
 from __future__ import print_function, division
+
 import io
-import re
-import string
-import urlparse
-import mmap
 import logging
+import mmap
+import re
+import urlparse
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
 # restriction enforced by DBS. for different types blocks.
 # It could have a strict restriction
 # i.e production should end with v[number]
-PRIMARY_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 99}
+PRIMARY_DS = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 99}
 PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
 TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
 BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
 
 lfnParts = {
     'era': '([a-zA-Z0-9\-_]+)',
-    'primDS': '(%(re)s)' % PRIMARY_DS,
+    'primDS': '([a-zA-Z][a-zA-Z0-9\-_]*)',
     'tier': '(%(re)s)' % TIER,
     'version': '([a-zA-Z0-9\-_]+)',
-    'secondary': '([a-zA-Z0-9\-_]+)',
+    'procDS': '([a-zA-Z0-9\-_]+)',  # Processed dataset = Processing string + Processing version
     'counter': '([0-9]+)',
     'root': '([a-zA-Z0-9\-_]+).root',
     'hnName': '([a-zA-Z0-9\.]+)',
@@ -45,10 +45,11 @@ userProcDSParts = {
     'psethash': '([a-f0-9]){32}'
 }
 
-STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
+STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(procDS)s' % lfnParts
 
 # condor log filtering lexicons
-WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_FILTER = "(?P<WMException>\%s(?!<@).*?\%s)" % (WMEXCEPTION_START_STR, WMEXCEPTION_END_STR)
+WMEXCEPTION_FILTER += "|(?P<ERROR>(ERROR:root:.*?This is a CRITICAL error))"
 WMEXCEPTION_REGEXP = re.compile(r"%s" % WMEXCEPTION_FILTER, re.DOTALL)
 
 CONDOR_LOG_REASON_FILTER = '<a n="Reason"><s>(?P<Reason>(?!</s></a>).*?)</s></a>'
@@ -71,15 +72,22 @@ def DBSUser(candidate):
     r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_\']*$'
     r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
 
+    errorMsg = "DBSUser candidate: %s doesn't match any of the following regular expressions:\n" % candidate
     try:
         return check(r1, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % r1
 
     try:
         return check(r2, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % r2
+
+    try:
         return check(r3, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % r3
+        raise AssertionError(errorMsg)
 
 
 def searchblock(candidate):
@@ -291,6 +299,7 @@ def acqname(candidate):
     else:
         return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
+
 def campaign(candidate):
     """
     Check for Campaign name.
@@ -300,6 +309,7 @@ def campaign(candidate):
         return True
     return check(r'^[a-zA-Z0-9-_]{1,80}$', candidate)
 
+
 def primdataset(candidate):
     """
     Check for primary dataset name.
@@ -307,8 +317,7 @@ def primdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and
-            check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate))
+    return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
 
 
 def hnName(candidate):
@@ -332,74 +341,82 @@ def lfn(candidate):
 
     Add for LHE files: /data/lhe/...
     """
-    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp1 = '/([a-z]+)/([a-z0-9]+)/(%(era)s)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root' % lfnParts
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(procDS)s/%(version)s/%(counter)s/%(root)s' % lfnParts
     regexp4 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/(%(subdir)s/)+%(root)s' % lfnParts
 
     oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s(/%(counter)s)?/%(root)s' % lfnParts
 
-    storeMcLFN = '/store/mc/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root'
+    storeMcLFN = '/store/mc/(%(era)s)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root' % lfnParts
 
-    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
+    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(procDS)s/%(primDS)s/%(tier)s/%(procDS)s/%(counter)s/%(root)s' % lfnParts
 
     storeResultRootPart = '%(counter)s/%(root)s' % lfnParts
     storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
 
     lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
     # This is for future lhe LFN structure. Need to be tested.
-    lheLFN2 = '/store/lhe/%(primDS)s/%(secondary)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+    lheLFN2 = '/store/lhe/%(era)s/%(primDS)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
+
+    errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
     try:
         return check(regexp1, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp1
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp2
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp3
 
     try:
         return check(regexp4, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp4
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % tier0LFN
 
     try:
         return check(oldStyleTier0LFN, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % oldStyleTier0LFN
 
     try:
         return check(storeMcLFN, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % storeMcLFN
 
     try:
         return check(lheLFN1, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % lheLFN1
 
     try:
         return check(lheLFN2, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % lheLFN2
 
     try:
         return check(storeResults2LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % storeResults2LFN
+
+    try:
         return check(storeResultsLFN, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % storeResultsLFN
+        raise AssertionError(errorMsg)
 
 
 def lfnBase(candidate):
@@ -409,29 +426,37 @@ def lfnBase(candidate):
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
     regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
-    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(procDS)s/%(version)s' % lfnParts
 
     tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
+
+    errorMsg = "LFN candidate: %s doesn't match any of the following regular expressions:\n" % candidate
 
     try:
         return check(regexp1, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp1
 
     try:
         return check(regexp2, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp2
 
     try:
         return check(regexp3, candidate)
     except AssertionError:
-        pass
+        errorMsg += "  %s\n" % regexp3
 
     try:
         return check(tier0LFN, candidate)
     except AssertionError:
+        errorMsg += "  %s\n" % tier0LFN
+
+    try:
         return check(STORE_RESULTS_LFN, candidate)
+    except AssertionError:
+        errorMsg += "  %s\n" % STORE_RESULTS_LFN
+        raise AssertionError(errorMsg)
 
 
 def userLfn(candidate):
@@ -494,6 +519,7 @@ def parseLFN(candidate):
 
     Take an LFN, return the component parts
     """
+    separator = "/"
 
     # First, make sure what we've gotten is a real LFN
     lfn(candidate)
@@ -505,10 +531,10 @@ def parseLFN(candidate):
         parts.remove('')
     if 'user' in parts[1:3] or 'group' in parts[1:3]:
         if parts[1] in ['user', 'group']:
-            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:2])
             parts = parts[2:]
         else:
-            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:3])
             parts = parts[3:]
 
         final['hnName'] = parts[0]
@@ -522,10 +548,10 @@ def parseLFN(candidate):
 
     if len(parts) == 8:
         # Then we have only two locations
-        final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:2])
         parts = parts[2:]
     elif len(parts) == 9:
-        final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:3])
         parts = parts[3:]
     else:
         # How did we end up here?
@@ -553,6 +579,7 @@ def parseLFNBase(candidate):
 
     Return a meaningful dictionary with info from an LFNBase
     """
+    separator = "/"
 
     # First, make sure what we've gotten is a real LFNBase
     lfnBase(candidate)
@@ -565,10 +592,10 @@ def parseLFNBase(candidate):
 
     if 'user' in parts[1:3] or 'group' in parts[1:3]:
         if parts[1] in ['user', 'group']:
-            final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:2])
             parts = parts[2:]
         else:
-            final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+            final['baseLocation'] = '/%s' % separator.join(parts[:3])
             parts = parts[3:]
 
         final['hnName'] = parts[0]
@@ -580,10 +607,10 @@ def parseLFNBase(candidate):
 
     if len(parts) == 6:
         # Then we have only two locations
-        final['baseLocation'] = '/%s' % string.join(parts[:2], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:2])
         parts = parts[2:]
     elif len(parts) == 7:
-        final['baseLocation'] = '/%s' % string.join(parts[:3], '/')
+        final['baseLocation'] = '/%s' % separator.join(parts[:3])
         parts = parts[3:]
     else:
         # How did we end up here?
@@ -619,12 +646,12 @@ def sanitizeURL(url):
 
     # Build a URL without the username/password information
     url = urlparse.urlunparse(
-            [endpoint_components.scheme,
-             netloc,
-             endpoint_components.path,
-             endpoint_components.params,
-             endpoint_components.query,
-             endpoint_components.fragment])
+        [endpoint_components.scheme,
+         netloc,
+         endpoint_components.path,
+         endpoint_components.params,
+         endpoint_components.query,
+         endpoint_components.fragment])
 
     return {'url': url, 'username': endpoint_components.username,
             'password': endpoint_components.password}

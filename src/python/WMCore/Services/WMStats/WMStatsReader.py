@@ -2,9 +2,9 @@ from __future__ import division, print_function
 
 from Utils.IteratorTools import nestedDictUpdate
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -208,7 +208,7 @@ class WMStatsReader(object):
         options["group"] = True
         result = self._getCouchView("requestAgentUrl", options)
 
-        if filterRequest == None:
+        if filterRequest is None:
             keys = [row['key'] for row in result["rows"]]
         else:
             keys = [row['key'] for row in result["rows"] if row['key'][0] in filterRequest]

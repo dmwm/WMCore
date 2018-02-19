@@ -733,30 +733,16 @@ class WorkQueueTest(WorkQueueTestCase):
         slots = {'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}
 
         # Can't get work for wrong team
-        self.localQueue.params['Teams'] = ['other']
+        self.localQueue.params['Team'] = 'other'
         self.assertEqual(self.localQueue.pullWork(slots), 0)
         # and with correct team name
-        self.localQueue.params['Teams'] = ['The A-Team']
+        self.localQueue.params['Team'] = 'The A-Team'
         self.assertEqual(self.localQueue.pullWork(slots), 1)
         syncQueues(self.localQueue)
         # when work leaves the queue in the agent it doesn't care about teams
-        self.localQueue.params['Teams'] = ['other']
+        self.localQueue.params['Team'] = 'other'
         self.assertEqual(len(self.localQueue.getWork(slots, {})), 1)
         self.assertEqual(0, len(self.globalQueue))
-
-    def testMultipleTeams(self):
-        """Multiple teams"""
-        slots = {'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}
-        self.globalQueue.queueWork(self.spec.specUrl(), team='The B-Team')
-        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
-        self.globalQueue.queueWork(processingSpec.specUrl(), team='The C-Team')
-        self.globalQueue.processInboundWork()
-        self.globalQueue.updateLocationInfo()
-
-        self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
-        self.assertEqual(self.localQueue.pullWork(slots), NBLOCKS_HICOMM + 1)
-        syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.getWork(slots, {})), NBLOCKS_HICOMM + 1)
 
     def testSplittingLargeInputs(self):
         """

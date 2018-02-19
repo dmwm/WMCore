@@ -3,19 +3,19 @@
 Helper class for RequestManager interaction
 """
 import os
-import time
 import socket
-import traceback
 import threading
+import time
+import traceback
 from operator import itemgetter
 
 from WMCore import Lexicon
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError, TERMINAL_EXCEPTIONS
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
+from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError, TERMINAL_EXCEPTIONS
 
 
 class WorkQueueReqMgrInterface(object):
@@ -50,7 +50,7 @@ class WorkQueueReqMgrInterface(object):
             msg += "New Work: %d\n" % work
         except Exception as ex:
             errorMsg = "Error caught during RequestManager pull"
-            self.logger.exception("%s: %s",  errorMsg, str(ex))
+            self.logger.exception("%s: %s", errorMsg, str(ex))
 
         try:  # get additional open-running work
             self.logger.info("adding new element to open requests")
@@ -58,7 +58,7 @@ class WorkQueueReqMgrInterface(object):
             msg += "Work added: %d\n" % extraWork
         except Exception as ex:
             errorMsg = "Error caught during RequestManager split"
-            self.logger.exception("%s: %s",  errorMsg, str(ex))
+            self.logger.exception("%s: %s", errorMsg, str(ex))
 
         try:  # report back to ReqMgr
             self.logger.info("cancel aborted requests")
@@ -67,7 +67,7 @@ class WorkQueueReqMgrInterface(object):
             msg += "Work canceled: %s " % count
         except Exception as ex:
             errorMsg = "Error caught during canceling the request"
-            self.logger.exception("%s: %s",  errorMsg, str(ex))
+            self.logger.exception("%s: %s", errorMsg, str(ex))
 
         queue.backend.recordTaskActivity('reqmgr_sync', msg)
 
@@ -249,7 +249,7 @@ class WorkQueueReqMgrInterface(object):
                          'Canceled': 'aborted',
                          'CancelRequested': 'aborted',
                          'Done': 'completed'
-                        }
+                         }
         if status in statusMapping:
             # if wq status passed convert to reqmgr status
             return statusMapping[status]

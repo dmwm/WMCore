@@ -784,7 +784,7 @@ class WorkQueue(WorkQueueBase):
         If resources passed in get work for them, if not available resources
         from get from wmbs.
         """
-        if self.pullWorkConditionCheck() == False:
+        if self.pullWorkConditionCheck() is False:
             return 0
 
         (resources, jobCounts) = self.freeResouceCheck(resources)
@@ -900,7 +900,7 @@ class WorkQueue(WorkQueueBase):
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
         for key, value in requestsInfo.items():
-            if (value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates):
+            if (value["RequestStatus"] is None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
 
         return self.backend.deleteWQElementsByWorkflow(deleteRequests)

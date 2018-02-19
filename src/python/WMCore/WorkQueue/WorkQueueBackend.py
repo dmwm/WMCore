@@ -8,7 +8,6 @@ Interface to WorkQueue persistent storage
 import json
 import random
 import time
-import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
@@ -48,7 +47,7 @@ class WorkQueueBackend(object):
             import logging
             self.logger = logging
 
-        if inbox_name == None:
+        if inbox_name is None:
             inbox_name = "%s_inbox" % db_name
 
         self.server = CouchServer(db_url)
@@ -168,7 +167,7 @@ class WorkQueueBackend(object):
                        'StartPolicy': spec.startPolicyParameters(),
                        'EndPolicy': spec.endPolicyParameters(),
                        'OpenForNewData': False
-                      })
+                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams=kwargs)
         unit.id = spec.name()
         return unit
@@ -268,7 +267,7 @@ class WorkQueueBackend(object):
 
     def _raiseConflictErrorAndLog(self, conflictIDs, updatedParams, dbName="workqueue"):
         errorMsg = "Need to update this element manually from %s\n ids:%s\n, parameters:%s\n" % (
-                                            dbName, conflictIDs, updatedParams)
+            dbName, conflictIDs, updatedParams)
         self.logger.error(errorMsg)
         raise WorkQueueError(errorMsg)
 

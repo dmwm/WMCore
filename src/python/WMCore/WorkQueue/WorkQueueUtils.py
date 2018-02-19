@@ -117,12 +117,12 @@ def queueConfigFromConfigObject(config):
         wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
 
     # pull some info we need from other areas of the config
-    if not "BossAirConfig" in qConfig and hasattr(config, 'BossAir'):
+    if "BossAirConfig" not in qConfig and hasattr(config, 'BossAir'):
         qConfig["BossAirConfig"] = config
         qConfig['BossAirConfig'].section_("Agent").agentName = config.Agent.agentName
-    if not "JobDumpConfig" in qConfig and hasattr(config, 'JobStateMachine'):
+    if "JobDumpConfig" not in qConfig and hasattr(config, 'JobStateMachine'):
         qConfig["JobDumpConfig"] = config
-    if not "CacheDir" in qConfig and getattr(config.WorkQueueManager, 'componentDir', None):
+    if "CacheDir" not in qConfig and getattr(config.WorkQueueManager, 'componentDir', None):
         qConfig['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'cache')
 
     # alert api needs full agent config

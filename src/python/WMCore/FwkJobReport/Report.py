@@ -213,6 +213,7 @@ class Report(object):
         Create a JSON version of the Report.
         """
         jsonReport = {}
+        jsonReport["WorkerNodeInfo"] = self.getWorkerNodeInfo()
         jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
         jsonReport["skippedFiles"] = self.getAllSkippedFiles()
@@ -553,7 +554,6 @@ class Report(object):
             self.addStep(stepName, status=1)
 
         stepSection = self.retrieveStep(stepName)
-
         errorCount = getattr(stepSection.errors, "errorCount", 0)
         errEntry = "error%s" % errorCount
         stepSection.errors.section_(errEntry)
@@ -563,6 +563,7 @@ class Report(object):
         errDetails.details = errorDetails
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
+        self.setStepStatus(stepName=stepName, status=exitCode)
         return
 
     def addSkippedFile(self, lfn, pfn):
@@ -1513,3 +1514,10 @@ class Report(object):
                     delattr(source.files, "file%d" % fileNum)
                 source.files.fileCount = 0
         return
+
+    def getWorkerNodeInfo(self):
+        wnInfo = {"HostName": self.data.hostName,
+                  "MachineFeatures": self.data.machineFeatures,
+                  "JobFeatures": self.data.jobFeatures}
+
+        return wnInfo

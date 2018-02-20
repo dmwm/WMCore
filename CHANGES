@@ -1,3 +1,26 @@
+1.1.10 to 1.1.10.patch3:
+  - Merge pull request #8466 from ticoann/wmagent_10_patch3
+  - initial patch for worker node data update
+  - fix exicode 0 when job failed for log Collector
+  - Merge pull request #8462 from amaltaro/long-quantize-1110
+  - Accept long data type as input for quantize
+  - 1.1.10.patch2
+  - Merge pull request #8455 from amaltaro/patch2-1110
+  - add lock time out in db exception list
+  - Properly create dummy files in the job wrapper
+  - Change requestDisk rounding to base 10
+  - 1.1.10.patch1
+  - Merge pull request #8425 from amaltaro/logArchive-moreLogs
+  - Merge pull request #8418 from amaltaro/deploy-drain
+  - Merge pull request #8375 from amaltaro/templates-inclParents
+  - Merge pull request #8429 from amaltaro/quantize
+  - StepChain template with IncludeParents; fixed TaskChain one
+  - pylint fixes
+  - Add all WMRuntime logs to the job logArchive; improve logging
+  - Set agents connected to "production" team to drain mode
+  - Quantize job time and disk usage
+  - Math function to quantize data
+
 1.1.10 to 1.1.10.patch2:
   - Merge pull request #8455 from amaltaro/patch2-1110
   - add lock time out in db exception list

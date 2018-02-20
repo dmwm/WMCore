@@ -51,7 +51,7 @@ class SOMExceptionHandler(DiagnosticHandler):
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
             localmsg = "Job Report contains no error report, but StageOutManager exited non-zero: %s" % errCode
-            executor.report.addError(50116, "MissingErrorReport", localmsg)
+            executor.report.addError(executor.stepName, 50116, "MissingErrorReport", localmsg)
 
         else:
             #check exit code in report is non zero
@@ -59,7 +59,7 @@ class SOMExceptionHandler(DiagnosticHandler):
                 msg = "Job Report contains no error report, but StageOutManager exited non-zero: %s" % errCode
 
 
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  errCode, description, msg)
 
         return

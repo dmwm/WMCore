@@ -28,6 +28,12 @@ class BootstrapException(WMException):
     """ An awesome exception """
     pass
 
+def readFloatFromFile(filePath):
+    try:
+        with open(filePath, "r") as nf:
+            return float(nf.readline())
+    except:
+        return None
 
 # Copied direct from ProdAgent to find the damn CE name
 def getSyncCE():
@@ -231,12 +237,18 @@ def createInitialReport(job, reportName):
     # $MACHINEFEATURES/total_cpu: number of configured job slots
     # $JOBFEATURES/hs06_job: HS06 score available to your job
     # $JOBFEATURES/allocated_cpu: number of allocated slots (=8 in case of a multicore job
+
+    machineFeaturesFile = os.environ.get('MACHINEFEATURES')
     report.data.machineFeatures = {}
-    report.data.machineFeatures['HS06_SCORE_HOST'] = os.environ.get('MACHINEFEATURES/hs06')
-    report.data.machineFeatures['TOTAL_CPU'] = os.environ.get('MACHINEFEATURES/total_cpu')
+    if machineFeaturesFile:
+        report.data.machineFeatures['hs06'] = readFloatFromFile("%s/hs06" % machineFeaturesFile)
+        report.data.machineFeatures['total_cpu'] = readFloatFromFile("%s/total_cpu" % machineFeaturesFile)
+
+    jobFeaturesFile = os.environ.get('JOBFEATURES')
     report.data.jobFeatures = {}
-    report.data.jobFeatures['HS06_SCORE_JOB'] = os.environ.get('JOBFEATURES/hs06_job')
-    report.data.jobFeatures['ALLOCATED_CPU'] = os.environ.get('JOBFEATURES/allocated_cpu')
+    if jobFeaturesFile:
+        report.data.jobFeatures['hs06_job'] = readFloatFromFile("%s/hs06_job" % jobFeaturesFile)
+        report.data.jobFeatures['allocated_cpu'] = readFloatFromFile("%s/allocated_cpu" % jobFeaturesFile)
 
     report.data.completed = False
     report.setTaskName(taskName=job.get('task', 'TaskNotFound'))

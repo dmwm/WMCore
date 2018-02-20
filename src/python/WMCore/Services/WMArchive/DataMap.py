@@ -417,9 +417,13 @@ def createArchiverDoc(job, version=None):
         import WMCore
         version = WMCore.__version__
     # append meta data in fwjr
+    wnName = ""
+    if "WorkerNodeInfo" in fwjr:
+        wnName = fwjr["WorkerNodeInfo"].get("HostName", "")
+
     newfwjr['meta_data'] = {'agent_ver': version,
                          'host': socket.gethostname().lower(),
-                         'wn_info': fwjr["WorkerNodeInfo"],
+                         'wn_name': wnName,
                          'fwjr_id': job_id,
                          'jobtype': jobtype,
                          'jobstate': jobstate,

@@ -170,7 +170,7 @@ config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = globalLogLevel
 config.JobAccountant.workerThreads = 1
-config.JobAccountant.pollInterval = 60
+config.JobAccountant.pollInterval = 300
 config.JobAccountant.specDir = config.General.workDir + "/JobAccountant/SpecCache"
 
 config.component_("JobCreator")

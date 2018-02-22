@@ -8,7 +8,6 @@ Interface to WorkQueue persistent storage
 import json
 import random
 import time
-import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
@@ -48,7 +47,7 @@ class WorkQueueBackend(object):
             import logging
             self.logger = logging
 
-        if inbox_name == None:
+        if inbox_name is None:
             inbox_name = "%s_inbox" % db_name
 
         self.server = CouchServer(db_url)
@@ -168,7 +167,7 @@ class WorkQueueBackend(object):
                        'StartPolicy': spec.startPolicyParameters(),
                        'EndPolicy': spec.endPolicyParameters(),
                        'OpenForNewData': False
-                      })
+                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams=kwargs)
         unit.id = spec.name()
         return unit
@@ -268,7 +267,7 @@ class WorkQueueBackend(object):
 
     def _raiseConflictErrorAndLog(self, conflictIDs, updatedParams, dbName="workqueue"):
         errorMsg = "Need to update this element manually from %s\n ids:%s\n, parameters:%s\n" % (
-                                            dbName, conflictIDs, updatedParams)
+            dbName, conflictIDs, updatedParams)
         self.logger.error(errorMsg)
         raise WorkQueueError(errorMsg)
 
@@ -318,7 +317,7 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None,
+    def availableWork(self, thresholds, siteJobCounts, team=None, wfs=None,
                       excludeWorkflows=None, numElems=9999999):
         """
         Get work which is available to be run
@@ -356,9 +355,9 @@ class WorkQueueBackend(object):
         options['include_docs'] = True
         options['descending'] = True
         options['resources'] = thresholds
-        if teams:
-            options['teams'] = teams
-            self.logger.info("setting teams %s" % teams)
+        if team:
+            options['team'] = team
+            self.logger.info("setting team to %s" % team)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):

@@ -3,7 +3,7 @@ function(head, req) {
   // Apply restrictions provided in query to find elements that can run
   // at the given sites.
 
-  // Include checks on data location, site white/blacklists & teams.
+  // Include checks on data location, site white/blacklists & team.
 
   // Return at least one element for each site with free job slots,
   // then take element size into account for further allocation.
@@ -20,12 +20,12 @@ function(head, req) {
         return;
     }
   
-    var teams = [];
-    if (req.query.teams) {
+    var team = "";
+    if (req.query.team) {
         try {
-            teams = JSON.parse(req.query.teams);
+            team = JSON.parse(req.query.team);
         } catch (ex) {
-            send('"Error parsing teams" ' + req.query.teams);
+            send('"Error parsing team" ' + req.query.team);
             return;
         }
     }
@@ -57,7 +57,7 @@ function(head, req) {
         var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
 
         // check work is for a team in the request
-        if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
+        if (team && ele["TeamName"] && team !== ele["TeamName"]) {
             continue;
         }
 

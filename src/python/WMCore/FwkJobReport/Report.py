@@ -1516,8 +1516,8 @@ class Report(object):
         return
 
     def getWorkerNodeInfo(self):
-        wnInfo = {"HostName": self.data.hostName,
-                  "MachineFeatures": self.data.machineFeatures,
-                  "JobFeatures": self.data.jobFeatures}
+        wnInfo = {"HostName": getattr(self.data, 'hostName', ''),
+                  "MachineFeatures": getattr(self.data, 'machineFeatures', {}),
+                  "JobFeatures": getattr(self.data, 'jobFeatures', {})}
 
         return wnInfo

@@ -1051,7 +1051,6 @@ class StdBase(object):
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
                       "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
-                      "MaxRSS": {"default": 2300, "type": int, "validate": lambda x: x > 0},
                       "MaxVSize": {"default": 1024 * 1024, "type": int, "validate": lambda x: x > 0}
                       }
 

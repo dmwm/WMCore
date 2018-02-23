@@ -1,3 +1,49 @@
+1.1.10 to 1.1.11.pre2:
+  - Merge pull request #8482 from amaltaro/bloody-wnInfo
+  - Handle worker node info when there was no worker node in the job lifetime
+  - Merge pull request #8452 from amaltaro/defaultDocs-reqmgrAux
+  - Merge pull request #8464 from amaltaro/teams-7355
+  - Replace DEFAULT reqmgr aux docs when requested
+  - fix pylint and unit test
+  - Remove remaining Teams code
+  - Merge pull request #8475 from amaltaro/deploy-1110patch4
+  - Bump deployment example
+  - Merge pull request #8469 from amaltaro/jobAcc-cycle
+  - Merge pull request #8470 from ticoann/add_host_name_wmarchive
+  - add worker_node name in wmarchive
+  - Bump JobAccountant polling cycle to 5min
+  - 1.1.11.pre1
+  - Merge pull request #8424 from ticoann/fix_exitcode
+  - Merge pull request #8304 from ticoann/fwjr_update_hostname
+  - fix exicode 0 when job failed for log Collector
+  - initial patch for worker node data update
+  - Merge pull request #8440 from amaltaro/primdset-validation
+  - Merge pull request #8461 from amaltaro/long-quantize
+  - Merge pull request #8463 from amaltaro/fix-8457
+  - Ignore anything but RequestPriority for no status update
+  - pylint fixes
+  - Accept long data type as input for quantize
+  - Merge pull request #8454 from ticoann/lock_timeout_retry
+  - Merge pull request #8447 from amaltaro/submit-wmaJobLog
+  - Merge pull request #8444 from amaltaro/decimal-disk
+  - add lock time out in db exception list
+  - Enforce primary dataset to start with a letter - Lexicon
+  - Merge pull request #8445 from amaltaro/addT3s-only
+  - Properly create dummy files in the job wrapper
+  - Add option to insert only T3 sites into resource control
+  - Change requestDisk rounding to base 10
+  - 1.1.10.patch1
+  - Merge pull request #8425 from amaltaro/logArchive-moreLogs
+  - Merge pull request #8418 from amaltaro/deploy-drain
+  - Merge pull request #8375 from amaltaro/templates-inclParents
+  - Merge pull request #8429 from amaltaro/quantize
+  - StepChain template with IncludeParents; fixed TaskChain one
+  - pylint fixes
+  - Add all WMRuntime logs to the job logArchive; improve logging
+  - Set agents connected to "production" team to drain mode
+  - Quantize job time and disk usage
+  - Math function to quantize data
+
 1.1.10 to 1.1.11.pre1:
   - Merge pull request #8424 from ticoann/fix_exitcode
   - Merge pull request #8304 from ticoann/fwjr_update_hostname

@@ -75,7 +75,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
         if self.mockReqMgrAux:
             self.reqMgrAuxPatchers = []
             patchReqMgrAuxAt = ['WMCore.Services.ReqMgrAux.ReqMgrAux.ReqMgrAux',
-                                'WMComponent.JobSubmitter.JobSubmitterPoller.ReqMgrAux']
+                                'WMComponent.JobSubmitter.JobSubmitterPoller.ReqMgrAux',
+                                'WMComponent.ErrorHandler.ErrorHandlerPoller.ReqMgrAux']
             for module in patchReqMgrAuxAt:
                 self.reqMgrAuxPatchers.append(mock.patch(module, new=MockReqMgrAux))
                 self.reqMgrAuxPatchers[-1].start()

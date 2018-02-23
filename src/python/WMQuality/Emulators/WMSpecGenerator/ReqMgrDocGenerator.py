@@ -41,7 +41,7 @@ def generate_reqmgr_schema(number=NUM_OF_REQUEST):
                "Requestor": "cmsdataops",
                "RequestType": "ReReco"
                #"site_white_list": ["T1_DE_KIT"],
-               #"teams": ["cmsdataops"]
+               #"team": "cmsdataops"
                 }
         docs.append(doc)
     return docs
@@ -79,9 +79,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
        "site_white_list": [
            "T1_DE_KIT"
        ],
-       "teams": [
-           "cmsdataops"
-       ]
+       "team": "cmsdataops"
     }
     """
     docs = []
@@ -102,7 +100,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                                   {"status": "assigned", "update_time": 1326304227}
                                  ],
                 "site_white_list": ["T1_DE_KIT"],
-                "teams": ["cmsdataops"]
+                "teams": "cmsdataops"
                 }
         docs.append(doc)
     return docs

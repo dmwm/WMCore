@@ -27,21 +27,20 @@ class UUIDTest(unittest.TestCase):
 
         listOfIDs = []
 
+        tmpID = makeUUID()
         splitID = None
+        splitID = tmpID.split('-')
 
         for i in range(0,1000):
             tmpID = makeUUID()
-            if not splitID:
-                splitID = tmpID.split('-')
             tmpSplit = tmpID.split('-')
-            self.assertEqual(tmpSplit[1], splitID[1], "Second component of UUID not the same %s != %s" \
-                             %(tmpSplit[1], splitID[1]))
-            self.assertEqual(tmpSplit[2], splitID[2], "Third component of UUID not the same %s != %s" \
-                             %(tmpSplit[2], splitID[2]))
-            self.assertEqual(tmpSplit[4], splitID[4], "Fourth component of UUID not the same %s != %s" \
-                             %(tmpSplit[4], splitID[4]))
+            self.assertNotEqual(tmpSplit[1], splitID[1], "Second component of UUID the same %s != %s"
+                             % (tmpSplit[1], splitID[1]))
+            self.assertNotEqual(tmpSplit[4], splitID[4], "Fourth component of UUID the same %s != %s"
+                             % (tmpSplit[4], splitID[4]))
             self.assertEqual(type(tmpID), str)
-            self.assertEqual(listOfIDs.count(tmpID), 0, "UUID repeated!  %s found in list %i times!" %(tmpID, listOfIDs.count(tmpID)))
+            self.assertEqual(listOfIDs.count(tmpID), 0, "UUID repeated!  %s found in list %i times!"
+                             % (tmpID, listOfIDs.count(tmpID)))
             listOfIDs.append(tmpID)
 
 

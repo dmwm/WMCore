@@ -169,7 +169,7 @@ class StompAMQ(object):
             'metadata': {
                 'timestamp': int(time.time()),
                 'id': id_,
-                'uuid': str(uuid.uuid1()),
+                'uuid': str(uuid.uuid4()),
             }
         }
 

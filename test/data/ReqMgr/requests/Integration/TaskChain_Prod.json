@@ -8,12 +8,6 @@
         }, 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": {
-            "myTask1": 1001,
-            "myTask2": 4001,
-            "myTask3": 2801,
-            "myTask4": 2001
-        }, 
         "MergedLFNBase": "/store/backfill/1",
         "ProcessingString": {
             "myTask1": "ProcessingString-OVERRIDE-ME", 
@@ -40,7 +34,7 @@
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": ["Classic TaskChain production wf; reading PU from DBS prod; Task1 single core, others 4 cores",
-                     "Each task with a different PrepId/AcqEra/ProcStr/ProcVer per task; Diff CMSSW for Task1; MaxRSS set to task Memory + 1"],
+                     "Each task with a different PrepId/AcqEra/ProcStr/ProcVer per task; Diff CMSSW for Task1"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 

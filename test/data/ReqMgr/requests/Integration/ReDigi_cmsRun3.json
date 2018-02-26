@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReDigi with 3 steps, steps 1 and 2 in the same job. Two blocks whitelisted. 100 events per job; 8 cores and 8GB; MaxRSS set to 8.1GB",
+    "Comments": "ReDigi with 3 steps, steps 1 and 2 in the same job. Two blocks whitelisted. 100 events per job; 8 cores and 8GB",
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        
@@ -61,8 +61,6 @@
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 50000,
     "ProcessingVersion": 1,
-    "MaxRSS": 8100,
-    "MaxVSize": 200294,
     "SoftTimeout": 129600,
     "GracePeriod": 300,
     "CustodialSites": [],

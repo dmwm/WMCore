@@ -383,12 +383,12 @@ class WMTaskTest(unittest.TestCase):
 
         testTask = makeWMTask("TestTask")
 
-        testTask.setPerformanceMonitor(maxRSS=100, maxVSize=101, softTimeout=100,
+        testTask.setPerformanceMonitor(softTimeout=100,
                                        gracePeriod=1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 100)
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
+        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxRSS"))
+        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxVSize"))
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return
@@ -607,6 +607,20 @@ class WMTaskTest(unittest.TestCase):
 
         return
 
+    def testMaxRSS(self):
+        """
+        _testMaxRSS_
+
+        Test whether we can properly add MaxRSS performance monitor
+        to this task.
+        """
+        testTask = makeWMTask("TestTask")
+
+        testTask.setMaxRSS(123)
+
+        self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 123)
+        return
 
 if __name__ == '__main__':
     unittest.main()

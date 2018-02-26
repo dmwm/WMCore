@@ -426,6 +426,11 @@ class Request(RESTEntity):
         # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area)
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
 
+        # hacky way to update MaxRSS, if MaxRSS is not set but Memory is set Memory becomes MaxRSS value.
+        # that is how it sets in WMTask setJobResourceInformation method
+        if request_args.get('Memory') and request_args.get('MaxRSS') is not None:
+            request_args['Memory'] = request_args['MaxRSS']
+
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)

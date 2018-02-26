@@ -1749,6 +1749,11 @@ class WMWorkloadHelper(PersistencyHelper):
         if kwargs.get("ProcessingVersion") is not None:
             self.setProcessingVersion(kwargs["ProcessingVersion"])
 
+        # sets the Memory before setting MaxRSS otherwise it will replace MaxRSS value to MaxMemory
+        # if MaxRSS is not None.
+        if kwargs.get("Memory") is not None:
+            self.setMemory(kwargs.get("Memory"))
+
         self.setupPerformanceMonitoring(kwargs.get("MaxRSS"),
                                         kwargs.get("MaxVSize"),
                                         kwargs["SoftTimeout"],
@@ -1765,8 +1770,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
         self.setDashboardActivity(kwargs["Dashboard"])
 
-        if kwargs.get("Memory") is not None:
-            self.setMemory(kwargs.get("Memory"))
         if kwargs.get("Multicore") is not None:
             self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 

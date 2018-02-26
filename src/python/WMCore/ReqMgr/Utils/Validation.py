@@ -81,6 +81,10 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     3. convert data from body to arguments (spec instance, argument with default setting)
     TODO: raise right kind of error with clear message
     """
+    ### TODO: backwards compatibility. Remove these 2 lines in ~HG1805
+    request_args.pop('MaxRSS', None)
+    request_args.pop('MaxVSize', None)
+
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
@@ -165,6 +169,10 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
 
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
+
+    ### TODO: backwards compatibility. Remove these 2 lines in ~HG1805
+    cloned_args.pop('MaxRSS', None)
+    cloned_args.pop('MaxVSize', None)
 
     permission = getWritePermission(cloned_args)
     authz_match(permission['role'], permission['group'])

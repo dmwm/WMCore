@@ -185,9 +185,9 @@ class StdBase(object):
 
         return outputModules
 
-    def addDashboardMonitoring(self, task):
+    def addRuntimeMonitors(self, task):
         """
-        _addDashboardMonitoring_
+        _addRuntimeMonitors_
 
         Add dashboard monitoring for the given task.
         Memory settings are defined in Megabytes and timing in seconds.
@@ -312,7 +312,7 @@ class StdBase(object):
         splitArgs = splitArgs or {'lumis_per_job': 8}
         userFiles = userFiles or []
 
-        self.addDashboardMonitoring(procTask)
+        self.addRuntimeMonitors(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType(stepType)
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
@@ -449,9 +449,7 @@ class StdBase(object):
         procTask.setPrepID(prepID)
 
         # has to be done in the very end such that child tasks are set too
-        procTask.setPerformanceMonitor(maxRSS=memoryReq,
-                                       maxVSize=self.maxVSize,
-                                       softTimeout=taskConf.get("SoftTimeout", None),
+        procTask.setPerformanceMonitor(softTimeout=taskConf.get("SoftTimeout", None),
                                        gracePeriod=taskConf.get("GracePeriod", None))
 
         return outputModules
@@ -564,7 +562,7 @@ class StdBase(object):
         cmsswVersion = cmsswVersion or self.frameworkVersion
         scramArch = scramArch or self.scramArch
         logCollectTask = parentTask.addTask(taskName)
-        self.addDashboardMonitoring(logCollectTask)
+        self.addRuntimeMonitors(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectStep.setNewStageoutOverride(self.enableNewStageout)
@@ -600,7 +598,7 @@ class StdBase(object):
         taskConf = taskConf or {}
 
         mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
-        self.addDashboardMonitoring(mergeTask)
+        self.addRuntimeMonitors(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 
@@ -702,7 +700,7 @@ class StdBase(object):
             forceTaskName = parentTask.name()
 
         cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (forceTaskName, parentOutputModuleName))
-        self.addDashboardMonitoring(cleanupTask)
+        self.addRuntimeMonitors(cleanupTask)
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
@@ -738,7 +736,7 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-        self.addDashboardMonitoring(harvestTask)
+        self.addRuntimeMonitors(harvestTask)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -1050,9 +1048,7 @@ class StdBase(object):
                       "RequestDate": {"optional": False, "type": list},
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
-                      "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
-                      "MaxRSS": {"default": 2300, "type": int, "validate": lambda x: x > 0},
-                      "MaxVSize": {"default": 1024 * 1024, "type": int, "validate": lambda x: x > 0}
+                      "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
                       }
 
         arguments.update(reqmgrArgs)
@@ -1121,8 +1117,6 @@ class StdBase(object):
                      "TrustPUSitelists": {"default": False, "type": strToBool},
                      "AllowOpportunistic": {"default": False, "type": strToBool},
                      # from assignment: performance monitoring data
-                     "MaxRSS": {"type": int, "null": True, "validate": lambda x: x > 0},
-                     "MaxVSize": {"type": int, "null": True, "validate": lambda x: x > 0},
                      "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
                      "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
                      "HardTimeout": {"default": 129600 + 300, "type": int, "validate": lambda x: x > 0},

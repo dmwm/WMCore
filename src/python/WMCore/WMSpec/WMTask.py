@@ -1193,8 +1193,7 @@ class WMTaskHelper(TreeHelper):
                 task.setMaxVSize(maxVSize)
         return
 
-    def setPerformanceMonitor(self, maxRSS=None, maxVSize=None,
-                              softTimeout=None, gracePeriod=None):
+    def setPerformanceMonitor(self, softTimeout=None, gracePeriod=None):
         """
         _setPerformanceMonitor_
 
@@ -1203,10 +1202,6 @@ class WMTaskHelper(TreeHelper):
         # make sure there is a PerformanceMonitor section in the task
         self._setPerformanceMonitorConfig()
 
-        if maxRSS:
-            self.setMaxRSS(maxRSS)
-        if maxVSize:
-            self.setMaxVSize(maxVSize)
         if softTimeout:
             self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
             if gracePeriod:
@@ -1512,9 +1507,7 @@ class WMTaskHelper(TreeHelper):
         """
         propMap = {"ProcessingVersion": self.setProcessingVersion,
                    "AcquisitionEra": self.setAcquisitionEra,
-                   "ProcessingString": self.setProcessingString,
-                   "MaxRSS": self.setMaxRSS,
-                   "MaxVSize": self.setMaxVSize
+                   "ProcessingString": self.setProcessingString
                    }
         return propMap
 

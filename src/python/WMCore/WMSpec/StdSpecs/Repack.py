@@ -93,7 +93,7 @@ class RepackWorkloadFactory(StdBase):
 
         """
         mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModuleName))
-        self.addDashboardMonitoring(mergeTask)
+        self.addRuntimeMonitors(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 

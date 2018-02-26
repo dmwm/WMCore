@@ -204,8 +204,10 @@ class PerformanceMonitor(WMRuntimeMonitor):
             rss = int(output[2])
             vsize = int(output[3])
         else:
-            rss = int(output[2]) // 1024  # convert it to MiB
-            vsize = int(output[3]) // 1024  # convert it to MiB
+            # ps returns data in kiloBytes, let's make it megaBytes
+            # I'm so confused with these megabytes and mebibytes...
+            rss = int(output[2]) // 1000  # convert it to MiB
+            vsize = int(output[3]) // 1000  # convert it to MiB
         logging.info("Retrieved following performance figures:")
         logging.info("RSS: %s;  VSize: %s; PCPU: %s; PMEM: %s", output[2], output[3],
                      output[4], output[5])

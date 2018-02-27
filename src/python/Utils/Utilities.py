@@ -3,6 +3,8 @@
 from __future__ import division, print_function
 
 import subprocess
+import os
+import re
 
 
 def makeList(stringList):
@@ -86,3 +88,18 @@ def numberCouchProcess():
     process = ps.communicate()[0].count('couchjs')
 
     return process
+
+
+def rootUrlJoin(base, extend):
+    """
+    Adds a path element to the path within a ROOT url
+    """
+    if base:
+        match = re.match("^root://([^/]+)/(.+)", base)
+        if match:
+            host = match.group(1)
+            path = match.group(2)
+            newpath = os.path.join(path, extend)
+            newurl = "root://%s/%s" % (host, newpath)
+            return newurl
+    return None

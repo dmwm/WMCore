@@ -14,6 +14,7 @@ import tarfile
 import logging
 import subprocess
 
+from Utils.Utilities import rootUrlJoin
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.UUIDLib import makeUUID
@@ -78,12 +79,13 @@ class AlcaHarvest(Executor):
             # make sure all conditions from this job get the same uuid
             uuid = makeUUID()
 
-            files2copy = []
+            condFiles2copy = []
+            lumiFiles2copy = []
 
             # Working on analysis files
             for analysisFile in analysisFiles:
 
-                # only deal with sqlite files
+                # deal with sqlite files
                 if analysisFile.FileClass == "ALCA":
 
                     sqlitefile = analysisFile.fileName.replace('sqlite_file:', '', 1)
@@ -105,39 +107,73 @@ class AlcaHarvest(Executor):
                     os.chmod(filenameDB, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
                     os.chmod(filenameTXT, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 
-                    files2copy.append(filenameDB)
-                    files2copy.append(filenameTXT)
+                    condFiles2copy.append(filenameDB)
+                    condFiles2copy.append(filenameTXT)
 
-            # copy files out and fake the job report
-            logging.info("Copy out conditions files to %s" % self.step.condition.dir)
-            for file2copy in files2copy:
+                # deal with text files containing lumi info
+                elif analysisFile.FileClass == "ALCATXT":
 
-                logging.info("==> copy %s" % file2copy)
+                    shutil.copy2(os.path.join(stepLocation, analysisFile.fileName), analysisFile.fileName)
+                    lumiFiles2copy.append(analysisFile.fileName)
 
-                targetLFN = os.path.join(self.step.condition.dir, file2copy)
-                targetPFN = "root://eoscms//eos/cms%s" % targetLFN
+            # copy conditions files out and fake the job report
+            addedOutputFJR = False
+            if self.step.condition.lfnbase:
+                logging.info("Copy out conditions files to %s" % self.step.condition.lfnbase)
+                for file2copy in condFiles2copy:
 
-                command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
+                    logging.info("==> copy %s" % file2copy)
 
-                p = subprocess.Popen(command, shell = True,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT)
-                output = p.communicate()[0]
-                if p.returncode > 0:
-                    msg = 'Failure during copy to EOS:\n'
-                    msg += '   %s\n' % output
-                    logging.error(msg)
-                    raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
+                    targetLFN = os.path.join(self.step.condition.lfnbase, file2copy)
+                    targetPFN = "root://eoscms//eos/cms%s" % targetLFN
 
-                # add fake output file to job report
-                stepReport.addOutputFile(self.step.condition.outLabel,
-                                         aFile= {'lfn' : targetLFN,
-                                                  'pfn' : targetPFN,
-                                                  'module_label' : self.step.condition.outLabel})
+                    command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
 
-            if len(files2copy) == 0:
+                    p = subprocess.Popen(command, shell = True,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT)
+                    output = p.communicate()[0]
+                    if p.returncode > 0:
+                        msg = 'Failure during condition copy to EOS:\n'
+                        msg += '   %s\n' % output
+                        logging.error(msg)
+                        raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
 
-                # no output from AlcaHarvest is a valid result, can
+                    # add fake output file to job report
+                    addedOutputFJR = True
+                    stepReport.addOutputFile(self.step.condition.outLabel,
+                                             aFile= {'lfn' : targetLFN,
+                                                     'pfn' : targetPFN,
+                                                     'module_label' : self.step.condition.outLabel})
+
+            # copy luminosity files out
+            if self.step.luminosity.url:
+                logging.info("Copy out luminosity files to %s" % self.step.luminosity.url)
+                for file2copy in lumiFiles2copy:
+
+                    logging.info("==> copy %s" % file2copy)
+
+                    targetPFN = rootUrlJoin(self.step.luminosity.url, file2copy)
+                    if not targetPFN:
+                        msg = 'No valid URL for lumi copy:\n'
+                        msg += '   %s\n' % self.step.luminosity.url
+                        logging.error(msg)
+                        raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
+
+                    command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
+
+                    p = subprocess.Popen(command, shell = True,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT)
+                    output = p.communicate()[0]
+                    if p.returncode > 0:
+                        msg = 'Failure during copy to EOS:\n'
+                        msg += '   %s\n' % output
+                        logging.error(msg)
+                        raise WMExecutionFailure(60319, "AlcaHarvestFailure", msg)
+
+            if not addedOutputFJR:
+                # no conditions from AlcaHarvest is a valid result, can
                 # happen if calibration algorithms produced no output
                 # due to not enough statistics or other reasons
                 #
@@ -145,8 +181,8 @@ class AlcaHarvest(Executor):
                 logging.info("==> no sqlite files from AlcaHarvest job, creating placeholder file record")
                 stepReport.addOutputFile(self.step.condition.outLabel,
                                          aFile= {'lfn' : "/no/output",
-                                                  'pfn' : "/no/output",
-                                                  'module_label' : self.step.condition.outLabel})
+                                                 'pfn' : "/no/output",
+                                                 'module_label' : self.step.condition.outLabel})
 
             # Am DONE with report
             # Persist it

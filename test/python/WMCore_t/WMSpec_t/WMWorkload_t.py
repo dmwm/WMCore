@@ -1605,11 +1605,9 @@ class WMWorkloadTest(unittest.TestCase):
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setTaskType("Merge")
 
-        testWorkload.setupPerformanceMonitoring(maxRSS=101, maxVSize=102,
-                                                softTimeout=100, gracePeriod=1)
-
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxRSS, 101)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxVSize, 102)
+        testWorkload.setupPerformanceMonitoring(softTimeout=100, gracePeriod=1)
+        self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor, "maxRSS"))
+        self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor, "maxVSize"))
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.hardTimeout, 101)
         self.assertTrue(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))

@@ -1655,15 +1655,14 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout, gracePeriod):
+    def setupPerformanceMonitoring(self, softTimeout, gracePeriod):
         """
         _setupPerformanceMonitoring_
 
         Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            task.setPerformanceMonitor(maxRSS=maxRSS, maxVSize=maxVSize,
-                                       softTimeout=softTimeout, gracePeriod=gracePeriod)
+            task.setPerformanceMonitor(softTimeout=softTimeout, gracePeriod=gracePeriod)
 
         return
 
@@ -1749,10 +1748,8 @@ class WMWorkloadHelper(PersistencyHelper):
         if kwargs.get("ProcessingVersion") is not None:
             self.setProcessingVersion(kwargs["ProcessingVersion"])
 
-        self.setupPerformanceMonitoring(kwargs.get("MaxRSS"),
-                                        kwargs.get("MaxVSize"),
-                                        kwargs["SoftTimeout"],
-                                        kwargs["GracePeriod"])
+        self.setupPerformanceMonitoring(softTimeout=kwargs["SoftTimeout"],
+                                        gracePeriod=kwargs["GracePeriod"])
 
         # Check whether we should check location for the data
         self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))

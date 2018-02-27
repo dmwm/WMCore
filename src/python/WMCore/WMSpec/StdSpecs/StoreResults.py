@@ -37,7 +37,7 @@ class StoreResultsWorkloadFactory(StdBase):
         workload = self.createWorkload()
 
         mergeTask = workload.newTask("StoreResults")
-        self.addDashboardMonitoring(mergeTask)
+        self.addRuntimeMonitors(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 

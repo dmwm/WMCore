@@ -246,7 +246,7 @@ class AccountantWorker(WMConnectionBase):
 
             self.count += 1
 
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
@@ -304,7 +304,7 @@ class AccountantWorker(WMConnectionBase):
         if len(self.jobsWithSkippedFiles) > 0:
             self.handleSkippedFiles()
 
-        self.commitTransaction(existingTransaction=False)
+        self.commitTransaction(existingTransaction)
 
         return returnList
 

@@ -92,11 +92,8 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
             logging.info("Killing %d jobs for workflow: %s", len(killableJobs), workflowName)
             bossAir.kill(jobs=killableJobs, workflowName=workflowName)
         except BossAirException as ex:
-            # Something's gone wrong. Jobs not killed!
-            logging.error("Error while trying to kill running jobs in workflow!\n")
-            logging.error(str(ex))
-            trace = getattr(ex, 'traceback', '')
-            logging.error(trace)
+            errMsg = "Error while trying to kill running jobs in workflow. Error: %s" % str(ex)
+            logging.exception(errMsg)
             # But continue; we need to kill the jobs in the master
             # the batch system will have to take care of itself.
 
@@ -406,7 +403,7 @@ class WMBSHelper(WMConnectionBase):
         put everything in one transaction.
 
         """
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
 
         self.createTopLevelFileset()
         try:
@@ -414,8 +411,7 @@ class WMBSHelper(WMConnectionBase):
         except Exception as ex:
             myThread = threading.currentThread()
             myThread.transaction.rollback()
-            msg = traceback.format_exc()
-            logging.error("Failed to create subscription %s", msg)
+            logging.exception("Failed to create subscription. Error: %s", str(ex))
             raise ex
 
         if block != None:
@@ -435,7 +431,7 @@ class WMBSHelper(WMConnectionBase):
                 self.mask['LastEvent'])
             addedFiles = self.addMCFakeFile()
 
-        self.commitTransaction(existingTransaction=False)
+        self.commitTransaction(existingTransaction)
 
         return sub, addedFiles
 
@@ -483,6 +479,7 @@ class WMBSHelper(WMConnectionBase):
         Register workflow information and settings in dbsbuffer for all
         tasks that will potentially produce any output in this spec.
         """
+        existingTransaction = self.beginTransaction()
 
         for task in self.wmSpec.listOutputProducingTasks():
             workflow_id = self.dbsInsertWorkflow.execute(self.wmSpec.name(), task,
@@ -494,6 +491,8 @@ class WMBSHelper(WMConnectionBase):
             if task == self.topLevelTask.getPathName():
                 self.topLevelTaskDBSBufferId = workflow_id
 
+        self.commitTransaction(existingTransaction)
+
     def _createDatasetSubscriptionsInDBSBuffer(self):
         """
         _createDatasetSubscriptionsInDBSBuffer_
@@ -501,11 +500,14 @@ class WMBSHelper(WMConnectionBase):
         Insert the subscriptions defined in the workload for the output
         datasets with the different options.
         """
+        existingTransaction = self.beginTransaction()
+
         subInfo = self.wmSpec.getSubscriptionInformation()
         for dataset in subInfo:
             dbsDataset = DBSBufferDataset(path=dataset)
             dbsDataset.create()
             dbsDataset.addSubscription(subInfo[dataset])
+        self.commitTransaction(existingTransaction)
         return
 
     def _createFilesInDBSBuffer(self):

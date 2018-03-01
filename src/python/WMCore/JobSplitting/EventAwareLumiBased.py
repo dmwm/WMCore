@@ -109,6 +109,9 @@ class EventAwareLumiBased(JobFactory):
             # First we need to load the data
             if self.loadRunLumi:
                 fileLumis = self.loadRunLumi.execute(files=lDict[key])
+                if not fileLumis:
+                    logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
+                                    self.subscription.workflowName(), self.subscription['id'])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
                     for run in lumiDict.keys():

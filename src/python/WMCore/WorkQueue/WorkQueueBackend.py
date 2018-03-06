@@ -318,7 +318,7 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None,
+    def availableWork(self, thresholds, siteJobCounts, team=None, wfs=None,
                       excludeWorkflows=None, numElems=9999999):
         """
         Get work which is available to be run
@@ -356,9 +356,9 @@ class WorkQueueBackend(object):
         options['include_docs'] = True
         options['descending'] = True
         options['resources'] = thresholds
-        if teams:
-            options['teams'] = teams
-            self.logger.info("setting teams %s" % teams)
+        if team:
+            options['team'] = team
+            self.logger.info("setting team to %s" % team)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):

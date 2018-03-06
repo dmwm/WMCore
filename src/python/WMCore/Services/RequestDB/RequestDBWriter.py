@@ -13,8 +13,7 @@ class RequestDBWriter(RequestDBReader):
                                          "SiteBlacklist",
                                          "BlockWhitelist",
                                          "InputDatasetTypes",
-                                         "OutputDatasets",
-                                         "Teams"]
+                                         "OutputDatasets"]
 
     def insertGenericRequest(self, doc):
 

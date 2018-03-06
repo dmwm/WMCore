@@ -17,7 +17,7 @@ import traceback
 import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
-from WMCore.Algorithms.BasicAlgos import calculateChecksums
+from Utils.FileTools import calculateChecksums
 from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure

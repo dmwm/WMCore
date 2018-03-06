@@ -15,9 +15,10 @@ import os
 import os.path
 import logging
 
-from WMCore.Algorithms.BasicAlgos import calculateChecksums
+from Utils.FileTools import calculateChecksums
 
-class FileInfo:
+
+class FileInfo(object):
     """
 
     Package to hold all info regarding file

@@ -1,11 +1,10 @@
-#!/bin/env python
-
+#!/usr/bin/env python
 """
-_BasicAlgos_
-
-Python implementations of basic Linux functionality
-
+Utilities related to file handling
 """
+
+from __future__ import print_function, division
+
 import io
 import os
 import stat

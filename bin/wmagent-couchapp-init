@@ -374,4 +374,12 @@ if __name__ == "__main__":
             installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmstatsDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName)
+
+    if hasattr(wmagentConfig, "General") and hasattr(wmagentConfig.General, "central_logdb_url") and \
+            "localhost" in wmagentConfig.General.central_logdb_url:
+        logDBName = wmagentConfig.General.central_logdb_url.split("/")[-1].strip()
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, logDBName, "LogDB")
+        if options.cron:
+            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, logDBName)
+
     sys.exit(0)

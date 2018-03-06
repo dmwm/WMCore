@@ -15,8 +15,8 @@ import time
 import classad
 import htcondor
 
+from Utils import FileTools
 from Utils.IteratorTools import convertFromUnicodeToStr, grouper
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -286,7 +286,7 @@ class SimpleCondorPlugin(BasePlugin):
                         condorFilePath = os.path.join(job['cache_dir'], condorFile)
                         logOutput += "\n========== %s ==========\n" % condorFile
                         if os.path.isfile(condorFilePath):
-                            logTail = BasicAlgos.tail(condorFilePath, 50)
+                            logTail = FileTools.tail(condorFilePath, 50)
                             logOutput += 'Adding end of %s to error message:\n\n' % condorFile
                             logOutput += logTail
                             logOutput += '\n\n'

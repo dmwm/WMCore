@@ -14,7 +14,7 @@ import logging
 import os.path
 import socket
 
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
+from Utils import FileTools
 from WMCore.FwkJobReport.Report import FwkJobReportException
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
@@ -72,7 +72,7 @@ class Exit50513(DiagnosticHandler):
                               'scramOutput.log')
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
@@ -123,11 +123,11 @@ class CMSDefaultHandler(DiagnosticHandler):
 
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
@@ -136,7 +136,7 @@ class CMSDefaultHandler(DiagnosticHandler):
                               'scramOutput.log')
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 25)
+            logTail = FileTools.tail(errLog, 25)
             msg += '\n Adding last ten lines of SCRAM error log:\n'
             msg += logTail
 
@@ -183,11 +183,11 @@ class CMSRunHandler(DiagnosticHandler):
                               '%s-stdout.log' % (executor.stepName))
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
@@ -233,7 +233,7 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         addOn = '\n'
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
+            logTail = FileTools.tail(errLog, 10)
             addOn += '\nAdding last ten lines of CMSSW stderr:\n'
             addOn += logTail
         else:
@@ -241,7 +241,7 @@ class EDMExceptionHandler(DiagnosticHandler):
             logging.error(os.listdir(os.path.basename(jobRepXml)))
 
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg = '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 

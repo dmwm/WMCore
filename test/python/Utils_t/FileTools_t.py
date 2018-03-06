@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 """
-_BasicAlgos_t_
+_FileTools_t_
 
-Test class for Basic Algorithms
+Test class for file handling tools
 """
+from __future__ import division
 
 import os
 import os.path
 import unittest
 
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
+from Utils import FileTools
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
-class testBasicAlgos(unittest.TestCase):
+class testFileTools(unittest.TestCase):
     """
     Test to see whether we can do Linux
     """
@@ -50,9 +51,9 @@ class testBasicAlgos(unittest.TestCase):
         f.write(a)
         f.close()
 
-        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 10), "g\nh\ni\nj\nk\nl\nm\nn\no\np\n")
+        self.assertEqual(FileTools.tail('tmpfile.tmp', 10), "g\nh\ni\nj\nk\nl\nm\nn\no\np\n")
 
-        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 2), "o\np\n")
+        self.assertEqual(FileTools.tail('tmpfile.tmp', 2), "o\np\n")
 
         os.remove('tmpfile.tmp')
 
@@ -71,7 +72,7 @@ class testBasicAlgos(unittest.TestCase):
         f.write(silly)
         f.close()
 
-        info = BasicAlgos.getFileInfo(filename=filename)
+        info = FileTools.getFileInfo(filename=filename)
         self.assertEqual(info['Name'], filename)
         self.assertEqual(info['Size'], 34)
         return

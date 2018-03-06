@@ -9,7 +9,7 @@ import os
 import time
 import unittest
 
-from WMCore.Algorithms import BasicAlgos
+from Utils import FileTools
 from WMCore.Configuration import ConfigSection
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
@@ -264,22 +264,21 @@ class ReportTest(unittest.TestCase):
         Verify that errors are correctly transfered from the XML report to the
         python report.
         """
-        cmsException = \
-"""cms::Exception caught in cmsRun
----- EventProcessorFailure BEGIN
-EventProcessingStopped
----- ScheduleExecutionFailure BEGIN
-ProcessingStopped
----- NoRecord BEGIN
-No "CastorDbRecord" record found in the EventSetup.
- Please add an ESSource or ESProducer that delivers such a record.
-cms::Exception going through module CastorRawToDigi/castorDigis run: 121849 lumi: 1 event: 23
----- NoRecord END
-Exception going through path raw2digi_step
----- ScheduleExecutionFailure END
-an exception occurred during current event processing
-cms::Exception caught in EventProcessor and rethrown
----- EventProcessorFailure END"""
+        cmsException = "cms::Exception caught in cmsRun\n"
+        cmsException += "---- EventProcessorFailure BEGIN\n"
+        cmsException += "EventProcessingStopped\n"
+        cmsException += "---- ScheduleExecutionFailure BEGIN\n"
+        cmsException += "ProcessingStopped\n"
+        cmsException += "---- NoRecord BEGIN\n"
+        cmsException += 'No "CastorDbRecord" record found in the EventSetup.\n'
+        cmsException += " Please add an ESSource or ESProducer that delivers such a record.\n"
+        cmsException += "cms::Exception going through module CastorRawToDigi/castorDigis run: 121849 lumi: 1 event: 23\n"
+        cmsException += "---- NoRecord END\n"
+        cmsException += "Exception going through path raw2digi_step\n"
+        cmsException += "---- ScheduleExecutionFailure END\n"
+        cmsException += "an exception occurred during current event processing\n"
+        cmsException += "cms::Exception caught in EventProcessor and rethrown\n"
+        cmsException += "---- EventProcessorFailure END"
 
         xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
@@ -709,7 +708,7 @@ cms::Exception caught in EventProcessor and rethrown
         path2 = os.path.join(self.testDir, 'testReport2.pkl')
 
         myReport.save(path1)
-        info = BasicAlgos.getFileInfo(filename=path1)
+        info = FileTools.getFileInfo(filename=path1)
         sizeBefore = info['Size']
 
         inputFiles = myReport.getAllInputFiles()
@@ -718,7 +717,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(len(myReport.getAllInputFiles()), 0)
 
         myReport.save(path2)
-        info = BasicAlgos.getFileInfo(filename=path2)
+        info = FileTools.getFileInfo(filename=path2)
         sizeAfter = info['Size']
 
         self.assertGreater(sizeBefore, sizeAfter)

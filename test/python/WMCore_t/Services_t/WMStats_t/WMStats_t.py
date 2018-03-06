@@ -59,10 +59,10 @@ class WMStatsTest(unittest.TestCase):
         result = self.reqDBWriter.updateRequestStatus("not_exist_schema", "assigned")
         self.assertEqual(result,'Error: document not found')
 
-        result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], {"Teams": ['teamA']})
+        result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], {"Team": 'teamA'})
         self.assertEqual(result, 'OK', 'update fail')
 
-        result = self.reqDBWriter.updateRequestProperty("not_exist_schema", {"Teams": ['teamA']})
+        result = self.reqDBWriter.updateRequestProperty("not_exist_schema", {"Team": 'teamA'})
         self.assertEqual(result, 'Error: document not found')
 
         totalStats = {'TotalEstimatedJobs': 100, 'TotalInputEvents': 1000, 'TotalInputLumis': 1234, 'TotalInputFiles': 5}

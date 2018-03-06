@@ -15,7 +15,7 @@ WMStats.Controls = function($){
                             <div class="verticalFilter"> input dataset: <br/><input name="inputdataset" value=""></input> </div>\
                             <div class="verticalFilter"> output dataset: <br/><input name="outputdatasets" value=""></input> </div>\
                             <div class="verticalFilter"> site whitelist: <br/><input name="site_white_list" value=""></input> </div>\
-                            <div class="verticalFilter"> teams: <br/><input name="teams" value=""></input> </div> \
+                            <div class="verticalFilter"> team: <br/><input name="team" value=""></input> </div> \
                             <div class="endFlter"> agent:<br/><input name="agent_url" value=""></input> </div>\
                            </div>');
        var _filterSelector = selector + ' div[name="filter"] input';

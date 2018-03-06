@@ -7,7 +7,6 @@ Use WMSpecParser to extract information for creating workflow, fileset, and subs
 
 import logging
 import threading
-import traceback
 from collections import defaultdict
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset

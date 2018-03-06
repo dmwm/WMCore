@@ -153,7 +153,7 @@ class AccountantWorker(WMConnectionBase):
         gc.collect()
         return
 
-    def loadJobReport(self, parameters):
+    def loadJobReport(self, jobReportPath):
         """
         _loadJobReport_
 
@@ -163,19 +163,18 @@ class AccountantWorker(WMConnectionBase):
         """
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
-        jobReportPath = parameters.get("fwjr_path", None)
         if not jobReportPath:
             logging.error("Bad FwkJobReport Path: %s", jobReportPath)
-            return self.createMissingFWKJR(parameters, 99999, "FWJR path is empty")
+            return self.createMissingFWKJR(99999, "FWJR path is empty")
 
         jobReportPath = jobReportPath.replace("file://", "")
         if not os.path.exists(jobReportPath):
             logging.error("Bad FwkJobReport Path: %s", jobReportPath)
-            return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path: %s' % jobReportPath)
+            return self.createMissingFWKJR(99999, 'Cannot find file in jobReport path: %s' % jobReportPath)
 
         if os.path.getsize(jobReportPath) == 0:
             logging.error("Empty FwkJobReport: %s", jobReportPath)
-            return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0: %s ' % jobReportPath)
+            return self.createMissingFWKJR(99998, 'jobReport of size 0: %s ' % jobReportPath)
 
         jobReport = Report()
 
@@ -185,12 +184,11 @@ class AccountantWorker(WMConnectionBase):
             msg = "Error loading jobReport %s\n" % jobReportPath
             msg += str(ex)
             logging.error(msg)
-            logging.debug("Failing job: %s\n", parameters)
-            return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
+            return self.createMissingFWKJR(99997, 'Cannot load jobReport')
 
         if len(jobReport.listSteps()) == 0:
             logging.error("FwkJobReport with no steps: %s", jobReportPath)
-            return self.createMissingFWKJR(parameters, 99997, 'jobReport with no steps: %s ' % jobReportPath)
+            return self.createMissingFWKJR(99997, 'jobReport with no steps: %s ' % jobReportPath)
 
         return jobReport
 
@@ -232,7 +230,7 @@ class AccountantWorker(WMConnectionBase):
             logging.info("Handling %s", job["fwjr_path"])
 
             # Load the job and set the ID
-            fwkJobReport = self.loadJobReport(job)
+            fwkJobReport = self.loadJobReport(job["fwjr_path"])
             fwkJobReport.setJobID(job['id'])
 
             jobSuccess = self.handleJob(jobID=job["id"],
@@ -426,7 +424,7 @@ class AccountantWorker(WMConnectionBase):
             setattr(fwjrFile["fileRef"], 'merged', True)
             fwjrFile["merged"] = True
 
-        wmbsFile = self.createFileFromDataStructsFile(file=fwjrFile, jobID=jobID)
+        wmbsFile = self.createFileFromDataStructsFile(fname=fwjrFile, jobID=jobID)
 
         if jobType == "Merge":
             self.wmbsMergeFilesToBuild.append(wmbsFile)
@@ -622,8 +620,7 @@ class AccountantWorker(WMConnectionBase):
 
         return
 
-    def createMissingFWKJR(self, parameters, errorCode=999,
-                           errorDescription='Failure of unknown type'):
+    def createMissingFWKJR(self, errorCode=999, errorDescription='Failure of unknown type'):
         """
         _createMissingFWJR_
 
@@ -863,24 +860,24 @@ class AccountantWorker(WMConnectionBase):
         wmbsFilesToBuild = []
         return
 
-    def createFileFromDataStructsFile(self, file, jobID):
+    def createFileFromDataStructsFile(self, fname, jobID):
         """
         _createFileFromDataStructsFile_
 
         This function will create a WMBS File given a DataStructs file
         """
         wmbsFile = File()
-        wmbsFile.update(file)
+        wmbsFile.update(fname)
 
-        if isinstance(file["locations"], set):
-            pnn = list(file["locations"])[0]
-        elif isinstance(file["locations"], list):
-            if len(file['locations']) > 1:
+        if isinstance(fname["locations"], set):
+            pnn = list(fname["locations"])[0]
+        elif isinstance(fname["locations"], list):
+            if len(fname['locations']) > 1:
                 logging.error("Have more then one location for a file in job %i", jobID)
-                logging.error("Choosing location %s", file['locations'][0])
-            pnn = file["locations"][0]
+                logging.error("Choosing location %s", fname['locations'][0])
+            pnn = fname["locations"][0]
         else:
-            pnn = file["locations"]
+            pnn = fname["locations"]
 
         wmbsFile["locations"] = set()
 

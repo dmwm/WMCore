@@ -14,7 +14,7 @@ import threading
 import time
 import traceback
 
-from Utils.DecoratorUtils import db_exception_handler
+from WMCore.Database.DBExceptionHandler import db_exception_handler
 from WMCore.Alerts import API as alertAPI
 from WMCore.Database.Transaction import Transaction
 

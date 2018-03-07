@@ -1,3 +1,20 @@
+1.1.11 to 1.1.12.pre1:
+  - Merge pull request #8459 from ticoann/add_logdb_report
+  - Merge pull request #8494 from amaltaro/no-runLumi-map
+  - add log db report for db exception
+  - Merge pull request #8502 from amaltaro/basicAlgos
+  - Merge pull request #8500 from ticoann/set_local_logdb
+  - pylint fix
+  - Merge pull request #8471 from ticoann/add_wn_info
+  - Merge pull request #8485 from ticoann/cleanup_wmstats_teamcode
+  - unit test and pylint fixes
+  - Move Algorithms/BasicAlgos under Utils package
+  - pylint fixes
+  - Add local logdb for tier0 test
+  - Fix WMBSHelper transactions; Warning record if there is no run/lumi map
+  - clean up some wmstats deplicated codes
+  - add some machine matrix
+
 1.1.10 to 1.1.11:
   - 1.1.11.pre3
   - Merge pull request #8489 from amaltaro/maxrss-drop

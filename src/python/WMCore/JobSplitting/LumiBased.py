@@ -389,6 +389,9 @@ class LumiBased(JobFactory):
         # first, check whether we have enough files to reach the desired lumis_per_job
         for sites in lDict.keys():
             fileLumis = self.loadRunLumi.execute(files=lDict[sites])
+            if not fileLumis:
+                logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
+                                self.subscription.workflowName(), self.subscription['id'])
             if checkMinimumWork:
                 # fileLumis has a format like {230: {1: [1]}, 232: {1: [2]}, 304: {1: [3]}, 306: {1: [4]}}
                 availableLumisPerLocation = [runL for fileItem in fileLumis.values() for runL in fileItem.values()]

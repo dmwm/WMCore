@@ -83,6 +83,9 @@ class EventBased(JobFactory):
                 if self.package == 'WMCore.WMBS':
                     loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
                     fileLumis = loadRunLumi.execute(files=fileList)
+                    if not fileLumis:
+                        logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
+                                        self.subscription.workflowName(), self.subscription['id'])
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
                         for run in lumiDict.keys():

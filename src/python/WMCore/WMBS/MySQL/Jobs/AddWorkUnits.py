@@ -55,6 +55,8 @@ class AddWorkUnits(DBFormatter):
             binds = self.getBinds(jobFileRunLumis)
         elif jobid and fileid and run and lumi:
             binds = DBFormatter.getBinds(self, jobid=jobid, fileid=fileid, run=run, lumi=lumi)
+        elif not jobFileRunLumis and isinstance(jobFileRunLumis, list):  # Empty list is ok
+            return
         else:
             logging.error('Jobs.AddWorkUnits called with insufficient arguments')
             return

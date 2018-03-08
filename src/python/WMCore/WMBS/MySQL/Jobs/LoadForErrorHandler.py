@@ -4,7 +4,6 @@ _LoadForErrHandler_
 
 MySQL implementation of Jobs.LoadForErrorHandler.
 """
-from pprint import pprint, pformat
 
 from WMCore.DataStructs.Run import Run
 from WMCore.Database.DBFormatter import DBFormatter
@@ -52,7 +51,7 @@ class LoadForErrorHandler(DBFormatter):
 
 
     def updateFilesWithoutLocation(self, jobBinds, fileList,
-                          conn=None, transaction=False):
+                                   conn=None, transaction=False):
         """
         _updateFilesWithoutLocation_
 
@@ -141,8 +140,6 @@ class LoadForErrorHandler(DBFormatter):
         jobList = self.formatDict(result)
         for entry in jobList:
             entry.setdefault('input_files', [])
-
-        print("jobList %s" % pformat(jobList))
 
         filesResult = self.dbi.processData(self.fileSQL, binds, conn=conn,
                                            transaction=transaction)

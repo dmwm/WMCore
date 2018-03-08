@@ -9,6 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import logging
 import threading
+from operator import itemgetter
 from WMCore.DAOFactory import DAOFactory
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
@@ -78,20 +79,28 @@ class DataCollectionService(CouchService):
 
         NOTE: jobs must have a non-standard task, workflow attributes assigned to them.
         """
+        # first we sort the list of dictionary by two keys: workflow then task
+        failedJobs.sort(key=itemgetter('workflow'))
+        failedJobs.sort(key=itemgetter('task'))
+
+        previousWorkflow = ""
+        previousTask = ""
         for job in failedJobs:
             try:
-                taskName = job['task']
                 workflow = job['workflow']
+                taskName = job['task']
             except KeyError as ex:
                 msg = "Missing required, non-standard key %s in job in ACDC.DataCollectionService" % (str(ex))
                 logging.error(msg)
                 raise ACDCDCSException(msg)
 
-            coll = CouchCollection(database=self.database, url=self.url,
-                                   name=workflow,
-                                   type=CollectionTypes.DataCollection)
-            fileset = CouchFileset(database=self.database, url=self.url,
-                                   name=taskName)
+            if workflow != previousWorkflow:
+                coll = CouchCollection(database=self.database, url=self.url,
+                                       name=workflow,
+                                       type=CollectionTypes.DataCollection)
+            if taskName != previousTask:
+                fileset = CouchFileset(database=self.database, url=self.url,
+                                       name=taskName)
             coll.addFileset(fileset)
             inputFiles = job['input_files']
             for fInfo in inputFiles:
@@ -109,6 +118,9 @@ class DataCollectionService(CouchService):
                 fileset.add(files=inputFiles, mask=job['mask'])
             else:
                 fileset.add(files=inputFiles)
+
+            previousWorkflow = workflow
+            previousTask = taskName
 
         return
 

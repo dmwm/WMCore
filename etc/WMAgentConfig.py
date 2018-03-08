@@ -54,9 +54,7 @@ globalDBSVersion = "DBS_2_0_8"
 diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
              'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov']
 
-# Job retry information.  This includes the number of times a job will be retried and
-# for how long it will sit in cool off.
-maxJobRetries = {'default': 3, 'Merge': 4, 'LogCollect': 2, 'Cleanup': 2, 'Harvesting': 2}
+# Job retry information.  How long it will sit in cool off.
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.
@@ -228,7 +226,6 @@ config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = globalLogLevel
-config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
 config.ErrorHandler.maxFailTime = 120000

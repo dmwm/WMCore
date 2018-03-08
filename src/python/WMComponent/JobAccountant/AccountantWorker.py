@@ -106,9 +106,9 @@ class AccountantWorker(WMConnectionBase):
                                                     database=config.ACDC.database)
 
         jobDBurl = sanitizeURL(config.JobStateMachine.couchurl)['url']
-        jobDBName = config.JobStateMachine.couchDBName
-        jobCouchdb = CouchServer(jobDBurl)
-        self.fwjrCouchDB = jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        self.jobDBName = config.JobStateMachine.couchDBName
+        self.jobCouchdb = CouchServer(jobDBurl)
+        self.fwjrCouchDB = None
         self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL, appName="WMStatsAgent")
 
         # Hold data for later commital
@@ -588,6 +588,9 @@ class AccountantWorker(WMConnectionBase):
 
         Associate a logArchive output to its parent job
         """
+        if self.fwjrCouchDB is None:
+            self.fwjrCouchDB = self.jobCouchdb.connectDatabase("%s/fwjrs" % self.jobDBName)
+
         inputFileList = fwkJobReport.getAllInputFiles()
         requestName = task.split('/')[1]
         keys = []

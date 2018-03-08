@@ -95,6 +95,29 @@ class BaseWorkerThread(object):
         """
         logging.error("Calling algorithm on BaseWorkerThread: Override me!")
 
+    def setUpHeartbeat(self, myThread):
+        # heartbeat needed to be called in self.initInThread
+        # to get the right name but before the self.setup
+        if hasattr(self.component.config, "Agent"):
+            self.useHeartbeat = getattr(self.component.config.Agent, "useHeartbeat", True)
+            self.workerName = myThread.getName()
+
+        if self.useHeartbeat:
+            self.heartbeatAPI.registerWorker(self.workerName)
+        return
+
+    def setUpLogDB(self, myThread):
+        # setup logDB
+        if hasattr(self.component.config, "General") and \
+                hasattr(self.component.config.General, "central_logdb_url") and \
+                hasattr(self.component.config, "Agent"):
+            from WMCore.Services.LogDB.LogDB import LogDB
+            myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
+                                         self.component.config.Agent.hostName, logger=logging)
+        else:
+            myThread.logdbClient = None
+        return
+
     def initInThread(self, parameters):
         """
         Called when the thread is actually running in its own thread. Performs
@@ -121,6 +144,9 @@ class BaseWorkerThread(object):
         logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
 
+        self.setUpHeartbeat(myThread)
+        self.setUpLogDB(myThread)
+
         # Call worker setup
         self.setup(parameters)
         myThread.transaction.commit()
@@ -130,6 +156,7 @@ class BaseWorkerThread(object):
         Thread entry point; handles synchronisation with run and terminate
         conditions
         """
+        errMsg = ""
         try:
             msg = "Initialising worker thread %s" % str(self)
             logging.info(msg)
@@ -140,25 +167,7 @@ class BaseWorkerThread(object):
             msg = "Worker thread %s started" % str(self)
             logging.info(msg)
 
-            # heartbeat needed to be called after self.initInThread
-            # to get the right name
             myThread = threading.currentThread()
-
-            if hasattr(self.component.config, "Agent"):
-                self.useHeartbeat = getattr(self.component.config.Agent, "useHeartbeat", True)
-                self.workerName = myThread.getName()
-
-            if hasattr(self.component.config, "General") and \
-                    hasattr(self.component.config.General, "central_logdb_url") and \
-                    hasattr(self.component.config, "Agent"):
-                from WMCore.Services.LogDB.LogDB import LogDB
-                myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
-                                             self.component.config.Agent.hostName, logger=logging)
-            else:
-                myThread.logdbClient = None
-
-            if self.useHeartbeat:
-                self.heartbeatAPI.registerWorker(self.workerName)
 
             # Run event loop while termination is not flagged
             while not self.notifyTerminate.isSet():
@@ -190,19 +199,17 @@ class BaseWorkerThread(object):
                         except Exception as ex:
                             if myThread.transaction.transaction is not None:
                                 myThread.transaction.rollback()
-                            msg = "Error in worker algorithm (1):\nBacktrace:\n "
-                            msg += (" %s %s" % (str(self), str(ex)))
+                            errMsg = "Error in worker algorithm (1):\nBacktrace:\n "
+                            errMsg += (" %s %s" % (str(self), str(ex)))
                             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                             for stackFrame in stackTrace:
-                                msg += stackFrame
-                            logging.error(msg)
+                                errMsg += stackFrame
+                            logging.error(errMsg)
                             # force entire component to terminate
                             try:
                                 self.component.prepareToStop()
                             except Exception as ex:
                                 logging.error("Failed to halt component after worker crash: %s", str(ex))
-                            if self.useHeartbeat:
-                                self.heartbeatAPI.updateWorkerError(self.workerName, msg)
                             raise ex
                         # Put the thread to sleep
                         self.sleepThread()
@@ -217,6 +224,13 @@ class BaseWorkerThread(object):
             for stackFrame in stackTrace:
                 msg += stackFrame
             logging.error(msg)
+            # send heartbeat message that thread is terminated
+            if self.useHeartbeat:
+                msg = errMsg or msg
+                try:
+                    self.heartbeatAPI.updateWorkerError(self.workerName, errMsg)
+                except Exception as ex:
+                    logging.error("Heartbeat error update failed %s" % str(ex))
 
         # Indicate to manager that thread is done
         self.terminateCallback(threading.currentThread().name)

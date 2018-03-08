@@ -9,4 +9,4 @@ def makeUUID():
 
     Makes a UUID from the uuid class, returns it
     """
-    return str(uuid.uuid1())
+    return str(uuid.uuid4())

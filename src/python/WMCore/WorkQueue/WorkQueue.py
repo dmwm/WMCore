@@ -413,6 +413,16 @@ class WorkQueue(WorkQueueBase):
                                            splitedBlockName['Offset'],
                                            splitedBlockName['NumOfFiles'])
 
+            # If TrustSitelist is enabled, then assume files without location are
+            # available at the ACDC collection location
+            if match['NoInputUpdate']:
+                acdcLocations = match['Inputs'].values()[0]
+                for f in fileLists:
+                    if not f['locations']:
+                        msg = "ACDC file %s with no location, but trusting the TrustSitelists" % f['lfn']
+                        self.logger.info(msg)
+                        for loc in acdcLocations:
+                            f['locations'].add(loc)
             block = {}
             block["Files"] = fileLists
             return blockName, block

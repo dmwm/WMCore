@@ -9,6 +9,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
+from nose.plugins.attrib import attr
+
 from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.LumiList import LumiList
@@ -35,13 +37,11 @@ class DataCollectionService_t(unittest.TestCase):
         return
 
     @staticmethod
-    def getMinimalJob():
+    def getMinimalJob(wf=None, task=None):
         job = Job()
-        job["task"] = "/ACDCTest/reco"
-        job["workflow"] = "ACDCTest"
-        job["location"] = "cmssrm.fnal.gov"
-        job["owner"] = "cmsdataops"
-        job["group"] = "cmsdataops"
+        job["workflow"] = wf or "ACDCTest"
+        job["task"] = task or "/ACDCTest/reco"
+        job["location"] = "T1_US_FNAL_Disk"
         return job
 
     def testChunking(self):
@@ -355,6 +355,48 @@ class DataCollectionService_t(unittest.TestCase):
             if job['lfn'] == 'MCFakeFile-File1':
                 lumiList = job['runs'][0]['lumis']
                 self.assertEqual(len(lumiList), 22)
+
+    def jobConfig(self, wf, task, jobid, lfn):
+        """
+        Create a fake job dict to upload to the ACDC server
+        """
+        testFile = File(lfn=lfn, size=1024, events=1024)
+        testFile.setLocation(["T2_CH_CERN", "T2_CH_CERN_HLT"])
+        testFile.addRun(Run(jobid, 1, 2))  # run = jobid
+        testJob = self.getMinimalJob(wf, task)
+        testJob.addFile(testFile)
+
+        return testJob
+
+    @attr('integration')
+    def testFailedJobsUniqueWf(self):
+        """
+        Performance test of failedJobs with all failed jobs belonging
+        to the same workflow and the same task name
+        """
+        loadList = []
+        for i in range(1, 5000):
+            loadList.append(self.jobConfig('wf1', '/wf1/task1', i, 'lfn1'))
+
+        dcs = DataCollectionService(url=self.testInit.couchUrl, database="wmcore-acdc-datacollectionsvc")
+        dcs.failedJobs(loadList)
+        return
+
+    @attr('integration')
+    def testFailedJobsScrambledWf(self):
+        """
+        Performance test of failedJobs where jobs belong to 10 different
+        workflows and 3 different tasks
+        """
+        loadList = []
+        for i in range(1, 5000):
+            wfName = "wf%d" % (i % 10)
+            taskName = "/wf%d/task%d" % (i % 10, i % 3)
+            loadList.append(self.jobConfig(wfName, taskName, i, '/file/name/lfn1'))
+
+        dcs = DataCollectionService(url=self.testInit.couchUrl, database="wmcore-acdc-datacollectionsvc")
+        dcs.failedJobs(loadList)
+        return
 
 
 if __name__ == '__main__':

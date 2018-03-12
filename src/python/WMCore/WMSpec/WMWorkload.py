@@ -1039,7 +1039,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setEndPolicy("SingleShot")
         return
 
-    def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs):
+    def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs, updateOnly=False):
         """
         _setJobSplittingParameters_
 
@@ -1075,16 +1075,21 @@ class WMWorkloadHelper(PersistencyHelper):
                 childSplitParams = childTask.jobSplittingParameters()
                 minMergeSize = childSplitParams["min_merge_size"]
                 maxMergeEvents = childSplitParams["max_merge_events"]
-                del childSplitParams["algorithm"]
-                del childSplitParams["siteWhitelist"]
-                del childSplitParams["siteBlacklist"]
-                childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
-
+                if not updateOnly:
+                    del childSplitParams["algorithm"]
+                    del childSplitParams["siteWhitelist"]
+                    del childSplitParams["siteBlacklist"]
+                    childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
+                else:
+                    childTask.updateSplittingParameters(mergeAlgo, **childSplitParams)
         # Set the splitting algorithm for the task.  If the split algo is
         # EventBased, we need to disable straight to merge.  If this isn't an
         # EventBased algo we need to enable straight to merge. If straight
         # to merge is disabled then keep it that way.
-        taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        if not updateOnly:
+            taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        else:
+            taskHelper.updateSplittingParameters(splitAlgo, **splitArgs)
         for stepName in taskHelper.listAllStepNames():
             stepHelper = taskHelper.getStepHelper(stepName)
             if stepHelper.stepType() == "StageOut":

@@ -503,6 +503,23 @@ class WMTaskHelper(TreeHelper):
             self.data.input.splitting.performance = performanceConfig
         return
 
+    def updateSplittingParameters(self, algoName, **params):
+        """
+        _updateSplittingAlgorithm_
+        :param algoName: string Algorithm name
+        :param params: splitting parameters
+        :return:
+
+        Only updates specific parameters in splitting Algorithm but doesn't remove the existing splitting parameters
+        """
+        performanceConfig = getattr(self.data.input.splitting, "performance", None)
+        setattr(self.data.input.splitting, "algorithm", algoName)
+        self.data.input.splitting.section_("performance")
+        self.setSplittingParameters(**params)
+        if performanceConfig is not None:
+            self.data.input.splitting.performance = performanceConfig
+        return
+
     def jobSplittingAlgorithm(self):
         """
         _jobSplittingAlgorithm_

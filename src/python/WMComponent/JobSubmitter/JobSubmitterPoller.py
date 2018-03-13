@@ -523,6 +523,27 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+    def checkZeroTaskThresholds(self, jobType, siteList):
+        """
+        _checkZeroTaskThresholds_
+
+        Given a job type and a list of sites, remove sites from the list
+        if that site + task has 0 pending thresholds.
+        Returns a new list of sites
+        """
+        newSiteList = []
+        for site in siteList:
+            try:
+                taskPendingSlots = self.currentRcThresholds[site]['thresholds'][jobType]["pending_slots"]
+            except KeyError as ex:
+                msg = "Invalid key for site %s and job type %s. Error: %s" % (site, jobType, str(ex))
+                logging.warning(msg)
+            else:
+                if taskPendingSlots > 0:
+                    newSiteList.append(site)
+
+        return newSiteList
+
     def _getJobSubmitCondition(self, jobPrio, siteName, jobType):
         """
         returns the string describing whether a job is ready to be submitted or the reason can't be submitted
@@ -620,14 +641,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             for job in sorted(self.cachedJobs[jobPrio].values(), key=itemgetter('timestamp')):
                 jobid = job['id']
                 jobType = job['type']
-                possibleSites = job['possibleLocations']
+                # remove sites with 0 task thresholds
+                finalPossibleSites = self.checkZeroTaskThresholds(jobType, job['possibleLocations'])
                 jobSubmitLogByPriority[jobPrio]['Total'] += 1
                 # now look for sites with free pending slots
-                for siteName in possibleSites:
-                    if siteName not in self.currentRcThresholds:
-                        logging.warn("Have a job for %s which is not in the resource control", siteName)
-                        continue
-
+                for siteName in finalPossibleSites:
                     condition = self._getJobSubmitCondition(jobPrio, siteName, jobType)
 
                     if condition != "JobSubmitReady":
@@ -655,6 +673,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Now update the job dictionary object
                     cachedJob['custom'] = {'location': siteName}
+                    cachedJob['possibleSites'] = finalPossibleSites
                     cachedJob['taskPriority'] = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
 
                     # Get this job in place to be submitted by the plugin

@@ -550,17 +550,17 @@ class SimpleCondorPlugin(BasePlugin):
             sites = ','.join(sorted(job.get('potentialSites')))
             ad['ExtDESIRED_Sites'] = sites
 
-            ad['WMAgent_RequestName'] = job['requestName']
+            ad['WMAgent_RequestName'] = job['request_name']
 
-            match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['requestName'])
+            match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
                 ad['CMSGroups'] = match.groups()[0]
             else:
                 ad['CMSGroups'] = classad.Value.Undefined
 
             ad['WMAgent_JobID'] = job['jobid']
-            ad['WMAgent_SubTaskName'] = job['taskName']
-            ad['CMS_JobType'] = job['taskType']
+            ad['WMAgent_SubTaskName'] = job['task_name']
+            ad['CMS_JobType'] = job['task_type']
 
             # Handling for AWS, cloud and opportunistic resources
             ad['AllowOpportunistic'] = job.get('allowOpportunistic', False)
@@ -577,8 +577,8 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['DESIRED_CMSDataLocations'] = classad.Value.Undefined
 
             # HighIO and repack jobs
-            ad['Requestioslots'] = 1 if job['taskType'] in ["Merge", "Cleanup", "LogCollect", "Repack"] else 0
-            ad['RequestRepackslots'] = 1 if job['taskType'] == 'Repack' else 0
+            ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect", "Repack"] else 0
+            ad['RequestRepackslots'] = 1 if job['task_type'] == 'Repack' else 0
 
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
@@ -628,10 +628,10 @@ class SimpleCondorPlugin(BasePlugin):
             ad['WMCore_ResizeJob'] = bool(job.get('resizeJob', False))
 
             taskPriority = int(job.get('taskPriority', self.defaultTaskPriority))
-            priority = int(job.get('priority', 0))
+            priority = int(job.get('wf_priority', 0))
             ad['JobPrio'] = int(priority + taskPriority * self.maxTaskPriority)
             ad['PostJobPrio1'] = int(-1 * len(job.get('potentialSites', [])))
-            ad['PostJobPrio2'] = int(-1 * job['taskID'])
+            ad['PostJobPrio2'] = int(-1 * job['task_id'])
 
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))

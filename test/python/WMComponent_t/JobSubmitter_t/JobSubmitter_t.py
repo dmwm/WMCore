@@ -15,13 +15,15 @@ import threading
 import time
 import unittest
 
-from nose.plugins.attrib import attr
-from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from nose.plugins.attrib import attr
+
+from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -125,7 +127,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         return
 
     def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site,
-                        taskType='Processing', name=None):
+                        taskType='Processing', name=None, wfPrio=1):
         """
         _createJobGroups_
 
@@ -139,7 +141,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         testWorkflow = Workflow(spec=workloadSpec, owner="tapas",
                                 name=name, task="basicWorkload/Production",
-                                priority=1)
+                                priority=wfPrio)
         testWorkflow.create()
 
         # Create subscriptions
@@ -786,6 +788,84 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
         p.print_stats()
+
+        return
+
+    @attr('integration')
+    def testMemoryProfile(self):
+        """
+        _testMemoryProfile_
+
+        Creates 20k jobs and keep refreshing the cache and submitting
+        them between the components cycle
+
+        Example using memory_profiler library, unfortunately the source
+        code has to be updated with decorators.
+        NOTE: Never run it on jenkins
+        """
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+        myResourceControl = ResourceControl(config)
+
+        nSubs = 100
+        nJobs = 100
+        allSites = SiteDBJSON().PSNtoPNNMap('.*')
+
+        for site in allSites:
+            self.setResourceThresholds(site, pendingSlots=20000, runningSlots=999999, tasks=['Processing', 'Merge'],
+                                       Processing={'pendingSlots': 10000, 'runningSlots': 999999},
+                                       Merge={'pendingSlots': 10000, 'runningSlots': 999999, 'priority': 5})
+
+        # Always initialize the submitter after setting the sites, flaky!
+        jobSubmitter = JobSubmitterPoller(config=config)
+
+        jobGroupList = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                            task=workload.getTask("ReReco"),
+                                            workloadSpec=self.workloadSpecPath,
+                                            site=[x for x in allSites], wfPrio=10)
+
+        jobGroupList.extend(self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                                 task=workload.getTask("ReReco"),
+                                                 workloadSpec=self.workloadSpecPath,
+                                                 site=[x for x in allSites],
+                                                 taskType='Merge', wfPrio=100))
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T2_TW_Taiwan', 'Draining')
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T3_CO_Uniandes', 'Draining')
+        jobSubmitter.algorithm()
+
+        jobGroupList = self.createJobGroups(nSubs=50, nJobs=100,
+                                            site=[x for x in allSites],
+                                            task=workload.getTask("ReReco"),
+                                            workloadSpec=self.workloadSpecPath,
+                                            taskType='Merge', wfPrio=1000)
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T2_US_Florida', 'Normal')
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T2_TW_Taiwan', 'Normal')
+        jobSubmitter.algorithm()
+
+        myResourceControl.changeSiteState('T3_CO_Uniandes', 'Normal')
+        jobSubmitter.algorithm()
 
         return
 

@@ -5,10 +5,8 @@ _ListForSubmitter_
 MySQL function to list jobs for submission
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class ListForSubmitter(DBFormatter):
     sql = """SELECT wmbs_job.id AS id,
@@ -33,7 +31,7 @@ class ListForSubmitter(DBFormatter):
                  wmbs_subscription.workflow = wmbs_workflow.id
              WHERE wmbs_job_state.name = 'created'"""
 
-    def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn,
-                                      transaction = transaction)
+    def execute(self, conn=None, transaction=False):
+        result = self.dbi.processData(self.sql, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

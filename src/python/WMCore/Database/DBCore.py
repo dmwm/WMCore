@@ -72,6 +72,11 @@ class DBInterface(WMObject):
         resultProxy.close()
         return result
 
+    def _generateCursor(self, sql, binds, connection):
+
+        for bind in binds:
+            yield connection.execute(sql, bind)
+
     def executemanybinds(self, s=None, b=None, connection=None,
                          returnCursor=False):
         """
@@ -96,9 +101,10 @@ class DBInterface(WMObject):
             Trying to select many
             """
             if returnCursor:
-                result = []
-                for bind in b:
-                    result.append(connection.execute(s, bind))
+                if b:
+                    return self._generateCursor(s, b, connection)
+                else:
+                    return []
             else:
                 result = ResultSet()
                 for bind in b:
@@ -119,7 +125,6 @@ class DBInterface(WMObject):
         Return a connection to the engine (from the connection pool)
         """
         return self.engine.connect()
-
 
     def processData(self, sqlstmt, binds={}, conn=None,
                     transaction=False, returnCursor=False):
@@ -156,15 +161,23 @@ class DBInterface(WMObject):
                 #Run single SQL statement for a list of binds - use execute_many()
                 if not transaction:
                     trans = connection.begin()
-                while(len(binds) > self.maxBindsPerQuery):
-                    result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
-                                                   conn=connection, transaction=True,
-                                                   returnCursor=returnCursor))
-                    binds = binds[self.maxBindsPerQuery:]
 
-                for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection,
-                                                        returnCursor=returnCursor))
+                s = sqlstmt[0]
+
+                if s.lower().endswith('select', 0, 6) and returnCursor:
+                    # for the select statement with returnCursor true, don't worry about sending to many bindings
+                    # it sends one
+                   result = self.executemanybinds(s, binds, connection=connection,
+                                                        returnCursor=returnCursor)
+                else:
+                    while (len(binds) > self.maxBindsPerQuery):
+                        result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
+                                                       conn=connection, transaction=True,
+                                                       returnCursor=returnCursor))
+                        binds = binds[self.maxBindsPerQuery:]
+
+                    result.extend(self.executemanybinds(s, binds, connection=connection,
+                                    returnCursor = returnCursor))
                 if not transaction:
                     trans.commit()
             elif len(binds) == len(sqlstmt):

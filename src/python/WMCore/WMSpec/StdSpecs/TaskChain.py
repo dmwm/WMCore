@@ -203,6 +203,7 @@ class ParameterStorage(object):
 class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
+        self.eventsPerJob = None
         self.mergeMapping = {}
         self.taskMapping = {}
 
@@ -277,6 +278,9 @@ class TaskChainWorkloadFactory(StdBase):
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
+        # Feed values back to save in couch
+        if self.eventsPerJob:
+            arguments['Task1']['EventsPerJob'] = self.eventsPerJob
         return self.workload
 
     def makeTask(self, taskConf, parentTask=None):
@@ -487,10 +491,11 @@ class TaskChainWorkloadFactory(StdBase):
 
         taskConf["SplittingArguments"] = {}
         if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:
-            if taskConf.get("EventsPerJob") is None:
-                taskConf["EventsPerJob"] = int((8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
-            if taskConf.get("EventsPerLumi") is None:
-                taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
+            taskConf["EventsPerJob"], taskConf["EventsPerLumi"] = StdBase.calcEvtsPerJobLumi(taskConf.get("EventsPerJob"),
+                                                                                             taskConf.get("EventsPerLumi"),
+                                                                                             taskConf.get("TimePerEvent",
+                                                                                                          self.timePerEvent))
+            self.eventsPerJob = taskConf["EventsPerJob"]
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventBased":
                 taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]

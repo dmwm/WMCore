@@ -490,6 +490,45 @@ class StepChainTests(EmulatedUnitTestCase):
 
         return
 
+    def testStepChainIncludeParentsValidation(self):
+        """
+        Check that the test arguments pass basic validation,
+        i.e. no exception should be raised.
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+
+        testArguments['Step1'] = deepcopy(testArguments.pop('Step2'))
+        testArguments['Step2'] = deepcopy(testArguments.pop('Step3'))
+        testArguments['StepChain'] = 2
+
+        testArguments['Step1'].pop('InputFromOutputModule')
+        testArguments['Step1'].pop('InputStep')
+        testArguments['Step1'].update({
+            'IncludeParents': True,
+            'KeepOutput': False,
+            'InputDataset': '/Cosmics/ComissioningHI-v1/RAW'
+        })
+
+        factory = StepChainWorkloadFactory()
+        self.assertRaises(WMSpecFactoryException, factory.factoryWorkloadConstruction,
+                          "TestWorkload", testArguments)
+
+        testArguments['Step1']["InputDataset"] = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1']["IncludeParents"] = False
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Step1']["IncludeParents"] = False
+        testArguments['Step1']["InputDataset"] = '/Cosmics/ComissioningHI-v1/RAW'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        return
+
     def testStepChainReDigi(self):
         """
         Build a StepChain workload with input dataset in the first step

@@ -8,9 +8,8 @@ Created on Jun 14, 2013
 from __future__ import print_function
 
 import unittest
-from nose.plugins.attrib import attr
+
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 
 class StdBaseTest(unittest.TestCase):
@@ -51,38 +50,23 @@ class StdBaseTest(unittest.TestCase):
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return
 
-    @attr('integration')
-    def testStdBaseIncludeParentsValidation(self):
+    def testCalcEvtsPerJobLumi(self):
         """
-        _testStdBaseValidation_
+        _testCalcEvtsPerJobLumi_
 
-        Check that the test arguments pass basic validation,
-        i.e. no exception should be raised.
+        Check that EventsPerJob and EventsPerLumi are properly calculated
+        for EventBased job splitting.
         """
-        arguments = StdBase.getTestArguments()
-        stdBaseInstance = StdBase()
+        self.assertEqual((123, 345), StdBase.calcEvtsPerJobLumi(123, 345, 1))
+        self.assertEqual((123, 123), StdBase.calcEvtsPerJobLumi(123, None, 1))
 
-        arguments["IncludeParents"] = True
-        arguments["InputDataset"] = "/Cosmics/Commissioning2015-v1/RAW"
-        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload",
-                          arguments)
+        self.assertEqual((28800, 100), StdBase.calcEvtsPerJobLumi(None, 100, 1))
+        self.assertEqual((600, 100), StdBase.calcEvtsPerJobLumi(None, 100, 50.5))
+        self.assertEqual((1000, 1000), StdBase.calcEvtsPerJobLumi(None, 1000, 50.5))
 
-        arguments["IncludeParents"] = True
-        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload",
-                          arguments)
+        self.assertEqual((23040, 23040), StdBase.calcEvtsPerJobLumi(None, None, 1.25))
+        self.assertEqual((229, 229), StdBase.calcEvtsPerJobLumi(None, None, 125.5))
 
-        arguments["IncludeParents"] = True
-        arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
-        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
-
-        arguments["IncludeParents"] = False
-        arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
-        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
-
-        arguments["IncludeParents"] = False
-        arguments["InputDataset"] = "/Cosmics/ABS/RAW"
-        arguments["DbsUrl"] = None
-        stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return
 
 

@@ -3,6 +3,7 @@ from __future__ import (print_function, division)
 import json
 
 import cherrypy
+import traceback
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from Utils.Utilities import strToBool
@@ -13,6 +14,7 @@ from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 
 
 def format_algo_web_list(task_name, task_type, split_param):
@@ -55,6 +57,22 @@ def create_web_splitting_format(split_info):
             web_form.append(format_algo_web_list(sp["taskName"], sp["taskType"],
                                                  sp["splitParams"]))
     return web_form
+
+
+def create_updatable_splitting_format(split_info):
+    splitInfo = []
+    for taskInfo in split_info:
+        if taskInfo["taskType"] not in ["Cleanup", "LogCollect"]:
+            splittingAlgo = taskInfo["splitAlgo"]
+            submittedParams = taskInfo["splitParams"]
+            splitParams = {}
+            for param in submittedParams:
+                validFlag, _ = _validate_split_param(splittingAlgo, param)
+                if validFlag:
+                    splitParams[param] = taskInfo["splitParams"][param]
+            taskInfo["splitParams"] = splitParams
+            splitInfo.append(taskInfo)
+    return splitInfo
 
 
 def _validate_split_param(split_algo, split_param):
@@ -163,7 +181,7 @@ class WorkloadSplitting(RESTEntity):
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqdb_url = "%s/%s" % (config.couch_host, config.couch_reqmgr_db)
 
-    def _validate_args(self, param, safe):
+    def _validate_get_args(self, param, safe):
         # TODO: need proper validation but for now pass everything
         args_length = len(param.args)
         if args_length == 1:
@@ -171,6 +189,11 @@ class WorkloadSplitting(RESTEntity):
             param.args.pop()
         elif args_length == 2 and param.args[0] == "web_form":
             safe.kwargs["web_form"] = True
+            safe.kwargs["name"] = param.args[1]
+            param.args.pop()
+            param.args.pop()
+        elif args_length == 2 and param.args[0] == "update_only":
+            safe.kwargs["update_only"] = True
             safe.kwargs["name"] = param.args[1]
             param.args.pop()
             param.args.pop()
@@ -184,11 +207,33 @@ class WorkloadSplitting(RESTEntity):
         are not passed in the method at all.
 
         """
-        self._validate_args(param, safe)
+        try:
+            if method == 'GET':
+                self._validate_get_args(param, safe)
+
+            if method == 'POST':
+                args_length = len(param.args)
+                if args_length == 1:
+                    safe.kwargs["name"] = param.args[0]
+                    param.args.pop()
+        except InvalidSpecParameterValue as ex:
+            raise ex
+        except Exception as ex:
+            msg = traceback.format_exc()
+            cherrypy.log("Error: %s" % msg)
+            if hasattr(ex, "message"):
+                if hasattr(ex.message, '__call__'):
+                    msg = ex.message()
+                else:
+                    msg = str(ex)
+            else:
+                msg = str(ex)
+            raise InvalidSpecParameterValue(msg)
+
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
-    def get(self, name, web_form=False):
+    def get(self, name, web_form=False, update_only=False):
         """
         getting job splitting algorithm.
 
@@ -213,6 +258,8 @@ class WorkloadSplitting(RESTEntity):
                               "taskName": taskName})
         if web_form:
             splitInfo = create_web_splitting_format(splitInfo)
+        elif update_only:
+            splitInfo = create_updatable_splitting_format(splitInfo)
 
         return splitInfo
 

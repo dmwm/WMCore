@@ -8,6 +8,9 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
         super(HeartbeatMonitorBase, self).__init__(config)
         self.centralWMStats = WMStatsWriter(config.wmstats_url)
         self.threadList = config.thread_list
+        self.postToAMQ = getattr(config, "post_to_amq", False)
+        self.topicAMQ = getattr(config, "topic_amq", None)
+        self.hostPortAMQ = getattr(config, "host_port_amq", None)
 
     def setConcurrentTasks(self, config):
         """
@@ -18,7 +21,7 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
     def reportToWMStats(self, config):
         """
         report thread status and heartbeat.
-        Also can report additional mointoring information by rewriting addAdditionalMonitorReport method
+        Also can report additional monitoring information by rewriting addAdditionalMonitorReport method
         """
         self.logger.info("Checking Thread status...")
         downThreadInfo = self.logDB.wmstats_down_components_report(self.threadList)

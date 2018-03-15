@@ -294,7 +294,7 @@ class WorkloadSplitting(RESTEntity):
                     msg = "Parameter '%s' is not supported in the algorithm '%s'" % (param, splittingAlgo)
                     raise cherrypy.HTTPError(400, msg)
 
-            helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
+            helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams, updateOnly=True)
 
         # Now persist all these changes in the workload
         url = "%s/%s" % (self.reqdb_url, name)

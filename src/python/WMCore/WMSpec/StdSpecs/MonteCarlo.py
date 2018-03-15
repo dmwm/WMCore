@@ -105,10 +105,10 @@ class MonteCarloWorkloadFactory(StdBase):
         # Tune the splitting, only EventBased is allowed for MonteCarlo
         # 8h jobs are CMS standard, set the default with that in mind
         self.prodJobSplitAlgo = "EventBased"
-        if self.eventsPerJob is None:
-            self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
-        if self.eventsPerLumi is None:
-            self.eventsPerLumi = self.eventsPerJob
+        self.eventsPerJob, self.eventsPerLumi = StdBase.calcEvtsPerJobLumi(self.eventsPerJob,
+                                                                           self.eventsPerLumi,
+                                                                           self.timePerEvent)
+
         self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
                                  "events_per_lumi": self.eventsPerLumi,
                                  "lheInputFiles": self.lheInputFiles}
@@ -124,6 +124,9 @@ class MonteCarloWorkloadFactory(StdBase):
         if self.firstLumi > 1:
             self.previousJobCount = int(math.ceil((self.firstEvent - 1) / self.eventsPerJob))
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
+
+        # Feed values back to save in couch
+        arguments['EventsPerJob'] = self.eventsPerJob
 
         return self.buildWorkload()
 

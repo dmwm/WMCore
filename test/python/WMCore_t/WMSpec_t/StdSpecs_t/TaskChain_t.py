@@ -135,6 +135,32 @@ REQUEST = {
     "TimePerEvent": 0.5
 }
 
+REQUEST_INPUT = {
+    "AcquisitionEra": "ReleaseValidation",
+    "CMSSWVersion": "CMSSW_8_0_17",
+    "ScramArch": "slc6_amd64_gcc530",
+    "GlobalTag": "GR10_P_v4::All",
+    "ConfigCacheUrl": os.environ["COUCHURL"],
+    "CouchDBName": "taskchain_t",
+    "DashboardHost": "127.0.0.1",
+    "DashboardPort": 8884,
+    "TaskChain": 2,
+    "Task1": {
+        "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
+        "TaskName": "DIGI",
+        "ConfigCacheID": 'DigiHLT',
+        "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
+        "DeterministicPileup": True
+    },
+    "Task2": {
+        "TaskName": "RECO",
+        "InputTask": "DIGI",
+        "InputFromOutputModule": "writeRAWDIGI",
+        "ConfigCacheID": 'Reco',
+        "DataPileup": "/some/minbias-data-v1/GEN-SIM"
+    },
+}
+
 
 def getTestFile(partialPath):
     """
@@ -1030,35 +1056,10 @@ class TaskChainTests(EmulatedUnitTestCase):
         """
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
-        testArguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments = {
-            "AcquisitionEra": "ReleaseValidation",
-            "CMSSWVersion": "CMSSW_8_0_17",
-            "ScramArch": "slc6_amd64_gcc530",
-            "GlobalTag": "GR10_P_v4::All",
-            "ConfigCacheUrl": self.testInit.couchUrl,
-            "CouchDBName": self.testInit.couchDbName,
-            "DashboardHost": "127.0.0.1",
-            "DashboardPort": 8884,
-            "TaskChain": 2,
-            "Task1": {
-                "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
-                "TaskName": "DIGI",
-                "ConfigCacheID": processorDocs['DigiHLT'],
-                "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
-                "DeterministicPileup": True
-            },
-            "Task2": {
-                "TaskName": "RECO",
-                "InputTask": "DIGI",
-                "InputFromOutputModule": "writeRAWDIGI",
-                "ConfigCacheID": processorDocs['Reco'],
-                "DataPileup": "/some/minbias-data-v1/GEN-SIM"
-            },
-        }
-
-        testArguments.update(arguments)
-        arguments = testArguments
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(REQUEST_INPUT)
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
@@ -1078,6 +1079,35 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(pileupData.data.dataset, ["/some/minbias-data-v1/GEN-SIM"])
         splitting = secondTask.jobSplittingParameters()
         self.assertFalse(splitting["deterministicPileup"])
+
+    def testTaskChainIncludeParentsValidation(self):
+        """
+        Check that the test arguments pass basic validation,
+        i.e. no exception should be raised.
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(REQUEST_INPUT)
+        testArguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        testArguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+
+        factory = TaskChainWorkloadFactory()
+        testArguments['Task1']['IncludeParents'] = True
+        testArguments['Task1']['InputDataset'] = '/Cosmics/ComissioningHI-v1/RAW'
+        self.assertRaises(WMSpecFactoryException, factory.factoryWorkloadConstruction,
+                          "TestWorkload", testArguments)
+
+        testArguments['Task1']["InputDataset"] = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Task1']["IncludeParents"] = False
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Task1']["IncludeParents"] = False
+        testArguments['Task1']["InputDataset"] = '/Cosmics/ComissioningHI-v1/RAW'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        return
 
     def buildMultithreadedTaskChain(self, filename):
         """
@@ -1162,7 +1192,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy checks
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 288, 'SliceType': 'NumberOfEvents',
+        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 300, 'SliceType': 'NumberOfEvents',
                                                                     'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
                                                                     'SubSliceType': 'NumberOfEventsPerLumi',
                                                                     'blowupFactor': 3.4, 'policyName': 'MonteCarlo'})
@@ -1172,7 +1202,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         task1Splitting = splitArgs['/ComplexChain/myTask1']
         self.assertEqual(task1Splitting['type'], 'Production')
         self.assertEqual(task1Splitting['algorithm'], 'EventBased')
-        self.assertEqual(task1Splitting['events_per_job'], 288)
+        self.assertEqual(task1Splitting['events_per_job'], 300)
         self.assertEqual(task1Splitting['events_per_lumi'], 100)
         self.assertFalse(task1Splitting['deterministicPileup'])
         self.assertFalse(task1Splitting['lheInputFiles'])

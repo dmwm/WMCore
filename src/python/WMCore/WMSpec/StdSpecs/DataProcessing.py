@@ -28,6 +28,7 @@ class DataProcessing(StdBase):
             if self.procJobSplitAlgo == "EventAwareLumiBased":
                 self.procJobSplitArgs["job_time_limit"] = 48 * 3600  # 2 days
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
+            arguments['EventsPerJob'] = self.eventsPerJob
         elif self.procJobSplitAlgo == "LumiBased":
             self.procJobSplitArgs["lumis_per_job"] = self.lumisPerJob
         elif self.procJobSplitAlgo == "FileBased":

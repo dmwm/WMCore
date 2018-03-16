@@ -1,7 +1,8 @@
 { 
 "createRequest":
 {     
-    "Comments": "MC extension wf; FacOps Custodial Replica to MSS; AnalysisOps NonCustodial Move to Disk auto-approved; Automatic splitting 3LpJ",
+    "Comments": ["MC extension wf; FacOps Custodial Replica to MSS; AnalysisOps NonCustodial Move to Disk auto-approved;",
+                 "Automatic splitting 250 EpJ and 250 EpL"],
     "AcquisitionEra": "DMWM_Test",
     "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
@@ -19,9 +20,8 @@
     "PrimaryDataset": "Pythia8_Dijet15_pp502_TuneCUETP8M1",
     "PrepID": "TEST-pp502Fall15-00013",
     "Group": "DATAOPS",
-    "TimePerEvent": 98.4094,
+    "TimePerEvent": 115.2,
     "LheInputFiles": false,
-    "EventsPerLumi": 100,
     "Memory": 1250,
     "SizePerEvent": 414,
     "FirstEvent": 10001,

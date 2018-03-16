@@ -18,7 +18,7 @@
         "AcquisitionEra": "RunIISummer15wmLHEGS", 
         "CMSSWVersion": "CMSSW_7_1_25_patch3", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Automatic splitting 80 EpJ and 2LpJ; Eff. < 1.0",
+        "Comments": "Given 40 EpLumi, set 80 EpJob (instead of 87.3), so 2LpJ; Eff. < 1.0",
         "ConfigCacheID": "3910f87c1c1ff387d33a6415da869b44", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -41,6 +41,6 @@
         "ScramArch": "slc6_amd64_gcc481", 
         "Seeding": "AutomaticSeeding", 
         "SizePerEvent": 1000, 
-        "TimePerEvent": 360.0
+        "TimePerEvent": 330.0
     }
 }

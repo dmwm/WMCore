@@ -18,11 +18,12 @@
         "AcquisitionEra": "RunIIWinter15pLHE", 
         "CMSSWVersion": "CMSSW_7_1_16_patch2", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Automatic splitting 50k EpJ and 50 LpJ; LheInputFiles enabled", 
+        "Comments": "Manual splitting at 50k EpJob and 1k EpLumi, so 50 LpJ; LheInputFiles enabled",
         "ConfigCacheID": "b233cc749d98d4ae0796ca3673cc5823", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "EventsPerJob": 50000,
         "EventsPerLumi": 1000, 
         "FilterEfficiency": 1, 
         "GlobalTag": "MCRUN2_71_V1::All",
@@ -41,6 +42,6 @@
         "ScramArch": "slc6_amd64_gcc481", 
         "Seeding": "AutomaticSeeding", 
         "SizePerEvent": 3, 
-        "TimePerEvent": 0.576
+        "TimePerEvent": 5.576
     }
 }

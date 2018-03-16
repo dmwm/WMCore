@@ -29,6 +29,13 @@ class PyCondorAPI(object):
         """
         try:
             jobs = self.schedd.query(constraint, attr_list)
+            return jobs
+        except Exception:
+            # if there is an error, try to recreate the schedd instance
+            logging.info("Recreating Schedd instance due to query error...")
+            self.schedd = htcondor.Schedd()
+        try:
+            jobs = self.schedd.query(constraint, attr_list)
         except Exception as ex:
             jobs = None  # return None to signalize the query failed
             msg = "Condor failed to fetch schedd constraints for: %s" % constraint
@@ -44,6 +51,14 @@ class PyCondorAPI(object):
         ( ShadowsRunning > 9.700000000000000E-01 * MAX_RUNNING_JOBS) )
         || ( RecentDaemonCoreDutyCycle > 9.800000000000000E-01 )
         """
+        try:
+            scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
+            isOverloaded = scheddAd['CurbMatchmaking'].eval()
+            return isOverloaded
+        except Exception:
+            # if there is an error, try to recreate the collector instance
+            logging.info("Recreating Collector instance due to query error...")
+            self.coll = htcondor.Collector()
         try:
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
             isOverloaded = scheddAd['CurbMatchmaking'].eval()

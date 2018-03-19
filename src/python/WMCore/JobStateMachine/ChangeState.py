@@ -416,6 +416,8 @@ class ChangeState(WMObject, WMConnectionBase):
                                   "site": job.get("location", None),
                                   "cms_location": job["fwjr"].getSiteName(),
                                   "exitcode": job["fwjr"].getExitCode(),
+                                  "eos_log_url": job["fwjr"].getLogURL(),
+                                  "worker_node_info": job["fwjr"].getWorkerNodeInfo(),
                                   "errors": errmsgs,
                                   "lumis": inputs,
                                   "outputdataset": outputDataset,

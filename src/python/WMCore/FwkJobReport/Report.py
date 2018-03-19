@@ -220,6 +220,7 @@ class Report(object):
         jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
         jsonReport["Campaign"] = self.getCampaign()
         jsonReport["PrepID"] = self.getPrepID()
+        jsonReport["EOSLogURL"] = self.getLogURL()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -1521,3 +1522,17 @@ class Report(object):
                   "JobFeatures": getattr(self.data, 'jobFeatures', {})}
 
         return wnInfo
+
+    def setLogURL(self, url):
+        """
+        Set log url for the this job report.
+        https://eoscmshttp.cern.ch/store/logs/prod/recent/
+        """
+        self.data.logURL = url
+
+    def getLogURL(self):
+        """
+        _getLogURL_
+        Return the log URL
+        """
+        return getattr(self.data, 'logURL', '')

@@ -1101,6 +1101,9 @@ class WMTaskHelper(TreeHelper):
                 stepReport = Report()
                 stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
+                logURL = stepReport.getLogURL()
+                if logURL:
+                    finalReport.setLogURL(logURL)
             else:
                 msg = "  failed to find it."
                 msg += "Files in the directory are:\n%s" % os.listdir(os.path.join(jobLocation, taskStep))

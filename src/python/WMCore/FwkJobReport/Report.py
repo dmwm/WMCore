@@ -560,7 +560,13 @@ class Report(object):
         errDetails = getattr(stepSection.errors, errEntry)
         errDetails.exitCode = exitCode
         errDetails.type = str(errorType)
-        errDetails.details = errorDetails
+
+        if hasattr(errorDetails, "decode"):
+            # Fix for the unicode encoding issue, #8043
+            # interprets this string using utf-8 codec and ignoring any errors
+            errDetails.details = errorDetails.decode('utf-8', 'ignore')
+        else:
+            errDetails.details = errorDetails
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
         self.setStepStatus(stepName=stepName, status=exitCode)

@@ -229,9 +229,9 @@ class Report(object):
 
             stepTimes = self.getTimes(stepName)
 
-            if stepTimes["startTime"] != None:
+            if stepTimes["startTime"] is not None:
                 stepTimes["startTime"] = int(stepTimes["startTime"])
-            if stepTimes["stopTime"] != None:
+            if stepTimes["stopTime"] is not None:
                 stepTimes["stopTime"] = int(stepTimes["stopTime"])
 
             jsonStep["start"] = stepTimes["startTime"]

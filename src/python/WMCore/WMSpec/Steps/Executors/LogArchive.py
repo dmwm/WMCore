@@ -100,7 +100,6 @@ class LogArchive(Executor):
         """
         _execute_
 
-
         """
         # Are we using emulators again?
         if emulator is not None:
@@ -127,7 +126,7 @@ class LogArchive(Executor):
             "^PSet.py$",
             "^PSet.pkl$",
             "_condor_std*",  # condor wrapper logs at the pilot top level
-        ]
+            ]
 
         ignoredDirs = ['Utils', 'WMCore', 'WMSandbox']
 

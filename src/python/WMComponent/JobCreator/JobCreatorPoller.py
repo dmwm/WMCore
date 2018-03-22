@@ -120,7 +120,7 @@ def capResourceEstimates(jobGroups, constraints):
 def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
             owner=None, ownerDN=None, ownerGroup='', ownerRole='',
             scramArch=None, swVersion=None, agentNumber=0, numberOfCores=1,
-            inputDataset=None, inputDatasetLocations=None, allowOpportunistic=False):
+            inputDataset=None, inputDatasetLocations=None, allowOpportunistic=False, agentName=''):
     """
     _saveJob_
 
@@ -136,6 +136,7 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
 
     job['counter'] = jobNumber
     job['agentNumber'] = agentNumber
+    job['agentName'] = agentName
     cacheDir = job.getCache()
     job['cache_dir'] = cacheDir
     job['owner'] = owner
@@ -181,6 +182,7 @@ def creatorProcess(work, jobCacheDir):
         inputDataset = work.get('inputDataset', None)
         inputDatasetLocations = work.get('inputDatasetLocations', None)
         allowOpportunistic = work.get('allowOpportunistic', False)
+        agentName = work.get('agentName', '')
 
         if ownerDN is None:
             ownerDN = owner
@@ -221,7 +223,8 @@ def creatorProcess(work, jobCacheDir):
                     numberOfCores=numberOfCores,
                     inputDataset=inputDataset,
                     inputDatasetLocations=inputDatasetLocations,
-                    allowOpportunistic=allowOpportunistic)
+                    allowOpportunistic=allowOpportunistic,
+                    agentName=agentName)
 
     except Exception as ex:
         # Register as failure; move on
@@ -371,6 +374,7 @@ class JobCreatorPoller(BaseWorkerThread):
         self.defaultJobType = config.JobCreator.defaultJobType
         self.limit = getattr(config.JobCreator, 'fileLoadLimit', 500)
         self.agentNumber = int(getattr(config.Agent, 'agentNumber', 0))
+        self.agentName = getattr(config.Agent, 'hostName', '')
         self.glideinLimits = getattr(config.JobCreator, 'GlideInRestriction', None)
 
         # initialize the alert framework (if available - config.Alert present)
@@ -608,6 +612,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
                     tempDict['agentNumber'] = self.agentNumber
+                    tempDict['agentName'] = self.agentName
                     tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
                     tempDict['allowOpportunistic'] = allowOpport
 

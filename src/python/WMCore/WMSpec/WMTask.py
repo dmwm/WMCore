@@ -549,9 +549,9 @@ class WMTaskHelper(TreeHelper):
         splittingParams["trustSitelists"] = self.getTrustSitelists().get('trustlists')
         splittingParams["trustPUSitelists"] = self.getTrustSitelists().get('trustPUlists')
 
-        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
+        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() is not None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
-        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() != None:
+        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() is not None:
             splittingParams["runBlacklist"] = self.inputRunBlacklist()
 
         return splittingParams
@@ -1101,6 +1101,9 @@ class WMTaskHelper(TreeHelper):
                 stepReport = Report()
                 stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
+                logURL = stepReport.getLogURL()
+                if logURL:
+                    finalReport.setLogURL(logURL)
             else:
                 msg = "  failed to find it."
                 msg += "Files in the directory are:\n%s" % os.listdir(os.path.join(jobLocation, taskStep))
@@ -1157,7 +1160,7 @@ class WMTaskHelper(TreeHelper):
         """
         if config section for the PerformanceMonitor. If not set, it will set one
         """
-        if self.monitoring != None:
+        if self.monitoring is not None:
             return
 
         self.monitoring = self.data.section_("watchdog")
@@ -1676,7 +1679,7 @@ class WMTaskHelper(TreeHelper):
                                                     getattr(outputModule, "dataTier"),
                                                     processingString)
 
-                    if runNumber != None and runNumber > 0:
+                    if runNumber is not None and runNumber > 0:
                         runString = str(runNumber).zfill(9)
                         lfnSuffix = "/%s/%s/%s" % (runString[0:3],
                                                    runString[3:6],

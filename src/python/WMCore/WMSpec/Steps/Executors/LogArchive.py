@@ -12,7 +12,6 @@ import re
 import signal
 import tarfile
 import time
-import traceback
 
 import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
@@ -47,10 +46,59 @@ class LogArchive(Executor):
         logging.info("Steps.Executors.LogArchive.pre called")
         return None
 
+    def sendLogToEOS(self, overrides, tarBallLocation, useNewStageOutCode):
+        """
+        :param overrides: dictionary for setting the eos lfn.
+        :return: None (copy log archive to eos location.)
+        Don'f fail the job if copy fails
+        """
+        eosStageOutParams = {}
+        eosStageOutParams['command'] = "xrdcp"
+        eosStageOutParams['option'] = "--wma-disablewriterecovery"
+        eosStageOutParams['phedex-node'] = overrides.get('eos-phedex-node', "T2_CH_CERN")
+        eosStageOutParams['lfn-prefix'] = overrides.get('eos-lfn-prefix',
+                                                        "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent")
+
+        if not eosStageOutParams['lfn-prefix']:
+            # if overrides for eos-lfn-prefix is set to None or "", don't copy the log to eos
+            return
+
+        if not useNewStageOutCode:
+            # old style
+            eosmanager = StageOutMgr.StageOutMgr(**eosStageOutParams)
+            eosmanager.numberOfRetries = self.step.retryCount
+            eosmanager.retryPauseTime = self.step.retryDelay
+        else:
+            # new style
+            logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE For EOS Copy")
+            eosmanager = WMCore.Storage.FileManager.StageOutMgr(
+                retryPauseTime=self.step.retryDelay,
+                numberOfRetries=self.step.retryCount,
+                **eosStageOutParams)
+
+        eosFileInfo = {'LFN': self.getEOSLogLFN(),
+                       'PFN': tarBallLocation,
+                       'PNN': None,
+                       'GUID': None
+                       }
+
+        try:
+            eosmanager(eosFileInfo)
+            eosServerPrefix = eosStageOutParams['lfn-prefix'].replace("root://eoscms.cern.ch//eos/cms",
+                                                                      "https://eoscmshttp.cern.ch")
+            self.report.setLogURL(eosServerPrefix + eosFileInfo['LFN'])
+            self.saveReport()
+        except Alarm:
+            msg = "Indefinite hang during stageOut of logArchive to EOS, ignoring it"
+            logging.error(msg)
+        except Exception as ex:
+            logging.exception("EOS copy failed, lfn: %s. Error: %s", eosFileInfo['LFN'], str(ex))
+
+        return
+
     def execute(self, emulator=None, **overrides):
         """
         _execute_
-
 
         """
         # Are we using emulators again?
@@ -58,6 +106,7 @@ class LogArchive(Executor):
             return emulator.emulate(self.step, self.job)
 
         overrides = {}
+        #TODO need to set override using addOverride method in WMStep
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
@@ -77,7 +126,8 @@ class LogArchive(Executor):
             "^PSet.py$",
             "^PSet.pkl$",
             "_condor_std*",  # condor wrapper logs at the pilot top level
-        ]
+            ]
+
         ignoredDirs = ['Utils', 'WMCore', 'WMSandbox']
 
         # Okay, we need a stageOut Manager
@@ -126,9 +176,9 @@ class LogArchive(Executor):
                     'PNN': None,
                     'GUID': None
                     }
-
         signal.signal(signal.SIGALRM, alarmHandler)
         signal.alarm(waitTime)
+
         try:
             manager(fileInfo)
             self.report.addOutputModule(moduleName="logArchive")
@@ -142,22 +192,24 @@ class LogArchive(Executor):
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
             self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
-            self.report.persist("Report.pkl")
+            self.saveReport()
             raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
         except WMException as ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
-            self.report.persist("Report.pkl")
+            self.saveReport()
             raise ex
         except Exception as ex:
             self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
-            self.report.persist("Report.pkl")
+            self.saveReport()
             msg = "Failure in transferring logArchive tarball\n"
-            msg += str(ex) + "\n"
-            msg += traceback.format_exc()
-            logging.error(msg)
+            logging.exception(msg)
             raise WMException("LogArchiveFailure", message=str(ex))
-
         signal.alarm(0)
+
+        signal.alarm(waitTime)
+        self.sendLogToEOS(overrides, tarBallLocation, useNewStageOutCode)
+        signal.alarm(0)
+
         return
 
     def post(self, emulator=None):
@@ -224,5 +276,20 @@ class LogArchive(Executor):
             LFN = "%s/%s/%s/%i/%s-%i-%s" % (self.altLFN, self.task.getPathName(),
                                             lfnGroup(self.job), self.job.get('retry_count', 0), self.job["name"],
                                             self.job.get('retry_count', 0), tarName)
+
+        return LFN
+
+    def getEOSLogLFN(self):
+        """
+        getEOSLogLFN
+
+        LFNs are messy, do the messy stuff here
+         /eos/cms/store/logs/prod/recent/vlimant_task_TOP-RunIIFall17wmLHEGS-00073__v1_T_180219_102942_9978/TOP-RunIIFall17DRPremix-00053_0/vocms0251.cern.ch-3803-0.log.tar.gz
+        """
+        taskPath = self.task.getPathName().split("/")
+        requestName = taskPath[1]
+        lastTask = taskPath[-1]
+        LFN = "/%s/%s/%s-%s-%s-log.tar.gz" % (requestName, lastTask, self.job.get("agentName",'NA'),
+                                      self.job["id"], self.job.get('retry_count', 0))
 
         return LFN

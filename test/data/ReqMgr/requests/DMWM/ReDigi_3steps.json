@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReDigi with 3 separated steps. TpE and SpE provided for each step. One block whitelisted. 1371 EpJ",
+    "Comments": "ReDigi with 3 separated steps; TpE and SpE provided for each step, sets 1371 EpJob; One block whitelisted",
     "AcquisitionEra": "DMWM_Test",
     "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        

@@ -24,7 +24,7 @@
         }, 
         "CMSSWVersion": "CMSSW_9_4_2",
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Process MINIAOD to NANO with EventAware; Multicore 8; Memory 4000",
+        "Comments": "Process MINIAOD to NANO with EventAware; Automatic split at 711 EpJob; Multicore 8; Memory 4000",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
         "GlobalTag": "94X_mcRun2_asymptotic_v2",
@@ -40,7 +40,7 @@
         "RequestType": "TaskChain", 
         "ScramArch": "slc6_amd64_gcc630",
         "SizePerEvent": 5.25,
-        "TimePerEvent": 4.5,
+        "TimePerEvent": 40.5,
         "SubRequestType": "Alan",
         "Task1": {
             "AcquisitionEra": "RunIIFall17NanoAOD",

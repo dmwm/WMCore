@@ -18,7 +18,8 @@
         "AcquisitionEra": "DMWM_Test",
         "CMSSWVersion": "CMSSW_9_0_0",
         "Campaign": "Campaign-OVERRIDE-ME",
-        "Comments": ["MC from scratch; 3 steps in the same job; save all outputs; Step1 and Step2 have the same RAWSIM output module"],
+        "Comments": ["MC from scratch; 3 steps in the same job; Step1 and Step2 have the same RAWSIM output module",
+                     "save all outputs; Given 50 EpLumi, sets 150 EpJob (instead of 174), so 3 LpJob"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
         "GlobalTag": "90X_mcRun1_realistic_v4",
@@ -36,7 +37,6 @@
         "Step1": {
             "CMSSWVersion": "CMSSW_9_0_0",
             "ConfigCacheID": "f739820360b865fbaec79db3ed0cf0d1",
-            "EventsPerJob": 150,
             "EventsPerLumi": 50,
             "GlobalTag": "90X_mcRun1_realistic_v4",
             "PrepID": "TEST-Step1-DupOutMod",
@@ -67,6 +67,6 @@
             "StepName": "RECOPROD1"
         },
         "StepChain": 3,
-        "TimePerEvent": 144
+        "TimePerEvent": 165
     }
 }

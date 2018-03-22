@@ -1,3 +1,55 @@
+1.1.11 to 1.1.12.pre3:
+  - Merge pull request #8456 from ticoann/stageout-to-eos
+  - pylint fix
+  - Merge pull request #8509 from amaltaro/jobsubmitter-minors
+  - add to transfer eos log archive
+  - Merge pull request #8521 from amaltaro/reqmgr2-monitor
+  - Fetch monitoring metrics from the ReqMgr monitoring thread
+  - pylint fixes
+  - Minor improvements to JobSubmitter; trying to reduce memory footprint
+  - Merge pull request #8504 from goughes/fix_schedd_query
+  - 1.1.12.pre2
+  - Merge pull request #8515 from amaltaro/issue-6857
+  - Merge pull request #8508 from ticoann/fix_splitting_update
+  - Merge pull request #8507 from ticoann/add_request_get_update
+  - unit test and pylint fixes
+  - Adapt EventsPerJob to a multiple of EventsPerLumi - EventBased only
+  - Retry schedd/collector queries on error
+  - Merge pull request #8511 from hufnagel/repack-io-jobs
+  - add update only splitting parameters
+  - have repack jobs also request io slot
+  - Merge pull request #8484 from amaltaro/multi-psn-jobs
+  - change splitting call to update
+  - unit tests and pylint fixes
+  - Remove site from DESIREDSites if task thresholds are 0
+  - Merge pull request #8505 from amaltaro/failedJobs-test
+  - Performance tests for ACDC failedJobs method
+  - Merge pull request #8487 from bbockelm/use_uuid4
+  - Merge pull request #8207 from ericvaandering/bad_wu
+  - Merge pull request #8476 from ticoann/heartbeat_fix
+  - Merge pull request #8433 from goughes/change_maxretries
+  - 1.1.12.pre1
+  - Merge pull request #8459 from ticoann/add_logdb_report
+  - Merge pull request #8494 from amaltaro/no-runLumi-map
+  - add log db report for db exception
+  - Merge pull request #8502 from amaltaro/basicAlgos
+  - Merge pull request #8500 from ticoann/set_local_logdb
+  - pylint fix
+  - Merge pull request #8471 from ticoann/add_wn_info
+  - Merge pull request #8485 from ticoann/cleanup_wmstats_teamcode
+  - unit test and pylint fixes
+  - Move Algorithms/BasicAlgos under Utils package
+  - pylint fixes
+  - Add local logdb for tier0 test
+  - Move maxRetries config to aux db
+  - Fix WMBSHelper transactions; Warning record if there is no run/lumi map
+  - Update UUID test to reflect new algorithm.
+  - Switch from UUID1 to UUID4.
+  - clean up some wmstats deplicated codes
+  - fix silence crash
+  - add some machine matrix
+  - Explictly allow an empty list without generating an error message
+
 1.1.11 to 1.1.12.pre2:
   - Merge pull request #8515 from amaltaro/issue-6857
   - Merge pull request #8508 from ticoann/fix_splitting_update

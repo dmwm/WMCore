@@ -2,6 +2,7 @@
 """
 Oracle implementation of AddPNNs
 """
+from __future__ import division
 
 from WMCore.WMBS.MySQL.Locations.AddPNNs import AddPNNs as AddPNNsMySQL
 

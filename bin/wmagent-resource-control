@@ -109,7 +109,7 @@ def getCMSSiteInfo(pattern=''):
     """
     print("Querying SiteDB for site information...")
 
-    return SiteDBJSON().PSNtoPNNMap(pattern.replace('*', '.*').replace('%', '.*'))
+    return SiteDBJSON().PSNtoPNNMap(pattern)
 
 
 def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
@@ -139,6 +139,20 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
     if state:
         for siteName in allSites.keys():
             setSiteState(resourceControl, siteName, state)
+
+    return
+
+def addPNNs(resourceControl, pattern):
+    """
+    _addPNNs_
+
+    Add the given sites to resource control and add tasks as well.
+    """
+    print("Querying SiteDB for PhEDEx Node Names...")
+
+    pnns = SiteDBJSON().getAllPhEDExNodeNames(pattern, excludeBuffer=True)
+    print("Inserting %i PNNs into WMBS table" % len(pnns))
+    resourceControl.insertPNNs(pnns)
 
     return
 
@@ -312,21 +326,29 @@ else:
         addSites(myResourceControl, testSite, "CERN", "SimpleCondorPlugin",
                  500, 1, state=options.state)
     elif options.addT1s:
-        t1Sites = getCMSSiteInfo("T1*")
+        pattern = "T1.*"
+        t1Sites = getCMSSiteInfo(pattern)
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
+        addPNNs(myResourceControl, pattern=pattern)
     elif options.addT2s:
-        t2Sites = getCMSSiteInfo("T2*")
+        pattern = "T2.*"
+        t2Sites = getCMSSiteInfo(pattern)
         addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
+        addPNNs(myResourceControl, pattern=pattern)
     elif options.addT3s:
-        t3Sites = getCMSSiteInfo("T3*")
+        pattern = "T3.*"
+        t3Sites = getCMSSiteInfo(pattern)
         addSites(myResourceControl, t3Sites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
+        addPNNs(myResourceControl, pattern=pattern)
     elif options.addAllSites:
-        allSites = getCMSSiteInfo("*")
+        pattern = ".*"
+        allSites = getCMSSiteInfo(pattern)
         addSites(myResourceControl, allSites, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
+        addPNNs(myResourceControl, pattern=pattern)
     elif options.addOneSite:
         oneSite = getCMSSiteInfo(options.addOneSite)
         addSites(myResourceControl, oneSite, options.ceName, options.plugin,

@@ -26,27 +26,10 @@ class SiteDBTest(EmulatedUnitTestCase):
 
     def testCmsNametoPhEDExNode(self):
         """
-        #Tests CmsNametoSE
+        Tests CMS Name to PhEDEx Node Name
         """
         target = ['T1_US_FNAL_Buffer', 'T1_US_FNAL_MSS']
         results = self.mySiteDB.cmsNametoPhEDExNode('T1_US_FNAL')
-        self.assertItemsEqual(results, target)
-
-    def testSEtoCmsName(self):
-        """
-        Tests CmsNametoSE
-        """
-        target = [u'T1_US_FNAL', u'T1_US_FNAL_Disk']
-        results = self.mySiteDB.seToCMSName("cmsdcadisk01.fnal.gov")
-        self.assertTrue(results == target)
-        target = sorted([u'T2_CH_CERN', u'T2_CH_CERN_HLT'])
-        results = sorted(self.mySiteDB.seToCMSName("srm-eoscms.cern.ch"))
-        self.assertItemsEqual(results, target)
-        target = sorted([u'T0_CH_CERN', u'T1_CH_CERN'])
-        results = sorted(self.mySiteDB.seToCMSName("srm-cms.cern.ch"))
-        self.assertItemsEqual(results, target)
-        target = sorted([u'T2_CH_CERN_AI'])
-        results = sorted(self.mySiteDB.seToCMSName("eoscmsftp.cern.ch"))
         self.assertItemsEqual(results, target)
 
     def testDNUserName(self):

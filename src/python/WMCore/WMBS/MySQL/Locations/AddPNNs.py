@@ -2,6 +2,7 @@
 """
 Adds PhEDEx Node Names into the WMBS database.
 """
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
 

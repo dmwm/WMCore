@@ -1380,6 +1380,26 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.section_('overrides')
 
+    def setWorkloadOverrides(self, overrides):
+        """
+        _getWorkloadOverrides_
+
+        Get the overrides config section
+        of this workload, creates it if it doesn't exist
+        """
+        
+        if overrides:
+            taskIterator = self.taskIterator()
+            for task in taskIterator:
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+                    for key, value in overrides.items():
+                        stepHelper.addOverride(key, value)
+
+            self.data.overrides = overrides
+
+        return
+
     def setBlockCloseSettings(self, blockCloseMaxWaitTime,
                               blockCloseMaxFiles, blockCloseMaxEvents,
                               blockCloseMaxSize):
@@ -1732,6 +1752,7 @@ class WMWorkloadHelper(PersistencyHelper):
         argumentDefinition = specClass.getWorkloadAssignArgs()
         setAssignArgumentsWithDefault(kwargs, argumentDefinition)
 
+        self.setWorkloadOverrides(kwargs["Override"])
         self.setSiteWhitelist(kwargs["SiteWhitelist"])
         self.setSiteBlacklist(kwargs["SiteBlacklist"])
         self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),

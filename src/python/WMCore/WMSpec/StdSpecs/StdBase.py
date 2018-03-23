@@ -1153,7 +1153,11 @@ class StdBase(object):
                      "BlockCloseMaxEvents": {"default": 25000000, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
                      # dashboard activity
-                     "Dashboard": {"default": "production", "type": str, "validate": activity}
+                     "Dashboard": {"default": "production", "type": str, "validate": activity},
+                     # Override parameters for step (EOS log location, etc
+                     # set to "" string or None for eos-lfn-prefix if you don't want to save the log in eos
+                     "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent"},
+                                  "type": dict},
                      }
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)

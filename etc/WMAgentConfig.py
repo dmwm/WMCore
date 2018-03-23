@@ -229,7 +229,7 @@ config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
 config.ErrorHandler.maxFailTime = 120000
-config.ErrorHandler.maxProcessSize = 30
+config.ErrorHandler.maxProcessSize = 500
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"

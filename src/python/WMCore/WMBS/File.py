@@ -535,6 +535,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
     lfnList = []
     fileUpdate = []
 
+    logging.info("AMR building data structs before wmbs insertions for %s", workflowName)
     for wmbsFile in files:
         lfn = wmbsFile['lfn']
         lfnList.append(lfn)
@@ -586,7 +587,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                            None,
                            wmbsFile["first_event"],
                            wmbsFile['merged']])
-
+    logging.info("AMR creating files and adding their checksum")
     if len(fileCreate) > 0:
         addFileAction.execute(files=fileCreate,
                               conn=conn,
@@ -594,22 +595,23 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         setFileAddChecksum.execute(bulkList=fileCksumBinds,
                                    conn=conn,
                                    transaction=transaction)
-
+    logging.info("AMR updating file info/run/lumi/events")
     if len(fileUpdate) > 0:
         updateFileAction.execute(files=fileUpdate,
                                  conn=conn,
                                  transaction=transaction)
-
+    logging.info("AMR setting file locations")
     if len(fileLocations) > 0:
         setFileLocation.execute(lfns=lfnList, locations=fileLocations,
                                 isDBS=isDBS,
                                 conn=conn,
                                 transaction=transaction)
+    logging.info("AMR adding run/lumi mask")
     if len(runLumiBinds) > 0:
         setFileRunLumi.execute(file=runLumiBinds,
                                conn=conn,
                                transaction=transaction)
-
+    logging.info("AMR adding files to fileset")
     if len(fileLFNs) > 0:
         logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
                                                                filesetId))
@@ -618,10 +620,10 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                              workflow=workflowName,
                              conn=conn,
                              transaction=transaction)
-
+    logging.info("AMR creating parentage relationship files and adding their checksum")
     if len(parentageBinds) > 0:
         setParentage.execute(binds=parentageBinds,
                              conn=conn,
                              transaction=transaction)
-
+    logging.info("AMR all done!")
     return len(lfnsToCreate)

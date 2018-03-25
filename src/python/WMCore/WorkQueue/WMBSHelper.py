@@ -449,18 +449,22 @@ class WMBSHelper(WMConnectionBase):
 
         if self.topLevelTask.getInputACDC():
             self.isDBS = False
+            logging.info('Adding ACDC files into WMBS for %s', self.wmSpec.name())
             for acdcFile in self.validFiles(block['Files']):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True
+            logging.info('Adding files into WMBS for %s', self.wmSpec.name())
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, block['PhEDExNodeNames'])
 
         # Add files to WMBS
+        logging.info('Inserting in bulk all the file info into WMBS for %s', self.wmSpec.name())
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
                                                                isDBS=self.isDBS)
         # Add files to DBSBuffer
+        logging.info('Inserting all the file info into DBSBuffer for %s', self.wmSpec.name())
         self._createFilesInDBSBuffer()
 
         self.topLevelFileset.markOpen(block.get('IsOpen', False))

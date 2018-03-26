@@ -5,8 +5,8 @@ _SetLocationByLFN_
 MySQL implementation of DBSBuffer.SetLocationByLFN
 """
 
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class SetLocationByLFN(DBFormatter):
     sql = """INSERT IGNORE INTO dbsbuffer_file_location (filename, location)
@@ -16,12 +16,11 @@ class SetLocationByLFN(DBFormatter):
                AND dl.pnn = :pnn
     """
 
-
-    def execute(self, binds, conn = None, transaction = None):
+    def execute(self, binds, conn=None, transaction=None):
         """
         Expect binds in the form {lfn, pnn}
 
         """
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn,
+                             transaction=transaction)
         return

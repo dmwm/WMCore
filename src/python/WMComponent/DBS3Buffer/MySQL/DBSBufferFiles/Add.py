@@ -1,12 +1,8 @@
 #!/usr/bin/env python
-
-
-
-
-
 """
 MySQL implementation of AddFile
 """
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
@@ -16,18 +12,18 @@ class Add(DBFormatter):
 
     def getBinds(self, files, size, events, cksum, dataset_algo, status, workflowID, inPhedex):
         # Can't use self.dbi.buildbinds here...
-        binds = {}
+        binds = []
         if isinstance(files, basestring):
-            binds = {'lfn': files,
+            bind = {'lfn': files,
                      'filesize': size,
                      'events': events,
                      'dataset_algo': dataset_algo,
                      'status' : status,
                      'workflow': workflowID,
                      'in_phedex': inPhedex}
-        elif isinstance(files, list):
-        # files is a list of tuples containing lfn, size, events, cksum, dataset, status
-            binds = []
+            binds.append(bind)
+        elif isinstance(files, (list, set)):
+            # files is a list of tuples containing lfn, size, events, cksum, dataset, status
             for f in files:
                 binds.append({'lfn': f[0],
                               'filesize': f[1],

@@ -6,15 +6,12 @@ MySQL implementation of DBSBuffer.SetLocationByLFN
 """
 
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocationByLFN(DBFormatter):
     sql = """INSERT IGNORE INTO dbsbuffer_file_location (filename, location)
                SELECT df.id, dl.id
-               FROM dbsbuffer_file df
-               INNER JOIN dbsbuffer_location dl
+               FROM dbsbuffer_file df, dbsbuffer_location dl
                WHERE df.lfn = :lfn
                AND dl.pnn = :pnn
     """

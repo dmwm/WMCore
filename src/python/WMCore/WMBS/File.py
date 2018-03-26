@@ -511,11 +511,11 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
 
     Assumes files are full dao objects
     """
-    if len(files) == 0:
+    if not files:
         # Nothing to do
         return 0
 
-    daofactory = files[0].daofactory
+    daofactory = next(iter(files)).daofactory
     setParentage = daofactory(classname="Files.SetParentage")
     setFileRunLumi = daofactory(classname="Files.AddRunLumi")
     setFileLocation = daofactory(classname="Files.SetLocationForWorkQueue")
@@ -530,18 +530,17 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
     fileCksumBinds = []
     fileLocations = []
     fileCreate = []
-    fileLFNs = []
-    lfnsToCreate = []
-    lfnList = []
+    fileLFNs = set()
+    lfnsToCreate = set()
+    lfnList = set()
     fileUpdate = []
 
     for wmbsFile in files:
         lfn = wmbsFile['lfn']
-        lfnList.append(lfn)
+        lfnList.add(lfn)
 
         if wmbsFile.get('inFileset', True):
-            if lfn not in fileLFNs:
-                fileLFNs.append(lfn)
+            fileLFNs.add(lfn)
         for parent in wmbsFile['parents']:
             parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
 
@@ -569,9 +568,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                                wmbsFile['merged']])
             continue
 
-        if lfn in lfnsToCreate:
-            continue
-        lfnsToCreate.append(lfn)
+        lfnsToCreate.add(lfn)
 
         if selfChecksums:
             # If we have checksums we have to create a bind
@@ -611,8 +608,6 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                                transaction=transaction)
 
     if len(fileLFNs) > 0:
-        logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
-                                                               filesetId))
         addToFileset.execute(file=fileLFNs,
                              fileset=filesetId,
                              workflow=workflowName,

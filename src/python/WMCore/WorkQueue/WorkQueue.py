@@ -453,6 +453,8 @@ class WorkQueue(WorkQueueBase):
             Assumes elements are from the same workflow"""
         if not self.params['LocalQueueFlag']:
             return
+
+        from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         wmspec = None
         for ele in elements:
             if not ele.isRunning() or not ele['SubscriptionId'] or not ele:
@@ -464,7 +466,6 @@ class WorkQueue(WorkQueueBase):
             blockName, dbsBlock = self._getDBSBlock(ele, wmspec)
             if ele['NumOfFilesAdded'] != len(dbsBlock['Files']):
                 self.logger.info("Adding new files to open block %s (%s)" % (blockName, ele.id))
-                from WMCore.WorkQueue.WMBSHelper import WMBSHelper
                 wmbsHelper = WMBSHelper(wmspec, ele['TaskName'], blockName, ele['Mask'], self.params['CacheDir'])
                 ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)[1]
                 self.backend.updateElements(ele.id, NumOfFilesAdded=ele['NumOfFilesAdded'])

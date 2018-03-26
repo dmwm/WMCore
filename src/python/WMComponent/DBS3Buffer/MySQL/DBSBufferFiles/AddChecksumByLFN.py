@@ -7,7 +7,6 @@ MySQL implementation of AddChecksumByLFN
 
 
 
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddChecksumByLFN(DBFormatter):
@@ -21,9 +20,9 @@ class AddChecksumByLFN(DBFormatter):
         if bulkList:
             binds = bulkList
         else:
-            binds = {'lfn': lfn, 'cktype': cktype, 'cksum': cksum}
+            binds = [{'lfn': lfn, 'cktype': cktype, 'cksum': cksum}]
 
-        result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+        self.dbi.processData(self.sql, binds,
+                             conn = conn, transaction = transaction)
 
         return

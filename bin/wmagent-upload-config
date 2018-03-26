@@ -2,6 +2,7 @@
 from __future__ import division, print_function
 
 import os
+import time
 from pprint import pformat
 
 from WMCore.Agent.DefaultConfig import DEFAULT_AGENT_CONFIG
@@ -10,13 +11,14 @@ from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 
 def insertWMAgentConfig(reqMgrAux, agentName, agentConfig):
-    print("Uploading agent configuration to ReqMgrAux. Data is\n%s" % pformat(agentConfig))
-    reqMgrAux.postWMAgentConfig(agentName, agentConfig)
-
+    print("\nUploading new agent configuration to ReqMgrAux. Data is\n%s" % pformat(agentConfig))
+    res = reqMgrAux.postWMAgentConfig(agentName, agentConfig)
+    print(res)
 
 def removeWMAgentConfig(reqMgrAux, agentName):
+    print("Deleting previous config...")
     reqMgrAux.deleteWMAgentConfig(agentName)
-
+    time.sleep(2)
 
 if __name__ == "__main__":
     wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])

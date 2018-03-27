@@ -1,9 +1,9 @@
 from __future__ import (print_function, division)
 
 import json
+import traceback
 
 import cherrypy
-import traceback
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from Utils.Utilities import strToBool
@@ -12,13 +12,12 @@ from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 
 
 def format_algo_web_list(task_name, task_type, split_param, algo_config):
-
     fdict = {"taskName": task_name}
     fdict["taskType"] = task_type
     default_algo = split_param["algorithm"]
@@ -237,7 +236,6 @@ class WorkloadSplitting(RESTEntity):
             else:
                 msg = str(ex)
             raise InvalidSpecParameterValue(msg)
-
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)

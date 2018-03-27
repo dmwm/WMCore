@@ -17,8 +17,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 
 
-def format_algo_web_list(task_name, task_type, split_param):
-    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+def format_algo_web_list(task_name, task_type, split_param, algo_config):
 
     fdict = {"taskName": task_name}
     fdict["taskType"] = task_type
@@ -51,23 +50,33 @@ def format_algo_web_list(task_name, task_type, split_param):
 
 def create_web_splitting_format(split_info):
     web_form = []
+    splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+
     for sp in split_info:
         # skip Cleanup and LogCollect: don't allow change the param
         if sp["taskType"] not in ["Cleanup", "LogCollect"]:
             web_form.append(format_algo_web_list(sp["taskName"], sp["taskType"],
-                                                 sp["splitParams"]))
+                                                 sp["splitParams"], splitSettings))
     return web_form
 
 
 def create_updatable_splitting_format(split_info):
+    """
+    _create_updatable_splitting_format_
+
+    Returns the workflow job splitting without parameters that
+    cannot be updated in the POST call.
+    """
     splitInfo = []
+    splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+
     for taskInfo in split_info:
         if taskInfo["taskType"] not in ["Cleanup", "LogCollect"]:
             splittingAlgo = taskInfo["splitAlgo"]
             submittedParams = taskInfo["splitParams"]
             splitParams = {}
             for param in submittedParams:
-                validFlag, _ = _validate_split_param(splittingAlgo, param)
+                validFlag, _ = _validate_split_param(splittingAlgo, param, splitSettings)
                 if validFlag:
                     splitParams[param] = taskInfo["splitParams"][param]
             taskInfo["splitParams"] = splitParams
@@ -75,11 +84,10 @@ def create_updatable_splitting_format(split_info):
     return splitInfo
 
 
-def _validate_split_param(split_algo, split_param):
+def _validate_split_param(split_algo, split_param, algo_config):
     """
     validate param for editing, also returns param type
     """
-    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
 
     valid_params = algo_config["algo_params"][split_algo]
     if split_param in valid_params:
@@ -281,13 +289,14 @@ class WorkloadSplitting(RESTEntity):
         except Exception:
             raise cherrypy.HTTPError(404, "Cannot find workload for: %s" % name)
 
+        splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
         for taskInfo in splittingInfo:
             splittingTask = taskInfo["taskName"]
             splittingAlgo = taskInfo["splitAlgo"]
             submittedParams = taskInfo["splitParams"]
             splitParams = {}
             for param in submittedParams:
-                validFlag, castType = _validate_split_param(splittingAlgo, param)
+                validFlag, castType = _validate_split_param(splittingAlgo, param, splitSettings)
                 if validFlag:
                     _assign_key_value(param, submittedParams[param], splitParams, castType)
                 else:

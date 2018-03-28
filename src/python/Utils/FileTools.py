@@ -106,3 +106,15 @@ def findMagicStr(filename, matchString):
         for line in logfile:
             if matchString in line:
                 yield line
+
+def getFullPath(name, envPath="PATH"):
+    """
+    :param name: file name
+    :param envPath: any environment variable specified for path (PATH, PYTHONPATH, etc)
+    :return: full path if it is under PATH env
+    """
+    for path in os.getenv(envPath).split(os.path.pathsep):
+        fullPath = os.path.join(path, name)
+        if os.path.exists(fullPath):
+            return fullPath
+    return None

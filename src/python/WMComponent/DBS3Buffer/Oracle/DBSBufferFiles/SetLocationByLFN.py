@@ -16,10 +16,10 @@ class SetLocationByLFN(MySQLSetLocationByLFN):
 
     """
     sql = """INSERT INTO dbsbuffer_file_location (filename, location)
-               SELECT (SELECT id FROM dbsbuffer_file WHERE lfn= :lfn) AS filename,
-                      (SELECT id FROM dbsbuffer_location WHERE pnn= :pnn) AS location
-               FROM DUAL WHERE NOT EXISTS
+               SELECT df.id, dl.id FROM dbsbuffer_file df, dbsbuffer_location dl
+               WHERE df.lfn = :lfn AND dl.pnn = :pnn
+               AND NOT EXISTS
                  (SELECT filename FROM dbsbuffer_file_location
-                   WHERE filename= (SELECT id FROM dbsbuffer_file WHERE lfn= :lfn) AND
-                   location= (SELECT id FROM dbsbuffer_location WHERE pnn= :pnn))
-               """
+                 WHERE filename = df.id
+                 AND location = dl.id)
+          """

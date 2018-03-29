@@ -622,5 +622,83 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 123)
         return
 
+    def testGetSwVersionAndScramArch(self):
+        """
+        _testGetSwVersionAndScramArch_
+
+        Test whether we can fetch the CMSSW release and ScramArch
+        being used in a task
+        """
+        testTask = makeWMTask("MultiTask")
+
+        taskCmssw = testTask.makeStep("cmsRun1")
+        taskCmssw.setStepType("CMSSW")
+        taskCmsswStageOut = taskCmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+
+        testTask.applyTemplates()
+
+        taskCmsswHelper = taskCmssw.getTypeHelper()
+        taskCmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        self.assertEqual(testTask.getSwVersion(), "CMSSW_1_2_3")
+        self.assertEqual(testTask.getSwVersion(allSteps=True), ["CMSSW_1_2_3"])
+
+        self.assertEqual(testTask.getScramArch(), "slc7_amd64_gcc123")
+        self.assertEqual(testTask.getScramArch(allSteps=True), ["slc7_amd64_gcc123"])
+
+        return
+
+    def testGetSwVersionAndScramArchMulti(self):
+        """
+        _testGetSwVersionAndScramArchMulti_
+
+        Test whether we can fetch the CMSSW release and ScramArch
+        being used in a task
+        """
+        testTask = makeWMTask("MultiTask")
+
+        taskCmssw = testTask.makeStep("cmsRun1")
+        taskCmssw.setStepType("CMSSW")
+        taskCmsswStageOut = taskCmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+
+        testTask.applyTemplates()
+        taskCmsswHelper = taskCmssw.getTypeHelper()
+        taskCmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        # setup step2/cmsRun2
+        step1Cmssw = testTask.getStep("cmsRun1")
+        step2Cmssw = step1Cmssw.addTopStep("cmsRun2")
+        step2Cmssw.setStepType("CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(step2Cmssw.data)
+
+        step2CmsswHelper = step2Cmssw.getTypeHelper()
+        step2CmsswHelper.setupChainedProcessing("cmsRun1", "RAWSIMoutput")
+        step2CmsswHelper.cmsswSetup("CMSSW_2_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc223")
+
+        # setup step3/cmsRun3 --> duplicate CMSSW and ScramArch
+        step3Cmssw = step2Cmssw.addTopStep("cmsRun3")
+        step3Cmssw.setStepType("CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(step3Cmssw.data)
+
+        step3CmsswHelper = step3Cmssw.getTypeHelper()
+        step3CmsswHelper.setupChainedProcessing("cmsRun2", "AODoutput")
+        step3CmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        self.assertEqual(testTask.getSwVersion(), "CMSSW_1_2_3")
+        self.assertEqual(testTask.getSwVersion(allSteps=True), ["CMSSW_1_2_3", "CMSSW_2_2_3", "CMSSW_1_2_3"])
+
+        self.assertEqual(testTask.getScramArch(), "slc7_amd64_gcc123")
+        self.assertEqual(testTask.getScramArch(allSteps=True), ["slc7_amd64_gcc123", "slc7_amd64_gcc223", "slc7_amd64_gcc123"])
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

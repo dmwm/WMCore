@@ -13,7 +13,11 @@ class AddLocation(DBFormatter):
 
     def execute(self, siteName, conn = None, transaction = False):
         binds = []
-        binds.append({"location": siteName})
+        if isinstance(siteName, basestring):
+            siteName = [siteName]
+
+        for site in siteName:
+            binds.append({"location": site})
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = True)

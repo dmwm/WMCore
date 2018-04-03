@@ -25,6 +25,7 @@ import tarfile
 import zipfile
 import getopt
 import traceback
+import logging
 
 options = {
     "sandbox=": "WMAGENT_SANDBOX",  # sandbox archive file
@@ -88,8 +89,8 @@ def createWorkArea(sandbox):
     os.close(fd)
 
     zfile.close()
+    logging.info("PYTHONPATH=%s", os.environ.get("PYTHONPATH"))
 
-    print("export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir))
     return jobDir
 
 

@@ -289,6 +289,11 @@ class Scram(object):
             if varName == "SCRAM_ARCH":
                 rtScramArch = self.runtimeEnv[varName].replace('\"', '')
 
+        # Make sure to pass PYTHONPATH env (with WMCore path) to CMSSW python
+        # Scram was modified in CMSSW_10_1_0 and it no longer returns this env var
+        if "PYTHONPATH" not in self.runtimeEnv:
+            self.procWriter(proc, 'export PYTHONPATH=%s\n' % os.environ['PYTHONPATH'])
+
         if os.environ.get('VO_CMS_SW_DIR', None) != None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])
         if os.environ.get('OSG_APP', None) != None:
@@ -318,7 +323,7 @@ class Scram(object):
                 command = command.replace(sys.executable, python26exec)
             elif hackLdLibPath:
                 # reset python path for DMWM python (scram will have changed env to point at its own)
-                self.procWriter(proc, "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
+                self.procWriter(proc, "export PYTHONPATH=%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
 
         logging.info("    Invoking command: %s", command)
         self.procWriter(proc, "%s\n" % command)

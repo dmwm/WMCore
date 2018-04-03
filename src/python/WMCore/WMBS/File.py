@@ -530,7 +530,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
     fileCksumBinds = []
     fileLocations = []
     fileCreate = []
-    fileLFNs = []
+    fileLFNs = set()
     lfnsToCreate = []
     lfnList = []
     fileUpdate = []
@@ -540,8 +540,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         lfnList.append(lfn)
 
         if wmbsFile.get('inFileset', True):
-            if lfn not in fileLFNs:
-                fileLFNs.append(lfn)
+            fileLFNs.add(lfn)
         for parent in wmbsFile['parents']:
             parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
 

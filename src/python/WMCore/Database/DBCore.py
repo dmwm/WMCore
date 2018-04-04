@@ -7,7 +7,7 @@ Core Database APIs
 
 """
 
-
+import logging
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Database.ResultSet import ResultSet
@@ -156,10 +156,13 @@ class DBInterface(WMObject):
                 #Run single SQL statement for a list of binds - use execute_many()
                 if not transaction:
                     trans = connection.begin()
+                queryPrint = True
                 while(len(binds) > self.maxBindsPerQuery):
+                    logging.info("XXXXX bind: %s, %s", len(binds), sqlstmt)
                     result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
                                                    conn=connection, transaction=True,
                                                    returnCursor=returnCursor))
+                    logging.info("XXXXX done")
                     binds = binds[self.maxBindsPerQuery:]
 
                 for i in sqlstmt:

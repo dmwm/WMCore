@@ -530,18 +530,18 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
     fileCksumBinds = []
     fileLocations = []
     fileCreate = []
-    fileLFNs = []
+    fileLFNs = set()
     lfnsToCreate = []
     lfnList = []
     fileUpdate = []
 
+    logging.info("XXXX building binds for %d wmbs files for workflow %s", len(files), workflowName)
     for wmbsFile in files:
         lfn = wmbsFile['lfn']
         lfnList.append(lfn)
 
         if wmbsFile.get('inFileset', True):
-            if lfn not in fileLFNs:
-                fileLFNs.append(lfn)
+            fileLFNs.add(lfn)
         for parent in wmbsFile['parents']:
             parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
 
@@ -587,6 +587,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                            wmbsFile["first_event"],
                            wmbsFile['merged']])
 
+    logging.info("XXXX creating %d files and adding their checksum", len(fileCreate))
     if len(fileCreate) > 0:
         addFileAction.execute(files=fileCreate,
                               conn=conn,
@@ -595,21 +596,26 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                                    conn=conn,
                                    transaction=transaction)
 
+    logging.info("XXXX updating %d file info/run/lumi/events", len(fileUpdate))
     if len(fileUpdate) > 0:
         updateFileAction.execute(files=fileUpdate,
                                  conn=conn,
                                  transaction=transaction)
 
+    logging.info("XXXX setting %d file locations", len(fileLocations))
     if len(fileLocations) > 0:
         setFileLocation.execute(lfns=lfnList, locations=fileLocations,
                                 isDBS=isDBS,
                                 conn=conn,
                                 transaction=transaction)
+
+    logging.info("XXXX adding %d run/lumi mask", len(runLumiBinds))
     if len(runLumiBinds) > 0:
         setFileRunLumi.execute(file=runLumiBinds,
                                conn=conn,
                                transaction=transaction)
 
+    logging.info("XXXX Add file lfn to fileset %s", len(fileLFNs))
     if len(fileLFNs) > 0:
         logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
                                                                filesetId))
@@ -619,9 +625,11 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                              conn=conn,
                              transaction=transaction)
 
+    logging.info("XXXX creating %d parentage relationship files and adding their checksum", len(parentageBinds))
     if len(parentageBinds) > 0:
         setParentage.execute(binds=parentageBinds,
                              conn=conn,
                              transaction=transaction)
 
+    logging.info("XXXX all done!")
     return len(lfnsToCreate)

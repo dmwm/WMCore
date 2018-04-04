@@ -19,12 +19,14 @@ This will then do the following:
 
 """
 from __future__ import print_function
-import sys
-import os
-import tarfile
-import zipfile
+
 import getopt
+import logging
+import os
+import sys
+import tarfile
 import traceback
+import zipfile
 
 options = {
     "sandbox=": "WMAGENT_SANDBOX",  # sandbox archive file
@@ -56,9 +58,8 @@ def makeErrorReport(jobName, exitCode, message):
     xml += "</FrameworkError>\n"
     xml += "</FrameworkJobReport>\n"
     xml += "</xml>\n"
-    handle = open("FrameworkJobReport.xml", 'w')
-    handle.write(xml)
-    handle.close()
+    with open("FrameworkJobReport.xml", 'w') as handle:
+        handle.write(xml)
 
 
 def createWorkArea(sandbox):
@@ -76,20 +77,18 @@ def createWorkArea(sandbox):
     if not os.path.exists(os.path.join(jobDir, 'StartupScript')):
         os.makedirs(os.path.join(jobDir, 'StartupScript'))
 
-    tfile = tarfile.open(sandbox, "r")
-    tfile.extractall(jobDir)
-    tfile.close()
+    with tarfile.open(sandbox, "r") as tfile:
+        tfile.extractall(jobDir)
 
     # need to pull out the startup file from the zipball
-    zfile = zipfile.ZipFile(os.path.join(jobDir, 'WMCore.zip'), 'r')
-    startupScript = zfile.read('WMCore/WMRuntime/Startup.py')
-    fd = os.open(os.path.join(jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY)
-    os.write(fd, startupScript)
-    os.close(fd)
+    with zipfile.ZipFile(os.path.join(jobDir, 'WMCore.zip'), 'r') as zfile:
+        startupScript = zfile.read('WMCore/WMRuntime/Startup.py')
+        fd = os.open(os.path.join(jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY)
+        os.write(fd, startupScript)
+        os.close(fd)
 
-    zfile.close()
+    logging.info("PYTHONPATH=%s", os.environ.get("PYTHONPATH"))
 
-    print("export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir))
     return jobDir
 
 
@@ -107,9 +106,8 @@ def installPackage(jobArea, jobPackage, jobIndex):
     os.system("/bin/cp %s %s" % (jobPackage, pkgTarget))
 
     indexPy = "%s/JobIndex.py" % target
-    handle = open(indexPy, 'w')
-    handle.write("jobIndex = %s\n" % jobIndex)
-    handle.close()
+    with open(indexPy, 'w') as handle:
+        handle.write("jobIndex = %s\n" % jobIndex)
 
     return
 
@@ -129,7 +127,7 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
         msg += str(ex)
         msg += str(traceback.format_exc())
         makeErrorReport(jobname, 1, msg)
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
 
 
@@ -140,7 +138,7 @@ if __name__ == '__main__':
     except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
 
     sandbox = os.environ.get('WMAGENT_SANDBOX', None)
@@ -157,20 +155,20 @@ if __name__ == '__main__':
         if opt == "--jobname":
             jobname = arg
 
-    if sandbox == None:
+    if sandbox is None:
         msg = "No Sandbox provided"
         makeErrorReport(jobname, 1, msg)
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
-    if package == None:
+    if package is None:
         msg = "No Job Package provided"
         makeErrorReport(jobname, 1, msg)
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
-    if jobIndex == None:
+    if jobIndex is None:
         msg = "No Job Index provided"
         makeErrorReport(jobname, 1, msg)
-        print(msg)
+        logging.error(msg)
         sys.exit(1)
 
     runUnpacker(sandbox=sandbox, package=package,

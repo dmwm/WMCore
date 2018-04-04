@@ -77,6 +77,12 @@ class testFileTools(unittest.TestCase):
         self.assertEqual(info['Size'], 34)
         return
 
+    def test_getFullPath(self):
+        fullPath = FileTools.getFullPath("cd")
+        #assuming there is path for cd
+        self.assertIsNotNone(fullPath)
+        fullPath = FileTools.getFullPath("this_shouldnt_be")
+        self.assertEqual(fullPath, None)
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,7 @@ import sys
 import json
 import subprocess
 
+from Utils.FileTools import getFullPath
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
@@ -175,9 +176,11 @@ class Executor:
             condor_config_dir = os.path.dirname(condor_config)
             condor_chirp_bin = os.path.join(condor_config_dir, 'main/condor/libexec/condor_chirp')
             if not os.path.isfile(condor_chirp_bin):
-                condor_chirp_bin = None
+                # Singularity container might not have CONDOR_CONFIG env.
+                #TODO: It should have fixed from Singularity setting
+                condor_chirp_bin = getFullPath("condor_chirp")
 
-        if condor_chirp_bin:
+        if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
             args = [ condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value) ]
             returncode = subprocess.call(args)
 

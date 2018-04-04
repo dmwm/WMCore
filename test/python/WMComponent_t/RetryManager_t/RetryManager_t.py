@@ -144,7 +144,7 @@ class RetryManagerTest(EmulatedUnitTestCase):
         testFileA.create()
         testFileB.create()
 
-        for i in range(0, nJobs):
+        for _ in range(0, nJobs):
             testJob = Job(name=makeUUID())
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
@@ -534,6 +534,9 @@ class RetryManagerTest(EmulatedUnitTestCase):
 
         testJobGroup = self.createTestJobGroup(nJobs=self.nJobs)
 
+        # adding a 2nd job group
+        testJobGroup2 = self.createTestJobGroup(nJobs=self.nJobs)
+
         config = self.getConfig()
         config.RetryManager.plugins = {'Processing': 'PauseAlgo'}
         config.RetryManager.section_("PauseAlgo")
@@ -552,6 +555,8 @@ class RetryManagerTest(EmulatedUnitTestCase):
 
         testRetryManager = RetryManagerPoller(config)
         testRetryManager.setup(None)
+
+        report = Report()
 
         # Making sure that jobs are not created ahead of time
         for job in testJobGroup.jobs:
@@ -645,6 +650,79 @@ class RetryManagerTest(EmulatedUnitTestCase):
         testRetryManager.algorithm(None)
         idList = self.getJobs.execute(state='jobpaused')
         self.assertEqual(len(idList), self.nJobs)
+
+        # a configurable retry count per job type {jobExitCodeA: pauseCountB}
+        config.RetryManager.PauseAlgo.Processing.retryErrorCodes = {8020: 1, 12345: 1, 5555: 2}
+
+        testRetryManager2 = RetryManagerPoller(config)
+        testRetryManager2.algorithm()
+
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t",
+                                "fwjrs/badBackfillJobReport.pkl")
+
+        report.load(fwjrPath)
+        for job in testJobGroup2.jobs:
+            job['fwjr'] = report
+            job['retry_count'] = 0
+            report.save(os.path.join(job['cache_dir'], "Report.%i.pkl" % job['retry_count']))
+
+        # fail the jobs
+        changer.propagate(testJobGroup2.jobs, 'created', 'new')
+        changer.propagate(testJobGroup2.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup2.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup2.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup2.jobs, 'jobcooloff', 'jobfailed')
+
+        # Giving time so they can be paused
+        for job in testJobGroup2.jobs:
+            self.setJobTime.execute(jobID=job["id"],
+                                    stateTime=int(time.time()) - 85)
+
+        # Make sure that the plugin sent those jobs to the next state:
+        testRetryManager2.algorithm()
+        # job exit code is 8020, so it is supposed to be retried one time.
+        # Meaning, that here we should have 10 jobs (from the first part of the test) in jobpaused
+        # and 10 jobs in created state
+
+        idList = self.getJobs.execute(state='created')
+        self.assertEqual(len(idList), self.nJobs)
+
+        idList2 = self.getJobs.execute(state='jobpaused')
+        self.assertEqual(len(idList2), self.nJobs)
+
+        # save a second job report - with a retry count = 1
+        for job in testJobGroup2.jobs:
+            j = Job(id=job['id'])
+            j.load()
+            j['retry_count'] = 1
+            self.assertEqual(j['retry_count'], 1)
+            report.save(os.path.join(j['cache_dir'], "Report.%i.pkl" % j['retry_count']))
+
+        # Fail them out again
+        changer.propagate(testJobGroup2.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup2.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup2.jobs, 'jobfailed', 'complete')
+        changer.propagate(testJobGroup2.jobs, 'jobcooloff', 'jobfailed')
+
+        for job in testJobGroup2.jobs:
+            self.setJobTime.execute(jobID=job["id"],
+                                    stateTime=int(time.time()) - 175)
+
+        # not sure if this check is needed:
+        idList = self.getJobs.execute(state='jobcooloff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        # Giving time so they can be paused
+        for job in testJobGroup2.jobs:
+            self.setJobTime.execute(jobID=job["id"],
+                                    stateTime=int(time.time()) - 85)
+
+        # Make sure that the plugin sent those jobs to paused state:
+        testRetryManager2.algorithm(None)
+        idList = self.getJobs.execute(state='jobpaused')
+        # And again, in total, there should be 10+10=20 jobs in jobpaused
+        self.assertEqual(len(idList), self.nJobs * 2)
 
         return
 

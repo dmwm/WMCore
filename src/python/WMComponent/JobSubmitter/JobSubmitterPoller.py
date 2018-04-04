@@ -372,7 +372,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'possibleSites': frozenset(possibleLocations),  # abort and drain sites filtered out
                        'potentialSites': frozenset(potentialLocations),  # original list of sites
                        'scramArch': loadedJob.get("scramArch", None),
-                       'swVersion': loadedJob.get("swVersion", None),
+                       'swVersion': loadedJob.get("swVersion", []),
                        'proxyPath': loadedJob.get("proxyPath", None),
                        'estimatedJobTime': loadedJob.get("estimatedJobTime", None),
                        'estimatedDiskUsage': loadedJob.get("estimatedDiskUsage", None),

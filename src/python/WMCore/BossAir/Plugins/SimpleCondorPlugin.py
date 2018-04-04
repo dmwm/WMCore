@@ -636,6 +636,8 @@ class SimpleCondorPlugin(BasePlugin):
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
             ad['REQUIRED_OS'] = requiredOSes
+            cmsswVersions = ','.join(job.get('swVersion'))
+            ad['CMSSW_Versions'] = cmsswVersions
 
             ad = convertFromUnicodeToStr(ad)
             condorAd = classad.ClassAd()

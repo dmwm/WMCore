@@ -608,7 +608,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict = {}
                     tempDict.update(processDict)
                     tempDict['jobGroup'] = wmbsJobGroup
-                    tempDict['swVersion'] = wmTask.getSwVersion()
+                    tempDict['swVersion'] = wmTask.getSwVersion(allSteps=True)
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
                     tempDict['agentNumber'] = self.agentNumber

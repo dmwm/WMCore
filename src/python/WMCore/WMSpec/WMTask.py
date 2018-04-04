@@ -1238,14 +1238,14 @@ class WMTaskHelper(TreeHelper):
          used in this task
         :return: a string with the release name or a list of releases if allSteps is True.
         """
-        versions = set()
+        versions = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
                 if not allSteps:
                     return stepHelper.getCMSSWVersion()
                 else:
-                    versions.add(stepHelper.getCMSSWVersion(allSteps))
+                    versions.append(stepHelper.getCMSSWVersion())
         return versions
 
     def getScramArch(self, allSteps=False):
@@ -1255,14 +1255,14 @@ class WMTaskHelper(TreeHelper):
         Get the scram architecture for the first CMSSW step of workload.
         Set allSteps to true to retrieve all the scramArchs used in this task.
         """
-        scrams = set()
+        scrams = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
                 if not allSteps:
                     return stepHelper.getScramArch()
                 else:
-                    scrams.add(stepHelper.getScramArch(allSteps))
+                    scrams.append(stepHelper.getScramArch())
         return scrams
 
     def setPrimarySubType(self, subType):

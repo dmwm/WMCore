@@ -17,10 +17,8 @@ class SetLocationForWorkQueue(MySQLSetLocationForWorkQueue):
 
     """
 
-    insertSQL = """INSERT INTO wmbs_file_location (fileid, pnn)
-                     SELECT wfd.id, wpnn.id FROM wmbs_file_details wfd, wmbs_pnns wpnn
-                     WHERE wfd.lfn = :lfn AND wpnn.pnn = :location
-                     AND NOT EXISTS (SELECT fileid FROM wmbs_file_location
-                                     WHERE fileid = wfd.id
-                                     AND pnn=
-                                     (SELECT id from wmbs_pnns where pnn=:location))"""
+    insertSQL = """INSERT /*+ IGNORE_ROW_ON_DUPKEY_INDEX (wmbs_file_location (fileid, pnn)) */ 
+                     INTO wmbs_file_location (fileid, pnn)
+                   SELECT wfd.id, wpnn.id FROM wmbs_file_details wfd, wmbs_pnns wpnn
+                   WHERE wfd.lfn = :lfn AND wpnn.pnn = :location
+                """

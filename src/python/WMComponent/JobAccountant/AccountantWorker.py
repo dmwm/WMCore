@@ -730,12 +730,10 @@ class AccountantWorker(WMConnectionBase):
         try:
 
             diffLocation = jobLocations.difference(self.dbsLocations)
-
-            for jobLocation in diffLocation:
-                self.dbsInsertLocation.execute(siteName=jobLocation,
-                                               conn=self.getDBConn(),
-                                               transaction=self.existingTransaction())
-                self.dbsLocations.add(jobLocation)
+            self.dbsInsertLocation.execute(siteName=diffLocation,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
+            self.dbsLocations.union(diffLocation)  # update the component cache location list
 
             self.dbsCreateFiles.execute(files=dbsFileTuples,
                                         conn=self.getDBConn(),

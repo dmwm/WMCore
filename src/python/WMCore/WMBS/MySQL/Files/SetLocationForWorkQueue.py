@@ -36,14 +36,14 @@ class SetLocationForWorkQueue(DBFormatter):
         Else:
         Simply insert the new locations
         """
-        binds = []
-        for lfn in lfns:
-            binds.append({'lfn': lfn})
-
         if isDBS:
+            binds = []
+            for lfn in lfns:
+                binds.append({'lfn': lfn})
             self.dbi.processData(self.deleteSQL, binds, conn=conn,
                                  transaction=transaction)
 
         self.dbi.processData(self.insertSQL, locations, conn=conn,
                              transaction=transaction)
+
         return

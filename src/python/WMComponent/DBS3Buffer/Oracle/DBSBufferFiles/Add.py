@@ -3,7 +3,6 @@
 Oracle implementation of AddFile
 """
 
-#This has been modified for Oracle
 
 
 

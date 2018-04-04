@@ -14,7 +14,7 @@ class Add(DBFormatter):
                  first_event=0, merged=False):
         # Can't use self.dbi.buildbinds here...
         binds = {}
-        if not isinstance(files, list):
+        if not isinstance(files, (list, set)):
             binds = {'lfn': files,
                      'filesize': size,
                      'events': events,

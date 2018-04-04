@@ -16,16 +16,17 @@
 ###
 ### Usage: deploy-wmagent.sh -h
 ### Usage:               -w <wma_version>  WMAgent version (tag) available in the WMCore repository
-### Usage:               -c <cmsweb_tag>   CMSWEB deployment tag used for the WMAgent deployment
+### Usage:               -d <deployment_tag>   CMSWEB deployment tag used for the WMAgent deployment
 ### Usage:               -t <team_name>    Team name in which the agent should be connected to
 ### Usage:               -s <scram_arch>   The RPM architecture (defaults to slc5_amd64_gcc461)
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
+### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
-### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.10.patch4 -c HG1802d -t production -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.6.patch4 -c HG1709c -t testbed-cmssrv214 -p "8208 8209" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.10.patch5 -d HG1802d -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.12.patch1 -d HG1804d -t testbed-vocms001 -p "8503" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -41,6 +42,7 @@ WMA_ARCH=slc7_amd64_gcc630
 REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
+CENTRAL_SERVICES="cmsweb.cern.ch"
 
 ### Usage function: print the usage of the script
 usage()
@@ -122,17 +124,18 @@ for arg; do
   case $arg in
     -h) help ;;
     -w) WMA_TAG=$2; shift; shift ;;
-    -c) CMSWEB_TAG=$2; shift; shift ;;
+    -d) DEPLOY_TAG=$2; shift; shift ;;
     -t) TEAMNAME=$2; shift; shift ;;
     -s) WMA_ARCH=$2; shift; shift ;;
     -r) REPO=$2; shift; shift ;;
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
+    -c) CENTRAL_SERVICES=$2; shift; shift ;;
     -*) usage ;;
   esac
 done
 
-if [[ -z $WMA_TAG ]] || [[ -z $CMSWEB_TAG ]] || [[ -z $TEAMNAME ]]; then
+if [[ -z $WMA_TAG ]] || [[ -z $DEPLOY_TAG ]] || [[ -z $TEAMNAME ]]; then
   usage
   exit 1
 fi
@@ -172,23 +175,24 @@ else
 fi && echo
 
 echo "Starting new agent deployment with the following data:"
-echo " - WMAgent version: $WMA_TAG"
-echo " - CMSWEB tag     : $CMSWEB_TAG"
-echo " - Team name      : $TEAMNAME"
-echo " - WMAgent Arch   : $WMA_ARCH"
-echo " - Repository     : $REPO"
-echo " - Agent number   : $AG_NUM"
-echo " - DB Flavor      : $FLAVOR"
-echo " - Use /data1     : $DATA1" && echo
+echo " - WMAgent version : $WMA_TAG"
+echo " - CMSWEB tag      : $DEPLOY_TAG"
+echo " - Team name       : $TEAMNAME"
+echo " - WMAgent Arch    : $WMA_ARCH"
+echo " - Repository      : $REPO"
+echo " - Agent number    : $AG_NUM"
+echo " - DB Flavor       : $FLAVOR"
+echo " - Central Services: $CENTRAL_SERVICES"
+echo " - Use /data1      : $DATA1" && echo
 
 mkdir -p $DEPLOY_DIR || true
 cd $BASE_DIR
-rm -rf deployment deployment.zip deployment-${CMSWEB_TAG};
+rm -rf deployment deployment.zip deployment-${DEPLOY_TAG};
 
 set -e 
-wget -nv -O deployment.zip --no-check-certificate https://github.com/dmwm/deployment/archive/$CMSWEB_TAG.zip
+wget -nv -O deployment.zip --no-check-certificate https://github.com/dmwm/deployment/archive/$DEPLOY_TAG.zip
 unzip -q deployment.zip
-cd deployment-$CMSWEB_TAG
+cd deployment-$DEPLOY_TAG
 set +e 
 
 echo -e "\n*** Applying (for couchdb1.6, etc) cert file permission ***"
@@ -199,7 +203,7 @@ echo -e "\n*** Removing the current crontab ***"
 /usr/bin/crontab -r;
 echo "Done!"
 
-cd $BASE_DIR/deployment-$CMSWEB_TAG
+cd $BASE_DIR/deployment-$DEPLOY_TAG
 set -e
 for step in prep sw post; do
   echo -e "\n*** Deploying WMAgent: running $step step ***"
@@ -320,11 +324,19 @@ cd $MANAGE
 ./manage execute-agent wmagent-upload-config
 echo "Done!" && echo
 
+echo "*** Tweaking central agent configuration ***"
+CENTRAL_SERVICES="https://$CENTRAL_SERVICES/reqmgr2/data/wmagentconfig"
 if [[ "$TEAMNAME" == production ]]; then
   echo "Agent connected to the production team, setting it to drain mode"
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"UserDrainMode":true}' https://cmsweb.cern.ch/reqmgr2/data/wmagentconfig/$HOSTNAME
-  echo "Done!" && echo
+  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"UserDrainMode":true}' $CENTRAL_SERVICES/$HOSTNAME
+elif [[ "$TEAMNAME" == *testbed* ]]; then
+  echo "Testbed agent, setting MaxRetries to 0..."
+  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
+elif [[ "$TEAMNAME" == *devvm* ]]; then
+  echo "Dev agent, setting MaxRetries to 0..."
+  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
 fi
+echo "Done!" && echo
 
 ###
 # set scripts and specific cronjobs

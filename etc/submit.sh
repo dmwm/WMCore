@@ -160,6 +160,7 @@ $pythonCommand Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$
 cd job
 export WMAGENTJOBDIR=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
+export PYTHON27PATH=$PYTHON27PATH:$PWD/WMCore.zip:$PWD  # CMSSW_10_1_0 no longer uses PYTHONPATH
 echo -e "======== WMAgent Unpack the job finished at $(TZ=GMT date) ========\n"
 
 echo "======== Current environment dump starting ========"

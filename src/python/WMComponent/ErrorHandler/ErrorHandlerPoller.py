@@ -27,6 +27,7 @@ import os.path
 import threading
 from httplib import HTTPException
 from Utils.Timers import timeFunction
+from Utils.IteratorTools import grouper
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -310,19 +311,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
         for state in failure_states:
             idList = self.getJobs.execute(state="%sfailed" % state)
             logging.info("Found %d failed jobs in state %sfailed", len(idList), state)
-            while len(idList) > 0:
-                tmpList = idList[:self.maxProcessSize]
-                idList = idList[self.maxProcessSize:]
-                jobList = self.loadJobsFromList(tmpList)
+            for jobSlice in grouper(idList, self.maxProcessSize):
+                jobList = self.loadJobsFromList(jobSlice)
                 self.handleFailedJobs(jobList, state)
 
         # Run over jobs done with retries
         idList = self.getJobs.execute(state='retrydone')
         logging.info("Found %d jobs done with all retries", len(idList))
-        while len(idList) > 0:
-            tmpList = idList[:self.maxProcessSize]
-            idList = idList[self.maxProcessSize:]
-            jobList = self.loadJobsFromList(tmpList)
+        for jobSlice in grouper(idList, self.maxProcessSize):
+            jobList = self.loadJobsFromList(jobSlice)
             self.handleRetryDoneJobs(jobList)
 
         return

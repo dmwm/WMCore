@@ -19,30 +19,27 @@ class LoadForErrorHandler(DBFormatter):
     to determine ACDC records for skipped files in successful jobs, this mode
     is used when a file selection is provided.
     """
-    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
-                    wmbs_job_state.name AS state, state_time, retry_count,
-                    couch_record,  cache_dir, wmbs_location.site_name AS location,
-                    outcome AS bool_outcome, fwjr_path AS fwjr_path, ww.name as workflow,
-                    ww.task as task, ww.spec as spec, wmbs_users.owner as owner,
-                    wmbs_users.grp as grp
+    sql = """SELECT wmbs_job.id, wmbs_job.jobgroup,
+                    ww.name as workflow, ww.task as task
              FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup
                INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_workflow ww ON ww.id = wmbs_subscription.workflow
-               INNER JOIN wmbs_users ON ww.owner = wmbs_users.id
-               LEFT OUTER JOIN wmbs_location ON
-                 wmbs_job.location = wmbs_location.id
-               LEFT OUTER JOIN wmbs_job_state ON
-                 wmbs_job.state = wmbs_job_state.id
              WHERE wmbs_job.id = :jobid"""
 
-    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
-                   wfd.merged, wja.job jobid, wpnn.pnn
+    fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize AS size, wfd.events, wfd.first_event,
+                   wfd.merged, wja.job AS jobid, wpnn.pnn
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                  INNER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
                  WHERE wja.job = :jobid"""
+
+    fileNoLocationSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize AS size, wfd.events,
+                             wfd.first_event, wfd.merged, wja.job AS jobid
+                           FROM wmbs_file_details wfd
+                           INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
+                           WHERE wja.job = :jobid"""
 
     parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
                      FROM wmbs_file_parent wfp
@@ -52,28 +49,73 @@ class LoadForErrorHandler(DBFormatter):
     runLumiSQL = """SELECT fileid, run, lumi, num_events FROM wmbs_file_runlumi_map
                      WHERE fileid = :fileid"""
 
-    def formatJobs(self, result):
+
+    def updateFilesWithoutLocation(self, jobBinds, fileList,
+                                   conn=None, transaction=False):
         """
-        _formatJobs_
+        _updateFilesWithoutLocation_
 
-        Cast the id, jobgroup and last_update columns to integers because
-        formatDict() turns everything into strings.
+        There might be files without any valid location (thus no rows in
+        wmbs_file_location), in such cases, run a different query such that
+        they can get uploaded to the ACDCServer
+        :param jobBinds: list of dicts with jobid
+        :param fileList: formatted result returned by fileSQL query
+        :return: nothing, changes fileList in place with the non-location files.
         """
+        missingJobs = []
+        for job in jobBinds:
+            found = False
+            for fDict in fileList:
+                if job["jobid"] == fDict['jobid']:
+                    found = True
+                    break
+            if not found and job not in missingJobs:
+                missingJobs.append(job)
 
-        formattedResult = DBFormatter.formatDict(self, result)
+        if not missingJobs:
+            return
 
-        for entry in formattedResult:
-            if entry["bool_outcome"] == 0:
-                entry["outcome"] = "failure"
-            else:
-                entry["outcome"] = "success"
+        filesResult = self.dbi.processData(self.fileNoLocationSQL, missingJobs,
+                                           conn=conn, transaction=transaction)
+        filesResult = self.formatDict(filesResult)
+        fileList.extend(filesResult)
+        return
 
-            del entry["bool_outcome"]
+    def getRunLumis(self, fileBinds, fileList,
+                    conn=None, transaction=False):
+        """
+        _getRunLumis_
 
-            entry['group'] = entry['grp']
-            entry['input_files'] = []
+        Fetch run/lumi/events information for each file and append Run objects
+        to the files information.
+        """
+        lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
+                                          transaction=transaction)
+        lumiList = self.formatDict(lumiResult)
 
-        return formattedResult
+        lumiDict = {}
+        for l in lumiList:
+            lumiDict.setdefault(l['fileid'], [])
+            lumiDict[l['fileid']].append(l)
+
+        for f in fileList:
+            # Add new runs
+            f.setdefault('newRuns', [])
+
+            fileRuns = {}
+            if f['id'] in lumiDict.keys():
+                for l in lumiDict[f['id']]:
+                    run = l['run']
+                    lumi = l['lumi']
+                    numEvents = l['num_events']
+                    fileRuns.setdefault(run, [])
+                    fileRuns[run].append((lumi, numEvents))
+
+            for r in fileRuns.keys():
+                newRun = Run(runNumber=r)
+                newRun.lumis = fileRuns[r]
+                f['newRuns'].append(newRun)
+        return
 
     def execute(self, jobID, fileSelection=None,
                 conn=None, transaction=False):
@@ -82,32 +124,35 @@ class LoadForErrorHandler(DBFormatter):
 
         Execute the SQL for the given job ID and then format and return
         the result.
+        fileSelection is a dictionary key'ed by the job id and with a list
+        of lfns
         """
 
-        if isinstance(jobID, list):
-            if len(jobID) < 1:
-                # Nothing to do
-                return []
+        if isinstance(jobID, list) and not len(jobID):
+            return []
+        elif isinstance(jobID, list):
             binds = jobID
         else:
-            binds = {"jobid": jobID}
+            binds = [{"jobid": jobID}]
 
         result = self.dbi.processData(self.sql, binds, conn=conn,
                                       transaction=transaction)
-
-        jobList = self.formatJobs(result)
+        jobList = self.formatDict(result)
+        for entry in jobList:
+            entry.setdefault('input_files', [])
 
         filesResult = self.dbi.processData(self.fileSQL, binds, conn=conn,
                                            transaction=transaction)
         fileList = self.formatDict(filesResult)
+
+        self.updateFilesWithoutLocation(binds, fileList, conn, transaction)
+
         fileBinds = []
         if fileSelection:
             fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
         for x in fileList:
-            # Add new runs
-            x['newRuns'] = []
             # Assemble unique list of binds
-            if not {'fileid': x['id']} in fileBinds:
+            if {'fileid': x['id']} not in fileBinds:
                 fileBinds.append({'fileid': x['id']})
 
         parentList = []
@@ -116,47 +161,27 @@ class LoadForErrorHandler(DBFormatter):
                                                 transaction=transaction)
             parentList = self.formatDict(parentResult)
 
-            lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
-                                              transaction=transaction)
-            lumiList = self.formatDict(lumiResult)
-            lumiDict = {}
-            for l in lumiList:
-                if not l['fileid'] in lumiDict.keys():
-                    lumiDict[l['fileid']] = []
-                lumiDict[l['fileid']].append(l)
-
-            for f in fileList:
-                fileRuns = {}
-                if f['id'] in lumiDict.keys():
-                    for l in lumiDict[f['id']]:
-                        run = l['run']
-                        lumi = l['lumi']
-                        numEvents = l['num_events']
-                        fileRuns.setdefault(run, [])
-                        fileRuns[run].append((lumi, numEvents))
-
-                for r in fileRuns.keys():
-                    newRun = Run(runNumber=r)
-                    newRun.lumis = fileRuns[r]
-                    f['newRuns'].append(newRun)
+            self.getRunLumis(fileBinds, fileList, conn, transaction)
 
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
-            if jobid not in filesForJobs.keys():
-                filesForJobs[jobid] = {}
-            if f['id'] not in filesForJobs[jobid].keys():
+            filesForJobs.setdefault(jobid, {})
+
+            if f['id'] not in filesForJobs[jobid]:
                 wmbsFile = File(id=f['id'])
                 wmbsFile.update(f)
-                wmbsFile['locations'].add(f['pnn'])
-                for r in wmbsFile['newRuns']:
+                if 'pnn' in f:  # file might not have a valid location
+                    wmbsFile['locations'].add(f['pnn'])
+                for r in wmbsFile.pop('newRuns'):
                     wmbsFile.addRun(r)
                 for entry in parentList:
                     if entry['id'] == f['id']:
                         wmbsFile['parents'].add(entry['lfn'])
+                wmbsFile.pop('pnn', None)  # not needed for anything
                 filesForJobs[jobid][f['id']] = wmbsFile
-            else:
-                # If the file is there, just add the location
+            elif 'pnn' in f:
+                # If the file is there and it has a location, just add it
                 filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 
         for j in jobList:

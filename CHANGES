@@ -1,3 +1,26 @@
+1.1.12 to 1.1.13.pre1:
+  - Merge pull request #8526 from amaltaro/deploy-maxRetries
+  - Merge pull request #8530 from ticoann/fix_multi_reject
+  - Merge pull request #8537 from vytjan/ZeroRetriesJobPausedTier0
+  - Merge pull request #8533 from amaltaro/wmbs-performance
+  - Set MaxRetries to 0 for testbed/dev agents
+  - unit test and pylint fixes
+  - Performance improvements for getting ACDC work; slicing insert DAOs
+  - Merge pull request #8542 from amaltaro/python27-path
+  - pylint fixes
+  - Add WMCore libraries to PYTHON27PATH
+  - Merge pull request #8539 from amaltaro/cmssw-classad
+  - Merge pull request #8535 from amaltaro/boost-splitting
+  - Merge pull request #8536 from ticoann/chirp_env
+  - unit test and pylint fixes
+  - Publish CMSSW versions via htcondor class ad
+  - Configurable number of retries per job type. Tier0 specific.
+  - add unittest
+  - check the PATH for condor_chirp command
+  - pylint and unit test fixes
+  - Minor performance update to the splitting API
+  - fix multi reject in reqmgr2
+
 1.1.11 to 1.1.12:
   - Merge pull request #8534 from amaltaro/put-config-aux
   - Avoid couch race condition when updating agent config to aux db

@@ -19,6 +19,18 @@ from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
 getStepName = lambda step: WMStepHelper(step).name()
 getStepErrorDestination = lambda step: WMStepHelper(step).getErrorDestinationStep()
 
+def getFullPath(name, envPath="PATH"):
+    """
+    :param name: file name
+    :param envPath: any environment variable specified for path (PATH, PYTHONPATH, etc)
+    :return: full path if it is under PATH env
+    """
+    for path in os.getenv(envPath).split(os.path.pathsep):
+        fullPath = os.path.join(path, name)
+        if os.path.exists(fullPath):
+            return fullPath
+    return None
+
 def getStepSpace(stepName):
     """
     _getStepSpace_
@@ -175,9 +187,11 @@ class Executor:
             condor_config_dir = os.path.dirname(condor_config)
             condor_chirp_bin = os.path.join(condor_config_dir, 'main/condor/libexec/condor_chirp')
             if not os.path.isfile(condor_chirp_bin):
-                condor_chirp_bin = None
+                # Singularity container might not have CONDOR_CONFIG env.
+                #TODO: It should have fixed from Singularity setting
+                condor_chirp_bin = getFullPath("condor_chirp")
 
-        if condor_chirp_bin:
+        if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
             args = [ condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value) ]
             returncode = subprocess.call(args)
 

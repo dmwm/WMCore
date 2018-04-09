@@ -130,6 +130,10 @@ WMStats.namespace('JobDetailList');
                 htmlstr += "</ul>";
             }
             htmlstr += "</li>";
+            if (jobDoc.worker_node_info) {
+                htmlstr += "<li><b>Worker Node:</b>" + jobDoc.worker_node_info.HostName  + "</li>";
+            };
+
             htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.logArchiveLFN, "log archive", logArchiveFormat) + "</li>";
             if (jobDoc.eos_log_url) {
                 htmlstr += '<li><b>EOS log URL:</b><a href="' + jobDoc.eos_log_url + '"> download log </a></li>';

@@ -7,6 +7,7 @@ MySQL implementation of Files.SetLocationForWorkQueue
 For WorkQueue only
 """
 
+from Utils.IteratorTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -36,14 +37,16 @@ class SetLocationForWorkQueue(DBFormatter):
         Else:
         Simply insert the new locations
         """
-        binds = []
-        for lfn in lfns:
-            binds.append({'lfn': lfn})
-
         if isDBS:
-            self.dbi.processData(self.deleteSQL, binds, conn=conn,
-                                 transaction=transaction)
+            binds = []
+            for lfn in lfns:
+                binds.append({'lfn': lfn})
 
-        self.dbi.processData(self.insertSQL, locations, conn=conn,
-                             transaction=transaction)
+            for sliceBinds in grouper(binds, 10000):
+                self.dbi.processData(self.deleteSQL, sliceBinds, conn=conn,
+                                     transaction=transaction)
+
+        for sliceBinds in grouper(locations, 10000):
+            self.dbi.processData(self.insertSQL, sliceBinds, conn=conn,
+                                 transaction=transaction)
         return

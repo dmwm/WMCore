@@ -200,9 +200,8 @@ class WMBSHelper(WMConnectionBase):
         self.dbsInsertWorkflow = self.dbsDaoFactory(classname="InsertWorkflow")
 
         # Added for file creation bookkeeping
-        self.dbsFilesToCreate = []
-        self.addedLocations = []
-        self.wmbsFilesToCreate = []
+        self.dbsFilesToCreate = set()
+        self.wmbsFilesToCreate = set()
         self.insertedBogusDataset = -1
 
         return
@@ -389,7 +388,7 @@ class WMBSHelper(WMConnectionBase):
 
         logging.info("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
-        self.wmbsFilesToCreate.append(wmbsFile)
+        self.wmbsFilesToCreate.add(wmbsFile)
 
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
@@ -446,24 +445,29 @@ class WMBSHelper(WMConnectionBase):
         create wmbs files from given dbs block.
         as well as run lumi update
         """
+        blockOpen = block.get('IsOpen', False)
 
         if self.topLevelTask.getInputACDC():
             self.isDBS = False
+            logging.info('Adding ACDC files into WMBS for %s', self.wmSpec.name())
             for acdcFile in self.validFiles(block['Files']):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True
+            logging.info('Adding files into WMBS for %s', self.wmSpec.name())
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, block['PhEDExNodeNames'])
 
         # Add files to WMBS
+        logging.info('Inserting in bulk all the file info into WMBS for %s', self.wmSpec.name())
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
                                                                isDBS=self.isDBS)
         # Add files to DBSBuffer
+        logging.info('Inserting all the file info into DBSBuffer for %s', self.wmSpec.name())
         self._createFilesInDBSBuffer()
 
-        self.topLevelFileset.markOpen(block.get('IsOpen', False))
+        self.topLevelFileset.markOpen(blockOpen)
         return totalFiles
 
     def getMergeOutputMapping(self):
@@ -519,15 +523,15 @@ class WMBSHelper(WMConnectionBase):
             # Whoops, nothing to do!
             return
 
-        dbsFileTuples = []
+        dbsFileTuples = set()
         dbsFileLoc = []
         dbsCksumBinds = []
-        locationsToAdd = []
+        locationsToAdd = set()
 
         # The first thing we need to do is add the datasetAlgo
         # Assume all files in a pass come from one datasetAlgo?
         if self.insertedBogusDataset == -1:
-            self.insertedBogusDataset = self.dbsFilesToCreate[0].insertDatasetAlgo()
+            self.insertedBogusDataset = next(iter(self.dbsFilesToCreate)).insertDatasetAlgo()
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
@@ -540,9 +544,7 @@ class WMBSHelper(WMConnectionBase):
                         self.insertedBogusDataset, dbsFile['status'],
                         self.topLevelTaskDBSBufferId, dbsFile['in_phedex'])
 
-            # TODO: we can probably optmize it
-            if newTuple not in dbsFileTuples:
-                dbsFileTuples.append(newTuple)
+            dbsFileTuples.add(newTuple)
 
             if len(dbsFile['newlocations']) < 1:
                 msg = ''
@@ -553,10 +555,7 @@ class WMBSHelper(WMConnectionBase):
                 raise WorkQueueWMBSException(msg)
 
             for jobLocation in dbsFile['newlocations']:
-                if jobLocation not in self.addedLocations:
-                    # If we don't have it, try and add it
-                    locationsToAdd.append(jobLocation)
-                    self.addedLocations.append(jobLocation)
+                locationsToAdd.add(jobLocation)
                 dbsFileLoc.append({'lfn': lfn, 'pnn': jobLocation})
 
             if selfChecksums:
@@ -566,26 +565,30 @@ class WMBSHelper(WMConnectionBase):
                     dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                           'cktype': entry})
 
-        for jobLocation in locationsToAdd:
-            self.dbsInsertLocation.execute(siteName=jobLocation,
-                                           conn=self.getDBConn(),
-                                           transaction=self.existingTransaction())
+        logging.info("AMR inserting %d locations in DBSBuffer", len(locationsToAdd))
+        self.dbsInsertLocation.execute(siteName=locationsToAdd,
+                                       conn=self.getDBConn(),
+                                       transaction=self.existingTransaction())
 
+        logging.info("AMR creating %d files DBSBuffer", len(dbsFileTuples))
         self.dbsCreateFiles.execute(files=dbsFileTuples,
                                     conn=self.getDBConn(),
                                     transaction=self.existingTransaction())
 
+        logging.info("AMR setting %d file location in DBSBuffer", len(dbsFileLoc))
         self.dbsSetLocation.execute(binds=dbsFileLoc,
                                     conn=self.getDBConn(),
                                     transaction=self.existingTransaction())
 
         if len(dbsCksumBinds) > 0:
+            logging.info("AMR setting %d file checksum in DBSBuffer", len(dbsCksumBinds))
             self.dbsSetChecksum.execute(bulkList=dbsCksumBinds,
                                         conn=self.getDBConn(),
                                         transaction=self.existingTransaction())
 
         # Now that we've created those files, clear the list
-        self.dbsFilesToCreate = []
+        logging.info("AMR DBSBuffer done!!!")
+        self.dbsFilesToCreate = set()
         return
 
     def _addToDBSBuffer(self, dbsFile, checksums, locations):
@@ -606,7 +609,7 @@ class WMBSHelper(WMConnectionBase):
                                configContent="Unknown")
 
         if not dbsBuffer.exists():
-            self.dbsFilesToCreate.append(dbsBuffer)
+            self.dbsFilesToCreate.add(dbsBuffer)
         # dbsBuffer.create()
         return
 
@@ -657,7 +660,7 @@ class WMBSHelper(WMConnectionBase):
         logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
-        self.wmbsFilesToCreate.append(wmbsFile)
+        self.wmbsFilesToCreate.add(wmbsFile)
 
         return wmbsFile
 
@@ -676,23 +679,23 @@ class WMBSHelper(WMConnectionBase):
         adds the ACDC files into WMBS database
         """
         wmbsParents = []
+
         # TODO:  this check can be removed when ErrorHandler filters parents file for unmerged data
-        # If files is merged and has unmerged parents skip the wmbs population
-        firstParent = ""
         if acdcFile["parents"]:
             firstParent = next(iter(acdcFile["parents"]))
-        if acdcFile.get("merged", 0) and ("/store/unmerged/" in firstParent or "MCFakeFile" in firstParent):
-            # don't set the parents
-            pass
-        else:
-            # set the parentage for all the unmerged parents
-            for parent in acdcFile["parents"]:
-                logging.debug("WMBS ACDC Parent File: %s", parent)
-                parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
-                                                                    locations=acdcFile["locations"],
-                                                                    merged=True),
-                                                     inFileset=False)
-                wmbsParents.append(parent)
+            # If files is merged and has unmerged parents skip the wmbs population
+            if acdcFile.get("merged", 0) and ("/store/unmerged/" in firstParent or "MCFakeFile" in firstParent):
+                # don't set the parents
+                pass
+            else:
+                # set the parentage for all the unmerged parents
+                for parent in acdcFile["parents"]:
+                    logging.debug("WMBS ACDC Parent File: %s", parent)
+                    parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
+                                                                        locations=acdcFile["locations"],
+                                                                        merged=True),
+                                                         inFileset=False)
+                    wmbsParents.append(parent)
 
         # pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
@@ -717,7 +720,7 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = bool(inFileset)
 
-        self.wmbsFilesToCreate.append(wmbsFile)
+        self.wmbsFilesToCreate.add(wmbsFile)
 
         return wmbsFile
 

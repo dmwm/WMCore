@@ -515,7 +515,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         # Nothing to do
         return 0
 
-    daofactory = files[0].daofactory
+    daofactory = next(iter(files)).daofactory
     setParentage = daofactory(classname="Files.SetParentage")
     setFileRunLumi = daofactory(classname="Files.AddRunLumi")
     setFileLocation = daofactory(classname="Files.SetLocationForWorkQueue")
@@ -529,19 +529,19 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
     runLumiBinds = []
     fileCksumBinds = []
     fileLocations = []
-    fileCreate = []
-    fileLFNs = []
-    lfnsToCreate = []
-    lfnList = []
+    fileCreate = set()
+    fileLFNs = set()
+    lfnsToCreate = set()
+    lfnList = set()
     fileUpdate = []
 
+    logging.info("AMR building binds for %d wmbs files for workflow %s", len(files), workflowName)
     for wmbsFile in files:
         lfn = wmbsFile['lfn']
-        lfnList.append(lfn)
+        lfnList.add(lfn)
 
         if wmbsFile.get('inFileset', True):
-            if lfn not in fileLFNs:
-                fileLFNs.append(lfn)
+            fileLFNs.add(lfn)
         for parent in wmbsFile['parents']:
             parentageBinds.append({'child': lfn, 'parent': parent["lfn"]})
 
@@ -569,9 +569,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                                wmbsFile['merged']])
             continue
 
-        if lfn in lfnsToCreate:
-            continue
-        lfnsToCreate.append(lfn)
+        lfnsToCreate.add(lfn)
 
         if selfChecksums:
             # If we have checksums we have to create a bind
@@ -580,13 +578,14 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                 fileCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                        'cktype': entry})
 
-        fileCreate.append([lfn,
+        fileCreate.add((lfn,
                            wmbsFile['size'],
                            wmbsFile['events'],
                            None,
                            wmbsFile["first_event"],
-                           wmbsFile['merged']])
+                           wmbsFile['merged']))
 
+    logging.info("AMR creating %d files and adding their checksum", len(fileCreate))
     if len(fileCreate) > 0:
         addFileAction.execute(files=fileCreate,
                               conn=conn,
@@ -594,22 +593,23 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
         setFileAddChecksum.execute(bulkList=fileCksumBinds,
                                    conn=conn,
                                    transaction=transaction)
-
+    logging.info("AMR updating %d file info/run/lumi/events", len(fileUpdate))
     if len(fileUpdate) > 0:
         updateFileAction.execute(files=fileUpdate,
                                  conn=conn,
                                  transaction=transaction)
-
+    logging.info("AMR setting %d file locations", len(fileLocations))
     if len(fileLocations) > 0:
         setFileLocation.execute(lfns=lfnList, locations=fileLocations,
                                 isDBS=isDBS,
                                 conn=conn,
                                 transaction=transaction)
+    logging.info("AMR adding %d run/lumi mask", len(runLumiBinds))
     if len(runLumiBinds) > 0:
         setFileRunLumi.execute(file=runLumiBinds,
                                conn=conn,
                                transaction=transaction)
-
+    logging.info("AMR adding %d files to fileset", len(fileLFNs))
     if len(fileLFNs) > 0:
         logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
                                                                filesetId))
@@ -618,10 +618,10 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS=True,
                              workflow=workflowName,
                              conn=conn,
                              transaction=transaction)
-
+    logging.info("AMR creating %d parentage relationship files and adding their checksum", len(parentageBinds))
     if len(parentageBinds) > 0:
         setParentage.execute(binds=parentageBinds,
                              conn=conn,
                              transaction=transaction)
-
+    logging.info("AMR all done!")
     return len(lfnsToCreate)

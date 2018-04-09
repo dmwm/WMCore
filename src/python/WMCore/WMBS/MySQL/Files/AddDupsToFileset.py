@@ -6,6 +6,7 @@ MySQL implementation of Files.AddDupsToFileset
 """
 
 import time
+from Utils.IteratorTools import grouper
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -47,10 +48,7 @@ class AddDupsToFileset(DBFormatter):
                           wmbs_fileset_files.fileset != :fileset)"""
 
     def execute(self, file, fileset, workflow, conn = None, transaction = False):
-        binds      = []
-        availBinds = []
         existBinds = []
-        timestamp = int(time.time())
         for fileLFN in file:
             existBinds.append({'lfn': fileLFN, 'fileset': fileset})
         existResult = self.dbi.processData(self.existSQL, existBinds,
@@ -65,14 +63,18 @@ class AddDupsToFileset(DBFormatter):
             # There's nothing more for us to do.
             return
 
+        binds = []
+        availBinds = []
+        timestamp = int(time.time())
         for fileLFN in file:
             binds.append({"lfn": fileLFN, "fileset": fileset,
                           "insert_time": timestamp, "workflow": workflow})
-            availBinds.append({"lfn": fileLFN, "fileset": fileset,
-                               "workflow": workflow})
+            availBinds.append({"lfn": fileLFN, "fileset": fileset, "workflow": workflow})
 
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
-                             transaction = transaction)
+        for slicedBinds in grouper(binds, 10000):
+            self.dbi.processData(self.sql, slicedBinds, conn = conn,
+                                 transaction = transaction)
+        for slicedBinds in grouper(availBinds, 10000):
+            self.dbi.processData(self.sqlAvail, slicedBinds, conn = conn,
+                                 transaction = transaction)
         return

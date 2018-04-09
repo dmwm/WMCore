@@ -57,8 +57,6 @@ class JobArchiverPoller(BaseWorkerThread):
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
 
-        # initialize the alert framework (if available)
-        self.initAlerts(compName="JobArchiver")
 
         try:
             self.logDir = getattr(config.JobArchiver, 'logDir',

@@ -53,8 +53,6 @@ class StatusPoller(BaseWorkerThread):
         # the states and the values the timeouts.
         self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts')
 
-        # init alert system
-        self.initAlerts(compName="StatusPoller")
         return
 
     @timeFunction
@@ -71,13 +69,11 @@ class StatusPoller(BaseWorkerThread):
         except WMException as ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
-            self.sendAlert(6, msg=str(ex))
             raise
         except Exception as ex:
             msg = "Unhandled error in statusPoller"
             msg += str(ex)
             logging.exception(msg)
-            self.sendAlert(6, msg=msg)
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
             raise StatusPollerException(msg)

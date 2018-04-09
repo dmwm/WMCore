@@ -377,10 +377,6 @@ class JobCreatorPoller(BaseWorkerThread):
         self.agentName = getattr(config.Agent, 'hostName', '')
         self.glideinLimits = getattr(config.JobCreator, 'GlideInRestriction', None)
 
-        # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available
-        self.initAlerts(compName="JobCreator")
-
         try:
             self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
                                        os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
@@ -391,7 +387,6 @@ class JobCreatorPoller(BaseWorkerThread):
             msg = "Unhandled exception while setting up jobCacheDir!\n"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             raise JobCreatorException(msg)
 
         self.changeState = ChangeState(self.config)
@@ -474,7 +469,6 @@ class JobCreatorPoller(BaseWorkerThread):
                 # Ignore this subscription
                 msg = "JobCreator cannot load subscription %i" % subscriptionID
                 logging.error(msg)
-                self.sendAlert(6, msg=msg)
                 continue
 
             workflow = Workflow(id=wmbsSubscription["workflow"].id)
@@ -492,7 +486,6 @@ class JobCreatorPoller(BaseWorkerThread):
                 msg = "Have no task for workflow %i\n" % (workflow.id)
                 msg += "Aborting Subscription %i" % (subscriptionID)
                 logging.error(msg)
-                self.sendAlert(1, msg=msg)
                 continue
 
             logging.debug("Have loaded subscription %i with workflow %i\n", subscriptionID, workflow.id)
@@ -517,7 +510,6 @@ class JobCreatorPoller(BaseWorkerThread):
                 msg += "Passing over this error.  It will reoccur next interation!\n"
                 msg += "Please check or remove this subscription!\n"
                 logging.error(msg)
-                self.sendAlert(6, msg=msg)
                 continue
 
             logging.debug("Going to call wmbsJobFactory for sub %i with limit %i", subscriptionID, self.limit)
@@ -638,7 +630,6 @@ class JobCreatorPoller(BaseWorkerThread):
                     msg = "Unknown exception while setting the bulk cache:\n"
                     msg += str(ex)
                     logging.error(msg)
-                    self.sendAlert(6, msg=msg)
                     logging.debug("Error while setting bulkCache with following values: %s\n", nameDictList)
                     raise JobCreatorException(msg)
 
@@ -728,7 +719,6 @@ class JobCreatorPoller(BaseWorkerThread):
             msg = "Unhandled exception while calling changeState.\n"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             logging.debug("Error while using changeState on the following jobs: %s\n", wmbsJobGroup.jobs)
 
         logging.info("JobCreator has finished creating jobGroup %i.\n", wmbsJobGroup.id)

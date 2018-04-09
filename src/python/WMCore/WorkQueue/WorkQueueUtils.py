@@ -125,10 +125,6 @@ def queueConfigFromConfigObject(config):
     if "CacheDir" not in qConfig and getattr(config.WorkQueueManager, 'componentDir', None):
         qConfig['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'cache')
 
-    # alert api needs full agent config
-    if hasattr(config, 'Alert'):
-        qConfig['Config'] = config.Alert
-
     if 'Team' not in qConfig and hasattr(config.Agent, 'teamName'):
         qConfig['Team'] = config.Agent.teamName
     if 'logger' not in qConfig:

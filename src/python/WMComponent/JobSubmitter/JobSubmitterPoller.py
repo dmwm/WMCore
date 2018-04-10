@@ -88,6 +88,9 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.condorOverflowFraction = 0.2
         self.ioboundTypes = ('LogCollect', 'Merge', 'Cleanup', 'Harvesting')
 
+        # Used for speed draining the agent
+        self.enableAllSites = False
+
         # Additions for caching-based JobSubmitter
         self.jobsByPrio = {}  # key'ed by the final job priority, which contains a set of job ids
         self.jobDataCache = {}  # key'ed by the job id, containing the whole job info dict
@@ -275,6 +278,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Found %s new jobs to be submitted.", len(newJobs))
 
+        if self.enableAllSites:
+            logging.info("Agent is in speed drain mode. Submitting jobs to all possible locations.")
+
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:
@@ -316,15 +322,17 @@ class JobSubmitterPoller(BaseWorkerThread):
             potentialLocations = set()
             potentialLocations.update(possibleLocations)
 
-            # now check for sites in drain and adjust the possible locations
-            # also check if there is at least one site left to run the job
+            # check if there is at least one site left to run the job
             if len(possibleLocations) == 0:
                 newJob['fileLocations'] = loadedJob.get('fileLocations', [])
                 newJob['siteWhitelist'] = loadedJob.get('siteWhitelist', [])
                 newJob['siteBlacklist'] = loadedJob.get('siteBlacklist', [])
                 badJobs[71101].append(newJob)
                 continue
-            else:
+
+            # if agent is in speed drain and has hit the threshold to submit to all sites, we can skip the logic below that exclude sites
+            if not self.enableAllSites:
+                # check for sites in aborted state and adjust the possible locations
                 nonAbortSites = [x for x in possibleLocations if x not in self.abortSites]
                 if nonAbortSites:  # if there is at least a non aborted/down site then run there, otherwise fail the job
                     possibleLocations = nonAbortSites
@@ -333,17 +341,18 @@ class JobSubmitterPoller(BaseWorkerThread):
                     badJobs[71102].append(newJob)
                     continue
 
-            # try to remove draining sites if possible, this is needed to stop
-            # jobs that could run anywhere blocking draining sites
-            # if the job type is Merge, LogCollect or Cleanup this is skipped
-            if newJob['task_type'] not in self.ioboundTypes:
-                nonDrainingSites = [x for x in possibleLocations if x not in self.drainSites]
-                if nonDrainingSites:  # if >1 viable non-draining site remove draining ones
-                    possibleLocations = nonDrainingSites
-                else:
-                    newJob['possibleSites'] = possibleLocations
-                    badJobs[71104].append(newJob)
-                    continue
+                # try to remove draining sites if possible, this is needed to stop
+                # jobs that could run anywhere blocking draining sites
+                # if the job type is Merge, LogCollect or Cleanup this is skipped
+                if newJob['task_type'] not in self.ioboundTypes:
+                    nonDrainingSites = [x for x in possibleLocations if x not in self.drainSites]
+                    if nonDrainingSites:  # if >1 viable non-draining site remove draining ones
+                        possibleLocations = nonDrainingSites
+                    else:
+                        newJob['possibleSites'] = possibleLocations
+                        badJobs[71104].append(newJob)
+                        continue
+
             # Sigh...make sure the job added to the package has the proper retry_count
             loadedJob['retry_count'] = newJob['retry_count']
             batchDir = self.addJobsToPackage(loadedJob)
@@ -553,6 +562,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         except KeyError as ex:
             msg = "Invalid key for site %s and job type %s\n" % (siteName, jobType)
+            msg += str(ex)
             logging.exception(msg)
             return "NoJobType_%s_%s" % (siteName, jobType)
 
@@ -741,6 +751,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             # only runs when reqmgr is used (not Tier0)
             self.removeAbortedForceCompletedWorkflowFromCache()
             agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+            if agentConfig.get("SpeedDrainConfig"):
+                self.enableAllSites = agentConfig.get("SpeedDrainConfig")['EnableAllSites']['Enabled']
             self.condorFraction = agentConfig.get('CondorJobsFraction', 0.75)
             self.condorOverflowFraction = agentConfig.get("CondorOverflowFraction", 0.2)
         else:

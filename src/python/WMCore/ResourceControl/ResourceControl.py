@@ -49,6 +49,17 @@ class ResourceControl(WMConnectionBase):
                              transaction=self.existingTransaction())
         return
 
+    def insertPNNs(self, pnns):
+        """
+        _insertPNNs_
+
+        Insert a list of standalone PNNs into WMBS (usually used for MSS nodes)
+        """
+        addAction = self.wmbsDAOFactory(classname="Locations.AddPNNs")
+        addAction.execute(pnns=pnns, conn=self.getDBConn(),
+                          transaction=self.existingTransaction())
+        return
+
     def changeSiteState(self, siteName, state):
         """
         _changeSiteState_

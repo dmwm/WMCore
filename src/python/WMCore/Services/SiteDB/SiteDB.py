@@ -82,12 +82,6 @@ class SiteDBJSON(SiteDBAPI):
         """
         raise NotImplementedError
 
-    def cmsNametoSE(self, cmsName):
-        """
-        Convert CMS name (also pattern) to list of SEs
-        """
-        return self.cmsNametoList(cmsName, 'SE')
-
     def getAllCENames(self):
         """
         _getAllCENames_
@@ -121,7 +115,7 @@ class SiteDBJSON(SiteDBAPI):
         cmsnames = [x['alias'] for x in sitenames if x['type'] == 'psn']
         return cmsnames
 
-    def getAllPhEDExNodeNames(self, excludeBuffer=False):
+    def getAllPhEDExNodeNames(self, pattern=None, excludeBuffer=False):
         """
         _getAllPhEDExNodeNames_
 
@@ -132,6 +126,10 @@ class SiteDBJSON(SiteDBAPI):
         nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
             nodeNames = [x for x in nodeNames if not x.endswith("_Buffer")]
+        if pattern and isinstance(pattern, basestring):
+            pattern = re.compile(pattern)
+            nodeNames = [x for x in nodeNames if pattern.match(x)]
+
         return nodeNames
 
     def cmsNametoList(self, cmsnamePattern, kind):
@@ -163,37 +161,6 @@ class SiteDBJSON(SiteDBAPI):
             siteNames.extend(self._sitenames(sitename=resource['site_name']))
         cmsname = [x for x in siteNames if x['type'] == 'cms']
         return [x['alias'] for x in cmsname]
-
-    def seToCMSName(self, se):
-        """
-        Convert SE name to the CMS Site they belong to,
-        this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
-        """
-        try:
-            siteresources = [x for x in self._siteresources() if x['fqdn'] == se]
-        except IndexError:
-            return None
-        siteNames = []
-        for resource in siteresources:
-            siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        cmsname = [x for x in siteNames if x['type'] == 'cms']
-        return [x['alias'] for x in cmsname]
-
-    def seToPNNs(self, se):
-        """
-        Convert SE name to the PNN they belong to,
-        this is not a 1-to-1 relation but 1-to-many, return a list of pnns
-        """
-        try:
-            siteresources = [x for x in self._siteresources() if  x['fqdn'] == se]
-        except IndexError:
-            return None
-        siteNames = []
-        for resource in siteresources:
-            siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        pnns = [x for x in siteNames if x['type'] == 'phedex']
-        return [x['alias'] for x in pnns]
-
 
     def cmsNametoPhEDExNode(self, cmsName):
         """

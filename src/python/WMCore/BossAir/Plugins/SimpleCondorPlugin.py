@@ -577,7 +577,7 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['DESIRED_CMSDataLocations'] = classad.Value.Undefined
 
             # HighIO and repack jobs
-            ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect", "Repack"] else 0
+            ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0
             ad['RequestRepackslots'] = 1 if job['task_type'] == 'Repack' else 0
 
             # Performance and resource estimates (including JDL magic tweaks)

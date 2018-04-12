@@ -25,7 +25,7 @@
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.10.patch5 -d HG1802d -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.12.patch2 -d HG1802d -t production -n 2
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.12.patch1 -d HG1804d -t testbed-vocms001 -p "8503" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
  
@@ -296,13 +296,6 @@ if [[ "$HOSTNAME" == *fnal.gov ]]; then
 else
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
 fi
-# TODO remove this hack once AlertProcessor gets fixed
-sed -i "s+config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+#config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+" $MANAGE/config.py
-sed -i "s+config.AlertProcessor.critical.sinks.email.smtpServer = 'cernmx.cern.ch'+#config.AlertProcessor.critical.sinks.email.smtpServer = 'cernmx.cern.ch'+" $MANAGE/config.py
-sed -i "s+config.AlertProcessor.critical.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+#config.AlertProcessor.critical.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+" $MANAGE/config.py
-sed -i "s+config.AlertProcessor.soft.sinks.email.fromAddr = 'noreply@cern.ch'+#config.AlertProcessor.soft.sinks.email.fromAddr = 'noreply@cern.ch'+" $MANAGE/config.py
-sed -i "s+config.AlertProcessor.soft.sinks.email.smtpServer = 'cernmx.cern.ch'+#config.AlertProcessor.soft.sinks.email.smtpServer = 'cernmx.cern.ch'+" $MANAGE/config.py
-sed -i "s+config.AlertProcessor.soft.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+#config.AlertProcessor.soft.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+" $MANAGE/config.py
 echo "Done!" && echo
 
 ### Populating resource-control

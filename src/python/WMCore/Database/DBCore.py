@@ -6,13 +6,12 @@ Core Database APIs
 
 
 """
+from copy import copy
 
-
-
+from Utils.IteratorTools import grouper
+import WMCore.WMLogging
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Database.ResultSet import ResultSet
-from copy import copy
-import WMCore.WMLogging
 
 class DBInterface(WMObject):
     """
@@ -156,15 +155,10 @@ class DBInterface(WMObject):
                 #Run single SQL statement for a list of binds - use execute_many()
                 if not transaction:
                     trans = connection.begin()
-                while(len(binds) > self.maxBindsPerQuery):
-                    result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
-                                                   conn=connection, transaction=True,
-                                                   returnCursor=returnCursor))
-                    binds = binds[self.maxBindsPerQuery:]
+                for subBinds in grouper(binds, self.maxBindsPerQuery):
+                    result.extend(self.executemanybinds(sqlstmt[0], subBinds,
+                                                        connection=connection, returnCursor=returnCursor))
 
-                for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection,
-                                                        returnCursor=returnCursor))
                 if not transaction:
                     trans.commit()
             elif len(binds) == len(sqlstmt):

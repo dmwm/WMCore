@@ -67,6 +67,9 @@ class StdBaseTest(unittest.TestCase):
         self.assertEqual((23040, 23040), StdBase.calcEvtsPerJobLumi(None, None, 1.25))
         self.assertEqual((229, 229), StdBase.calcEvtsPerJobLumi(None, None, 125.5))
 
+        self.assertEqual((24000, 11764), StdBase.calcEvtsPerJobLumi(24000, 11764, 10.157120496967591))
+        self.assertEqual((11764, 11764), StdBase.calcEvtsPerJobLumi(None, 11764, 10.157120496967591))  # non rounded result is 2835
+
         return
 
 

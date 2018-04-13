@@ -99,6 +99,8 @@ class StdBase(object):
             ePerJob = int((8.0 * 3600.0) / tPerEvent)
             # then make EventsPerJob multiple of EventsPerLumi and still closer to 8h jobs
             multiplier = int(round(ePerJob / ePerLumi))
+            # make sure not to have 0 EventsPerJob
+            multiplier = max(multiplier, 1)
             ePerJob = ePerLumi * multiplier
         elif ePerLumi is None:
             ePerLumi = ePerJob

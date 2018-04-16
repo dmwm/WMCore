@@ -11,8 +11,37 @@ Unit tests for the DBInterface class
 import unittest
 import logging
 import threading
+import types
 
 from WMQuality.TestInit import TestInit
+
+
+def formatCursor(cursor, size=10):
+    """
+    Fetch the driver cursor directly.
+    Tested only with cx_Oracle.
+    Cursor must be already executed.
+    Use fetchmany(size = default arraysize = 50)
+
+    """
+    if type(cursor.keys) == types.MethodType:
+        keys = [x.lower() for x in cursor.keys()]
+    else:
+        keys = [x.lower() for x in cursor.keys]
+    result = []
+    while True:
+        if not cursor.closed:
+            rows = cursor.fetchmany(size=size)
+            if not rows:
+                cursor.close()
+                break
+            for r in rows:
+                result.append(dict(list(zip(keys, r))))
+        else:
+            break
+    if not cursor.closed:
+        cursor.close()
+    return result
 
 class DBCoreTest(unittest.TestCase):
     def setUp(self):
@@ -219,6 +248,37 @@ class DBCoreTest(unittest.TestCase):
 
         return
 
+    def testProcessDataSeveralBindsWithReturnCursor(self):
+        """
+        _testProcessDataSeveralBinds_
+
+        Verify that insert and select queries work with several binds.
+        """
+        bindsA = [{"one": 1, "two": 2, "three": "three"},
+                  {"one": 3, "two": 2, "three": "one"},
+                  {"one": 4, "two": 5, "three": "six"},
+                  {"one": 6, "two": 5, "three": "four"}]
+
+        insertSQL = "INSERT INTO test_tablea VALUES (:one, :two, :three)"
+        selectSQL = \
+          """SELECT column1, column2, column3 FROM test_tablea
+             WHERE column1 = :one AND column2 = :two AND column3 = :three"""
+
+        myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, binds = bindsA)
+
+        resultCursor = myThread.dbi.processData(selectSQL, bindsA, returnCursor=True)
+
+        result = []
+        for cursor in resultCursor:
+            result.extend(formatCursor(cursor))
+
+        assert len(result) == 4, \
+            "Error: Wrong number of columns returned."
+
+
+        return
+
     def testProcessDataHugeBinds(self):
         """
         _testProcessDataHugeBinds_
@@ -299,7 +359,6 @@ class DBCoreTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.dbi.processData(insertSQL, binds = bindsA)
         myThread.dbi.processData(insertSQL, binds = bindsB)
-
         resultSets = myThread.dbi.processData(selectSQL)
         results = []
         for resultSet in resultSets:

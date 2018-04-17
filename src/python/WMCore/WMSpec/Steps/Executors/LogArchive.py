@@ -188,18 +188,22 @@ class LogArchive(Executor):
                           "events": 0, "size": 0, "merged": False,
                           "checksums": {'adler32': adler32, 'cksum': cksum}}
             self.report.addOutputFile(outputModule="logArchive", aFile=reportFile)
+            self.saveReport()
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
             self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
+            #self.report.persist("Report.pkl")
             self.saveReport()
             raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
         except WMException as ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
+            #self.report.persist("Report.pkl")
             self.saveReport()
             raise ex
         except Exception as ex:
             self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
+            #self.report.persist("Report.pkl")
             self.saveReport()
             msg = "Failure in transferring logArchive tarball\n"
             logging.exception(msg)

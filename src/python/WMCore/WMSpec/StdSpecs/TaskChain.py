@@ -204,6 +204,7 @@ class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
         self.eventsPerJob = None
+        self.eventsPerLumi = None
         self.mergeMapping = {}
         self.taskMapping = {}
 
@@ -483,11 +484,14 @@ class TaskChainWorkloadFactory(StdBase):
 
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
+            sizePerEvent = taskConf.get("SizePerEvent", self.sizePerEvent)
+            eventsPerLumi = taskConf.get("EventsPerLumi", self.eventsPerLumi)
             # Adjust totalEvents according to the filter efficiency
             taskConf["RequestNumEvents"] = int(taskConf.get("RequestNumEvents", 0) / \
                                                taskConf.get("FilterEfficiency"))
-            taskConf["SizePerEvent"] = taskConf.get("SizePerEvent", self.sizePerEvent) * \
-                                       taskConf.get("FilterEfficiency")
+            taskConf["SizePerEvent"] = sizePerEvent * taskConf.get("FilterEfficiency", 1.0)
+            if eventsPerLumi:
+                taskConf["EventsPerLumi"] = eventsPerLumi * taskConf.get("FilterEfficiency", 1.0)
 
         taskConf["SplittingArguments"] = {}
         if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:

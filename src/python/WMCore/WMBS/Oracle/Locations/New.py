@@ -18,10 +18,8 @@ class New(NewLocationMySQL):
              WHERE NOT EXISTS (SELECT site_name FROM wmbs_location
                                WHERE site_name = :location)"""
 
-    pnnSQL = """INSERT INTO wmbs_pnns (id, pnn)
-                  SELECT wmbs_pnns_SEQ.nextval, :pnn
-                  FROM DUAL WHERE NOT EXISTS
-                (SELECT pnn FROM wmbs_pnns where pnn = :pnn)"""
+    pnnSQL = """INSERT /*+ IGNORE_ROW_ON_DUPKEY_INDEX (wmbs_pnns (pnn)) */
+                   INTO wmbs_pnns (id, pnn) VALUES (wmbs_pnns_SEQ.nextval, :pnn)"""
 
     mapSQL = """INSERT INTO wmbs_location_pnns (location, pnn)
                   SELECT (SELECT id from wmbs_location WHERE site_name = :location),

@@ -1,11 +1,8 @@
 from __future__ import division, print_function
 
 import time
-from pprint import pformat
-
 from WMCore.REST.HeartbeatMonitorBase import HeartbeatMonitorBase
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
-from WMCore.Services.StompAMQ.StompAMQ import StompAMQ
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 
 
@@ -58,9 +55,6 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
 
     def __init__(self, rest, config):
         super(HeartbeatMonitor, self).__init__(rest, config)
-        self.userAMQ = getattr(config, "user_amq", None)
-        self.passAMQ = getattr(config, "pass_amq", None)
-
         self.producer = "reqmgr2"
         self.docTypeAMQ = "cms_%s_info" % self.producer
 
@@ -114,8 +108,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         Given the statistics that are uploaded to wmstats, create different
         documents to post to MonIT AMQ (aggregation-friendly docs).
         """
-        commonInfo = {"version": '0.3',
-                      "agent_url": "reqmgr2"}
+        commonInfo = {"agent_url": "reqmgr2"}
 
         docs = []
         for status, numReq in stats['requestsByStatus'].iteritems():
@@ -156,32 +149,3 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
 
         self.logger.info("%i docs created to post to MonIT", len(docs))
         return docs
-
-    def uploadToAMQ(self, docs, producer="reqmgr2"):
-        """
-        _uploadToAMQ_
-
-        Submits all the docs to CERN MonIT AMQ..
-        :param docs: list of documents to be posted
-        :param producer: service providing this info
-        """
-        self.logger.debug("Sending %s", pformat(docs))
-        ts = int(time.time())
-
-        try:
-            stompSvc = StompAMQ(username=self.userAMQ,
-                                password=self.passAMQ,
-                                producer=self.producer,
-                                topic=self.topicAMQ,
-                                host_and_ports=self.hostPortAMQ,
-                                logger=self.logger)
-
-            notifications = stompSvc.make_notification(payload=docs, docType=self.docTypeAMQ,
-                                                       docId=self.producer, ts=ts)
-
-            failures = stompSvc.send(notifications)
-            self.logger.info("%i docs successfully sent to Stomp AMQ", len(notifications) - len(failures))
-        except Exception as ex:
-            self.logger.exception("Failed to send data to StompAMQ. Error %s", str(ex))
-
-        return

@@ -81,7 +81,7 @@ ALLOWED_ACTIONS_FOR_STATUS = {
                             "BlockCloseMaxFiles", "BlockCloseMaxEvents", "BlockCloseMaxSize",
                             "SoftTimeout", "GracePeriod",
                             "TrustPUSitelists", "CustodialSites", "CustodialSubType",
-                            "NonCustodialSites", "NonCustodialSubType",
+                            "NonCustodialSites", "NonCustodialSubType", "Override",
                             "AutoApproveSubscriptionSites", "SubscriptionPriority"],
     "assigned": ["RequestPriority"],
     "acquired": ["RequestPriority"],

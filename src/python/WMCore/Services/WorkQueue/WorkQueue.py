@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer, CouchConflictError
 from WMCore.Lexicon import splitCouchServiceURL

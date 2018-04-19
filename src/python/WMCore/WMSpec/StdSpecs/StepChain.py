@@ -49,6 +49,7 @@ class StepChainWorkloadFactory(StdBase):
         self.primaryDataset = None
         self.prepID = None
         self.eventsPerJob = None
+        self.eventsPerLumi = None
         # stepMapping is going to be used during assignment for properly mapping
         # the arguments to each step/cmsRun
         self.stepMapping = {}
@@ -103,6 +104,8 @@ class StepChainWorkloadFactory(StdBase):
         # Feed values back to save in couch
         if self.eventsPerJob:
             arguments['Step1']['EventsPerJob'] = self.eventsPerJob
+        if self.eventsPerLumi:
+            arguments['Step1']['EventsPerLumi'] = self.eventsPerLumi
         return self.workload
 
     def setupGeneratorTask(self, task, taskConf):
@@ -336,6 +339,7 @@ class StepChainWorkloadFactory(StdBase):
                                                                                              taskConf.get("EventsPerLumi"),
                                                                                              self.timePerEvent)
             self.eventsPerJob = taskConf["EventsPerJob"]
+            self.eventsPerLumi = taskConf["EventsPerLumi"]
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventBased":
                 taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]

@@ -204,6 +204,7 @@ class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
         StdBase.__init__(self)
         self.eventsPerJob = None
+        self.eventsPerLumi = None
         self.mergeMapping = {}
         self.taskMapping = {}
 
@@ -281,6 +282,8 @@ class TaskChainWorkloadFactory(StdBase):
         # Feed values back to save in couch
         if self.eventsPerJob:
             arguments['Task1']['EventsPerJob'] = self.eventsPerJob
+        if self.eventsPerLumi:
+            arguments['Task1']['EventsPerLumi'] = self.eventsPerLumi
         return self.workload
 
     def makeTask(self, taskConf, parentTask=None):
@@ -495,7 +498,9 @@ class TaskChainWorkloadFactory(StdBase):
                                                                                              taskConf.get("EventsPerLumi"),
                                                                                              taskConf.get("TimePerEvent",
                                                                                                           self.timePerEvent))
-            self.eventsPerJob = taskConf["EventsPerJob"]
+            if firstTask:
+                self.eventsPerJob = taskConf["EventsPerJob"]
+                self.eventsPerLumi = taskConf["EventsPerLumi"]
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventBased":
                 taskConf["SplittingArguments"]["events_per_lumi"] = taskConf["EventsPerLumi"]

@@ -87,23 +87,24 @@ class StdBase(object):
         Given EventsPerJob, EventsPerLumi and TimePerEvent information,
         calculates the final values for EventsPerJob and EventsPerLumi.
         
-        If user provided both values, then we don't do anything.
+        Final result will always be an EventsPerJob multiple of EventsPerLumi,
+        no matter whether EventsPerJob was provided or not.
         :param ePerJob: events per job
         :param ePerLumi: events per lumi
         :param tPerEvent: time per event
         """
-        if ePerLumi is None and ePerJob is None:
+        # if not set, let's calculate an 8h job and set it for you
+        if ePerJob is None:
             ePerJob = int((8.0 * 3600.0) / tPerEvent)
+
+        if ePerLumi is None:
             ePerLumi = ePerJob
-        elif ePerJob is None:
-            ePerJob = int((8.0 * 3600.0) / tPerEvent)
+        else:
             # then make EventsPerJob multiple of EventsPerLumi and still closer to 8h jobs
             multiplier = int(round(ePerJob / ePerLumi))
             # make sure not to have 0 EventsPerJob
             multiplier = max(multiplier, 1)
             ePerJob = ePerLumi * multiplier
-        elif ePerLumi is None:
-            ePerLumi = ePerJob
 
         return ePerJob, ePerLumi
 

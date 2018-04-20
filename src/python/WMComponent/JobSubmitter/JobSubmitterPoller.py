@@ -345,7 +345,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     newJob['possibleSites'] = possibleLocations
                     badJobs[71104].append(newJob)
                     continue
-
+            # Sigh...make sure the job added to the package has the proper retry_count
+            loadedJob['retry_count'] = newJob['retry_count']
             batchDir = self.addJobsToPackage(loadedJob)
 
             # calculate the final job priority such that we can order cached jobs by prio
@@ -365,6 +366,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             jobInfo = {'taskPriority': None,  # update from the thresholds
                        'custom': {'location': None},  # update later
                        'packageDir': batchDir,
+                       'retry_count': newJob["retry_count"],
                        'sandbox': loadedJob["sandbox"],  # remove before submit
                        'userdn': loadedJob.get("ownerDN", None),
                        'usergroup': loadedJob.get("ownerGroup", ''),

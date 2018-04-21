@@ -6,7 +6,7 @@ Unittests for Utilities functions
 from __future__ import division, print_function
 
 import unittest
-from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
+from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr, rootUrlJoin
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -75,6 +75,17 @@ class UtilitiesTests(unittest.TestCase):
 
         for v in [[1, 2], {'x': 123}, set([1])]:
             self.assertRaises(ValueError, safeStr, v)
+
+    def testRootUrlJoin(self):
+        """
+        Test the testRootUrlJoin function.
+        """
+        urlbase = "root://site.domain//somepath"
+        self.assertEqual(rootUrlJoin(urlbase, "extend"), "root://site.domain//somepath/extend")
+        urlbase = "random"
+        self.assertEqual(rootUrlJoin(urlbase, "extend"), None)
+        urlbase = None
+        self.assertEqual(rootUrlJoin(urlbase, "extend"), None)
 
 if __name__ == '__main__':
     unittest.main()

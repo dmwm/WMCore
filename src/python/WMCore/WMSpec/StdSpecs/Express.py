@@ -212,11 +212,13 @@ class ExpressWorkloadFactory(StdBase):
 
                 for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
 
-                    if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and self.alcaHarvestDir != None:
+                    if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and \
+                            ( self.alcaHarvestCondLFNBase != None or self.alcaHarvestLumiURL != None ):
                         harvestTask = self.addAlcaHarvestTask(alcaSkimTask, alcaSkimOutLabel,
                                                               alcapromptdataset=alcaSkimOutInfo['filterName'],
                                                               condOutLabel=self.alcaHarvestOutLabel,
-                                                              condUploadDir=self.alcaHarvestDir,
+                                                              condLFNBase=self.alcaHarvestCondLFNBase,
+                                                              lumiURL=self.alcaHarvestLumiURL,
                                                               uploadProxy=self.dqmUploadProxy,
                                                               doLogCollect=True)
 
@@ -316,8 +318,8 @@ class ExpressWorkloadFactory(StdBase):
         return mergeTask
 
     def addAlcaHarvestTask(self, parentTask, parentOutputModuleName,
-                           alcapromptdataset, condOutLabel, condUploadDir, uploadProxy,
-                           parentStepName="cmsRun1", doLogCollect=True):
+                           alcapromptdataset, condOutLabel, condLFNBase, lumiURL,
+                           uploadProxy, parentStepName="cmsRun1", doLogCollect=True):
         """
         _addAlcaHarvestTask_
 
@@ -386,7 +388,8 @@ class ExpressWorkloadFactory(StdBase):
         harvestTaskConditionHelper = harvestTaskCondition.getTypeHelper()
         harvestTaskConditionHelper.setRunNumber(self.runNumber)
         harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel+"ALCAPROMPT")
-        harvestTaskConditionHelper.setConditionDir(condUploadDir)
+        harvestTaskConditionHelper.setConditionLFNBase(condLFNBase)
+        harvestTaskConditionHelper.setLuminosityURL(lumiURL)
 
         self.addOutputModule(harvestTask, condOutLabel,
                              primaryDataset=getattr(parentOutputModule, "primaryDataset"),
@@ -478,7 +481,8 @@ class ExpressWorkloadFactory(StdBase):
                     "StreamName": {"optional": False},
                     "SpecialDataset": {"optional": False},
                     "AlcaHarvestTimeout": {"type": int, "optional": False},
-                    "AlcaHarvestDir": {"optional": False, "null": True},
+                    "AlcaHarvestCondLFNBase": {"optional": False, "null": True},
+                    "AlcaHarvestLumiURL": {"optional": False, "null": True},
                     "AlcaSkims": {"type": makeList, "optional": False},
                     "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False},
                     "Outputs": {"type": makeList, "optional": False},

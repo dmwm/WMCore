@@ -22,7 +22,8 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 REQUEST = {
     "AcquisitionEra": "TestAcquisitionEra",
     "AlcaHarvestTimeout": 12 * 3600,
-    "AlcaHarvestDir": "/somepath",
+    "AlcaHarvestCondLFNBase": "somelfn",
+    "AlcaHarvestLumiURL": "someurl",
     "AlcaSkims": ["TkAlMinBias", "PromptCalibProd"],
     "CMSSWVersion": "CMSSW_9_0_0",
     "DQMSequences": ["@common"],

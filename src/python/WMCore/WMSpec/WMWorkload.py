@@ -1395,8 +1395,8 @@ class WMWorkloadHelper(PersistencyHelper):
                     stepHelper = task.getStepHelper(stepName)
                     for key, value in overrides.items():
                         stepHelper.addOverride(key, value)
-
-            self.data.overrides = overrides
+            for key, value in overrides.items():
+                setattr(self.data.overrides, key, value)
 
         return
 

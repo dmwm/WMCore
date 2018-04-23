@@ -1786,6 +1786,21 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False again")
         return
 
+    def testOverrides(self):
+        """Test Overrides setter and getter methods"""
+
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+
+        self.assertFalse(workload.getWorkloadOverrides().dictionary_whole_tree_())
+
+        overrideArgs = {"lfn-prefix": "alan", "folder-num": 123}
+        workload.setWorkloadOverrides(overrideArgs)
+        self.assertEqual(getattr(workload.data.overrides, "lfn-prefix"), "alan")
+        self.assertEqual(getattr(workload.data.overrides, "folder-num"), 123)
+
+        result = workload.getWorkloadOverrides().dictionary_whole_tree_()
+        self.assertItemsEqual(overrideArgs, result)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -114,19 +114,36 @@ class WMStatsWriter(WMStatsReader):
                                         'generalFields',
                                         fields={'general_fields': JSONEncoder().encode(doc)})
 
-    def updateAgentInfo(self, agentInfo):
+    def updateAgentInfo(self, agentInfo, propertiesToKeep=None):
         """
         replace the agentInfo document with new one.
+        :param agentInfo: dictionary for agent info
+        :param propertiesToKeep: list of properties to keep original value
+        :return: None
         """
         try:
             exist_doc = self.couchDB.document(agentInfo["_id"])
             agentInfo["_rev"] = exist_doc["_rev"]
+            if propertiesToKeep and isinstance(propertiesToKeep, list):
+                for prop in propertiesToKeep:
+                    if prop in exist_doc:
+                        agentInfo[prop] = exist_doc[prop]
+
         except CouchNotFoundError:
             # this means document is not exist so we will just insert
             pass
         finally:
             result = self.couchDB.commitOne(agentInfo)
         return result
+
+    def updateAgentInfoInPlace(self, agentURL, agentInfo):
+        """
+        :param agentInfo: dictionary for agent info
+        :return: document update status
+
+        update agentInfo in couch in place without replacing a doucment
+        """
+        return self.couchDB.updateDocument(agentURL, self.couchapp, 'agentInfo', fields=agentInfo)
 
     def updateLogArchiveLFN(self, jobNames, logArchiveLFN):
         for jobName in jobNames:

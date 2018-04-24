@@ -8,7 +8,7 @@ __all__ = []
 import threading
 import logging
 import time
-import traceback
+
 from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -17,7 +17,7 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
-     initAgentInfo, DataUploadTime
+     initAgentInfo
 from WMComponent.DBS3Buffer.DBSBufferUtil  import DBSBufferUtil
 from WMCore.WMFactory import WMFactory
 
@@ -68,6 +68,8 @@ class AnalyticsPoller(BaseWorkerThread):
 
         self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL,
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
+        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+
         #TODO: change the config to hold couch url
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
 
@@ -142,10 +144,17 @@ class AnalyticsPoller(BaseWorkerThread):
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
-            DataUploadTime.setInfo(uploadTime, "ok")
+
+            self.centralWMStatsCouchDB.updateAgentInfoInPlace(self.agentInfo["agent_url"],
+                                                              {"data_last_update": uploadTime, "data_error": "ok"})
 
         except Exception as ex:
-            logging.error("Error occurred, will retry later:")
-            logging.error(str(ex))
-            DataUploadTime.setInfo(False, str(ex))
-            logging.error("Trace back: \n%s" % traceback.format_exc())
+            msg = str(ex)
+            logging.exception("Error occurred, will retry later: %s", msg)
+
+            try:
+                self.centralWMStatsCouchDB.updateAgentInfoInPlace(self.agentInfo["agent_url"], {"data_error": msg})
+            except:
+                logging.error("upload Agent Info to central couch failed")
+
+

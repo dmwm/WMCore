@@ -61,7 +61,7 @@ WMStats.Agents = function (couchData) {
             if (lastUpdatedDuration > agentPollingCycle * 2) {
                 agentData.agentNumber.error += 1;
                 report.status = "error"; 
-                report.message += "Data is not updated: AnalyticsDataCollector Down; ";
+                report.message += "Agent Data is not updated: AgentStatusWatcher is Down; ";
             }
             
             if (agentInfo.down_components.length > 0) {

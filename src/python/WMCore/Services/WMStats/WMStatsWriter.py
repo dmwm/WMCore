@@ -4,6 +4,7 @@ from json import JSONEncoder
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
+
 def monitorDocFromRequestSchema(schema):
     """
     prun and convert

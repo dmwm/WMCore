@@ -151,7 +151,7 @@ class LocalCouchDBData(object):
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {})
             data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]] = x['value']
-            data[x['key'][0]]['skipped'] =  True
+            data[x['key'][0]]['skipped'] = True
 
         return data
 
@@ -284,7 +284,6 @@ class WMAgentDBData(object):
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['total'] = item['total']
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['updated'] = item['updated']
         return finishedSubs
-
 
 def combineAnalyticsData(a, b, combineFunc=None):
     """
@@ -425,7 +424,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel=None):
     data['status'] = {}
     data['sites'] = {}
 
-    if summaryLevel != None and summaryLevel == 'task':
+    if summaryLevel is not None and summaryLevel == 'task':
         data['tasks'] = {}
         for task, taskData in requestData.items():
             data['tasks'][task] = _convertToStatusSiteFormat(taskData)

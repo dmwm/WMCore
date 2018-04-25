@@ -5,8 +5,6 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
-__all__ = []
-
 import json
 import logging
 import threading
@@ -266,7 +264,6 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         secsLeft = self.proxy.getTimeLeft(proxy=self.proxyFile)
         logging.debug("Proxy '%s' lifetime is %d secs", self.proxyFile, secsLeft)
-
 
         if secsLeft <= 86400 * 3:  # 3 days
             proxyWarning = True

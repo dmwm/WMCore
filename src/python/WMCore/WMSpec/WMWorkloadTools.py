@@ -12,7 +12,7 @@ import json
 import re
 import inspect
 
-from Utils.Utilities import makeList, strToBool
+from Utils.Utilities import makeList
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
@@ -67,26 +67,18 @@ def _validateArgument(argument, value, argumentDefinition):
 
 def _validateArgumentDict(argument, argValue, argumentDefinition):
     """
-    Validate arguments that carry a dict value type
+    Validate only the basic structure of dict arguments, we anyways
+    don't have the definition of the internal arguments.
     """
-    validNull = argumentDefinition["null"]
-    if not validNull and None in argValue.values():
-        raise WMSpecFactoryException("Argument '%s' cannot be None" % argument)
-    elif all(val is None for val in argValue.values()):
-        return argValue
+    # make sure we're not going to cast a dict to string and let that unnoticed
+    if isinstance(argumentDefinition["type"], type(dict)) and not isinstance(argValue, dict):
+        msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, argValue)
+        msg += "%s. It must be %s" % (type(argValue), argumentDefinition["type"])
+        raise WMSpecFactoryException(msg)
 
-    for val in argValue.values():
-        try:
-            # sigh.. LumiList has a peculiar type validation.
-            # Task/Step is validated later in the schema
-            if argument in ['LumiList', 'Step1', 'Task1']:
-                val = argumentDefinition["type"](argValue)
-                break
-            val = argumentDefinition["type"](val)
-        except Exception:
-            msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, val)
-            msg += "%s. It must be %s" % (type(val), argumentDefinition["type"])
-            raise WMSpecFactoryException(msg)
+    # still an exception, make sure it has the correct format
+    if argument == "LumiList":
+        argValue = argumentDefinition["type"](argValue)
 
     _validateArgFunction(argument, argValue, argumentDefinition["validate"])
     return argValue

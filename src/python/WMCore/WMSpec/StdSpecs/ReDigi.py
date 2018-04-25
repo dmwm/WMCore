@@ -5,10 +5,10 @@ _ReDigi_
 Standard two/three step redigi workflow.
 """
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
+from Utils.Utilities import strToBool
 from WMCore.Lexicon import dataset
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 class ReDigiWorkloadFactory(DataProcessing):
     """

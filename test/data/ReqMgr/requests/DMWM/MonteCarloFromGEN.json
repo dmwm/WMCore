@@ -12,13 +12,14 @@
         ], 
         "SoftTimeout": 129600, 
         "Team": "Team-OVERRIDE-ME", 
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
         "AcquisitionEra": "RunIISummer15GS", 
         "CMSSWVersion": "CMSSW_7_1_25_patch2", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Automatic EventAware setting 507 EpJob, around 2LpJob",
+        "Comments": "Automatic EventAware setting 507 EpJob, around 2LpJob; write job logs to prod/recent/TESTBED",
         "ConfigCacheID": "e86c9397d893f309853b83f87f674f6b", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 

@@ -1,3 +1,69 @@
+1.1.12 to 1.1.13:
+  - 1.1.13.pre5
+  - Merge pull request #8585 from amaltaro/override-acdc
+  - Very basic validation of dict spec args
+  - 1.1.13.pre4
+  - Merge pull request #8576 from amaltaro/job-retry-count
+  - Merge pull request #8582 from amaltaro/workload-overrides-test
+  - Unit test for workload Overrides methods
+  - Merge pull request #8581 from amaltaro/overrides-section
+  - Expand override arguments into the section
+  - Merge pull request #8563 from hufnagel/alcaharvest-lumi-info
+  - Set retry_count for jobs to be submitted
+  - 1.1.13.pre3
+  - Merge pull request #8531 from ticoann/add_override
+  - Merge pull request #8520 from amaltaro/issue-6857-take2
+  - Merge pull request #8572 from amaltaro/gq-monit-amq
+  - Post global_workqueue data to MonIT
+  - unit tests and pylint fixes
+  - Use first task attributes instead of the last one
+  - add override param to reqmgr2
+  - 1.1.13.pre2
+  - Merge pull request #8529 from amaltaro/add-mss-pnns
+  - Merge pull request #8551 from ticoann/add_worker_node_wmstats
+  - upload lumi text file from AlcaHarvest
+  - Merge pull request #8567 from amaltaro/multiplier-0
+  - update unit tests
+  - multiplier has to be >= 1
+  - Merge pull request #8547 from ticoann/dbcore_clean_up
+  - Merge pull request #8562 from amaltaro/deploy-1112patch2
+  - Remove AlertProcessor tweak from the deployment script
+  - unit tests and pylint fixes
+  - Speed up for ACDC document creation
+  - ResourceControl API to add standalone PNNs into the database
+  - Merge pull request #8552 from ticoann/remove_alert_system
+  - Merge pull request #8557 from hufnagel/repack-io-jobs-revert
+  - revert a change that turned out to not bee needed
+  - Merge pull request #8550 from amaltaro/more-error-codes
+  - remove alert components
+  - add worker node info to wmstats
+  - Define 99303 and 99304 exit codes in the WMExceptions
+  - remove recursive call
+  - Merge pull request #8546 from amaltaro/bloody-permissions
+  - make wmagent-upload-config executable, again
+  - 1.1.13.pre1
+  - Merge pull request #8526 from amaltaro/deploy-maxRetries
+  - Merge pull request #8530 from ticoann/fix_multi_reject
+  - Merge pull request #8537 from vytjan/ZeroRetriesJobPausedTier0
+  - Merge pull request #8533 from amaltaro/wmbs-performance
+  - Set MaxRetries to 0 for testbed/dev agents
+  - unit test and pylint fixes
+  - Performance improvements for getting ACDC work; slicing insert DAOs
+  - Merge pull request #8542 from amaltaro/python27-path
+  - pylint fixes
+  - Add WMCore libraries to PYTHON27PATH
+  - Merge pull request #8539 from amaltaro/cmssw-classad
+  - Merge pull request #8535 from amaltaro/boost-splitting
+  - Merge pull request #8536 from ticoann/chirp_env
+  - unit test and pylint fixes
+  - Publish CMSSW versions via htcondor class ad
+  - Configurable number of retries per job type. Tier0 specific.
+  - add unittest
+  - check the PATH for condor_chirp command
+  - pylint and unit test fixes
+  - Minor performance update to the splitting API
+  - fix multi reject in reqmgr2
+
 1.1.12 to 1.1.13.pre5:
   - Merge pull request #8585 from amaltaro/override-acdc
   - Very basic validation of dict spec args

@@ -151,7 +151,7 @@ class LocalCouchDBData(object):
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {})
             data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]] = x['value']
-            data[x['key'][0]]['skipped'] =  True
+            data[x['key'][0]]['skipped'] = True
 
         return data
 
@@ -284,7 +284,6 @@ class WMAgentDBData(object):
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['total'] = item['total']
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['updated'] = item['updated']
         return finishedSubs
-
 
 def combineAnalyticsData(a, b, combineFunc=None):
     """
@@ -425,7 +424,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel=None):
     data['status'] = {}
     data['sites'] = {}
 
-    if summaryLevel != None and summaryLevel == 'task':
+    if summaryLevel is not None and summaryLevel == 'task':
         data['tasks'] = {}
         for task, taskData in requestData.items():
             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
@@ -453,31 +452,3 @@ def initAgentInfo(config):
     # temporarly add port for the split test
     agentInfo['agent_url'] = "%s" % config.Agent.hostName
     return agentInfo
-
-
-class DataUploadTime(object):
-    """
-    Cache class to storage the last time when data was uploaded
-    If data could not be updated, it storages the error message.
-    """
-    data_last_update = 0
-    data_error = ""
-
-    @staticmethod
-    def setInfo(timestamp, message):
-        """
-        Set the time and message
-        """
-        if timestamp:
-            DataUploadTime.data_last_update = timestamp
-        DataUploadTime.data_error = message
-
-    @staticmethod
-    def getInfo():
-        """
-        Returns the last time when data was uploaded and the error message (if any)
-        """
-        answer = {}
-        answer['data_last_update'] = DataUploadTime.data_last_update
-        answer['data_error'] = DataUploadTime.data_error
-        return answer

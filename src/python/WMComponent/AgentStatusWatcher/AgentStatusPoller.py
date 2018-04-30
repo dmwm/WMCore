@@ -5,8 +5,6 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
-__all__ = []
-
 import json
 import logging
 import threading
@@ -15,8 +13,7 @@ import time
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import (DataUploadTime, WMAgentDBData,
-                                                               convertToAgentCouchDoc, initAgentInfo)
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import (WMAgentDBData, convertToAgentCouchDoc, initAgentInfo)
 from WMCore.Credential.Proxy import Proxy
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Lexicon import sanitizeURL
@@ -210,13 +207,6 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['couch_process_warning'] = 0
 
-        # This adds the last time and message when data was updated to agentInfo
-        lastDataUpload = DataUploadTime.getInfo()
-        if lastDataUpload['data_last_update']:
-            agentInfo['data_last_update'] = lastDataUpload['data_last_update']
-        if lastDataUpload['data_error']:
-            agentInfo['data_error'] = lastDataUpload['data_error']
-
         # Change status if there is data_error, couch process maxed out or disk full problems.
         if agentInfo['status'] == 'ok' and (agentInfo['drain_mode'] or agentInfo['disk_warning']):
             agentInfo['status'] = "warning"
@@ -232,7 +222,7 @@ class AgentStatusPoller(BaseWorkerThread):
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
         # direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
-        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
+        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs, propertiesToKeep=["data_last_update", "data_error"])
 
     @timeFunction
     def collectWMBSInfo(self):
@@ -274,7 +264,6 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         secsLeft = self.proxy.getTimeLeft(proxy=self.proxyFile)
         logging.debug("Proxy '%s' lifetime is %d secs", self.proxyFile, secsLeft)
-
 
         if secsLeft <= 86400 * 3:  # 3 days
             proxyWarning = True

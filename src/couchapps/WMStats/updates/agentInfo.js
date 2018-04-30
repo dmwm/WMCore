@@ -1,16 +1,16 @@
 function (doc, req) {
     // create doc if it is not exist.
     // If exists, replace existing doc
-    var agentInfo = req.query.agent_info || JSON.parse(req.body).agent_info;
-    var reqDoc = JSON.parse(agentInfo);
+    var agentInfo = req.query || JSON.parse(req.body);
+
     if (!doc) {
-        doc = reqDoc;
+        doc = agentInfo;
         if (!doc._id) {
             return [null, "Error"];
         }
     } else {
-        for (var prop in reqDoc) {
-            doc[prop] = reqDoc[prop];
+        for (var prop in agentInfo) {
+            doc[prop] = agentInfo[prop];
         }
     }
     return [doc, 'OK'];

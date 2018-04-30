@@ -18,7 +18,7 @@ from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
-from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CMSCouch import CouchConflictError, CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
 
 
@@ -93,11 +93,19 @@ class JobUpdaterPoller(BaseWorkerThread):
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
+        except CouchError as ex:
+            if ex.status is None and ex.reason is None:
+                msg = "Couch Server error occured. Mostly due to time out\n"
+                msg += str(ex)
+                logging.exception(msg)
+            else:
+                raise JobUpdaterException(str(ex))
         except Exception as ex:
-            if 'Connection refused' in str(ex):
+            errorStr = str(ex)
+            if 'Connection refused' in errorStr or "timed out" in errorStr:
                 logging.warn("Failed to sync priorities. Trying in the next cycle")
             else:
-                msg = "Caught unexpected exception in JobUpdater: %s\n" % str(ex)
+                msg = "Caught unexpected exception in JobUpdater: %s\n" % errorStr
                 logging.exception(msg)
                 raise JobUpdaterException(msg)
 

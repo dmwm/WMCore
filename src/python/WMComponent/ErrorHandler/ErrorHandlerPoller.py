@@ -116,17 +116,17 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Actually do the jobs exhaustion
         """
 
-        self.changeState.propagate(jobList, 'exhausted', 'retrydone')
-
         # Remove all the files in the exhausted jobs.
         logging.debug("About to fail input files for exhausted jobs")
         for job in jobList:
             job.failInputFiles()
 
         # Do not build ACDC for utilitarian job types
-        jobList = [job for job in jobList if job['type'] not in ['LogCollect', 'Cleanup']]
+        acdcJobList = [job for job in jobList if job['type'] not in ['LogCollect', 'Cleanup']]
 
-        self.handleACDC(jobList)
+        self.handleACDC(acdcJobList)
+
+        self.changeState.propagate(jobList, 'exhausted', 'retrydone')
 
         return
 

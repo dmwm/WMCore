@@ -1382,19 +1382,19 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setWorkloadOverrides(self, overrides):
         """
-        _getWorkloadOverrides_
+        _setWorkloadOverrides_
 
-        Get the overrides config section
-        of this workload, creates it if it doesn't exist
+        Set the override parameters for all logArch steps
+        in all tasks.
         """
-        
         if overrides:
-            taskIterator = self.taskIterator()
-            for task in taskIterator:
+            for task in self.getAllTasks():
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
-                    for key, value in overrides.items():
-                        stepHelper.addOverride(key, value)
+                    if stepHelper.stepType() == "LogArchive":
+                        for key, value in overrides.items():
+                            stepHelper.addOverride(key, value)
+            # save it at workload level as well
             for key, value in overrides.items():
                 setattr(self.data.overrides, key, value)
 

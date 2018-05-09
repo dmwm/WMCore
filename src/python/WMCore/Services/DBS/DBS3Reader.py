@@ -282,7 +282,7 @@ class DBS3Reader(object):
 
         return
 
-    def listDatasetFileDetails(self, datasetPath, getParents=False, validFileOnly=1):
+    def listDatasetFileDetails(self, datasetPath, getParents=False, getLumis=True, validFileOnly=1):
         """
         TODO: This is completely wrong need to be redone. or be removed - getting dataset altogether
         might be to costly
@@ -321,14 +321,16 @@ class DBS3Reader(object):
                 for p in parents:
                     if p['logical_file_name'] in files:  # invalid files are not there if validFileOnly=1
                         files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
-            # get the lumis
-            file_lumis = self.dbs.listFileLumis(block_name=blockName)
-            for f in file_lumis:
-                if f['logical_file_name'] in files:  # invalid files are not there if validFileOnly=1
-                    if f['run_num'] in files[f['logical_file_name']]['Lumis']:
-                        files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
-                    else:
-                        files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
+
+            if getLumis:
+                # get the lumis
+                file_lumis = self.dbs.listFileLumis(block_name=blockName)
+                for f in file_lumis:
+                    if f['logical_file_name'] in files:  # invalid files are not there if validFileOnly=1
+                        if f['run_num'] in files[f['logical_file_name']]['Lumis']:
+                            files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
+                        else:
+                            files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
 
         return files
 

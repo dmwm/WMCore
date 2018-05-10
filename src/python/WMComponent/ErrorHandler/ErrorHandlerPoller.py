@@ -192,7 +192,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.info("Starting to build ACDC with %i jobs", len(idList))
         logging.info("This operation will take some time...")
         loadList = self.loadJobsFromListFull(idList)
+        logging.info("AMR loaded full jobs from the database")
         for job in loadList:
+            logging.info("AMR getting mask for job %s", job)
             job.getMask()
         self.dataCollection.failedJobs(loadList)
         return
@@ -359,8 +361,9 @@ class ErrorHandlerPoller(BaseWorkerThread):
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
-
+        logging.info("AMR querying binds %s", binds)
         results = self.loadAction.execute(jobID=binds)
+        logging.info("AMR query completed")
 
         # You have to have a list
         if isinstance(results, dict):

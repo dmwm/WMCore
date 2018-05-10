@@ -254,7 +254,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
                 if len([x for x in report.getExitCodes() if x in self.exitCodesNoRetry]):
                     msg = "Job %i exhausted due to a bad exit code (%s)" % (job['id'], str(report.getExitCodes()))
-                    logging.error(msg)
+                    logging.debug(msg)
                     exhaustJobs.append(job)
                     continue
 

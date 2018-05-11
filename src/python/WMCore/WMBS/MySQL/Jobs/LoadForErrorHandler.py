@@ -41,10 +41,13 @@ class LoadForErrorHandler(DBFormatter):
                      WHERE wfp.child = :fileid """
 
     runLumiSQL = """SELECT fileid, run, lumi, num_events FROM wmbs_file_runlumi_map
-                     WHERE fileid = :fileid"""
+                     WHERE fileid = :fileid ORDER BY RUN, LUMI"""
 
 
-    def getRunLumis(self, fileBinds, fileList,
+    minRunLumiSQL = """SELECT fileid, run, lumi, num_events FROM (%s) WHERE LIMIT 1""" % runLumiSQL
+
+
+    def getRunLumis(self, dataFileBinds, mcFileBinds, fileList,
                     conn=None, transaction=False):
         """
         _getRunLumis_
@@ -52,9 +55,18 @@ class LoadForErrorHandler(DBFormatter):
         Fetch run/lumi/events information for each file and append Run objects
         to the files information.
         """
-        lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
+        if len(dataFileBinds) == 0 and len(mcFileBinds) == 0:
+            return
+
+        lumiList = []
+        if dataFileBinds:
+            dataLumiResult = self.dbi.processData(self.runLumiSQL, dataFileBinds, conn=conn,
                                           transaction=transaction)
-        lumiList = self.formatDict(lumiResult)
+            lumiList.extend(self.formatDict(dataLumiResult))
+        if mcFileBinds:
+            mcLumiResult = self.dbi.processData(self.minRunLumiSQL, mcFileBinds, conn=conn,
+                                                   transaction=transaction)
+            lumiList.extend(self.formatDict(mcLumiResult))
 
         lumiDict = {}
         for l in lumiList:
@@ -108,13 +120,23 @@ class LoadForErrorHandler(DBFormatter):
                                            transaction=transaction)
         fileList = self.formatDict(filesResult)
 
-        fileBinds = []
+        fileIDs = set()
+        dataFileIDs = set()
+        mcFileIDs = set()
         if fileSelection:
             fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
+
         for x in fileList:
             # Assemble unique list of binds
-            if {'fileid': x['id']} not in fileBinds:
-                fileBinds.append({'fileid': x['id']})
+            fileIDs.add(x['id'])
+            if x['lfn'].startswith("MCFakeFile"):
+                mcFileIDs.add(x['id'])
+            else:
+                dataFileIDs.add(x['id'])
+
+        fileBinds = [{"fileid": x} for x in fileIDs]
+        dataFileBinds = [{"fileid": x} for x in dataFileIDs]
+        mcFileBinds = [{"fileid": x} for x in mcFileIDs]
 
         parentList = []
         if len(fileBinds) > 0:
@@ -122,7 +144,7 @@ class LoadForErrorHandler(DBFormatter):
                                                 transaction=transaction)
             parentList = self.formatDict(parentResult)
 
-            self.getRunLumis(fileBinds, fileList, conn, transaction)
+        self.getRunLumis(dataFileBinds, mcFileBinds, fileList, conn, transaction)
 
         filesForJobs = {}
         for f in fileList:

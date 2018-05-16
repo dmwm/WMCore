@@ -11,6 +11,7 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
+from WMCore.REST.Error import MethodWithoutQueryString
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
@@ -149,6 +150,8 @@ class WorkloadConfig(RESTEntity):
         if args_length == 1:
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
+        else:
+            raise MethodWithoutQueryString
         return
 
     def validate(self, apiobj, method, api, param, safe):
@@ -204,6 +207,8 @@ class WorkloadSplitting(RESTEntity):
             safe.kwargs["name"] = param.args[1]
             param.args.pop()
             param.args.pop()
+        else:
+            raise MethodWithoutQueryString
         return
 
     def validate(self, apiobj, method, api, param, safe):

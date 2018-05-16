@@ -11,7 +11,7 @@ from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
-from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig,
+from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig, ProcessMatrix,
                                 CMSSWVersions, WMAgentConfig, CampaignConfig, UnifiedConfig)
 from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec,
     WorkloadConfig, WorkloadSplitting)
@@ -58,8 +58,9 @@ class RestApiHub(RESTApi):
                    "unifiedconfig": UnifiedConfig(app, IndividualCouchManager(config), config, mount),
                    "status": RequestStatus(app, IndividualCouchManager(config), config, mount),
                    "type": RequestType(app, IndividualCouchManager(config), config, mount),
-                   "spec_template": RequestSpec(IndividualCouchManager(config), app, config, mount),
-                   "workload_config": WorkloadConfig(IndividualCouchManager(config), app, config, mount),
-                   "splitting": WorkloadSplitting(IndividualCouchManager(config), app, config, mount),
-                   "wmstats_info": WMStatsInfo(IndividualCouchManager(config), app, config, mount)
+                   "spec_template": RequestSpec(app, IndividualCouchManager(config), config, mount),
+                   "workload_config": WorkloadConfig(app, IndividualCouchManager(config), config, mount),
+                   "splitting": WorkloadSplitting(app, IndividualCouchManager(config), config, mount),
+                   "wmstats_info": WMStatsInfo(app, IndividualCouchManager(config), config, mount),
+                   "proc_status": ProcessMatrix(app, self, config, mount)
                   })

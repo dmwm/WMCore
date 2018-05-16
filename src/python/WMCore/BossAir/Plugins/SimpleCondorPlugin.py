@@ -531,7 +531,6 @@ class SimpleCondorPlugin(BasePlugin):
         _getProcAds_
 
         Return list of job specific classads for submission
-
         """
         classAds = []
         for job in jobList:
@@ -550,6 +549,7 @@ class SimpleCondorPlugin(BasePlugin):
             sites = ','.join(sorted(job.get('potentialSites')))
             ad['ExtDESIRED_Sites'] = sites
 
+            ad['CMS_JobRetryCount'] = job['retry_count']
             ad['WMAgent_RequestName'] = job['request_name']
 
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])

@@ -192,9 +192,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.info("Starting to build ACDC with %i jobs", len(idList))
         logging.info("This operation will take some time...")
         loadList = self.loadJobsFromListFull(idList)
-        for job in loadList:
-            job.getMask()
-        self.dataCollection.failedJobs(loadList)
+        self.dataCollection.failedJobs(loadList, useMask=False)
         return
 
     def readFWJRForErrors(self, jobList):
@@ -360,7 +358,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         for jobID in idList:
             binds.append({"jobid": jobID})
 
-        results = self.loadAction.execute(jobID=binds)
+        results = self.loadAction.execute(jobID=binds, includeLumis=True)
 
         # You have to have a list
         if isinstance(results, dict):

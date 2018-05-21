@@ -937,6 +937,7 @@ class AccountantWorker(WMConnectionBase):
         """
         jobList = self.getFullJobInfo.execute([{'jobid': x} for x in self.jobsWithSkippedFiles.keys()],
                                               fileSelection=self.jobsWithSkippedFiles,
+                                              includeLumis=True,
                                               conn=self.getDBConn(),
                                               transaction=self.existingTransaction())
         self.dataCollection.failedJobs(jobList, useMask=False)

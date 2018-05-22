@@ -1,3 +1,40 @@
+1.1.13 to 1.1.14.pre2:
+  - Merge pull request #8620 from ticoann/add_status_reqmgr2
+  - Merge pull request #8617 from amaltaro/util-scripts
+  - add process report for prometheus
+  - Merge pull request #8604 from ticoann/error_handler_acdc_fix
+  - Merge pull request #8607 from ticoann/cleanup_jobcreator
+  - 1.1.14.pre1
+  - Merge pull request #8611 from ticoann/add_getlumi_flag
+  - Script to check dataset inconsistencies in DBS x PhEDEx
+  - Merge pull request #8612 from ticoann/remove_false_error
+  - change to debug level which is not actually error
+  - add getLumis flag
+  - Added RequestStateTransition.png
+  - Update RequestStateTransition.xml
+  - remove Sam service
+  - delete registration service
+  - remove JobCreatorWorker unused code
+  - Merge pull request #8606 from ticoann/doc_update
+  - update job state transition diagram
+  - Update JobStateTransition.xml
+  - Merge pull request #8605 from amaltaro/production-schematic
+  - Schematic of the production system
+  - swap the order of ACDC update before moving to exhausted
+  - Merge pull request #8601 from ticoann/job_transition_dia_update
+  - update the jobtransition diagram
+  - Merge pull request #8592 from ticoann/jobupdater_error_handle
+  - Merge pull request #8597 from ticoann/update_docs
+  - add jobstatus transition diagram
+  - ignore timeout error in job updater
+  - Merge pull request #8583 from ticoann/data_update_time_fix
+  - Merge pull request #8586 from amaltaro/redigi-pylint
+  - Merge pull request #8589 from amaltaro/eoscmshttp-url
+  - Update eoscmshttp url
+  - pylint fix
+  - fix wmstats report for data update time
+  - Some pylint fixes for ReDigi spec
+
 1.1.13 to 1.1.14.pre1:
   - Merge pull request #8611 from ticoann/add_getlumi_flag
   - Merge pull request #8612 from ticoann/remove_false_error

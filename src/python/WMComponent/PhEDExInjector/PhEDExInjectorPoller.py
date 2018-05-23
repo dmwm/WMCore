@@ -41,20 +41,20 @@ deleted from the site it was originally injected at.
 
 """
 
-import threading
 import logging
-import traceback
+import threading
 import time
+import traceback
 from httplib import HTTPException
+
 from Utils.Timers import timeFunction
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.WMException import WMException
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
-
-from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class PhEDExInjectorException(WMException):
@@ -281,7 +281,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 elif "Disk" in self.seMap and siteName in self.seMap["Disk"]:
                     location = self.seMap["Disk"][siteName]
 
-            if location == None:
+            if location is None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
                 continue
@@ -367,7 +367,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 elif "Disk" in self.seMap and siteName in self.seMap["Disk"]:
                     location = self.seMap["Disk"][siteName]
 
-            if location == None:
+            if location is None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
                 continue
@@ -521,12 +521,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                   comments="WMAgent blocks auto-delete from %s" % location,
                                   blocks=blocksToDelete)
 
-        xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                 deletion.getDatasetsAndBlocks())
-        logging.debug("deleteBlocks XMLData: %s", xmlData)
-
         try:
-            response = self.phedex.delete(deletion, xmlData)
+            response = self.phedex.delete(deletion)
             requestId = response['phedex']['request_created'][0]['id']
             # auto-approve deletion request
             self.phedex.updateRequest(requestId, 'approve', location)

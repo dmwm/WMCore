@@ -9,9 +9,10 @@ import cherrypy
 
 from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
+from WMCore.REST.Services import ProcessMatrix
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
-from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig, ProcessMatrix,
+from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig,
                                 CMSSWVersions, WMAgentConfig, CampaignConfig, UnifiedConfig)
 from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec,
     WorkloadConfig, WorkloadSplitting)

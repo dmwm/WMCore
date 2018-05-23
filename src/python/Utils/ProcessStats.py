@@ -43,17 +43,34 @@ try:
 except ImportError:
     pass
 
-def processStatus(pid=None):
-    "Return status of the process in a dictionary format"
+def _baseProcessStatusFormat(pid=None):
     if not pid:
         pid = os.getpid()
     ttime = time.localtime()
     tstamp = time.strftime('%d/%b/%Y:%H:%M:%S', ttime)
-    pdict = {'pid': pid, 'timestamp': tstamp, 'time': time.time()}
+    return {'pid': pid, 'timestamp': tstamp, 'time': time.time()}
+
+def processStatus(pid=None):
+    "Return status of the process in a dictionary format"
+
+    pdict = _baseProcessStatusFormat(pid)
     if 'psutil' not in sys.modules:
         return pdict
     proc = psutil.Process(pid)
     pdict.update(proc.as_dict())
+    return pdict
+
+def processStatusDict(pid=None):
+    "Return status of the process in a dictionary format"
+    pdict = _baseProcessStatusFormat(pid)
+    if 'psutil' not in sys.modules:
+        return pdict
+    proc = psutil.Process(pid)
+    pdict.update({"cpu_times": dict(proc.cpu_times()._asdict())})
+    pdict.update({"cpu_percent": proc.cpu_percent(interval=1.0)})
+    pdict.update({"cpu_num": proc.cpu_num()})
+    pdict.update({"memory_full_info": dict(proc.memory_full_info()._asdict())})
+    pdict.update({"memory_percent": proc.memory_percent()})
     return pdict
 
 def threadStack():

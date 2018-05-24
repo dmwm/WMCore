@@ -9,12 +9,14 @@ import cherrypy
 from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Services import ProcessMatrix
 
 from WMCore.WMStats.Service.MetaDataInfo import ServerInfo
 from WMCore.WMStats.Service.RequestInfo import (RequestInfo, FinishedStatusInfo,
                                                 TeamInfo, JobDetailInfo)
 from WMCore.WMStats.Service.ActiveRequestJobInfo import (ActiveRequestJobInfo, GlobalLockList,
                         ProtectedLFNList, ProtectedLFNListOnlyFinalOutput, FilteredActiveRequestJobInfo)
+
 
 
 class RestApiHub(RESTApi):
@@ -44,5 +46,6 @@ class RestApiHub(RESTApi):
                    "filtered_requests": FilteredActiveRequestJobInfo(app, self, config, mount),
                    "protectedlfns": ProtectedLFNList(app, self, config, mount),
                    "protectedlfns_final": ProtectedLFNListOnlyFinalOutput(app, self, config, mount),
-                   "globallocks": GlobalLockList(app, self, config, mount)
+                   "globallocks": GlobalLockList(app, self, config, mount),
+                   "proc_status": ProcessMatrix(app, self, config, mount)
                   })

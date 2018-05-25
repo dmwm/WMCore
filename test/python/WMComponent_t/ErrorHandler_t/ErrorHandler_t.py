@@ -148,7 +148,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
 
 
-    def createTestJobGroup(self, nJobs=10, retry_count=1,
+    def createTestJobGroup(self, nJobs=10, retry_count=0,
                            workloadPath='test', fwjrPath=None,
                            workloadName=makeUUID(),
                            fileModifier=''):
@@ -219,6 +219,63 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return testJobGroup
 
+    def createTestJobGroupWithManyFiles(self, nJobs=10, nFiles=1000, retry_count=3,
+                           workloadPath='test', fwjrPath=None, workloadName=makeUUID()):
+        """
+        Creates a group of several jobs
+        """
+
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        testWorkflow = Workflow(spec=workloadPath, owner="cmsdataops", group="cmsdataops",
+                                name=workloadName, task="/TestWorkload/ReReco")
+        testWorkflow.create()
+
+        testWMBSFileset = Fileset(name="TestFileset")
+        testWMBSFileset.create()
+
+        testSubscription = Subscription(fileset=testWMBSFileset, workflow=testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription=testSubscription)
+        testJobGroup.create()
+
+        testFiles = []
+        for x in range(nFiles):
+
+            testFile = File(lfn="/this/is/a/lfnA%s" % x, size=1024, events=10,
+                             first_event=88, merged=False)
+            testFile.addRun(Run(10, *[12310+x, 12313+x]))
+            testFile.setLocation('T2_CH_CERN')
+            testFile.create()
+            testFiles.append(testFile)
+
+
+        for i in range(0, nJobs):
+            testJob = Job(name=makeUUID())
+            testJob['retry_count'] = retry_count
+            testJob['retry_max'] = 10
+            testJob['mask'].addRunAndLumis(run=10, lumis=[12312])
+            testJob['mask'].addRunAndLumis(run=10, lumis=[12314, 12316])
+            testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
+            testJob['fwjr_path'] = fwjrPath
+            os.mkdir(testJob['cache_dir'])
+            testJobGroup.add(testJob)
+            testJob.create(group=testJobGroup)
+            for f in testFiles:
+                testJob.addFile(f)
+            testJob.save()
+
+
+        testJobGroup.commit()
+
+
+        testSubscription.acquireFiles(files=testFiles)
+        testSubscription.save()
+        myThread.transaction.commit()
+
+        return testJobGroup
 
     def testA_Create(self):
         """
@@ -497,6 +554,52 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return
 
+    @attr('integration')
+    def testF_FailJobsPerformance(self):
+        """
+        _FailJobs_
+
+        Test our ability to fail jobs based on the information in the FWJR
+        """
+        workloadName = 'TestWorkload'
+
+        self.createWorkload(workloadName=workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
+                                    'WMSandbox', 'WMWorkload.pkl')
+
+        fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
+                                "WMComponent_t/JobAccountant_t",
+                                "fwjrs/badBackfillJobReport.pkl")
+
+        testJobGroup = self.createTestJobGroupWithManyFiles(nJobs=self.nJobs,
+                                               workloadPath=workloadPath,
+                                               fwjrPath=fwjrPath)
+
+        config = self.getConfig()
+        config.ErrorHandler.maxRetries = 0
+        config.ErrorHandler.readFWJR = True
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+
+        testErrorHandler = ErrorHandlerPoller(config)
+        # set reqAuxDB None for the test,
+        testErrorHandler.reqAuxDB = None
+        testErrorHandler.setup(None)
+
+        startTime = time.time()
+        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename="profStats.stat")
+        stopTime = time.time()
+
+        print("Took %f seconds to run polling algo" % (stopTime - startTime))
+
+        p = pstats.Stats('profStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(0.2)
+
+        return
 
     @attr('integration')
     def testZ_Profile(self):
@@ -530,7 +633,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         testErrorHandler.setup(None)
 
         startTime = time.time()
-        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename="profStats.stat")
+        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename="profStats1.stat")
         stopTime = time.time()
 
         idList = self.getJobs.execute(state='CreateFailed')
@@ -544,7 +647,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         print("Took %f seconds to run polling algo" % (stopTime - startTime))
 
-        p = pstats.Stats('profStats.stat')
+        p = pstats.Stats('profStats1.stat')
         p.sort_stats('cumulative')
         p.print_stats(0.2)
 

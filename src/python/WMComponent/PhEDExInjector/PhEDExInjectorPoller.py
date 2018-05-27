@@ -174,7 +174,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
             if self.pollCounter == self.subFrequency:
                 self.pollCounter = 0
-                self.deleteBlocks()
+                # self.deleteBlocks()  # skip block deletion until situation gets under control
                 self.subscribeDatasets()
         except HTTPException as ex:
             if hasattr(ex, "status") and ex.status in [502, 503]:

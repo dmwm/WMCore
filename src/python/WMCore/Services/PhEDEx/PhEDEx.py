@@ -109,7 +109,6 @@ class PhEDEx(Service):
         """
         _delete_
 
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
         Deletion is a PhEDEX deletion structure
         """
         callname = 'delete'
@@ -119,7 +118,7 @@ class PhEDEx(Service):
         for node in deletion.nodes:
             args['node'].append(node)
 
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(deletion.datasetPaths))
+        xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl, deletion.getDatasetsAndBlocks())
         args['data'] = xmlData
         args['level'] = deletion.level
         args['rm_subscriptions'] = deletion.subscriptions

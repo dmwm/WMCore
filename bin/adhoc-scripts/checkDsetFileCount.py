@@ -130,7 +130,7 @@ def main(argv=None):
     for blockname in phedex_blocks:
         if phedex_blocks[blockname] != dbs_blocks.get(blockname):
             print("Block with file mismatch: %s" % blockname)
-            print("\tPhEDEx: %d\t\tDBS: %d" % (phedex_blocks[blockname], dbs_blocks[blockname]))
+            print("\tPhEDEx: %s\t\tDBS: %s" % (phedex_blocks.get(blockname), dbs_blocks.get(blockname)))
 
 
 if __name__ == "__main__":

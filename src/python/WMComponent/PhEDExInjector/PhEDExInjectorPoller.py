@@ -521,12 +521,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                   comments="WMAgent blocks auto-delete from %s" % location,
                                   blocks=blocksToDelete)
 
-        xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                 deletion.getDatasetsAndBlocks())
-        logging.debug("deleteBlocks XMLData: %s", xmlData)
-
         try:
-            response = self.phedex.delete(deletion, xmlData)
+            response = self.phedex.delete(deletion)
             requestId = response['phedex']['request_created'][0]['id']
             # auto-approve deletion request
             self.phedex.updateRequest(requestId, 'approve', location)

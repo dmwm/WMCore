@@ -496,3 +496,13 @@ class ExpressWorkloadFactory(StdBase):
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        specArgs = {"Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/Express"},
+                                  "type": dict},
+                    }
+        baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs

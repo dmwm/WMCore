@@ -79,6 +79,32 @@ class LoadForErrorHandler(DBFormatter):
                                           transaction=transaction)
         return self.formatDict(lumiResult)
 
+    def getRunLumiWithBulkFilesWithoutMask(self, fileBinds, fileList, conn=None, transaction=False):
+        """
+        :param fileBinds: unique files with [{'fileid': 1234, ...}]
+        :param fileList: list of file objects which will be updated with run lumi information.
+        :param conn:
+        :param transaction:
+        :return:
+        """
+        lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
+                                          transaction = transaction)
+        lumiList = self.formatDict(lumiResult)
+        lumiDict = {}
+        for l in lumiList:
+            lumiDict.setdefault(l['fileid'], [])
+            lumiDict[l['fileid']].append(l)
+
+        for f in fileList:
+            # Add new runs
+            f.setdefault('newRuns', [])
+
+            fileRuns = {}
+            if f['id'] in lumiDict:
+                f['newRuns'] = self.formatRunLumi(lumiDict[f['id']])
+        return
+
+
     def formatRunLumi(self, runLumiResult):
 
         fileRuns = {}
@@ -96,7 +122,7 @@ class LoadForErrorHandler(DBFormatter):
             runLumiList.append(newRun)
         return runLumiList
 
-    def updateFilesWithRunLumi(self, jobid, fileObj, conn=None, transaction=False):
+    def updateFilesWithRunLumiMask(self, jobid, fileObj, conn=None, transaction=False):
 
         mask = self.getJobMask(jobid, conn=None, transaction=False)
 
@@ -116,7 +142,7 @@ class LoadForErrorHandler(DBFormatter):
             runLumiList = self.getNoMaskRunLumis(fileObj['id'], conn=conn, transaction=transaction)
             fileObj['newRuns'] = self.formatRunLumi(runLumiList)
 
-    def execute(self, jobID, fileSelection=None, includeLumis=True,  conn=None, transaction=False):
+    def execute(self, jobID, fileSelection=None, maskAdded=True,  conn=None, transaction=False):
         """
         _execute_
 
@@ -127,7 +153,7 @@ class LoadForErrorHandler(DBFormatter):
         """
 
         if isinstance(jobID, list) and not len(jobID):
-            return []
+            return [], False
         elif isinstance(jobID, list):
             binds = jobID
         else:
@@ -157,6 +183,13 @@ class LoadForErrorHandler(DBFormatter):
                                                 transaction=transaction)
             parentList = self.formatDict(parentResult)
 
+        # add adhoc checking wether job contains a lot of files (100 times)
+        # in that case, get the bulk lumi information and add the mask later
+
+        if not maskAdded or len(fileList) > (len(jobList) * 100):
+            self.getRunLumiWithBulkFilesWithoutMask(fileBinds, fileList, conn, transaction)
+            maskAdded = False
+
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
@@ -164,10 +197,10 @@ class LoadForErrorHandler(DBFormatter):
 
             if f['id'] not in filesForJobs[jobid]:
 
-                if includeLumis:
+                if maskAdded:
                     #TODO: don't need to do this for merge job
                     # add Run lumi information for the file and the job. (masked value)
-                    self.updateFilesWithRunLumi(jobid, f, conn, transaction)
+                    self.updateFilesWithRunLumiMask(jobid, f, conn, transaction)
 
                 wmbsFile = File(id=f['id'])
                 wmbsFile.update(f)
@@ -188,4 +221,4 @@ class LoadForErrorHandler(DBFormatter):
             if j['id'] in filesForJobs.keys():
                 j['input_files'] = filesForJobs[j['id']].values()
 
-        return jobList
+        return jobList, maskAdded

@@ -99,6 +99,8 @@ class StdBase(object):
 
         if ePerLumi is None:
             ePerLumi = ePerJob
+        elif ePerLumi > ePerJob:
+            ePerLumi = ePerJob
         else:
             # then make EventsPerJob multiple of EventsPerLumi and still closer to 8h jobs
             multiplier = int(round(ePerJob / ePerLumi))

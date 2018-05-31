@@ -1,4 +1,11 @@
 #!/bin/bash
+# On some sites we know there were some problems with environment cleaning
+# with using 'env -i'. To overcome this issue, whenever we start a job, we have
+# to save full current environment into file, and whenever it is needed we can load
+# it. Be aware, that there are some read-only variables, like: BASHOPTS, BASH_VERSINFO,
+# EUID, PPID, SHELLOPTS, UID, etc.
+set | sed 's/^/export /g' > startup_environment.sh
+
 # Function to check the exit code of this bootstrap script and the job/python
 # wrapper exit code.
 # 1) If the bootstrap exit code is not 0, then something is wrong with the worker
@@ -46,14 +53,6 @@ WMA_SCRAM_ARCH=slc6_amd64_gcc493
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
 
-# On some sites we know there was some problems with environment cleaning
-# with using 'env -i'. To overcome this issue, whenever we start a job, we have
-# to save full current environment into file, and whenever it is needed we can load
-# it. Be aware, that there are some read-only variables, like: BASHOPTS, BASH_VERSINFO,
-# EUID, PPID, SHELLOPTS, UID, etc.
-set > startup_environment.sh
-sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
-mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
 
 if [ "X$_CONDOR_JOB_AD" != "X" ];

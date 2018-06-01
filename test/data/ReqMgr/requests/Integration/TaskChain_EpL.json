@@ -7,6 +7,7 @@
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "GracePeriod": 300,
     "MergedLFNBase": "/store/backfill/1",
+    "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
     "ProcessingString": {
       "HIN_00075_0": "ProcessingString-OVERRIDE-ME",
       "HIN_00075_1": "ProcessingString-OVERRIDE-ME"

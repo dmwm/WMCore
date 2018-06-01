@@ -22,7 +22,7 @@
         "AcquisitionEra": "CMSSW_8_1_0", 
         "CMSSWVersion": "CMSSW_8_1_0", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["MC from scratch; Given 100 EpLumi for Task1, set it to 100 EpJob (instead of 41), so 1LpJob;",
+        "Comments": ["MC from scratch; Given 100 EpLumi for Task1, set EpJob and EpLumi to 41 (instead of 100), so 1LpJob;",
                     "Task2 and Task3 EventAwareLumiBased with 800 and 900 EpJob; diff ProcStr"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache", 

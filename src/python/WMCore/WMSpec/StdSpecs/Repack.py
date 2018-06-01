@@ -207,9 +207,10 @@ class RepackWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadAssignArgs():
         baseArgs = StdBase.getWorkloadAssignArgs()
-        specArgs = {"Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/Repack"},
-                                  "type": dict},
-                    }
+        specArgs = {
+            "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/Repack"},
+                         "type": dict},
+            }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

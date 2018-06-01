@@ -197,9 +197,10 @@ class PromptRecoWorkloadFactory(DataProcessing):
     @staticmethod
     def getWorkloadAssignArgs():
         baseArgs = DataProcessing.getWorkloadAssignArgs()
-        specArgs = {"Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/PromptReco"},
-                                  "type": dict},
-                    }
+        specArgs = {
+            "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/PromptReco"},
+                         "type": dict},
+            }
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

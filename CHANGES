@@ -1,3 +1,51 @@
+1.1.12 to 1.1.12.patch5:
+  - Merge pull request #8643 from amaltaro/delete-blocks-1112
+  - Make phedex block deletion level instead of datasets
+  - Merge pull request #8637 from amaltaro/delete-phedex-1112
+  - Fix phedex delete call
+  - Merge pull request #8628 from amaltaro/retry-classad-1112
+  - Add retry count to the job classad
+  - 1.1.12.patch4
+  - Merge pull request #8596 from ticoann/job_updater_patch
+  - Update eoscmshttp url
+  - ignore timeout error in job updater
+  - 1.1.12.patch3
+  - Merge pull request #8578 from ticoann/alca_harvest_wmagent
+  - upload lumi text file from AlcaHarvest
+  - Merge pull request #8577 from amaltaro/job-retry-count-1112
+  - Set retry_count for jobs to be submitted
+  - 1.1.12.patch2
+  - Merge pull request #8559 from ticoann/1.1.12_wmagent_patch2
+  - unit tests and pylint fixes
+  - Speed up for ACDC document creation
+  - ResourceControl API to add standalone PNNs into the database
+  - remove alert components
+  - revert a change that turned out to not bee needed
+  - make wmagent-upload-config executable, again
+  - 1.1.12.patch1
+  - 1.1.13.pre1
+  - Merge pull request #8526 from amaltaro/deploy-maxRetries
+  - Merge pull request #8530 from ticoann/fix_multi_reject
+  - Merge pull request #8537 from vytjan/ZeroRetriesJobPausedTier0
+  - Merge pull request #8533 from amaltaro/wmbs-performance
+  - Set MaxRetries to 0 for testbed/dev agents
+  - unit test and pylint fixes
+  - Performance improvements for getting ACDC work; slicing insert DAOs
+  - Merge pull request #8542 from amaltaro/python27-path
+  - pylint fixes
+  - Add WMCore libraries to PYTHON27PATH
+  - Merge pull request #8539 from amaltaro/cmssw-classad
+  - Merge pull request #8535 from amaltaro/boost-splitting
+  - Merge pull request #8536 from ticoann/chirp_env
+  - unit test and pylint fixes
+  - Publish CMSSW versions via htcondor class ad
+  - Configurable number of retries per job type. Tier0 specific.
+  - add unittest
+  - check the PATH for condor_chirp command
+  - pylint and unit test fixes
+  - Minor performance update to the splitting API
+  - fix multi reject in reqmgr2
+
 1.1.12 to 1.1.12.patch4:
   - Merge pull request #8596 from ticoann/job_updater_patch
   - Update eoscmshttp url

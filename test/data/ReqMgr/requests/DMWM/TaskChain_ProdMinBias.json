@@ -22,8 +22,8 @@
         "AcquisitionEra": "CMSSW_8_1_0", 
         "CMSSWVersion": "CMSSW_8_1_0", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["MC from scratch; Given 100 EpLumi for Task1 sets 200 EpJob (instead of 197), so 2LpJob;",
-                    "Task2 LumiBased at 8 LpJob, Task3 LumiBased at 9 LpJob; diff ProcStr"],
+        "Comments": ["MC from scratch; Given 100 EpLumi for Task1, set EpJob and EpLumi to 41 (instead of 100), so 1LpJob;",
+                    "Task2 and Task3 EventAwareLumiBased with 800 and 900 EpJob; diff ProcStr"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
         "CouchDBName": "reqmgr_config_cache", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
@@ -58,7 +58,7 @@
             "RequestNumEvents": 9000, 
             "Seeding": "AutomaticSeeding", 
             "SplittingAlgo": "EventBased",
-            "TimePerEvent": 146,
+            "TimePerEvent": 700,
             "TaskName": "ProdMinBias"
         }, 
         "Task2": {
@@ -68,10 +68,10 @@
             "InputFromOutputModule": "RAWSIMoutput", 
             "InputTask": "ProdMinBias", 
             "KeepOutput": true, 
-            "LumisPerJob": 8,
             "Memory": 1500, 
+            "TimePerEvent": 36,
             "ProcessingString": "Task2_WMCore_TEST", 
-            "SplittingAlgo": "LumiBased", 
+            "SplittingAlgo": "EventAwareLumiBased",
             "TaskName": "DIGIPROD1"
         }, 
         "Task3": {
@@ -81,10 +81,10 @@
             "InputFromOutputModule": "RAWSIMoutput", 
             "InputTask": "DIGIPROD1", 
             "KeepOutput": true, 
-            "LumisPerJob": 9,
             "Memory": 2000, 
+            "TimePerEvent": 32,
             "ProcessingString": "Task3_WMCore_TEST", 
-            "SplittingAlgo": "LumiBased", 
+            "SplittingAlgo": "EventAwareLumiBased",
             "TaskName": "RECOPROD1"
         }, 
         "TaskChain": 3, 

@@ -62,6 +62,7 @@
     "MinMergeSize": 2147483648,
     "MaxMergeEvents": 100000,
     "MaxMergeSize": 4294967296,
+    "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
     "SoftTimeout": 129600,
     "GracePeriod": 1000,
     "CustodialSites": [],

@@ -2,7 +2,7 @@
 "createRequest":
 {     
     "Comments": ["MC extension wf; FacOps Custodial Replica to MSS; AnalysisOps NonCustodial Move to Disk auto-approved;",
-                 "Automatic splitting 250 EpJ and 250 EpL"],
+                 "Given 150EpL and 250EpJ, set EpJ to 300 instead"],
     "AcquisitionEra": "DMWM_Test",
     "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
@@ -20,6 +20,8 @@
     "PrimaryDataset": "Pythia8_Dijet15_pp502_TuneCUETP8M1",
     "PrepID": "TEST-pp502Fall15-00013",
     "Group": "DATAOPS",
+    "EventsPerJob": 250,
+    "EventsPerLumi": 150,
     "TimePerEvent": 115.2,
     "LheInputFiles": false,
     "Memory": 1250,
@@ -40,6 +42,7 @@
     "MinMergeSize": 2147483648,
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 50000,
+    "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
     "ProcessingVersion": 1,
     "SoftTimeout": 129600,
     "GracePeriod": 300,

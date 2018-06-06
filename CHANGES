@@ -1,3 +1,64 @@
+1.1.13 to 1.1.14:
+  - Merge pull request #8588 from amaltaro/templates-EpJ-take3
+  - Set recent log location to TESTBED
+  - Further tweaks to templates related to eos-lfn-prefix and EventsPerJob
+  - Merge pull request #8631 from amaltaro/delete-blocks
+  - Merge pull request #8641 from amaltaro/submit-finish
+  - Merge pull request #8638 from amaltaro/check-dset-script
+  - Dump the WN environment before defining the finish function
+  - 1.1.14.pre4
+  - Merge pull request #8640 from amaltaro/EpL-change
+  - fix unit tests
+  - Decrease EventsPerLumi if its way beyond 8h jobs
+  - Script to check dbs/phedex inconsistency - fix for when block is unavailable
+  - 1.1.14.pre3
+  - Merge pull request #8621 from amaltaro/retry-classad
+  - Merge pull request #8599 from amaltaro/override-all-logArchs
+  - Make phedex block deletion level instead of datasets
+  - Merge pull request #8627 from ticoann/proc_stat
+  - Add retry count to the job classad
+  - send minimal info for process data
+  - Merge pull request #8625 from amaltaro/phedex-delete-master
+  - fix pylint and unit tests
+  - Fix phedex delete call
+  - 1.1.14.pre2
+  - Merge pull request #8620 from ticoann/add_status_reqmgr2
+  - Merge pull request #8617 from amaltaro/util-scripts
+  - add process report for prometheus
+  - Merge pull request #8604 from ticoann/error_handler_acdc_fix
+  - Merge pull request #8607 from ticoann/cleanup_jobcreator
+  - 1.1.14.pre1
+  - Merge pull request #8611 from ticoann/add_getlumi_flag
+  - Script to check dataset inconsistencies in DBS x PhEDEx
+  - Merge pull request #8612 from ticoann/remove_false_error
+  - change to debug level which is not actually error
+  - add getLumis flag
+  - Added RequestStateTransition.png
+  - Update RequestStateTransition.xml
+  - remove Sam service
+  - delete registration service
+  - remove JobCreatorWorker unused code
+  - Merge pull request #8606 from ticoann/doc_update
+  - update job state transition diagram
+  - Update JobStateTransition.xml
+  - Merge pull request #8605 from amaltaro/production-schematic
+  - Schematic of the production system
+  - swap the order of ACDC update before moving to exhausted
+  - Merge pull request #8601 from ticoann/job_transition_dia_update
+  - update the jobtransition diagram
+  - Add override to all tasks logArch step
+  - Merge pull request #8592 from ticoann/jobupdater_error_handle
+  - Merge pull request #8597 from ticoann/update_docs
+  - add jobstatus transition diagram
+  - ignore timeout error in job updater
+  - Merge pull request #8583 from ticoann/data_update_time_fix
+  - Merge pull request #8586 from amaltaro/redigi-pylint
+  - Merge pull request #8589 from amaltaro/eoscmshttp-url
+  - Update eoscmshttp url
+  - pylint fix
+  - fix wmstats report for data update time
+  - Some pylint fixes for ReDigi spec
+
 1.1.13 to 1.1.14.pre4:
   - Merge pull request #8640 from amaltaro/EpL-change
   - fix unit tests

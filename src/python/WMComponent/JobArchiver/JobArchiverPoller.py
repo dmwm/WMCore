@@ -56,6 +56,8 @@ class JobArchiverPoller(BaseWorkerThread):
         # Variables
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
+        self.numberOfJobsToArchive = getattr(self.config.JobArchiver,
+                                             "numberOfJobsToArchive", 10000)
 
         # initialize the alert framework (if available)
         self.initAlerts(compName="JobArchiver")
@@ -172,9 +174,9 @@ class JobArchiverPoller(BaseWorkerThread):
         jobList = []
 
         jobListAction = self.daoFactory(classname="Jobs.GetAllJobs")
-        jobList1 = jobListAction.execute(state="success")
-        jobList2 = jobListAction.execute(state="exhausted")
-        jobList3 = jobListAction.execute(state="killed")
+        jobList1 = jobListAction.execute(state="success", limitRows=self.numberOfJobsToArchive)
+        jobList2 = jobListAction.execute(state="exhausted", limitRows=self.numberOfJobsToArchive)
+        jobList3 = jobListAction.execute(state="killed", limitRows=self.numberOfJobsToArchive)
 
         jobList.extend(jobList1)
         jobList.extend(jobList2)

@@ -2,28 +2,25 @@
 """
 The actual jobArchiver algorithm
 """
-__all__ = []
-
-import threading
 import logging
 import os
 import os.path
 import shutil
 import tarfile
+import threading
 
 from Utils.IteratorTools import grouper
 from Utils.Timers import timeFunction
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMBS.Job import Job
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMException import WMException
-
-from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 
 class JobArchiverPollerException(WMException):
     """
@@ -51,7 +48,6 @@ class JobArchiverPoller(BaseWorkerThread):
                                      logger=myThread.logger,
                                      dbinterface=myThread.dbi)
         self.loadAction = self.daoFactory(classname="Jobs.LoadFromIDWithWorkflow")
-
 
         # Variables
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
@@ -114,8 +110,8 @@ class JobArchiverPoller(BaseWorkerThread):
             self.markInjected()
         except WMException:
             myThread = threading.currentThread()
-            if getattr(myThread, 'transaction', None) != None \
-                    and getattr(myThread.transaction, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None \
+                    and getattr(myThread.transaction, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
@@ -123,8 +119,8 @@ class JobArchiverPoller(BaseWorkerThread):
             msg = "Caught exception in JobArchiver\n"
             msg += str(ex)
             msg += "\n\n"
-            if getattr(myThread, 'transaction', None) != None \
-                    and getattr(myThread.transaction, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None \
+                    and getattr(myThread.transaction, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise JobArchiverPollerException(msg)
 

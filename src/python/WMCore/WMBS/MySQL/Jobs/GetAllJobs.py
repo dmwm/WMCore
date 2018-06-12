@@ -31,6 +31,9 @@ class GetAllJobs(DBFormatter):
                           AND wmbs_sub_types.name = :type
     """
 
+    limit_sql = " limit %d"
+
+
     def format(self, results):
         """
         _formatDict_
@@ -49,23 +52,29 @@ class GetAllJobs(DBFormatter):
             return final
 
 
-    def execute(self, state = None, jobType = None, conn = None, transaction = False):
+    def execute(self, state = None, jobType = None, conn = None,
+                transaction = False, limitRows=None):
         """
         _execute_
 
         Execute the SQL for the given job ID and then format and return
         the result.
         """
+        if limitRows:
+            extraSql = self.limit_sql % limitRows
+        else:
+            extraSql = ""
+
         if state == None:
-            result = self.dbi.processData(self.sql_all, {}, conn = conn,
+            result = self.dbi.processData(self.sql_all + extraSql, {}, conn = conn,
                                           transaction = transaction)
         else:
             if jobType:
-                result = self.dbi.processData(self.sql_state_type, {'state':state.lower(), 'type': jobType}, conn = conn,
-                                          transaction = transaction)
+                result = self.dbi.processData(self.sql_state_type + extraSql, {'state':state.lower(),'type': jobType},
+                                              conn = conn, transaction = transaction)
             else:
-                result = self.dbi.processData(self.sql_state, {'state':state.lower()}, conn = conn,
-                                              transaction = transaction)
+                result = self.dbi.processData(self.sql_state + extraSql, {'state':state.lower()},
+                                              conn = conn, transaction = transaction)
 
         res = self.format(result)
         return res

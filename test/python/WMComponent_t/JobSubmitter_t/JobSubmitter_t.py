@@ -127,11 +127,12 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         return
 
     def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site,
-                        taskType='Processing', name=None, wfPrio=1):
+                        taskType='Processing', name=None, wfPrio=1, changeState=None):
         """
         _createJobGroups_
 
         Creates a series of jobGroups for submissions
+        changeState is an instance of the ChangeState class to make job status changes
         """
 
         jobGroupList = []
@@ -171,6 +172,10 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             testFileset.commit()
             testJobGroup.commit()
             jobGroupList.append(testJobGroup)
+
+        if changeState:
+            for group in jobGroupList:
+                changeState.propagate(group.jobs, 'created', 'new')
 
         return jobGroupList
 
@@ -650,7 +655,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         nSubs = 1
         nJobs = 20
 
-        sites = ['T2_US_Florida', 'T2_TW_Taiwan', 'T3_CO_Uniandes', 'T1_US_FNAL']
+        sites = ['T2_US_Florida', 'T2_RU_INR', 'T3_CO_Uniandes', 'T1_US_FNAL']
         for site in sites:
             self.setResourceThresholds(site, pendingSlots=10, runningSlots=999999, tasks=['Processing', 'Merge'],
                                        Processing={'pendingSlots': 10, 'runningSlots': 999999},
@@ -806,10 +811,12 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         workload = self.createTestWorkload()
         config = self.getConfig()
         changeState = ChangeState(config)
-        myResourceControl = ResourceControl(config)
+        # myResourceControl = ResourceControl(config)
 
-        nSubs = 100
+        nSubs = 20
         nJobs = 100
+
+        sites = ['T2_US_Florida', 'T2_RU_INR', 'T3_CO_Uniandes', 'T1_US_FNAL']
         allSites = SiteDBJSON().PSNtoPNNMap('.*')
 
         for site in allSites:
@@ -820,52 +827,47 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         # Always initialize the submitter after setting the sites, flaky!
         jobSubmitter = JobSubmitterPoller(config=config)
 
-        jobGroupList = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
-                                            task=workload.getTask("ReReco"),
-                                            workloadSpec=self.workloadSpecPath,
-                                            site=[x for x in allSites], wfPrio=10)
-
-        jobGroupList.extend(self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
-                                                 task=workload.getTask("ReReco"),
-                                                 workloadSpec=self.workloadSpecPath,
-                                                 site=[x for x in allSites],
-                                                 taskType='Merge', wfPrio=100))
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
+        self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=10,
+                             task=workload.getTask("ReReco"),
+                             workloadSpec=self.workloadSpecPath,
+                             site=[x for x in sites], changeState=changeState)
 
         # Actually run it
-        jobSubmitter.algorithm()
+        jobSubmitter.algorithm()  # cycle 1
 
-        myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
-        jobSubmitter.algorithm()
+        self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=10,
+                             task=workload.getTask("ReReco"),
+                             workloadSpec=self.workloadSpecPath,
+                             site=[x for x in sites], changeState=changeState)
+        # myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
+        jobSubmitter.algorithm()  # cycle 2
 
-        myResourceControl.changeSiteState('T2_TW_Taiwan', 'Draining')
-        jobSubmitter.algorithm()
+        self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=10,
+                             task=workload.getTask("ReReco"),
+                             workloadSpec=self.workloadSpecPath,
+                             site=[x for x in sites], changeState=changeState)
+        # myResourceControl.changeSiteState('T2_RU_INR', 'Draining')
+        jobSubmitter.algorithm()  # cycle 3
 
-        myResourceControl.changeSiteState('T3_CO_Uniandes', 'Draining')
-        jobSubmitter.algorithm()
+        self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=10,
+                             task=workload.getTask("ReReco"),
+                             workloadSpec=self.workloadSpecPath,
+                             site=[x for x in sites], changeState=changeState)
+        # myResourceControl.changeSiteState('T3_CO_Uniandes', 'Draining')
+        jobSubmitter.algorithm()  # cycle 4
 
-        jobGroupList = self.createJobGroups(nSubs=50, nJobs=100,
-                                            site=[x for x in allSites],
-                                            task=workload.getTask("ReReco"),
-                                            workloadSpec=self.workloadSpecPath,
-                                            taskType='Merge', wfPrio=1000)
+        # myResourceControl.changeSiteState('T2_RU_INR', 'Normal')
+        jobSubmitter.algorithm()  # cycle 5
 
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
+        # myResourceControl.changeSiteState('T2_US_Florida', 'Normal')
+        jobSubmitter.algorithm()  # cycle 6
 
-        # Actually run it
-        jobSubmitter.algorithm()
+        # myResourceControl.changeSiteState('T2_RU_INR', 'Normal')
+        jobSubmitter.algorithm()  # cycle 7
 
-        myResourceControl.changeSiteState('T2_US_Florida', 'Normal')
-        jobSubmitter.algorithm()
-
-        myResourceControl.changeSiteState('T2_TW_Taiwan', 'Normal')
-        jobSubmitter.algorithm()
-
-        myResourceControl.changeSiteState('T3_CO_Uniandes', 'Normal')
-        jobSubmitter.algorithm()
+        # myResourceControl.changeSiteState('T3_CO_Uniandes', 'Normal')
+        jobSubmitter.algorithm()  # cycle 8
+        jobSubmitter.algorithm()  # cycle 9, nothing to submit
 
         return
 

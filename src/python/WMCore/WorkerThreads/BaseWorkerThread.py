@@ -230,7 +230,7 @@ class BaseWorkerThread(object):
                 try:
                     self.heartbeatAPI.updateWorkerError(self.workerName, errMsg)
                 except Exception as ex:
-                    logging.error("Heartbeat error update failed %s" % str(ex))
+                    logging.error("Heartbeat error update failed %s", str(ex))
 
         # Indicate to manager that thread is done
         self.terminateCallback(threading.currentThread().name)

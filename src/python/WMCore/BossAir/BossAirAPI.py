@@ -716,7 +716,7 @@ class BossAirAPI(WMConnectionBase):
             try:
                 pluginInst = self.plugins[plugin]
                 tempjoblist = pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
-                if tempjoblist != None:
+                if tempjoblist is not None:
                     jobkill.extend(tempjoblist)
             except WMException:
                 raise

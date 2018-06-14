@@ -1,3 +1,8 @@
+1.1.14 to 1.1.14.crab1:
+  - Merge pull request #8654 from amaltaro/crab1114-bundle1
+  - split STAGEOUT_ERRORS for code 60317. Fix #8405
+  - Added exit code 8033 - FileWriteError - to the list of exceptions
+
 1.1.13 to 1.1.14:
   - Merge pull request #8588 from amaltaro/templates-EpJ-take3
   - Set recent log location to TESTBED

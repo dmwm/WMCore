@@ -93,7 +93,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.jobDataCache = {}  # key'ed by the job id, containing the whole job info dict
         self.jobsToPackage = {}
         self.locationDict = {}
-        self.taskTypePrioMap = {}
         self.drainSites = set()
         self.abortSites = set()
         self.refreshPollingCount = 0
@@ -350,7 +349,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             batchDir = self.addJobsToPackage(loadedJob)
 
             # calculate the final job priority such that we can order cached jobs by prio
-            jobPrio = self.taskTypePrioMap.get(newJob['task_type'], 0) + newJob['wf_priority']
+            jobPrio = newJob['task_prio'] * self.maxTaskPriority + newJob['wf_priority']
             self.jobsByPrio.setdefault(jobPrio, set())
             self.jobsByPrio[jobPrio].add(jobID)
 
@@ -363,7 +362,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             loadedJob['numberOfCores'] = numberOfCores
 
             # Create a job dictionary object and put it in the cache (needs to be in sync with RunJob)
-            jobInfo = {'taskPriority': None,  # update from the thresholds
+            jobInfo = {'taskPriority': newJob['task_prio'],
                        'custom': {'location': None},  # update later
                        'packageDir': batchDir,
                        'retry_count': newJob["retry_count"],
@@ -475,7 +474,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         Also update the list of draining and abort/down sites.
         Finally, creates a map between task type and its priority.
         """
-        self.taskTypePrioMap = {}
         newDrainSites = set()
         newAbortSites = set()
 
@@ -489,11 +487,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 newDrainSites.add(siteName)
             if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
-
-            # then update the task type x task priority mapping
-            if not self.taskTypePrioMap:
-                for task, value in rcThresholds[siteName]['thresholds'].items():
-                    self.taskTypePrioMap[task] = value.get('priority', 0) * self.maxTaskPriority
 
         # When the list of drain/abort sites change between iteration then a location
         # refresh is needed, for now it forces a full cache refresh
@@ -641,7 +634,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                     cachedJob = self.jobDataCache.pop(jobid)
                     cachedJob['custom'] = {'location': siteName}
                     cachedJob['possibleSites'] = possibleSites
-                    cachedJob['taskPriority'] = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
 
                     # Sort jobs by jobPackage and get it in place to be submitted by the plugin
                     package = cachedJob['packageDir']

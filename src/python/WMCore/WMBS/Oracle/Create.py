@@ -735,8 +735,8 @@ class Create(CreateWMBSBase):
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        self.subTypes = [("Processing", 0), ("Merge", 5), ("Harvesting", 3), ("Cleanup", 5),
-                         ("LogCollect", 3), ("Skim", 3), ("Production", 0)]
+        self.subTypes = [("Processing", 0), ("Merge", 4), ("Harvesting", 5), ("Cleanup", 1),
+                         ("LogCollect", 2), ("Skim", 3), ("Production", 0)]
         for pair in self.subTypes:
             subTypeQuery = """INSERT INTO wmbs_sub_types (id, name, priority)
                               VALUES (wmbs_sub_types_SEQ.nextval, '%s', %d)""" % (pair[0], pair[1])

@@ -13,7 +13,6 @@ import logging
 import os.path
 import threading
 from collections import defaultdict, Counter
-
 try:
     import cPickle as pickle
 except ImportError:
@@ -708,7 +707,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState.propagate(successList, 'executing', 'created')
         logging.debug("Propagating fail state to WMBS.")
         self.changeState.propagate(failList, 'submitfailed', 'created')
-
         # At the end we mark the locations of the jobs
         # This applies even to failed jobs, since the location
         # could be part of the failure reason.

@@ -498,7 +498,8 @@ class BossAirTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
         self.assertEqual(len(result), nJobs)
 
-        baAPI.removeComplete(jobs=jobDummies)
+        jobsToRemove = baAPI._buildRunningJobs(wmbsJobs=jobDummies)
+        baAPI._deleteJobs(jobs=jobsToRemove)
 
         result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
         self.assertEqual(len(result), 0)

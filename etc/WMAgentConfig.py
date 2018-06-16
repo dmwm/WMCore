@@ -244,9 +244,10 @@ config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 240
+config.JobArchiver.pollInterval = 120
 config.JobArchiver.logLevel = globalLogLevel
 config.JobArchiver.numberOfJobsToCluster = 1000
+config.JobArchiver.numberOfJobsToArchive = 10000
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator
@@ -270,9 +271,12 @@ config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch = True
 # set to False couch data if request mgr is not used (Tier0, PromptSkiming)
 config.TaskArchiver.useReqMgrForCompletionCheck = True
-config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
-config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,
+                                               config.JobStateMachine.couchDBName)
+config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
+                                               config.WorkQueueManager.dbname)
+config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
+                                                 config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.DataKeepDays = 0.125  # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20  # 20 min
 config.TaskArchiver.archiveDelayHours = 24  # delay the archiving so monitor can still show. default 24 hours
@@ -295,10 +299,12 @@ config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.An
 config.AnalyticsDataCollector.componentDir = config.General.workDir + "/AnalyticsDataCollector"
 config.AnalyticsDataCollector.logLevel = globalLogLevel
 config.AnalyticsDataCollector.pollInterval = 600
-config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (
-config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
-config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,
+                                                         config.JobStateMachine.couchDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
+                                                         config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
+                                                           config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"

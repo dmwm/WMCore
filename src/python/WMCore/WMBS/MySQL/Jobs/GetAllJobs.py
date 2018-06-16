@@ -5,11 +5,8 @@ _GetLocation_
 MySQL implementation of Jobs.GetAllJobs
 """
 
-__all__ = []
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetAllJobs(DBFormatter):
     """
@@ -18,7 +15,7 @@ class GetAllJobs(DBFormatter):
     Retrieve all files that are associated with the given job from the
     database.
     """
-    sql_all   = "SELECT id FROM wmbs_job"
+    sql_all = "SELECT id FROM wmbs_job"
 
     sql_state = "SELECT id FROM wmbs_job WHERE state = (SELECT id FROM wmbs_job_state WHERE name = :state)"
 
@@ -28,8 +25,9 @@ class GetAllJobs(DBFormatter):
                           INNER JOIN wmbs_job_state ON wmbs_job.state = wmbs_job_state.id
                           INNER JOIN wmbs_sub_types ON wmbs_subscription.subtype = wmbs_sub_types.id
                           WHERE wmbs_job_state.name = :state
-                          AND wmbs_sub_types.name = :type
-    """
+                          AND wmbs_sub_types.name = :type"""
+
+    limit_sql = " limit %d"
 
     def format(self, results):
         """
@@ -48,24 +46,29 @@ class GetAllJobs(DBFormatter):
                 final.append(i.values()[0])
             return final
 
-
-    def execute(self, state = None, jobType = None, conn = None, transaction = False):
+    def execute(self, state=None, jobType=None, conn=None,
+                transaction=False, limitRows=None):
         """
         _execute_
 
         Execute the SQL for the given job ID and then format and return
         the result.
         """
-        if state == None:
-            result = self.dbi.processData(self.sql_all, {}, conn = conn,
-                                          transaction = transaction)
+        if limitRows:
+            extraSql = self.limit_sql % limitRows
+        else:
+            extraSql = ""
+
+        if state is None:
+            result = self.dbi.processData(self.sql_all + extraSql, {}, conn=conn,
+                                          transaction=transaction)
         else:
             if jobType:
-                result = self.dbi.processData(self.sql_state_type, {'state':state.lower(), 'type': jobType}, conn = conn,
-                                          transaction = transaction)
+                result = self.dbi.processData(self.sql_state_type + extraSql, {'state': state.lower(), 'type': jobType},
+                                              conn=conn, transaction=transaction)
             else:
-                result = self.dbi.processData(self.sql_state, {'state':state.lower()}, conn = conn,
-                                              transaction = transaction)
+                result = self.dbi.processData(self.sql_state + extraSql, {'state': state.lower()},
+                                              conn=conn, transaction=transaction)
 
         res = self.format(result)
         return res

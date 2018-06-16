@@ -1,3 +1,11 @@
+1.1.14 to 1.1.14.patch2:
+  - Merge pull request #8657 from amaltaro/bundle-1114patch2
+  - Limit the number of archiveable jobs to be loaded each cycle
+  - Strip the requirement string and proxy for Volunteer jobs
+  - Reduce the BossAir memory footprint
+  - Added exit code 8033 - FileWriteError - to the list of exceptions
+  - 1.1.14.patch1
+
 1.1.14 to 1.1.14.patch1:
 
 

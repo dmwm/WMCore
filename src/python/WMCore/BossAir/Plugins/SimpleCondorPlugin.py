@@ -109,7 +109,8 @@ class SimpleCondorPlugin(BasePlugin):
         # TODO(bbockelm): Remove reqStr once HLT has upgraded.
         self.reqStr = ('((REQUIRED_OS=?="any") || '
                        '(GLIDEIN_REQUIRED_OS =?= "any") || '
-                       'stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))')
+                       'stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS)) && '
+                       '(AuthenticatedIdentity =!= "volunteer-node@cern.ch")')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -118,6 +119,8 @@ class SimpleCondorPlugin(BasePlugin):
         self.x509userproxy = proxy.getProxyFilename()
         self.x509userproxysubject = proxy.getSubject()
         self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
+        # Remove the x509 ads if the job is matching a volunteer resource
+        self.x509Expr = 'ifThenElse("$$(GLIDEIN_CMSSite)" =?= "T3_CH_Volunteer",undefined,"%s")'
 
         return
 
@@ -467,7 +470,7 @@ class SimpleCondorPlugin(BasePlugin):
 
     def getClusterAd(self):
         """
-        _initSubmit_
+        _getClusterAd_
 
         Return common cluster classad
 
@@ -478,8 +481,6 @@ class SimpleCondorPlugin(BasePlugin):
         ad = classad.ClassAd()
 
         # ad['universe'] = "vanilla"
-        if self.reqStr:
-            ad['Requirements'] = classad.ExprTree(self.reqStr)
         ad['ShouldTransferFiles'] = "YES"
         ad['WhenToTransferOutput'] = "ON_EXIT"
         ad['UserLogUseXML'] = True
@@ -506,10 +507,6 @@ class SimpleCondorPlugin(BasePlugin):
 
         # Customized classAds for this plugin
         ad['DESIRED_Archs'] = "INTEL,X86_64"
-
-        ad['x509userproxy'] = self.x509userproxy
-        ad['x509userproxysubject'] = self.x509userproxysubject
-        ad['x509userproxyfirstfqan'] = self.x509userproxyfqan
 
         ad['Rank'] = 0.0
         ad['TransferIn'] = False
@@ -542,6 +539,15 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Arguments'] = "%s %i" % (os.path.basename(job['sandbox']), job['id'])
 
             ad['TransferOutput'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
+
+            # Do not define Requirements and X509 ads for Volunteer resources
+            if self.reqStr and "T3_CH_Volunteer" not in job.get('possibleSites'):
+                ad['Requirements'] = classad.ExprTree(self.reqStr)
+
+            ad['x509userproxy'] = classad.ExprTree(self.x509Expr % self.x509userproxy)
+            ad['x509userproxysubject'] = classad.ExprTree(self.x509Expr % self.x509userproxysubject)
+            ad['x509userproxyfirstfqan'] = classad.ExprTree(self.x509Expr % self.x509userproxyfqan)
+
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['DESIRED_Sites'] = sites

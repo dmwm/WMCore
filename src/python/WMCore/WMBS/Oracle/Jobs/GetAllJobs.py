@@ -13,6 +13,6 @@ from WMCore.WMBS.MySQL.Jobs.GetAllJobs import GetAllJobs as MySQLGetAllJobs
 
 class GetAllJobs(MySQLGetAllJobs):
     """
-    Right now the same as the MySQL version
-
+    Besides the row limitation, it's the same as in MySQL
     """
+    limit_sql = " AND ROWNUM <= %d"

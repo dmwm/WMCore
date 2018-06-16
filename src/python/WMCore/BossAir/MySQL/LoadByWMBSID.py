@@ -20,7 +20,7 @@ class LoadByWMBSID(DBFormatter):
                st.name AS status, rj.retry_count as retry_count, rj.id AS id,
                rj.status_time as status_time, wu.cert_dn AS userdn,
                wu.group_name AS usergroup, wu.role_name AS userrole,
-               wl.plugin AS plugin
+               wl.plugin AS plugin, wj.cache_dir AS cache_dir
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
                LEFT OUTER JOIN wmbs_users wu ON wu.id = rj.user_id

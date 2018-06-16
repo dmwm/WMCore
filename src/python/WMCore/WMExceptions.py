@@ -134,6 +134,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       8030: "Exceeded maximum allowed VSize (ExceededResourceVSize).",
                       8031: "Exceeded maximum allowed RSS (ExceededResourceRSS).",
                       8032: "Exceeded maximum allowed time (ExceededResourceTime).",
+                      8033: "Could not write output file (FileWriteError) (usually local disk problem).",
                       9000: "cmsRun caught (SIGINT and SIGUSR2) signal.",
                       10031: "Directory VO_CMS_SW_DIR not found. ",  # (CRAB3)
                       10032: "Failed to source CMS Environment setup script such as cmssset_default.sh, grid system or site equivalent script.",  # (CRAB3)

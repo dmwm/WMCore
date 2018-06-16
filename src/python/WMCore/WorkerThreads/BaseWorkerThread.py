@@ -170,6 +170,7 @@ class BaseWorkerThread(object):
             myThread = threading.currentThread()
 
             # Run event loop while termination is not flagged
+            algorithmWithDBExceptionHandler = db_exception_handler(self.algorithm)
             while not self.notifyTerminate.isSet():
                 # Check manager hasn't paused threads
                 if self.notifyPause.isSet():
@@ -183,7 +184,6 @@ class BaseWorkerThread(object):
                             if self.useHeartbeat:
                                 self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
 
-                            algorithmWithDBExceptionHandler = db_exception_handler(self.algorithm)
                             tSpent, results, _ = algorithmWithDBExceptionHandler(parameters)
                             if tSpent and self.useHeartbeat:
                                 logging.info("%s took %.3f secs to execute", self.workerName, tSpent)

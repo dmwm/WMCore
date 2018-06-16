@@ -244,9 +244,10 @@ config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 240
+config.JobArchiver.pollInterval = 120
 config.JobArchiver.logLevel = globalLogLevel
 config.JobArchiver.numberOfJobsToCluster = 1000
+config.JobArchiver.numberOfJobsToArchive = 10000
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator

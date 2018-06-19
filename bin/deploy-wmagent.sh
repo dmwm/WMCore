@@ -25,8 +25,8 @@
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.12.patch2 -d HG1802d -t production -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.12.patch1 -d HG1804d -t testbed-vocms001 -p "8503" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.14.patch2 -d HG1806m -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.14.patch2 -d HG1806m -t testbed-vocms001 -p "8503" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -282,6 +282,8 @@ echo "Done!" && echo
 echo "*** Tweaking configuration ***"
 sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
+# TODO: remove this ErrorHandler tweak once 8614 issue gets fixed
+sed -i "s+ErrorHandler.maxProcessSize = 500+ErrorHandler.maxProcessSize = 50+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then

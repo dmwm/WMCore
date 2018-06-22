@@ -558,7 +558,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         # test default task priorities
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 5)
+        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 4)
         self.assertEqual(result['testSite1']['thresholds']['Processing']['priority'], 0)
 
         myResourceControl.changeTaskPriority("Merge", 3)

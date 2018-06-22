@@ -38,7 +38,6 @@ class ListForSubmitter(DBFormatter):
 
     limit_sql = " limit %d"
 
-
     def execute(self, conn=None, transaction=False, limitRows=None):
         if limitRows:
             extraSql = self.limit_sql % limitRows

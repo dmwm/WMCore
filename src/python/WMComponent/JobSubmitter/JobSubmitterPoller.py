@@ -763,7 +763,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
         except WMException:
-            if getattr(myThread, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
@@ -772,7 +772,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             # msg += str(traceback.format_exc())
             msg += '\n\n'
             logging.error(msg)
-            if getattr(myThread, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise JobSubmitterPollerException(msg)
 

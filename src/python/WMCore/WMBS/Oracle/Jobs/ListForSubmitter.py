@@ -5,10 +5,8 @@ _ListForSubmitter_
 Oracle implementation of Jobs.ListForSubmitter
 """
 
-
-
-
 from WMCore.WMBS.MySQL.Jobs.ListForSubmitter import ListForSubmitter as MySQLListForSubmitter
+
 
 class ListForSubmitter(MySQLListForSubmitter):
     sql = """SELECT * FROM

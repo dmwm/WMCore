@@ -213,7 +213,7 @@ class ExpressWorkloadFactory(StdBase):
                 for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
 
                     if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and \
-                            ( self.alcaHarvestCondLFNBase != None or self.alcaHarvestLumiURL != None ):
+                            (self.alcaHarvestCondLFNBase is not None or self.alcaHarvestLumiURL is not None):
                         harvestTask = self.addAlcaHarvestTask(alcaSkimTask, alcaSkimOutLabel,
                                                               alcapromptdataset=alcaSkimOutInfo['filterName'],
                                                               condOutLabel=self.alcaHarvestOutLabel,
@@ -365,7 +365,7 @@ class ExpressWorkloadFactory(StdBase):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        dataTier=getattr(parentOutputModule, "dataTier")
+        dataTier = getattr(parentOutputModule, "dataTier")
         harvestTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         harvestTask.setSplittingAlgorithm("AlcaHarvest",
@@ -387,7 +387,7 @@ class ExpressWorkloadFactory(StdBase):
 
         harvestTaskConditionHelper = harvestTaskCondition.getTypeHelper()
         harvestTaskConditionHelper.setRunNumber(self.runNumber)
-        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel+"ALCAPROMPT")
+        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel + "ALCAPROMPT")
         harvestTaskConditionHelper.setConditionLFNBase(condLFNBase)
         harvestTaskConditionHelper.setLuminosityURL(lumiURL)
 
@@ -428,7 +428,7 @@ class ExpressWorkloadFactory(StdBase):
         conditionTaskBogus = conditionTask.makeStep("bogus")
         conditionTaskBogus.setStepType("DQMUpload")
 
-        dataTier=getattr(parentOutputModule, "dataTier")
+        dataTier = getattr(parentOutputModule, "dataTier")
         conditionTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         conditionTask.applyTemplates()
@@ -493,6 +493,17 @@ class ExpressWorkloadFactory(StdBase):
                     "MaxLatency": {"type": int, "optional": False},
 
                     }
+        baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        specArgs = {
+            "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/Express"},
+                         "type": dict},
+            }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

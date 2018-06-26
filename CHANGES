@@ -1,3 +1,17 @@
+1.1.14 to 1.1.14.patch4:
+  - Merge pull request #8664 from ticoann/1.1.14_wmagent_8635
+  - pylint fixes
+  - Override T0-spec assignment parameters with a new Override value
+  - Merge pull request #8662 from amaltaro/issue-8660-1114
+  - Limit number of jobs to cache in JobSubmitter; also order by task_id
+  - 1.1.14.patch2
+  - Merge pull request #8657 from amaltaro/bundle-1114patch2
+  - Limit the number of archiveable jobs to be loaded each cycle
+  - Strip the requirement string and proxy for Volunteer jobs
+  - Reduce the BossAir memory footprint
+  - Added exit code 8033 - FileWriteError - to the list of exceptions
+  - 1.1.14.patch1
+
 1.1.14 to 1.1.14.patch2:
   - Merge pull request #8657 from amaltaro/bundle-1114patch2
   - Limit the number of archiveable jobs to be loaded each cycle

@@ -13,6 +13,7 @@ class ListForSubmitter(DBFormatter):
                     wmbs_job.name AS name,
                     wmbs_job.cache_dir AS cache_dir,
                     wmbs_sub_types.name AS task_type,
+                    wmbs_sub_types.priority AS task_prio,
                     wmbs_job.retry_count AS retry_count,
                     wmbs_workflow.name AS request_name,
                     wmbs_workflow.id AS task_id,
@@ -29,9 +30,20 @@ class ListForSubmitter(DBFormatter):
                  wmbs_job.state = wmbs_job_state.id
                INNER JOIN wmbs_workflow ON
                  wmbs_subscription.workflow = wmbs_workflow.id
-             WHERE wmbs_job_state.name = 'created'"""
+             WHERE wmbs_job_state.name = 'created'
+             ORDER BY
+               wmbs_sub_types.priority DESC,
+               wmbs_workflow.priority DESC,
+               wmbs_workflow.id DESC"""
 
-    def execute(self, conn=None, transaction=False):
-        result = self.dbi.processData(self.sql, conn=conn,
+    limit_sql = " limit %d"
+
+    def execute(self, conn=None, transaction=False, limitRows=None):
+        if limitRows:
+            extraSql = self.limit_sql % limitRows
+        else:
+            extraSql = ""
+
+        result = self.dbi.processData(self.sql + extraSql, conn=conn,
                                       transaction=transaction)
         return self.formatDict(result)

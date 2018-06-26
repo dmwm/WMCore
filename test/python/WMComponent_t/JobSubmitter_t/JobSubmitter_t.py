@@ -297,7 +297,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         return config
 
-    def createTestWorkload(self):
+    def createTestWorkload(self, name='workloadTest'):
         """
         _createTestWorkload_
 
@@ -306,11 +306,11 @@ class JobSubmitterTest(EmulatedUnitTestCase):
 
         workload = testWorkload()
 
-        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
+        taskMaker = TaskMaker(workload, os.path.join(self.testDir, name))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-        self.workloadSpecPath = os.path.join(self.testDir, 'workloadTest',
-                                             "TestWorkload/WMSandbox/WMWorkload.pkl")
+        self.workloadSpecPath = os.path.join(self.testDir, name,
+                                             "%s/WMSandbox/WMWorkload.pkl" % name)
 
         return workload
 
@@ -512,6 +512,121 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         self.assertEqual(len(result), 280)
 
         return
+
+    def testC_prioTest(self):
+        """
+        _testC_prioTest_
+
+        Test whether the correct job type, workflow and task id priorities
+        are respected in the DAO
+        """
+        workload1 = self.createTestWorkload(name='testWorkload1')
+        workload2 = self.createTestWorkload(name='testWorkload2')
+        workload3 = self.createTestWorkload(name='testWorkload3')
+        workload4 = self.createTestWorkload(name='testWorkload4')
+
+        config = self.getConfig()
+        changeState = ChangeState(config)
+        getJobsAction = self.daoFactory(classname="Jobs.ListForSubmitter")
+
+        site = "T1_US_FNAL"
+        self.setResourceThresholds(site, pendingSlots=1000, runningSlots=1000,
+                                   tasks=['Processing', 'Merge', 'Production', 'Harvesting', 'LogCollect'],
+                                   Processing={'pendingSlots': 1000, 'runningSlots': 1000},
+                                   Merge={'pendingSlots': 1000, 'runningSlots': 10000},
+                                   Production={'pendingSlots': 1000, 'runningSlots': 1000},
+                                   Harvesting={'pendingSlots': 1000, 'runningSlots': 1000},
+                                   LogCollect={'pendingSlots': 1000, 'runningSlots': 1000})
+
+        nSubs = 1
+        nJobs = 5
+        jobGroupList = []
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                        task=workload1.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site,
+                                        name='OldestWorkflow')  # task_id = 1
+        jobGroupList.extend(jobGroup)
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                        task=workload1.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site,
+                                        taskType='Merge')  # task_id = 2
+        jobGroupList.extend(jobGroup)
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                        task=workload1.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site,
+                                        taskType='LogCollect')  # task_id = 3
+        jobGroupList.extend(jobGroup)
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # retrieve all 15 jobs created so far
+        result = getJobsAction.execute(limitRows=100)
+        self.assertItemsEqual([int(j['task_prio']) for j in result],
+                              [4] * 5 + [2] * 5 + [0] * 5)
+        self.assertItemsEqual([int(j['wf_priority']) for j in result],
+                              [1] * 15)
+        self.assertItemsEqual([int(j['task_id']) for j in result],
+                              [2] * 5 + [3] * 5 + [1] * 5)
+
+        # now retrieve only 6 jobs (5 Merge and 1 LogCollect), wf prio=1
+        result = getJobsAction.execute(limitRows=6)
+        self.assertItemsEqual([int(j['task_prio']) for j in result], [4] * 5 + [2] * 1)
+
+        jobGroupList = []
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=2,
+                                        task=workload2.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site, taskType='Merge')  # task_id = 4
+        jobGroupList.extend(jobGroup)
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=3,
+                                        task=workload3.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site, taskType='Processing')  # task_id = 5
+        jobGroupList.extend(jobGroup)
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=3,
+                                        task=workload3.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site, taskType='LogCollect')  # task_id = 6
+        jobGroupList.extend(jobGroup)
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # retrieve all 30 jobs created so far
+        result = getJobsAction.execute(limitRows=100)
+        self.assertItemsEqual([int(j['task_prio']) for j in result],
+                              [4] * 10 + [2] * 10 + [0] * 10)
+        # merge prio 2, merge prio 1, logCol prio 3, logCol prio 1, proc prio 3, proc prio 1
+        self.assertItemsEqual([int(j['wf_priority']) for j in result],
+                              [2] * 5 + [1] * 5 + [3] * 5 + [1] * 5 + [3] * 5 + [1] * 5)
+        # merge id 4, merge id 2, logCol id 6, logCol id 3, proc id 5, proc id 1
+        self.assertItemsEqual([int(j['task_id']) for j in result],
+                              [4] * 5 + [2] * 5 + [6] * 5 + [3] * 5 + [5] * 5 + [1] * 5)
+
+
+        jobGroupList = []
+        jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=2,
+                                        task=workload4.getTask("ReReco"),
+                                        workloadSpec=self.workloadSpecPath,
+                                        site=site, taskType='Merge')  # task_id = 7
+        jobGroupList.extend(jobGroup)
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # retrieve all 15 Merge jobs created so far
+        result = getJobsAction.execute(limitRows=15)
+        self.assertItemsEqual([int(j['task_prio']) for j in result], [4] * 15)
+        # merge prio 2, merge prio 2, merge prio 1
+        self.assertItemsEqual([int(j['wf_priority']) for j in result], [2] * 10 + [1] * 5)
+        # merge id 7, merge id 4, merge id 2
+        self.assertItemsEqual([int(j['task_id']) for j in result],
+                              [7] * 5 + [4] * 5 + [2] * 5)
+
 
     def testC_prioritization(self):
         """

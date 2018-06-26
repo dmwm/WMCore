@@ -65,3 +65,9 @@ class DataProcessing(StdBase):
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs

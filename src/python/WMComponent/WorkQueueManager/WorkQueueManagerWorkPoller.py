@@ -4,12 +4,13 @@ _WorkQueueManagerPoller_
 
 Pull work out of the work queue.
 """
-
+import logging
 import time
 import random
 import traceback
 import threading
 from Utils.Timers import timeFunction
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
@@ -25,9 +26,15 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+        myThread = threading.currentThread()
+
         self.queue = queue
         self.config = config
         self.condorAPI = PyCondorAPI()
+
+        self.daoFactory = DAOFactory(package="WMCore.WMBS", logger=logging, dbinterface=myThread.dbi)
+        self.listSubsWithoutJobs = self.daoFactory(classname="Subscriptions.GetSubsWithoutJobGroup")
+
 
     def setup(self, parameters):
         """
@@ -70,10 +77,14 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         if isDrainMode(self.config):
             passCond = "No work will be pulled: Agent is in drain"
         elif availableScheddSlots(myThread.dbi) <= 0:
-            passCond = False
             passCond = "No work will be pulled: schedd slot is maxed: MAX_JOBS_PER_OWNER"
         elif self.condorAPI.isScheddOverloaded():
-            passCond = "No work will be pulled: shedd is overloaded"
+            passCond = "No work will be pulled: schedd is overloaded"
+        else:
+            subscriptions = self.listSubsWithoutJobs.execute()
+            if subscriptions:
+                passCond = "No work will be pulled: "
+                passCond += "JobCreator hasn't created jobs for subscriptions %s" % subscriptions
 
         return passCond
 

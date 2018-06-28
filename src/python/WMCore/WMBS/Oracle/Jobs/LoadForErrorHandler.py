@@ -19,3 +19,5 @@ class LoadForErrorHandler(MySQLLoadForErrorHandler):
                    INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                    INNER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
                  WHERE wja.job = :jobid"""
+
+    minRunLumiSQL = """SELECT fileid, run, lumi, num_events FROM (%s) WHERE ROWNUM = 1""" % MySQLLoadForErrorHandler.runLumiSQL

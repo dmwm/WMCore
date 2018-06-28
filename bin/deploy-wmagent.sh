@@ -23,10 +23,11 @@
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
+### Usage:               -X This option enables usage of the CRIC data service
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t testbed-vocms001 -p "8788" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t testbed-vocms001 -p "8788" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch -X
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -43,6 +44,7 @@ REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
 CENTRAL_SERVICES="cmsweb.cern.ch"
+USE_CRIC=false
 
 ### Usage function: print the usage of the script
 usage()
@@ -131,6 +133,7 @@ for arg; do
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
     -c) CENTRAL_SERVICES=$2; shift; shift ;;
+    -X) USE_CRIC=true; shift;;
     -*) usage ;;
   esac
 done
@@ -183,7 +186,12 @@ echo " - Repository      : $REPO"
 echo " - Agent number    : $AG_NUM"
 echo " - DB Flavor       : $FLAVOR"
 echo " - Central Services: $CENTRAL_SERVICES"
-echo " - Use /data1      : $DATA1" && echo
+echo " - Use /data1      : $DATA1"
+echo " - Using CRIC      : $USE_CRIC" && echo
+
+if [ "$USE_CRIC" = true ]; then
+  export WMAGENT_USE_CRIC=true
+fi
 
 mkdir -p $DEPLOY_DIR || true
 cd $BASE_DIR

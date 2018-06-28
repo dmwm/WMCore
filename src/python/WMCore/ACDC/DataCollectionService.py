@@ -94,6 +94,7 @@ class DataCollectionService(CouchService):
         # first we sort the list of dictionary by two keys: workflow then task
         failedJobs.sort(key=itemgetter('workflow'))
         failedJobs.sort(key=itemgetter('task'))
+        logging.info("AMR in failedJobs")
 
         previousWorkflow = ""
         previousTask = ""
@@ -110,9 +111,11 @@ class DataCollectionService(CouchService):
                 coll = CouchCollection(database=self.database, url=self.url,
                                        name=workflow,
                                        type=CollectionTypes.DataCollection)
+            logging.info("AMR CouchCollection created")
             if taskName != previousTask:
                 fileset = CouchFileset(database=self.database, url=self.url,
                                        name=taskName)
+            logging.info("AMR CouchFileset created")
             coll.addFileset(fileset)
             inputFiles = job['input_files']
             for fInfo in inputFiles:
@@ -126,6 +129,7 @@ class DataCollectionService(CouchService):
                     elif "MCFakeFile" in firstParent:
                         fInfo["parents"] = []
                     # other case, fInfo["parents"] all or merged parents
+            logging.info("AMR adding %d input files to the couch fileset...", len(inputFiles))
             if useMask:
                 fileset.add(files=inputFiles, mask=job['mask'])
             else:

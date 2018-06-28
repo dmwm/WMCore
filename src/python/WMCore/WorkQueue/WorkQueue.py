@@ -27,6 +27,7 @@ from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
@@ -149,6 +150,17 @@ class WorkQueue(WorkQueueBase):
         elif self.params.get('PopulateFilesets'):
             raise RuntimeError('CacheDir mandatory for local queue')
 
+        if os.getenv("WMAGENT_USE_CRIC", False):
+            if self.params.get('CRIC'):
+                self.SiteDB = self.params['CRIC']  # FIXME: rename the attr to self.cric
+            else:
+                self.SiteDB = CRIC()  # FIXME: rename the attr to self.cric
+        else:
+            if self.params.get('SiteDB'):
+                self.SiteDB = self.params['SiteDB']
+            else:
+                self.SiteDB = SiteDB()
+
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
                                                    {'name': 'Block',
@@ -187,11 +199,6 @@ class WorkQueue(WorkQueueBase):
             if self.params.get('PhEDExEndpoint'):
                 phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
             self.phedexService = PhEDEx(phedexArgs)
-
-        if self.params.get('SiteDB'):
-            self.SiteDB = self.params['SiteDB']
-        else:
-            self.SiteDB = SiteDB()
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,

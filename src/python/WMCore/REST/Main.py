@@ -121,7 +121,7 @@ class RESTMain:
     CherryPy server set up with an application configuration.
 
     The main application object takes the server configuration and state
-    directory as parametres. It provides methods to create full CherryPy
+    directory as parameters. It provides methods to create full CherryPy
     serer and configure the application based on configuration description."""
     def __init__(self, config, statedir):
         """Prepare the server.

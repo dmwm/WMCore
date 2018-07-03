@@ -12,6 +12,7 @@ from __future__ import print_function
 
 import logging
 import os
+import sys
 
 import WMCore.WMRuntime.Bootstrap as Bootstrap
 
@@ -40,9 +41,10 @@ if __name__ == '__main__':
     task.execute(job)
 
     logging.info("Completing task at directory: %s", os.getcwd())
-    task.completeTask(jobLocation=os.getcwd(), reportName=reportName)
+    finalReport = task.completeTask(jobLocation=os.getcwd(), reportName=reportName)
     logging.info("Shutting down monitor")
     os.fchmod(1, 0o664)
     os.fchmod(2, 0o664)
     if monitor.isAlive():
         monitor.shutdown()
+    sys.exit(finalReport.getExitCode())

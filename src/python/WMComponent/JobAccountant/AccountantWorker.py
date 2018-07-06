@@ -935,8 +935,9 @@ class AccountantWorker(WMConnectionBase):
         Here ACDC records and created and the file are moved
         to wmbs_sub_files_failed from completed.
         """
-        jobList = self.getFullJobInfo.execute([{'jobid': x} for x in self.jobsWithSkippedFiles.keys()],
+        jobList, maskAdded  = self.getFullJobInfo.execute([{'jobid': x} for x in self.jobsWithSkippedFiles.keys()],
                                               fileSelection=self.jobsWithSkippedFiles,
+                                              maskAdded=False,
                                               conn=self.getDBConn(),
                                               transaction=self.existingTransaction())
         self.dataCollection.failedJobs(jobList, useMask=False)

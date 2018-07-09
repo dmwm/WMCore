@@ -108,6 +108,7 @@ class LoadForErrorHandler(DBFormatter):
                                            transaction=transaction)
         fileList = self.formatDict(filesResult)
 
+        noDuplicateFiles = {}
         fileBinds = []
         if fileSelection:
             fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
@@ -115,6 +116,7 @@ class LoadForErrorHandler(DBFormatter):
             # Assemble unique list of binds
             if {'fileid': x['id']} not in fileBinds:
                 fileBinds.append({'fileid': x['id']})
+                noDuplicateFiles[x['id']] = x
 
         parentList = []
         if len(fileBinds) > 0:
@@ -122,7 +124,8 @@ class LoadForErrorHandler(DBFormatter):
                                                 transaction=transaction)
             parentList = self.formatDict(parentResult)
 
-            self.getRunLumis(fileBinds, fileList, conn, transaction)
+            # only upload to not duplicate files to prevent excessive memory
+            self.getRunLumis(fileBinds, noDuplicateFiles.values(), conn, transaction)
 
         filesForJobs = {}
         for f in fileList:
@@ -131,7 +134,9 @@ class LoadForErrorHandler(DBFormatter):
 
             if f['id'] not in filesForJobs[jobid]:
                 wmbsFile = File(id=f['id'])
-                wmbsFile.update(f)
+                # need to update with noDuplicateFiles since this one has run lumi information.
+
+                wmbsFile.update(noDuplicateFiles[f["id"]])
                 if 'pnn' in f:  # file might not have a valid location
                     wmbsFile['locations'].add(f['pnn'])
                 for r in wmbsFile.pop('newRuns'):

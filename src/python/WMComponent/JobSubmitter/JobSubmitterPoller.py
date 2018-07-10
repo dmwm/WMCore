@@ -12,6 +12,7 @@ from __future__ import print_function, division
 import logging
 import os.path
 import threading
+import gc
 from collections import defaultdict, Counter
 try:
     import cPickle as pickle
@@ -405,12 +406,14 @@ class JobSubmitterPoller(BaseWorkerThread):
         return
 
     def removeAbortedForceCompletedWorkflowFromCache(self):
+        logging.info("AMR getting aborted workflows from cache")
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
         jobIDsToPurge = set()
         for jobID, jobInfo in self.jobDataCache.iteritems():
             if (jobInfo['request_name'] in abortedAndForceCompleteRequests) and \
                     (jobInfo['task_type'] not in ['LogCollect', "Cleanup"]):
                 jobIDsToPurge.add(jobID)
+        logging.info("AMR purging jobs from cache")
         self._purgeJobsFromCache(jobIDsToPurge)
         return
 
@@ -492,14 +495,22 @@ class JobSubmitterPoller(BaseWorkerThread):
         # refresh is needed, for now it forces a full cache refresh
         if newDrainSites != self.drainSites or newAbortSites != self.abortSites:
             logging.info("Draining or Aborted sites have changed, the cache will be rebuilt.")
-            self.jobsByPrio = {}
-            self.jobDataCache = {}
+            self.clearDataCache()
 
         self.currentRcThresholds = rcThresholds
         self.abortSites = newAbortSites
         self.drainSites = newDrainSites
 
         return
+
+    def clearDataCache(self):
+        """
+        Clear job data cache structs and try to release that memory
+        """
+        self.jobsByPrio.clear()
+        self.jobDataCache.clear()
+        survivors = gc.collect()
+        logging.info("Memory released, but %d objects were unreachable.", survivors)
 
     def checkZeroTaskThresholds(self, jobType, siteList):
         """
@@ -736,7 +747,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         3) Submit the jobs to the plugin
         """
         myThread = threading.currentThread()
-
+        logging.info("Running JobSubmitter algorithm...")
         if self.useReqMgrForCompletionCheck:
             # only runs when reqmgr is used (not Tier0)
             self.removeAbortedForceCompletedWorkflowFromCache()
@@ -748,6 +759,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.condorFraction = 1
             self.condorOverflowFraction = 0
 
+        logging.info("AMR checking submit conditions")
         if not self.passSubmitConditions():
             msg = "JobSubmitter didn't pass the submit conditions. Skipping this cycle."
             logging.warning(msg)
@@ -756,6 +768,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         try:
             myThread.logdbClient.delete("JobSubmitter_submitWork", "warning", this_thread=True)
+            logging.info("AMR getting thresholds")
             self.getThresholds()
             if self.hasToRefreshCache():
                 self.refreshCache()

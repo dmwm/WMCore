@@ -40,6 +40,7 @@ from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
 from WMCore.Algorithms.MiscAlgos import sortListByKey
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUIDLib import makeUUID
+from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -126,6 +127,8 @@ def uploadWorker(workInput, results, dbsUrl):
                 logging.error(msg)
                 logging.error(str(traceback.format_exc()))
                 results.put({'name': name, 'success': "check"})
+            elif 'Missing data when inserting to dataset_parents' in exString:
+                logging.warning("Parent dataset is not inserted yet for block %s", block)
             else:
                 msg = "Error trying to process block %s through DBS.\n" % name
                 msg += exString
@@ -162,6 +165,13 @@ class DBSUploadPoller(BaseWorkerThread):
         # This is slightly dangerous, but DBSUpload depends
         # on DBSInterface anyway
         self.dbsUrl = self.config.DBS3Upload.dbsUrl
+
+        #Tier0 Agent don't need this
+        if hasattr(self.config, "Tier0Feeder"):
+            self.wmstatsServerSvc = None
+        else:
+            wmstatsSvcURL = (self.config.AgentStatusWatcher.centralWMStatsURL).replace("couchdb/wmstats", "wmstatsserver")
+            self.wmstatsServerSvc = WMStatsServer(wmstatsSvcURL)
 
         self.dbsUtil = DBSBufferUtil()
 
@@ -200,6 +210,8 @@ class DBSUploadPoller(BaseWorkerThread):
                                      'dbsuploader_block.json')
 
         self.timeoutWaiver = 1
+
+        self.datasetParentageCache = {}
 
         return
 
@@ -293,6 +305,9 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         try:
             logging.info("Starting the DBSUpload Polling Cycle")
+            # refreshing parentageCache every cycle
+            self.updateDatasetParentageCache()
+            logging.info("Dataset parentage map: %s" % self.datasetParentageCache)
             self.checkBlocks()
             self.loadBlocks()
             self.loadFiles()
@@ -307,6 +322,13 @@ class DBSUploadPoller(BaseWorkerThread):
             msg += str(str(traceback.format_exc()))
             logging.error(msg)
             raise DBSUploadException(msg)
+
+    def updateDatasetParentageCache(self):
+        if self.wmstatsServerSvc:
+            self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
+        else:
+            self.datasetParentageCache = {}
+        return
 
     def loadBlocks(self):
         """
@@ -341,6 +363,11 @@ class DBSUploadPoller(BaseWorkerThread):
             block = DBSBufferBlock(name=blockInfo['block_name'],
                                    location=blockInfo['origin_site_name'],
                                    datasetpath=blockInfo['datasetpath'])
+
+            parent = self.datasetParentageCache.get(blockInfo['datasetpath'])
+            if parent:
+                block.addDatasetParent(parent)
+                logging.info("load block: Child dataset %s, Parent dataset %s", blockInfo['datasetpath'], parent)
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
@@ -504,6 +531,12 @@ class DBSUploadPoller(BaseWorkerThread):
         newBlock = DBSBufferBlock(name=blockname,
                                   location=location,
                                   datasetpath=datasetpath)
+
+        parent = self.datasetParentageCache.get(datasetpath)
+        if parent:
+            newBlock.addDatasetParent(parent)
+            logging.info("Get block: Child dataset %s, Parent dataset %s", datasetpath, parent)
+
         self.blockCache[blockname] = newBlock
         return newBlock
 
@@ -816,3 +849,5 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # We're done
         return
+
+

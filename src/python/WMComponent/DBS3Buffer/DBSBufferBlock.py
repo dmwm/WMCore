@@ -49,6 +49,7 @@ class DBSBufferBlock:
                           'primds':               {},   # Dict of primary dataset info
                           'dataset':              {},   # Dict of processed dataset info
                           'file_parent_list':     [],   # List of file parents
+                          'dataset_parent_list':  [],   # List of parent datasets (DBS requires this as list although it only allows one parent)
                           'close_settings':       {}}   # Dict of info about block close settings
 
         self.files        = []
@@ -151,10 +152,13 @@ class DBSBufferBlock:
         # Append to the files list
         self.data['files'].append(fileDict)
 
-        # now add file to data
-        parentLFNs = dbsFile.getParentLFNs()
-        for lfn in parentLFNs:
-            self.addFileParent(child = dbsFile['lfn'], parent = lfn)
+        # If dataset_parent_list is defined don't add the file parentage.
+        # This means it is block from StepChain workflow and parentage of file will be resloved later
+        if not self.data['dataset_parent_list']:
+            # now add file to data
+            parentLFNs = dbsFile.getParentLFNs()
+            for lfn in parentLFNs:
+                self.addFileParent(child = dbsFile['lfn'], parent = lfn)
 
 
         # Do the algo
@@ -217,8 +221,7 @@ class DBSBufferBlock:
 
         Add the parent datasets to the data block
         """
-
-        self.data['ds_parent_list'].append({'parent_dataset': parent})
+        self.data['dataset_parent_list'].append(parent)
         return
 
     def setProcessingVer(self, procVer):

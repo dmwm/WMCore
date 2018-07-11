@@ -49,6 +49,9 @@ def initialize_request_args(request, config):
                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
 
+    # set the original priority when request is create
+    request["PriorityTransition"] = [{"Priority": request["RequestPriority"],
+                                     "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     # update the information from config
     request["CouchURL"] = config.couch_host
     request["CouchWorkloadDBName"] = config.couch_reqmgr_db

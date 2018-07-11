@@ -5,16 +5,27 @@ function(doc, req) {
     	return [null, "Error: document not found"];
     };
     
-    function updateTransition() {
+    function updateTransition(key) {
+        var keyAllowed = {"RequestStatus": "RequestTransition",
+                          "RequestPriority": "PriorityTransition"};
+        var keyMap = {"RequestStatus": "Status",
+                      "RequestPriority": "Priority"};
+
+        var transitionKey = keyAllowed[key]
+        if (transitionKey === undefined) {
+            return
+        }
+
         var currentTS =  Math.round((new Date()).getTime() / 1000);
         var dn = doc.DN || null;
-        var statusObj = {"Status": doc.RequestStatus, "UpdateTime": currentTS, "DN": dn};
-        
-        if (!doc.RequestTransition) {
-            doc.RequestTransition = new Array();
-            doc.RequestTransition.push(statusObj);
+        var statusObj = {"UpdateTime": currentTS, "DN": dn};
+        statusObj[keyMap[key]] = doc[key];
+
+        if (!doc[transitionKey]) {
+            doc[transitionKey] = new Array();
+            doc[transitionKey].push(statusObj);
         } else {
-            doc.RequestTransition.push(statusObj);
+            doc[transitionKey].push(statusObj);
         }
     }
 
@@ -60,6 +71,7 @@ function(doc, req) {
     
         if (fromQuery) {
             if (key == "RequestTransition" ||
+                key == "PriorityTransition" ||
                 key == "SiteWhitelist" ||
                 key == "SiteBlacklist" ||
                 key == "BlockWhitelist" ||
@@ -78,9 +90,7 @@ function(doc, req) {
         doc[key] = newValues[key];
 
         // If key is RequestStatus, also update the transition
-        if (key == "RequestStatus") {
-            updateTransition();
-        }
+        updateTransition(key);
         
         updateTaskStepChain("Task", key, newValues[key]);
         updateTaskStepChain("Step", key, newValues[key]);

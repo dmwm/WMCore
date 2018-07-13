@@ -373,7 +373,7 @@ class Request(RESTEntity):
             childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
         return childrenRequestNames
 
-    def _handleNoStatusUpdate(self, workload, request_args):
+    def _handleNoStatusUpdate(self, workload, request_args, dn):
         """
         For no-status update, we only support the following parameters:
          1. RequestPriority
@@ -384,7 +384,7 @@ class Request(RESTEntity):
             request_args = {'RequestPriority': request_args['RequestPriority']}
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
-            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
+            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
         elif workqueue_stat_validation(request_args):
@@ -457,7 +457,7 @@ class Request(RESTEntity):
         dn = cherrypy.request.user.get("dn", "unknown")
 
         if "RequestStatus" not in request_args:
-            report = self._handleNoStatusUpdate(workload, request_args)
+            report = self._handleNoStatusUpdate(workload, request_args, dn)
         else:
             req_status = request_args["RequestStatus"]
             if len(request_args) == 2 and req_status == "assignment-approved":

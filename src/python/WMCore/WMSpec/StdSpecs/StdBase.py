@@ -1077,6 +1077,7 @@ class StdBase(object):
                       "RequestName": {"optional": False, "null": False, "validate": identifier},
                       "RequestStatus": {"optional": False, "validate": lambda x: x == REQUEST_START_STATE},
                       "RequestTransition": {"optional": False, "type": list},
+                      "PriorityTransition": {"optional": False, "type": list},
                       "RequestDate": {"optional": False, "type": list},
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
@@ -1276,6 +1277,9 @@ class StdBase(object):
             elif arg == "RequestTransition":
                 from time import time
                 schema[arg] = [{"Status": REQUEST_START_STATE, "UpdateTime": int(time()), "DN": "Fake_DN"}]
+            elif arg == "PriorityTransition":
+                from time import time
+                schema[arg] = [{"Priority": REQUEST_START_STATE, "UpdateTime": int(time()), "DN": "Fake_DN"}]
             elif arg == "RequestStatus":
                 schema[arg] = REQUEST_START_STATE
             elif arg == "CouchDBName":

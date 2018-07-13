@@ -8,6 +8,7 @@ class RequestDBWriter(RequestDBReader):
         # inherited from WMStatsReader
         self._commonInit(couchURL, couchapp)
         self._propertyNeedToBeEncoded = ["RequestTransition",
+                                         "PriorityTransition",
                                          "SiteWhitelist",
                                          "SiteBlacklist",
                                          "BlockWhitelist",

@@ -209,7 +209,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         if len(finishedwfs) == 0:
             return
 
-        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs), finishedwfs.keys())
+        logging.info("Found %d candidate workflows for completing:", len(finishedwfs))
         completedWorkflowsDAO = self.dbsDaoFactory(classname="UpdateWorkflowsToCompleted")
 
         centralCouchAlive = True

@@ -161,8 +161,9 @@ class CleanCouchPoller(BaseWorkerThread):
         try:
             logging.info("Creating workload summary")
             finishedwfsWithLogCollectAndCleanUp = DataCache.getFinishedWorkflows()
+            logging.info("Total %s workload summary will be created", len(finishedwfsWithLogCollectAndCleanUp))
             self.archiveSummaryAndPublishToDashBoard(finishedwfsWithLogCollectAndCleanUp)
-            logging.info("%s workload summary is created", len(finishedwfsWithLogCollectAndCleanUp))
+            logging.info("All workload summary docs were uploaded")
 
             logging.info("Cleaning up couch db")
             self.cleanCouchDBAndChangeToArchiveStatus()
@@ -373,7 +374,7 @@ class CleanCouchPoller(BaseWorkerThread):
         deletablewfs = deletableWorkflowsDAO.execute()
 
         # Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion: %s", len(deletablewfs), deletablewfs.keys())
+        logging.info("Found %d candidate workflows for deletion.", len(deletablewfs))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(deletablewfs) == 0:
@@ -390,7 +391,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 if wfStatus in safeStatesToDelete:
                     wfsToDelete[workflow] = {"spec": spec, "workflows": deletablewfs[workflow]["workflows"]}
                 else:
-                    logging.info("%s is in %s, will be deleted later", workflow, wfStatus)
+                    logging.debug("%s is in %s, will be deleted later", workflow, wfStatus)
 
             except Exception as ex:
                 # Something didn't go well on couch, abort!!!
@@ -410,6 +411,7 @@ class CleanCouchPoller(BaseWorkerThread):
         The input is a dictionary with workflow names as keys, fully loaded WMWorkloads and
         subscriptions lists as values
         """
+        logging.info("Deleting %s workflows by subscription (from disk)", len(workflows))
         for workflow in workflows:
             logging.info("Deleting workflow %s", workflow)
             try:
@@ -447,7 +449,7 @@ class CleanCouchPoller(BaseWorkerThread):
                     # Now delete directories
                     _, taskDir = getMasterName(startDir=self.jobCacheDir,
                                                workflow=wmbsWorkflow)
-                    logging.info("About to delete work directory %s", taskDir)
+                    logging.debug("About to delete work directory %s", taskDir)
                     if os.path.exists(taskDir):
                         if os.path.isdir(taskDir):
                             shutil.rmtree(taskDir)
@@ -500,7 +502,7 @@ class CleanCouchPoller(BaseWorkerThread):
         # so we can skip this if there is a summary already up there
         # TODO: With multiple agents sharing workflows, we will need to differentiate and combine summaries for a request
         if self.workdatabase.documentExists(workflowName):
-            logging.info("Couch summary for %s already exists, proceeding only with cleanup", workflowName)
+            logging.debug("Workload summary for %s already exists, proceeding only with cleanup", workflowName)
             return
 
         # Set campaign

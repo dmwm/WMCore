@@ -123,7 +123,7 @@ def createHistogram(numList, nBins, limit):
     lowerBound = min(histEvents)
     if lowerBound == upperBound:
         # This is a problem
-        logging.error("Only one value in the histogram!")
+        logging.debug("Only one value in the histogram!")
         nBins = 1
         upperBound = upperBound + 1
         lowerBound = lowerBound - 1

@@ -207,7 +207,7 @@ class CleanCouchPoller(BaseWorkerThread):
             if spec:
                 self.archiveWorkflowSummary(spec=spec)
                 # Send Reconstruciton performance information to DashBoard
-                if self.dashBoardUrl != None:
+                if self.dashBoardUrl is not None:
                     self.publishRecoPerfToDashBoard(spec)
             else:
                 logging.warn("Workflow spec was not found for %s", workflow)
@@ -510,8 +510,7 @@ class CleanCouchPoller(BaseWorkerThread):
         # Set inputdataset
         workflowData['inputdatasets'] = spec.listInputDatasets()
         # Set histograms
-        histograms = {'workflowLevel': {'failuresBySite':
-                                            DiscreteSummaryHistogram('Failed jobs by site', 'Site')},
+        histograms = {'workflowLevel': {'failuresBySite': DiscreteSummaryHistogram('Failed jobs by site', 'Site')},
                       'taskLevel': {},
                       'stepLevel': {}}
 
@@ -663,8 +662,7 @@ class CleanCouchPoller(BaseWorkerThread):
                                                       "logs": []}
                         stepFailures[exitCode]['jobs'] += 1  # Increment job counter
                         errorsBySiteData.addPoint(errorSite, str(exitCode))
-                        if len(stepFailures[exitCode]['errors']) == 0 or \
-                                        exitCode == '99999':
+                        if len(stepFailures[exitCode]['errors']) == 0 or exitCode == '99999':
                             # Only record the first error for an exit code
                             # unless exit code is 99999 (general panic)
                             stepFailures[exitCode]['errors'].append(error)
@@ -805,7 +803,7 @@ class CleanCouchPoller(BaseWorkerThread):
                             # Why do we get None values here?
                             # We may want to look into it
                             logging.debug("Got a None performance value for key %s", key)
-                            if row[key] == None:
+                            if row[key] is None:
                                 output[key].append(0.0)
                             else:
                                 raise

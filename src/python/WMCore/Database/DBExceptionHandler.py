@@ -4,7 +4,7 @@ from functools import wraps
 import logging
 import threading
 
-DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135",
+DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545",
                            "MySQL server has gone away", "Lock wait timeout exceeded"]
 
 

@@ -11,7 +11,7 @@ import os.path
 import re
 import threading
 import time
-
+import pickle
 import classad
 import htcondor
 
@@ -23,7 +23,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
-
+from WMCore.Services.PyCondor.PyCondorUtils import AuthenticatedSubprocess
 
 class SimpleCondorPlugin(BasePlugin):
     """
@@ -128,8 +128,7 @@ class SimpleCondorPlugin(BasePlugin):
         """
         _submit_
 
-
-        Submit jobs for one subscription
+        Submits jobs to the condor queue
         """
         successfulJobs = []
         failedJobs = []
@@ -148,11 +147,27 @@ class SimpleCondorPlugin(BasePlugin):
 
             logging.debug("Start: Submitting %d jobs using Condor Python SubmitMany", len(procAds))
             try:
-                clusterId = schedd.submitMany(clusterAd, procAds)
-            except Exception as ex:
+                condorIdDict = {}
+                ### HTCondor submitMany is leaking memory (as of 8.6.11 and 8.7.7), so let's wrap
+                # the submitMany call in this context manager such that memory stays under control
+                # I see no need for it though once HTCondor gets fixed...
+                with AuthenticatedSubprocess(pickleOut=True, outputObj=condorIdDict) as (parent, rpipe):
+                    if not parent:
+                        # getting this clusterId out of the context manager in an obscured way
+                        condorIdDict['clusterId'] = schedd.submitMany(clusterAd, procAds)
+                # clusterId = schedd.submitMany(clusterAd, procAds)
+                results = pickle.load(rpipe)
+                if results.outputMessage != "OK":
+                    raise Exception(results.outputMessage)
+                clusterId = results.outputObj["clusterId"]
+            except EOFError:
+                raise RuntimeError("Timeout executing condor submit command.")
+            except (EOFError, Exception) as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
-                logging.error("Moving on the the next batch of jobs and/or cycle....")
+                if ex.__class__ == EOFError:
+                    logging.error("Timeout executing condor submit command.")
                 logging.exception(ex)
+                logging.error("Moving on the the next batch of jobs and/or cycle....")
 
                 condorErrorReport = Report()
                 condorErrorReport.addError("JobSubmit", 61202, "CondorError", str(ex))
@@ -160,7 +175,7 @@ class SimpleCondorPlugin(BasePlugin):
                     job['fwjr'] = condorErrorReport
                     failedJobs.append(job)
             else:
-                logging.debug("Finish: Submitting jobs using Condor Python SubmitMany")
+                print("Job submission to condor suceeded, clusterId is %s" % clusterId)
                 for index, job in enumerate(jobsReady):
                     job['gridid'] = "%s.%s" % (clusterId, index)
                     job['status'] = 'Idle'

@@ -1118,7 +1118,7 @@ class WMTaskHelper(TreeHelper):
         finalReport.data.completed = True
         finalReport.persist(reportName)
 
-        return
+        return finalReport
 
     def taskLogBaseLFN(self):
         """

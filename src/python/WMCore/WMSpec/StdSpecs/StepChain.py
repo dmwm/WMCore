@@ -53,6 +53,7 @@ class StepChainWorkloadFactory(StdBase):
         # stepMapping is going to be used during assignment for properly mapping
         # the arguments to each step/cmsRun
         self.stepMapping = {}
+        self.stepDatasetParentage = {}
 
     def __call__(self, workloadName, arguments):
         """
@@ -229,7 +230,21 @@ class StepChainWorkloadFactory(StdBase):
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
             childCmsswStepHelper.keepOutput(childKeepOutput)
-            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
+            outputMods = self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
+
+            # set the output dataset parentage
+            if parentKeepOutput and parentStepNumber == "Step1":
+                childStepName = origArgs[parentStepNumber]["StepName"]
+                # TODO how to get the output dataset if first step has KeepOut == True
+                outputModule = outputMods[origArgs[parentStepNumber]['InputFromOutputModule']]
+                self.setStepChainDatasetParentageMap(outputModule, childStepName, parentStepName)
+
+            parentStepName = self.findParentStepWithOuputDataset(origArgs, currentStepNumber)
+            if childKeepOutput:
+                childStepName = origArgs[currentStepNumber]["StepName"]
+                outputModule = outputMods[taskConf['InputFromOutputModule']]
+                self.setStepChainDatasetParentageMap(outputModule, childStepName, parentStepName)
+
 
         # Closing out the task configuration. The last step output must be saved/merged
         childCmsswStepHelper.keepOutput(True)
@@ -271,7 +286,7 @@ class StepChainWorkloadFactory(StdBase):
         if keepOutput:
             self.setupMergeTask(task, taskConf, stepCmsRun, outputMods)
 
-        return
+        return outputMods
 
     def setupMergeTask(self, task, taskConf, stepCmsRun, outputMods):
         """
@@ -472,3 +487,36 @@ class StepChainWorkloadFactory(StdBase):
             self.raiseValidationException(str(ex))
 
         return
+
+    def findParentStepWithOuputDataset(self, orgArgs, stepNumber):
+        """
+        :param orgArgs: original StepChain arguments
+        :param stepNumber: child step number "Step2"
+        :return: return parent step name when parent step has KeepOut == True, otherwise recursively search for parent
+                 with KeepOut == True. If it can't find it return None
+        """
+        if "InputStep" in orgArgs[stepNumber]:
+            parentStepNumber = self.stepMapping(orgArgs[stepNumber]["InputStep"])[0]
+            if orgArgs[parentStepNumber ].get("KeepOut", False):
+                return orgArgs[parentStepNumber ]["StepName"]
+            else:
+                return self.findParentStepWithOuputDataset(self, orgArgs, parentStepNumber)
+        else:
+            return None
+
+    def setStepChainDatasetParentageMap(self, outputModule, childStepName, parentStepName):
+
+        self.stepDatasetParentage.setdefault(childStepName, {})
+        outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                       outputModule.processedDataset,
+                                       outputModule.dataTier)
+        self.stepDatasetParentage[childStepName]["OutDataset"] = outputDataset
+        self.stepDatasetParentage[childStepName]["ParentStepName"] = parentStepName
+        if parentStepName:
+            self.stepDatasetParentage[childStepName]["ParentOutDataset"] = self.stepDatasetParentage[parentStepName]["OutDataset"]
+        else:
+            self.stepDatasetParentage[childStepName]["ParentOutDataset"] = None
+
+
+    def getStepChainDatasetParentageMap(self):
+        return self.stepDatasetParentage

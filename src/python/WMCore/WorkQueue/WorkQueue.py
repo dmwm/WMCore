@@ -924,6 +924,7 @@ class WorkQueue(WorkQueueBase):
         # Get queue elements grouped by their workflow with updated wmbs progress
         # Cancel if requested, update locally and remove obsolete elements
         for wf in self.backend.getWorkflows(includeInbox=True, includeSpecs=True):
+            parentQueueDeleted = True
             try:
                 elements = self.status(RequestName=wf, syncWithWMBS=useWMBS)
                 parents = self.backend.getInboxElements(RequestName=wf)
@@ -954,7 +955,7 @@ class WorkQueue(WorkQueueBase):
                                 "Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
                             finished_elements.extend(result['Elements'])
                         else:
-                            self.logger.info('Waiting for parent queue to delete "%s"' % result['RequestName'])
+                            parentQueueDeleted = False
                         continue
 
                     self.addNewFilesToOpenSubscriptions(*elements)
@@ -967,6 +968,10 @@ class WorkQueue(WorkQueueBase):
                         self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
                     for x in updated_elements:
                         self.backend.updateElements(x.id, **x.statusMetrics())
+
+                if not parentQueueDeleted:
+                    self.logger.info('Waiting for parent queue to delete "%s"' % wf)
+
             except Exception as ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
 

@@ -69,16 +69,16 @@ class JobArchiverPoller(BaseWorkerThread):
             logging.exception(msg)
             raise JobArchiverPollerException(msg)
 
+        self.tier0Mode = hasattr(config, "Tier0Feeder")
+
         try:
-            self.workQueue = queueFromConfig(self.config)
+            if not self.tier0Mode:
+                self.workQueue = queueFromConfig(self.config)
         except Exception as ex:
             msg = "Could not load workQueue"
             msg += str(ex)
             logging.error(msg)
             # raise JobArchiverPollerException(msg)
-
-        self.handleWorkflowInjection = getattr(self.config.JobArchiver,
-                                               'handleInjected', True)
 
         return
 
@@ -295,7 +295,7 @@ class JobArchiverPoller(BaseWorkerThread):
         Mark any workflows that have been fully injected as injected
         """
 
-        if not self.handleWorkflowInjection:
+        if self.tier0Mode:
             logging.debug("Component will not check workflows for injection status")
             return
 

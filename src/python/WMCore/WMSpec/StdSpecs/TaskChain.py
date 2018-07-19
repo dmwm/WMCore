@@ -277,6 +277,8 @@ class TaskChainWorkloadFactory(StdBase):
             self.taskMapping[task.name()] = taskConf
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
+        self.workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         # Feed values back to save in couch

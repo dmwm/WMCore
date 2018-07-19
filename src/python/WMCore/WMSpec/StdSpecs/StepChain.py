@@ -99,6 +99,8 @@ class StepChainWorkloadFactory(StdBase):
             self.setupNextSteps(firstTask, arguments)
 
         self.workload.setStepMapping(self.stepMapping)
+        self.workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         # Feed values back to save in couch

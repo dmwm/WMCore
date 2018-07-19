@@ -85,29 +85,28 @@ class Logger(LogManager):
             delta_time = (time.time() - request.start_time)*1e6
         else:
             delta_time = 0
-        self.access_log.log \
-          (logging.INFO,
-           ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
-            ' [data: %(i)s in %(b)s out %(T).0f us ]'
-            ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
-            ' [ref: "%(f)s" "%(a)s" ]') %
-           { 't': self.time(),
-             'H': self.host,
-             'h': remote.name or remote.ip,
-             'r': request.request_line,
-             's': response.status,
-             # request.rfile.rfile.bytes_read is a custom CMS web
-             # cherrypy patch not always available, hence the test
-             'i': (getattr(request.rfile, 'rfile', None)
-                   and getattr(request.rfile.rfile, "bytes_read", None)
-                   and request.rfile.rfile.bytes_read) or "-",
-             'b': nout or "-",
-             'T': delta_time,
-             'AS': inheaders.get("CMS-Auth-Status", "-"),
-             'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
-             'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
-             'f': inheaders.get("Referer", ""),
-             'a': inheaders.get("User-Agent", "") })
+        msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
+               ' [data: %(i)s in %(b)s out %(T).0f us ]'
+               ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
+               ' [ref: "%(f)s" "%(a)s" ]') %\
+              { 't': self.time(),
+                'H': self.host,
+                'h': remote.name or remote.ip,
+                'r': request.request_line,
+                's': response.status,
+                # request.rfile.rfile.bytes_read is a custom CMS web
+                #  cherrypy patch not always available, hence the test
+                'i': (getattr(request.rfile, 'rfile', None)
+                      and getattr(request.rfile.rfile, "bytes_read", None)
+                      and request.rfile.rfile.bytes_read) or "-",
+                'b': nout or "-",
+                'T': delta_time,
+                'AS': inheaders.get("CMS-Auth-Status", "-"),
+                'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
+                'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
+                'f': inheaders.get("Referer", ""),
+                'a': inheaders.get("User-Agent", "") }
+
 
 class RESTMain:
     """Base class for the core CherryPy main application object.
@@ -171,6 +170,7 @@ class RESTMain:
 
         # Set default server configuration.
         cherrypy.log = Logger()
+
         cpconfig.update({'server.max_request_body_size': 0})
         cpconfig.update({'server.environment': 'production'})
         cpconfig.update({'server.socket_host': '0.0.0.0'})
@@ -440,6 +440,7 @@ class RESTDaemon(RESTMain):
         self.setup_server()
         self.install_application()
         cherrypy.log("INFO: starting server in %s" % self.statedir)
+        cherrypy.config.update({'log.screen': bool(getattr(self.srvconfig, "log_screen", False))})
         cherrypy.engine.start()
         signal(SIGHUP, sig_reload)
         signal(SIGUSR1, sig_graceful)

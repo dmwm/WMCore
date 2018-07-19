@@ -70,6 +70,8 @@ class Request(RESTEntity):
             request_args = json.loads(data)
         else:
             request_args = {}
+        cherrypy.log('Updating request "%s" with these user-provided args: %s' % (requestName, request_args))
+
         # In case key args are also passed and request body also exists.
         # If the request.body is dictionally update the key args value as well
         if isinstance(request_args, dict):
@@ -387,6 +389,7 @@ class Request(RESTEntity):
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
+            cherrypy.log('Updating priority for request "%s" to %s' % (workload.name(), request_args['RequestPriority']))
         elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         else:
@@ -411,7 +414,7 @@ class Request(RESTEntity):
             request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
 
         # Only allow extra value update for assigned status
-        cherrypy.log("INFO: Assign request %s, input args: %s ..." % (workload.name(), request_args))
+        cherrypy.log("Assign request %s, input args: %s ..." % (workload.name(), request_args))
         try:
             workload.updateArguments(request_args)
         except Exception as ex:
@@ -449,6 +452,7 @@ class Request(RESTEntity):
             for req_name in cascade_list:
                 self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
 
+        cherrypy.log('Updating request status for request "%s" to %s. Cascade mode: %s' % (workload.name(), req_status, cascade))
         # then update original workflow status in couchdb
         report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         return report
@@ -547,7 +551,7 @@ class Request(RESTEntity):
         for workload, request_args in workload_pair_list:
             self._update_additional_request_args(workload, request_args)
 
-            cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
+            cherrypy.log("Create request, input args: %s ..." % request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)
             out.append({'request': workload.name()})

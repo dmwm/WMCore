@@ -160,8 +160,6 @@ class SimpleCondorPlugin(BasePlugin):
                 if results.outputMessage != "OK":
                     raise Exception(results.outputMessage)
                 clusterId = results.outputObj["clusterId"]
-            except EOFError:
-                raise RuntimeError("Timeout executing condor submit command.")
             except (EOFError, Exception) as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
                 if ex.__class__ == EOFError:
@@ -175,7 +173,7 @@ class SimpleCondorPlugin(BasePlugin):
                     job['fwjr'] = condorErrorReport
                     failedJobs.append(job)
             else:
-                print("Job submission to condor suceeded, clusterId is %s" % clusterId)
+                logging.info("Job submission to condor suceeded, clusterId is %s", clusterId)
                 for index, job in enumerate(jobsReady):
                     job['gridid'] = "%s.%s" % (clusterId, index)
                     job['status'] = 'Idle'

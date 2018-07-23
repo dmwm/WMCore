@@ -641,6 +641,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
+        testArguments['Step3']['InputFromOutputModule'] = testArguments['Step2']['InputFromOutputModule']
 
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
@@ -847,6 +848,7 @@ class StepChainTests(EmulatedUnitTestCase):
             testArguments[s]['AcquisitionEra'] = 'AcqEra_' + s
             testArguments[s]['ProcessingString'] = 'ProcStr_' + s
             testArguments[s]['ProcessingVersion'] = int(s.replace('Step', ''))
+        testArguments['Step3']['InputFromOutputModule'] = testArguments['Step2']['InputFromOutputModule']
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -1834,6 +1836,7 @@ class StepChainTests(EmulatedUnitTestCase):
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step3']['InputFromOutputModule'] = testArguments['Step2']['InputFromOutputModule']
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -1882,6 +1885,275 @@ class StepChainTests(EmulatedUnitTestCase):
         subMaps.append((14, topFilesetName, '/TestWorkload/GENSIM', 'EventBased', 'Production'))
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
         self.assertItemsEqual(subscriptions, subMaps)
+
+    def testStepParentageMapping1(self):
+        """
+        Build a 4-steps request
+         *) with NO input dataset
+         *) and only saving the output of the Step4
+        and test the parentage mapping structure
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        testArguments['StepChain'] = 1
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
+        testArguments['StepChain'] = 4
+
+        # Create a new DIGI step in Step3 and shift Step3 to Step4
+        testArguments['Step4'] = deepcopy(testArguments['Step3'])
+        testArguments['Step3'] = {"InputFromOutputModule": "RAWSIMoutput",
+                                  "InputStep": "GENSIM",
+                                  "StepName": "DIGI2"}
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3', 'Step4']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['KeepOutput'] = False
+            testArguments[s]['AcquisitionEra'] = "AcqEra_" + s
+            testArguments[s]['ProcessingString'] = "ProcStr_" + s
+            testArguments[s]['GlobalTag'] = "GT-" + s
+        testArguments['Step4']['KeepOutput'] = True
+
+        # these are the inverse...
+        testArguments['Step3']['ConfigCacheID'] = configDocs['Step4']
+        testArguments['Step4']['ConfigCacheID'] = configDocs['Step3']
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        parentageMapping = testWorkload.getStepParentageMapping()
+
+        for i in range(1, testArguments['StepChain'] + 1):
+            stepNumber = "Step%d" % i
+            stepName = testArguments[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+
+            self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
+            self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
+            self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            # request does not have InputDataset and we keep the output of the last step only
+            self.assertEqual(None, parentageMapping[stepName]['ParentDataset'])
+
+        # test output modules and datasets, only Step2 not saving the output
+        self.assertEqual({}, parentageMapping['GENSIM']['OutputDatasetMap'])
+        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
+        self.assertEqual({}, parentageMapping['DIGI2']['OutputDatasetMap'])
+
+        self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
+
+    def testStepParentageMapping2(self):
+        """
+        Build a 4-steps request
+         *) with input dataset
+         *) and only saving the output of the Step4
+        and test the parentage mapping structure
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        testArguments['StepChain'] = 1
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
+        testArguments['Step1']['InputDataset'] = "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM"
+        testArguments['StepChain'] = 4
+
+        # Create a new DIGI step in Step3 and shift Step3 to Step4
+        testArguments['Step4'] = deepcopy(testArguments['Step3'])
+        testArguments['Step3'] = {"InputFromOutputModule": "RAWSIMoutput",
+                                  "InputStep": "GENSIM",
+                                  "StepName": "DIGI2"}
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3', 'Step4']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['KeepOutput'] = False
+            testArguments[s]['AcquisitionEra'] = "AcqEra_" + s
+            testArguments[s]['ProcessingString'] = "ProcStr_" + s
+            testArguments[s]['GlobalTag'] = "GT-" + s
+        testArguments['Step4']['KeepOutput'] = True
+
+        # these are the inverse...
+        testArguments['Step3']['ConfigCacheID'] = configDocs['Step4']
+        testArguments['Step4']['ConfigCacheID'] = configDocs['Step3']
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        parentageMapping = testWorkload.getStepParentageMapping()
+
+        for i in range(1, testArguments['StepChain'] + 1):
+            stepNumber = "Step%d" % i
+            stepName = testArguments[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+
+            self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
+            self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
+            self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            self.assertEqual('/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM',
+                             parentageMapping[stepName]['ParentDataset'])
+
+        # test output modules and datasets, only Step2 not saving the output
+        self.assertEqual({}, parentageMapping['GENSIM']['OutputDatasetMap'])
+        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
+        self.assertEqual({}, parentageMapping['DIGI2']['OutputDatasetMap'])
+
+        self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
+
+    def testStepParentageMapping3(self):
+        """
+        Build a 4-steps request
+         *) with NO input dataset
+         *) and saving the output of Step1 and Step3 and Step4
+        and test the parentage mapping structure
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        testArguments['StepChain'] = 1
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
+        testArguments['StepChain'] = 4
+
+        # Create a new DIGI step in Step3 and shift Step3 to Step4
+        testArguments['Step4'] = deepcopy(testArguments['Step3'])
+        testArguments['Step4']['InputFromOutputModule'] = 'RAWSIMoutput'
+        testArguments['Step3'] = {"InputFromOutputModule": "RAWSIMoutput",
+                                  "InputStep": "GENSIM",
+                                  "StepName": "DIGI2"}
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3', 'Step4']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['KeepOutput'] = True
+            testArguments[s]['AcquisitionEra'] = "AcqEra_" + s
+            testArguments[s]['ProcessingString'] = "ProcStr_" + s
+            testArguments[s]['GlobalTag'] = "GT-" + s
+        testArguments['Step2']['KeepOutput'] = False
+
+        # these are the inverse...
+        testArguments['Step3']['ConfigCacheID'] = configDocs['Step4']
+        testArguments['Step4']['ConfigCacheID'] = configDocs['Step3']
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        parentageMapping = testWorkload.getStepParentageMapping()
+
+        for i in range(1, testArguments['StepChain'] + 1):
+            stepNumber = "Step%d" % i
+            stepName = testArguments[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+            self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
+            self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
+            self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+
+        # test parentage dataset
+        self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
+        parentDset = '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM'
+        self.assertEqual(parentDset, parentageMapping['DIGI']['ParentDataset'])
+        self.assertEqual(parentDset, parentageMapping['DIGI2']['ParentDataset'])
+        self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
+
+        # test output modules and datasets, only Step2 not saving the output
+        self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM'
+        self.assertTrue(outDset in parentageMapping['GENSIM']['OutputDatasetMap']['RAWSIMoutput'])
+
+        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
+
+        self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step3-ProcStr_Step3-v1/GEN-SIM-RAW'
+        self.assertTrue(outDset in parentageMapping['DIGI2']['OutputDatasetMap']['RAWSIMoutput'])
+
+        self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
+        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
+
+
+    def testStepParentageMapping4(self):
+        """
+        Same logic as testStepParentageMapping3, but checking the map after
+        the workflow gets assigned. Request is
+         *) with NO input dataset
+         *) and saving the output of Step1 and Step3 and Step4
+        and test the parentage mapping structure
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        testArguments['StepChain'] = 1
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
+        testArguments['StepChain'] = 4
+
+        # Create a new DIGI step in Step3 and shift Step3 to Step4
+        testArguments['Step4'] = deepcopy(testArguments['Step3'])
+        testArguments['Step4']['InputFromOutputModule'] = 'RAWSIMoutput'
+        testArguments['Step3'] = {"InputFromOutputModule": "RAWSIMoutput",
+                                  "InputStep": "GENSIM",
+                                  "StepName": "DIGI2"}
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3', 'Step4']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['KeepOutput'] = True
+            testArguments[s]['AcquisitionEra'] = "AcqEra_" + s
+            testArguments[s]['ProcessingString'] = "ProcStr_" + s
+            testArguments[s]['GlobalTag'] = "GT-" + s
+        testArguments['Step2']['KeepOutput'] = False
+
+        # these are the inverse...
+        testArguments['Step3']['ConfigCacheID'] = configDocs['Step4']
+        testArguments['Step4']['ConfigCacheID'] = configDocs['Step3']
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        parentageMapping = testWorkload.getStepParentageMapping()
+
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"GENSIM": "AcqEraNew_Step1", "DIGI": "AcqEraNew_Step2",
+                                         "DIGI2": "AcqEraNew_Step3", "RECO": "AcqEraNew_Step4"},
+                      "ProcessingString": {"GENSIM": "ProcStrNew_Step1", "DIGI": "ProcStrNew_Step2",
+                                           "DIGI2": "ProcStrNew_Step3", "RECO": "ProcStrNew_Step4"},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+
+        parentageMapping = testWorkload.getStepParentageMapping()
+
+        for i in range(1, testArguments['StepChain'] + 1):
+            stepNumber = "Step%d" % i
+            stepName = testArguments[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+            self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
+            self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
+            self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+
+        # test parentage dataset
+        self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
+        parentDset = '/PrimaryDataset-StepChain/AcqEraNew_Step1-FilterA-ProcStrNew_Step1-v1/GEN-SIM'
+        self.assertEqual(parentDset, parentageMapping['DIGI']['ParentDataset'])
+        self.assertEqual(parentDset, parentageMapping['DIGI2']['ParentDataset'])
+        self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
+
+        # test output modules and datasets, only Step2 not saving the output
+        self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step1-FilterA-ProcStrNew_Step1-v1/GEN-SIM'
+        self.assertTrue(outDset in parentageMapping['GENSIM']['OutputDatasetMap']['RAWSIMoutput'])
+
+        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
+
+        self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step3-ProcStrNew_Step3-v1/GEN-SIM-RAW'
+        self.assertTrue(outDset in parentageMapping['DIGI2']['OutputDatasetMap']['RAWSIMoutput'])
+
+        self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
+        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterD-ProcStrNew_Step4-v1/AODSIM'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
+        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterC-ProcStrNew_Step4-v1/GEN-SIM-RECO'
+        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
 
 
 if __name__ == '__main__':

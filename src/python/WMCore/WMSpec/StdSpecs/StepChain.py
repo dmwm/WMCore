@@ -53,6 +53,7 @@ class StepChainWorkloadFactory(StdBase):
         # stepMapping is going to be used during assignment for properly mapping
         # the arguments to each step/cmsRun
         self.stepMapping = {}
+        self.stepParentageMapping = {}
 
     def __call__(self, workloadName, arguments):
         """
@@ -81,6 +82,9 @@ class StepChainWorkloadFactory(StdBase):
         # Create the first task
         firstTask = self.workload.newTask(taskConf['StepName'])
 
+        # it has to be called before the other steps are created
+        self.createStepMappings(arguments)
+
         # Create a proper task and set workload level arguments
         if isGenerator(arguments):
             self.workload.setDashboardActivity("production")
@@ -98,7 +102,10 @@ class StepChainWorkloadFactory(StdBase):
         if self.stepChain > 1:
             self.setupNextSteps(firstTask, arguments)
 
+        self.createStepParentageMappings(firstTask, arguments)
+
         self.workload.setStepMapping(self.stepMapping)
+        self.workload.setStepParentageMapping(self.stepParentageMapping)
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         # Feed values back to save in couch
@@ -107,6 +114,96 @@ class StepChainWorkloadFactory(StdBase):
         if self.eventsPerLumi:
             arguments['Step1']['EventsPerLumi'] = self.eventsPerLumi
         return self.workload
+
+    def createStepMappings(self, origArgs):
+        """
+        _createStepMappings_
+
+        Create a simple map of StepName to Step and cmsRun number.
+        cmsRun numbers are sequential, just like the step number.
+        :param origArgs: arguments provided by the user + default spec args
+        :return: update a dictionary in place which is latter used to set a
+         `stepMapping` property in the workload object
+        """
+        for i in range(1, self.stepChain + 1):
+            stepNumber = "Step%d" % i
+            stepName = origArgs[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+            self.stepMapping.setdefault(stepName, (stepNumber, cmsRunNumber))
+
+    def createStepParentageMappings(self, firstTaskO, origArgs):
+        """
+        _createStepParentageMappings_
+
+        Create a dict struct with a mapping of step name to parent step. It
+        also includes a map of output datasets and parent dataset.
+        :param firstTaskO: a WMTask object with the top level StepChain task
+        :param origArgs: arguments provided by the user + default spec args
+        :return: update a dictionary in place which will be later set as a
+        WMWorkload property
+        """
+        for i in range(1, self.stepChain + 1):
+            stepNumber = "Step%d" % i
+            stepName = origArgs[stepNumber]['StepName']
+            cmsRunNumber = "cmsRun%d" % i
+
+            self.stepParentageMapping.setdefault(stepName, {})
+            self.stepParentageMapping[stepName] = {'StepNumber': stepNumber,
+                                                   'StepCmsRun': cmsRunNumber,
+                                                   'ParentStepName': None,
+                                                   'ParentStepNumber': None,
+                                                   'ParentStepCmsRun': None,
+                                                   'ParentDataset': None,
+                                                   'OutputDatasetMap': {}}
+
+            if stepNumber == 'Step1':
+                self.stepParentageMapping[stepName]['ParentDataset'] = origArgs[stepNumber].get('InputDataset')
+
+            # set the OutputDatasetMap or empty if KeepOutput is False
+            if origArgs[stepNumber].get("KeepOutput", True):
+                stepHelper = firstTaskO.getStepHelper(cmsRunNumber)
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                   outputModule.processedDataset,
+                                                   outputModule.dataTier)
+                    self.stepParentageMapping[stepName]['OutputDatasetMap'].setdefault(outputModuleName, [])
+                    self.stepParentageMapping[stepName]['OutputDatasetMap'][outputModuleName].append(outputDataset)
+
+            if "InputStep" in origArgs[stepNumber]:
+                parentStepName = origArgs[stepNumber]["InputStep"]
+                self.stepParentageMapping[stepName]['ParentStepName'] = parentStepName
+                parentStepNumber = self.stepParentageMapping[parentStepName]['StepNumber']
+                self.stepParentageMapping[stepName]['ParentStepNumber'] = parentStepNumber
+                parentStepCmsRun = self.stepParentageMapping[parentStepName]['StepCmsRun']
+                self.stepParentageMapping[stepName]['ParentStepCmsRun'] = parentStepCmsRun
+
+                parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
+                parentDset = self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                self.stepParentageMapping[stepName]['ParentDataset'] = parentDset
+
+    def findParentStepWithOuputDataset(self, origArgs, stepNumber, stepName, outModName):
+        """
+        _findParentStepWithOuputDataset_
+        Given the parent step name and output module name, finds the parent dataset 
+        :param origArgs: request arguments
+        :param stepNumber: step number of the parent step
+        :param stepName: step name of the parent step
+        :param outModName: output module name of the parent step
+        :return: the parent dataset name (str), otherwise None
+        """
+        if origArgs[stepNumber].get("KeepOutput", True):
+            return self.stepParentageMapping[stepName]['OutputDatasetMap'][outModName][0]
+        else:
+            # then fetch grand-parent data
+            parentStepNumber = self.stepParentageMapping[stepName]['ParentStepNumber']
+            parentStepName = self.stepParentageMapping[stepName]['ParentStepName']
+            if parentStepNumber:
+                parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
+                return self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+            else:
+                # this is Step1, return the InputDataset if any
+                return origArgs[stepNumber].get("InputDataset")
 
     def setupGeneratorTask(self, task, taskConf):
         """
@@ -177,14 +274,13 @@ class StepChainWorkloadFactory(StdBase):
         Modify the step one task to include N more CMSSW steps and
         chain the output between all three steps.
         """
-        self.stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
+        self.stepParentageMapping.setdefault(origArgs['Step1']['StepName'], {})
 
         for i in range(2, self.stepChain + 1):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
-            self.stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
-            for k, v in origArgs[currentStepNumber].iteritems():
+            for k, v in origArgs[currentStepNumber].items():
                 taskConf[k] = v
 
             parentStepNumber = self.stepMapping.get(taskConf['InputStep'])[0]
@@ -198,16 +294,16 @@ class StepChainWorkloadFactory(StdBase):
             frameworkVersion = self.getStepValue('CMSSWVersion', taskConf, self.frameworkVersion)
             scramArch = self.getStepValue('ScramArch', taskConf, self.scramArch)
 
-            childCmssw = parentCmsswStep.addTopStep(currentCmsRun)
-            childCmssw.setStepType("CMSSW")
+            currentCmssw = parentCmsswStep.addTopStep(currentCmsRun)
+            currentCmssw.setStepType("CMSSW")
             template = StepFactory.getStepTemplate("CMSSW")
-            template(childCmssw.data)
+            template(currentCmssw.data)
 
-            childCmsswStepHelper = childCmssw.getTypeHelper()
-            childCmsswStepHelper.setGlobalTag(globalTag)
-            childCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
-            childCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
-            childCmsswStepHelper.setConfigCache(self.configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
+            currentCmsswStepHelper = currentCmssw.getTypeHelper()
+            currentCmsswStepHelper.setGlobalTag(globalTag)
+            currentCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
+            currentCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
+            currentCmsswStepHelper.setConfigCache(self.configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
             # multicore settings
             multicore = self.multicore
@@ -217,7 +313,7 @@ class StepChainWorkloadFactory(StdBase):
             if taskConf.get('EventStreams') >= 0:
                 eventStreams = taskConf['EventStreams']
 
-            childCmsswStepHelper.setNumberOfCores(multicore, eventStreams)
+            currentCmsswStepHelper.setNumberOfCores(multicore, eventStreams)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -228,11 +324,11 @@ class StepChainWorkloadFactory(StdBase):
             parentKeepOutput = strToBool(origArgs[parentStepNumber].get('KeepOutput', True))
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
-            childCmsswStepHelper.keepOutput(childKeepOutput)
+            currentCmsswStepHelper.keepOutput(childKeepOutput)
             self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
 
         # Closing out the task configuration. The last step output must be saved/merged
-        childCmsswStepHelper.keepOutput(True)
+        currentCmsswStepHelper.keepOutput(True)
 
         return
 

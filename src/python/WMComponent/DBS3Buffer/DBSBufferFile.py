@@ -38,7 +38,6 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("acquisitionEra", None)
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
-        self.setdefault("datasetParent", None)
         self.setdefault("prep_id", None)
 
         if locations is None:
@@ -164,7 +163,6 @@ class DBSBufferFile(WMBSBase, WMFile):
                                             acquisitionEra=self['acquisitionEra'],
                                             validStatus=self['validStatus'],
                                             globalTag=self.get('globalTag', None),
-                                            parent=self['datasetParent'],
                                             prep_id=self['prep_id'])
 
         if dbsbufferDataset.exists():
@@ -447,25 +445,6 @@ class DBSBufferFile(WMBSBase, WMFile):
     def getPrepID(self):
 
         return self['prep_id']
-
-    def setDatasetParent(self, datasetParent):
-        """
-        _setDatasetParent_
-
-        Set the dataset's parent path
-        """
-
-        self['datasetParent'] = datasetParent
-        return
-
-    def getDatasetParent(self):
-        """
-        _getDatasetParent_
-
-        Return the datasetParent
-        """
-
-        return self['datasetParent']
 
     def getParentLFNs(self):
         """

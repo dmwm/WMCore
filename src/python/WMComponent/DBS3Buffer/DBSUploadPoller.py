@@ -341,6 +341,11 @@ class DBSUploadPoller(BaseWorkerThread):
             block = DBSBufferBlock(name=blockInfo['block_name'],
                                    location=blockInfo['origin_site_name'],
                                    datasetpath=blockInfo['datasetpath'])
+
+            parent = self.getStepChainParentage(blockInfo['datasetpath'])
+            if parent:
+                block.addDatasetParent(parent)
+
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
@@ -504,6 +509,9 @@ class DBSUploadPoller(BaseWorkerThread):
         newBlock = DBSBufferBlock(name=blockname,
                                   location=location,
                                   datasetpath=datasetpath)
+        parent = self.getStepChainParentage(datasetpath)
+        if parent:
+            block.addDatasetParent(parent)
         self.blockCache[blockname] = newBlock
         return newBlock
 
@@ -816,3 +824,16 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # We're done
         return
+
+    def getStepChainParentage(self, dataset):
+        myThread = threading.currentThread()
+        parentDatasetDAO = self.daoFactory(classname="GetStepChainParentDataset")
+        try:
+            myThread.transaction.begin()
+            parentDatasetDAO.execute(child_dataset=dataset,
+                                    conn=myThread.transaction.conn)
+        except Exception:
+            myThread.transaction.rollback()
+            raise
+        else:
+            myThread.transaction.commit()

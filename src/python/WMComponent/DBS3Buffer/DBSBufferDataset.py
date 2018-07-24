@@ -17,9 +17,8 @@ class DBSBufferDataset(WMConnectionBase, dict):
     information
     """
 
-    def __init__(self, path, id = -1,
-                 processingVer = None, acquisitionEra = None, validStatus = None,
-                 globalTag = None, parent = None, prep_id = None):
+    def __init__(self, path, id=-1,processingVer=None, acquisitionEra=None, validStatus=None,
+                 globalTag=None, parent=None, prep_id=None, is_stepchain=0):
         """
         Initialize the stored attributes and
         database connection.
@@ -35,6 +34,7 @@ class DBSBufferDataset(WMConnectionBase, dict):
         self['globalTag'] = globalTag
         self['parent'] = parent
         self['prep_id'] = prep_id
+        self['is_stepchain'] = is_stepchain
         self['subscriptions'] = []
 
     def exists(self):
@@ -63,15 +63,16 @@ class DBSBufferDataset(WMConnectionBase, dict):
         if self.exists():
             self.load()
         else:
-            action = self.daofactory(classname = "NewDataset")
-            action.execute(datasetPath = self['path'],
-                           acquisitionEra = self['acquisitionEra'],
-                           processingVer = self['processingVer'],
-                           validStatus = self['validStatus'],
-                           globalTag = self['globalTag'],
-                           parent = self['parent'],
-                           prep_id = self['prep_id'],
-                           conn = self.getDBConn(), transaction = self.existingTransaction())
+            action = self.daofactory(classname="NewDataset")
+            action.execute(datasetPath=self['path'],
+                           acquisitionEra=self['acquisitionEra'],
+                           processingVer=self['processingVer'],
+                           validStatus=self['validStatus'],
+                           globalTag=self['globalTag'],
+                           parent=self['parent'],
+                           prep_id=self['prep_id'],
+                           is_stepchain=self['is_stepchain'],
+                           conn=self.getDBConn(), transaction=self.existingTransaction())
         return self.exists()
 
     def load(self, subscriptions = True):

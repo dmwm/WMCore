@@ -497,6 +497,16 @@ class StepChainWorkloadFactory(StdBase):
 
         return baseArgs
 
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        specArgs = {
+            "StepParentageMap": {"default": {}, "type": dict},
+        }
+        baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs
+
     def validateSchema(self, schema):
         """
         _validateSchema_

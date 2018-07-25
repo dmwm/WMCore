@@ -429,6 +429,12 @@ class Request(RESTEntity):
         # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area)
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
 
+        # Add parentage relation for step chain, task chain:
+        stepMap = workload.getStepParentageSimpleMapping()
+        if stepMap:
+            request_args["StepParentageMap"] = stepMap
+        #TODO add task chain parentage map
+
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)

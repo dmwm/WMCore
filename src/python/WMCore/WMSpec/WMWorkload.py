@@ -115,11 +115,48 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         stepNameMapping = self.getStepMapping()
+        # it has only one top level task
         for task in self.taskIterator():
             # Merge task has cmsRun1 step, so it gets messy on Merge ACDC of StepChain
             if task.taskType() == "Merge":
                 continue
             task.updateLFNsAndDatasets(dictValues=assignArgs, stepMapping=stepNameMapping)
+
+        return
+
+    def updateStepParentageMap(self):
+        """
+        _updateStepParentageMap
+        Used to update the step parentage mapping of StepChain requests at the
+        end of the assignment process, given that we might have new output
+        dataset names
+        :return: just updates the workload property: stepParentageMapping
+        """
+        topLevelTask = next(self.taskIterator())
+
+        parentMap = self.getStepParentageMapping()
+        listOfStepNames = parentMap.keys()
+        for stepName in listOfStepNames:
+            if parentMap[stepName]['OutputDatasetMap']:
+                # then there is output dataset, let's update it
+                cmsRunNumber = parentMap[stepName]['StepCmsRun']
+                stepHelper = topLevelTask.getStepHelper(cmsRunNumber)
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                   outputModule.processedDataset,
+                                                   outputModule.dataTier)
+
+                    # now find and replace the old dataset by the new dataset name
+                    oldOutputDset = parentMap[stepName]['OutputDatasetMap'][outputModuleName][0]
+                    for s in listOfStepNames:
+                        if parentMap[s]['ParentDataset'] == oldOutputDset:
+                            parentMap[s]['ParentDataset'] = outputDataset
+                        if oldOutputDset in parentMap[s]['OutputDatasetMap'].get(outputModuleName, []):
+                            parentMap[s]['OutputDatasetMap'][outputModuleName].remove(oldOutputDset)
+                            parentMap[s]['OutputDatasetMap'][outputModuleName].append(outputDataset)
+
+        self.setStepParentageMapping(parentMap)
 
         return
 
@@ -133,13 +170,32 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.stepMapping = mapping
 
+    def setStepParentageMapping(self, mapping):
+        """
+        _setStepParentageMapping_
+
+        Used for StepChains. Set a wider dictionary structure with a mapping between
+        parent and child steps as well as dataset parentage
+        """
+        self.data.properties.stepParentageMapping = mapping
+
     def getStepMapping(self):
         """
         _getStepMapping_
 
-        Mostly used for StepChains.
+        Only important for StepChains. Map from step name to step number
+        and cmsRun number.
         """
         return getattr(self.data.properties, "stepMapping", None)
+
+    def getStepParentageMapping(self):
+        """
+        _getStepParentageMapping_
+
+        Only important for StepChains. Map from step name to step and parent
+        step properties, including a map of output datasets to the parent dataset.
+        """
+        return getattr(self.data.properties, "stepParentageMapping", None)
 
     def getInitialJobCount(self):
         """
@@ -365,7 +421,7 @@ class WMWorkloadHelper(PersistencyHelper):
             raise RuntimeError(msg)
 
         topTask = self.getTask(taskList[1])
-        if topTask == None:
+        if topTask is None:
             msg = "Task /%s/%s Not Found in Workload" % (taskList[0],
                                                          taskList[1])
             raise RuntimeError(msg)
@@ -1796,6 +1852,7 @@ class WMWorkloadHelper(PersistencyHelper):
         # MUST be set after AcqEra/ProcStr/ProcVer
         if self.getRequestType() == "StepChain":
             self.setStepProperties(kwargs)
+            self.updateStepParentageMap()
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

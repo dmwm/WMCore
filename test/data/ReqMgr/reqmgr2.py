@@ -9,7 +9,7 @@ Command line interface: --help
 
 There are mandatory command line arguments (e.g. URL of the Request Manager)
 
-Production ConfigCache: https://cmsweb.cern.ch/couchdb/reqmgr_config_cache/
+Production ConfigCache: https://cmsweb.cern.ch:8443/couchdb/reqmgr_config_cache/
 
 Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py

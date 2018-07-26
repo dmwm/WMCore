@@ -232,7 +232,7 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = TestSpecs.oneTaskTwoStep()
         url = testWorkload.getDbsUrl()
-        self.assertEqual(url, "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+        self.assertEqual(url, "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader")
         return
 
     def testWhiteBlacklists(self):

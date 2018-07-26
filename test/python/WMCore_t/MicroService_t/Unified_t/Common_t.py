@@ -52,9 +52,9 @@ class CommonTest(unittest.TestCase):
 
     def testWorkqueueView(self):
         "Test workqueueView functionality"
-        url = 'https://cmsweb.cern.ch/couchdb/workqueue/_design/WorkQueue/_view/jobsByRequest?group=true&reduce=true'
+        url = 'https://cmsweb.cern.ch:8443/couchdb/workqueue/_design/WorkQueue/_view/jobsByRequest?group=true&reduce=true'
         self.assertEqual(url, workqueueView('jobsByRequest'))
-        url = 'https://cmsweb.cern.ch/couchdb/workqueue/_design/WorkQueue/_view/jobsByRequest?a=1&b=2'
+        url = 'https://cmsweb.cern.ch:8443/couchdb/workqueue/_design/WorkQueue/_view/jobsByRequest?a=1&b=2'
         self.assertEqual(url, workqueueView('jobsByRequest', {'a':1, 'b':2}))
 
 if __name__ == '__main__':

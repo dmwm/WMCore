@@ -160,7 +160,7 @@
                            "guid": "6820CA85-C6EC-E511-85CC-02163E0149A0",
                            "size": 201730377,
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;9bdc3d7b2fc90e0f4ca24e270a45fde6",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;9bdc3d7b2fc90e0f4ca24e270a45fde6",
                            "location": null,
                            "input": [
                                "/store/mc/Fall13/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM/POSTLS162_V1-v1/20000/CA435697-9155-E411-B6DB-00266CFFBED8.root",

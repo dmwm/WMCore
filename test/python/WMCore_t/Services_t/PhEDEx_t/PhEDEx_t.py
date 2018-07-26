@@ -24,7 +24,7 @@ class PhEDExTest(unittest.TestCase):
 
         Initialize the PhEDEx API to point at the test server.
         """
-        phedexTestDS = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
+        phedexTestDS = "https://cmsweb.cern.ch:8443/phedex/datasvc/json/test"
         self.dbsTestUrl = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
         self.phedexApi = PhEDEx({"endpoint": phedexTestDS,
                                  "method": "POST"})
@@ -158,9 +158,9 @@ class PhEDExTest(unittest.TestCase):
         Test XML and JSON in the same scope
         """
         site = 'T1_US_FNAL_Buffer'
-        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/json/test"}
+        httpDict = {'endpoint': "https://cmsweb.cern.ch:8443/phedex/datasvc/json/test"}
         phedexJSON = PhEDEx(responseType='json', httpDict=httpDict)
-        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/xml/test"}
+        httpDict = {'endpoint': "https://cmsweb.cern.ch:8443/phedex/datasvc/xml/test"}
         phedexXML = PhEDEx(responseType='xml', httpDict=httpDict)
 
         phedexXML.getNodeTFC(site)

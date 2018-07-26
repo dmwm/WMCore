@@ -1,7 +1,7 @@
 ======== gWMS-CMSRunAnalysis.sh STARTING at Fri Jun  9 11:53:48 GMT 2017 on wj49.grid.hep.ph.ic.ac.uk ========
 Local time : Fri Jun  9 11:53:48 BST 2017
 Current system : Linux wj49.grid.hep.ph.ic.ac.uk 3.10.0-514.16.1.el7.x86_64 #1 SMP Wed Apr 12 15:04:24 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
-Arguments are -a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 --scriptArgs=[] -o {}
+Arguments are -a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch:8443/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 --scriptArgs=[] -o {}
 SCRAM_ARCH=slc6_amd64_gcc530
 ======== HTCONDOR JOB SUMMARY at Fri Jun  9 11:53:48 GMT 2017 START ========
 CRAB ID: 5
@@ -74,7 +74,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: LastJobLeaseRenewal = 1497009220
 == JOB AD: CRAB_AdditionalOutputFiles = {  }
 == JOB AD: OnExitHold = false
-== JOB AD: CRAB_ASOURL = "https://cmsweb.cern.ch/crabserver/prod"
+== JOB AD: CRAB_ASOURL = "https://cmsweb.cern.ch:8443/crabserver/prod"
 == JOB AD: CRAB_NumAutomJobRetries = 2
 == JOB AD: AccountingGroup = "analysis.adow"
 == JOB AD: WantRemoteSyscalls = false
@@ -92,7 +92,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: CommittedSuspensionTime = 0
 == JOB AD: PreJobPrio1 = 0
 == JOB AD: GlobalJobId = "crab3@vocms0106.cern.ch#20980386.0#1496925601"
-== JOB AD: CRAB_ISB = "https://cmsweb.cern.ch/crabcache"
+== JOB AD: CRAB_ISB = "https://cmsweb.cern.ch:8443/crabcache"
 == JOB AD: StreamErr = false
 == JOB AD: TransferSocket = "<188.184.85.27:4080?addrs=188.184.85.27-4080&noUDP&sock=1481226_7703_913013>"
 == JOB AD: DAGManNodesLog = "/data/srv/glidecondor/condor_local/spool/381/0/cluster20980381.proc0.subproc0/RunJobs.dag.nodes.log"
@@ -105,7 +105,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: x509userproxy = "/data/srv/glidecondor/condor_local/spool/381/0/cluster20980381.proc0.subproc0/ced936bbe1cd5fd8b390fb02463f7ae0d7c34498"
 == JOB AD: JOB_GLIDEIN_SEs = "gfe02.grid.hep.ph.ic.ac.uk"
 == JOB AD: JobNotification = 0
-== JOB AD: CRAB_DBSURL = "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader"
+== JOB AD: CRAB_DBSURL = "https://cmsweb.cern.ch:8443/dbs/prod/phys03/DBSReader"
 == JOB AD: MachineAttrHAS_SINGULARITY0 = true
 == JOB AD: ProcId = 0
 == JOB AD: JOB_GLIDEIN_MaxMemMBs = "20240"
@@ -114,7 +114,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: ShadowIpAddr = "<188.184.85.27:4080?addrs=188.184.85.27-4080&noUDP&sock=1481226_7703_913013>"
 == JOB AD: Used_Gatekeeper = "cetest01.grid.hep.ph.ic.ac.uk"
 == JOB AD: CondorVersion = "$CondorVersion: 8.5.4 May 02 2016 BuildID: 365871 $"
-== JOB AD: Arguments = "-a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 --scriptArgs=[] -o {}"
+== JOB AD: Arguments = "-a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch:8443/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 --scriptArgs=[] -o {}"
 == JOB AD: ShouldTransferFiles = "YES"
 == JOB AD: Out = "_condor_stdout"
 == JOB AD: JOB_GLIDEIN_Memory = "2000"
@@ -189,7 +189,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: CRAB_RestURInoAPI = "/crabserver/prod"
 == JOB AD: CRAB_JobArch = "slc6_amd64_gcc530"
 == JOB AD: QDate = 1496925601
-== JOB AD: CRAB_PublishDBSURL = "https://cmsweb.cern.ch/dbs/prod/phys03/DBSWriter"
+== JOB AD: CRAB_PublishDBSURL = "https://cmsweb.cern.ch:8443/dbs/prod/phys03/DBSWriter"
 == JOB AD: CRAB_PublishGroupName = 0
 == JOB AD: x509UserProxyFQAN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=adow/CN=818235/CN=Albert Kenneth Dow,/cms/Role=NULL/Capability=NULL"
 == JOB AD: Err = "_condor_stderr"
@@ -552,14 +552,14 @@ PWD: /srv
 ======== CMSRunAnalysis.py STARTING at Fri Jun  9 11:53:48 GMT 2017 ========
 Now running the CMSRunAnalysis.py job in /srv...
 ++ pwd
-+ python CMSRunAnalysis.py -r /srv -a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 '--scriptArgs=[]' -o '{}' --oneEventMode=0
++ python CMSRunAnalysis.py -r /srv -a sandbox.tar.gz --sourceURL=https://cmsweb.cern.ch:8443/crabcache --jobNumber=5 --cmsswVersion=CMSSW_9_2_0_patch3 --scramArch=slc6_amd64_gcc530 --inputFile=job_input_file_list_5.txt --runAndLumis=job_lumis_5.json --lheInputFiles=False --firstEvent=None --firstLumi=None --lastEvent=None --firstRun=None --seeding=AutomaticSeeding --scriptExe=None --eventsPerLumi=None --maxRuntime=-1 '--scriptArgs=[]' -o '{}' --oneEventMode=0
 ==== CMSRunAnalysis.py STARTING at Fri Jun  9 11:53:50 2017 ====
 Local time : Fri Jun  9 11:53:50 2017
 Dashboard early startup params: {'MonitorID': '170608_123905:adow_crab_HLTPhysics2', 'MonitorJobID': '5_https://glidein.cern.ch/5/170608:123905:adow:crab:HLTPhysics2_0', 'SyncCE': 'cetest01.grid.hep.ph.ic.ac.uk', 'OverflowFlag': 0, 'SyncSite': 'T2_UK_London_IC', 'SyncGridJobId': 'https://glidein.cern.ch/5/170608:123905:adow:crab:HLTPhysics2', 'WNHostName': 'wj49.grid.hep.ph.ic.ac.uk'}
 ==== Parameters Dump at Fri Jun  9 11:53:50 2017 ===
 archiveJob:     sandbox.tar.gz
 runDir:         /srv
-sourceURL:      https://cmsweb.cern.ch/crabcache
+sourceURL:      https://cmsweb.cern.ch:8443/crabcache
 jobNumber:      5
 cmsswVersion:   CMSSW_9_2_0_patch3
 scramArch:      slc6_amd64_gcc530

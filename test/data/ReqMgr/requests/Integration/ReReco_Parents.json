@@ -12,7 +12,7 @@
     "ScramArch": "slc6_amd64_gcc491",
     "RequestType": "ReReco",
     "RunWhitelist": [234297, 234304, 234321, 234332],
-    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch:8443/couchdb",
     "ConfigCacheID": "029a0b63329659025f308af53c7e092b",
     "IncludeParents": true,
     "Group": "DATAOPS",
@@ -21,7 +21,7 @@
     "Memory": 2300,
     "SizePerEvent": 512,
     "InputDataset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
     "OpenRunningTimeout" : 28800
 },
 "assignRequest":

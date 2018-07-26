@@ -28,7 +28,7 @@ REQUEST = {
     "CMSSWVersion": "CMSSW_9_0_0",
     "DQMSequences": ["@common"],
     "DQMUploadProxy": "/somepath/proxy",
-    "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/offline",
+    "DQMUploadUrl": "https://cmsweb.cern.ch:8443/dqm/offline",
     "GlobalTag": "SomeGlobalTag",
     "GlobalTagTransaction": "Express_123456",
     "GlobalTagConnect": "frontier://PromptProd/CMS_CONDITIONS",

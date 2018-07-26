@@ -17,8 +17,8 @@ class MigrationToGlobal:
     def __init__(self):
 
         # Initialize dbs API
-        dbsUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSMigrate/'
-        #dbsUrl = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSMigrate/'
+        dbsUrl = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSMigrate/'
+        #dbsUrl = 'https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSMigrate/'
         self.dbsApi = DbsApi(url = dbsUrl)
 
         # Timing variable

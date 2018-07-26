@@ -17,8 +17,8 @@ from mechanize import Browser
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
-dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
-#dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"
+dbs_base_url = "https://cmsweb.cern.ch:8443/dbs/prod/"
+#dbs_base_url = "https://cmsweb-testbed.cern.ch:8443/dbs/int/"
 
 class RequestQuery:
 
@@ -157,7 +157,7 @@ class RequestQuery:
             - ticket: the ticket #, for instance 110773 on https://ggus.eu/?mode=ticket_info&ticket_id=110773
             - input_dataset
             - dbs_url: only the instance name, For example: "phys01" for
-             https://cmsweb.cern.ch/dbs/prod/phys01/DBSReader
+             https://cmsweb.cern.ch:8443/dbs/prod/phys01/DBSReader
             - cmssw_release
             - group_name: the physics group name
             - version: the dataset version, 1 by default.
@@ -175,7 +175,7 @@ class RequestQuery:
         data_tier = input_dataset.split('/')[3].replace(' ','')
 
         # Transform input value to a valid DBS url
-        #dbs_url = "https://cmsweb.cern.ch/dbs/prod/"+dbs_url+"/DBSReader"
+        #dbs_url = "https://cmsweb.cern.ch:8443/dbs/prod/"+dbs_url+"/DBSReader"
         dbs_url = dbs_base_url+dbs_url+"/DBSReader"
         release_id = cmssw_release
 

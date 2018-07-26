@@ -117,7 +117,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
         config.WorkQueueManager.dbname = 'whatever'
         config.WorkQueueManager.inboxDatabase = 'whatever2'
         config.WorkQueueManager.queueParams = {}
-        config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
+        config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch:8443/couchdb/workqueue"
 
         return config
 

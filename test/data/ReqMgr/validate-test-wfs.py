@@ -75,15 +75,6 @@ def getContent(url, params=None):
     return output
 
 
-def getReqMgrOutput(reqName, baseUrl):
-    """
-    Queries reqmgr db for the output datasets
-    """
-    reqmgrUrl = baseUrl + "/reqmgr/reqMgr/outputDatasetsByRequestName?requestName=" + reqName
-    outputDsets = json.loads(getContent(reqmgrUrl))
-    return outputDsets
-
-
 def getCouchSummary(reqName, baseUrl):
     """
     Queries couchdb wmstats database for the workloadSummary
@@ -287,10 +278,8 @@ def handleReqMgr(reqName, reqmgrUrl):
     elif 'Step1' in reqmgrOut and 'RequestNumEvents' in reqmgrOut['Step1']:
         reqmgrInputDset['RequestNumEvents'] = reqmgrOut['Step1']['RequestNumEvents']
 
-    if reqmgrOut.get('ReqMgr2Only'):
-        reqmgrOutDsets = reqmgrOut['OutputDatasets']
-    else:
-        reqmgrOutDsets = getReqMgrOutput(reqName, reqmgrUrl)
+    reqmgrOutDsets = reqmgrOut['OutputDatasets']
+
 
     ### Handle harvesting case
     print(" - Comments: %s" % reqmgrOut.get('Comments', ''))

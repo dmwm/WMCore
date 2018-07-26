@@ -44,7 +44,7 @@ class DQMUpload(Template):
         stepname = nodeName(step)
         step.stepType = "DQMUpload"
         step.section_("upload")
-        step.upload.URL = 'https://cmsweb.cern.ch/dqm/dev'
+        step.upload.URL = 'https://cmsweb.cern.ch:8443/dqm/dev'
         step.upload.proxy = None
 
     def helper(self, step):

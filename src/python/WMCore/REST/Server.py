@@ -53,8 +53,8 @@ class RESTFrontPage:
     The base class assumes the actual application consists of a single
     front-page, which loads JavaScript and other content dynamically,
     and uses HTML5 URL history features to figure out what to do. That
-    is, given application mount point <https://cmsweb.cern.ch/app>, all
-    links such as <https://cmsweb.cern.ch/app/foo/bar?q=xyz> get mapped
+    is, given application mount point <https://cmsweb.cern.ch:8443/app>, all
+    links such as <https://cmsweb.cern.ch:8443/app/foo/bar?q=xyz> get mapped
     to the same page, which then figures out what to do at /foo/bar
     relative location or with the query string part.
 

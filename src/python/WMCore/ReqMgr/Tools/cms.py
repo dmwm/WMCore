@@ -178,26 +178,26 @@ def web_ui_names():
 def dqm_urls():
     "Return list of DQM urls"
     urls = [
-            "https://cmsweb.cern.ch/dqm/dev",
-            "https://cmsweb.cern.ch/dqm/offline",
-            "https://cmsweb.cern.ch/dqm/relval",
-            "https://cmsweb-testbed.cern.ch/dqm/dev",
-            "https://cmsweb-testbed.cern.ch/dqm/offline",
-            "https://cmsweb-testbed.cern.ch/dqm/relval",
+            "https://cmsweb.cern.ch:8443/dqm/dev",
+            "https://cmsweb.cern.ch:8443/dqm/offline",
+            "https://cmsweb.cern.ch:8443/dqm/relval",
+            "https://cmsweb-testbed.cern.ch:8443/dqm/dev",
+            "https://cmsweb-testbed.cern.ch:8443/dqm/offline",
+            "https://cmsweb-testbed.cern.ch:8443/dqm/relval",
             ]
     return urls
 
 def dbs_urls():
     "Return list of DBS urls"
     urls = []
-    base = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/"
+    base = "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader/"
     for inst in ["prod", "phys01", "phys02", "phys03"]:
         urls.append(base.replace("prod", inst))
     return urls
 
 def couch_url():
     "Return central couch url"
-    url = "https://cmsweb.cern.ch/couchdb"
+    url = "https://cmsweb.cern.ch:8443/couchdb"
     return url
 
 def releases(arch=None):

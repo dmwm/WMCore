@@ -57,7 +57,7 @@ for row in results:
 
     blocks[row[0]].append(row[1])
 
-phedex = PhEDEx.PhEDEx({"endpoint": "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
+phedex = PhEDEx.PhEDEx({"endpoint": "https://cmsweb.cern.ch:8443/phedex/datasvc/json/prod/"}, "json")
 
 for blockName in blocks.keys():
     print("%s:" % blockName)

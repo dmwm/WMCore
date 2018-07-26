@@ -11,11 +11,11 @@ class PhEDEx(Service):
     API for dealing with retrieving information from PhEDEx DataService
 
     according to documentation
-    https://cmsweb.cern.ch/phedex/datasvc/doc
+    https://cmsweb.cern.ch:8443/phedex/datasvc/doc
     """
 
     def __init__(self, httpDict=None, responseType="json", logger=None,
-                 dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
+                 dbsUrl='https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader'):
         """
         responseType will be either xml or json
         """
@@ -26,7 +26,7 @@ class PhEDEx(Service):
         httpDict['logger'] = logger if logger else logging.getLogger()
         httpDict["timeout"] = 300
         if 'endpoint' not in httpDict:
-            httpDict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
+            httpDict['endpoint'] = "https://cmsweb.cern.ch:8443/phedex/datasvc/%s/prod/" % self.responseType
         httpDict.setdefault('cacheduration', 0)
 
         Service.__init__(self, httpDict)

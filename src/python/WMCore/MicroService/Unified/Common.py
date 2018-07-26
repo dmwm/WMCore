@@ -276,22 +276,22 @@ def monitoringUrl():
 
 def dbsUrl():
     "Return DBS URL"
-    default = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+    default = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader'
     return uConfig.get('dbsUrl', default)
 
 def reqmgrUrl():
     "Return ReqMgr2 url"
-    default = 'https://cmsweb.cern.ch/reqmgr2'
+    default = 'https://cmsweb.cern.ch:8443/reqmgr2'
     return uConfig.get('reqmgrUrl', default)
 
 def reqmgrCacheUrl():
     "Return ReqMgr cache url"
-    default = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
+    default = 'https://cmsweb.cern.ch:8443/couchdb/reqmgr_workload_cache'
     return uConfig.get('reqmgrCacheUrl', default)
 
 def phedexUrl():
     "Return PhEDEx url"
-    default = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
+    default = "https://cmsweb.cern.ch:8443/phedex/datasvc/json/prod"
     return uConfig.get('phedexUrl', default)
 
 def ssbUrl():
@@ -301,7 +301,7 @@ def ssbUrl():
 
 def agentInfoUrl():
     "Return agent info url"
-    default = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
+    default = 'https://cmsweb.cern.ch:8443/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
     return uConfig.get('agentInfoUrl', default)
 
 def mcoreUrl():
@@ -311,7 +311,7 @@ def mcoreUrl():
 
 def workqueueUrl():
     "Return WorkQueue url "
-    default = 'https://cmsweb.cern.ch/couchdb/workqueue'
+    default = 'https://cmsweb.cern.ch:8443/couchdb/workqueue'
     return uConfig.get('workqueueUrl', default)
 
 def workqueueView(view, kwds=None):

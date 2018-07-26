@@ -65,7 +65,7 @@ class ResubmissionWorkloadFactory(StdBase):
                     "OriginalRequestName": {"null": False},
                     "InitialTaskPath": {"optional": False,
                                         "validate": lambda x: len(x.split('/')) > 2},
-                    "ACDCServer": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl,
+                    "ACDCServer": {"default": "https://cmsweb.cern.ch:8443/couchdb", "validate": couchurl,
                                    "attr": "acdcServer"},
                     "ACDCDatabase": {"default": "acdcserver", "validate": identifier,
                                      "attr": "acdcDatabase"},

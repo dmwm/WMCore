@@ -47,7 +47,7 @@ glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+globalDBSUrl = "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # List of SE for T1 _Disk endpoints (TODO clean this up at some point)
@@ -91,7 +91,7 @@ config.JobStateMachine.jobSummaryDBName = jobSummaryDBName
 config.JobStateMachine.summaryStatsDBName = summaryStatsDBName
 
 config.section_("ACDC")
-config.ACDC.couchurl = "https://cmsweb.cern.ch/couchdb"
+config.ACDC.couchurl = "https://cmsweb.cern.ch:8443/couchdb"
 config.ACDC.database = acdcDBName
 
 config.section_("WorkloadSummary")
@@ -124,7 +124,7 @@ config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
-config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
+config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch:8443/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 100  # don't pull more than this number of elements per cycle
@@ -136,7 +136,7 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-# "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+# "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
@@ -157,7 +157,7 @@ config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
-# phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+# phedex address "https://cmsweb.cern.ch:8443/phedex/datasvc/json/prod/"
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
@@ -267,7 +267,7 @@ config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJob
 config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
 config.TaskArchiver.perfDashBoardMinLumi = 50
 config.TaskArchiver.perfDashBoardMaxLumi = 9000
-# dqm address -'https://cmsweb.cern.ch/dqm/dev/'
+# dqm address -'https://cmsweb.cern.ch:8443/dqm/dev/'
 config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch = True
 # set to False couch data if request mgr is not used (Tier0, PromptSkiming)

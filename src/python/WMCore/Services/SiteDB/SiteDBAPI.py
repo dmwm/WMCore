@@ -32,7 +32,7 @@ class SiteDBAPI(Service):
 
     def __init__(self, config={}, logger=None):
         config = dict(config)
-        config['endpoint'] = "https://cmsweb.cern.ch/sitedb/data/prod/"
+        config['endpoint'] = "https://cmsweb.cern.ch:8443/sitedb/data/prod/"
         config['logger'] = logger if logger else logging.getLogger()
 
         Service.__init__(self, config)

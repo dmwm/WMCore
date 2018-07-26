@@ -65,7 +65,7 @@ WMStats.Utils.get = function (baseObj, objStr, val) {
     return WMStats.Utils.getOrDefault(baseObj, objList, val); 
 };
 
-WMStats.Utils.formatReqDetailUrl = function (request, reqmgr2Flag) {
+WMStats.Utils.formatReqDetailUrl = function (request) {
 	urlLink = WMStats.Globals.REQ_DETAIL_URL_PREFIX;
 	return '<a href="' + urlLink + 
             encodeURIComponent(request) + '" target="requestDetailFrame">' + request + '</a>';

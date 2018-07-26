@@ -31,8 +31,7 @@ WMStats.Globals = function($){
 		   "TotalInputLumis": "input_lumis",
 		   "TotalInputFiles": "input_num_files",
 		   "Run": "run",
-		   "AgentJobInfo": "AgentJobInfo",
-		   "ReqMgr2Only": "ReqMgr2Only"
+		   "AgentJobInfo": "AgentJobInfo"
 		};
 
     function convertRequestDocToWMStatsFormat(doc) {
@@ -76,17 +75,7 @@ WMStats.Globals = function($){
         }
         
     };
-    
-    // this function need to be removed when reqmgr dropped (reqmgr2Only)
-    function getReqDetailPrefixReqMgr1 () {
-        if (_dbVariants[dbname] == "tier1") {
-            return "/reqmgr/view/details/";
-        } else {
-            return null;
-        }
-        
-    };
-    
+
     function getAlertCollectorLink() {
         return "/couchdb/alertscollector/_design/AlertsCollector/index.html";
     };
@@ -145,7 +134,6 @@ WMStats.Globals = function($){
 
     return {
         REQ_DETAIL_URL_PREFIX: getReqDetailPrefix(),
-        REQMGR1_REQ_DETAIL_URL_PREFIX: getReqDetailPrefixReqMgr1(),
         WORKLOAD_SUMMARY_URL_PREFIX: getWorkloadSummaryPrefix(),
         AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show();}, 
                               complete: function(){$('#loading_page').hide();}},

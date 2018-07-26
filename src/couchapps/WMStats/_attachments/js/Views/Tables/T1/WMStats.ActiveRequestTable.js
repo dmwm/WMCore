@@ -30,7 +30,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "data": "workflow", 
               "title": "workflow",
               "render": function (data, type, row, meta) {
-                            return formatReqDetailUrl(data, row.ReqMgr2Only);
+                            return formatReqDetailUrl(data);
                       }, 
               "width": "150px"
             },

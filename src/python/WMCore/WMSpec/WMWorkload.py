@@ -124,42 +124,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateStepParentageMap(self):
-        """
-        _updateStepParentageMap
-        Used to update the step parentage mapping of StepChain requests at the
-        end of the assignment process, given that we might have new output
-        dataset names
-        :return: just updates the workload property: stepParentageMapping
-        """
-        topLevelTask = next(self.taskIterator())
-
-        parentMap = self.getStepParentageMapping()
-        listOfStepNames = parentMap.keys()
-        for stepName in listOfStepNames:
-            if parentMap[stepName]['OutputDatasetMap']:
-                # then there is output dataset, let's update it
-                cmsRunNumber = parentMap[stepName]['StepCmsRun']
-                stepHelper = topLevelTask.getStepHelper(cmsRunNumber)
-                for outputModuleName in stepHelper.listOutputModules():
-                    outputModule = stepHelper.getOutputModule(outputModuleName)
-                    outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
-                                                   outputModule.processedDataset,
-                                                   outputModule.dataTier)
-
-                    # now find and replace the old dataset by the new dataset name
-                    oldOutputDset = parentMap[stepName]['OutputDatasetMap'][outputModuleName][0]
-                    for s in listOfStepNames:
-                        if parentMap[s]['ParentDataset'] == oldOutputDset:
-                            parentMap[s]['ParentDataset'] = outputDataset
-                        if oldOutputDset in parentMap[s]['OutputDatasetMap'].get(outputModuleName, []):
-                            parentMap[s]['OutputDatasetMap'][outputModuleName].remove(oldOutputDset)
-                            parentMap[s]['OutputDatasetMap'][outputModuleName].append(outputDataset)
-
-        self.setStepParentageMapping(parentMap)
-
-        return
-
     def setStepMapping(self, mapping):
         """
         _setStepMapping_
@@ -205,6 +169,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Correct parentage mapping is set when workflow is assigned, Shouldn't call this method before workflow is assigned
         Assumes there is only one parent dataset given childDataset
         """
+        ### FIXME: Seangchan, I don't think we need this method, since we'll add the
+        # map to the dbsbuffer_dataset table and then use it from there. So,
+        # wmbsHelper should actually fetch the simple map data and insert that into db
         stepParentageMap = self.getStepParentageMapping()
         if stepParentageMap:
             for stepName in stepParentageMap:
@@ -216,27 +183,109 @@ class WMWorkloadHelper(PersistencyHelper):
         else:
             return None
 
-    def getStepParentageSimpleMapping(self):
+    def setTaskParentageMapping(self, mapping):
         """
+        _setTaskParentageMapping_
+
+        Used for TaskChains. Sets a dictionary with the task / parent task /
+        parent dataset / and output datasets relationship.
+        """
+        self.data.properties.taskParentageMapping = mapping
+
+    def getTaskParentageMapping(self):
+        """
+        _getTaskParentageMapping_
+
+        Only important for TaskChains. Returns a map of task name to
+        parent dataset and output datasets.
+        """
+        return getattr(self.data.properties, "taskParentageMapping", None)
+
+    def getChainParentageSimpleMapping(self):
+        """
+        Creates a simple map of task or step to parent and output datasets
+        such that it can be friendly stored in the reqmgr workload cache doc.
         :return:  {'Step1': {'ParentDset': 'blah1', 'ChildDsets': ['blah2']},
                    'Step2': {'ParentDset': 'blah2', 'ChildDsets': ['blah3', 'blah4],
                    ...} if stepParentageMapping exist otherwise None
-
-        convert stepParentageMapping to simple map to store in reqmgr document
         """
-        stepParentageMap = self.getStepParentageMapping()
-        sMap = {}
-        if stepParentageMap:
-            for stepName in stepParentageMap:
-                stepItem = stepParentageMap[stepName]
-                outDSMap = stepItem["OutputDatasetMap"]
-                stepNumber = stepItem["StepNumber"]
-                sMap[stepNumber] = {}
-                sMap[stepNumber]["ParentDset"] = stepItem['ParentDataset']
-                sMap[stepNumber]["ChildDsets"] = []
-                for outmodule in outDSMap:
-                    sMap[stepNumber]["ChildDsets"].extend(outDSMap[outmodule])
-        return sMap
+        if self.getRequestType() == "TaskChain":
+            chainMap = self.getTaskParentageMapping()
+        elif self.getRequestType() == "StepChain":
+            chainMap = self.getStepParentageMapping()
+        else:
+            return {}
+
+        newMap = {}
+        if chainMap:
+            for _, cData in chainMap.items():
+                cNum = cData.get('TaskNumber', cData.get('StepNumber'))
+                newMap[cNum] = {'ParentDset': cData['ParentDataset'],
+                                'ChildDsets': []}
+                for outMod in cData['OutputDatasetMap']:
+                    newMap[cNum]['ChildDsets'].append(cData['OutputDatasetMap'][outMod])
+        return newMap
+
+    def updateStepParentageMap(self):
+        """
+        _updateStepParentageMap
+        Used to update the step parentage mapping of StepChain requests at the
+        end of the assignment process, given that we might have new output
+        dataset names
+        :return: just updates the workload property: stepParentageMapping
+        """
+        topLevelTask = next(self.taskIterator())
+
+        parentMap = self.getStepParentageMapping()
+        listOfStepNames = parentMap.keys()
+        for stepName in listOfStepNames:
+            if parentMap[stepName]['OutputDatasetMap']:
+                # then there is output dataset, let's update it
+                cmsRunNumber = parentMap[stepName]['StepCmsRun']
+                stepHelper = topLevelTask.getStepHelper(cmsRunNumber)
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                   outputModule.processedDataset,
+                                                   outputModule.dataTier)
+
+                    # now find and replace the old dataset by the new dataset name
+                    oldOutputDset = parentMap[stepName]['OutputDatasetMap'][outputModuleName]
+                    for s in listOfStepNames:
+                        if parentMap[s]['ParentDataset'] == oldOutputDset:
+                            parentMap[s]['ParentDataset'] = outputDataset
+                        if oldOutputDset == parentMap[s]['OutputDatasetMap'].get(outputModuleName, ""):
+                            parentMap[s]['OutputDatasetMap'][outputModuleName] = outputDataset
+
+        self.setStepParentageMapping(parentMap)
+
+        return
+
+    def updateTaskParentageMap(self):
+        """
+        _updateTaskParentageMap_
+        Used to update the task dataset parentage mapping of TaskChain requests
+        at the end of the assignment process, given that we might have new output
+        dataset names
+        :return: just updates the workload property: taskParentageMapping
+        """
+        taskMap = self.getTaskParentageMapping()
+
+        for tName in taskMap.keys():
+            if not taskMap[tName]['OutputDatasetMap']:
+                continue
+
+            taskO = self.getTaskByName(tName)
+            for outInfo in taskO.listOutputDatasetsAndModules():
+                oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
+                taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']
+                for tt in taskMap.keys():
+                    if taskMap[tt]['ParentDataset'] == oldOutputDset:
+                        taskMap[tt]['ParentDataset'] = outInfo['outputDataset']
+
+        self.setTaskParentageMapping(taskMap)
+
+        return
 
     def getInitialJobCount(self):
         """
@@ -881,6 +930,8 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setTaskProperties(self, requestArgs):
+        # FIXME (Alan): I don't think it works, given that the assignment
+        # parameters never have the TaskChain parameter...
         if not 'TaskChain' in requestArgs:
             return
         numTasks = requestArgs['TaskChain']
@@ -1894,9 +1945,10 @@ class WMWorkloadHelper(PersistencyHelper):
         if self.getRequestType() == "StepChain":
             self.setStepProperties(kwargs)
             self.updateStepParentageMap()
-
-        # TODO: need to define proper task form maybe kwargs['Tasks']?
-        self.setTaskProperties(kwargs)
+        elif self.getRequestType() == "TaskChain":
+            # TODO: need to define proper task form maybe kwargs['Tasks']?
+            self.setTaskProperties(kwargs)
+            self.updateTaskParentageMap()
 
         # Since it lists the output datasets, it has to be done in the very end
         # Set phedex subscription information

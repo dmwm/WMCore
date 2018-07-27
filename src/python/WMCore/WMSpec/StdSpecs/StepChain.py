@@ -107,6 +107,8 @@ class StepChainWorkloadFactory(StdBase):
         self.workload.setStepMapping(self.stepMapping)
         self.workload.setStepParentageMapping(self.stepParentageMapping)
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
+        # and push the parentage map to the reqmgr2 workload cache doc
+        arguments['ChainParentageMap'] = self.workload.getChainParentageSimpleMapping()
 
         # Feed values back to save in couch
         if self.eventsPerJob:
@@ -167,8 +169,7 @@ class StepChainWorkloadFactory(StdBase):
                     outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
                                                    outputModule.processedDataset,
                                                    outputModule.dataTier)
-                    self.stepParentageMapping[stepName]['OutputDatasetMap'].setdefault(outputModuleName, [])
-                    self.stepParentageMapping[stepName]['OutputDatasetMap'][outputModuleName].append(outputDataset)
+                    self.stepParentageMapping[stepName]['OutputDatasetMap'][outputModuleName] = outputDataset
 
             if "InputStep" in origArgs[stepNumber]:
                 parentStepName = origArgs[stepNumber]["InputStep"]
@@ -193,7 +194,7 @@ class StepChainWorkloadFactory(StdBase):
         :return: the parent dataset name (str), otherwise None
         """
         if origArgs[stepNumber].get("KeepOutput", True):
-            return self.stepParentageMapping[stepName]['OutputDatasetMap'][outModName][0]
+            return self.stepParentageMapping[stepName]['OutputDatasetMap'][outModName]
         else:
             # then fetch grand-parent data
             parentStepNumber = self.stepParentageMapping[stepName]['ParentStepNumber']
@@ -320,7 +321,8 @@ class StepChainWorkloadFactory(StdBase):
             if taskConf["PileupConfig"]:
                 self.setupPileup(task, taskConf['PileupConfig'])
 
-            # Handling the output modules
+            # Handling the output modules in order to decide whether we should
+            # stage them out and report them in the Report.pkl file
             parentKeepOutput = strToBool(origArgs[parentStepNumber].get('KeepOutput', True))
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
@@ -463,6 +465,7 @@ class StepChainWorkloadFactory(StdBase):
                     "PrimaryDataset": {"null": True, "validate": primdataset},
                     "StepChain": {"default": 1, "type": int, "null": False,
                                   "optional": False, "validate": lambda x: x > 0},
+                    "ChainParentageMap": {"default": {}, "type": dict},
                     "FirstEvent": {"default": 1, "type": int, "validate": lambda x: x > 0,
                                    "null": False},
                     "FirstLumi": {"default": 1, "type": int, "validate": lambda x: x > 0,
@@ -501,7 +504,7 @@ class StepChainWorkloadFactory(StdBase):
     def getWorkloadAssignArgs():
         baseArgs = StdBase.getWorkloadAssignArgs()
         specArgs = {
-            "StepParentageMap": {"default": {}, "type": dict},
+            "ChainParentageMap": {"default": {}, "type": dict},
         }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

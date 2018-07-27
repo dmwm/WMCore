@@ -1893,6 +1893,13 @@ class StepChainTests(EmulatedUnitTestCase):
          *) and only saving the output of the Step4
         and test the parentage mapping structure
         """
+        outDsets = {
+            "Step1": [],
+            "Step2": [],
+            "Step3": [],
+            "Step4": ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM',
+                      '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO']
+        }
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
         testArguments['StepChain'] = 1
@@ -1930,19 +1937,11 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
             # request does not have InputDataset and we keep the output of the last step only
             self.assertEqual(None, parentageMapping[stepName]['ParentDataset'])
 
-        # test output modules and datasets, only Step2 not saving the output
-        self.assertEqual({}, parentageMapping['GENSIM']['OutputDatasetMap'])
-        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
-        self.assertEqual({}, parentageMapping['DIGI2']['OutputDatasetMap'])
-
         self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
 
     def testStepParentageMapping2(self):
         """
@@ -1951,11 +1950,19 @@ class StepChainTests(EmulatedUnitTestCase):
          *) and only saving the output of the Step4
         and test the parentage mapping structure
         """
+        outDsets = {
+            "Step1": [],
+            "Step2": [],
+            "Step3": [],
+            "Step4": ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM',
+                      '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO']
+        }
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
         testArguments['StepChain'] = 1
         testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
-        testArguments['Step1']['InputDataset'] = "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM"
+        testArguments['Step1'][
+            'InputDataset'] = "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM"
         testArguments['StepChain'] = 4
 
         # Create a new DIGI step in Step3 and shift Step3 to Step4
@@ -1989,19 +1996,11 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
             self.assertEqual('/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM',
                              parentageMapping[stepName]['ParentDataset'])
 
-        # test output modules and datasets, only Step2 not saving the output
-        self.assertEqual({}, parentageMapping['GENSIM']['OutputDatasetMap'])
-        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
-        self.assertEqual({}, parentageMapping['DIGI2']['OutputDatasetMap'])
-
         self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
 
     def testStepParentageMapping3(self):
         """
@@ -2010,6 +2009,13 @@ class StepChainTests(EmulatedUnitTestCase):
          *) and saving the output of Step1 and Step3 and Step4
         and test the parentage mapping structure
         """
+        outDsets = {
+            "Step1": ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM'],
+            "Step2": [],
+            "Step3": ['/PrimaryDataset-StepChain/AcqEra_Step3-ProcStr_Step3-v1/GEN-SIM-RAW'],
+            "Step4": ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM',
+                      '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO']
+        }
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
         testArguments['StepChain'] = 1
@@ -2047,6 +2053,7 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
 
         # test parentage dataset
         self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
@@ -2055,32 +2062,26 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(parentDset, parentageMapping['DIGI2']['ParentDataset'])
         self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
 
-        # test output modules and datasets, only Step2 not saving the output
+        # test output modules, only Step2 not saving the output
         self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM'
-        self.assertTrue(outDset in parentageMapping['GENSIM']['OutputDatasetMap']['RAWSIMoutput'])
-
-        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
-
         self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step3-ProcStr_Step3-v1/GEN-SIM-RAW'
-        self.assertTrue(outDset in parentageMapping['DIGI2']['OutputDatasetMap']['RAWSIMoutput'])
-
         self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
-        outDset = '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
-
 
     def testStepParentageMapping4(self):
         """
-        Same logic as testStepParentageMapping3, but checking the map after
-        the workflow gets assigned. Request is
+        Same logic as testStepParentageMapping3, but also checking the mapping
+        after the workflow gets assigned. Request is
          *) with NO input dataset
          *) and saving the output of Step1 and Step3 and Step4
         and test the parentage mapping structure
         """
+        outDsets = {
+            "Step1": ['/PrimaryDataset-StepChain/AcqEraNew_Step1-FilterA-ProcStrNew_Step1-v1/GEN-SIM'],
+            "Step2": [],
+            "Step3": ['/PrimaryDataset-StepChain/AcqEraNew_Step3-ProcStrNew_Step3-v1/GEN-SIM-RAW'],
+            "Step4": ['/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterD-ProcStrNew_Step4-v1/AODSIM',
+                      '/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterC-ProcStrNew_Step4-v1/GEN-SIM-RECO']
+        }
         testArguments = StepChainWorkloadFactory.getTestArguments()
         testArguments.update(deepcopy(REQUEST))
         testArguments['StepChain'] = 1
@@ -2109,7 +2110,6 @@ class StepChainTests(EmulatedUnitTestCase):
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
-        parentageMapping = testWorkload.getStepParentageMapping()
 
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"GENSIM": "AcqEraNew_Step1", "DIGI": "AcqEraNew_Step2",
@@ -2120,7 +2120,6 @@ class StepChainTests(EmulatedUnitTestCase):
                       "UnmergedLFNBase": "/store/unmerged"
                       }
         testWorkload.updateArguments(assignDict)
-
         parentageMapping = testWorkload.getStepParentageMapping()
 
         for i in range(1, testArguments['StepChain'] + 1):
@@ -2130,6 +2129,7 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
+            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
 
         # test parentage dataset
         self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
@@ -2138,22 +2138,10 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(parentDset, parentageMapping['DIGI2']['ParentDataset'])
         self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
 
-        # test output modules and datasets, only Step2 not saving the output
+        # test output modules, only Step2 not saving the output
         self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step1-FilterA-ProcStrNew_Step1-v1/GEN-SIM'
-        self.assertTrue(outDset in parentageMapping['GENSIM']['OutputDatasetMap']['RAWSIMoutput'])
-
-        self.assertEqual({}, parentageMapping['DIGI']['OutputDatasetMap'])
-
         self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step3-ProcStrNew_Step3-v1/GEN-SIM-RAW'
-        self.assertTrue(outDset in parentageMapping['DIGI2']['OutputDatasetMap']['RAWSIMoutput'])
-
         self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
-        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterD-ProcStrNew_Step4-v1/AODSIM'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['AODSIMoutput'])
-        outDset = '/PrimaryDataset-StepChain/AcqEraNew_Step4-FilterC-ProcStrNew_Step4-v1/GEN-SIM-RECO'
-        self.assertTrue(outDset in parentageMapping['RECO']['OutputDatasetMap']['RECOSIMoutput'])
 
 
 if __name__ == '__main__':

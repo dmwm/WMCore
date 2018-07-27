@@ -197,6 +197,47 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, "stepParentageMapping", None)
 
+    def getStepParentDataset(self, childDataset):
+        """
+        :param childDataset: child dataset which is looking for parent dataset
+        :return: str parent dataset if exist, otherwise None
+
+        Correct parentage mapping is set when workflow is assigned, Shouldn't call this method before workflow is assigned
+        Assumes there is only one parent dataset given childDataset
+        """
+        stepParentageMap = self.getStepParentageMapping()
+        if stepParentageMap:
+            for stepName in stepParentageMap:
+                stepItem = stepParentageMap[stepName]
+                outDSMap = stepItem["OutputDatasetMap"]
+                for outmodule in outDSMap:
+                    if childDataset in outDSMap[outmodule] and stepItem['ParentDataset']:
+                        return stepItem['ParentDataset']
+        else:
+            return None
+
+    def getStepParentageSimpleMapping(self):
+        """
+        :return:  {'Step1': {'ParentDset': 'blah1', 'ChildDsets': ['blah2']},
+                   'Step2': {'ParentDset': 'blah2', 'ChildDsets': ['blah3', 'blah4],
+                   ...} if stepParentageMapping exist otherwise None
+
+        convert stepParentageMapping to simple map to store in reqmgr document
+        """
+        stepParentageMap = self.getStepParentageMapping()
+        sMap = {}
+        if stepParentageMap:
+            for stepName in stepParentageMap:
+                stepItem = stepParentageMap[stepName]
+                outDSMap = stepItem["OutputDatasetMap"]
+                stepNumber = stepItem["StepNumber"]
+                sMap[stepNumber] = {}
+                sMap[stepNumber]["ParentDset"] = stepItem['ParentDataset']
+                sMap[stepNumber]["ChildDsets"] = []
+                for outmodule in outDSMap:
+                    sMap[stepNumber]["ChildDsets"].extend(outDSMap[outmodule])
+        return sMap
+
     def getInitialJobCount(self):
         """
         _getInitialJobCount_

@@ -1802,5 +1802,75 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertItemsEqual(overrideArgs, result)
 
 
+    def testStepChainParentage(self):
+        """Test Overrides setter and getter methods"""
+
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+
+        self.assertEqual(workload.getStepParentageMapping(), None)
+
+        mapping = {'GENSIM': {'OutputDatasetMap': {u'RAWSIMoutput': ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM']},
+                              'ParentDataset': None,
+                              'ParentStepCmsRun': None,
+                              'ParentStepName': None,
+                              'ParentStepNumber': None,
+                              'StepCmsRun': 'cmsRun1',
+                              'StepNumber': 'Step1'},
+                 'DIGI': {'OutputDatasetMap': {},
+                          'ParentDataset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                          'ParentStepCmsRun': 'cmsRun1',
+                          'ParentStepName': 'GENSIM',
+                          'ParentStepNumber': 'Step1',
+                          'StepCmsRun': 'cmsRun2',
+                          'StepNumber': 'Step2'},
+                 'DIGI2': {'OutputDatasetMap': {u'RAWSIMoutput': ['/PrimaryDataset-StepChain/AcqEra_Step3-ProcStr_Step3-v1/GEN-SIM-RAW']},
+                           'ParentDataset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                           'ParentStepCmsRun': 'cmsRun1',
+                           'ParentStepName': 'GENSIM',
+                           'ParentStepNumber': 'Step1',
+                           'StepCmsRun': 'cmsRun3',
+                           'StepNumber': 'Step3'},
+                 'RECO': {'OutputDatasetMap': {u'AODSIMoutput': ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM'],
+                                             u'RECOSIMoutput': ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO']},
+                          'ParentDataset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                          'ParentStepCmsRun': 'cmsRun2',
+                          'ParentStepName': 'DIGI',
+                          'ParentStepNumber': 'Step2',
+                          'StepCmsRun': 'cmsRun4',
+                          'StepNumber': 'Step4'}}
+
+        workload.setStepParentageMapping(mapping)
+
+        pDataset = workload.getStepParentDataset(mapping["GENSIM"]["OutputDatasetMap"]["RAWSIMoutput"][0])
+        self.assertEqual(None, pDataset)
+
+        pDataset = workload.getStepParentDataset(mapping["RECO"]["OutputDatasetMap"]["AODSIMoutput"][0])
+
+        self.assertEqual(mapping["RECO"]["ParentDataset"], pDataset)
+
+        pDataset = workload.getStepParentDataset(mapping["RECO"]["OutputDatasetMap"]["RECOSIMoutput"][0])
+        self.assertEqual(mapping["RECO"]["ParentDataset"], pDataset)
+
+        pDataset = workload.getStepParentDataset(mapping["DIGI2"]["OutputDatasetMap"]["RAWSIMoutput"][0])
+        self.assertEqual(mapping["DIGI2"]["ParentDataset"], pDataset)
+
+
+        simpleFormat = workload.getStepParentageSimpleMapping()
+
+        simpleFormatOutput = {'Step1': {'ParentDset': None,
+                                        'ChildDsets': ['/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM']},
+                              'Step2': {
+                                  'ParentDset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                                  'ChildDsets': []},
+                              'Step3': {
+                                  'ParentDset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                                  'ChildDsets': ['/PrimaryDataset-StepChain/AcqEra_Step3-ProcStr_Step3-v1/GEN-SIM-RAW']},
+                              'Step4': {'ParentDset': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM',
+                                        'ChildDsets': ['/PrimaryDataset-StepChain/AcqEra_Step4-FilterD-ProcStr_Step4-v1/AODSIM',
+                                                       '/PrimaryDataset-StepChain/AcqEra_Step4-FilterC-ProcStr_Step4-v1/GEN-SIM-RECO']},
+                              }
+
+        self.assertEqual(simpleFormatOutput,  simpleFormat)
+
 if __name__ == '__main__':
     unittest.main()

@@ -469,7 +469,6 @@ class RESTDaemon(RESTMain):
         self.setup_server()
         self.install_application()
         cherrypy.log("INFO: starting server in %s" % self.statedir)
-        cherrypy.config.update({'log.screen': bool(getattr(self.srvconfig, "log_screen", False))})
         cherrypy.engine.start()
         signal.signal(signal.SIGHUP, sig_reload)
         signal.signal(signal.SIGUSR1, sig_graceful)

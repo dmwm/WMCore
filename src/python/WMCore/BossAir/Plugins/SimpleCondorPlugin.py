@@ -274,9 +274,12 @@ class SimpleCondorPlugin(BasePlugin):
                 continue
 
             reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
+            reportNameWithBootstapError =  os.path.join(job['cache_dir'], 'Report.0.pkl')
             if os.path.isfile(reportName) and os.path.getsize(reportName) > 0:
                 # everything in order, move on
                 continue
+            elif os.path.isfile(reportNameWithBootstapError) and os.path.getsize(reportNameWithBootstapError) > 0:
+                os.rename(reportNameWithBootstapError, reportName)
             elif os.path.isdir(reportName):
                 # Then something weird has happened. Report error, do nothing
                 logging.error("The job report for job with id %s and gridid %s is a directory", job['id'],

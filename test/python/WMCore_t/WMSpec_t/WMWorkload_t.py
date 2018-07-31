@@ -1806,7 +1806,7 @@ class WMWorkloadTest(unittest.TestCase):
 
         workload = WMWorkloadHelper(WMWorkload("workload1"))
 
-        self.assertEqual(workload.getStepParentageMapping(), None)
+        self.assertEqual(workload.getStepParentageMapping(), {})
 
         mapping = {'GENSIM': {'OutputDatasetMap': {
                        u'RAWSIMoutput': '/PrimaryDataset-StepChain/AcqEra_Step1-FilterA-ProcStr_Step1-v1/GEN-SIM'},

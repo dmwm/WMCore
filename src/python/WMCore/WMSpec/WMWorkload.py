@@ -159,7 +159,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Only important for StepChains. Map from step name to step and parent
         step properties, including a map of output datasets to the parent dataset.
         """
-        return getattr(self.data.properties, "stepParentageMapping", None)
+        return getattr(self.data.properties, "stepParentageMapping", {})
 
     def getStepParentDataset(self, childDataset):
         """
@@ -199,7 +199,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Only important for TaskChains. Returns a map of task name to
         parent dataset and output datasets.
         """
-        return getattr(self.data.properties, "taskParentageMapping", None)
+        return getattr(self.data.properties, "taskParentageMapping", {})
 
     def getChainParentageSimpleMapping(self):
         """

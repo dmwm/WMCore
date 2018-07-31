@@ -2,6 +2,7 @@
 from __future__ import print_function, division
 import json
 import time
+import datetime
 import httplib
 import os
 
@@ -75,7 +76,7 @@ def getParentfilesMissingParents(dataset, searchFile=False):
     # print("parent datasets %s\n" % pDatasets)
     if not pDatasets:
         # print("No parents dataset found for %s\n" % dataset)
-        return None, None
+        return None, None, False
 
     if not searchFile:
         blocks = listBlocksWithNoParents(dataset)
@@ -86,7 +87,7 @@ def getParentfilesMissingParents(dataset, searchFile=False):
         # DatasetReport = {'child_dataset': dataset, 'parent_datasets': pDatasets, 'mssing_parent_blocks': []}
         DatasetReport = {'CDS': dataset, 'PDS': pDatasets, 'MISSING': []}
     else:
-        return None, None
+        return None, None, False
 
     print("=== searching problem dataset %s ===\n" % dataset)
 
@@ -94,6 +95,9 @@ def getParentfilesMissingParents(dataset, searchFile=False):
     countParentFiles = 0
     countChildBlocks = 0
     countParentBlocks = 0
+    numOfChildBlockWithNoParent = 0
+    numOfChildFilesWithNoParent = 0
+    noParentBlock = False
 
     for blockName in blocks:
         # BlockLevel = {'child_block': blockName, "parent_blocks": set(), 'lfn_parentage': []}
@@ -134,6 +138,10 @@ def getParentfilesMissingParents(dataset, searchFile=False):
                     originalSet.add(block['parent_block_name'])
                 print("Difference from lumi-matching - original: %s" % (caculatedBlocks - originalSet))
                 print("Difference original - lumi-matching: %s" % (originalSet - caculatedBlocks))
+        if len(BlockLevel['PBK']) == 0:
+            noParentBlock = True
+            numOfChildBlockWithNoParent += 1
+            numOfChildFilesWithNoParent += countChildFiles
 
         countParentBlocks += len(BlockLevel['PBK'])
         # DatasetReport['missing_parent_blocks'].append(BlockLevel)
@@ -143,33 +151,42 @@ def getParentfilesMissingParents(dataset, searchFile=False):
             len(blocks), countChildBlocks, countParentBlocks, countChildFiles, countParentFiles))
     metaData = {"NumChildDatasets": 1, "NumParentDatasets": len(pDatasets),
                 "NumChildBlocks": countChildBlocks, "NumParentBlocks": countChildBlocks,
-                "NumChildFiles": countChildFiles, "NumParentFiles": countParentFiles, }
+                "NumChildFiles": countChildFiles, "NumParentFiles": countParentFiles,
+                "NumOfChildBlockWithNoParent": numOfChildBlockWithNoParent,
+                "NumOfChildFilesWithNoParent": numOfChildFilesWithNoParent}
 
     print("====================================\n\n")
 
-    return DatasetReport, metaData
+    return (DatasetReport, metaData, noParentBlock)
 
 
 def getMissingParentSummaryUsingBlock(datasetList):
     totalMetaData = {"NumChildDatasets": 0, "NumParentDatasets": 0,
                 "NumChildBlocks": 0, "NumParentBlocks": 0,
-                "NumChildFiles": 0, "NumParentFiles": 0, }
+                "NumChildFiles": 0, "NumParentFiles": 0,
+                "NumOfChildBlockWithNoParent": 0, "NumOfChildFilesWithNoParent": 0}
 
     missingParents = []
+    missingParentsButNoParentFiles = []
     start = int(time.time())
     for dataset in datasetList:
         if isinstance(dataset, dict):
             dsName = dataset['dataset']
         else:
             dsName = dataset
-        datasetInfo, metaData = getParentfilesMissingParents(dsName)
+        datasetInfo, metaData, noParentBlock = getParentfilesMissingParents(dsName)
 
         if datasetInfo is not None:
-            missingParents.append(datasetInfo)
+            if noParentBlock:
+                missingParentsButNoParentFiles.append(datasetInfo)
+            else:
+                missingParents.append(datasetInfo)
             for k in totalMetaData:
                 totalMetaData[k] += metaData[k]
 
     cEnd = int(time.time())
+    with open("./missing_parents_error.json", "w") as f:
+        json.dump(missingParentsButNoParentFiles, f, indent=4)
 
     with open("./missing_parents.json", "w") as f:
         json.dump(missingParents, f, indent=4)
@@ -188,7 +205,7 @@ def getMissingParentSummaryUsingBlock(datasetList):
 
 
 def getMissingParentSummaryUsingFile(dataset):
-    missingParentsm, metaData = getParentfilesMissingParents(dataset, True)
+    missingParents, metaData, noParent = getParentfilesMissingParents(dataset, True)
     with open("./missing_parents_by_file.json", "w") as f:
         json.dump(missingParents, f, indent=4)
     with open("./missing_parents_by_file.py", "w") as f:
@@ -233,28 +250,38 @@ def investigateACDCCollection(workflow):
 
 if __name__ == '__main__':
 
-    # datasetLists = dbs.listDatasets(min_cdate=1492717811, max_cdate=1498717900)
-    # print(len(datasetLists))
-    outDS = getOutputDSFromActiveWFs()
-    datasetList = outDS.keys()
+    # this is local time not GMT
+    s = "07/01/2017"
+    startTime = int(time.mktime(datetime.datetime.strptime(s, "%d/%m/%Y").timetuple()))
+
+    e = "10/01/2017"
+    endTime = int(time.mktime(datetime.datetime.strptime(e, "%d/%m/%Y").timetuple()))
+
+    datasetList = dbs.listDatasets(min_cdate=startTime, max_cdate=endTime)
+    print(len(datasetList))
+
+    #outDS = getOutputDSFromActiveWFs()
+    #datasetList = outDS.keys()
     missingPS = getMissingParentSummaryUsingBlock(datasetList)
+
 
     for info in missingPS:
         cDS = info['CDS']
-        print("%s: %s" % (cDS, outDS[cDS]))
-
-    wfs = set()
-    for ds, value in outDS.items():
-        for reqInfo in value:
-            if reqInfo[0] != "Resubmission":
-                wfs.add(reqInfo[1])
-    missingFiles = set()
-    for wf in wfs:
-        missingFiles = missingFiles.union(investigateACDCCollection(wf))
-
-    with open("./child_with_umerged_parents.json", "w") as f:
-        json.dump(list(missingFiles), f, indent=4)
-
-    print(len(missingFiles))
+        print("%s:" % cDS)
+        #print("%s: %s" % (cDS, outDS[cDS]))
+    #
+    # wfs = set()
+    # for ds, value in outDS.items():
+    #     for reqInfo in value:
+    #         if reqInfo[0] != "Resubmission":
+    #             wfs.add(reqInfo[1])
+    # missingFiles = set()
+    # for wf in wfs:
+    #     missingFiles = missingFiles.union(investigateACDCCollection(wf))
+    #
+    # with open("./child_with_umerged_parents.json", "w") as f:
+    #     json.dump(list(missingFiles), f, indent=4)
+    #
+    # print(len(missingFiles))
 
     # getMissingParentSummaryUsingFile("/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD")

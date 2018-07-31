@@ -1532,7 +1532,7 @@ class Report(object):
     def setLogURL(self, url):
         """
         Set log url for the this job report.
-        https://eoscmshttp.cern.ch/eos/cms/store/logs/prod/recent/
+        https://eoscmsweb.cern.ch/eos/cms/store/logs/prod/recent/
         """
         self.data.logURL = url
 

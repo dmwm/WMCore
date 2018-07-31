@@ -85,7 +85,7 @@ class LogArchive(Executor):
         try:
             eosmanager(eosFileInfo)
             eosServerPrefix = eosStageOutParams['lfn-prefix'].replace("root://eoscms.cern.ch//eos/cms",
-                                                                      "https://eoscmshttp.cern.ch/eos/cms")
+                                                                      "https://eoscmsweb.cern.ch/eos/cms")
             self.report.setLogURL(eosServerPrefix + eosFileInfo['LFN'])
             self.saveReport()
         except Alarm:

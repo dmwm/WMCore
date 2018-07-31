@@ -207,6 +207,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.eventsPerLumi = None
         self.mergeMapping = {}
         self.taskMapping = {}
+        self.taskOutputMapping = {}
 
     def __call__(self, workloadName, arguments):
         """
@@ -276,8 +277,14 @@ class TaskChainWorkloadFactory(StdBase):
                 self.setupTask(task, taskConf)
             self.taskMapping[task.name()] = taskConf
 
+        # now that all tasks have been created, create the parent x output dataset map
+        self.createTaskParentageMapping(arguments)
+        self.workload.setTaskParentageMapping(self.taskOutputMapping)
+
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
+        # and push the parentage map to the reqmgr2 workload cache doc
+        arguments['ChainParentageMap'] = self.workload.getChainParentageSimpleMapping()
 
         # Feed values back to save in couch
         if self.eventsPerJob:
@@ -285,6 +292,76 @@ class TaskChainWorkloadFactory(StdBase):
         if self.eventsPerLumi:
             arguments['Task1']['EventsPerLumi'] = self.eventsPerLumi
         return self.workload
+
+    def createTaskParentageMapping(self, origArgs):
+        """
+        Create a dict struct with a mapping of task name to parent dataset
+        and output datasets.
+        :param taskO: a WMTask object for the production/processing task
+        :param origArgs: arguments provided by the user + default spec args
+        :param firstTask: if Task1, then call it with firstTask=True
+        :return: update a dictionary in place which will be later set as a
+        WMWorkload property
+        """
+        for i in range(1, self.taskChain + 1):
+            taskNumber = "Task%d" % i
+            taskName = origArgs[taskNumber]['TaskName']
+            taskO = self.workload.getTaskByName(taskName)
+            self.taskOutputMapping.setdefault(taskName, {})
+
+            # create a few more key/value pairs to help find the parent. Remove it later
+            self.taskOutputMapping[taskName] = {'TaskNumber': taskNumber,
+                                                'ParentTaskNumber': None,
+                                                'ParentTaskName': None,
+                                                'ParentDataset': None,
+                                                'OutputDatasetMap': {}}
+
+            if taskNumber == 'Task1':
+                self.taskOutputMapping[taskName]['ParentDataset'] = origArgs[taskNumber].get('InputDataset')
+            else:
+                parentTaskName = origArgs[taskNumber]["InputTask"]
+                parentOutputModName = origArgs[taskNumber]["InputFromOutputModule"]
+                parentTaskNumber = self.taskOutputMapping[parentTaskName]['TaskNumber']
+
+                self.taskOutputMapping[taskName]['ParentTaskName'] = parentTaskName
+                self.taskOutputMapping[taskName]['ParentTaskNumber'] = parentTaskNumber
+
+                parentDset = self.findParentDataset(origArgs, parentTaskNumber, parentTaskName, parentOutputModName)
+                self.taskOutputMapping[taskName]['ParentDataset'] = parentDset
+
+            # set the OutputDatasetMap or empty if KeepOutput is False
+            if not origArgs[taskNumber].get("KeepOutput", True):
+                continue
+
+            transientMods = origArgs[taskNumber].get("TransientOutputModules", [])
+            for outInfo in taskO.listOutputDatasetsAndModules():
+                outModName = outInfo['outputModule']
+                if outModName not in transientMods:
+                    self.taskOutputMapping[taskName]['OutputDatasetMap'][outModName] = outInfo['outputDataset']
+
+    def findParentDataset(self, origArgs, taskNumber, taskName, outModName):
+        """
+        _findParentDataset_
+        Given the parent task name and output module name, finds the parent dataset
+        :param origArgs: request arguments
+        :param taskNumber: step number of the parent step
+        :param taskName: step name of the parent step
+        :param outModName: output module name of the parent step
+        :return: the parent dataset name (str), otherwise None
+        """
+        # mind there might be transient output modules too...
+        if outModName in self.taskOutputMapping[taskName]['OutputDatasetMap']:
+            return self.taskOutputMapping[taskName]['OutputDatasetMap'][outModName]
+        else:
+            # then fetch grand-parent data
+            parentTaskNumber = self.taskOutputMapping[taskName]['ParentTaskNumber']
+            parentTaskName = self.taskOutputMapping[taskName]['ParentTaskName']
+            if parentTaskNumber:
+                parentOutputModName = origArgs[taskNumber]["InputFromOutputModule"]
+                return self.findParentDataset(origArgs, parentTaskNumber, parentTaskName, parentOutputModName)
+            else:
+                # this is Task1
+                return self.taskOutputMapping[taskName]['ParentDataset']
 
     def makeTask(self, taskConf, parentTask=None):
         """
@@ -532,6 +609,7 @@ class TaskChainWorkloadFactory(StdBase):
                     "TaskChain": {"default": 1, "type": int,
                                   "optional": False, "validate": lambda x: x > 0,
                                   "attr": "taskChain", "null": False},
+                    "ChainParentageMap": {"default": {}, "type": dict},
                     "FirstEvent": {"default": 1, "type": int,
                                    "optional": True, "validate": lambda x: x > 0,
                                    "attr": "firstEvent", "null": False},
@@ -566,6 +644,16 @@ class TaskChainWorkloadFactory(StdBase):
                                'null': False},
                     }
         baseArgs.update(arguments)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        specArgs = {
+            "ChainParentageMap": {"default": {}, "type": dict},
+        }
+        baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 

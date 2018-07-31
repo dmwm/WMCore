@@ -416,7 +416,7 @@ def buildComplexTaskChain(couchdb):
     factory = TaskChainWorkloadFactory()
     testWorkload = factory.factoryWorkloadConstruction("ComplexChain", testArguments)
 
-    return testWorkload
+    return (testWorkload, testArguments)
 
 
 class TaskChainTests(EmulatedUnitTestCase):
@@ -1159,7 +1159,7 @@ class TaskChainTests(EmulatedUnitTestCase):
          * job splitting and performance settings
         """
         # create a taskChain workload
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         # test workload properties
         self.assertEqual(testWorkload.getRequestType(), REQUEST['RequestType'])
@@ -1277,7 +1277,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             return
 
         # Case 1: workflow creation only
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_21', 'CMSSW_8_0_22',
                                                                 'CMSSW_8_0_23', 'CMSSW_8_0_24'])
         _checkCMSSWScram(testWorkload)
@@ -1296,7 +1296,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         """
         Test the prepid settings for the workload and tasks
         """
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         self.assertEqual(testWorkload.getPrepID(), REQUEST['PrepID'])
         for t in ["myTask1", "myTask1MergeLHEoutput", "myTask1MergeRAWSIMoutput"]:
@@ -1417,7 +1417,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             return
 
         # Case 1: only workload creation
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         _checkInputData(testWorkload)
 
         # Case 2: workload assignment. Only the site whitelist is supposed to change
@@ -1487,7 +1487,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         mergedMods['Task4']['MINIAODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4 + 5]})
 
         # create a taskChain workload
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         # Case 1: only workload creation
         lfnBases = ("/store/unmerged", "/store/data")
@@ -1520,7 +1520,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                 self._validateOutputModule(step.getOutputModule('Merged'), mergedMods[t][modName])
 
         # Case 3: workload creation and assignment, output dataset overriden with the same values
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"myTask1": "AcqEra_Task1", "myTask2": "AcqEra_Task2",
                                          "myTask3": "AcqEra_Task3", "myTask4": "AcqEra_Task4"},
@@ -1542,7 +1542,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                 self._validateOutputModule(step.getOutputModule('Merged'), mergedMods[t][modName])
 
         # Case 4: workload creation and assignment, output dataset overriden with new values
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"myTask1": "AcqEra_TaskA", "myTask2": "AcqEra_TaskB",
                                          "myTask3": "AcqEra_TaskC", "myTask4": "AcqEra_TaskD"},
@@ -2087,6 +2087,189 @@ class TaskChainTests(EmulatedUnitTestCase):
         subMaps.append((36, topFilesetName, '/TestWorkload/DigiHLT', 'EventAwareLumiBased', 'Processing'))
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
         self.assertItemsEqual(subscriptions, subMaps)
+
+
+    def testTaskParentageMapping1(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task2-ProcStr_Task2-v22/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task3-ProcStr_Task3-v23/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testArguments = testWorkload[1]
+        testWorkload = testWorkload[0]
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        parentDset = None
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = outDsets[tNum][0]
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task2-ProcStrNew_Task2-v32/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task3-ProcStrNew_Task3-v33/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = None
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = outDsets[tNum][0]
+
+        return
+
+    def testTaskParentageMapping2(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": [],
+            "Task3": [],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        complexDocs = makeRealConfigs(self.configDatabase)
+
+        # additional request override
+        del testArguments['ConfigCacheID']
+        testArguments['DQMConfigCacheID'] = complexDocs['Harvest']
+        testArguments['Task1']['ConfigCacheID'] = complexDocs['Scratch']
+        testArguments['Task2']['ConfigCacheID'] = complexDocs['Digi']
+        testArguments['Task3']['ConfigCacheID'] = complexDocs['Aod']
+        testArguments['Task4']['ConfigCacheID'] = complexDocs['MiniAod']
+
+        testArguments['Task1']['InputDataset'] = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        testArguments['Task2']['KeepOutput'] = False
+        testArguments['Task3']['KeepOutput'] = False
+
+
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("ComplexChain", testArguments)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        parentDset = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM'
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": [],
+            "Task3": [],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM'
+
+        return
+
+    def testTaskChainParentage(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task2-ProcStr_Task2-v22/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task3-ProcStr_Task3-v23/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
+        parentageMap = testWorkload.getChainParentageSimpleMapping()
+
+        parentDset = None
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            self.assertItemsEqual(parentageMap[t]['ChildDsets'], outDsets[t])
+            self.assertEqual(parentageMap[t]['ParentDset'], parentDset)
+            parentDset = outDsets[t][0]
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getChainParentageSimpleMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task2-ProcStrNew_Task2-v32/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task3-ProcStrNew_Task3-v33/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = None
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            self.assertItemsEqual(parentageMap[t]['ChildDsets'], outDsets[t])
+            self.assertEqual(parentageMap[t]['ParentDset'], parentDset)
+            parentDset = outDsets[t][0]
+
+        return
 
 
 if __name__ == '__main__':

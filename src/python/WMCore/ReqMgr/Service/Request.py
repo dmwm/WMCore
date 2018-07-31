@@ -430,10 +430,9 @@ class Request(RESTEntity):
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
 
         # Add parentage relation for step chain, task chain:
-        stepMap = workload.getStepParentageSimpleMapping()
-        if stepMap:
-            request_args["StepParentageMap"] = stepMap
-        #TODO add task chain parentage map
+        chainMap = workload.getChainParentageSimpleMapping()
+        if chainMap:
+            request_args["ChainParentageMap"] = chainMap
 
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated

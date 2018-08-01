@@ -1,3 +1,79 @@
+1.1.14 to 1.1.15.pre6:
+  - Merge pull request #8722 from ticoann/fix_input_filter
+  - remove status stall warning
+  - fix inputdatset filter
+  - 1.1.15.pre5
+  - Merge pull request #8712 from amaltaro/eos-logs-url
+  - Merge pull request #8715 from ticoann/eos_http_link_change
+  - Merge pull request #8710 from amaltaro/chain-map-compat
+  - make backward compatible for the url change
+  - fix unit test
+  - Update endpoint for EOS prod/recent logs
+  - Backwards compatibility for handling chain parentage map
+  - 1.1.15.pre4
+  - Merge pull request #8706 from amaltaro/task-output-map
+  - update tests and pylint
+  - Create task/output dataset for TaskChain workflows
+  - Merge pull request #8700 from ticoann/add_parentage_method
+  - add unit test
+  - add step chain parentage map to reqmgr db.
+  - Merge pull request #8699 from amaltaro/pycondorutils-py3
+  - 1.1.15.pre3
+  - Merge pull request #8697 from amaltaro/stepchain-parentage-map
+  - import division on new module to silent py3 tests
+  - added unit test and pylint fixes
+  - Create a WMWorkload property with a StepChain steps/parentage mapping
+  - 1.1.15.pre2
+  - Merge pull request #8691 from amaltaro/log-original-args
+  - pylint fixes
+  - Remove duplicate cherrypy logs in the central services
+  - Merge pull request #8693 from amaltaro/fix-8686
+  - Fix dup exception handling and print in 8686
+  - Merge pull request #8686 from amaltaro/condor-leak-planB
+  - Merge pull request #8685 from ticoann/clean_task_archiver_log
+  - Merge pull request #8690 from ticoann/remove_error_for_tier0
+  - pylint fix
+  - clean up TaskArchiver log
+  - Merge pull request #8688 from ticoann/wqlog_clean
+  - clean up log for wq
+  - don't use workqueue injection check with T0Agent
+  - Merge pull request #8689 from ticoann/add_db_exception
+  - Add one more DB exception to retry
+  - Wrapper for HTCondor job submission
+  - 1.1.15.pre1
+  - Merge pull request #8666 from amaltaro/cric-firsttest
+  - Merge pull request #8669 from ticoann/return_exit_code
+  - return exit code in Start.py
+  - Add CRIC Service module
+  - Merge pull request #8679 from ticoann/track_priority
+  - Merge pull request #8668 from ticoann/fix_by_date
+  - add priority transition record
+  - fix the view by date
+  - Merge pull request #8667 from amaltaro/issue-8648
+  - Merge pull request #8672 from ticoann/errorhander_memory_fix
+  - fix memory problem on error handler
+  - New DAO to check subscriptions with no jobgroup associated; new condition for pulling work from GQ
+  - Merge pull request #8661 from amaltaro/issue-8660
+  - Merge pull request #8635 from amaltaro/override-tier0
+  - unit test and pylint fixes
+  - Limit number of jobs to cache in JobSubmitter; also order by task_id
+  - Merge pull request #8658 from amaltaro/deploy-1114patch2
+  - Configure ErrorHandler to 50 jobs only; bump deploy example to 1.1.14.patch2
+  - Merge pull request #8615 from amaltaro/volunteer-proxy
+  - Merge pull request #8650 from amaltaro/archive-slice-jobs
+  - Merge pull request #8651 from amaltaro/bossair-memory
+  - pylint and unit test fixes
+  - Reduce the BossAir memory footprint
+  - pylint and unit test fixes
+  - Limit the number of archiveable jobs to be loaded each cycle
+  - Strip the requirement string and proxy for Volunteer jobs
+  - Merge pull request #8652 from belforte/return60317
+  - Merge pull request #8653 from amaltaro/file-write-error
+  - Added exit code 8033 - FileWriteError - to the list of exceptions
+  - pylint fixes
+  - Override T0-spec assignment parameters with a new Override value
+  - split STAGEOUT_ERRORS for code 60317. Fix #8405
+
 1.1.14 to 1.1.15.pre5:
   - Merge pull request #8712 from amaltaro/eos-logs-url
   - Merge pull request #8715 from ticoann/eos_http_link_change

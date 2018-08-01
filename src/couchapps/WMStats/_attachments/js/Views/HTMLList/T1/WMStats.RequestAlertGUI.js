@@ -38,17 +38,18 @@ WMStats.RequestAlertGUI = function (requestData, containerDiv) {
     var siteError = alertRequests.siteError;
     var failed = alertRequests.failed;
     var assignedStall = notPulledRequests.assignedStall;
-    var statusStall = notPulledRequests.statusStall;
+    //var statusStall = notPulledRequests.statusStall;
     var errorFlag = false;
     var numError = (configError.length + siteError.length + failed.length + 
-                    assignedStall.length + statusStall.length);
+                    assignedStall.length);
     var htmlList = "";
-    
+
+    displayAlert(failed, "failed");
     displayAlert(assignedStall, "assigned > 2h");
-    displayAlert(statusStall, "stautus stall > 2 days");
+    //displayAlert(statusStall, "stautus stall > 2 days");
     displayAlert(configError, "Config Error");
     displayAlert(siteError, "Site Error");
-    displayAlert(failed, "failed");
+
     
     $(containerDiv).addClass("request_error_box");
     if (errorFlag) {

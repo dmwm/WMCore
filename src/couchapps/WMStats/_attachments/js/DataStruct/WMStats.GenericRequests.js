@@ -295,6 +295,9 @@ WMStats.GenericRequests.prototype = {
         if (property == 'request_status') {
             return workflowData[property][workflowData[property].length - 1].status;
         }
+        if (property == 'inputdataset') {
+            return WMStats.Utils.getInputDatasets(workflowData);
+        }
         return workflowData[property];
     },
     

@@ -172,10 +172,8 @@ class ReqMgrAux(Service):
         # update config DB
         resp = self.updateRecords('campaignconfig/%s' % campaignName, propDict)
 
-        if len(resp) == 1 and resp[0].get("ok", False):
-            return True
-        else:
-            return False
+        return bool(len(resp) == 1 and resp[0].get("ok", False))
+
 
 AUXDB_AGENT_CONFIG_CACHE = {}
 
@@ -208,20 +206,18 @@ def listDiskUsageOverThreshold(config, updateDB):
     if updateDB is True update the aux couch db value.
     This function contains both check an update to avoide multiple db calls.
     """
+    defaultDiskThreshold = 85
+    defaultIgnoredDisks = []
     if hasattr(config, "Tier0Feeder"):
-        ignoredDisks = []
-        diskUseThreshold = 85
         # get the value from config.
-        if hasattr(config.AgentStatusWatcher, "ignoreDisks"):
-            ignoredDisks = config.AgentStatusWatcher.ignoreDisks
-        if hasattr(config.AgentStatusWatcher, "diskUseThreshold"):
-            diskUseThreshold = config.AgentStatusWatcher.diskUseThreshold
+        ignoredDisks = getattr(config.AgentStatusWatcher, "ignoreDisks", defaultIgnoredDisks)
+        diskUseThreshold = getattr(config.AgentStatusWatcher, "diskUseThreshold", defaultDiskThreshold)
         t0Flag = True
     else:
         reqMgrAux = ReqMgrAux(config.General.ReqMgr2ServiceURL)
         agentConfig = reqMgrAux.getWMAgentConfig(config.Agent.hostName)
-        diskUseThreshold = agentConfig["DiskUseThreshold"]
-        ignoredDisks = agentConfig["IgnoreDisks"]
+        diskUseThreshold = agentConfig.get("DiskUseThreshold", defaultDiskThreshold)
+        ignoredDisks = agentConfig.get("IgnoreDisks", defaultIgnoredDisks)
         t0Flag = False
 
     # Disk space warning

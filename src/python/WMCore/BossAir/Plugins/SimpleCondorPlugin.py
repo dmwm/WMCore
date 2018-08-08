@@ -11,7 +11,6 @@ import os.path
 import re
 import threading
 import time
-import pickle
 import classad
 import htcondor
 
@@ -23,7 +22,6 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
-from WMCore.Services.PyCondor.PyCondorUtils import AuthenticatedSubprocess
 
 class SimpleCondorPlugin(BasePlugin):
     """
@@ -147,24 +145,12 @@ class SimpleCondorPlugin(BasePlugin):
 
             logging.debug("Start: Submitting %d jobs using Condor Python SubmitMany", len(procAds))
             try:
-                condorIdDict = {}
-                ### HTCondor submitMany is leaking memory (as of 8.6.11 and 8.7.7), so let's wrap
-                # the submitMany call in this context manager such that memory stays under control
-                # I see no need for it though once HTCondor gets fixed...
-                with AuthenticatedSubprocess(pickleOut=True, outputObj=condorIdDict) as (parent, rpipe):
-                    if not parent:
-                        # getting this clusterId out of the context manager in an obscured way
-                        condorIdDict['clusterId'] = schedd.submitMany(clusterAd, procAds)
-                # clusterId = schedd.submitMany(clusterAd, procAds)
-                results = pickle.load(rpipe)
-                if results.outputMessage != "OK":
-                    raise Exception(results.outputMessage)
-                clusterId = results.outputObj["clusterId"]
-            except (EOFError, Exception) as ex:
+                # 4th argument has to be None otherwise HTCondor leaks the result ads
+                # through it (as of 8.7.x). More info in WMCore/#8729
+                clusterId = schedd.submitMany(clusterAd, procAds, False, None)
+            except Exception as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
-                if ex.__class__ == EOFError:
-                    logging.error("Timeout executing condor submit command.")
-                logging.exception(ex)
+                logging.exception(str(ex))
                 logging.error("Moving on the the next batch of jobs and/or cycle....")
 
                 condorErrorReport = Report()
@@ -173,7 +159,7 @@ class SimpleCondorPlugin(BasePlugin):
                     job['fwjr'] = condorErrorReport
                     failedJobs.append(job)
             else:
-                logging.info("Job submission to condor suceeded, clusterId is %s", clusterId)
+                logging.debug("Job submission to condor succeeded, clusterId is %s", clusterId)
                 for index, job in enumerate(jobsReady):
                     job['gridid'] = "%s.%s" % (clusterId, index)
                     job['status'] = 'Idle'
@@ -528,12 +514,13 @@ class SimpleCondorPlugin(BasePlugin):
         ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
                                        "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
 
-        # TODO: remove when 8.5.7 is deployed
+        # TODO: remove when 8.5.7 is deployed (seems to be still needed as of 8.6.11 ...)
         paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
         paramsToSkip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']
         for param in paramsToAdd:
             if (param not in ad) and (param in htcondor.param) and (param not in paramsToSkip):
                 ad[param] = classad.ExprTree(htcondor.param[param])
+
         return ad
 
     def getProcAds(self, jobList):

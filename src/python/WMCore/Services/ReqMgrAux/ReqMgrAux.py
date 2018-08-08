@@ -123,6 +123,18 @@ class ReqMgrAux(Service):
                                    (drainFlag, resp))
             return False
 
+    def updateAgentConfig(self, agentName, key, value):
+        # update config DB
+        resp = self.updateRecords('wmagentconfig/%s' % agentName, {key: value})
+
+        if len(resp) == 1 and resp[0].get("ok", False):
+            self["logger"].info("update agent key %s to %s successful." % (key, value))
+            return True
+        else:
+            self["logger"].warning("update agent config failed: %s should be %s, response: %s" %
+                                   (key, value, resp))
+            return False
+
     def getCampaignConfig(self, campaignName):
         """
         get campaign config for transferor function in unified ReqMgr2MS.
@@ -199,7 +211,6 @@ def isDrainMode(config):
     else:
         # if the cache is empty this will raise Key not exist exception.
         return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
-
 
 def listDiskUsageOverThreshold(config, updateDB):
     """

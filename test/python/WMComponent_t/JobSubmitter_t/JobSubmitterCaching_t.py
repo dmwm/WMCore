@@ -22,15 +22,19 @@ from WMCore.WMBase import getTestBase
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobSubmitterCachingTest(unittest.TestCase):
+class JobSubmitterCachingTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Set everything up.
         """
+
+        super(JobSubmitterCachingTest, self).setUp()
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()

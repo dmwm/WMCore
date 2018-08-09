@@ -33,6 +33,7 @@ class Create(DBCreator):
                  global_tag        VARCHAR2(255),
                  parent            VARCHAR2(500),
                  prep_id           VARCHAR(255),
+                 is_stepchain        INTEGER         DEFAULT 0,
                  PRIMARY KEY (id),
                  CONSTRAINT uq_dbs_dat UNIQUE (path)
                )"""

@@ -428,7 +428,8 @@ class WMBSHelper(WMConnectionBase):
                 self.mask['LastLumi'],
                 self.mask['LastEvent'])
             addedFiles = self.addMCFakeFile()
-
+        #update dbs dataset parentage
+        self.createStepChainParentageInDBSBuffer()
         self.commitTransaction(existingTransaction)
 
         # Now that we've created those files, clear the list
@@ -771,3 +772,15 @@ class WMBSHelper(WMConnectionBase):
                 results.append(f)
 
         return results
+
+    def createStepChainParentageInDBSBuffer(self):
+
+        if self.wmSpec.getRequestType() == "StepChain":
+            datasetParentageMap = self.wmSpec.getChainParentageSimpleMapping()
+
+            for parentInfo in datasetParentageMap.values():
+                if parentInfo['ParentDset']:
+                    for dataset in parentInfo['ChildDsets']:
+                        dbsDataset = DBSBufferDataset(path=dataset, parent=parentInfo['ParentDset'], stepChain=1)
+                        dbsDataset.create()
+        return

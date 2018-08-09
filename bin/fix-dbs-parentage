@@ -1,260 +1,139 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
-import json
-import time
-import httplib
-import os
+"""
+Fix the missing dataset parenatage by dates specified.
 
-from pprint import pprint
-from collections import defaultdict
+1. Looking for the dataset which has a parent datasets
+2. Check any of the blocks has missing parents.
+3. Search for file parents by comparing lumis from the parent datasets on those blocks.
+4. Insert the parentage to DBS
+
+options
+
+set the dbs instance (default is testbed)
+
+-p --production: look for the DBS production instance,
+-t --testbed: look for the testbed instance.
+
+dataset look up options,
+
+(you can search for the missing parentage by giving the start date and end date)
+It will look all the datasets from given data period and try to find the missing parentage for those datasets
+
+-s --start: start date of dataset creation (day/month/year i.e. 1/1/2017)
+-e --end: end date of dataset creation (day/month/year i.e. 1/2/2017)
+
+or
+-d --dataset: specific child dataset you need to fix.
+
+insert options (when missing parentage is found you can specify to insert to DBS, default is --no-insert)
+
+--insert: insert to the specified dbs instance (production or testbed)
+--no-insert: not inserting the data - only for the testing purpose
+
+Method for the search: (By default it searches only for blocks with missing parents first then searches file parentage for those blocks)
+
+-f: search for all the files in the dataset for missing parentage - very expensive to run only use when block has parent
+    but some files in the block doesn't have parents
+
+Usage:
+
+$manage execute-agent fix-dbs-parentage -s 1/1/2017 -e 1/2/2017 -p --insert
+$manage execute-agent fix-dbs-parentage -p --insert -d /SingleMuon/Run2016D-03Feb2017-v1/MINIAOD
+
+"""
+
+from __future__ import print_function, division
+
+import time
+import datetime
+import argparse
+
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from dbs.apis.dbsClient import DbsApi
 
-endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-dbs = DbsApi('https://cmsweb.cern.ch/dbs/prod/global/DBSReader')
+def getMissingParentSummaryUsingBlock(datasetList, fileFix=False, insertFlag=False):
 
-def callRESTAPI(restURL, url="cmsweb.cern.ch"):
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_CERT'),
-                                 key_file=os.getenv('X509_USER_KEY'))
-    conn.request('GET', restURL, headers={"Accept": "application/json"})
-    r2 = conn.getresponse()
-    data = r2.read()
-    s = json.loads(data)
-    return s
-
-
-def listOfParentDatasets(dataset):
-    parents = dbs.listDatasetParents(dataset=dataset)
-    parentDatasets = []
-    for parent in parents:
-        parentDatasets.append(parent['parent_dataset'])
-    return parentDatasets
-
-def listBlocksWithNoParents(dataset):
-    allBlocks = dbs.listBlocks(dataset=dataset)
-    blockNames = []
-    for block in allBlocks:
-        blockNames.append(block['block_name'])
-    parentBlocks = dbs.listBlockParents(block_name=blockNames)
-
-    cblock = set()
-    for pblock in parentBlocks:
-        cblock.add(pblock['this_block_name'])
-
-    noParentBlocks = set(blockNames) - cblock
-    return noParentBlocks
-
-def listFilesWithNoParents(blockName):
-    allFiles = dbs.listFiles(block_name=blockName)
-    parentFiles = dbs.listFileParents(block_name=blockName)
-
-    allFileNames = set()
-    for fInfo in allFiles:
-        allFileNames.add(fInfo['logical_file_name'])
-
-    cfile = set()
-    for pFile in parentFiles:
-        cfile.add(pFile['logical_file_name'])
-
-    noParentFiles = allFileNames - cfile
-    return noParentFiles
-
-def getParentFilesFromDataset(parentDataset, lfn):
-    fInfo = dbs.listFileLumis(logical_file_name=lfn)
-    pLFNsByBlocks = defaultdict(set)
-    for f in fInfo:
-        pFiles = dbs.listFiles(dataset=parentDataset, run_num=f['run_num'], lumi_list=f['lumi_section_num'])
-        for fi in pFiles:
-            blocks = dbs.listBlocks(logical_file_name=fi['logical_file_name'])
-            for bl in blocks:
-                pLFNsByBlocks[bl['block_name']].add(fi['logical_file_name'])
-    return pLFNsByBlocks
-
-def getParentfilesMissingParents(dataset, searchFile=False):
-
-    pDatasets = listOfParentDatasets(dataset)
-    # print("parent datasets %s\n" % pDatasets)
-    if not pDatasets:
-        # print("No parents dataset found for %s\n" % dataset)
-        return None, None
-
-    if not searchFile:
-        blocks = listBlocksWithNoParents(dataset)
-    else:
-        blocks = [b['block_name'] for b in dbs.listBlocks(dataset=dataset)]
-
-    if blocks:
-        # DatasetReport = {'child_dataset': dataset, 'parent_datasets': pDatasets, 'mssing_parent_blocks': []}
-        DatasetReport = {'CDS': dataset, 'PDS': pDatasets, 'MISSING': []}
-    else:
-        return None, None
-
-    print("=== searching problem dataset %s ===\n" % dataset)
-
-    countChildFiles = 0
-    countParentFiles = 0
-    countChildBlocks = 0
-    countParentBlocks = 0
-
-    for blockName in blocks:
-        # BlockLevel = {'child_block': blockName, "parent_blocks": set(), 'lfn_parentage': []}
-        noParentFiles = listFilesWithNoParents(blockName)
-        # print("%s block has %s files with no parents\n\n" % (blockName, len(noParentFiles)))
-        if noParentFiles:
-            BlockLevel = {'CBK': blockName, "PBK": [], 'PT': []}
-            countChildBlocks += 1
-        else:
-            continue
-
-        countChildFiles += len(noParentFiles)
-        parentBlocks = set()
-        for lfn in noParentFiles:
-            # print("child file : %s\n" % lfn)
-            parentlfns = []  # combined parent with different datasts
-            for parentDataset in pDatasets:
-                # print("found parents %s dataset" % parentDataset)
-                plfns = getParentFilesFromDataset(parentDataset, lfn)
-                # pprint("block, files %s" % dict(plfns))
-                for pblock, pfiles in plfns.items():
-                    # BlockLevel['parent_blocks'].append(pblock)
-                    parentBlocks.add(pblock)
-                    parentlfns.extend(list(pfiles))
-                countParentFiles += len(parentlfns)
-                # BlockLevel['lfn_parentage'].append({'child_lfn': lfn, 'parent_lfns': parentlfns})
-            BlockLevel['PT'].append({'CLFN': lfn, 'PLFN': parentlfns})
-        BlockLevel['PBK'] = list(parentBlocks)
-        if searchFile:
-            originalBlocks = dbs.listBlockParents(block_name=blockName)
-            caculatedBlocks = set(BlockLevel['PBK'])
-            if len(caculatedBlocks) != len(originalBlocks):
-                print("Block doesn't match %s - %s" % (len(caculatedBlocks), len(originalBlocks)))
-                print("Block: %s" % blockName)
-                originalSet = set()
-                for block in originalBlocks:
-                    print(block)
-                    originalSet.add(block['parent_block_name'])
-                print("Difference from lumi-matching - original: %s" % (caculatedBlocks - originalSet))
-                print("Difference original - lumi-matching: %s" % (originalSet - caculatedBlocks))
-
-        countParentBlocks += len(BlockLevel['PBK'])
-        # DatasetReport['missing_parent_blocks'].append(BlockLevel)
-        DatasetReport['MISSING'].append(BlockLevel)
-            # print()
-    print("Total %s blocks with no parent child blocks (%s) found, %s parent bocks, %s child files, %s parent_files\n" % (
-            len(blocks), countChildBlocks, countParentBlocks, countChildFiles, countParentFiles))
-    metaData = {"NumChildDatasets": 1, "NumParentDatasets": len(pDatasets),
-                "NumChildBlocks": countChildBlocks, "NumParentBlocks": countChildBlocks,
-                "NumChildFiles": countChildFiles, "NumParentFiles": countParentFiles, }
-
-    print("====================================\n\n")
-
-    return DatasetReport, metaData
-
-
-def getMissingParentSummaryUsingBlock(datasetList):
-    totalMetaData = {"NumChildDatasets": 0, "NumParentDatasets": 0,
-                "NumChildBlocks": 0, "NumParentBlocks": 0,
-                "NumChildFiles": 0, "NumParentFiles": 0, }
-
-    missingParents = []
+    missingParentsFailed = {}
     start = int(time.time())
+
+    if insertFlag:
+        answer = raw_input("fixing DBS parentage: Are you sure?(y/n): ").lower()
+
     for dataset in datasetList:
         if isinstance(dataset, dict):
             dsName = dataset['dataset']
         else:
             dsName = dataset
-        datasetInfo, metaData = getParentfilesMissingParents(dsName)
 
-        if datasetInfo is not None:
-            missingParents.append(datasetInfo)
-            for k in totalMetaData:
-                totalMetaData[k] += metaData[k]
+        if insertFlag:
+            if answer == 'y':
+                if fileFix:
+                    print("Insert missing parentage using file checking for dataset: ", dataset)
+                    failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName, filterFilesWithParents=fileFix,
+                                                                                insertFlag=insertFlag)
+                else:
+                    print("Insert missing parentage using block checking for dataset: ", dataset)
+                    failedBlocks = dbsService.fixMissingParentageDatasets(dsName)
+            else:
+                print("Aborting the procedure, Nothing updated")
+                exit(1)
+        else:
+            print("Only testing perfomance: No insert")
+            failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName,  filterFilesWithParents=fileFix,
+                                                                        insertFlag=insertFlag)
+        missingParentsFailed[dsName] = failedBlocks
+    return missingParentsFailed
 
-    cEnd = int(time.time())
-
-    with open("./missing_parents.json", "w") as f:
-        json.dump(missingParents, f, indent=4)
-    jEnd = int(time.time())
-
-    with open("./missing_parents.py", "w") as f:
-        f.write("MD = %s" % missingParents)
-
-    pEnd = int(time.time())
-    print("dbs call time %s" % (cEnd - start))
-    print("json create time %s" % (jEnd - cEnd))
-    print("python create time %s" % (pEnd - jEnd))
-    print("total meta data:\n")
-    pprint(totalMetaData)
-    return missingParents
-
-
-def getMissingParentSummaryUsingFile(dataset):
-    missingParentsm, metaData = getParentfilesMissingParents(dataset, True)
-    with open("./missing_parents_by_file.json", "w") as f:
-        json.dump(missingParents, f, indent=4)
-    with open("./missing_parents_by_file.py", "w") as f:
-        f.write("MD = %s" % missingParents)
-    return [missingParents]
-
-
-def getOutputDSFromActiveWFs():
-    restURL = '/wmstatsserver/data/filtered_requests?mask=OutputDatasets&mask=RequestType'
-    result = callRESTAPI(restURL)["result"]
-
-    outDataDict = {}
-    for info in result:
-        for outputDS in info["OutputDatasets"]:
-            outDataDict.setdefault(outputDS, [])
-            outDataDict[outputDS].append((info["RequestType"], info["RequestName"]))
-    return outDataDict
-
-
-def investigateACDCCollection(workflow):
-    restURL = '/couchdb/acdcserver/_design/ACDC/_view/byCollectionName?key="%s"&reduce=false&include_docs=true' % workflow
-    result = callRESTAPI(restURL)
-    missingFiles = set()
-    if "rows" in result:
-        if result["rows"]:
-            for row in result["rows"]:
-                for inFile, value in row["doc"]["files"].items():
-                    if not value["merged"] or value["merged"] == "0":
-                        if value["parents"] and "/unmerged/" in value["parents"][0]:
-                            missingFiles.add(inFile)
-                        elif value["parents"]:
-                            parentFiles = dbs.listFileArray(logical_file_name=value["parents"])
-                            if len(parentFiles) != len(value["parents"]):
-                                fromDBS = set([x["logical_file_name"] for x in preantFiles])
-                                notInDBS = set(value["parents"]) - fromDBS
-                                print(notInDBS)
-                                exit(1)
-        return missingFiles
-    else:
-        print(result)
-        return missingFiles
 
 if __name__ == '__main__':
 
-    # datasetLists = dbs.listDatasets(min_cdate=1492717811, max_cdate=1498717900)
-    # print(len(datasetLists))
-    outDS = getOutputDSFromActiveWFs()
-    datasetList = outDS.keys()
-    missingPS = getMissingParentSummaryUsingBlock(datasetList)
+    parser = argparse.ArgumentParser(description="Fix DBS file parentage using run/lumi relations")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-d', '--dataset', dest='dataset')
+    group.add_argument('-s', '--start', help='start date for dataset search DD/MM/YYYY format')
+    parser.add_argument('-e', '--end', help='end date for dataset search DD/MM/YYYY format')
 
-    for info in missingPS:
-        cDS = info['CDS']
-        print("%s: %s" % (cDS, outDS[cDS]))
+    group2 = parser.add_mutually_exclusive_group()
+    group2.add_argument('-p', '--production', dest='prod', action='store_true')
+    group2.add_argument('-t','--testbed', dest='prod', action='store_false')
+    parser.set_defaults(prod=False)
 
-    wfs = set()
-    for ds, value in outDS.items():
-        for reqInfo in value:
-            if reqInfo[0] != "Resubmission":
-                wfs.add(reqInfo[1])
-    missingFiles = set()
-    for wf in wfs:
-        missingFiles = missingFiles.union(investigateACDCCollection(wf))
+    group3 = parser.add_mutually_exclusive_group()
+    group3.add_argument('--insert', dest='insert', action='store_true')
+    group3.add_argument('--no-insert', dest='insert', action='store_false')
+    parser.set_defaults(insert=False)
 
-    with open("./child_with_umerged_parents.json", "w") as f:
-        json.dump(list(missingFiles), f, indent=4)
+    parser.add_argument('-f', '--fix-partial-block', dest='filefix', action='store_true',
+                        help='fix the case some not all the files in the block has missing parentage (ReReco)')
 
-    print(len(missingFiles))
+    args = parser.parse_args()
 
-    # getMissingParentSummaryUsingFile("/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD")
+    if args.start:
+        start = time.mktime(datetime.datetime.strptime(args.start, "%d/%m/%Y").timetuple())
+        endTime = args.end if args.end else args.start
+        end = time.mktime(datetime.datetime.strptime(args.end, "%d/%m/%Y").timetuple())
+
+    if args.prod:
+        dbsURL = 'https://cmsweb.cern.ch/dbs/prod/global/DBSWriter'
+        print("Using production: ", dbsURL)
+    else:
+        dbsURL = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSWriter'
+        print("Using testbed: ", dbsURL)
+    dbs = DbsApi(dbsURL)
+    dbsService = DBS3Reader(dbsURL)
+
+    if args.dataset:
+        datasetList = [args.dataset]
+    else:
+        datasetList = dbs.listDatasets(min_cdate=int(start), max_cdate=int(end))
+
+    print("Number of datasets to check: ", len(datasetList))
+
+    startTime = int(time.time())
+    failedBlocks = getMissingParentSummaryUsingBlock(datasetList, fileFix=args.filefix, insertFlag=args.insert)
+    endTime = int(time.time())
+
+    for dataset in failedBlocks:
+        if failedBlocks[dataset]:
+            print("Update failed blocks: dataset: %s, blocks %s", (dataset, failedBlocks[dataset]))
+    print("Total Time: ", endTime - startTime)

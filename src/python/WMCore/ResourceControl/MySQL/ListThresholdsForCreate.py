@@ -71,7 +71,11 @@ class ListThresholdsForCreate(DBFormatter):
                             WHERE wmbs_job.location IS NULL AND
                                   wmbs_job_state.name != 'killed' AND
                                   wmbs_job_state.name != 'cleanout' AND
-                                  wsv.valid = 1) unassigned_jobs ON
+                                  (wsv.valid = 1 OR
+                                   (wsv.valid IS NULL AND NOT EXISTS
+                                    (SELECT wsv2.valid FROM wmbs_subscription_validation wsv2
+                                     WHERE wsv2.subscription_id = wmbs_jobgroup.subscription
+                                     AND wsv2.valid = 1)))) unassigned_jobs ON
                             wl.id = unassigned_jobs.location
                          INNER JOIN wmbs_location_state wls ON
                             wls.id = wl.state

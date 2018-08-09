@@ -32,7 +32,7 @@ REQUEST = {
     "ConfigCacheUrl": os.environ["COUCHURL"],
     "CouchDBName": "taskchain_t",
     "DQMConfigCacheID": "Harvest",
-    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev;https://cmsweb.cern.ch/dqm/relval-test",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch:8443/dqm/dev;https://cmsweb.cern.ch:8443/dqm/relval-test",
     "EnableHarvesting": True,
     "GlobalTag": "GlobalTag-TopLevel",
     "Memory": 5000,

@@ -20,7 +20,7 @@ class ValidationTests(unittest.TestCase):
         """
         Test the validateOutputDatasets function
         """
-        dbsUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader/'
+        dbsUrl = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader/'
 
         outputDsets = ['/PD1/AcqEra1-ProcStr1-v1/GEN']
         self.assertIsNone(validateOutputDatasets(outputDsets, dbsUrl))

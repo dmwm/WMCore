@@ -81,7 +81,7 @@ class CleanCouchPoller(BaseWorkerThread):
 
         # Set defaults for reco performance reporting
         self.interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets", ['SingleMu', 'MuHad'])
-        self.dqmUrl = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')
+        self.dqmUrl = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch:8443/dqm/dev/')
         self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
         self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
         self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)

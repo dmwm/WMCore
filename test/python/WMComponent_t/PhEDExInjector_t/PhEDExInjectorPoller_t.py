@@ -40,7 +40,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Install the DBSBuffer schema into the database and connect to PhEDEx.
         """
-        self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
+        self.phedexURL = "https://cmsweb.cern.ch:8443/phedex/datasvc/json/test"
         self.dbsURL = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
 
         self.testInit = TestInit(__file__)

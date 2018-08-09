@@ -93,7 +93,7 @@
                            "guid": "16A4A65C-73EC-E511-BC4A-02163E00E66E",
                            "size": 8650159,
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;a09fa7ea98f8c88bdae47b19ed049d44",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;a09fa7ea98f8c88bdae47b19ed049d44",
                            "location": null,
                            "async_dest": null,
                            "events": 11,

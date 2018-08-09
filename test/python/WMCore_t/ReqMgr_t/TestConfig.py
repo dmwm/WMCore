@@ -81,7 +81,7 @@ data.default_sw_scramarch = "slc6_amd64_gcc493"
 data.dqm_url = "%s/dqm/dev" % BASE_URL
 
 # use dbs testbed for private vm test
-data.dbs_url = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
+data.dbs_url = "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader"
 
 # number of past days since when to display requests in the default view
 data.default_view_requests_since_num_days = 30  # days
@@ -94,8 +94,8 @@ data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype
 # request related settings (e.g. default injection arguments)
 data.default_sw_version = "CMSSW_7_6_1"
 data.default_sw_scramarch = "slc6_amd64_gcc493"
-data.dqm_url = "https://cmsweb.cern.ch/dqm/dev"
-data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+data.dqm_url = "https://cmsweb.cern.ch:8443/dqm/dev"
+data.dbs_url = "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader"
 
 
 # web user interface

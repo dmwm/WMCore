@@ -5,8 +5,8 @@ from pprint import pprint
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 
-reqmgrurl = "https://cmsweb.cern.ch/reqmgr2"
-reqdb_url = "https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache"
+reqmgrurl = "https://cmsweb.cern.ch:8443/reqmgr2"
+reqdb_url = "https://cmsweb.cern.ch:8443/couchdb/reqmgr_workload_cache"
 
 count = 0
 reqmgrSvc = ReqMgr(reqmgrurl)

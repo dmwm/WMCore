@@ -219,7 +219,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.47,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -500,7 +500,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.55,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -3265,7 +3265,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.51,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -4302,7 +4302,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.18,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -5933,7 +5933,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.44,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -6700,7 +6700,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.35,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -10923,7 +10923,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.61,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -17468,7 +17468,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.04,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -18667,7 +18667,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1450197938.68,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -20176,7 +20176,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510322.94,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -22293,7 +22293,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.42,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -26732,7 +26732,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.33,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -30955,7 +30955,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.46,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -33612,7 +33612,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1450203939.47,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -36093,7 +36093,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510362.46,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -36572,7 +36572,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1450203939.49,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -36839,7 +36839,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.28,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -38740,7 +38740,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510307.81,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader/",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -40533,7 +40533,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.59,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -41138,7 +41138,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510362.38,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -41833,7 +41833,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.24,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -42654,7 +42654,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510322.85,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -47471,7 +47471,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510362.5,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -47680,7 +47680,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.18,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -54549,7 +54549,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.1,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -55046,7 +55046,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1450197938.71,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -55151,7 +55151,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.22,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -56620,7 +56620,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.31,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -58143,7 +58143,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510323.34,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },
@@ -58802,7 +58802,7 @@
   "ACDC": {},
   "ChildQueueUrl": null,
   "CreationTime": 1443510314.28,
-  "Dbs": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+  "Dbs": "https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader",
   "EndPolicy": {
    "policyName": "SingleShot"
   },

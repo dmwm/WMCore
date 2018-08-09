@@ -9,8 +9,8 @@ from pprint import pprint
 from collections import defaultdict
 from dbs.apis.dbsClient import DbsApi
 
-endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-dbs = DbsApi('https://cmsweb.cern.ch/dbs/prod/global/DBSReader')
+endpoint = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader'
+dbs = DbsApi('https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader')
 
 def callRESTAPI(restURL, url="cmsweb.cern.ch"):
     conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_CERT'),

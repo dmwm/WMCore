@@ -139,7 +139,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
         config.TaskArchiver.perfDashBoardMinLumi = 50
         config.TaskArchiver.perfDashBoardMaxLumi = 9000
-        config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch/dqm/dev/'
+        config.TaskArchiver.dqmUrl = 'https://cmsweb.cern.ch:8443/dqm/dev/'
         config.TaskArchiver.dashBoardUrl = 'http://dashboard43.cern.ch/dashboard/request.py/putluminositydata'
         config.TaskArchiver.workloadSummaryCouchDBName = "%s/workloadsummary" % self.databaseName
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
@@ -378,7 +378,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         # Assert if the URL is assembled as expected
         if run == 207214:
             self.assertEqual(
-                'https://cmsweb.cern.ch/dqm/dev/jsonfairy/archive/207214/MinimumBias/Commissioning10-v4/DQM/DQM/TimerService/event_byluminosity',
+                'https://cmsweb.cern.ch:8443/dqm/dev/jsonfairy/archive/207214/MinimumBias/Commissioning10-v4/DQM/DQM/TimerService/event_byluminosity',
                 getUrl)
         # let's suppose it works..
         testResponseFile = open(os.path.join(getTestBase(),
@@ -810,7 +810,7 @@ class TaskArchiverTest(EmulatedUnitTestCase):
         runList = listRunsWorkflow.execute(workflow=workload.name())
         self.assertEqual([207214, 207215], runList)
         # GO to DQM GUI, get what you want
-        # https://cmsweb.cern.ch/dqm/offline/jsonfairy/archive/211313/PAMuon/HIRun2013-PromptReco-v1/DQM/DQM/TimerService/event
+        # https://cmsweb.cern.ch:8443/dqm/offline/jsonfairy/archive/211313/PAMuon/HIRun2013-PromptReco-v1/DQM/DQM/TimerService/event
         for dataset in interestingDatasets:
             (nothing, PD, procDataSet, dataTier) = dataset.split('/')
             worthPoints = {}

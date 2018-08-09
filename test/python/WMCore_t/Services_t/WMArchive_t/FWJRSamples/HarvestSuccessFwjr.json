@@ -386,7 +386,7 @@
                            "validate": false,
                            "pfn": "./DQM_V0001_R000251721__MET__Run2015B-05Aug2015-v1__DQMIO.root",
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;0b256efd770a57fd79772ffc74d4b65b",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;0b256efd770a57fd79772ffc74d4b65b",
                            "processingVer": 1,
                            "processingStr": "DQMHarvesting_reqmgr2_test",
                            "prep_id": null,

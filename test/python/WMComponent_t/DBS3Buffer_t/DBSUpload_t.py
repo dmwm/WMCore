@@ -102,7 +102,7 @@ class DBSUploadTest(unittest.TestCase):
         config.component_("DBS3Upload")
         config.DBS3Upload.pollInterval = 10
         config.DBS3Upload.logLevel = 'DEBUG'
-        # config.DBS3Upload.dbsUrl           = "https://cmsweb-testbed.cern.ch/dbs/dev/global/DBSWriter"
+        # config.DBS3Upload.dbsUrl           = "https://cmsweb-testbed.cern.ch:8443/dbs/dev/global/DBSWriter"
         # config.DBS3Upload.dbsUrl           = "https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter"
         config.DBS3Upload.dbsUrl = self.dbsUrl
         config.DBS3Upload.namespace = 'WMComponent.DBS3Buffer.DBS3Upload'

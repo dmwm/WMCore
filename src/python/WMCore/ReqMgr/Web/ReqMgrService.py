@@ -193,9 +193,9 @@ def tasks_configs(docs, html=False):
             chainTypeFlag = False
             ctype = None
         
-        curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch/couchdb')
+        curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch:8443/couchdb')
         if  curl == None or curl == "none":
-            curl = 'https://cmsweb.cern.ch/couchdb'
+            curl = 'https://cmsweb.cern.ch:8443/couchdb'
         if  not name:
             continue
         for key, val in doc.items():
@@ -640,7 +640,7 @@ class ReqMgrService(TemplatedPage):
         dataset = kwargs.get('uinput', '')
         if not dataset:
             return {'error': 'no input dataset'}
-        url = 'https://cmsweb.cern.ch/reqmgr2/data/request?outputdataset=%s' % dataset
+        url = 'https://cmsweb.cern.ch:8443/reqmgr2/data/request?outputdataset=%s' % dataset
         params = {}
         headers = {'Accept': 'application/json'}
         wdata = getdata(url, params, headers)

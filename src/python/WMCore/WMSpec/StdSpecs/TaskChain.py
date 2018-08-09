@@ -24,7 +24,7 @@ CouchDB parameters the main request parameters are:
     "ScramArch": "slc5_ia32_gcc434",                  Scram Arch
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "GlobalTag": "GR10_P_v4::All",                    Global Tag
-    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of CouchDB containing ConfigCache docs for all tasks
+    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch:8443/couchdb URL of CouchDB containing ConfigCache docs for all tasks
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache (Used for all sub-tasks)
     "TaskChain" : 4,                                  Define number of tasks in chain.
 }

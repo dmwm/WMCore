@@ -22,8 +22,8 @@ from mechanize import Browser
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
-dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
-#dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"
+dbs_base_url = "https://cmsweb.cern.ch:8443/dbs/prod/"
+#dbs_base_url = "https://cmsweb-testbed.cern.ch:8443/dbs/int/"
 
 class RequestQuery:
 
@@ -34,7 +34,7 @@ class RequestQuery:
 
         # Initialise connections
         self.mySiteDB = SiteDBJSON()
-        self.phedex = PhEDEx({"endpoint":"https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
+        self.phedex = PhEDEx({"endpoint":"https://cmsweb.cern.ch:8443/phedex/datasvc/json/prod/"}, "json")
         self.dbsPhys01 = DbsApi(url = dbs_base_url+"phys01/DBSReader/")
         self.dbsPhys02 = DbsApi(url = dbs_base_url+"phys02/DBSReader/")
         self.dbsPhys03 = DbsApi(url = dbs_base_url+"phys03/DBSReader/")
@@ -327,7 +327,7 @@ class RequestQuery:
                         control = self.br.find_control("custom_tf4",type="text")
                         dbs_url = control.value.replace(' ','')
                     else: # Transform input value to a valid DBS url
-                        #dbs_url = "https://cmsweb.cern.ch/dbs/prod/"+dbs_url+"/DBSReader"
+                        #dbs_url = "https://cmsweb.cern.ch:8443/dbs/prod/"+dbs_url+"/DBSReader"
                         dbs_url = dbs_base_url+dbs_url+"/DBSReader"
 
                     ## Get Release

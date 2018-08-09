@@ -33,7 +33,7 @@ class LogDB(object):
     """
     def __init__(self, url, identifier, logger=None, **kwds):
         self.logger = logger if logger else logging.getLogger()
-        self.url = url if url else 'https://cmsweb.cern.ch/couchdb/wmstats_logdb'
+        self.url = url if url else 'https://cmsweb.cern.ch:8443/couchdb/wmstats_logdb'
         self.identifier = identifier if identifier else 'unknown'
         self.default_user = "HEARTBEAT"
 

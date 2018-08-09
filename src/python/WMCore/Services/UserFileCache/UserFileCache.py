@@ -86,7 +86,7 @@ class UserFileCache(Service):
     def __init__(self, mydict=None):
         if mydict==None: #dangerous {} default value
             mydict = {}
-        mydict['endpoint'] =  mydict.get('endpoint', 'https://cmsweb.cern.ch/crabcache/')
+        mydict['endpoint'] =  mydict.get('endpoint', 'https://cmsweb.cern.ch:8443/crabcache/')
         Service.__init__(self, mydict)
         self['requests']['accept_type'] = 'application/json'
 

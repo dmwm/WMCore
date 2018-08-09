@@ -287,10 +287,10 @@ sed -i "s+ErrorHandler.maxProcessSize = 500+ErrorHandler.maxProcessSize = 50+" $
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
-  GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
+  GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch:8443/dbs/int/global/DBSReader
   sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 2, 'Harvesting': 2}+0+" $MANAGE/config.py
-  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
-  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
+  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
+  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
 fi
 
 if [[ "$HOSTNAME" == *fnal.gov ]]; then

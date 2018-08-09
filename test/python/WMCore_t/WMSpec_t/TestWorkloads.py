@@ -12,7 +12,7 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 
 def oneTaskTwoStep():
     workload = newWorkload("OneTaskTwoStepTest")
-    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+    workload.setDbsUrl("https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 
@@ -29,7 +29,7 @@ def oneTaskTwoStep():
 
 def oneTaskFourStep():
     workload = newWorkload("OneTaskFourStepTest")
-    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+    workload.setDbsUrl("https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 
@@ -50,7 +50,7 @@ def oneTaskFourStep():
 
 def twoTaskTree():
     workload = newWorkload("TwoTaskTree")
-    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+    workload.setDbsUrl("https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 

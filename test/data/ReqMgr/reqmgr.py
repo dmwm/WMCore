@@ -16,7 +16,7 @@ Command line interface: --help
 
 There are mandatory command line arguments (e.g. URL of the Request Manager)
 
-Production ConfigCache: https://cmsweb.cern.ch/couchdb/reqmgr_config_cache/
+Production ConfigCache: https://cmsweb.cern.ch:8443/couchdb/reqmgr_config_cache/
 
 -----------------------------------------------------------------------------
 Notes to request arguments JSON file:
@@ -394,7 +394,7 @@ class ReqMgrClient(RESTClient):
                                  "TimePerEvent": origMCRequestArgs["TimePerEvent"],
                                  "Memory": origMCRequestArgs["Memory"],
                                  "SizePerEvent": origMCRequestArgs["SizePerEvent"],
-                                 "ACDCServer": "https://cmsweb-testbed.cern.ch/couchdb",
+                                 "ACDCServer": "https://cmsweb-testbed.cern.ch:8443/couchdb",
                                  "ACDCDatabase": "acdcserver",
                                  "Requestor": origMCRequestArgs["Requestor"],
                                  "Group": origMCRequestArgs["Group"]

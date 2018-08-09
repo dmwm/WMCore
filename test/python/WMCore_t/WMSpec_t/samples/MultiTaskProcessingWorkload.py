@@ -7,7 +7,7 @@ _Tier1ReRecoWorkload_
 """
 from WMCore.WMSpec.WMWorkload import newWorkload
 
-DBSURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+DBSURL = "https://cmsweb.cern.ch:8443/dbs/prod/global/DBSReader"
 
 #  //
 # // Set up the basic workload task and step structure

@@ -163,7 +163,7 @@
                            "guid": "DC2B1873-F7EC-E511-9B7B-02163E00B25A",
                            "size": 1354525,
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
                            "location": null,
                            "input": [
                                "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
@@ -236,7 +236,7 @@
                            "guid": "18B6E971-F7EC-E511-9B7B-02163E00B25A",
                            "size": 2611559,
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
                            "location": null,
                            "input": [
                                "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
@@ -311,7 +311,7 @@
                            "guid": "FECB8D72-F7EC-E511-9B7B-02163E00B25A",
                            "size": 209627491,
                            "acquisitionEra": "Integ_Test",
-                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "configURL": "https://cmsweb.cern.ch:8443/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
                            "location": null,
                            "input": [
                                "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",

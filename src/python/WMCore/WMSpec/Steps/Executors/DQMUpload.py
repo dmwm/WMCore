@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 import urllib2
-from cStringIO import StringIO
+from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
 from hashlib import md5
@@ -255,6 +255,6 @@ class DQMUpload(Executor):
 
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
-            data = GzipFile(fileobj=StringIO(data)).read()
+            data = GzipFile(fileobj=BytesIO(data)).read()
 
         return (result.headers, data)

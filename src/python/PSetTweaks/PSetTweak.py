@@ -7,13 +7,13 @@ independent python structure
 
 """
 
-import StringIO
 import imp
 import inspect
 import json
 import pickle
 import sys
 from functools import reduce
+from io import BytesIO
 
 
 class PSetHolder(object):
@@ -394,7 +394,7 @@ class PSetTweak:
 
 
             jsoniser = JSONiser()
-            jsoniser.dejson(json.load(StringIO.StringIO(jsonContent)))
+            jsoniser.dejson(json.load(BytesIO(jsonContent)))
 
             for param, value in jsoniser.parameters.items():
                 self.addParameter(param , value)

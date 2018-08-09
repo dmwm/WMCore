@@ -103,6 +103,10 @@ class Service(dict):
         if not cfg_dict['endpoint'].endswith('/'):
             cfg_dict['endpoint'] = cfg_dict['endpoint'].strip() + '/'
 
+        # setup port 8443 for cmsweb services
+        if cfg_dict['endpoint'].startswith("https://cmsweb"):
+            cfg_dict['endpoint'] = cfg_dict['endpoint'].replace('.cern.ch/', '.cern.ch:8443/', 1)
+
         #set up defaults
         self.setdefault("inputdata", {})
         self.setdefault("cacheduration", 0.5)

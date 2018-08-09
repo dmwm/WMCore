@@ -523,8 +523,6 @@ class Request(RESTEntity):
         # Add initial priority only for the creation of the request
         request_args['InitialPriority'] = request_args["RequestPriority"]
 
-        # TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
-        request_args['ReqMgr2Only'] = True
         return
 
     @restcall(formats=[('application/json', JSONFormat())])

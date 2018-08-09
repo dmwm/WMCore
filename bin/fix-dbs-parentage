@@ -57,7 +57,7 @@ def getMissingParentSummaryUsingBlock(datasetList, fileFix=False, insertFlag=Fal
     start = int(time.time())
 
     if insertFlag:
-        answer = raw_input("fixing DBS parentage: Are you sure?(y/n): ").lower()
+        answer = input("fixing DBS parentage: Are you sure?('y'/'n') - needs ' single quote: ").lower()
 
     for dataset in datasetList:
         if isinstance(dataset, dict):

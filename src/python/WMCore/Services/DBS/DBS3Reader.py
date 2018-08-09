@@ -9,7 +9,6 @@ from __future__ import print_function, division
 
 import time
 import logging
-import traceback
 from collections import defaultdict
 
 from dbs.apis.dbsClient import DbsApi
@@ -19,7 +18,7 @@ from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from Utils.IteratorTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.pycurl_manager import getdata as multi_getdata
+#from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
 
 
@@ -905,8 +904,8 @@ class DBS3Reader(object):
     #             data = json.loads(row['data'])
     #             rdict[req] = data['result'][0]  # we get back {'result': [workflow]} dict
     #         except Exception as exp:
-    #             print("ERROR: fail to load data as json record, error=%s" % str(exp))
-    #             print(row)
+    #             logging.error("Fail to load data as json record, error=%s", str(exp))
+    #             logging.error(row)
     #     return rdict
 
     def getParentFilesGivenParentDataset(self, parentDataset, childLFNs):
@@ -1019,11 +1018,11 @@ class DBS3Reader(object):
         :return: blocks which failed to insert parentage. for retry
         """
         pDatasets = self.listDatasetParents(childDataset)
-        # print("parent datasets %s\n" % pDatasets)
+        # logging.info("parent datasets %s\n", pDatasets)
         # pDatasets format is
         # [{'this_dataset': '/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD', 'parent_dataset_id': 13265209, 'parent_dataset': '/SingleMuon/Run2016D-23Sep2016-v1/AOD'}]
         if not pDatasets:
-            print("No parent dataset found for child dataset %s" % childDataset)
+            logging.warning("No parent dataset found for child dataset %s", childDataset)
             return {}
 
         blocks = self.listBlocksWithNoParents(childDataset)
@@ -1031,9 +1030,9 @@ class DBS3Reader(object):
         for blockName in blocks:
             try:
                 numFiles = self.findAndInsertMissingParentage(blockName, insertFlag=insertFlag)
-                print("%s file parentage added for block %s" % (numFiles, blockName))
+                logging.info("%s file parentage added for block %s", numFiles, blockName)
             except Exception as e:
-                print(traceback.format_exc())
+                logging.exception(str(e))
                 failedBlocks.append(blockName)
         return failedBlocks
 
@@ -1047,7 +1046,7 @@ class DBS3Reader(object):
         """
         blocks = [b['block_name'] for b in self.dbs.listBlocks(dataset=childDataset)]
         failedBlocks = []
-        print("Handling %d blocks" % len(blocks))
+        logging.info("Handling %d blocks", len(blocks))
         totalFiles = 0
         for blockName in blocks:
             try:
@@ -1059,10 +1058,10 @@ class DBS3Reader(object):
                     childLFNs = []
 
                 numFiles = self.findAndInsertMissingParentage(blockName, childLFNs=childLFNs, insertFlag=insertFlag)
-                print("%s file parentage added for block %s" % (numFiles, blockName))
+                logging.info("%s file parentage added for block %s", numFiles, blockName)
                 totalFiles += numFiles
             except Exception as e:
-                print(traceback.format_exc())
+                logging.exception(str(e))
                 failedBlocks.append(blockName)
-        print("Total pairs: ", totalFiles)
+        logging.info("Total pairs: %s", totalFiles)
         return failedBlocks

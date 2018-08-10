@@ -239,6 +239,10 @@ class RequestInfo(object):
                 # TODO: need to handle dictionary comparison
                 # For now ignore
                 continue
+            elif value in ["false", "False", "FALSE"]:
+                value = False
+            elif value in ["true", "True", "TRUE"]:
+                value = True
             elif not isinstance(value, list):
                 value = [value]
 
@@ -246,6 +250,9 @@ class RequestInfo(object):
             if reqValue is not None:
                 if isinstance(reqValue, list):
                     if not set(reqValue).intersection(set(value)):
+                        return False
+                elif isinstance(reqValue, bool):
+                    if reqValue is not value:
                         return False
                 elif reqValue not in value:
                     return False

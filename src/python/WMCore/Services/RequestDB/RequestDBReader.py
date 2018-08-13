@@ -243,3 +243,10 @@ class RequestDBReader(object):
         data = self._getCouchView("byrequest", {}, requestNames)
         requestInfo = self._formatCouchData(data, returnDict=True)
         return requestInfo
+
+    def getStepChainDatasetParentageByStatus(self, status):
+        options = {}
+        options["key"] = [False, status]
+        data = self._getCouchView("byparentageflag", options)
+        datasetParentageInfo = self._formatCouchData(data, returnDict=True)
+        return datasetParentageInfo

@@ -33,9 +33,13 @@ insert options (when missing parentage is found you can specify to insert to DBS
 Method for the search: (By default it searches only for blocks with missing parents first then searches file parentage for those blocks)
 
 -f: search for all the files in the dataset for missing parentage - very expensive to run only use when block has parent
-    but some files in the block doesn't have parents
+    but some files in the block doesn't have parents. This is normally used -d option for only one dataset.
 
 Usage:
+
+Uses block parentage to fix the problem (faster checks block parentage first to fix the missing parentage.)
+If some files has missing parents but some files has parents in the same block, this call doesn't fix those files parentage.
+In that case use -f option (slow)
 
 $manage execute-agent fix-dbs-parentage -s 1/1/2017 -e 1/2/2017 -p --insert
 $manage execute-agent fix-dbs-parentage -p --insert -d /SingleMuon/Run2016D-03Feb2017-v1/MINIAOD
@@ -51,13 +55,23 @@ import argparse
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from dbs.apis.dbsClient import DbsApi
 
-def getMissingParentSummaryUsingBlock(datasetList, fileFix=False, insertFlag=False):
+def updateParentageInfo(datasetList, fileFix=False, insertFlag=False):
 
     missingParentsFailed = {}
     start = int(time.time())
 
     if insertFlag:
         answer = input("fixing DBS parentage: Are you sure?('y'/'n') - needs ' single quote: ").lower()
+        if answer != 'y':
+            print("Aborting the procedure, Nothing updated")
+            exit(1)
+    else:
+        print("Only testing perfomance: No insert")
+
+    if fileFix:
+        print("Missing parentage fix using missing file checking for datasets")
+    else:
+        print("Missing parentage fix using missing block checking for datasets")
 
     for dataset in datasetList:
         if isinstance(dataset, dict):
@@ -65,22 +79,12 @@ def getMissingParentSummaryUsingBlock(datasetList, fileFix=False, insertFlag=Fal
         else:
             dsName = dataset
 
-        if insertFlag:
-            if answer == 'y':
-                if fileFix:
-                    print("Insert missing parentage using file checking for dataset: ", dataset)
-                    failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName, filterFilesWithParents=fileFix,
-                                                                                insertFlag=insertFlag)
-                else:
-                    print("Insert missing parentage using block checking for dataset: ", dataset)
-                    failedBlocks = dbsService.fixMissingParentageDatasets(dsName)
-            else:
-                print("Aborting the procedure, Nothing updated")
-                exit(1)
-        else:
-            print("Only testing perfomance: No insert")
-            failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName,  filterFilesWithParents=fileFix,
+        if fileFix:
+            failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName, filterFilesWithParents=fileFix,
                                                                         insertFlag=insertFlag)
+        else:
+            failedBlocks = dbsService.fixMissingParentageDatasets(dsName, insertFlag=insertFlag)
+
         missingParentsFailed[dsName] = failedBlocks
     return missingParentsFailed
 
@@ -130,7 +134,7 @@ if __name__ == '__main__':
     print("Number of datasets to check: ", len(datasetList))
 
     startTime = int(time.time())
-    failedBlocks = getMissingParentSummaryUsingBlock(datasetList, fileFix=args.filefix, insertFlag=args.insert)
+    failedBlocks = updateParentageInfo(datasetList, fileFix=args.filefix, insertFlag=args.insert)
     endTime = int(time.time())
 
     for dataset in failedBlocks:

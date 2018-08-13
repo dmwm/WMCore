@@ -3,7 +3,7 @@
 _ListThresholdsForCreate_
 
 Query the database to determine how many jobs are pending so that we can
-determine whether or not to task for more work.
+determine whether or not to ask for more work.
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -87,54 +87,40 @@ class ListThresholdsForCreate(DBFormatter):
         _format_
 
         Combine together the total we received from the assigned and unassigned
-        queries into a single datastructure.
+        queries into a single data structure.
         """
-        assignedResults = DBFormatter.formatDict(self, assignedResults)
-        unassignedResults = DBFormatter.formatDict(self, unassignedResults)
+        assignedResults = self.formatDict(assignedResults)
+        unassignedResults = self.formatDict(unassignedResults)
 
         results = {}
         for result in assignedResults:
-            if result["total"] == None:
+            if result["total"] is None:
                 result["total"] = 0
-            siteName = result["site_name"]
 
-            if not siteName in results:
+            siteName = result["site_name"]
+            if siteName not in results:
                 results[siteName] = {"cms_name": result["cms_name"],
                                      "state": result["state"],
                                      "pending_jobs": {},
                                      "total_slots": result["pending_slots"]}
 
-            countJobs = True
-            if result['job_status']:
-                module = __import__("WMCore.BossAir.Plugins.%s" % result['plugin'],
-                                    globals(), locals(), [result['plugin']])
-                plugIn = getattr(module, result['plugin'])
-                status = plugIn.stateMap().get(result['job_status'])
-                if status == 'Running':
-                    countJobs = False
-
             priority = result["priority"]
+            results[siteName]["pending_jobs"].setdefault(priority, 0)
 
-            if priority not in results[siteName]["pending_jobs"]:
-                results[siteName]["pending_jobs"][priority] = 0
-
-            if countJobs:
+            if result['job_status'] != 'Running':
                 results[siteName]["pending_jobs"][priority] += result["total"]
-
-            results[result["site_name"]]["total_slots"] = result["pending_slots"]
 
         # Sum up all the jobs currently unassigned
         for result in unassignedResults:
             siteName = result['site_name']
             if siteName not in results:
-                results[siteName] = {"total_slots": result["pending_slots"],
+                results[siteName] = {"cms_name": result["cms_name"],
+                                     "state": result["state"],
                                      "pending_jobs": {},
-                                     "cms_name": result["cms_name"],
-                                     "state": result["state"]}
-            priority = result["priority"] or 0
+                                     "total_slots": result["pending_slots"]}
 
-            if priority not in results[siteName]['pending_jobs']:
-                results[siteName]['pending_jobs'][priority] = 0
+            priority = result["priority"] or 0
+            results[siteName]["pending_jobs"].setdefault(priority, 0)
             results[siteName]['pending_jobs'][priority] += result['job_count']
 
         return results

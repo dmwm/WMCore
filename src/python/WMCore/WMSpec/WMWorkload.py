@@ -276,6 +276,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 continue
 
             taskO = self.getTaskByName(tName)
+            if taskO is None:
+                # Resubmission requests might not have certain tasks
+                continue
+
             for outInfo in taskO.listOutputDatasetsAndModules():
                 oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
                 taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']

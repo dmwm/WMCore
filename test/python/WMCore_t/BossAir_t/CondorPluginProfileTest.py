@@ -5,19 +5,18 @@ _CondorPluginProfile_
 
 CondorPluginProfile unittests
 """
-import os.path
-import unittest
 import cProfile
+import os.path
 import pstats
-
-
-from nose.plugins.attrib import attr
-
-from WMCore.BossAir.BossAirAPI   import BossAirAPI
-from WMCore.JobStateMachine.ChangeState          import ChangeState
-from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+import unittest
 
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
+from nose.plugins.attrib import attr
+
+from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+from WMCore.BossAir.BossAirAPI import BossAirAPI
+from WMCore.JobStateMachine.ChangeState import ChangeState
+
 
 class CondorPluginProfileTest(BossAirTest):
     """
@@ -41,7 +40,7 @@ class CondorPluginProfileTest(BossAirTest):
         config.BossAir.pluginName = 'PyCondorPlugin'
         config.BossAir.submitWMSMode = True
 
-        baAPI  = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         workload = self.createTestWorkload()
 
@@ -63,7 +62,6 @@ class CondorPluginProfileTest(BossAirTest):
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
-
         jobSubmitter = JobSubmitterPoller(config=config)
 
         jobSubmitter.algorithm()
@@ -80,7 +78,6 @@ class CondorPluginProfileTest(BossAirTest):
 
         return
 
-
     @attr('integration')
     def testT_updateJobInfo(self):
         """
@@ -96,7 +93,7 @@ class CondorPluginProfileTest(BossAirTest):
         config.BossAir.pluginName = 'PyCondorPlugin'
         config.BossAir.submitWMSMode = True
 
-        baAPI  = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
         workload = self.createTestWorkload()
         workloadName = "basicWorkload"
         changeState = ChangeState(config)
@@ -140,7 +137,7 @@ class CondorPluginProfileTest(BossAirTest):
         p.strip_dirs().sort_stats('cumulative').print_stats(0.1)
         p.strip_dirs().sort_stats('time').print_stats(0.1)
         p.strip_dirs().sort_stats('calls').print_stats(0.1)
-        #p.strip_dirs().sort_stats('name').print_stats(10)
+        # p.strip_dirs().sort_stats('name').print_stats(10)
 
     def ProfileWMSMode(self):
         self.createProfile('PyCondorProfile.prof', self.testF_WMSMode)

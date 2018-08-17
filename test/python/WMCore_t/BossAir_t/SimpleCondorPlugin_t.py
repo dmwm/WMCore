@@ -6,21 +6,22 @@ _SimpleCondorPlugin_t_
 SimpleCondorPlugin unittests
 """
 from __future__ import division, print_function
-import time
-import os.path
-import threading
-import unittest
-import re
 
-from nose.plugins.attrib import attr
+import os.path
+import re
+import threading
+import time
+import unittest
 from subprocess import Popen, PIPE
 
-from WMCore.BossAir.BossAirAPI   import BossAirAPI
-from WMCore.BossAir.StatusPoller import StatusPoller
-from WMCore.JobStateMachine.ChangeState          import ChangeState
-from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMComponent.JobTracker.JobTrackerPoller     import JobTrackerPoller
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
+from nose.plugins.attrib import attr
+
+from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
+from WMCore.BossAir.BossAirAPI import BossAirAPI
+from WMCore.BossAir.StatusPoller import StatusPoller
+from WMCore.JobStateMachine.ChangeState import ChangeState
 
 
 class SimpleCondorPluginTest(BossAirTest):
@@ -47,7 +48,7 @@ class SimpleCondorPluginTest(BossAirTest):
 
         nJobs = 10
         jobDummies = self.createDummyJobs(nJobs=nJobs)
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
         f = open(jobPackage, 'w')
@@ -170,7 +171,7 @@ class SimpleCondorPluginTest(BossAirTest):
         config = self.getConfig()
         config.BossAir.pluginName = 'SimpleCondorPlugin'
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         workload = self.createTestWorkload()
 
@@ -264,9 +265,9 @@ class SimpleCondorPluginTest(BossAirTest):
         Full test going through the chain; using polling cycles and everything
         """
 
-        from WMComponent.JobSubmitter.JobSubmitter   import JobSubmitter
+        from WMComponent.JobSubmitter.JobSubmitter import JobSubmitter
         from WMComponent.JobStatusLite.JobStatusLite import JobStatusLite
-        from WMComponent.JobTracker.JobTracker       import JobTracker
+        from WMComponent.JobTracker.JobTracker import JobTracker
 
         myThread = threading.currentThread()
 
@@ -276,7 +277,7 @@ class SimpleCondorPluginTest(BossAirTest):
         config = self.getConfig()
         config.BossAir.pluginName = 'SimpleCondorPlugin'
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         workload = self.createTestWorkload()
 
@@ -341,7 +342,7 @@ class SimpleCondorPluginTest(BossAirTest):
         config.BossAir.pluginName = 'SimpleCondorPlugin'
         config.BossAir.submitWMSMode = True
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         workload = self.createTestWorkload()
 
@@ -393,7 +394,7 @@ class SimpleCondorPluginTest(BossAirTest):
         config.BossAir.pluginName = 'SimpleCondorPlugin'
         config.BossAir.submitWMSMode = True
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
         workload = self.createTestWorkload()
         workloadName = "basicWorkload"
         changeState = ChangeState(config)
@@ -447,6 +448,7 @@ class SimpleCondorPluginTest(BossAirTest):
             match = GROUP_NAME_RE.match(request)
             matchedGroup = match.groups()[0] if match else 'undefined'
             self.assertEqual(group, matchedGroup)
+
 
 if __name__ == '__main__':
     unittest.main()

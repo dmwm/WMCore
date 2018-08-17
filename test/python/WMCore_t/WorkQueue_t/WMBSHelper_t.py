@@ -9,7 +9,6 @@ import os
 import threading
 import unittest
 
-from WMCore.WMBase import getTestBase
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.DAOFactory import DAOFactory
@@ -23,6 +22,7 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -552,7 +552,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         Verify that workflow killing works correctly.
         """
-        baAPI = BossAirAPI(config=self.config)
+        baAPI = BossAirAPI(config=self.config, insertStates=True)
 
         # Create nine jobs
         self.setupForKillTest(baAPI=baAPI)
@@ -660,12 +660,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         unmergedSkimOutputA.loadData()
         unmergedSkimOutputB.loadData()
 
-        self.assertEqual(mergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
+        self.assertEqual(mergedSkimOutputA.name,
+                         "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
                          "Error: Merged output fileset is wrong: %s" % mergedSkimOutputA.name)
         self.assertEqual(unmergedSkimOutputA.name,
                          "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
                          "Error: Unmerged output fileset is wrong.")
-        self.assertEqual(mergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
+        self.assertEqual(mergedSkimOutputB.name,
+                         "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
                          "Error: Merged output fileset is wrong.")
         self.assertEqual(unmergedSkimOutputB.name,
                          "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
@@ -778,13 +780,17 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         unmergedSkimOutputA.loadData()
         unmergedSkimOutputB.loadData()
 
-        self.assertEqual(mergedSkimOutputA.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
+        self.assertEqual(mergedSkimOutputA.name,
+                         "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
                          "Error: Merged output fileset is wrong: %s" % mergedSkimOutputA.name)
-        self.assertEqual(unmergedSkimOutputA.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
+        self.assertEqual(unmergedSkimOutputA.name,
+                         "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputADataTierA",
                          "Error: Unmerged output fileset is wrong.")
-        self.assertEqual(mergedSkimOutputB.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
+        self.assertEqual(mergedSkimOutputB.name,
+                         "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
                          "Error: Merged output fileset is wrong.")
-        self.assertEqual(unmergedSkimOutputB.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
+        self.assertEqual(unmergedSkimOutputB.name,
+                         "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputBDataTierB",
                          "Error: Unmerged output fileset is wrong.")
 
         topLevelFileset = Fileset(name="ResubmitTestWorkload-MergeTask-SomeBlock2")

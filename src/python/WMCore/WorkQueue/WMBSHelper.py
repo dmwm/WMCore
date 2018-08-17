@@ -607,9 +607,7 @@ class WMBSHelper(WMConnectionBase):
                                appFam="Unknown", psetHash="Unknown",
                                configContent="Unknown")
 
-        if not dbsBuffer.exists():
-            self.dbsFilesToCreate.add(dbsBuffer)
-        # dbsBuffer.create()
+        self.dbsFilesToCreate.add(dbsBuffer)
         return
 
     def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset=True):

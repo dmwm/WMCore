@@ -11,7 +11,7 @@ from collections import defaultdict
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
+from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.DataStructs.LumiList import LumiList
@@ -78,7 +78,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
     # Deal with any jobs that are running in the batch system
     # only works if we can start the API
     if bossAirConfig:
-        bossAir = BossAirAPI(config=bossAirConfig, noSetup=True)
+        bossAir = BossAirAPI(config=bossAirConfig)
         killableJobs = []
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':

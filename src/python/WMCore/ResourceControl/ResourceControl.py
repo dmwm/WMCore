@@ -73,7 +73,7 @@ class ResourceControl(WMConnectionBase):
         jobInfo = executingJobs.execute(state='executing')
 
         if jobInfo:
-            bossAir = BossAirAPI(self.config, noSetup=True)
+            bossAir = BossAirAPI(self.config)
             jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in state2ExitCode)
 
             ercode = state2ExitCode.get(state, 71300)

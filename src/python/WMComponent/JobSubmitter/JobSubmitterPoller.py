@@ -72,7 +72,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         # Libraries
         self.resourceControl = ResourceControl()
         self.changeState = ChangeState(self.config)
-        self.bossAir = BossAirAPI(config=self.config)
+        self.bossAir = BossAirAPI(config=self.config, insertStates=True)
 
         self.hostName = self.config.Agent.hostName
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)

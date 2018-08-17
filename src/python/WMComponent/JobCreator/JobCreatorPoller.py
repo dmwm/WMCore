@@ -8,7 +8,6 @@ import logging
 import os
 import os.path
 import threading
-import traceback
 
 try:
     import cPickle as pickle
@@ -194,10 +193,8 @@ def creatorProcess(work, jobCacheDir):
         logging.error(msg)
         raise JobCreatorException(msg)
     except Exception as ex:
-        msg = "Exception in opening work package.\n"
-        msg += str(ex)
-        msg += str(traceback.format_exc())
-        logging.error(msg)
+        msg = "Exception in opening work package. Error: %s" % str(ex)
+        logging.exception(msg)
         raise JobCreatorException(msg)
 
     try:
@@ -227,11 +224,8 @@ def creatorProcess(work, jobCacheDir):
                     agentName=agentName)
 
     except Exception as ex:
-        # Register as failure; move on
-        msg = "Exception in processing wmbsJobGroup %i\n" % wmbsJobGroup.id
-        msg += str(ex)
-        msg += str(traceback.format_exc())
-        logging.error(msg)
+        msg = "Exception in processing wmbsJobGroup %i\n. Error: %s" % (wmbsJobGroup.id, str(ex))
+        logging.exception(msg)
         raise JobCreatorException(msg)
 
     return wmbsJobGroup
@@ -438,8 +432,8 @@ class JobCreatorPoller(BaseWorkerThread):
                 logging.error(
                     'There was a connection problem during the JobCreator algorithm, I will try again next cycle')
             else:
-                msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex, traceback.format_exc())
-                logging.error(msg)
+                msg = "Failed to execute JobCreator. Error: %s" % str(ex)
+                logging.exception(msg)
                 raise JobCreatorException(msg)
 
     def terminate(self, params):

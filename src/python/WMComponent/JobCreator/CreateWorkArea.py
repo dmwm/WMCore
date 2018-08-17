@@ -34,10 +34,11 @@ def createDirectories(dirList):
         cmdArgs.extend(sdirList)
         pipe = Popen(cmdArgs, stdout = PIPE, stderr = PIPE, shell = False)
         stdout, stderr = pipe.communicate()
-        if not stderr == "":
-            msg = "Error in making directories: %s\n" % stderr
+        if stderr:
+            if hasattr(stderr, "decode"):
+                stderr = stderr.decode('utf-8', 'ignore')
+            msg = "Error in creating directories: %s\n" % stderr
             logging.error(msg)
-            logging.debug("Executing command %s\n" % cmdArgs)
             raise CreateWorkAreaException(msg)
 
     return
@@ -235,8 +236,6 @@ class CreateWorkArea:
         #Create the task directory
         if not os.path.isdir(taskDir):
             makedirs(directory = taskDir)
-
-        logging.info('JobMaker: Now in directory %s' %(os.getcwd()))
 
         return
 

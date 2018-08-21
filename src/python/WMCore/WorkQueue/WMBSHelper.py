@@ -607,9 +607,7 @@ class WMBSHelper(WMConnectionBase):
                                appFam="Unknown", psetHash="Unknown",
                                configContent="Unknown")
 
-        if not dbsBuffer.exists():
-            self.dbsFilesToCreate.add(dbsBuffer)
-        # dbsBuffer.create()
+        self.dbsFilesToCreate.add(dbsBuffer)
         return
 
     def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset=True):
@@ -712,8 +710,11 @@ class WMBSHelper(WMConnectionBase):
             wmbsFile.addRun(run)
 
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
-        self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
+        if not dbsFile["LogicalFileName"].startswith("/store/unmerged") or dbsFile["ParentList"]:
+            # only add to DBSBuffer if is not unmerged file or it has parents.
+            self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
+        
         logging.debug("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)

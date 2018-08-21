@@ -5,11 +5,11 @@ BossAir preliminary test
 """
 from __future__ import print_function
 
+import getpass
 import os.path
+import subprocess
 import threading
 import unittest
-import getpass
-import subprocess
 
 try:
     import cPickle as pickle
@@ -377,7 +377,7 @@ class BossAirTest(unittest.TestCase):
 
         config = self.getConfig()
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         # We should have loaded a plugin
         self.assertTrue('TestPlugin' in baAPI.plugins.keys())
@@ -457,7 +457,7 @@ class BossAirTest(unittest.TestCase):
 
         config = self.getConfig()
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         # Create some jobs
         nJobs = 10
@@ -516,7 +516,7 @@ class BossAirTest(unittest.TestCase):
 
         config = self.getConfig()
 
-        baAPI = BossAirAPI(config=config)
+        baAPI = BossAirAPI(config=config, insertStates=True)
 
         # Create some jobs
         nJobs = 10

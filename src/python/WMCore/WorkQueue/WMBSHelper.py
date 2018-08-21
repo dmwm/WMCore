@@ -11,7 +11,7 @@ from collections import defaultdict
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
+from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.DataStructs.LumiList import LumiList
@@ -78,7 +78,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
     # Deal with any jobs that are running in the batch system
     # only works if we can start the API
     if bossAirConfig:
-        bossAir = BossAirAPI(config=bossAirConfig, noSetup=True)
+        bossAir = BossAirAPI(config=bossAirConfig)
         killableJobs = []
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':
@@ -382,7 +382,7 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = True  # file is not a parent
 
-        logging.info("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         self.wmbsFilesToCreate.add(wmbsFile)
 
@@ -607,9 +607,7 @@ class WMBSHelper(WMConnectionBase):
                                appFam="Unknown", psetHash="Unknown",
                                configContent="Unknown")
 
-        if not dbsBuffer.exists():
-            self.dbsFilesToCreate.add(dbsBuffer)
-        # dbsBuffer.create()
+        self.dbsFilesToCreate.add(dbsBuffer)
         return
 
     def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset=True):
@@ -656,7 +654,7 @@ class WMBSHelper(WMConnectionBase):
 
         self._addToDBSBuffer(dbsFile, checksums, storageElements)
 
-        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
         self.wmbsFilesToCreate.add(wmbsFile)
@@ -712,9 +710,12 @@ class WMBSHelper(WMConnectionBase):
             wmbsFile.addRun(run)
 
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
-        self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.debug("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        if not dbsFile["LogicalFileName"].startswith("/store/unmerged") or dbsFile["ParentList"]:
+            # only add to DBSBuffer if is not unmerged file or it has parents.
+            self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
+        
+        logging.debug("WMBS ACDC File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
 

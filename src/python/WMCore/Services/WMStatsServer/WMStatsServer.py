@@ -90,3 +90,24 @@ class WMStatsServer(Service):
         query = self._createQuery(inputCondition)
         callname = 'filtered_requests?%s' % query
         return self._getResult(callname, verb="GET")
+
+    def getChildParentDatasetMap(self, requestType="StepChain", parentageResolved=False):
+        """
+
+        :param requestType: specify the type of requests you want find the parentag
+        :param dataset: child dataset
+        :param includeInputDataset:
+        :return: dict of {child_dataset_name: parent_dataset_name}
+        """
+        filter = {"RequestType": requestType, "ParentageResolved": parentageResolved}
+        mask = ["ChainParentageMap"]
+
+        results = self.getFilteredActiveData(filter, mask)
+        childParentMap = {}
+        for info in results:
+            if info["ChainParentageMap"]:
+                for childParentDS in info["ChainParentageMap"]:
+                    if childParentDS["ParentDset"]:
+                        for childDS in childParentDS["ChildDsets"]:
+                            childParentMap[childDS] = childParentDS["ParentDset"]
+        return childParentMap

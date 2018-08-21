@@ -110,6 +110,9 @@ class DBSUploadTest(unittest.TestCase):
         config.DBS3Upload.nProcesses = 1
         config.DBS3Upload.dbsWaitTime = 0.1
         config.DBS3Upload.datasetType = "VALID"
+
+        # added to skip the StepChain parentage setting test
+        config.component_("Tier0Feeder")
         return config
 
     def createParentFiles(self, acqEra, nFiles=10,
@@ -603,8 +606,8 @@ class DBSUploadTest(unittest.TestCase):
                 self.assertTrue('block_events' not in block['block'])
                 self.assertEqual(block['block']['open_for_writing'], 0)
                 self.assertTrue('close_settings' not in block)
-        except Exception:
-            self.fail("We failed at some point in the test")
+        except Exception as ex:
+            self.fail("We failed at some point in the test: %s" % str(ex))
         finally:
             # We don't trust anyone else with _exit
             del os.environ["DONT_TRAP_EXIT"]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-#pylint: disable=E1101, E1103, C0121
-#E1101 doesn't allow you to define config sections using .section_()
-#E1103: Transaction attached to myThread
+# pylint: disable=E1101, E1103, C0121
+# E1101 doesn't allow you to define config sections using .section_()
+# E1103: Transaction attached to myThread
 
 
 """
@@ -11,17 +11,17 @@ Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
 
+import logging
 import os
 import os.path
 import threading
-import logging
 import traceback
-
 from subprocess import Popen, PIPE
-from WMCore.DAOFactory        import DAOFactory
-from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.WMException import WMException
+
 from Utils.IteratorTools import grouper
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 
 
 def createDirectories(dirList):
@@ -32,12 +32,13 @@ def createDirectories(dirList):
     for sdirList in grouper(dirList, 500):
         cmdArgs = ['mkdir']
         cmdArgs.extend(sdirList)
-        pipe = Popen(cmdArgs, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe = Popen(cmdArgs, stdout=PIPE, stderr=PIPE, shell=False)
         stdout, stderr = pipe.communicate()
-        if not stderr == "":
-            msg = "Error in making directories: %s\n" % stderr
+        if stderr:
+            if hasattr(stderr, "decode"):
+                stderr = stderr.decode('utf-8', 'ignore')
+            msg = "Error in creating directories: %s\n" % stderr
             logging.error(msg)
-            logging.debug("Executing command %s\n" % cmdArgs)
             raise CreateWorkAreaException(msg)
 
     return
@@ -53,28 +54,26 @@ def makedirs(directory):
     a rare but observed possibility, they don't kill everything.
     """
 
-
     try:
         os.makedirs(directory)
     except:
         if not os.path.isdir(directory):
             # Then it really screwed up
-            msg =  "Failed to create directory %s\n" % (directory)
+            msg = "Failed to create directory %s\n" % (directory)
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise CreateWorkAreaException(msg)
         # Else: the directory exists.  Don't complain, but do mention it
         else:
-            msg =  "Hit error in creating directory %s; ignoring. \n" % (msg)
+            msg = "Hit error in creating directory %s; ignoring. \n" % (msg)
             msg += str(traceback.format_exc())
-            msg =  "This looks like an error but everything seems to be in place"
+            msg = "This looks like an error but everything seems to be in place"
             logging.error(msg)
-
 
     return
 
 
-def getMasterName(startDir, wmWorkload = None, workflow = None):
+def getMasterName(startDir, wmWorkload=None, workflow=None):
     """
     Gets a universal name for the jobGroup directory
     Return the uid as the name if none available (THIS SHOULD NEVER HAPPEN)
@@ -84,7 +83,7 @@ def getMasterName(startDir, wmWorkload = None, workflow = None):
     if wmWorkload != None:
         workload = wmWorkload.name()
     elif not os.path.exists(workflow.spec):
-        msg =  "Could not find Workflow spec %s: " % (workflow.spec)
+        msg = "Could not find Workflow spec %s: " % (workflow.spec)
         msg += "Cannot create work area without spec!"
         logging.error(msg)
         raise CreateWorkAreaException(msg)
@@ -102,8 +101,6 @@ def getMasterName(startDir, wmWorkload = None, workflow = None):
             os.path.join(startDir, workload, task))
 
 
-
-
 class CreateWorkAreaException(WMException):
     """
     This is a totally awesome exception class
@@ -114,34 +111,29 @@ class CreateWorkAreaException(WMException):
     pass
 
 
-
-
 class CreateWorkArea:
     """
     Basic class for doing the JobMaker dirty work
 
     """
 
+    def __init__(self, jobGroupID=None, startDir=None):
 
+        myThread = threading.currentThread()
+        myThread.logger = logging.getLogger()
 
-    def __init__(self, jobGroupID = None, startDir = None):
-
-
-        myThread           = threading.currentThread()
-        myThread.logger    = logging.getLogger()
-
-        self.jobGroupID    = jobGroupID
-        self.jobGroup      = None
-        self.subscript     = None
-        self.workflow      = None
+        self.jobGroupID = jobGroupID
+        self.jobGroup = None
+        self.subscript = None
+        self.workflow = None
         self.collectionDir = None
-        self.wmWorkload    = None
+        self.wmWorkload = None
         if not startDir:
-            self.startDir     = os.getcwd()
+            self.startDir = os.getcwd()
         else:
-            self.startDir  = startDir
+            self.startDir = startDir
 
-        self.jobs          = {}
+        self.jobs = {}
 
         self.getNewJobGroup(jobGroupID)
 
@@ -153,12 +145,11 @@ class CreateWorkArea:
 
         """
 
-        self.workflow   = None
+        self.workflow = None
         self.wmWorkload = None
 
-
-    def processJobs(self, jobGroup, startDir = None, wmWorkload = None,
-                    workflow = None, transaction = None, conn = None, cache = True):
+    def processJobs(self, jobGroup, startDir=None, wmWorkload=None,
+                    workflow=None, transaction=None, conn=None, cache=True):
         """
         Process the work
 
@@ -166,46 +157,44 @@ class CreateWorkArea:
         WMBS workflow, to save loading time
         """
         self.reset()
-        self.wmWorkload  = wmWorkload
-        self.workflow    = workflow
-        self.startDir    = startDir
+        self.wmWorkload = wmWorkload
+        self.workflow = workflow
+        self.startDir = startDir
         self.transaction = transaction
-        self.conn        = conn
+        self.conn = conn
 
         self.jobGroup = jobGroup
 
-        #self.getNewJobGroup(jobGroup = jobGroup)
+        # self.getNewJobGroup(jobGroup = jobGroup)
         self.createJobGroupArea()
-        self.createWorkArea(cache = cache)
+        self.createWorkArea(cache=cache)
 
         return
 
-
-
-    def getNewJobGroup(self, jobGroup = None):
+    def getNewJobGroup(self, jobGroup=None):
         """
         This gets a job group passed to the thread
         """
 
-        #See if we actually have a jobGroupID
+        # See if we actually have a jobGroupID
         if jobGroup:
             self.jobGroupID = jobGroup.id
         else:
-            #Then we have no jobGroup
+            # Then we have no jobGroup
             return
 
 
-        #We need the workflow to get the spec
-        #if self.workflow == None:
+            # We need the workflow to get the spec
+            # if self.workflow == None:
             # If we have something in the workflow,
             # assume we were passed a loaded workflow
             # We need the subscription mostly to get the workflow
-            #subscript = jobGroup.subscription
-            #subscript.load()
-            #self.workflow  = subscript['workflow']
-            #self.workflow.load()
+            # subscript = jobGroup.subscription
+            # subscript.load()
+            # self.workflow  = subscript['workflow']
+            # self.workflow.load()
 
-        #if not jobGroup.exists():
+        # if not jobGroup.exists():
         #    msg = 'JobMaker: Was passed a non-existant Job Group ID %i' % (self.jobGroupID)
         #    logging.error(msg)
         #    raise Exception(msg)
@@ -214,9 +203,6 @@ class CreateWorkArea:
 
         return
 
-
-
-
     def createJobGroupArea(self):
         """
         Creates an area for the task which is just the jobGroupUID,
@@ -224,30 +210,21 @@ class CreateWorkArea:
 
         """
 
-        workloadDir, taskDir = getMasterName(startDir = self.startDir,
-                                             wmWorkload = self.wmWorkload,
-                                             workflow = self.workflow)
+        workloadDir, taskDir = getMasterName(startDir=self.startDir,
+                                             wmWorkload=self.wmWorkload,
+                                             workflow=self.workflow)
 
-        #Create the workload directory
+        # Create the workload directory
         if not os.path.isdir(workloadDir):
-            makedirs(directory = workloadDir)
+            makedirs(directory=workloadDir)
 
-        #Create the task directory
+        # Create the task directory
         if not os.path.isdir(taskDir):
-            makedirs(directory = taskDir)
-
-        logging.info('JobMaker: Now in directory %s' %(os.getcwd()))
+            makedirs(directory=taskDir)
 
         return
 
-
-
-
-
-
-
-
-    def createWorkArea(self, cache = True):
+    def createWorkArea(self, cache=True):
         """
         This should handle the master tasks of creating a working area
         It should take a valid jobGroup and call the
@@ -261,49 +238,45 @@ class CreateWorkArea:
             logging.error(msg)
             raise CreateWorkAreaException(msg)
 
-        workloadDir, taskDir       = getMasterName(startDir = self.startDir,
-                                                   wmWorkload = self.wmWorkload,
-                                                   workflow = self.workflow)
-        jobCounter    = 0
-        nameList      = []
+        workloadDir, taskDir = getMasterName(startDir=self.startDir,
+                                             wmWorkload=self.wmWorkload,
+                                             workflow=self.workflow)
+        jobCounter = 0
+        nameList = []
 
         if cache:
             factory = DAOFactory("WMCore.WMBS", myThread.logger, myThread.dbi)
-            setBulkCache = factory(classname = "Jobs.SetCache")
+            setBulkCache = factory(classname="Jobs.SetCache")
         nameDictList = []
 
-
-        #Now actually start to do things
+        # Now actually start to do things
         for job in self.jobGroup.jobs:
             jid = job['id']
 
             if jobCounter % 1000 == 0:
-                #Create a new jobCollection
-                #Increment jobCreator if there's already something there
+                # Create a new jobCollection
+                # Increment jobCreator if there's already something there
                 jobCounter += self.createJobCollection(jobCounter, taskDir)
 
             jobCounter = jobCounter + 1
 
             name = self.getDirectoryName(jid)
             nameList.append(name)
-            nameDictList.append({'jobid':jid, 'cacheDir':name})
+            nameDictList.append({'jobid': jid, 'cacheDir': name})
             job['cache_dir'] = name
 
         if cache:
-            setBulkCache.execute(jobDictList = nameDictList,
-                                 conn = self.conn,
-                                 transaction = self.transaction)
+            setBulkCache.execute(jobDictList=nameDictList,
+                                 conn=self.conn,
+                                 transaction=self.transaction)
 
         createDirectories(nameList)
 
-        #change permissions. See #3623
+        # change permissions. See #3623
         for directory in nameList:
-            os.chmod(directory,  0o775)
+            os.chmod(directory, 0o775)
 
         return
-
-
-
 
     def createJobCollection(self, jobCounter, taskDir):
         """
@@ -311,37 +284,31 @@ class CreateWorkArea:
         Create a sub-directory to allow storage of large jobs
         """
 
-        value = jobCounter/1000
+        value = jobCounter / 1000
         jobCollDir = '%s/JobCollection_%i_%i' % (taskDir, self.jobGroup.id, value)
-        #Set this to a global variable
+        # Set this to a global variable
         self.collectionDir = jobCollDir
         if not os.path.exists(jobCollDir):
-            #This should be the only application
-            #You return 0 because the directory you just made should be empty
+            # This should be the only application
+            # You return 0 because the directory you just made should be empty
             os.mkdir(jobCollDir)
             return 0
         if os.path.isdir(jobCollDir):
-            #This should never happen
+            # This should never happen
             return len(os.listdir(jobCollDir))
         elif os.path.isfile(jobCollDir):
-            #Well, you're screwed.  Some other file is in the way: IN A DIRECTORY YOU JUST CREATED.
-            #Time to freak the hell out
-            msg =  "Could not create jobCollection %s;" % (jobCollDir)
+            # Well, you're screwed.  Some other file is in the way: IN A DIRECTORY YOU JUST CREATED.
+            # Time to freak the hell out
+            msg = "Could not create jobCollection %s;" % (jobCollDir)
             msg += "non-directory file in the way!"
             logging.error(msg)
             raise CreateWorkAreaException(msg)
         else:
-            #You're screwed
-            msg =  "Something is in the way at %s" % (jobCollDir)
+            # You're screwed
+            msg = "Something is in the way at %s" % (jobCollDir)
             msg += "File system could not determine type of object"
             logging.error(msg)
             raise CreateWorkAreaException(msg)
-
-
-
-
-
-
 
     def getDirectoryName(self, jid):
         """

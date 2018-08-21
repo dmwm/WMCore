@@ -44,7 +44,7 @@ class BossAirAPI(WMConnectionBase):
     The API layer for the BossAir prototype
     """
 
-    def __init__(self, config, noSetup=False):
+    def __init__(self, config, insertStates=False):
         """
         __init__
 
@@ -91,11 +91,11 @@ class BossAirAPI(WMConnectionBase):
         self.monitorDAO = self.daoFactory(classname="JobStatusForMonitoring")
 
         self.states = None
-        self.loadPlugin(noSetup)
+        self.loadPlugin(insertStates)
 
         return
 
-    def loadPlugin(self, noSetup=False):
+    def loadPlugin(self, insertStates):
         """
         _loadPlugin_
 
@@ -113,7 +113,7 @@ class BossAirAPI(WMConnectionBase):
         if self.newState not in states:
             states.add(self.newState)
 
-        if not noSetup:
+        if insertStates:
             # Add states only if we're not
             # doing a secondary instantiation
             self.addStates(states=states)
@@ -126,7 +126,8 @@ class BossAirAPI(WMConnectionBase):
         """
         _addStates_
 
-        Add States to bl_status table
+        Add States to bl_status table. Meant to be done only
+        once in an agent lifetime.
         """
         existingTransaction = self.beginTransaction()
 

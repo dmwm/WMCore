@@ -336,6 +336,7 @@ class WorkQueue(WorkQueueBase):
         matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts,
                                                    excludeWorkflows=excludeWorkflows, numElems=numElems)
 
+        self.logger.info('Got %i elements matching the constraints', len(matches))
         if not matches:
             return results
 
@@ -430,7 +431,10 @@ class WorkQueue(WorkQueueBase):
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
         """Inject data into wmbs and create subscription. """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-        self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
+        # the parent element (from local couch) can be fetch via:
+        # curl -ks -X GET 'http://localhost:5984/workqueue/<ParentQueueId>'
+        msg = "Running WMBS preparation for %s with ParentQueueId %s"
+        self.logger.info(msg, match['RequestName'], match['ParentQueueId'])
 
         mask = match['Mask']
         wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])

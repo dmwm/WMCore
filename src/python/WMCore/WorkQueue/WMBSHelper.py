@@ -382,7 +382,7 @@ class WMBSHelper(WMConnectionBase):
 
         wmbsFile['inFileset'] = True  # file is not a parent
 
-        logging.info("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS MC Fake File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         self.wmbsFilesToCreate.add(wmbsFile)
 
@@ -654,7 +654,7 @@ class WMBSHelper(WMConnectionBase):
 
         self._addToDBSBuffer(dbsFile, checksums, storageElements)
 
-        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
         self.wmbsFilesToCreate.add(wmbsFile)
@@ -712,7 +712,7 @@ class WMBSHelper(WMConnectionBase):
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.debug("WMBS ACDC File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
+        logging.debug("WMBS ACDC File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)
 

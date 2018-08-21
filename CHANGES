@@ -1,3 +1,17 @@
+1.1.15 to 1.1.15.patch2:
+  - Merge pull request #8754 from ticoann/1.1.15.wmagent_patch2
+  - Make WorkQueueManagerWMBSFileFeeder slightly more verbose
+  - fix unittest
+  - set the dataset parentage for StepChain
+  - clean up out put of the script and add more instruction
+  - pylint fixes
+  - Pass if job directory has been created already; fix encode error in error msg
+  - fix unit tests
+  - Create bl_status states only in JobSubmitter component
+  - skip umerged acdc files without parents to update dbsbuffer
+  - impove the perfomance of dbsfile insert
+  - 1.1.15.patch1
+
 1.1.15 to 1.1.15.patch1:
 
 

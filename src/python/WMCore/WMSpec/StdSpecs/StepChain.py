@@ -469,7 +469,8 @@ class StepChainWorkloadFactory(StdBase):
                     "FirstEvent": {"default": 1, "type": int, "validate": lambda x: x > 0,
                                    "null": False},
                     "FirstLumi": {"default": 1, "type": int, "validate": lambda x: x > 0,
-                                  "null": False}
+                                  "null": False},
+                    "ParentageResolved": {"default": False, "type": strToBool, "null": False},
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

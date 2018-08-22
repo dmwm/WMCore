@@ -48,7 +48,7 @@ WMStats.LogDBData = function (couchData) {
     logDBData._setLogWithLastestError = function () {
     	
     	for (var i in this._data) {
-    		 thrResult =this._getThreadValue(this._sortedLogs, this._data[i].request, 
+    		 thrResult = this._getThreadValue(this._sortedLogs, this._data[i].request,
     		 	                             this._data[i].agent, this._data[i].thr);
     		 if (this._data[i].type !== "message") {
     		 	thrResult.push(this._data[i]);	
@@ -59,11 +59,13 @@ WMStats.LogDBData = function (couchData) {
     	for (var req in this._sortedLogs) {
     		for (var agent in logs[req]) {
     			for (var thread in logs[req][agent]) {
-    					if (logs[req][agent][thread][0].type === "agent-error" || 
-    					    logs[req][agent][thread][0].type === "agent-warning") {
-    						this._errorLogs.push(logs[req][agent][thread][0]);
-    						this._errorLogIDList.push(logs[req][agent][thread][0].id);
+    			    for (var i in logs[req][agent][thread]) {
+    					if (logs[req][agent][thread][i].type === "agent-error" ||
+    					    logs[req][agent][thread][i].type === "agent-warning") {
+    						this._errorLogs.push(logs[req][agent][thread][i]);
+    						this._errorLogIDList.push(logs[req][agent][thread][i].id);
     					}
+    				}
     			}
     		}
     	}

@@ -307,7 +307,7 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.info("Starting the DBSUpload Polling Cycle")
             # refreshing parentageCache every cycle
             self.updateDatasetParentageCache()
-            logging.info("Dataset parentage map: %s" % self.datasetParentageCache)
+            logging.debug("Dataset parentage map: %s" % self.datasetParentageCache)
             self.checkBlocks()
             self.loadBlocks()
             self.loadFiles()
@@ -367,7 +367,7 @@ class DBSUploadPoller(BaseWorkerThread):
             parent = self.datasetParentageCache.get(blockInfo['datasetpath'])
             if parent:
                 block.addDatasetParent(parent)
-                logging.info("load block: Child dataset %s, Parent dataset %s", blockInfo['datasetpath'], parent)
+                logging.debug("Load block: Child dataset %s, Parent dataset %s", blockInfo['datasetpath'], parent)
             block.FillFromDBSBuffer(blockInfo)
             blockname = block.getName()
 
@@ -535,7 +535,7 @@ class DBSUploadPoller(BaseWorkerThread):
         parent = self.datasetParentageCache.get(datasetpath)
         if parent:
             newBlock.addDatasetParent(parent)
-            logging.info("Get block: Child dataset %s, Parent dataset %s", datasetpath, parent)
+            logging.debug("Get block: Child dataset %s, Parent dataset %s", datasetpath, parent)
 
         self.blockCache[blockname] = newBlock
         return newBlock

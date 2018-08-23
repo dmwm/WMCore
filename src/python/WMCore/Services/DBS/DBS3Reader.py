@@ -57,12 +57,13 @@ class DBS3Reader(object):
     # cache all the datatiers known by DBS
     _datatiers = {}
 
-    def __init__(self, url, **contact):
+    def __init__(self, url, logger=None, **contact):
 
         # instantiate dbs api object
         try:
             self.dbsURL = url
             self.dbs = DbsApi(url, **contact)
+            self.logger = logger or logging
         except dbsClientException as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
@@ -1023,7 +1024,7 @@ class DBS3Reader(object):
         # pDatasets format is
         # [{'this_dataset': '/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD', 'parent_dataset_id': 13265209, 'parent_dataset': '/SingleMuon/Run2016D-23Sep2016-v1/AOD'}]
         if not pDatasets:
-            print("No parent dataset found for child dataset %s" % childDataset)
+            self.logger.warning("No parent dataset found for child dataset %s", childDataset)
             return {}
 
         blocks = self.listBlocksWithNoParents(childDataset)
@@ -1031,10 +1032,11 @@ class DBS3Reader(object):
         for blockName in blocks:
             try:
                 numFiles = self.findAndInsertMissingParentage(blockName, insertFlag=insertFlag)
-                print("%s file parentage added for block %s" % (numFiles, blockName))
-            except Exception as e:
-                print(traceback.format_exc())
+                self.logger.debug("%s file parentage added for block %s" % (numFiles, blockName))
+            except Exception as ex:
+                self.logger.exception("Parentage updated failed for block %s", blockName)
                 failedBlocks.append(blockName)
+
         return failedBlocks
 
 

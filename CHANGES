@@ -1,3 +1,35 @@
+1.1.15 to 1.1.16.pre1:
+  - Merge pull request #8738 from ticoann/fix_stepchain_parentage
+  - StepChain fix in reqmgr
+  - Merge pull request #8752 from ticoann/fix_log_db_warnings
+  - Merge pull request #8760 from amaltaro/fix-8748
+  - Merge pull request #8757 from amaltaro/fix-8676
+  - Complement for 8748 skipping dbsbuffer inserts
+  - Convert a few DBS3Uploader logs to debug
+  - Merge pull request #8755 from ticoann/workqueue_log
+  - Merge pull request #8737 from ticoann/clean_up_fix_parentage
+  - Make WorkQueueManagerWMBSFileFeeder slightly more verbose
+  - Merge pull request #8676 from ticoann/set_stepchain_parentage
+  - Merge pull request #8746 from amaltaro/jobcreator-unicode
+  - Merge pull request #8747 from amaltaro/fix-8744
+  - Merge pull request #8748 from ticoann/improve_performance_dbsbuffer_insert
+  - Merge pull request #8736 from ticoann/add_stepchain_parent_flag
+  - clean up out put of the script and add more instruction
+  - fix logdb warning
+  - skip umerged acdc files without parents to update dbsbuffer
+  - fix unittest
+  - set the dataset parentage for StepChain
+  - impove the perfomance of dbsfile insert
+  - add flag for stepchain parentag
+  - Merge pull request #8739 from amaltaro/deploy-1115patch1
+  - fix unit tests
+  - Create bl_status states only in JobSubmitter component
+  - pylint fixes
+  - Pass if job directory has been created already; fix encode error in error msg
+  - Merge pull request #8742 from amaltaro/fix-8741
+  - Fix for ACDCs when updating the task parentage map
+  - Bump deployment script to 1.1.15.patch1; remove ErrorHandler tweak
+
 1.1.14 to 1.1.15:
   - Merge pull request #8734 from ticoann/change_to_input
   - fix raw_input

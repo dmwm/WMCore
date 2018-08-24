@@ -63,7 +63,7 @@ class DBS3Reader(object):
         try:
             self.dbsURL = url
             self.dbs = DbsApi(url, **contact)
-            self.logger = logger or logging
+            self.logger = logger or logging.getLogger(self.__class__.__name__)
         except dbsClientException as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)

@@ -16,7 +16,7 @@ def db_exception_handler(f):
     Only need to handle DB connection problem other db problems which need to rollback the transaction,
     shouldn't be included in this hanldler
 
-    TODO: instead of logging we can add logDB report
+    Warning: This only used, when original function return values are not used, or wrapped around Utils.Timer.timeFunc
     """
 
     @wraps(f)
@@ -27,19 +27,18 @@ def db_exception_handler(f):
         try:
             return f(*args, **kwargs)
         except Exception as ex:
-            raiseFlag = True
             msg = str(ex)
             for errStr in DB_CONNECTION_ERROR_STR:
                 if errStr in msg:
-                    logging.exception("%s: Temp error will try later", msg)
-                    raiseFlag = False
+                    logging.error("%s: Temp error will try later", msg)
 
                     if hasattr(myThread, "logdbClient") and myThread.logdbClient is not None:
                         myThread.logdbClient.post("DBConnection_error_handler", "warning")
 
-                    break
+                    # returns tuples of 3 since timeFunc returns (time to spend, result, func.__name__)
+                    return 0, None, f.__name__
 
-            if raiseFlag:
-                raise
+            # for other case raise the same exception
+            raise
 
     return wrapper

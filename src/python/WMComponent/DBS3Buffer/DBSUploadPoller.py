@@ -28,11 +28,12 @@ import Queue
 import json
 import logging
 import multiprocessing
+import os.path
 import threading
 import time
-import os.path
 
 from dbs.apis.dbsClient import DbsApi
+
 from Utils.Timers import timeFunction
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
@@ -175,8 +176,8 @@ class DBSUploadPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
-                                     logger=myThread.logger,
-                                     dbinterface=myThread.dbi)
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
         self.updateBlocksDAO = daoFactory(classname="UpdateBlocks")
         self.updateFilesDAO = daoFactory(classname="UpdateFiles")
         self.createBlocksDAO = daoFactory(classname="CreateBlocks")
@@ -615,12 +616,12 @@ class DBSUploadPoller(BaseWorkerThread):
                 myThread.transaction.begin()
                 if len(createInDBSBuffer) > 0:
                     self.createBlocksDAO.execute(blocks=createInDBSBuffer,
-                                            conn=myThread.transaction.conn,
-                                            transaction=True)
+                                                 conn=myThread.transaction.conn,
+                                                 transaction=True)
                 if len(updateInDBSBuffer) > 0:
                     self.updateBlocksDAO.execute(blocks=updateInDBSBuffer,
-                                            conn=myThread.transaction.conn,
-                                            transaction=True)
+                                                 conn=myThread.transaction.conn,
+                                                 transaction=True)
             except WMException:
                 myThread.transaction.rollback()
                 raise
@@ -645,8 +646,8 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 myThread.transaction.begin()
                 self.setBlockFilesDAO.execute(binds=self.filesToUpdate,
-                                         conn=myThread.transaction.conn,
-                                         transaction=True)
+                                              conn=myThread.transaction.conn,
+                                              transaction=True)
                 self.filesToUpdate = []
             except WMException:
                 myThread.transaction.rollback()
@@ -675,7 +676,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # What are we doing?
                 logging.debug("Skipping empty block")
                 continue
-            if block.getDataset() == None:
+            if block.getDataset() is None:
                 # Then we have to fix the dataset
                 dbsFile = block.files[0]
                 block.setDataset(datasetName=dbsFile['datasetPath'],
@@ -764,11 +765,11 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 myThread.transaction.begin()
                 self.updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
-                                       conn=myThread.transaction.conn,
-                                       transaction=True)
+                                            conn=myThread.transaction.conn,
+                                            transaction=True)
                 self.updateBlocksDAO.execute(blocks=loadedBlocks,
-                                        conn=myThread.transaction.conn,
-                                        transaction=True)
+                                             conn=myThread.transaction.conn,
+                                             transaction=True)
             except Exception as ex:
                 myThread.transaction.rollback()
                 # possible deadlock with PhEDExInjector, retry once after 10s
@@ -777,11 +778,11 @@ class DBSUploadPoller(BaseWorkerThread):
                 try:
                     myThread.transaction.begin()
                     self.updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
-                                           conn=myThread.transaction.conn,
-                                           transaction=True)
+                                                conn=myThread.transaction.conn,
+                                                transaction=True)
                     self.updateBlocksDAO.execute(blocks=loadedBlocks,
-                                            conn=myThread.transaction.conn,
-                                            transaction=True)
+                                                 conn=myThread.transaction.conn,
+                                                 transaction=True)
                 except Exception as ex:
                     myThread.transaction.rollback()
                     msg = "Unhandled exception while finished closed blocks in DBSBuffer\n"
@@ -838,11 +839,11 @@ class DBSUploadPoller(BaseWorkerThread):
             try:
                 myThread.transaction.begin()
                 self.updateBlocksDAO.execute(blocks=blocksUploaded,
-                                        conn=myThread.transaction.conn,
-                                        transaction=True)
+                                             conn=myThread.transaction.conn,
+                                             transaction=True)
                 self.updateFilesDAO.execute(blocks=blocksUploaded, status="InDBS",
-                                       conn=myThread.transaction.conn,
-                                       transaction=True)
+                                            conn=myThread.transaction.conn,
+                                            transaction=True)
             except WMException:
                 myThread.transaction.rollback()
                 raise

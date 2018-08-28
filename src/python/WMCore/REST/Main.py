@@ -29,6 +29,8 @@ from cherrypy import Application
 from cherrypy._cplogging import LogManager
 from cherrypy.lib import profiler
 
+# WARNING don't remove this import it sets up the tools attributes
+import WMCore.REST.Main
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
 
 #: Terminal controls to switch to "OK" status message colour.
@@ -469,7 +471,7 @@ class RESTDaemon(RESTMain):
         self.setup_server()
         self.install_application()
         cherrypy.log("INFO: starting server in %s" % self.statedir)
-        cherrypy.config.update({'log.screen': bool(getattr(self.srvconfig, "log_screen", False))})
+        cherrypy.config.update({'log.screen': bool(getattr(self.srvconfig, "log_screen", True))})
         cherrypy.engine.start()
         signal.signal(signal.SIGHUP, sig_reload)
         signal.signal(signal.SIGUSR1, sig_graceful)

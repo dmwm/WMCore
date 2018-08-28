@@ -48,7 +48,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         Look through the stepchain workflows with ParentageResolved flag is False.
         Fix the StepChain parentage and update the ParentageResolved flag to True
         """
-        self.logger.info("Updating parentage for StepChain workflows for ", self.statusToCheck)
+        self.logger.info("Updating parentage for StepChain workflows for %s", self.statusToCheck)
         childDatasets = set()
         requests = set()
         requestsByChildDataset = {}

@@ -118,9 +118,8 @@ WMStats.View.IndexHTML = function(){
             function(event) {
                 //only Tier1 case
                 var numError = WMStats.ActiveRequestModel.getData().numOfRequestError();
-                if ((numError.alert + numError.stalled) > 0) {
-                    $('#linkTabs a[href="#requestAlertPage"] strong').text("(" + 
-                                      numError.stalled + ", " + numError.alert  + ")");
+                if ((numError.alert) > 0) {
+                    $('#linkTabs a[href="#requestAlertPage"] strong').text("(" + numError.alert  + ")");
                 } else {
                 	$('#linkTabs a[href="#requestAlertPage"] strong').text("");
                 };

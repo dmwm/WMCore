@@ -29,8 +29,8 @@ from cherrypy import Application
 from cherrypy._cplogging import LogManager
 from cherrypy.lib import profiler
 
-# WARNING don't remove this import it sets up the tools attributes
-import WMCore.REST.Main
+### Tools is needed for CRABServer startup: it sets up the tools attributes
+import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
 
 #: Terminal controls to switch to "OK" status message colour.

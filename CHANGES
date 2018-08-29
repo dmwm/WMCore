@@ -1,3 +1,55 @@
+1.1.15 to 1.1.16.pre3:
+  - Merge pull request #8775 from amaltaro/rest-import
+  - Import Tools in REST.Main
+  - 1.1.16.pre2
+  - Merge pull request #8774 from ticoann/remove_old_script
+  - Merge pull request #8771 from ticoann/fix_crab3_support
+  - remove deprecated script
+  - Merge pull request #8773 from ticoann/fix_log_parentage_update
+  - fix log on reqmgr thread
+  - Merge pull request #8772 from ticoann/remove_stalled_count
+  - remove stalled request count from wmstats
+  - fix import and logging for crabserver
+  - Merge pull request #8765 from amaltaro/fix-8764
+  - Merge pull request #8768 from ticoann/fix_db_exception_handler
+  - Merge pull request #8766 from ticoann/add_logger_dbs3reader
+  - Merge pull request #8762 from amaltaro/stepchain-test-parent
+  - fix db exception handling
+  - Trap wmstats exception in DBSUploadPoller
+  - set default logger for DBS3Reader
+  - Template to test StepChain parentage
+  - 1.1.16.pre1
+  - Merge pull request #8738 from ticoann/fix_stepchain_parentage
+  - StepChain fix in reqmgr
+  - Merge pull request #8752 from ticoann/fix_log_db_warnings
+  - Merge pull request #8760 from amaltaro/fix-8748
+  - Merge pull request #8757 from amaltaro/fix-8676
+  - Complement for 8748 skipping dbsbuffer inserts
+  - Convert a few DBS3Uploader logs to debug
+  - Merge pull request #8755 from ticoann/workqueue_log
+  - Merge pull request #8737 from ticoann/clean_up_fix_parentage
+  - Make WorkQueueManagerWMBSFileFeeder slightly more verbose
+  - Merge pull request #8676 from ticoann/set_stepchain_parentage
+  - Merge pull request #8746 from amaltaro/jobcreator-unicode
+  - Merge pull request #8747 from amaltaro/fix-8744
+  - Merge pull request #8748 from ticoann/improve_performance_dbsbuffer_insert
+  - Merge pull request #8736 from ticoann/add_stepchain_parent_flag
+  - clean up out put of the script and add more instruction
+  - fix logdb warning
+  - skip umerged acdc files without parents to update dbsbuffer
+  - fix unittest
+  - set the dataset parentage for StepChain
+  - impove the perfomance of dbsfile insert
+  - add flag for stepchain parentag
+  - Merge pull request #8739 from amaltaro/deploy-1115patch1
+  - fix unit tests
+  - Create bl_status states only in JobSubmitter component
+  - pylint fixes
+  - Pass if job directory has been created already; fix encode error in error msg
+  - Merge pull request #8742 from amaltaro/fix-8741
+  - Fix for ACDCs when updating the task parentage map
+  - Bump deployment script to 1.1.15.patch1; remove ErrorHandler tweak
+
 1.1.15 to 1.1.16.pre2:
   - Merge pull request #8774 from ticoann/remove_old_script
   - Merge pull request #8771 from ticoann/fix_crab3_support

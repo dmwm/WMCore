@@ -219,11 +219,13 @@ class PerformanceMonitor(WMRuntimeMonitor):
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
             msg += "Job has RSS: %s\n" % rss
             killProc = True
+            killHard = True
             reason = 'RSS'
         elif self.maxVSize is not None and vsize >= self.maxVSize:
             msg += "Job has exceeded maxVSize: %s\n" % self.maxVSize
             msg += "Job has VSize: %s\n" % vsize
             killProc = True
+            killHard = True
             reason = 'VSZ'
         elif self.hardTimeout is not None and self.softTimeout is not None:
             currentTime = time.time()

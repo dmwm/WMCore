@@ -1,8 +1,8 @@
 <html>
   <head>
     <title>{{{workflow}}} Performance Histogram</title>
-    <script src="/_utils/script/json2.js"></script>
-    <script src="/_utils/script/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20160511/json2.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript" src="../../vendor/protovis/protovis-r3.2.js"></script>
     <script type="text/javascript" src="../../js/layout/gridLayout.js"></script>
     <script type="text/javascript" src="../../js/container/histogram.js"></script>
@@ -113,7 +113,8 @@
                treeConfig.hPadding = 5;
                treeContainer(null, treeConfig, errorData, "error").render()
                */
-               var errorData = errorSummary({{{errors}}});
+               var errorObj = {{{errors}}};
+               var errorData = errorSummary(errorObj);
                var errorHtml = "<b> Errors: </b> <br>" 
                               + listFormatter(errorData, errorValueMap, errorKeyMap) 
                               + "<p/>";

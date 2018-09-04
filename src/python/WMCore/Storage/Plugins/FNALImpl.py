@@ -8,7 +8,6 @@ Implementation of StageOutImpl interface for FNAL
 import logging
 import os
 
-from WMCore.Storage.Plugins.CPImpl import CPImpl
 from WMCore.Storage.Plugins.LCGImpl import LCGImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 

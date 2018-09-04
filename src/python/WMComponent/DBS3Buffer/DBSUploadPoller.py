@@ -303,11 +303,13 @@ class DBSUploadPoller(BaseWorkerThread):
         Then add blocks to DBS
         Then mark blocks as done in DBSBuffer
         """
+        logging.info("Starting the DBSUpload Polling Cycle")
+        # refreshing parentageCache every cycle
+        if self.updateDatasetParentageCache() is False:
+            return
+
+        logging.debug("Dataset parentage map: %s", self.datasetParentageCache)
         try:
-            logging.info("Starting the DBSUpload Polling Cycle")
-            # refreshing parentageCache every cycle
-            self.updateDatasetParentageCache()
-            logging.info("Dataset parentage map: %s" % self.datasetParentageCache)
             self.checkBlocks()
             self.loadBlocks()
             self.loadFiles()
@@ -324,11 +326,26 @@ class DBSUploadPoller(BaseWorkerThread):
             raise DBSUploadException(msg)
 
     def updateDatasetParentageCache(self):
-        if self.wmstatsServerSvc:
-            self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
-        else:
+        """
+        Return True to indicate it successfully fetched the parentage
+        map. If there was an exception, return False
+        """
+        success = True
+        if not self.wmstatsServerSvc:
             self.datasetParentageCache = {}
-        return
+            return success
+
+        try:
+            self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
+        except Exception as ex:
+            if 'Connection refused' in str(ex) or 'Service Unavailable' in getattr(ex, 'reason', ''):
+                logging.warning('Failed to fetch parentage map from WMStats, skipping this cycle')
+                success = False
+            else:
+                msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)
+                raise DBSUploadException(msg)
+
+        return success
 
     def loadBlocks(self):
         """

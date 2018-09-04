@@ -25,7 +25,6 @@ def _wmAgentConfig(configFile):
     config = Configuration()
     config.section_("General")
     config.General.logdb_name = "unittest_logdb"
-    config.General.logdb_url = "http://localhost/logdb"
     config.General.central_logdb_url = "http://localhost/central_logdb"
     config.General.ReqMgr2ServiceURL = "http://localhost/reqmgr2"
 

@@ -80,7 +80,6 @@ config.Agent.useHeartbeat = True
 config.section_("General")
 config.General.workDir = workDirectory
 config.General.logdb_name = logDBName
-config.General.logdb_url = "%s/%s" % (couchURL, config.General.logdb_name)
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 

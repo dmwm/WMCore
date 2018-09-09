@@ -166,11 +166,12 @@ class DBSUploadPoller(BaseWorkerThread):
         # on DBSInterface anyway
         self.dbsUrl = self.config.DBS3Upload.dbsUrl
 
-        #Tier0 Agent don't need this
+        # Tier0 Agent don't need this
         if hasattr(self.config, "Tier0Feeder"):
             self.wmstatsServerSvc = None
         else:
-            wmstatsSvcURL = (self.config.AgentStatusWatcher.centralWMStatsURL).replace("couchdb/wmstats", "wmstatsserver")
+            wmstatsSvcURL = (self.config.AgentStatusWatcher.centralWMStatsURL).replace("couchdb/wmstats",
+                                                                                       "wmstatsserver")
             self.wmstatsServerSvc = WMStatsServer(wmstatsSvcURL)
 
         self.dbsUtil = DBSBufferUtil()
@@ -338,7 +339,8 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
         except Exception as ex:
-            if 'Connection refused' in str(ex) or 'Service Unavailable' in getattr(ex, 'reason', ''):
+            if ('Connection refused' in str(ex) or 'Service Unavailable' in getattr(ex, 'reason', '') or
+                    'Error reading from remote server' in getattr(ex, 'reason', '')):
                 logging.warning('Failed to fetch parentage map from WMStats, skipping this cycle')
                 success = False
             else:
@@ -491,7 +493,7 @@ class DBSUploadPoller(BaseWorkerThread):
         for block in self.blockCache.values():
             if block.status == "Open":
                 if (block.getTime() > block.getMaxBlockTime()) or any(
-                                key in completedWorkflows for key in block.workflows):
+                        key in completedWorkflows for key in block.workflows):
                     block.setPendingAndCloseBlock()
 
         return
@@ -508,7 +510,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
 
         if block.getMaxBlockFiles() is None or block.getMaxBlockNumEvents() is None or \
-                        block.getMaxBlockSize() is None or block.getMaxBlockTime() is None:
+                block.getMaxBlockSize() is None or block.getMaxBlockTime() is None:
             return True
         if block.status != 'Open':
             # Then somebody has dumped this already
@@ -866,5 +868,3 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # We're done
         return
-
-

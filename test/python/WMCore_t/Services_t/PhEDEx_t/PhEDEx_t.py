@@ -80,19 +80,6 @@ class PhEDExTest(unittest.TestCase):
         self.assertTrue(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
         return
 
-    @attr("integration")
-    def testNodeMap(self):
-        """
-        _testNodeMap_
-
-        Verify that the node map can be retrieve from PhEDEx and that the
-        getNodeSE() and getNodeNames() methods work correctly.
-        """
-        self.assertTrue(self.phedexApi.getNodeSE("T2_FR_GRIF_LLR") == "polgrid4.in2p3.fr")
-        self.assertTrue(self.phedexApi.getNodeNames("cmssrm.fnal.gov") == ["T1_US_FNAL_Buffer",
-                                                                           "T1_US_FNAL_MSS"])
-        return
-
     @attr('integration')
     def testGetSubscriptionMapping(self):
         """
@@ -150,40 +137,6 @@ class PhEDExTest(unittest.TestCase):
 
         # and one of the mappings should be the same as from the previous call
         self.assertTrue(call1[call1_key] == call2[call1_key])
-        return
-
-    @attr('integration')
-    def testXMLJSON(self):
-        """
-        Test XML and JSON in the same scope
-        """
-        site = 'T1_US_FNAL_Buffer'
-        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/json/test"}
-        phedexJSON = PhEDEx(responseType='json', httpDict=httpDict)
-        httpDict = {'endpoint': "https://cmsweb.cern.ch/phedex/datasvc/xml/test"}
-        phedexXML = PhEDEx(responseType='xml', httpDict=httpDict)
-
-        phedexXML.getNodeTFC(site)
-        tfc_file = phedexXML.cacheFileName('tfc', inputdata={'node': site})
-        tfc_map = {}
-        tfc_map[site] = readTFC(tfc_file)
-        pfn = tfc_map[site].matchLFN('srmv2', '/store/user/jblow/dir/test.root')
-
-        self.assertTrue(pfn == 'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/user/jblow/dir/test.root')
-
-        self.assertTrue(phedexJSON.getNodeSE('T1_US_FNAL_Buffer') == 'cmssrm.fnal.gov')
-
-    @attr('integration')
-    def testAuth(self):
-        """
-        _testAuth_
-
-        Verify that the auth method works correctly."
-        """
-        self.assertFalse(self.phedexApi.getAuth("datasvc_whatever"))
-        self.assertTrue(self.phedexApi.getAuth("datasvc_subscribe"))
-        self.assertTrue(self.phedexApi.getAuth("datasvc_inject"))
-
         return
 
 

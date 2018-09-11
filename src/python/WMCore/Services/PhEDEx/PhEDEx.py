@@ -171,6 +171,7 @@ class PhEDEx(Service):
         """
         _getReplicaInfoForFiles_
 
+        TODO: this is only used for the unittest for other API's doesn't need to have RUCIO equvalent
         Retrieve file replica information from PhEDEx.
 
         block          block name, with '*' wildcards, can be multiple (*).  required when no lfn is specified.
@@ -306,52 +307,6 @@ class PhEDEx(Service):
         """
         return self._getResult("nodes", args=None)
 
-    def getNodeNames(self, se):
-        """
-        _getNodeName_
-
-        Convert SE to Name
-        """
-        names = []
-        output = self.getNodeMap()
-        nodeList = output['phedex']['node']
-        for node in nodeList:
-            if node['se'] == se:
-                names.append(node['name'])
-        return names
-
-    def getNodeSE(self, name):
-        """
-        _getNodeSE_
-
-        Convert Name to SE
-        """
-        output = self.getNodeMap()
-        nodeList = output['phedex']['node']
-        for node in nodeList:
-            if node['name'] == name:
-                return node['se']
-        return None
-
-    def getNodeTFC(self, node):
-        data = self._getResult('tfc', args={'node': node}, verb="GET")
-        return data
-
-    def getAuth(self, ability):
-        """
-        _getAuth_
-
-        Determine whether or not the users has permissions to perform the
-        given ability.
-        """
-        data = self._getResult('auth', args={'ability': ability}, verb="GET")
-        node = data['phedex']['auth'][0].get('node', None)
-
-        if node:
-            return True
-        else:
-            return False
-
     def getPFN(self, nodes=None, lfns=None, destination=None, protocol='srmv2', custodial='n'):
         """
         Get the PFN for an LFN on a node. Return a dict with a tuple of the input as the key
@@ -451,48 +406,6 @@ class PhEDEx(Service):
                             if fileInfo['lfn'] in blockFileDict[block]:
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
-
-    def getReplicaSEForBlocks(self, **kwargs):
-        """
-        _blockreplicasSE_
-
-        Get replicas SE for given blocks
-        kwargs are options passed through to phedex
-
-        dataset        dataset name, can be multiple (*)
-        block          block name, can be multiple (*)
-        node           node name, can be multiple (*)
-        se             storage element name, can be multiple (*)
-        update_since  unix timestamp, only return replicas updated since this
-                time
-        create_since   unix timestamp, only return replicas created since this
-                time
-        complete       y or n, whether or not to require complete or incomplete
-                blocks. Default is to return either
-        subscribed     y or n, filter for subscription. default is to return either.
-        custodial      y or n. filter for custodial responsibility.  default is
-                to return either.
-        group          group name.  default is to return replicas for any group.
-
-        Returns a dictionary with se names per block
-        """
-
-        callname = 'blockreplicas'
-        response = self._getResult(callname, args=kwargs)
-
-        blockSE = dict()
-
-        blocksInfo = response['phedex']['block']
-        if not blocksInfo:
-            return {}
-
-        for blockInfo in blocksInfo:
-            se = set()
-            for replica in blockInfo['replica']:
-                se.add(replica['se'])
-            blockSE[blockInfo['name']] = list(se)
-
-        return blockSE
 
     def getReplicaPhEDExNodesForBlocks(self, **kwargs):
         """

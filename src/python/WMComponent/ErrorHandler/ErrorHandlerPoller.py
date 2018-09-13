@@ -71,7 +71,12 @@ class ErrorHandlerPoller(BaseWorkerThread):
             self.maxRetries = self.config.ErrorHandler.maxRetries
         else:
             self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
-            self.maxRetries = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("MaxRetries")
+            agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+            if (agentConfig.get("UserDrainMode") and agentConfig.get("SpeedDrainMode") and
+                agentConfig.get("SpeedDrainConfig")['NoJobRetries']['Enabled']):
+                self.maxRetries = 0
+            else:
+                self.maxRetries = agentConfig.get("MaxRetries")
 
         if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default': self.maxRetries}

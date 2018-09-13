@@ -29,27 +29,27 @@ class DrainStatusPoller(BaseWorkerThread):
         self.config = config
         self.drainAPI = DrainStatusAPI()
         self.condorAPI = PyCondorAPI()
-        self.speedDrainConfig = None
+        self.agentConfig = {}
+        self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
 
-        if hasattr(config, "Tier0Feeder"):
-            self.reqAuxDB = None
-        else:
-            self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+        self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
 
     @timeFunction
     def algorithm(self, parameters):
         """
         Update drainStats if agent is in drain mode
         """
+
+        self.agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+
         if isDrainMode(self.config):
             logging.info("Checking agent drain status...")
             # check to see if the agent hit any speed drain thresholds
-            if self.reqAuxDB:
-                logging.info("Checking speed drain thresholds...")
-                thresholdsHit = self.checkSpeedDrainThresholds()
-                if thresholdsHit:
-                    logging.info("Updating agent configuration for speed drain...")
-                    self.updateAgentSpeedDrainConfig(thresholdsHit)
+            logging.info("Checking speed drain thresholds...")
+            thresholdsHit = self.checkSpeedDrainThresholds()
+            if thresholdsHit:
+                logging.info("Updating agent configuration for speed drain...")
+                self.updateAgentSpeedDrainConfig(thresholdsHit)
             try:
                 DrainStatusPoller.drainStats = self.drainAPI.collectDrainInfo()
                 logging.info("Finished collecting agent drain status.")
@@ -60,6 +60,7 @@ class DrainStatusPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
         else:
+            self.resetAgentSpeedDrainConfig()
             logging.info("Agent not in drain mode. Skipping drain check...")
 
     @classmethod
@@ -74,33 +75,54 @@ class DrainStatusPoller(BaseWorkerThread):
         Takes a list of speed drain configuration keys and updates the agent configuration
         """
         updateConfig = False
+        condorPriorityFlag = False
+        speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
 
         if 'CondorPriority' in thresholdsHit:
             if self.condorAPI.editCondorJobs(
                     "JobStatus=?=1 && (CMS_JobType =?= \"Production\" || CMS_JobType =?= \"Processing\")",
                     "JobPrio", "999999"):
-                logging.info("Condor job priority updated to 999999 for pending Production/Processing jobs.")
-                if not self.speedDrainConfig['CondorPriority']['Enabled']:
-                    self.speedDrainConfig['CondorPriority']['Enabled'] = True
-                    updateConfig = True
+                logging.info("Enabling NoJobRetries flag: Condor job priority updated to 999999 for pending Production/Processing jobs.")
+            condorPriorityFlag = True
+
+        if condorPriorityFlag != speedDrainConfig['CondorPriority']['Enabled']:
+            # CondorPriory setting is irreversible so the flog only indicated weather priorty is increased or not.
+            # this flag is not checked by other component
+            speedDrainConfig['CondorPriority']['Enabled'] = condorPriorityFlag
+            updateConfig = True
 
         if 'NoJobRetries' in thresholdsHit:
-            if self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "MaxRetries", 0):
-                logging.info("Agent updated max retries to 0.")
-                self.speedDrainConfig['NoJobRetries']['Enabled'] = True
-                updateConfig = True
+            logging.info("Enabling NoJobRetries flag: Error Handler won't retry the jobs")
+            # ErrorHandler will pick this up and set max retries to 0
+            speedDrainConfig['NoJobRetries']['Enabled'] = True
+            updateConfig = True
 
         if 'EnableAllSites' in thresholdsHit:
-            logging.info("Updating agent to submit to all sites.")
+            logging.info("Enabling EnableAllSites flag: Updating agent to submit to all sites.")
             # setting this value to True makes JobSubmitterPoller ignore site status
-            self.speedDrainConfig['EnableAllSites']['Enabled'] = True
+            speedDrainConfig['EnableAllSites']['Enabled'] = True
             updateConfig = True
 
         # update the aux db speed drain config with any changes
         if updateConfig:
             self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainMode", True)
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", self.speedDrainConfig)
+            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", speedDrainConfig)
 
+        return
+
+    def resetAgentSpeedDrainConfig(self):
+        """
+        resetting SpeedDrainMode to False and SpeedDrainiConfig Enabled to False
+        """
+
+        if self.agentConfig.get("SpeedDrainMode"):
+            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainMode", False)
+            speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
+            for key, v in speedDrainConfig.items():
+                if key in self.validSpeedDrainConfigKey and v['Enabled']:
+                    speedDrainConfig[key]['Enabled'] = False
+
+            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", speedDrainConfig)
         return
 
     def checkSpeedDrainThresholds(self):
@@ -108,11 +130,10 @@ class DrainStatusPoller(BaseWorkerThread):
         Check the current number of jobs in Condor and create a list of agent configuration parameters
         that need updated for speed draining
         """
-        validKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
         enableKeys = []
 
         # get the current speed drain status
-        self.speedDrainConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("SpeedDrainConfig")
+        speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
 
         # get condor jobs
         jobs = self.condorAPI.getCondorJobs("", [])
@@ -121,9 +142,9 @@ class DrainStatusPoller(BaseWorkerThread):
             return []
 
         # loop through the speed drain configuration and make a list of what thresholds have been hit
-        for k, v in self.speedDrainConfig.items():
+        for k, v in speedDrainConfig.items():
             # make sure keys in the speed drain config are valid
-            if k in validKeys and isinstance(v['Threshold'], int) and isinstance(v['Enabled'], bool):
+            if k in self.validSpeedDrainConfigKeys and isinstance(v['Threshold'], int) and isinstance(v['Enabled'], bool):
                 # we always want to apply the condor priority change if the threshold is hit
                 if not v['Enabled'] or k == 'CondorPriority':
                     logging.info("Checking speed drain threshold for %s. ", k)

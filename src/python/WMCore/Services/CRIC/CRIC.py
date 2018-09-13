@@ -63,17 +63,20 @@ class CRIC(Service):
 
     def whoAmI(self):
         """
+        _whoAmI_
+
         Given the authentication mechanism used for this request (x509 so far),
         return information about myself, like DN/ roles/groups, etc
-        :return: FIXME FIXME a list of dictionary?
+        :return: a list of dictionary
         """
         uri = "/api/accounts/user/query/"
         userinfo = self._getResult(uri, callname='whoami', unflatJson=False)
         return userinfo['result']
 
-    # TODO how about renaming it to userNameToDN???
     def userNameDn(self, username):
         """
+        _userNameDn_
+
         Convert CERN Nice username to DN.
         :param username: string with the username
         :return: a string wit the user's DN
@@ -88,12 +91,11 @@ class CRIC(Service):
                 break
         return userdn
 
-    # TODO should we rename it to getAllPSNs???
-    def getAllCMSNames(self):
+    def getAllPSNs(self):
         """
-        _getAllCMSNames_
+        _getAllPSNs_
 
-        Retrieve all CMSNames from CRIC
+        Retrieve all PSNs (aka CMSNames) from CRIC
         :return: a flat list of CMS site names
         """
         uri = "/api/cms/site/query/"
@@ -140,8 +142,6 @@ class CRIC(Service):
 
         psns = set()
         for pnn in pnns:
-            if pnn == "T0_CH_CERN_Export" or pnn.endswith("_MSS") or pnn.endswith("_Buffer"):
-                continue
             psnSet = set()
             for item in mapping:
                 if pnn == item['phedex_name']:

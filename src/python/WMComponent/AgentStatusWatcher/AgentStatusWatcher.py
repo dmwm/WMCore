@@ -48,7 +48,9 @@ class AgentStatusWatcher(Harness):
         myThread.workerThreadManager.addWorker(ResourceControlUpdater(self.config),
                                                resourceUpdaterPollInterval)
 
-        logging.info("Setting DrainStatusPoller poll interval to %s seconds", drainStatusPollInterval)
-        myThread.workerThreadManager.addWorker(DrainStatusPoller(self.config),
+        if not hasattr(self.config, "Tier0Feeder"):
+            # Don't set up DrainStausPoller for Tier0
+            logging.info("Setting DrainStatusPoller poll interval to %s seconds", drainStatusPollInterval)
+            myThread.workerThreadManager.addWorker(DrainStatusPoller(self.config),
                                                drainStatusPollInterval)
         return

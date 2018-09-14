@@ -6,10 +6,12 @@ Unit tests for the WMTask class.
 """
 
 import unittest
+
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.WMTask import WMTask, makeWMTask
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 
 class WMTaskTest(unittest.TestCase):
@@ -260,17 +262,17 @@ class WMTaskTest(unittest.TestCase):
         """
         testTask = makeWMTask("TestTask")
 
-        assert testTask.getInputDatasetPath() == None, \
+        assert testTask.getInputDatasetPath() is None, \
             "Error: Input dataset path should be None."
-        assert testTask.dbsUrl() == None, \
+        assert testTask.dbsUrl() is None, \
             "Error: Input DBS URL should be None."
-        assert testTask.inputBlockWhitelist() == None, \
+        assert testTask.inputBlockWhitelist() is None, \
             "Error: Input block white list should be None."
-        assert testTask.inputBlockBlacklist() == None, \
+        assert testTask.inputBlockBlacklist() is None, \
             "Error: Input block black list should be None."
-        assert testTask.inputRunWhitelist() == None, \
+        assert testTask.inputRunWhitelist() is None, \
             "Error: Input run white list should be None."
-        assert testTask.inputRunBlacklist() == None, \
+        assert testTask.inputRunBlacklist() is None, \
             "Error: Input run black list should be None."
 
         testTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DataTier",
@@ -353,6 +355,28 @@ class WMTaskTest(unittest.TestCase):
             "Error: Run missing from black list."
 
         return
+
+    def testInputPileup(self):
+        """
+        _testInputPileup_
+
+        Verify that the input pileup dataset getter/setter methods work correctly
+        """
+        testTask = makeWMTask("TestTask")
+        self.assertEqual(testTask.getInputPileupDatasets(), [])
+
+        pileupConfig = parsePileupConfig("/MC/ProcessedDataset/DataTier",
+                                         "/Data/ProcessedDataset/DataTier")
+        # then mimic the setupPileup method
+        thesePU = []
+        for puType, puList in pileupConfig.items():
+            # there should be only one type and one PU dataset
+            testTask.setInputPileupDatasets(puList)
+            thesePU.extend(puList)
+            self.assertItemsEqual(testTask.getInputPileupDatasets(), thesePU)
+
+        with self.assertRaises(ValueError):
+            testTask.setInputPileupDatasets(None)
 
     def testAddNotifications(self):
         """
@@ -506,7 +530,7 @@ class WMTaskTest(unittest.TestCase):
         template(childStep.data)
         childStep = childStep.getTypeHelper()
         childStep.addOutputModule("outputAOD", primaryDataset="ThreeParticles",
-                                    processedDataset="DawnOfAnEra-v1", dataTier="MINIAOD")
+                                  processedDataset="DawnOfAnEra-v1", dataTier="MINIAOD")
 
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
@@ -696,9 +720,11 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(testTask.getSwVersion(allSteps=True), ["CMSSW_1_2_3", "CMSSW_2_2_3", "CMSSW_1_2_3"])
 
         self.assertEqual(testTask.getScramArch(), "slc7_amd64_gcc123")
-        self.assertEqual(testTask.getScramArch(allSteps=True), ["slc7_amd64_gcc123", "slc7_amd64_gcc223", "slc7_amd64_gcc123"])
+        self.assertEqual(testTask.getScramArch(allSteps=True),
+                         ["slc7_amd64_gcc123", "slc7_amd64_gcc223", "slc7_amd64_gcc123"])
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

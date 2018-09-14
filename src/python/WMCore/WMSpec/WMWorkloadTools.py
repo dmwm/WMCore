@@ -34,7 +34,7 @@ def parsePileupConfig(mcPileup, dataPileup):
 
     If the pileup config is defined as MCPileup and DataPileup
     then make sure we get the usual dictionary as
-    PileupConfig : {'mc' : '/mc/procds/tier', 'data': '/minbias/procds/tier'}
+    PileupConfig : {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
     """
     pileUpConfig = {}
     if mcPileup is not None:

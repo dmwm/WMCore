@@ -26,3 +26,9 @@ if __name__ == "__main__":
 
     removeWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName)
     insertWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
+
+    # check whether the document was properly inserted (for some reason,
+    # it doesn't get from time to time
+    if not reqMgrAux.getWMAgentConfig(wmConfig.Agent.hostName):
+        print("Agent config not found, trying to insert it again...")
+        insertWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)

@@ -185,7 +185,7 @@ class AuxBaseAPI(RESTEntity):
     @restcall(formats=[('application/json', JSONFormat())])
     def post(self, subName=None):
         """
-        If the document already exists, replace it with a new one.
+        Inserts a new document into the database
         """
         data = cherrypy.request.body.read()
         if not data:

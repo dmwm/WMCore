@@ -117,27 +117,6 @@ class TrivialFileCatalogTest(unittest.TestCase):
         out_lfn = tfc.matchPFN("stageout", in_pfn)
         self.assertEqual(out_lfn, in_lfn)
 
-
-    def testDataServiceXML(self):
-        # asks for PEM pass phrase ...
-        raise nose.SkipTest
-        phedex = PhEDEx(responseType='xml')
-
-        site = 'T2_UK_SGrid_Bristol'
-        lfn = '/store/users/metson/file'
-        protocol = 'srmv2'
-        phedex.getNodeTFC(site)
-
-        tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
-        tfc = readTFC(tfc_file)
-
-        pfn_dict = phedex.getPFN(site, lfn, protocol)
-        phedex_pfn = pfn_dict[(site, lfn)]
-        pfn = tfc.matchLFN(protocol, lfn)
-        msg = 'TFC pfn (%s) did not match PhEDEx pfn (%s)' % (pfn, phedex_pfn)
-        self.assertEqual(phedex_pfn, pfn, msg)
-
-
     def testAddMapping(self):
         tfc = TrivialFileCatalog()
         lfn = "some_lfn"

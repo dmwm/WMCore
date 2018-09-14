@@ -119,7 +119,8 @@ def capResourceEstimates(jobGroups, constraints):
 def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
             owner=None, ownerDN=None, ownerGroup='', ownerRole='',
             scramArch=None, swVersion=None, agentNumber=0, numberOfCores=1,
-            inputDataset=None, inputDatasetLocations=None, allowOpportunistic=False, agentName=''):
+            inputDataset=None, inputDatasetLocations=None, inputPileup=None,
+            allowOpportunistic=False, agentName=''):
     """
     _saveJob_
 
@@ -147,11 +148,11 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
     job['numberOfCores'] = numberOfCores
     job['inputDataset'] = inputDataset
     job['inputDatasetLocations'] = inputDatasetLocations
+    job['inputPileup'] = inputPileup
     job['allowOpportunistic'] = allowOpportunistic
 
-    output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-    pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
-    output.close()
+    with open(os.path.join(cacheDir, 'job.pkl'), 'w') as output:
+        pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
 
     return
 
@@ -180,6 +181,7 @@ def creatorProcess(work, jobCacheDir):
         numberOfCores = work.get('numberOfCores', 1)
         inputDataset = work.get('inputDataset', None)
         inputDatasetLocations = work.get('inputDatasetLocations', None)
+        inputPileup = work.get('inputPileup', None)
         allowOpportunistic = work.get('allowOpportunistic', False)
         agentName = work.get('agentName', '')
 
@@ -220,6 +222,7 @@ def creatorProcess(work, jobCacheDir):
                     numberOfCores=numberOfCores,
                     inputDataset=inputDataset,
                     inputDatasetLocations=inputDatasetLocations,
+                    inputPileup=inputPileup,
                     allowOpportunistic=allowOpportunistic,
                     agentName=agentName)
 
@@ -576,7 +579,8 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
                                'numberOfCores': 1,
-                               'inputDataset': wmTask.getInputDatasetPath()}
+                               'inputDataset': wmTask.getInputDatasetPath(),
+                               'inputPileup': wmTask.getInputPileupDatasets()}
                 try:
                     maxCores = 1
                     stepNames = wmTask.listAllStepNames()

@@ -12,6 +12,7 @@ from __future__ import print_function, division
 import logging
 import os.path
 import threading
+import json
 from collections import defaultdict, Counter
 try:
     import cPickle as pickle
@@ -615,8 +616,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobsToSubmit = {}
         jobsCount = 0
         exitLoop = False
-        jobSubmitLogBySites = defaultdict(Counter)
-        jobSubmitLogByPriority = defaultdict(Counter)
+        jobSubmitLogBySites = defaultdict(lambda: defaultdict(Counter))
+        jobSubmitLogByPriority = defaultdict(lambda: defaultdict(Counter))
 
         # iterate over jobs from the highest to the lowest prio
         for jobPrio in sorted(self.jobsByPrio, reverse=True):
@@ -631,12 +632,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                 possibleSites = self.jobDataCache[jobid]['possibleSites']
                 # remove sites with 0 task thresholds
                 possibleSites = self.checkZeroTaskThresholds(jobType, possibleSites)
-                jobSubmitLogByPriority[jobPrio]['Total'] += 1
+                jobSubmitLogByPriority[jobPrio][jobType]['Total'] += 1
                 # now look for sites with free pending slots
                 for siteName in possibleSites:
                     condition = self._getJobSubmitCondition(jobPrio, siteName, jobType)
                     if condition != "JobSubmitReady":
-                        jobSubmitLogBySites[siteName][condition] += 1
+                        jobSubmitLogBySites[siteName][jobType][condition] += 1
                         logging.debug("Found a job for %s : %s", siteName, condition)
                         continue
 
@@ -654,8 +655,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     self.currentRcThresholds[siteName]["total_pending_jobs"] += 1
                     self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"] += 1
                     jobsCount += 1
-                    jobSubmitLogBySites[siteName]["submitted"] += 1
-                    jobSubmitLogByPriority[jobPrio]['submitted'] += 1
+                    jobSubmitLogBySites[siteName][jobType]["submitted"] += 1
+                    jobSubmitLogByPriority[jobPrio][jobType]['submitted'] += 1
 
                     # jobs that will be submitted must leave the job data cache
                     self.jobsByPrio[jobPrio].discard(jobid)
@@ -669,8 +670,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                     exitLoop = True
                     break
 
-        logging.info("Site submission report: %s", dict(jobSubmitLogBySites))
-        logging.info("Priority submission report: %s", dict(jobSubmitLogByPriority))
+        logging.info("Site submission report: %s", json.dumps(jobSubmitLogBySites, indent=4))
+        logging.info("Priority submission report: %s", json.dumps(jobSubmitLogByPriority, indent=4))
         logging.info("Have %s packages to submit.", len(jobsToSubmit))
         logging.info("Have %s jobs to submit.", jobsCount)
         logging.info("Done assigning site locations.")

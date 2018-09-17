@@ -1,3 +1,19 @@
+1.1.16 to 1.1.17.pre1:
+  - Merge pull request #8799 from amaltaro/fix-8783-plus
+  - Merge pull request #8795 from ticoann/remove_unused_phedex_api
+  - Changed a couple of CRIC method/API names
+  - remove unused PhEDEx call
+  - Merge pull request #8786 from amaltaro/fix-8783
+  - Merge pull request #8791 from ticoann/catch_proxy_error
+  - catch proxy server error
+  - Merge pull request #8787 from ticoann/remove_unused_config
+  - remove local logdb_url
+  - Merge pull request #8777 from ticoann/fix_script_link
+  - Merge pull request #8782 from amaltaro/cpimpl-bad
+  - Added users-wise CRIC APIs for CRAB
+  - Remove wrong reference in Plugins.FNALImpl
+  - fix wrong link in workload summary
+
 1.1.15 to 1.1.16:
   - 1.1.16.pre3
   - Merge pull request #8775 from amaltaro/rest-import

@@ -10,7 +10,7 @@ DEFAULT_AGENT_CONFIG = {
     # disk usage percentage for warning
     "DiskUseThreshold": 85,
      # list of disks which shouldn't be included in monitoring for the Threshold
-    "IgnoreDisks": ["/lustre/unmerged"],
+    "IgnoreDisks": ["/mnt/ramdisk"],
     # fraction of condor schedd limit, used for job submission
     "CondorJobsFraction": 0.75,
     # In JobSumitter, submit jobs over the threshold if the priority is higher than current pending/running jobs

@@ -1,0 +1,79 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "AcquisitionEra": "Integ_Test",
+    "CMSSWVersion": "CMSSW_8_0_21",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": "Broken template! Step1 reads input data; Both Step1 and Step2 are DIGI and use a different Pileup sample",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "CouchDBName": "reqmgr_config_cache",
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
+    "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6",
+    "Group": "DATAOPS",
+    "Memory": 2300,
+    "Multicore": 1,
+    "PrepID": "TEST-TEST-HIG-RunIISummer15wmLHEGS-00744",
+    "PrimaryDataset": "DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8",
+    "ProcessingString": "StepChain_MC_GenSimDigiReco_TEST_WMCore",
+    "ProcessingVersion": 20,
+    "RequestPriority": 316000,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "StepChain",
+    "Requestor": "amaltaro",
+    "ScramArch": [
+      "slc6_amd64_gcc530"
+    ],
+    "SizePerEvent": 250,
+    "Step1": {
+      "BlockWhitelist": [
+        "/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/RunIIWinter15GS-MCRUN2_71_V1_ext1-v2/GEN-SIM#cc0feda2-c027-11e6-8e8a-001e67abef8c"
+      ],
+      "InputDataset": "/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/RunIIWinter15GS-MCRUN2_71_V1_ext1-v2/GEN-SIM",
+      "CMSSWVersion": "CMSSW_7_4_1_patch4",
+      "ConfigCacheID": "8654d0a1dde0b1463693a416ef7a77f0",
+      "GlobalTag": "MCRUN2_74_V9",
+      "KeepOutput": false,
+      "MCPileup": "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM",
+      "PrepID": "TEST-Step1-ReDigi1",
+      "PrimaryDataset": "BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen",
+      "ScramArch": [
+        "slc6_amd64_gcc491"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "REDIGI1"
+    },
+    "Step2": {
+      "CMSSWVersion": "CMSSW_8_0_21",
+      "ConfigCacheID": "f7e311f2c6b5a0884faea133990edcbf",
+      "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6",
+      "InputFromOutputModule": "RAWSIMoutput",
+      "InputStep": "REDIGI1",
+      "MCPileup": "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW",
+      "PrepID": "TEST-Step4-ReDigi2",
+      "PrimaryDataset": "DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8",
+      "ScramArch": [
+        "slc6_amd64_gcc530"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "DIGI"
+    },
+    "StepChain": 2,
+    "TimePerEvent": 144
+  }
+}

@@ -753,6 +753,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
             if agentConfig.get("UserDrainMode") and agentConfig.get("SpeedDrainMode"):
                 self.enableAllSites = agentConfig.get("SpeedDrainConfig")['EnableAllSites']['Enabled']
+            else:
+                self.enableAllSites = False
             self.condorFraction = agentConfig.get('CondorJobsFraction', 0.75)
             self.condorOverflowFraction = agentConfig.get("CondorOverflowFraction", 0.2)
         else:

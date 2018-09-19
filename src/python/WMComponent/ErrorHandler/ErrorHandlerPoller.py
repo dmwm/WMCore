@@ -71,17 +71,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             self.maxRetries = self.config.ErrorHandler.maxRetries
         else:
             self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
-            agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
-            if (agentConfig.get("UserDrainMode") and agentConfig.get("SpeedDrainMode") and
-                agentConfig.get("SpeedDrainConfig")['NoJobRetries']['Enabled']):
-                self.maxRetries = 0
-            else:
-                self.maxRetries = agentConfig.get("MaxRetries")
-
-        if not isinstance(self.maxRetries, dict):
-            self.maxRetries = {'default': self.maxRetries}
-        if 'default' not in self.maxRetries:
-            raise ErrorHandlerException('Max retries for the default job type must be specified')
 
         self.exitCodesNoRetry = []
         self.maxProcessSize = getattr(self.config.ErrorHandler, 'maxProcessSize', 250)
@@ -96,7 +85,30 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
                                                     database=config.ACDC.database)
 
+        self.setupComponentParam()
+
         return
+
+    def setupComponentParam(self):
+        """
+        Initialize (and update every cycle) some of the component's
+        parameters, according to the agent type (T0/Production) and agent config.
+        """
+        if self.reqAuxDB:
+            agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+            self.exitCodesNoRetry = agentConfig.get("NoRetryExitCodes", [])
+
+            if agentConfig.get("UserDrainMode") and agentConfig.get("SpeedDrainMode") \
+                and agentConfig.get("SpeedDrainConfig")['NoJobRetries']['Enabled']:
+                logging.info("Agent is in speed drain mode. Not retrying any jobs.")
+                self.maxRetries = 0
+            else:
+                self.maxRetries = agentConfig.get("MaxRetries")
+
+        if not isinstance(self.maxRetries, dict):
+            self.maxRetries = {'default': self.maxRetries}
+        if 'default' not in self.maxRetries:
+            raise ErrorHandlerException('Max retries for the default job type must be specified')
 
     def setup(self, parameters=None):
         """
@@ -145,10 +157,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         retrydoneJobs = []
         cooloffJobs = []
         passJobs = []
-
-        # Query auxiliary db for current state of maxRetries
-        if self.reqAuxDB:
-            self.maxRetries = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("MaxRetries", self.maxRetries)
 
         if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default': self.maxRetries}
@@ -214,9 +222,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         cooloffJobs = []
         passJobs = []
         exhaustJobs = []
-
-        if self.reqAuxDB:
-            self.exitCodesNoRetry = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName).get("NoRetryExitCodes", [])
 
         for job in jobList:
             report = Report()
@@ -387,6 +392,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         And deal with it as desired.
         """
         logging.debug("Running error handling algorithm")
+        self.setupComponentParam()
+
         try:
             myThread = threading.currentThread()
             self.handleErrors()

@@ -39,13 +39,11 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         Update drainStats if agent is in drain mode
         """
-
+        logging.info("Running agent drain algorithm...")
         self.agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
 
         if isDrainMode(self.config):
-            logging.info("Checking agent drain status...")
             # check to see if the agent hit any speed drain thresholds
-            logging.info("Checking speed drain thresholds...")
             thresholdsHit = self.checkSpeedDrainThresholds()
             if thresholdsHit:
                 logging.info("Updating agent configuration for speed drain...")
@@ -60,8 +58,8 @@ class DrainStatusPoller(BaseWorkerThread):
                 msg += str(ex)
                 logging.exception(msg)
         else:
+            logging.info("Agent not in drain mode. Resetting flags and skipping drain check...")
             self.resetAgentSpeedDrainConfig()
-            logging.info("Agent not in drain mode. Skipping drain check...")
 
     @classmethod
     def getDrainInfo(cls):
@@ -79,15 +77,16 @@ class DrainStatusPoller(BaseWorkerThread):
         speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
 
         if 'CondorPriority' in thresholdsHit:
-            if self.condorAPI.editCondorJobs(
-                    "JobStatus=?=1 && (CMS_JobType =?= \"Production\" || CMS_JobType =?= \"Processing\")",
-                    "JobPrio", "999999"):
-                logging.info("Enabling NoJobRetries flag: Condor job priority updated to 999999 for pending Production/Processing jobs.")
+            logging.info("Bumping condor job priority to 999999 for Production/Processing pending jobs.")
+            self.condorAPI.editCondorJobs(
+                "JobStatus=?=1 && (CMS_JobType =?= \"Production\" || CMS_JobType =?= \"Processing\")",
+                "JobPrio", "999999")
             condorPriorityFlag = True
 
         if condorPriorityFlag != speedDrainConfig['CondorPriority']['Enabled']:
-            # CondorPriory setting is irreversible so the flog only indicated weather priorty is increased or not.
-            # this flag is not checked by other component
+            # CondorPriority setting is irreversible so the flag only indicates weather
+            # priority is increased or not. It is not checked by other components
+            logging.info("Enabling CondorPriority flag.")
             speedDrainConfig['CondorPriority']['Enabled'] = condorPriorityFlag
             updateConfig = True
 
@@ -119,7 +118,7 @@ class DrainStatusPoller(BaseWorkerThread):
             self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainMode", False)
             speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
             for key, v in speedDrainConfig.items():
-                if key in self.validSpeedDrainConfigKey and v['Enabled']:
+                if key in self.validSpeedDrainConfigKeys and v['Enabled']:
                     speedDrainConfig[key]['Enabled'] = False
 
             self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", speedDrainConfig)

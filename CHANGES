@@ -1,3 +1,35 @@
+1.1.15 to 1.1.15.patch5:
+  - Merge pull request #8815 from ticoann/1.1.15_wmagent_patch5
+  - Fix a typo; fixed loggings
+  - Try creating reqmgr_aux agent doc once again
+  - don't apply speed mode when user drain mode is false
+  - Remove lustre from the ignoredDisks list; added /mnt/ramdisk
+  - pylint fixes
+  - Catch Proxy Error for wmstats query; updated error messages; others
+  - Merge pull request #8793 from ticoann/handle_proxy_error
+  - catch proxy server error
+  - 1.1.15.patch4
+  - Merge pull request #8770 from ticoann/1.1.15.wmagent_patch4
+  - fix db exception handling
+  - Trap wmstats exception in DBSUploadPoller
+  - 1.1.15.patch3
+  - Merge pull request #8761 from ticoann/1.1.5.wmagent_patch3
+  - Complement for 8748 skipping dbsbuffer inserts
+  - Convert a few DBS3Uploader logs to debug
+  - 1.1.15.patch2
+  - Merge pull request #8754 from ticoann/1.1.15.wmagent_patch2
+  - Make WorkQueueManagerWMBSFileFeeder slightly more verbose
+  - fix unittest
+  - set the dataset parentage for StepChain
+  - clean up out put of the script and add more instruction
+  - pylint fixes
+  - Pass if job directory has been created already; fix encode error in error msg
+  - fix unit tests
+  - Create bl_status states only in JobSubmitter component
+  - skip umerged acdc files without parents to update dbsbuffer
+  - impove the perfomance of dbsfile insert
+  - 1.1.15.patch1
+
 1.1.15 to 1.1.15.patch4:
   - Merge pull request #8770 from ticoann/1.1.15.wmagent_patch4
   - fix db exception handling

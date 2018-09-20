@@ -575,12 +575,16 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['DESIRED_CMSDataset'] = job['inputDataset']
             else:
                 ad['DESIRED_CMSDataset'] = classad.Value.Undefined
-
             if job.get('inputDatasetLocations'):
                 sites = ','.join(sorted(job['inputDatasetLocations']))
                 ad['DESIRED_CMSDataLocations'] = sites
             else:
                 ad['DESIRED_CMSDataLocations'] = classad.Value.Undefined
+
+            if job.get('inputPileup'):
+                ad['DESIRED_CMSPileups'] = ','.join(sorted(job['inputPileup']))
+            else:
+                ad['DESIRED_CMSPileups'] = classad.Value.Undefined
 
             # HighIO and repack jobs
             ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0

@@ -63,6 +63,7 @@ class RunJob(dict):
         self.setdefault('potentialSites', None)
         self.setdefault('inputDataset', None)
         self.setdefault('inputDatasetLocations', None)
+        self.setdefault('inputPileup', None)
         self.setdefault('allowOpportunistic', False)
 
         return

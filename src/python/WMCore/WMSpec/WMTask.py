@@ -832,10 +832,37 @@ class WMTaskHelper(TreeHelper):
         """
 
         if hasattr(self.data.input, 'dataset'):
-            if hasattr(self.data.input.dataset, 'name') and self.data.input.dataset.name:
-                return self.data.input.dataset.name
+            return getattr(self.data.input.dataset, 'name', None)
 
         return None
+
+    def setInputPileupDatasets(self, dsetName):
+        """
+        _setInputPileupDatasets_
+
+        Create a list of pileup datasets to be used by this task (possible
+        multiple CMSSW steps)
+        """
+        self.data.input.section_("pileup")
+        if not hasattr(self.data.input.pileup, "datasets"):
+            self.data.input.pileup.datasets = []
+
+        if isinstance(dsetName, list):
+            self.data.input.pileup.datasets.extend(dsetName)
+        elif isinstance(dsetName, basestring):
+            self.data.input.pileup.datasets.append(dsetName)
+        else:
+            raise ValueError("Pileup dataset must be either a list or basestring")
+
+    def getInputPileupDatasets(self):
+        """
+        _getInputPileupDatasets_
+
+        Get a list of the input pileup dataset name(s) for this task.
+        """
+        if hasattr(self.data.input, 'pileup'):
+            return getattr(self.data.input.pileup, 'datasets', [])
+        return []
 
     def siteWhitelist(self):
         """

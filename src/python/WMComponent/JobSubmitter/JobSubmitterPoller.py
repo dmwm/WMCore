@@ -391,6 +391,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'numberOfCores': loadedJob.get("numberOfCores"),  # may update it later
                        'inputDataset': loadedJob.get('inputDataset', None),
                        'inputDatasetLocations': loadedJob.get('inputDatasetLocations', None),
+                       'inputPileup': loadedJob.get('inputPileup', None),
                        'allowOpportunistic': loadedJob.get('allowOpportunistic', False)}
             # then update it with the info retrieved from the database
             jobInfo.update(newJob)

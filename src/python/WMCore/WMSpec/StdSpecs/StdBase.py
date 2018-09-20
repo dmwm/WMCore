@@ -848,7 +848,12 @@ class StdBase(object):
         _setupPileup_
 
         Setup pileup for every CMSSW step in the task.
+        pileupConfig has the following data structure:
+            {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
         """
+        for puType, puList in pileupConfig.items():
+            task.setInputPileupDatasets(puList)
+
         for stepName in task.listAllStepNames():
             step = task.getStep(stepName)
             if step.stepType() != "CMSSW":

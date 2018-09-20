@@ -1,3 +1,43 @@
+1.1.16 to 1.1.17.pre2:
+  - Merge pull request #8808 from amaltaro/pileup-ad
+  - Merge pull request #8811 from ticoann/jobsumitter_add_type_info
+  - Merge pull request #8769 from amaltaro/dbsuploaded-parentage
+  - Merge pull request #8807 from amaltaro/upload-config-put
+  - Merge pull request #8806 from ticoann/fix_speed_drainig_setting
+  - don't apply speed mode when user drain mode is false
+  - Merge pull request #8817 from belforte/patch-1
+  - Merge pull request #8816 from amaltaro/multiPU-templ
+  - Merge pull request #8818 from amaltaro/deploy-1115patch5
+  - Bump agent deployment example to 1.1.15.patch5
+  - CRAB Client does not need SiteDB Service
+  - Added multi Pileup templates, jobs fail :)
+  - Merge pull request #8814 from belforte/CRICforCRAB
+  - added unit tests
+  - Define a new job classad for the PU dataset name
+  - make crabtaskworker depend on all services, so it gets the new CRIC one
+  - pylint fixes
+  - Catch Proxy Error for wmstats query; updated error messages; others
+  - Persist the PU dataset name under a WMTask object and its workload
+  - Try creating reqmgr_aux agent doc once again
+  - Merge pull request #8781 from amaltaro/ignore-ramdisk
+  - add job type info in the log
+  - 1.1.17.pre1
+  - Merge pull request #8799 from amaltaro/fix-8783-plus
+  - Merge pull request #8795 from ticoann/remove_unused_phedex_api
+  - Changed a couple of CRIC method/API names
+  - remove unused PhEDEx call
+  - Merge pull request #8786 from amaltaro/fix-8783
+  - Merge pull request #8791 from ticoann/catch_proxy_error
+  - catch proxy server error
+  - Merge pull request #8787 from ticoann/remove_unused_config
+  - remove local logdb_url
+  - Merge pull request #8777 from ticoann/fix_script_link
+  - Merge pull request #8782 from amaltaro/cpimpl-bad
+  - Added users-wise CRIC APIs for CRAB
+  - Remove wrong reference in Plugins.FNALImpl
+  - Remove lustre from the ignoredDisks list; added /mnt/ramdisk
+  - fix wrong link in workload summary
+
 1.1.16 to 1.1.17.pre1:
   - Merge pull request #8799 from amaltaro/fix-8783-plus
   - Merge pull request #8795 from ticoann/remove_unused_phedex_api

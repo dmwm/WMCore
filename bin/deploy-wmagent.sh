@@ -222,7 +222,9 @@ set +e
 # XXX: update the PR number below, if needed :-)
 echo -e "\n*** Applying database schema patches ***"
 cd $CURRENT
-#  wget -nv https://github.com/dmwm/WMCore/pull/8315.patch -O - | patch -d apps/wmagent/bin -p 2
+  ## patches required for CRIC during the agent deployment
+  wget -nv https://github.com/dmwm/WMCore/pull/8823.patch -O - | patch -d apps/wmagent/bin -p 2
+  wget -nv https://github.com/dmwm/WMCore/pull/8823.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
 cd -
 echo "Done!" && echo
 
@@ -290,8 +292,6 @@ echo "Done!" && echo
 echo "*** Tweaking configuration ***"
 sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
-# TODO: remove this ErrorHandler tweak once 8614 issue gets fixed
-sed -i "s+ErrorHandler.maxProcessSize = 500+ErrorHandler.maxProcessSize = 50+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then

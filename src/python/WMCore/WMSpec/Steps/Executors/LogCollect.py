@@ -104,8 +104,14 @@ class LogCollect(Executor):
         useEdmCopyUtil = False
         if result:
             try:
-                if int(result.group(1)) >= 8:
+                cmssw_major = int(result.group(1))
+                if cmssw_major >= 8:
                     useEdmCopyUtil = True
+                elif cmssw_major < 8 and scramArch.startswith('slc6_amd64_'):
+                    useEdmCopyUtil = True
+                    logging.warning("CMSSW too old to support edmCopyUtil, using CMSSW_10_2_3 instead")
+                    cmsswVersion = "CMSSW_10_2_3"
+                    scramArch = "slc6_amd64_gcc700"
             except ValueError:
                 pass
 

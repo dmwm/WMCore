@@ -122,14 +122,16 @@ class UserFileCache(Service):
         result=self['requests'].makeRequest(uri = 'info', data = {'subresource':'fileremove', 'hashkey': haskey})
         return result[0]['result'][0]
 
-    def download(self, hashkey, output):
+    def download(self, hashkey, output, username=None):
         """
         Download tarfile with the provided hashkey.
         """
         url = self['endpoint'] + 'file?hashkey=%s' % hashkey
+        if username:
+            url = url + '&username=%s' % username
 
         self['logger'].info('Fetching URL %s' % url)
-        fileName, dummyHeader = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
+        fileName, dummyHeader = self['requests'].downloadFile(output, str(url)) # unicode broke pycurl.setopt
         self['logger'].debug('Wrote %s' % fileName)
         return fileName
 

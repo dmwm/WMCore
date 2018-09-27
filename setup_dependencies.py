@@ -165,7 +165,7 @@ dependencies = {
         },
     'acdcserver': {
         'packages': ['WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.DataStructs',
-                     'WMCore.Wrappers+', 'WMCore.Database'],
+                     'WMCore.Wrappers+', 'WMCore.Database', 'Utils'],
         'modules': ['WMCore.Configuration',
                     'WMCore.Algorithms.ParseXMLFile', 'WMCore.Algorithms.Permissions',
                     'WMCore.Lexicon', 'WMCore.WMException', 'WMCore.Services.Requests',

@@ -414,3 +414,12 @@ class WMStatsReader(object):
             finalStruct["samples"].append(row["doc"])
 
         return jobInfoDoc
+
+    def getAllAgentRequestRevByID(self):
+
+        results = self.couchDB.loadView(self.couchapp, "agentRequests")
+        idRevMap = {}
+        for row in results['rows']:
+            idRevMap[row['key']] = row['value']['rev']
+
+        return idRevMap

@@ -55,6 +55,7 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
 
 
 class WMStatsWriter(WMStatsReader):
+
     def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
         # set the connection for local couchDB call
         WMStatsReader.__init__(self, couchURL, appName, reqdbURL, reqdbCouchApp)
@@ -76,6 +77,28 @@ class WMStatsWriter(WMStatsReader):
         for doc in docs:
             self.couchDB.queue(doc)
         return self.couchDB.commit(returndocs=True)
+
+    def bulkUpdateData(self, docs, existingDocs):
+        """
+        :param docs: docs to insert or update
+        :param existingDocs: docs existing in current
+        :return:
+        """
+        if isinstance(docs, dict):
+            docs = [docs]
+        for doc in docs:
+            if doc['_id'] in existingDocs:
+                revList = existingDocs[doc['_id']].split('-')
+                # update the revision number
+                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
+            else:
+                # just send well formatted revision for the new documents which required by new_edits=False
+                doc['_rev'] = "1-123456789"
+            self.couchDB.queue(doc)
+
+        self.couchDB.commit(new_edits=False)
+        return
+
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)

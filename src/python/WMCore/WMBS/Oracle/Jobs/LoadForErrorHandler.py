@@ -16,6 +16,6 @@ class LoadForErrorHandler(MySQLLoadForErrorHandler):
                    wfd.merged, wja.job "jobid", wpnn.pnn
                  FROM wmbs_file_details wfd
                    INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
-                   INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
-                   INNER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
+                   LEFT OUTER JOIN wmbs_file_location wfl ON wfd.id = wfl.fileid
+                   LEFT OUTER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
                  WHERE wja.job = :jobid"""

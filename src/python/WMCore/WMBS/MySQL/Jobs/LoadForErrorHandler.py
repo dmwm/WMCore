@@ -31,8 +31,8 @@ class LoadForErrorHandler(DBFormatter):
                    wfd.merged, wja.job AS jobid, wpnn.pnn
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
-                 INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
-                 INNER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
+                 LEFT OUTER JOIN wmbs_file_location wfl ON wfd.id = wfl.fileid
+                 LEFT OUTER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
                  WHERE wja.job = :jobid"""
 
     parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
@@ -137,16 +137,16 @@ class LoadForErrorHandler(DBFormatter):
                 # need to update with noDuplicateFiles since this one has run lumi information.
 
                 wmbsFile.update(noDuplicateFiles[f["id"]])
-                if 'pnn' in f:  # file might not have a valid location
+                if f['pnn']:  # file might not have a valid location, or be Null
                     wmbsFile['locations'].add(f['pnn'])
                 for r in wmbsFile.pop('newRuns'):
                     wmbsFile.addRun(r)
                 for entry in parentList:
                     if entry['id'] == f['id']:
                         wmbsFile['parents'].add(entry['lfn'])
-                wmbsFile.pop('pnn', None)  # not needed for anything
+                wmbsFile.pop('pnn', None)  # not needed for anything, just remove it
                 filesForJobs[jobid][f['id']] = wmbsFile
-            elif 'pnn' in f:
+            elif f['pnn']:
                 # If the file is there and it has a location, just add it
                 filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 

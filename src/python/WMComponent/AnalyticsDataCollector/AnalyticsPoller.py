@@ -138,7 +138,9 @@ class AnalyticsPoller(BaseWorkerThread):
             if self.plugin != None:
                 self.plugin(requestDocs, self.localSummaryCouchDB, self.centralRequestCouchDB)
 
-            self.localSummaryCouchDB.uploadData(requestDocs)
+            existingDocs = self.localSummaryCouchDB.getAllAgentRequestRevByID()
+            self.localSummaryCouchDB.bulkUpdateData(requestDocs, existingDocs)
+
             logging.info("Request data upload success\n %s request, \nsleep for next cycle", len(requestDocs))
 
             self.centralWMStatsCouchDB.updateAgentInfoInPlace(self.agentInfo["agent_url"],

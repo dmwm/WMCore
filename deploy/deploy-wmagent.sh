@@ -23,20 +23,25 @@
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
-### Usage:               -X This option enables usage of the CRIC data service
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t testbed-vocms001 -p "8788" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch -X
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.15.patch5 -d HG1808g -t testbed-vocms001 -p "8788" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
- 
-BASE_DIR=/data/srv 
-DEPLOY_DIR=$BASE_DIR/wmagent 
-ENV_FILE=/data/admin/wmagent/env.sh 
-CURRENT=/data/srv/wmagent/current
-MANAGE=/data/srv/wmagent/current/config/wmagent/ 
-OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
+
+IAM=`whoami`
 HOSTNAME=`hostname -f`
+MY_IP=`host $HOSTNAME | awk '{print $4}'`
+
+BASE_DIR=/data/srv
+DEPLOY_DIR=$BASE_DIR/wmagent
+CURRENT_DIR=$BASE_DIR/wmagent/current
+MANAGE_DIR=$BASE_DIR/wmagent/current/config/wmagent/
+ADMIN_DIR=/data/admin/wmagent
+ENV_FILE=/data/admin/wmagent/env.sh
+CERTS_DIR=/data/certs/
+OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
+
 
 # These values may be overwritten by the arguments provided in the command line
 WMA_ARCH=slc7_amd64_gcc630
@@ -60,66 +65,114 @@ help()
   exit 0
 }
 
-### Cleanup function: it cleans up the oracle database
-cleanup_oracle()
+### Runs some basic checks before actually starting the deployment procedure
+basic_checks()
 {
-  cd $CURRENT/config/wmagent/
-  cat > clean-oracle.sql << EOT
-BEGIN
-   FOR cur_rec IN (SELECT object_name, object_type
-                        FROM user_objects
-                        WHERE object_type IN
-                                ('TABLE',
-                                'VIEW',
-                                'PACKAGE',
-                                'PROCEDURE',
-                                'FUNCTION',
-                                'SEQUENCE'
-                                ))
-   LOOP
-        BEGIN
-        IF cur_rec.object_type = 'TABLE'
-        THEN
-                EXECUTE IMMEDIATE  'DROP '
-                                || cur_rec.object_type
-                                || ' "'
-                                || cur_rec.object_name
-                                || '" CASCADE CONSTRAINTS';
-        ELSE
-                EXECUTE IMMEDIATE  'DROP '
-                                || cur_rec.object_type
-                                || ' "'
-                                || cur_rec.object_name
-                                || '"';
-        END IF;
-        EXCEPTION
-        WHEN OTHERS
-        THEN
-                DBMS_OUTPUT.put_line (   'FAILED: DROP '
-                                || cur_rec.object_type
-                                || ' "'
-                                || cur_rec.object_name
-                                || '"'
-                                );
-        END;
-   END LOOP;
-END;
-/
+  echo -n "Checking whether this node has the very basic setup for the agent deployment..."
+  set -e
+  if [ -d $DEPLOY_DIR/v$WMA_TAG ]; then
+    echo -e "  FAILED!\n  You need to remove the previous $DEPLOY_DIR/v$WMA_TAG installation"
+    exit 4
+  elif [ ! -d $ADMIN_DIR ]; then
+    echo -e "  FAILED!\n Could not find $ADMIN_DIR, creating it now."
+    mkdir -p $ADMIN_DIR
+    wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/env.sh -O $ENV_FILE
+    download_secrets_file
+    update_secrets_file
+    echo "  Both env.sh and WMAgent.secrets files were created."
+    echo "  Make sure to update the WMAgent.secrets file and run this script once again"
+    exit 5
+  elif [ ! -f $ADMIN_DIR/WMAgent.secrets ]; then
+    echo -e "  FAILED!\n Could not find $ADMIN_DIR/WMAgent.secrets, downloading it now."
+    download_secrets_file
+    update_secrets_file
+    echo "  It's just a template, so make sure to update the WMAgent.secrets file and run this script once again"
+    exit 6
+  elif [ ! -f $ENV_FILE ]; then
+    echo -e "\n  Could not find $ENV_FILE, but I'm downloading it now."
+    wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/env.sh -O $ENV_FILE
+  fi
 
-EOT
-
-  while true; do
-    tmpf=`mktemp`
-    ./manage db-prompt < clean-oracle.sql > $tmpf
-    if grep -iq "PL/SQL procedure successfully completed" $tmpf; then
-      break
+  if [ ! -d $CERTS_DIR ]; then
+    echo -e "\n  Could not find $CERTS_DIR, but I'm creating it now"
+    mkdir -p $CERTS_DIR
+    chmod 755 $CERTS_DIR
+    echo "... and now trying to copy the certificates from another node, you might be prompted for a password."
+    if [[ "$IAM" == cmst1 ]]; then
+      scp cmst1@vocms0250:/data/certs/* /data/certs/
+    else
+      scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
     fi
-  done
+    check_certs
+  else
+    check_certs
+    echo -e "  OK!\n"
+  fi
+
+  check_process
+  set +e
+}
+
+download_secrets_file(){
+  cd $ADMIN_DIR
+  if [[ "$CENTRAL_SERVICES" == cmsweb.cern.ch ]]; then
+    wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/WMAgent.production -O $ADMIN_DIR/WMAgent.secrets
+  else
+    wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/WMAgent.testbed -O $ADMIN_DIR/WMAgent.secrets
+  fi
+  cd -
+}
+
+update_secrets_file(){
+  cd $ADMIN_DIR
+  sed -i "s+MYSQL_USER=+MYSQL_USER=$IAM+" WMAgent.secrets
+  sed -i "s+MYSQL_PASS=+MYSQL_PASS=UPDATE-ME+" WMAgent.secrets
+  sed -i "s+COUCH_USER=+COUCH_USER=$IAM+" WMAgent.secrets
+  sed -i "s+COUCH_HOST=127.0.0.1+COUCH_HOST=$MY_IP+" WMAgent.secrets
+  cd -
+}
+
+check_certs()
+{
+  echo -n "Checking whether the certificates and proxy are in place ..."
+  if [ ! -f $CERTS_DIR/myproxy.pem ] || [ ! -f $CERTS_DIR/servicecert.pem ] || [ ! -f $CERTS_DIR/servicekey.pem ]; then
+    echo "  FAILED!\n Failed to find one of the required grid certificates"
+    exit 7
+  else
+    chmod 600 $CERTS_DIR/*
+    echo -e "  OK!\n"
+  fi
+}
+
+check_process()
+{
+  echo -n "Checking whether there are any leftover processes ..."
+  output=`ps aux | egrep 'couch|wmcore|mysql|beam' | wc -l`
+  if [ "$output" -gt 1 ]; then
+    echo "  FAILED!\n There are still $output WMCore process running. Quitting!"
+    exit 8
+  else
+    echo -e "  OK!\n"
+  fi
+}
+
+check_oracle()
+{
+  echo -n "Checking whether there are any leftover processes from the previous agent ..."
+  cd $CURRENT_DIR/config/wmagent/
+  echo -e "SELECT COUNT(*) from USER_TABLES;" > check_db_status.sql
+
+  tmpf=`mktemp`
+  ./manage db-prompt < check_db_status.sql > $tmpf
+  tables=`cat $tmpf | grep -A1 '\-\-\-\-' | tail -n 1`
+  if [ "$tables" -gt 0 ]; then
+    echo "  FAILED!\n This database is likely being used by another agent! Found $tables tables. Quitting!"
+    exit 9
+  else
+    echo -e "  OK!\n"
+  fi
   rm -f $tmpf
-  echo -e "PURGE RECYCLEBIN;\nselect tname from tab;" > purging.sql
-  ./manage db-prompt < purging.sql
-  rm -f clean-oracle.sql purging.sql
-  echo "Done!" && echo
+  cd -
 }
 
 for arg; do
@@ -133,20 +186,31 @@ for arg; do
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
     -c) CENTRAL_SERVICES=$2; shift; shift ;;
-    -X) USE_CRIC=true; shift;;
     -*) usage ;;
   esac
 done
 
 if [[ -z $WMA_TAG ]] || [[ -z $DEPLOY_TAG ]] || [[ -z $TEAMNAME ]]; then
   usage
-  exit 1
+  exit 2
 fi
 
+basic_checks
+
 source $ENV_FILE;
+
+### Are we using Oracle or MySQL
 MATCH_ORACLE_USER=`cat $WMAGENT_SECRETS_LOCATION | grep ORACLE_USER | sed s/ORACLE_USER=//`
 if [ "x$MATCH_ORACLE_USER" != "x" ]; then
   FLAVOR=oracle
+  check_oracle
+fi
+
+### Are we meant to be using CRIC or not
+MATCH_WMAGENT_USE_CRIC=`cat $ENV_FILE | grep WMAGENT_USE_CRIC | awk -F'=' '{print $2}'`
+if [[ "$MATCH_WMAGENT_USE_CRIC" == ?rue ]]; then
+  USE_CRIC=true
+  export WMAGENT_USE_CRIC=true
 fi
 
 if [[ "$HOSTNAME" == *cern.ch ]]; then
@@ -157,7 +221,7 @@ elif [[ "$HOSTNAME" == *fnal.gov ]]; then
   FORCEDOWN=""
 else
   echo "Sorry, I don't know this network domain name"
-  exit 1
+  exit 3
 fi
 
 DATA_SIZE=`lsblk -bo SIZE,MOUNTPOINT | grep ' /data1' | sort | uniq | awk '{print $1}'`
@@ -189,10 +253,6 @@ echo " - Central Services: $CENTRAL_SERVICES"
 echo " - Use /data1      : $DATA1"
 echo " - Using CRIC      : $USE_CRIC" && echo
 
-if [ "$USE_CRIC" = true ]; then
-  export WMAGENT_USE_CRIC=true
-fi
-
 mkdir -p $DEPLOY_DIR || true
 cd $BASE_DIR
 rm -rf deployment deployment.zip deployment-${DEPLOY_TAG};
@@ -221,28 +281,20 @@ set +e
 
 # XXX: update the PR number below, if needed :-)
 echo -e "\n*** Applying database schema patches ***"
-cd $CURRENT
+cd $CURRENT_DIR
 #  wget -nv https://github.com/dmwm/WMCore/pull/8315.patch -O - | patch -d apps/wmagent/bin -p 2
 cd -
 echo "Done!" && echo
 
 echo -e "\n*** Activating the agent ***"
-cd $MANAGE
+cd $MANAGE_DIR
 ./manage activate-agent
 echo "Done!" && echo
-
-### Checking the database backend
-echo "*** Cleaning up database instance ***"
-if [ "$FLAVOR" == "oracle" ]; then
-  cleanup_oracle
-elif [ "$FLAVOR" == "mysql" ]; then
-  echo "Mysql, nothing to clean up" && echo
-fi
 
 # By default, it will only work for official WMCore patches in the general path
 echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
-  cd $CURRENT
+  cd $CURRENT_DIR
   for pr in $PATCHES; do
     wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
   done
@@ -252,9 +304,9 @@ echo "Done!" && echo
 
 ### Enabling couch watchdog; couchdb fix for file descriptors
 echo "*** Enabling couch watchdog ***"
-sed -i "s+RESPAWN_TIMEOUT=0+RESPAWN_TIMEOUT=5+" $CURRENT/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
-sed -i "s+exec 1>&-+exec 1>$CURRENT/install/couchdb/logs/stdout.log+" $CURRENT/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
-sed -i "s+exec 2>&-+exec 2>$CURRENT/install/couchdb/logs/stderr.log+" $CURRENT/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
+sed -i "s+RESPAWN_TIMEOUT=0+RESPAWN_TIMEOUT=5+" $CURRENT_DIR/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
+sed -i "s+exec 1>&-+exec 1>$CURRENT_DIR/install/couchdb/logs/stdout.log+" $CURRENT_DIR/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
+sed -i "s+exec 2>&-+exec 2>$CURRENT_DIR/install/couchdb/logs/stderr.log+" $CURRENT_DIR/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
 echo "Done!" && echo
 
 echo "*** Starting services ***"
@@ -268,7 +320,7 @@ echo "Done!" && echo
 sleep 5
 
 echo "*** Checking if couchdb migration is needed ***"
-echo -e "\n[query_server_config]\nos_process_limit = 50" >> $CURRENT/config/couchdb/local.ini
+echo -e "\n[query_server_config]\nos_process_limit = 50" >> $CURRENT_DIR/config/couchdb/local.ini
 if [ "$DATA1" = true ]; then
   ./manage stop-services
   sleep 5
@@ -278,8 +330,8 @@ if [ "$DATA1" = true ]; then
     FINAL_MSG="5) Remove the old database when possible (/data1/database_old/)"
   fi
   rsync --remove-source-files -avr /data/srv/wmagent/current/install/couchdb/database /data1
-  sed -i "s+database_dir = .*+database_dir = /data1/database+" $CURRENT/config/couchdb/local.ini
-  sed -i "s+view_index_dir = .*+view_index_dir = /data1/database+" $CURRENT/config/couchdb/local.ini
+  sed -i "s+database_dir = .*+database_dir = /data1/database+" $CURRENT_DIR/config/couchdb/local.ini
+  sed -i "s+view_index_dir = .*+view_index_dir = /data1/database+" $CURRENT_DIR/config/couchdb/local.ini
   ./manage start-services
 fi
 echo "Done!" && echo
@@ -288,27 +340,27 @@ echo "Done!" && echo
 # tweak configuration
 ### 
 echo "*** Tweaking configuration ***"
-sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE/config.py
-sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
+sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE_DIR/config.py
+sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE_DIR/config.py
 if [[ "$TEAMNAME" == relval ]]; then
-  sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
+  sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 2, 'Harvesting': 2}+0+" $MANAGE/config.py
-  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
-  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
+  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 2, 'Harvesting': 2}+0+" $MANAGE_DIR/config.py
+  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
+  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
 fi
 
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
 else
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE_DIR/config.py
 fi
 echo "Done!" && echo
 
 ### Populating resource-control
 echo "*** Populating resource-control ***"
-cd $MANAGE
+cd $MANAGE_DIR
 if [[ "$TEAMNAME" == relval* || "$TEAMNAME" == *testbed* ]]; then
   echo "Adding only T1 and T2 sites to resource-control..."
   ./manage execute-agent wmagent-resource-control --add-T1s --plugin=SimpleCondorPlugin --pending-slots=50 --running-slots=50 --down
@@ -321,7 +373,7 @@ echo "Done!" && echo
 
 ### Upload WMAgentConfig to AuxDB
 echo "*** Upload WMAgentConfig to AuxDB ***"
-cd $MANAGE
+cd $MANAGE_DIR
 ./manage execute-agent wmagent-upload-config
 echo "Done!" && echo
 
@@ -344,9 +396,8 @@ echo "Done!" && echo
 ###
 echo "*** Downloading utilitarian scripts ***"
 cd /data/admin/wmagent
-rm -f checkProxy.py restartComponent.sh
-wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py
-wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/ProductionTools/master/restartComponent.sh
+wget -nv https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py -O checkProxy.py
+wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/restartComponent.sh -O restartComponent.sh
 echo "Done!" && echo
 
 ### Populating cronjob with utilitarian scripts

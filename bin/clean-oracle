@@ -1,0 +1,100 @@
+#!/bin/bash
+
+validate_env(){
+  if [[ -z $WMAGENT_SECRETS_LOCATION ]]; then
+    echo "You must set the environment variable: WMAGENT_SECRETS_LOCATION"
+    exit 1
+  elif  [[ -z $config ]]; then
+    echo "You must set the environment variable: config"
+    exit 2
+  elif [ ! -e $WMAGENT_SECRETS_LOCATION ]; then
+    echo "Secrets file: $WMAGENT_SECRETS_LOCATION does not exist"
+    exit 3
+  fi
+
+  local MATCH_ORACLE_USER=`cat $WMAGENT_SECRETS_LOCATION | grep ORACLE_USER | sed s/ORACLE_USER=//`
+  local MATCH_ORACLE_PASS=`cat $WMAGENT_SECRETS_LOCATION | grep ORACLE_PASS | sed s/ORACLE_PASS=//`
+  local MATCH_ORACLE_TNS=`cat $WMAGENT_SECRETS_LOCATION | grep ORACLE_TNS | sed s/ORACLE_TNS=//`
+  if [[ -z $MATCH_ORACLE_USER ]] || [[ -z $MATCH_ORACLE_PASS ]] || [[ -z $MATCH_ORACLE_TNS ]]; then
+    echo "Secrets file doesn't contain valid ORACLE_USER, ORACLE_PASS or ORACLE_TNS";
+    exit 4
+  fi
+
+  # then everything is fine
+  ORACLE_USER=$MATCH_ORACLE_USER;
+  ORACLE_PASS=$MATCH_ORACLE_PASS;
+  ORACLE_TNS=$MATCH_ORACLE_TNS;
+}
+
+validate_env
+
+read -p "Are you sure you want to wipe out $ORACLE_USER oracle database (yes/no): " response
+case $response in
+  [Y/y]* )
+    echo "Alright, dropping and purging everything";;
+  * )
+    echo "Ok, not doing anything and quitting!";
+    exit 5;;
+esac
+
+CONFIG_DIR=$config
+
+
+cd $CONFIG_DIR
+cat > clean-oracle.sql << EOT
+BEGIN
+   FOR cur_rec IN (SELECT object_name, object_type
+                        FROM user_objects
+                        WHERE object_type IN
+                                ('TABLE',
+                                'VIEW',
+                                'PACKAGE',
+                                'PROCEDURE',
+                                'FUNCTION',
+                                'SEQUENCE'
+                                ))
+   LOOP
+        BEGIN
+        IF cur_rec.object_type = 'TABLE'
+        THEN
+                EXECUTE IMMEDIATE  'DROP '
+                                || cur_rec.object_type
+                                || ' "'
+                                || cur_rec.object_name
+                                || '" CASCADE CONSTRAINTS';
+        ELSE
+                EXECUTE IMMEDIATE  'DROP '
+                                || cur_rec.object_type
+                                || ' "'
+                                || cur_rec.object_name
+                                || '"';
+        END IF;
+        EXCEPTION
+        WHEN OTHERS
+        THEN
+                DBMS_OUTPUT.put_line (   'FAILED: DROP '
+                                || cur_rec.object_type
+                                || ' "'
+                                || cur_rec.object_name
+                                || '"'
+                                );
+        END;
+   END LOOP;
+END;
+/
+
+EOT
+
+while true; do
+    tmpf=`mktemp`
+    ./manage db-prompt < clean-oracle.sql > $tmpf
+    if grep -iq "PL/SQL procedure successfully completed" $tmpf; then
+      break
+    fi
+done
+
+echo -e "PURGE RECYCLEBIN;\nselect tname from tab;" > purging.sql
+./manage db-prompt < purging.sql
+rm -f clean-oracle.sql purging.sql
+
+echo "Done!" && echo

@@ -20,17 +20,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         """
         sets the list of functions which runs concurrently
         """
-        self.concurrentTasks = [{'func': self.cleanUpOldRequests, 'duration': (config.DataKeepDays * 24 * 60 * 60)},
-                                {'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration}]
-
-    def cleanUpOldRequests(self, config):
-        """
-        clean up wmstats data older then given days
-        """
-        self.logger.info("deleting %s hours old docs", (config.DataKeepDays * 24))
-        result = self.wmstatsDB.deleteOldDocs(config.DataKeepDays)
-        self.logger.info("%s old doc deleted", result)
-        return
+        self.concurrentTasks = [{'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration}]
 
     def cleanUpArchivedRequests(self, config):
         """

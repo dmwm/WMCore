@@ -328,6 +328,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 newJob['fileLocations'] = loadedJob.get('fileLocations', [])
                 newJob['siteWhitelist'] = loadedJob.get('siteWhitelist', [])
                 newJob['siteBlacklist'] = loadedJob.get('siteBlacklist', [])
+                logging.warning("Input data location doesn't pass the site restrictions for job id: %s", jobID)
                 badJobs[71101].append(newJob)
                 continue
 
@@ -339,6 +340,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     possibleLocations = nonAbortSites
                 else:
                     newJob['possibleSites'] = possibleLocations
+                    logging.warning("Job id %s can only run at a site in Aborted state", jobID)
                     badJobs[71102].append(newJob)
                     continue
 
@@ -351,6 +353,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                         possibleLocations = nonDrainingSites
                     else:
                         newJob['possibleSites'] = possibleLocations
+                        logging.warning("Job id %s can only run at a sites in Draining state", jobID)
                         badJobs[71104].append(newJob)
                         continue
 
@@ -461,11 +464,14 @@ class JobSubmitterPoller(BaseWorkerThread):
                                          ": file locations: " + ', '.join(job['fileLocations']) +
                                          ": site white list: " + ', '.join(job['siteWhitelist']) +
                                          ": site black list: " + ', '.join(job['siteBlacklist']))
+                else:
+                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed",
+                                         WM_JOB_ERROR_CODES[exitCode] + ', and empty fileLocations')
 
             else:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode])
-            fwjrPath = os.path.join(job['cache_dir'],
-                                    'Report.%d.pkl' % int(job['retry_count']))
+
+            fwjrPath = os.path.join(job['cache_dir'], 'Report.%d.pkl' % int(job['retry_count']))
             job['fwjr'].setJobID(job['id'])
             try:
                 job['fwjr'].save(fwjrPath)

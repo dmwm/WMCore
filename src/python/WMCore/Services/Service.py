@@ -25,14 +25,14 @@ Calling refreshCache/forceRefresh will return an open file object, the cache
 file. Once done with it you should close the object.
 
 The service has a default timeout to receive a response from the remote service
-of 30 seconds. Over ride this by passing in a timeout via the configuration
+of 300 seconds. Over ride this by passing in a timeout via the configuration
 dict, set to None if you want to turn off the timeout.
 
 If you just want to retrieve the data without caching use the Requests class
 directly.
 
 The Service class provides two layers of caching:
-    1. Caching from httplib2 is provided via Request, this respectsetag and
+    1. Caching from httplib2 is provided via Request, this respects etag and
     expires, but the cache will be lost if the service raises an exception or
     similar.
     2. Internal caching which respects an internal cache duration. If the remote
@@ -67,17 +67,20 @@ except ImportError:
         pass
 
 def isfile(obj):
-    # Any better way of identifying if an object is a file?
+    """
+    Check whether obj is a file-like object (file, StringIO)"
+    """
     return hasattr(obj, 'flush')
 
 def cache_expired(cache, delta = 0):
-    """Is the cache expired? At delta hours (default 0) in the future.
     """
-    # cache can either be a file name or an already opened file object
+    Is the cache expired? At delta hours (default 0) in the future.
+    """
     if isfile(cache):
-        # currently file object only used for StringIO object when not caching to disk
-        return True # could check size here, just assume we need a refresh
+        # already opened file-like object, assume we need to refresh
+        return True
     else:
+        # then it's a file name
         if not os.path.exists(cache):
             return True
 
@@ -110,7 +113,6 @@ class Service(dict):
         #set up defaults
         self.setdefault("inputdata", {})
         self.setdefault("cacheduration", 0.5)
-        self.setdefault("maxcachereuse", 24.0)
         self.supportVerbList = ('GET', 'POST', 'PUT', 'DELETE')
         # this value should be only set when whole service class uses
         # the same verb ('GET', 'POST', 'PUT', 'DELETE')
@@ -156,14 +158,10 @@ class Service(dict):
             self['logger'] = logging.getLogger(self.__class__.__name__)
             self['requests']['logger'] = self['logger']
 
-        self['logger'].debug("""Service initialised (%s):
-\t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %
-                  (self, self["requests"].getDomainName(), self["endpoint"],
-                   self["requests"]["accept_type"], self["cachepath"],
-                   self["cacheduration"], self["maxcachereuse"]))
+        msg = "Service '%s' initialized with the following settings: %s"
+        self['logger'].debug(msg, self.__class__.__name__, self)
 
-
-    def _makeHash(self, inputdata, hash_):
+    def _makeHash(self, inputdata):
         """
         Turn the input data into json and hash the string. This is simple and
         means that the input data must be json-serialisable, which is good.
@@ -181,9 +179,9 @@ class Service(dict):
 
         hash_ = 0
         if inputdata:
-            hash_ = self._makeHash(inputdata, hash_)
+            hash_ = self._makeHash(inputdata)
         else:
-            hash_ = self._makeHash(self['inputdata'], hash_)
+            hash_ = self._makeHash(self['inputdata'])
         cachefile = "%s/%s_%s_%s" % (self["cachepath"], hash_, verb, cachefile)
 
         return cachefile
@@ -201,8 +199,10 @@ class Service(dict):
 
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
-        if cache_expired(cachefile):
+        if cache_expired(cachefile, self["cacheduration"]):
             self.getData(cachefile, url, inputdata, incoming_headers, encoder, decoder, verb, contentType)
+        else:
+            self['logger'].debug('Data is from the Service cache')
 
         # cachefile may be filename or file object
         if openfile and not isfile(cachefile):
@@ -277,7 +277,7 @@ class Service(dict):
             if from_cache:
                 # If it's coming from the cache we don't need to write it to the
                 # second cache, or do we?
-                self['logger'].debug('Data is from the cache')
+                self['logger'].debug('Data is from the Requests cache')
             else:
                 # Don't need to prepend the cachepath, the methods calling
                 # getData have done that for us
@@ -303,8 +303,8 @@ class Service(dict):
                 msg = 'The cachefile %s does not exist and the service at %s'
                 msg = msg % (cachefile, self["requests"]['host'] + url)
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
-                    msg += ' is unavailable - it returned %s because %s\n' % (he.status,
-                                                                              he.reason)
+                    msg += ' is unavailable - it returned %s because %s' % (he.status,
+                                                                            he.reason)
                     if hasattr(he, 'result'):
                         msg += ' with result: %s\n' % he.result
                 else:
@@ -312,40 +312,34 @@ class Service(dict):
                 self['logger'].warning(msg)
                 raise he
             else:
-                cache_dead = cache_expired(cachefile, delta =  self.get('maxcachereuse', 24))
-                if self.get('usestalecache', False) and not cache_dead:
-                    # If usestalecache is set the previous version of the cache
-                    # file should be returned, with a suitable message in the
-                    # log, but no exception raised
-                    self['logger'].warning('Returning stale cache data from %s' % cachefile)
+                cache_dead = cache_expired(cachefile, delta =  self["cacheduration"])
+                if cache_dead:
+                    msg = 'The cachefile %s is dead (older than %s hours of cache duration), '
+                    msg += 'and the service at %s '
+                    msg = msg % (cachefile, self["cacheduration"], url)
                     if hasattr(he, 'status') and hasattr(he, 'reason'):
-                        self['logger'].info('%s returned %s because %s' % (he.url,
-                                                                           he.status,
-                                                                           he.reason))
+                        msg += 'is unavailable - it returned %s because %s' % (he.status, he.reason)
                     else:
-                        self['logger'].info('%s raised a %s when accessed' % (url, he.__repr__()))
+                        msg += 'raised a %s when accessed' % he.__repr__()
+                    self['logger'].warning(msg)
+                    raise he
+                if self.get('usestalecache', False):
+                    # then we can return data from the cache file, without raising an exception
+                    # but with a suitable message in the log
+                    msg = 'Returning stale cache data from %s, the service at ' % cachefile
+                    if hasattr(he, 'status') and hasattr(he, 'reason'):
+                        msg += '%s returned %s because %s' % (he.url, he.status, he.reason)
+                    else:
+                        msg += '%s raised a %s when accessed' % (url, he.__repr__())
+                    self['logger'].warning(msg)
                 else:
-                    if cache_dead:
-                        msg = 'The cachefile %s is dead (%s hours older than cache '
-                        msg += 'duration), and the service at %s'
-                        msg = msg % (cachefile, self.get('maxcachereuse', 24), url)
-                        if hasattr(he, 'status') and hasattr(he, 'reason'):
-                            msg += ' is unavailable - it returned %s because %s'
-                            msg += msg % (he.status, he.reason)
-                        else:
-                            msg += ' raised a %s when accessed' % he.__repr__()
-                        self['logger'].warning(msg)
-                    elif self.get('usestalecache', False) == False:
-                        # Cache is not dead but Service is configured to not
-                        # return stale data.
-                        msg = 'The cachefile %s is stale and the service at %s'
-                        msg = msg % (cachefile, url)
-                        if hasattr(he, 'status') and hasattr(he, 'reason'):
-                            msg += ' is unavailable - it returned %s because %s'
-                            msg += msg % (he.status, he.reason)
-                        else:
-                            msg += ' raised a %s when accessed' % he.__repr__()
-                        self['logger'].warning(msg)
+                    # Cache is not dead, but Service is configured to not return stale data.
+                    msg = 'The cachefile %s is stale and the service at %s ' % (cachefile, url)
+                    if hasattr(he, 'status') and hasattr(he, 'reason'):
+                        msg += 'is unavailable - it returned %s because %s' % (he.status, he.reason)
+                    else:
+                        msg += 'raised a %s when accessed' % he.__repr__()
+                    self['logger'].warning(msg)
                     raise he
 
     def _verbCheck(self, verb='GET'):

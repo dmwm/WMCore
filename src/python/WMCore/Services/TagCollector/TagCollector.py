@@ -26,7 +26,7 @@ class TagCollector(Service):
         params = {}
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL
-        params.setdefault('cacheduration', 3600)
+        params.setdefault('cacheduration', 1)
         params['logger'] = logger if logger else logging.getLogger()
 
         Service.__init__(self, params)

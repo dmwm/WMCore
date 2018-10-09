@@ -111,18 +111,6 @@ class ReqMgrAux(Service):
         """Mind your own business. Delete the agent config from ReqMgrAux"""
         self["requests"].delete('wmagentconfig/%s' % agentName)
 
-    def updateAgentDrainingMode(self, agentName, drainFlag):
-        # update config DB
-        resp = self.updateRecords('wmagentconfig/%s' % agentName, {"AgentDrainMode": drainFlag})
-
-        if len(resp) == 1 and resp[0].get("ok", False):
-            self["logger"].info("update drain mode suceeded: %s" % drainFlag)
-            return True
-        else:
-            self["logger"].warning("update agent drain mode failed: it should be %s, response: %s" %
-                                   (drainFlag, resp))
-            return False
-
     def updateAgentConfig(self, agentName, key, value):
         # update config DB
         resp = self.updateRecords('wmagentconfig/%s' % agentName, {key: value})
@@ -242,6 +230,6 @@ def listDiskUsageOverThreshold(config, updateDB):
     if updateDB and not t0Flag:
         agentDrainMode = bool(len(overThresholdDisks))
         if agentDrainMode != agentConfig["AgentDrainMode"]:
-            reqMgrAux.updateAgentDrainingMode(config.Agent.hostName, agentDrainMode)
+            reqMgrAux.updateAgentConfig(config.Agent.hostName, "AgentDrainMode", agentDrainMode)
 
     return overThresholdDisks

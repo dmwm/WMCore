@@ -38,8 +38,8 @@ def get_dbs(url):
         __dbses[url] = DBSReader(url)
         return __dbses[url]
 
-
-__sitedb = None
+__USE_CRIC = os.getenv("WMAGENT_USE_CRIC", False)
+__sitedb = None  # FIXME: rename it to __cric
 __cmsSiteNames = []
 
 
@@ -48,12 +48,20 @@ def cmsSiteNames():
     global __cmsSiteNames
     if __cmsSiteNames:
         return __cmsSiteNames
+    logging.info("cmsSiteNames Using CRIC Service: %s", __USE_CRIC)
     global __sitedb
     if not __sitedb:
-        from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-        __sitedb = SiteDB()
+        if __USE_CRIC:
+            from WMCore.Services.CRIC.CRIC import CRIC
+            __sitedb = CRIC()
+        else:
+            from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+            __sitedb = SiteDB()
     try:
-        __cmsSiteNames = __sitedb.getAllCMSNames()
+        if __USE_CRIC:
+            __cmsSiteNames = __sitedb.getAllPSNs()
+        else:
+            __cmsSiteNames = __sitedb.getAllCMSNames()
     except Exception:
         pass
     return __cmsSiteNames
@@ -115,6 +123,9 @@ def queueConfigFromConfigObject(config):
         wqManager.queueParams['DbName'] = wqManager.dbname
     if hasattr(wqManager, 'inboxDatabase'):
         wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
+
+    # setup CRIC or SiteDB computing resource
+    wqManager.queueParams['useCric'] = getattr(wqManager, 'useCric', False)
 
     # pull some info we need from other areas of the config
     if "BossAirConfig" not in qConfig and hasattr(config, 'BossAir'):

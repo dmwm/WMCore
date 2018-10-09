@@ -14,6 +14,7 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WMInit import connectToDB
 from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 
@@ -100,16 +101,21 @@ def createOptionParser():
     return myOptParser
 
 
-def getCMSSiteInfo(pattern=''):
+def getCMSSiteInfo(pattern):
     """
     _getCMSSiteInfo_
 
     Query SiteDB for the site and SE names matching the pattern.  Return a
     dictionary keyed by site name.
     """
-    print("Querying SiteDB for site information...")
+    if os.getenv("WMAGENT_USE_CRIC", False):
+        cricObj = CRIC()
+    else:
+        cricObj = SiteDBJSON()  # this will be removed anyways
 
-    return SiteDBJSON().PSNtoPNNMap(pattern)
+    mapping = cricObj.PSNtoPNNMap(pattern)
+    print("Retrieved %i maps from %s" % (len(mapping), cricObj['endpoint']))
+    return mapping
 
 
 def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
@@ -148,10 +154,13 @@ def addPNNs(resourceControl, pattern):
 
     Add the given sites to resource control and add tasks as well.
     """
-    print("Querying SiteDB for PhEDEx Node Names...")
+    if os.getenv("WMAGENT_USE_CRIC", False):
+        cricObj = CRIC()
+    else:
+        cricObj = SiteDBJSON()  # this will be removed anyways
 
-    pnns = SiteDBJSON().getAllPhEDExNodeNames(pattern, excludeBuffer=True)
-    print("Inserting %i PNNs into WMBS table" % len(pnns))
+    pnns = cricObj.getAllPhEDExNodeNames(pattern, excludeBuffer=True)
+    print("Retrieved %i PNNs from %s" % (len(pnns), cricObj['endpoint']))
     resourceControl.insertPNNs(pnns)
 
     return

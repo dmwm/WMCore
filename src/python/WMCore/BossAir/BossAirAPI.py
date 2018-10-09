@@ -247,9 +247,19 @@ class BossAirAPI(WMConnectionBase):
         self.updateDAO.execute(jobs=jobs, conn=self.getDBConn(),
                                transaction=self.existingTransaction())
 
-        jobsWithLocation = [job for job in jobs if job.get('location') is not None]
+        jobsWithLocation = []
+        jobsWithOutLocation = []
+        for job in jobs:
+            if isinstance(job.get('location'), basestring):
+                jobsWithLocation.append(job)
+            else:
+                jobsWithOutLocation.append(job)
+
         if jobsWithLocation:
             self.stateMachine.recordLocationChange(jobsWithLocation)
+
+        if jobsWithOutLocation:
+            logging.warning("No record of job location from BoasAir, Job list: %s", jobsWithOutLocation)
 
         self.commitTransaction(existingTransaction)
 

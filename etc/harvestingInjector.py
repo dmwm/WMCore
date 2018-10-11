@@ -11,46 +11,45 @@ import threading
 import time
 from argparse import ArgumentParser
 
-from WMCore.WMInit import connectToDB
-
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-
+from DBSAPI.dbsApi import DbsApi
+from WMCore.WMSpec.StdSpecs.Harvesting import harvestingWorkload, getTestArguments
 
 from WMCore.DataStructs.Run import Run
-
-from WMCore.WMSpec.StdSpecs.Harvesting import harvestingWorkload, getTestArguments
-from DBSAPI.dbsApi import DbsApi
-
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMInit import connectToDB
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+
 
 def check_list(option, opt, value):
     return value.split(",")
 
+
 def comma_separated_list(string):
     return string.split(',')
+
 
 usage = "usage: %prog [options]"
 parser = ArgumentParser(usage=usage)
 parser.add_argument("-d", "--dataset", dest="InputDataset",
-                  action="store", help="Dataset to harvest",
-                  metavar="DATASET")
+                    action="store", help="Dataset to harvest",
+                    metavar="DATASET")
 parser.add_argument("-R", "--run", dest="RunWhitelist", type=comma_separated_list,
-                  action="store", help="Comma separated list of runs",
-                  metavar="RUN1,RUN2", default=[])
+                    action="store", help="Comma separated list of runs",
+                    metavar="RUN1,RUN2", default=[])
 parser.add_argument("-r", "--release", dest="CMSSWVersion",
-                  action="store", help="CMSSW version to use for harvesting",
-                  metavar="CMSSW_X_Y_Z")
+                    action="store", help="CMSSW version to use for harvesting",
+                    metavar="CMSSW_X_Y_Z")
 parser.add_argument("-s", "--scenario", dest="Scenario",
-                  action="store", help="Configuration/DataProcessing scenario",
-                  metavar="SCENARIO")
+                    action="store", help="Configuration/DataProcessing scenario",
+                    metavar="SCENARIO")
 parser.add_argument("-t", "--global-tag", dest="GlobalTag",
-                  action="store", help="Conditions global tag",
-                  metavar="GLOBALTAG")
+                    action="store", help="Conditions global tag",
+                    metavar="GLOBALTAG")
 parser.add_argument("-f", "--reference", dest="RefHistogram",
-                  action="store", help="Reference histogram",
-                  metavar="LFN")
+                    action="store", help="Reference histogram",
+                    metavar="LFN")
 
 options = parser.parse_args()
 
@@ -87,27 +86,28 @@ taskMaker.processWorkload()
 
 workload.save(workloadPath)
 
+
 def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     """
     _injectFilesFromDBS_
 
     """
     print("injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name))
-    args={}
+    args = {}
     args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_1_1"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
-    dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
+    dbsResults = dbsApi.listFileArray(path=datasetPath, retriveList=["retrive_lumi", "retrive_run"])
     print("  found %d files, inserting into wmbs..." % (len(dbsResults)))
 
     for dbsResult in dbsResults:
         if runsWhiteList and str(dbsResult["LumiList"][0]["RunNumber"]) not in runsWhiteList:
             continue
-        myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
-                      events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                      locations = "cmssrm.fnal.gov", merged = True)
-        myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
+        myFile = File(lfn=dbsResult["LogicalFileName"], size=dbsResult["FileSize"],
+                      events=dbsResult["NumberOfEvents"], checksums={"cksum": dbsResult["Checksum"]},
+                      locations="cmssrm.fnal.gov", merged=True)
+        myRun = Run(runNumber=dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
             myRun.appendLumi(lumi["LumiSectionNumber"])
         myFile.addRun(myRun)
@@ -121,10 +121,11 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     inputFileset.markOpen(False)
     return
 
+
 myThread = threading.currentThread()
 myThread.transaction.begin()
 for workloadTask in workload.taskIterator():
-    inputFileset = Fileset(name = workloadTask.getPathName())
+    inputFileset = Fileset(name=workloadTask.getPathName())
     inputFileset.create()
 
     inputDataset = workloadTask.inputDataset()

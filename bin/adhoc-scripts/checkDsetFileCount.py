@@ -2,11 +2,11 @@
 
 from __future__ import print_function, division
 
+import httplib
 import json
 import sys
 import urllib
 import urllib2
-import httplib
 from argparse import ArgumentParser
 from urllib2 import HTTPError, URLError
 

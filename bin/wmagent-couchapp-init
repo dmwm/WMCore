@@ -4,20 +4,21 @@ wmagent-couchapp-init
 
 """
 from __future__ import print_function, division
-import os
-import tempfile
-import sys
-import urllib
+
 import argparse
+import os
 import shutil
+import sys
+import tempfile
+import urllib
 from urlparse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
-from WMCore.WMBase import getWMBASE
 from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.WMBase import getWMBASE
 
 
 def couchAppRoot(couchapp):

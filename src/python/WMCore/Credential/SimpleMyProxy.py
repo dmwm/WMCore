@@ -34,7 +34,7 @@ PASSPHRASE=PASSPHRASE
 LIFETIME=0\0"""
 
 
-class MyProxyException(Exception): 
+class MyProxyException(Exception):
     pass
 
 
@@ -222,21 +222,21 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--op", dest="op",
-                      help="Operation: info|get")
+                        help="Operation: info|get")
     parser.add_argument("-s", "--pshost", dest="host", default="myproxy.cern.ch",
-                      help="The hostname of the MyProxy server to contact")
+                        help="The hostname of the MyProxy server to contact")
     parser.add_argument("-p", "--psport", dest="port", default=7512,
-                      help="The port of the MyProxy server to contact")
+                        help="The port of the MyProxy server to contact")
     parser.add_argument("-l", "--username", dest="username",
-                      help="The username with which the credential is stored on the MyProxy server")
+                        help="The username with which the credential is stored on the MyProxy server")
     parser.add_argument("-C", "--certfile", dest="cert",
-                      help="Certificate PEM filename to use with myproxy authentication")
+                        help="Certificate PEM filename to use with myproxy authentication")
     parser.add_argument("-y", "--keyfile", dest="key",
-                      help="Certkey PEM filename to use with myproxy authentication")
+                        help="Certkey PEM filename to use with myproxy authentication")
     parser.add_argument("-t", "--proxy_lifetime", dest="lifetime", default=43200,
-                      help="The lifetime validity for the fetched proxy.")
+                        help="The lifetime validity for the fetched proxy.")
     parser.add_argument("-v", "--verbose", action="store_true", dest="debug", default=False,
-                      help="Print debug information to stdout.")
+                        help="Print debug information to stdout.")
     opt = parser.parse_args()
 
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
             loglevel = logging.DEBUG
         logging.basicConfig(level=loglevel)
         logger = logging.getLogger(__name__)
-        logger.debug("Logging level initialized to %s." % loglevel)
+        logger.debug("Logging level initialized to %s.", loglevel)
         return logger
 
 

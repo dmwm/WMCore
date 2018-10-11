@@ -15,13 +15,14 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py
 """
 from __future__ import print_function
+
+import json
+import logging
 import os
 import sys
-from httplib import HTTPSConnection, HTTPConnection
 import urllib
-import logging
 from argparse import ArgumentParser
-import json
+from httplib import HTTPSConnection, HTTPConnection
 
 
 class RESTClient(object):
@@ -306,7 +307,7 @@ def process_cli_args(args):
         print("\n\n%s" % msg)
         sys.exit(1)
 
-    parser = OptionParser(usage="usage: %prog options", add_help=False)
+    parser = ArgumentParser(usage="usage: %prog options", add_help=False)
     actions = define_cli_options(parser)
     # opts - new processed options
     # args - remainder of the input array

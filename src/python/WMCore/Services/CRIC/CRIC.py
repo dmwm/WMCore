@@ -27,15 +27,19 @@ class CRIC(Service):
     Class which provides client APIs to the CRIC service.
     """
 
-    def __init__(self, url=None, logger=None):
-        params = {}
-        defaultURL = "https://cms-cric.cern.ch/"
-        params['endpoint'] = url or defaultURL
-        params.setdefault('cacheduration', 3600)
-        params.setdefault('accept_type', 'application/json')
-        params.setdefault('content_type', 'application/json')
-        params['logger'] = logger if logger else logging.getLogger()
-        Service.__init__(self, params)
+    def __init__(self, url=None, logger=None, configDict=None):
+        """
+        configDict is a dictionary with parameters that are passed
+        to the super class
+        """
+        url = url or "https://cms-cric.cern.ch/"
+        configDict = configDict or {}
+        configDict.setdefault('endpoint', url)
+        configDict.setdefault('cacheduration', 1)  # in hours
+        configDict.setdefault('accept_type', 'application/json')
+        configDict.setdefault('content_type', 'application/json')
+        configDict['logger'] = logger if logger else logging.getLogger()
+        super(CRIC, self).__init__(configDict)
         self['logger'].info("DEBUG: Initializing CRIC with url: %s", self['endpoint'])
 
     def _getResult(self, uri, callname="", args=None, unflatJson=True):
@@ -61,6 +65,27 @@ class CRIC(Service):
             results = unflattenJSON(results)
         return results
 
+    def _CRICUserQuery(self, callname, unflatJson=True):
+        """
+        :param callname: name of the call
+        :return: dict of the result
+        """
+
+        uri = "/api/accounts/user/query/"
+        userinfo = self._getResult(uri, callname=callname, unflatJson=unflatJson)
+        return userinfo
+
+    def _CRICSiteQuery(self, callname):
+        """
+        :param callname: name of the call
+        :return: dict of the result
+        """
+
+        uri = "/api/cms/site/query/"
+        extraArgs = {"rcsite_state": "ANY"}
+        sitenames = self._getResult(uri, callname=callname, args=extraArgs)
+        return sitenames
+
     def whoAmI(self):
         """
         _whoAmI_
@@ -69,9 +94,7 @@ class CRIC(Service):
         return information about myself, like DN/ roles/groups, etc
         :return: a list of dictionary
         """
-        uri = "/api/accounts/user/query/"
-        userinfo = self._getResult(uri, callname='whoami', unflatJson=False)
-        return userinfo['result']
+        return self._CRICUserQuery('whoami', unflatJson=False)['result']
 
     def userNameDn(self, username):
         """
@@ -83,8 +106,7 @@ class CRIC(Service):
         """
         ### TODO: use a different cache file and try again if the user is still not there
         userdn = ""
-        uri = "/api/accounts/user/query/"
-        userinfo = self._getResult(uri, callname='people')
+        userinfo = self._CRICUserQuery('people')
         for x in userinfo:
             if x['username'] == username:
                 userdn = x['dn']
@@ -98,10 +120,8 @@ class CRIC(Service):
         Retrieve all PSNs (aka CMSNames) from CRIC
         :return: a flat list of CMS site names
         """
-        uri = "/api/cms/site/query/"
-        extraArgs = {"rcsite_state": "ANY"}
-        sitenames = self._getResult(uri, callname='site-names', args=extraArgs)
 
+        sitenames = self._CRICSiteQuery(callname='site-names')
         cmsnames = [x['alias'] for x in sitenames if x['type'] == 'psn']
         return cmsnames
 
@@ -114,9 +134,7 @@ class CRIC(Service):
         :param excludeBuffer: flag to exclude T1 Buffer endpoints
         :return: a flat list of PNNs
         """
-        uri = "/api/cms/site/query/"
-        extraArgs = {"rcsite_state": "ANY"}
-        sitenames = self._getResult(uri, callname='site-names', args=extraArgs)
+        sitenames = self._CRICSiteQuery(callname='site-names')
 
         nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
@@ -133,12 +151,10 @@ class CRIC(Service):
         :param pnns: a string or a list of PNNs
         :return: a list with unique PSNs matching those PNNs
         """
+        mapping = self._CRICSiteQuery(callname='data-processing')
+
         if isinstance(pnns, basestring):
             pnns = [pnns]
-
-        uri = "/api/cms/site/query/"
-        extraArgs = {"rcsite_state": "ANY"}
-        mapping = self._getResult(uri, callname='data-processing', args=extraArgs)
 
         psns = set()
         for pnn in pnns:
@@ -159,12 +175,10 @@ class CRIC(Service):
         :param psns: a string or a list of PSNs
         :return: a list with unique PNNs matching those PSNs
         """
+        mapping = self._CRICSiteQuery(callname='data-processing')
+
         if isinstance(psns, basestring):
             psns = [psns]
-
-        uri = "/api/cms/site/query/"
-        extraArgs = {"rcsite_state": "ANY"}
-        mapping = self._getResult(uri, callname='data-processing', args=extraArgs)
 
         pnns = set()
         for psn in psns:
@@ -187,12 +201,10 @@ class CRIC(Service):
         if not isinstance(psnPattern, basestring):
             raise TypeError('psnPattern argument must be of type basestring')
 
+        results = self._CRICSiteQuery(callname='data-processing')
         mapping = {}
-        uri = "/api/cms/site/query/"
-        extraArgs = {"rcsite_state": "ANY"}
-        psnPattern = re.compile(psnPattern)
-        results = self._getResult(uri, callname='data-processing', args=extraArgs)
 
+        psnPattern = re.compile(psnPattern)
         for entry in results:
             if psnPattern.match(entry['psn_name']):
                 mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])

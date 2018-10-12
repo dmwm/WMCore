@@ -7,9 +7,9 @@ Implementation of an Executor for a DQMUpload step
 """
 from __future__ import print_function
 
+import logging
 import os
 import sys
-import logging
 import urllib2
 from cStringIO import StringIO
 from functools import reduce
@@ -150,27 +150,33 @@ class DQMUpload(Executor):
         logging.info(msg)
 
         try:
+            logException = True
             for uploadURL in self.step.upload.URL.split(';'):
                 (headers, data) = self.upload(uploadURL, args, filename)
-                msg = 'HTTP upload finished succesfully with response:\n'
-                msg += 'Status code: %s\n' % headers.get("Dqm-Status-Code", None)
-                msg += 'Message: %s\n' % headers.get("Dqm-Status-Message", None)
-                msg += 'Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
-                msg += 'Data: %s\n' % str(data)
-                logging.info(msg)
+                msg = '  Status code: %s\n' % headers.get("Dqm-Status-Code", None)
+                msg += '  Message: %s\n' % headers.get("Dqm-Status-Message", None)
+                msg += '  Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
+                msg += '  Data: %s\n' % str(data)
+                if int(headers.get("Dqm-Status-Code", 400)) >= 400:
+                    logException = False
+                    raise Exception(msg)
+                else:
+                    msg = 'HTTP upload finished succesfully with response:\n' + msg
+                    logging.info(msg)
         except urllib2.HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'
-            msg += 'Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
-            msg += 'Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
-            msg += 'Detail: %s\n' % ex.hdrs.get("Dqm-Status-Detail", None)
-            msg += 'Error: %s\n' % str(ex)
+            msg += '  Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
+            msg += '  Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
+            msg += '  Detail: %s\n' % ex.hdrs.get("Dqm-Status-Detail", None)
+            msg += '  Error: %s\n' % str(ex)
             logging.exception(msg)
             raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
         except Exception as ex:
-            msg = 'HTTP upload failed with response:\n'
-            msg += 'Problem unknown.\n'
-            msg += 'Error: %s\n' % str(ex)
-            logging.exception(msg)
+            msg = 'HTTP upload failed! Error:\n%s' % str(ex)
+            if logException:
+                logging.exception(msg)
+            else:
+                logging.error(msg)
             raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
 
         return

@@ -84,8 +84,7 @@ WMStats._RequestModelBase.prototype = {
     },
 
     _getLatestRequestAgentUrlAndCreateTable: function (overviewData, keys, objPtr) {
-        var options = {"keys": keys, 
-                       "reduce": true, "group": true, "descending": true};
+        var options = {"keys": keys, "reduce": false, "descending": true};
         WMStats.Couch.view('latestRequest', options,
               function(agentIDs) {
                   objPtr._getRequestDetailsAndTriggerEvent(agentIDs, overviewData, objPtr);

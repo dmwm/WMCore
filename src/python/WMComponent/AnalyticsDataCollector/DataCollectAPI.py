@@ -318,6 +318,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
+        doc['_id'] = '%s-%s' % (agentInfo['agent_url'], request)
         doc.update(agentInfo)
         doc['type'] = "agent_request"
         doc['workflow'] = request

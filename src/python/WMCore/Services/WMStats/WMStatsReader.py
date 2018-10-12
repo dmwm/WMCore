@@ -222,8 +222,7 @@ class WMStatsReader(object):
         if len(keys) == 0:
             return []
         options = {}
-        options["reduce"] = True
-        options["group"] = True
+        options["reduce"] = False
         result = self._getCouchView("latestRequest", options, keys)
         ids = [row['value']['id'] for row in result["rows"]]
         return ids
@@ -414,3 +413,12 @@ class WMStatsReader(object):
             finalStruct["samples"].append(row["doc"])
 
         return jobInfoDoc
+
+    def getAllAgentRequestRevByID(self):
+
+        results = self.couchDB.loadView(self.couchapp, "agentRequests")
+        idRevMap = {}
+        for row in results['rows']:
+            idRevMap[row['key']] = row['value']['rev']
+
+        return idRevMap

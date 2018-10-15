@@ -220,7 +220,7 @@ class Requests(dict):
         if verb != 'GET' and data:
             if isinstance(encoder, (types.MethodType, types.FunctionType)):
                 encoded_data = encoder(data)
-            elif encoder == False:
+            elif encoder is False:
                 # Don't encode the data more than we have to
                 #  we don't want to URL encode the data blindly,
                 #  that breaks POSTing attachments... ConfigCache_t
@@ -417,7 +417,7 @@ class Requests(dict):
         # Set but not found
         if key is None or cert is None:
             raise WMException('Request requires a host certificate and key',
-                                  "WMCORE-11")
+                              "WMCORE-11")
 
         # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert

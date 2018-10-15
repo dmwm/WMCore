@@ -1,40 +1,42 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 
 import os
 import sys
-from optparse import OptionParser
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from argparse import ArgumentParser
+
 from WMCore.Configuration import loadConfigurationFile
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 if __name__ == "__main__":
 
-    if not os.environ.has_key("WMAGENT_CONFIG"):
-        print "The WMAGENT_CONFIG environment variable needs to be set before this can run"
+    if 'WMAGENT_CONFIG' not in os.environ:
+        print("The WMAGENT_CONFIG environment variable needs to be set before this can run")
         sys.exit(1)
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-    
-    parser = OptionParser()
-    parser.set_usage("wmagent-unregister-wmstats [agent_url]")
-    
-    (options, args) = parser.parse_args()
+
+    parser = ArgumentParser(usage="wmagent-unregister-wmstats [agent_url]")
+
+    (options, args) = parser.parse_known_args()
     if not args:
         agentUrl = ("%s" % wmagentConfig.Agent.hostName)
     else:
         agentUrl = args[0]
-    
-    answer = raw_input("Warning: This is remove agent info record for %s from wmstats (yes, no)?" % agentUrl)
-    if not answer.lower() == "yes":
-        print "Canceled"
+
+    msg = "Are you sure you want to remove agent info record for %s from wmstats? Type 'Y' or 'N' (type quotes too!): "
+    answer = input(msg % agentUrl)
+    if answer != "Y":
+        print("Aborting... no changes were made.")
         sys.exit(1)
-        
-    if hasattr(wmagentConfig, "AnalyticsDataCollector") and hasattr(wmagentConfig.AnalyticsDataCollector, "centralWMStatsURL"):
+
+    if hasattr(wmagentConfig, "AnalyticsDataCollector") and hasattr(wmagentConfig.AnalyticsDataCollector,
+                                                                    "centralWMStatsURL"):
         wmstats = WMStatsWriter(wmagentConfig.AnalyticsDataCollector.centralWMStatsURL)
     else:
-        print "AnalyticsDataCollector.centralWMStatsURL is not specified"
+        print("AnalyticsDataCollector.centralWMStatsURL is not specified")
         sys.exit(1)
-    
+
     report = wmstats.deleteDocsByIDs([agentUrl])
-    
-    print report
+
+    print(report)

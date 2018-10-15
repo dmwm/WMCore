@@ -19,9 +19,9 @@ import sys
 import thread
 import time
 import traceback
+from argparse import ArgumentParser
 from cStringIO import StringIO
 from glob import glob
-from optparse import OptionParser
 from subprocess import Popen, PIPE
 
 import cherrypy
@@ -490,22 +490,22 @@ def main():
         os.environ['PYTHONUNBUFFERED'] = "1"
         os.execvp("python", ["python"] + sys.argv)
 
-    opt = OptionParser(usage=__doc__)
-    opt.add_option("-q", "--quiet", action="store_true", dest="quiet", default=False,
-                   help="be quiet, don't print unnecessary output")
-    opt.add_option("-v", "--verify", action="store_true", dest="verify", default=False,
-                   help="verify daemon is running, restart if not")
-    opt.add_option("-s", "--status", action="store_true", dest="status", default=False,
-                   help="check if the server monitor daemon is running")
-    opt.add_option("-k", "--kill", action="store_true", dest="kill", default=False,
-                   help="kill any existing already running daemon")
-    opt.add_option("-r", "--restart", action="store_true", dest="restart", default=False,
-                   help="restart, kill any existing running daemon first")
-    opt.add_option("-d", "--dir", dest="statedir", metavar="DIR", default=os.getcwd(),
-                   help="server state directory (default: current working directory)")
-    opt.add_option("-l", "--log", dest="logfile", metavar="DEST", default=None,
-                   help="log to DEST, via pipe if DEST begins with '|', otherwise a file")
-    opts, args = opt.parse_args()
+    opt = ArgumentParser(usage=__doc__)
+    opt.add_argument("-q", "--quiet", action="store_true", dest="quiet", default=False,
+                     help="be quiet, don't print unnecessary output")
+    opt.add_argument("-v", "--verify", action="store_true", dest="verify", default=False,
+                     help="verify daemon is running, restart if not")
+    opt.add_argument("-s", "--status", action="store_true", dest="status", default=False,
+                     help="check if the server monitor daemon is running")
+    opt.add_argument("-k", "--kill", action="store_true", dest="kill", default=False,
+                     help="kill any existing already running daemon")
+    opt.add_argument("-r", "--restart", action="store_true", dest="restart", default=False,
+                     help="restart, kill any existing running daemon first")
+    opt.add_argument("-d", "--dir", dest="statedir", metavar="DIR", default=os.getcwd(),
+                     help="server state directory (default: current working directory)")
+    opt.add_argument("-l", "--log", dest="logfile", metavar="DEST", default=None,
+                     help="log to DEST, via pipe if DEST begins with '|', otherwise a file")
+    opts, args = opt.parse_known_args()
 
     if len(args) != 1:
         print("%s: exactly one configuration file required" % sys.argv[0], file=sys.stderr)

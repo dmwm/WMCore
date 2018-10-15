@@ -4,20 +4,21 @@ wmagent-couchapp-init
 
 """
 from __future__ import print_function, division
+
+import argparse
 import os
-import tempfile
-import sys
-import urllib
-import optparse
 import shutil
+import sys
+import tempfile
+import urllib
 from urlparse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
-from WMCore.WMBase import getWMBASE
 from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.WMBase import getWMBASE
 
 
 def couchAppRoot(couchapp):
@@ -274,11 +275,11 @@ files_needed_from_yui = [
 
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-    parser.add_option("--skip-cron", dest="cron",
-                     default = True, action="store_false",
-                     help="Do not install maintenance cron jobs")
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skip-cron", dest = "cron",
+                        default = True, action = "store_false",
+                        help = "Do not install maintenance cron jobs")
+    options = parser.parse_args()
 
     if "WMAGENT_CONFIG" not in os.environ:
         print("The WMAGENT_CONFIG environment variable needs to be set before")

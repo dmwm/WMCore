@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-import threading
+from __future__ import print_function
+
+import os
 import re
 import sys
-import os
+import threading
+from argparse import ArgumentParser
 
-from optparse import OptionParser
-
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Configuration     import loadConfigurationFile
-from WMCore.WMInit            import connectToDB
-from WMCore.WMBS.Job          import Job
-from WMCore.DAOFactory        import DAOFactory
+from WMCore.WMBS.Job import Job
+from WMCore.WMInit import connectToDB
 
 
 class PausedTool:
-
     def __init__(self):
         # Connecting to DB
         myThread = threading.currentThread()
@@ -22,46 +22,45 @@ class PausedTool:
         self.dbi = myThread.dbi
 
         # Creating DAO stuff for job discovery 
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = self.dbi)
-        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
-        self.getTask = self.daoFactory(classname = "Jobs.GetTask")
-        self.getTaskType = self.daoFactory(classname = "Jobs.GetType")
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=self.dbi)
+        self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
+        self.getTask = self.daoFactory(classname="Jobs.GetTask")
+        self.getTaskType = self.daoFactory(classname="Jobs.GetType")
         # Instantiating a changer so we can change jobState
         Config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
         self.changer = ChangeState(Config)
 
         return
 
-
     def getOptions(self):
 
         usage = './config/tier0/manage  execute-agent paused-jobs [options] '
-        myOptParser = OptionParser(usage = usage)
-        myOptParser.add_option('-f', '--fail', dest = 'action',
-                               action = 'store_const', const = 'fail',
-                               help = 'Fail the jobs matching the filters')
-        myOptParser.add_option('-r', '--resume', dest = 'action',
-                               action = 'store_const', const = 'resume',
-                               help = 'Resume the jobs matching the filters')
-        myOptParser.add_option('-w', '--workflow', dest = 'workflow',
-                               help = 'Jobs belonging to WORKFLOW will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-s', '--site', dest = 'site',
-                               help = 'Only jobs that ran at SITE will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-t', '--task-type', dest = 'taskType',
-                               help = 'Only jobs of TYPE will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-j', '--job-id', dest = 'jobId',
-                               help = 'Only the pointed job will be resumed/failed',
-                               default = None)
-        myOptParser.add_option('-d', '--dry-run', dest = 'dryRun',
-                               help = "Don't make any changes, just print out what will happen",
-                               default = False, action = 'store_true')
+        myOptParser = ArgumentParser(usage=usage)
+        myOptParser.add_argument('-f', '--fail', dest='action',
+                                 action='store_const', const='fail',
+                                 help='Fail the jobs matching the filters')
+        myOptParser.add_argument('-r', '--resume', dest='action',
+                                 action='store_const', const='resume',
+                                 help='Resume the jobs matching the filters')
+        myOptParser.add_argument('-w', '--workflow', dest='workflow',
+                                 help='Jobs belonging to WORKFLOW will be resumed/failed',
+                                 default=None)
+        myOptParser.add_argument('-s', '--site', dest='site',
+                                 help='Only jobs that ran at SITE will be resumed/failed',
+                                 default=None)
+        myOptParser.add_argument('-t', '--task-type', dest='taskType',
+                                 help='Only jobs of TYPE will be resumed/failed',
+                                 default=None)
+        myOptParser.add_argument('-j', '--job-id', dest='jobId',
+                                 help='Only the pointed job will be resumed/failed',
+                                 default=None)
+        myOptParser.add_argument('-d', '--dry-run', dest='dryRun',
+                                 help="Don't make any changes, just print out what will happen",
+                                 default=False, action='store_true')
 
-        (options, _) = myOptParser.parse_args()
+        options = myOptParser.parse_args()
 
         if not (options.workflow or options.site or options.taskType or options.jobId):
             myOptParser.error('At least a workflow, site, type or job-id must be specified')
@@ -78,9 +77,9 @@ class PausedTool:
 
         # Looks ugly but I didn't find a better idea to get all the 3 states with the current support for the query
         pausedJobs = []
-        pausedJobs = pausedJobs + self.getJobs.execute(state = 'jobpaused')
-        pausedJobs = pausedJobs + self.getJobs.execute(state = 'createpaused')
-        pausedJobs = pausedJobs + self.getJobs.execute(state = 'submitpaused')
+        pausedJobs = pausedJobs + self.getJobs.execute(state='jobpaused')
+        pausedJobs = pausedJobs + self.getJobs.execute(state='createpaused')
+        pausedJobs = pausedJobs + self.getJobs.execute(state='submitpaused')
 
         jobs = self.getTask.execute(pausedJobs)
         return jobs
@@ -91,7 +90,7 @@ class PausedTool:
 
         if self.workflow:
             for jobID in jobs:
-                if (re.match('.*' + self.workflow + '.*' , jobs[jobID])):
+                if (re.match('.*' + self.workflow + '.*', jobs[jobID])):
                     matchedJobs.append(jobID)
         elif self.jobId:
             for jobID in jobs:
@@ -107,13 +106,13 @@ class PausedTool:
         result = self.getTaskType.execute(matchedJobs)
         WMBSJobs = []
         for entry in result:
-            job = Job(id = entry['id'])
+            job = Job(id=entry['id'])
             job.load()
             job['taskType'] = entry['type']
             WMBSJobs.append(job)
 
         siteFilteredJobs = []
-        #And now filter by site
+        # And now filter by site
         if self.site:
             for job in WMBSJobs:
                 if job['location'] == self.site:
@@ -121,7 +120,7 @@ class PausedTool:
         else:
             siteFilteredJobs = WMBSJobs
 
-        #Finally if necessary filter by task
+        # Finally if necessary filter by task
         taskFilteredJobs = []
         if self.taskType:
             for job in siteFilteredJobs:
@@ -135,19 +134,19 @@ class PausedTool:
     def resumeJobs(self, jobs):
         for job in jobs:
             if self.dryRun:
-                print 'Job %d would be resumed' % job['id']
+                print('Job %d would be resumed' % job['id'])
             else:
-                self.changer.propagate(job, 'created', 'jobpaused',updatesummary=True)
-                print "Resuming job %d" % job['id']
+                self.changer.propagate(job, 'created', 'jobpaused', updatesummary=True)
+                print("Resuming job %d" % job['id'])
         return
 
     def failJobs(self, jobs):
         for job in jobs:
             if self.dryRun:
-                print 'Job %d would be failed' % job['id']
+                print('Job %d would be failed' % job['id'])
             else:
-                print "Failing job %d" % job['id']
-                self.changer.propagate(job, 'retrydone', 'jobpaused',updatesummary=True)
+                print("Failing job %d" % job['id'])
+                self.changer.propagate(job, 'retrydone', 'jobpaused', updatesummary=True)
         return
 
     def execute(self):
@@ -156,23 +155,24 @@ class PausedTool:
         allJobs = self.getPaused()
         jobs = self.filterJobs(allJobs)
         if not jobs:
-            print "No paused jobs that matched the filters were found..."
+            print("No paused jobs that matched the filters were found...")
             return 0
         if self.action == "resume":
             self.resumeJobs(jobs)
         elif self.action == "fail":
-            confirm = raw_input("Are you sure you want to fail %d jobs? Type Y or N:\n" % len(jobs))
+            confirm = input("Are you sure you want to fail %d jobs? Type 'Y' or 'N' (type quotes too!) :\n" % len(jobs))
             if confirm == "Y":
-                print "Failing the jobs..."
+                print("Failing the jobs...")
                 self.failJobs(jobs)
             else:
-                print "Aborting... No changes were made."
+                print("Aborting... No changes were made.")
         return 0
+
 
 def main():
     tool = PausedTool()
     tool.execute()
 
+
 if __name__ == "__main__":
     sys.exit(main())
-

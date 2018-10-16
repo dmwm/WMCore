@@ -73,32 +73,32 @@ def parse_opts():
     parser.add_argument("-u", "--users",
                         dest="users",
                         default=10,
-                        type="int",
+                        type=int,
                         help="The number of users, default=10")
     parser.add_argument("-s", "--sites",
                         dest="sites",
                         default=5,
-                        type="int",
+                        type=int,
                         help="The number of sites, default=5")
     parser.add_argument("-a", "--agents",
                         dest="agents",
                         default=2,
-                        type="int",
+                        type=int,
                         help="The number of agents, default=2")
     parser.add_argument("-i", "--iterations",
                         dest="iterations",
                         default=ITERATIONS,
-                        type="int",
+                        type=int,
                         help="The number of iterations to make, default=%s" % ITERATIONS)
     parser.add_argument("-r", "--requests",
                         dest="requests",
                         default=NUM_OF_REQUEST,
-                        type="int",
+                        type=int,
                         help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
     parser.add_argument("-w", "--wait",
                         dest="wait",
                         default=0,
-                        type="int",
+                        type=int,
                         help="Wait W seconds between iterations, default=0")
 
     return parser.parse_args()

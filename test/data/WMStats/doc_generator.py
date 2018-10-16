@@ -219,12 +219,12 @@ if __name__ == "__main__":
         parser.add_argument("-i", "--iterations",
                             dest="iterations",
                             default=ITERATIONS,
-                            type="int",
+                            type=int,
                             help="The number of iterations to make, default=%s" % ITERATIONS)
         parser.add_argument("-r", "--requests",
                             dest="requests",
                             default=NUM_OF_REQUEST,
-                            type="int",
+                            type=int,
                             help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
 
         return parser.parse_args()
@@ -239,6 +239,6 @@ if __name__ == "__main__":
     docList.extend(agent_requests)
     for req in agent_requests:
         docList.extend(generate_jobsummary(req['workflow']))
-    docs = {"docs": docList};
+    docs = {"docs": docList}
 
     json.dump(docs, open("sample_docs.json", "w+"))

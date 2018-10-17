@@ -414,11 +414,11 @@ class WMStatsReader(object):
 
         return jobInfoDoc
 
-    def getAllAgentRequestRevByID(self):
-
-        results = self.couchDB.loadView(self.couchapp, "agentRequests")
+    def getAllAgentRequestRevByID(self, agentURL):
+        options = {"reduce": False}
+        results = self.couchDB.loadView(self.couchapp, "byAgentURL", options=options, keys=[agentURL])
         idRevMap = {}
         for row in results['rows']:
-            idRevMap[row['key']] = row['value']['rev']
+            idRevMap[row['id']] = row['value']['rev']
 
         return idRevMap

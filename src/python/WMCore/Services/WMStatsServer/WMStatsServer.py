@@ -1,4 +1,5 @@
 import json
+import logging
 
 from WMCore.Services.Service import Service
 
@@ -9,7 +10,7 @@ class WMStatsServer(Service):
 
     """
 
-    def __init__(self, url, header=None):
+    def __init__(self, url, header=None, logger=None):
         """
         responseType will be either xml or json
         """
@@ -18,6 +19,7 @@ class WMStatsServer(Service):
         header = header or {}
         # url is end point
         httpDict['endpoint'] = "%s/data" % url
+        httpDict['logger'] = logger if logger else logging.getLogger()
 
         # cherrypy converts request.body to params when content type is set
         # application/x-www-form-urlencodeds
@@ -88,3 +90,24 @@ class WMStatsServer(Service):
         query = self._createQuery(inputCondition)
         callname = 'filtered_requests?%s' % query
         return self._getResult(callname, verb="GET")
+
+    def getChildParentDatasetMap(self, requestType="StepChain", parentageResolved=False):
+        """
+
+        :param requestType: specify the type of requests you want find the parentag
+        :param dataset: child dataset
+        :param includeInputDataset:
+        :return: dict of {child_dataset_name: parent_dataset_name}
+        """
+        filter = {"RequestType": requestType, "ParentageResolved": parentageResolved}
+        mask = ["ChainParentageMap"]
+
+        results = self.getFilteredActiveData(filter, mask)
+        childParentMap = {}
+        for info in results:
+            if info["ChainParentageMap"]:
+                for childParentDS in info["ChainParentageMap"]:
+                    if childParentDS["ParentDset"]:
+                        for childDS in childParentDS["ChildDsets"]:
+                            childParentMap[childDS] = childParentDS["ParentDset"]
+        return childParentMap

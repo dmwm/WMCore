@@ -6,26 +6,23 @@ CouchDB URL and database name can be specified as command line arguments.
 
 """
 
-import sys
-import os
-import logging
 import json
+import logging
+import sys
 from contextlib import contextmanager
-from optparse import OptionParser, TitledHelpFormatter
-
-from WMCore.Database.CMSCouch import CouchServer, Database, Document
+from argparse import ArgumentParser
+from WMCore.Database.CMSCouch import CouchServer, Database
 
 
 def _processCmdLineArgs(args):
     usage = \
-"""usage: %prog options"""
-    form = TitledHelpFormatter(width = 78)
-    parser = OptionParser(usage = usage, formatter = form, add_help_option = None)
+        """usage: %prog options"""
+    parser = ArgumentParser(usage=usage, add_help=False)
     _defineCmdLineOptions(parser)
 
     # opts - new processed options
     # args - remainder of the input array
-    opts, args = parser.parse_args(args = args)
+    opts = parser.parse_args(args=args)
     for mandatory in ("input", "couchUrl", "database"):
         if not getattr(opts, mandatory, None):
             logging.error("Missing mandatory option ('%s')." % mandatory)
@@ -36,13 +33,13 @@ def _processCmdLineArgs(args):
 
 def _defineCmdLineOptions(parser):
     help = "Display this help"
-    parser.add_option("-h", "--help", help = help, action = 'help')
+    parser.add_argument("-h", "--help", help=help, action='help')
     help = "CouchDB server URL (mandatory)"
-    parser.add_option("-c", "--couchUrl", help = help)
+    parser.add_argument("-c", "--couchUrl", help=help)
     help = "CouchDB database name (mandatory)"
-    parser.add_option("-d", "--database", help = help)
+    parser.add_argument("-d", "--database", help=help)
     help = "Input data file (json format) (mandatory)"
-    parser.add_option("-i", "--input", help = help)
+    parser.add_argument("-i", "--input", help=help)
 
 
 def _getDbConnection(couchUrl, dbName):
@@ -53,7 +50,7 @@ def _getDbConnection(couchUrl, dbName):
     couchServer = CouchServer(couchUrl)
     if not dbName in couchServer.listDatabases():
         logging.info("Database '%s' does not exits, creating it." % dbName)
-        db = couchServer.createDatabase(dbName) # returns Database
+        db = couchServer.createDatabase(dbName)  # returns Database
     else:
         logging.debug("Database '%s' exists." % dbName)
         db = Database(dbName, couchUrl)
@@ -84,14 +81,12 @@ def _processAndStoreFile(couchDb, inputFile):
     couchDb.commit()
 
 
-
 def main():
-    logging.basicConfig(level = logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     inputFile, couchUrl, dbName = _processCmdLineArgs(sys.argv)
     couchServer, couchDb = _getDbConnection(couchUrl, dbName)
     _processAndStoreFile(couchDb, inputFile)
     logging.info("Finished.")
-
 
     # helper stuff, checks (to remove later / if simon's happy):
     """

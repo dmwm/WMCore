@@ -2,7 +2,8 @@
 """
 _LumiBased_t_
 
-Lumi based splitting test.
+Lumi based splitting tests, using the DataStructs classes.
+See WMCore/WMBS/JobSplitting/ for the WMBS (SQL database) version.
 """
 
 import unittest

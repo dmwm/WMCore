@@ -1,11 +1,13 @@
-import time
 import random
+import time
 
 NUM_OF_REQUEST = 30
-ITERATIONS =50 # number of jobs updated
+ITERATIONS = 50  # number of jobs updated
 NUM_OF_JOBS_PER_REQUEST = 10
-#To use curl to insert doc
-#curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs
+
+
+# To use curl to insert doc
+# curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs
 
 def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     """
@@ -39,9 +41,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
        "site_white_list": [
            "T1_DE_KIT"
        ],
-       "teams": [
-           "cmsdataops"
-       ]
+       "team": "cmsdataops",
     }
     """
     docs = []
@@ -57,15 +57,16 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                "request_type": "ReReco",
                "type": "reqmgr_request",
                "request_status": [
-                                  {"status": "new", "update_time": 1326304190},
-                                  {"status": "assignment-approved", "update_time": 1326304216},
-                                  {"status": "assigned", "update_time": 1326304227}
-                                 ],
-                "site_white_list": ["T1_DE_KIT"],
-                "teams": ["cmsdataops"]
-                }
+                   {"status": "new", "update_time": 1326304190},
+                   {"status": "assignment-approved", "update_time": 1326304216},
+                   {"status": "assigned", "update_time": 1326304227}
+               ],
+               "site_white_list": ["T1_DE_KIT"],
+               "team": "cmsdataops"
+               }
         docs.append(doc)
     return docs
+
 
 def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
     """
@@ -105,34 +106,34 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "canceled": 2,
                               "cooloff": 2,
                               "success": 2
-                             },
+                              },
 
-                "workflow": "test_workflow_%s" % i,
-                "timestamp": current_time + (cycle * 10),
-                "sites": {"T1_DE_KIT":
-                             {
-                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1},
-                              "queued": {"retry": 1, "first": 1},
-                              "canceled": 1,
-                              "cooloff": 1,
-                              "success": 1
-                             },
-                          "T1_US_FNAL":
-                             {
-                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1},
-                              "queued": {"retry": 1, "first": 1},
-                              "canceled": 1,
-                              "cooloff": 1,
-                              "success": 1
-                             }
-                          },
-                "agent": "WMAgentCommissioning",
-                "agent_teams": "team1,team2,cmsdataops",
-                "agent_url": "cms-xen39.fnal.gov",
-                "type": "agent_request"
-            }
+                   "workflow": "test_workflow_%s" % i,
+                   "timestamp": current_time + (cycle * 10),
+                   "sites": {"T1_DE_KIT":
+                       {
+                           "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
+                           "failure": {"exception": 1, "create": 1, "submit": 1},
+                           "queued": {"retry": 1, "first": 1},
+                           "canceled": 1,
+                           "cooloff": 1,
+                           "success": 1
+                       },
+                       "T1_US_FNAL":
+                           {
+                               "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
+                               "failure": {"exception": 1, "create": 1, "submit": 1},
+                               "queued": {"retry": 1, "first": 1},
+                               "canceled": 1,
+                               "cooloff": 1,
+                               "success": 1
+                           }
+                   },
+                   "agent": "WMAgentCommissioning",
+                   "agent_teams": "cmsdataops",
+                   "agent_url": "cms-xen39.fnal.gov",
+                   "type": "agent_request"
+                   }
             docs.append(doc)
     return docs
 
@@ -171,14 +172,14 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
      'exhausted', 'killed']
     """
 
-    #TODO: Make more realistic
+    # TODO: Make more realistic
     docs = []
     statusList = ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed',
-     'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
-     'exhausted', 'killed']
+                  'jobfailed', 'createcooloff', 'submitcooloff', 'jobcooloff', 'success',
+                  'exhausted', 'killed']
 
     for i in xrange(number):
-        status = statusList[random.randint(0, len(statusList)-1)]
+        status = statusList[random.randint(0, len(statusList) - 1)]
         errmsgs = {}
         if status.find("failed"):
             exitCode = 666
@@ -189,41 +190,45 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
             exitCode = 0
 
         jobSummary = {"_id": "jobid_%s_%s" % (request, i),
-                  "type": "jobsummary",
-                  "retrycount": random.randint(0,5),
-                  "workflow": request,
-                  "task": "/%s/task_%s" % (request, i),
-                  "state": status,
-                  "site": "T1_US_FNAL",
-                  "exitcode": exitCode,
-                  "errors": errmsgs,
-                  "lumis": [[123, 124], [567, 879]],
-                  "output": [ {'type': "test-type",
-                               'lfn': "/somewhere/file.root",
-                               'location': ['T1_US_FNAL'],
-                               'checksums': {'adler32': 'abc123', 'cksum': 'cdf123'},
-                               'size': "1000" }  ]
-            }
+                      "type": "jobsummary",
+                      "retrycount": random.randint(0, 5),
+                      "workflow": request,
+                      "task": "/%s/task_%s" % (request, i),
+                      "state": status,
+                      "site": "T1_US_FNAL",
+                      "exitcode": exitCode,
+                      "errors": errmsgs,
+                      "lumis": [[123, 124], [567, 879]],
+                      "output": [{'type': "test-type",
+                                  'lfn': "/somewhere/file.root",
+                                  'location': ['T1_US_FNAL'],
+                                  'checksums': {'adler32': 'abc123', 'cksum': 'cdf123'},
+                                  'size': "1000"}]
+                      }
         docs.append(jobSummary)
     return docs
 
-if __name__ == "__main__":
-    from optparse import OptionParser
-    import json
-    def parse_opts():
-        parser = OptionParser()
-        parser.add_option("-i", "--iterations",
-                        dest="iterations",
-                        default=ITERATIONS,
-                        type="int",
-                        help="The number of iterations to make, default=%s" % ITERATIONS)
-        parser.add_option("-r", "--requests",
-                        dest="requests",
-                        default=NUM_OF_REQUEST,
-                        type="int",
-                        help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
 
-        return parser.parse_args()[0]
+if __name__ == "__main__":
+    from argparse import ArgumentParser
+    import json
+
+
+    def parse_opts():
+        parser = ArgumentParser()
+        parser.add_argument("-i", "--iterations",
+                            dest="iterations",
+                            default=ITERATIONS,
+                            type=int,
+                            help="The number of iterations to make, default=%s" % ITERATIONS)
+        parser.add_argument("-r", "--requests",
+                            dest="requests",
+                            default=NUM_OF_REQUEST,
+                            type=int,
+                            help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
+
+        return parser.parse_args()
+
 
     options = parse_opts()
     reqmgr_requests = generate_reqmgr_requests(options.requests)
@@ -234,6 +239,6 @@ if __name__ == "__main__":
     docList.extend(agent_requests)
     for req in agent_requests:
         docList.extend(generate_jobsummary(req['workflow']))
-    docs = {"docs": docList};
+    docs = {"docs": docList}
 
     json.dump(docs, open("sample_docs.json", "w+"))

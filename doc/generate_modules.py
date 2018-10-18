@@ -9,6 +9,9 @@ It also creates a modules index (named modules.<suffix>).
 """
 from __future__ import print_function
 
+import argparse
+import os
+
 # Copyright 2008 Société des arts technologiques (SAT), http://www.sat.qc.ca/
 # Copyright 2010 Thomas Waldmann <tw AT waldmann-edv DOT de>
 # All rights reserved.
@@ -27,13 +30,10 @@ from __future__ import print_function
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
-import optparse
-
-
 # automodule options
 OPTIONS = ['members']
 INIT = '__init__.py'
+
 
 def makename(package, module):
     """Join package and module with a dot."""
@@ -45,6 +45,7 @@ def makename(package, module):
     else:
         name = module
     return name
+
 
 def write_file(name, text, opts):
     """Write the output file for module/package <name>."""
@@ -59,10 +60,12 @@ def write_file(name, text, opts):
         f.write(text)
         f.close()
 
+
 def format_heading(level, text):
     """Create a heading of <level> [1, 2 or 3 supported]."""
-    underlining = ['=', '-', '~', ][level-1] * len(text)
+    underlining = ['=', '-', '~', ][level - 1] * len(text)
     return '%s\n%s\n\n' % (text, underlining)
+
 
 def format_directive(module, package=None):
     """Create the automodule directive and add the options."""
@@ -71,6 +74,7 @@ def format_directive(module, package=None):
         directive += '    :%s:\n' % option
     return directive
 
+
 def create_module_file(package, module, opts):
     """Build the text of the file and write the file."""
     text = format_heading(1, ':mod:`%s` Module' % module)
@@ -78,6 +82,7 @@ def create_module_file(package, module, opts):
     filename = makename(package, module)
     write_file(filename, text, opts)
     return filename
+
 
 def create_submodule_file(master_package, subroot, package, py_file, opts):
     is_package = py_file == INIT
@@ -90,6 +95,7 @@ def create_submodule_file(master_package, subroot, package, py_file, opts):
         return (text, '')
     else:
         return ('', create_module_file(subroot, py_file, opts))
+
 
 def create_package_file(root, master_package, subroot, py_files, opts, subs):
     """Build the text of the file and write the file."""
@@ -123,6 +129,7 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
 
     write_file(makename(master_package, subroot), text + toc, opts)
 
+
 def create_modules_toc_file(master_package, modules, opts, name='modules'):
     """
     Create the module's index.
@@ -142,12 +149,14 @@ def create_modules_toc_file(master_package, modules, opts, name='modules'):
 
     write_file(name, text, opts)
 
+
 def shall_skip(module):
     """
     Check if we want to skip this module.
     """
     # skip it, if there is nothing (or just \n or \r\n) in the file
     return os.path.getsize(module) < 3
+
 
 def recurse_tree(path, excludes, opts):
     """
@@ -167,7 +176,7 @@ def recurse_tree(path, excludes, opts):
     tree = os.walk(path, False)
     for root, subs, files in tree:
         # keep only the Python script files
-        py_files =  sorted([f for f in files if os.path.splitext(f)[1] == '.py'])
+        py_files = sorted([f for f in files if os.path.splitext(f)[1] == '.py'])
         if INIT in py_files:
             py_files.remove(INIT)
             py_files.insert(0, INIT)
@@ -176,20 +185,20 @@ def recurse_tree(path, excludes, opts):
         # check if there are valid files to process
         # TODO: could add check for windows hidden files
         if "/." in root or "/_" in root \
-        or not py_files \
-        or is_excluded(root, excludes):
+                or not py_files \
+                or is_excluded(root, excludes):
             continue
         if INIT in py_files:
             # we are in package ...
-            if (# ... with subpackage(s)
-                subs
-                or
-                # ... with some module(s)
-                len(py_files) > 1
-                or
-                # ... with a not-to-be-skipped INIT file
-                not shall_skip(os.path.join(root, INIT))
-               ):
+            if (  # ... with subpackage(s)
+                            subs
+                        or
+                        # ... with some module(s)
+                                len(py_files) > 1
+                    or
+                    # ... with a not-to-be-skipped INIT file
+                        not shall_skip(os.path.join(root, INIT))
+            ):
                 subroot = root[len(path):].lstrip(os.path.sep).replace(os.path.sep, '.')
                 create_package_file(root, package_name, subroot, py_files, opts, subs)
                 toc.append(makename(package_name, subroot))
@@ -204,6 +213,7 @@ def recurse_tree(path, excludes, opts):
     # create the module's index
     if not opts.notoc:
         create_modules_toc_file(package_name, toc, opts)
+
 
 def normalize_excludes(rootpath, excludes):
     """
@@ -222,6 +232,7 @@ def normalize_excludes(rootpath, excludes):
         f_excludes.append(exclude)
     return f_excludes
 
+
 def is_excluded(root, excludes):
     """
     Check if the directory is in the exclude list.
@@ -237,21 +248,28 @@ def is_excluded(root, excludes):
             return True
     return False
 
+
 def main():
     """
     Parse and check the command line arguments.
     """
-    parser = optparse.OptionParser(usage="""usage: %prog [options] <package path> [exclude paths, ...]
+    parser = argparse.ArgumentParser(usage="""usage: %prog [options] <package path> [exclude paths, ...]
 
 Note: By default this script will not overwrite already created files.""")
-    parser.add_option("-n", "--doc-header", action="store", dest="header", help="Documentation Header (default=Project)", default="Project")
-    parser.add_option("-d", "--dest-dir", action="store", dest="destdir", help="Output destination directory", default="")
-    parser.add_option("-s", "--suffix", action="store", dest="suffix", help="module suffix (default=txt)", default="txt")
-    parser.add_option("-m", "--maxdepth", action="store", dest="maxdepth", help="Maximum depth of submodules to show in the TOC (default=4)", type="int", default=4)
-    parser.add_option("-r", "--dry-run", action="store_true", dest="dryrun", help="Run the script without creating the files")
-    parser.add_option("-f", "--force", action="store_true", dest="force", help="Overwrite all the files")
-    parser.add_option("-t", "--no-toc", action="store_true", dest="notoc", help="Don't create the table of content file")
-    (opts, args) = parser.parse_args()
+    parser.add_argument("-n", "--doc-header", action="store", dest="header",
+                        help="Documentation Header (default=Project)", default="Project")
+    parser.add_argument("-d", "--dest-dir", action="store", dest="destdir", help="Output destination directory",
+                        default="")
+    parser.add_argument("-s", "--suffix", action="store", dest="suffix", help="module suffix (default=txt)",
+                        default="txt")
+    parser.add_argument("-m", "--maxdepth", action="store", dest="maxdepth",
+                        help="Maximum depth of submodules to show in the TOC (default=4)", type=int, default=4)
+    parser.add_argument("-r", "--dry-run", action="store_true", dest="dryrun",
+                        help="Run the script without creating the files")
+    parser.add_argument("-f", "--force", action="store_true", dest="force", help="Overwrite all the files")
+    parser.add_argument("-t", "--no-toc", action="store_true", dest="notoc",
+                        help="Don't create the table of content file")
+    (opts, args) = parser.parse_known_args()
     if not args:
         parser.error("package path is required.")
     else:
@@ -269,4 +287,3 @@ Note: By default this script will not overwrite already created files.""")
 
 if __name__ == '__main__':
     main()
-

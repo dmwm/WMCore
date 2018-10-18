@@ -4,15 +4,15 @@ wmagent-workqueue
 
 Utility script for manipulating workqueue.
 """
+from __future__ import print_function
 
-from optparse import OptionParser, OptionGroup
 import os
 import sys
-import logging
-import threading
+from argparse import ArgumentParser
 
-from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
 from WMCore.Configuration import loadConfigurationFile
+from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
+
 
 def createOptionParser():
     """
@@ -21,59 +21,57 @@ def createOptionParser():
     Create an option parser that knows about all the options for manipulating
     and accessing resource control.
     """
-    myOptParser = OptionParser()
-    myOptParser.add_option("--status", dest = "status",
-                           default = False, action = "store_true",
-                           help = "Print out element's status.")
-    myOptParser.add_option("--locations", dest = "updateLocations",
-                           default = False, action = "store_true",
-                       help = "Update data location's.")
-    myOptParser.add_option("--priority", dest = "setPriority",
-                           default = False, action = "store_true",
-                           help = "Change priority of elements.")
-    myOptParser.add_option("--queue", dest = "queueWork",
-                           default = False, action = "store_true",
-                           help = "Queue work directly to the WorkQueue.")
-    myOptParser.add_option("--reset", dest = "resetWork",
-                           default = False, action = "store_true",
-                           help = "Reset elements status.")
-    myOptParser.add_option("--delete", dest = "deleteWork",
-                           default = False, action = "store_true",
-                           help = "Delete elements.")
-    myOptParser.add_option("--cancel", dest = "cancelWork",
-                           default = False, action = "store_true",
-                           help = "Cancel request")
-    myOptParser.add_option("--process", dest = "process",
-                           default = False, action = "store_true",
-                           help = "Process inbound work.")
-    myOptParser.add_option("--clean", dest = "clean",
-                           default = False, action = "store_true",
-                           help = "Clean queue.")
-    myOptParser.add_option("-i", "--interactive", dest = "interactive",
-                           default = False, action = "store_true",
-                           help = "Interactive console.")
-    myOptParser.add_option("--reqmgr", dest = "requestmanager",
-                           default = False, action = "store_true",
-                           help = "Synchronize with ReqMgr2")
-    myOptParser.add_option("--deleteCascade", dest = "deleteCascade",
-                           default = False, action = "store_true",
-                           help = "delete LQ GQ.")
-    myOptParser.add_option("--resetGQ", dest = "resetGQ",
-                           default = False, action = "store_true",
-                           help = "Reset GQ elements status.")
-                           
-    group = OptionGroup(myOptParser, "WorkQueue elements selection.",
-                    "Use these to select which elements to perform  "
-                    "the desired operation on.")
-    group.add_option("--workflow", dest="workflow", help="workflow name")
-    group.add_option("--id", dest="id", help="element id")
-    myOptParser.add_option_group(group)
+    myOptParser = ArgumentParser()
+    myOptParser.add_argument("--status", dest="status",
+                             default=False, action="store_true",
+                             help="Print out element's status.")
+    myOptParser.add_argument("--locations", dest="updateLocations",
+                             default=False, action="store_true",
+                             help="Update data location's.")
+    myOptParser.add_argument("--priority", dest="setPriority",
+                             default=False, action="store_true",
+                             help="Change priority of elements.")
+    myOptParser.add_argument("--queue", dest="queueWork",
+                             default=False, action="store_true",
+                             help="Queue work directly to the WorkQueue.")
+    myOptParser.add_argument("--reset", dest="resetWork",
+                             default=False, action="store_true",
+                             help="Reset elements status.")
+    myOptParser.add_argument("--delete", dest="deleteWork",
+                             default=False, action="store_true",
+                             help="Delete elements.")
+    myOptParser.add_argument("--cancel", dest="cancelWork",
+                             default=False, action="store_true",
+                             help="Cancel request")
+    myOptParser.add_argument("--process", dest="process",
+                             default=False, action="store_true",
+                             help="Process inbound work.")
+    myOptParser.add_argument("--clean", dest="clean",
+                             default=False, action="store_true",
+                             help="Clean queue.")
+    myOptParser.add_argument("-i", "--interactive", dest="interactive",
+                             default=False, action="store_true",
+                             help="Interactive console.")
+    myOptParser.add_argument("--reqmgr", dest="requestmanager",
+                             default=False, action="store_true",
+                             help="Synchronize with ReqMgr2")
+    myOptParser.add_argument("--deleteCascade", dest="deleteCascade",
+                             default=False, action="store_true",
+                             help="delete LQ GQ.")
+    myOptParser.add_argument("--resetGQ", dest="resetGQ",
+                             default=False, action="store_true",
+                             help="Reset GQ elements status.")
 
-    group = OptionGroup(myOptParser, "General options.",
-                    "General options to direct bahviour")
-    group.add_option("--config", dest="config", help="wm agent config",
-                     default = os.environ.get("WMAGENT_CONFIG", None))
-    myOptParser.add_option_group(group)
+    group = myOptParser.add_argument_group("WorkQueue elements selection.",
+                                           "Use these to select which elements to perform  "
+                                           "the desired operation on.")
+    group.add_argument("--workflow", dest="workflow", help="workflow name")
+    group.add_argument("--id", dest="id", help="element id")
+
+    group = myOptParser.add_argument_group("General options.",
+                                           "General options to direct bahviour")
+    group.add_argument("--config", dest="config", help="wm agent config",
+                       default=os.environ.get("WMAGENT_CONFIG", None))
 
     return myOptParser
 
@@ -86,9 +84,9 @@ def createWorkQueue(config):
         wmInit = WMInit()
         (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
         socket = getattr(config.CoreDatabase, "socket", None)
-        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
-                                     dialect = dialect,
-                                     socketLoc = socket)
+        wmInit.setDatabaseConnection(dbConfig=config.CoreDatabase.connectUrl,
+                                     dialect=dialect,
+                                     socketLoc=socket)
     return queueFromConfig(config)
 
 
@@ -104,25 +102,27 @@ def _deleteWorkflowFromWQ(wqDB, workflow):
     """
 
     elements = wqDB.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : workflow, 'reduce' : False})['rows']
+                             {'key': workflow, 'reduce': False})['rows']
     for j in elements:
-        id  = j['id']
-        wqDB.delete_doc(id = id)
+        id = j['id']
+        wqDB.delete_doc(id=id)
     try:
-    	wqDB.delete_doc(workflow)
-    except Exception, ex:
-        print "%s : %s" % (workflow, str(ex))
+        wqDB.delete_doc(workflow)
+    except Exception as ex:
+        print("%s : %s" % (workflow, str(ex)))
     return len(elements)
-    
+
+
 def deleteWorkflowFromWQ(workqueue, workflowName):
-    print "LQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.db, workflowName)
-    print "LQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.inbox, workflowName)
-    print "GQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.db, workflowName)
-    print "GQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.inbox, workflowName)
+    print("LQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.db, workflowName))
+    print("LQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.backend.inbox, workflowName))
+    print("GQ deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.db, workflowName))
+    print("GQ inbox deleted: %s" % _deleteWorkflowFromWQ(workqueue.parent_queue.inbox, workflowName))
+
 
 def main():
     myOptParser = createOptionParser()
-    (options, args) = myOptParser.parse_args()
+    (options, args) = myOptParser.parse_known_args()
 
     if not options.config or not os.path.exists(options.config):
         msg = "No Config file provided\n"
@@ -135,7 +135,7 @@ def main():
     workqueue = createWorkQueue(cfgObject)
 
     if options.status:
-        print workqueue.status()
+        print(workqueue.status())
     elif options.updateLocations:
         workqueue.updateLocationInfo()
         # print out location list
@@ -156,20 +156,21 @@ def main():
     elif options.interactive:
         msg = 'Workqueue available in "workqueue" variable'
         import code
-        code.interact(banner = msg, local = locals())
+        code.interact(banner=msg, local=locals())
     elif options.requestmanager:
         from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
         reqConfig = getattr(cfgObject.WorkQueueManager, 'reqMgrConfig', {})
         reqMgrInt = WorkQueueReqMgrInterface(**reqConfig)
         reqMgrInt(workqueue)
     elif options.cancelWork:
-        workqueue.cancelWork(WorkflowName = options.workflow)
+        workqueue.cancelWork(WorkflowName=options.workflow)
     elif options.deleteCascade:
-        deleteWorkflowFromWQ(workqueue, workflowName = options.workflow)
+        deleteWorkflowFromWQ(workqueue, workflowName=options.workflow)
     elif options.resetGQ:
         ids = options.id.split(",")
-        workqueue.parent_queue.updateElements(*ids, Status = 'Available',
-                                           ChildQueueUrl = None, WMBSUrl = None)
+        workqueue.parent_queue.updateElements(*ids, Status='Available',
+                                              ChildQueueUrl=None, WMBSUrl=None)
+
 
 if __name__ == '__main__':
-	main()
+    main()

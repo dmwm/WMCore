@@ -1,0 +1,108 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": {
+      "DigiFullPU_2017PU": "AcquisitionEra1-OVERRIDE-ME",
+      "RecoFullPU_2017PU": "AcquisitionEra2-OVERRIDE-ME",
+      "REDIGI2": "AcquisitionEra2-OVERRIDE-ME"
+    },
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "ProcessingString": {
+      "DigiFullPU_2017PU": "ProcessingString-OVERRIDE-ME",
+      "RecoFullPU_2017PU": "ProcessingString-OVERRIDE-ME",
+      "REDIGI2": "ProcessingString-OVERRIDE-ME"
+    },
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "AcquisitionEra": "CMSSW_8_1_0",
+    "CMSSWVersion": "CMSSW_8_1_0",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": "Broken template! Reads input dataset; Task3 uses a diff PU sample from Task1 and Task2",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "CouchDBName": "reqmgr_config_cache",
+    "DQMConfigCacheID": "e2a5c7c675f60b4777564d5dd16b0dcd",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "EnableHarvesting": true,
+    "GlobalTag": "81X_upgrade2017_realistic_v26",
+    "Group": "DATAOPS",
+    "Memory": 3000,
+    "Multicore": 1,
+    "ProcessingString": {
+      "DigiFullPU_2017PU": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017",
+      "RecoFullPU_2017PU": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017"
+    },
+    "ProcessingVersion": 1,
+    "RequestPriority": 600000,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "TaskChain",
+    "Requestor": "amaltaro",
+    "ScramArch": "slc6_amd64_gcc530",
+    "SizePerEvent": 1234,
+    "PrepID": "TEST-PUMCRecyc-TopLevel",
+    "SubRequestType": "RelVal",
+    "Task1": {
+      "AcquisitionEra": "CMSSW_8_1_0",
+      "ConfigCacheID": "e2a5c7c675f60b4777564d5dd157112a",
+      "DeterministicPileup": true,
+      "GlobalTag": "81X_upgrade2017_realistic_v26",
+      "InputDataset": "/RelValH125GGgluonfusion_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM",
+      "KeepOutput": true,
+      "LumisPerJob": 10,
+      "MCPileup": "/RelValMinBias_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM",
+      "Memory": 4500,
+      "Multicore": 4,
+      "ProcessingString": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017",
+      "SplittingAlgo": "LumiBased",
+      "TaskName": "DigiFullPU_2017PU"
+    },
+    "Task2": {
+      "AcquisitionEra": "CMSSW_8_1_0",
+      "ConfigCacheID": "e2a5c7c675f60b4777564d5dd15b240e",
+      "DeterministicPileup": true,
+      "GlobalTag": "81X_upgrade2017_realistic_v26",
+      "InputFromOutputModule": "FEVTDEBUGHLToutput",
+      "InputTask": "DigiFullPU_2017PU",
+      "KeepOutput": true,
+      "LumisPerJob": 10,
+      "MCPileup": "/RelValMinBias_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM",
+      "Memory": 9000,
+      "Multicore": 4,
+      "ProcessingString": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017",
+      "SplittingAlgo": "LumiBased",
+      "PrepID": "TEST-PUMCRecyc-Task2",
+      "TaskName": "RecoFullPU_2017PU"
+    },
+    "Task3": {
+      "CMSSWVersion": "CMSSW_7_4_1_patch4",
+      "ConfigCacheID": "8654d0a1dde0b1463693a416ef7a77f0",
+      "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6",
+      "InputFromOutputModule": "FEVTDEBUGHLToutput",
+      "InputTask": "DigiFullPU_2017PU",
+      "LumisPerJob": 10,
+      "Memory": 2000,
+      "SplittingAlgo": "LumiBased",
+      "MCPileup": "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM",
+      "PrepID": "TEST-Task3-ReDigi2",
+      "PrimaryDataset": "BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen",
+      "ScramArch": [
+        "slc6_amd64_gcc491"
+      ],
+      "TaskName": "REDIGI2"
+    },
+    "TaskChain": 3,
+    "TimePerEvent": 0.1
+  }
+}

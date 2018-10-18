@@ -9,6 +9,7 @@ import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class AddDupsToFileset(DBFormatter):
     existSQL = """SELECT lfn FROM wmbs_file_details wfd
                     INNER JOIN wmbs_fileset_files wff ON wff.fileid = wfd.id
@@ -46,16 +47,16 @@ class AddDupsToFileset(DBFormatter):
                           wmbs_workflow.name = :workflow AND
                           wmbs_fileset_files.fileset != :fileset)"""
 
-    def execute(self, file, fileset, workflow, conn = None, transaction = False):
-        binds      = []
+    def execute(self, file, fileset, workflow, conn=None, transaction=False):
+        binds = []
         availBinds = []
         existBinds = []
         timestamp = int(time.time())
         for fileLFN in file:
             existBinds.append({'lfn': fileLFN, 'fileset': fileset})
         existResult = self.dbi.processData(self.existSQL, existBinds,
-                                           conn = conn,
-                                           transaction = transaction)
+                                           conn=conn,
+                                           transaction=transaction)
         existsLFNs = self.formatDict(existResult)
         for result in existsLFNs:
             file.remove(result.get('lfn'))
@@ -71,8 +72,8 @@ class AddDupsToFileset(DBFormatter):
             availBinds.append({"lfn": fileLFN, "fileset": fileset,
                                "workflow": workflow})
 
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.sqlAvail, availBinds, conn = conn,
-                             transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn,
+                             transaction=transaction)
+        self.dbi.processData(self.sqlAvail, availBinds, conn=conn,
+                             transaction=transaction)
         return

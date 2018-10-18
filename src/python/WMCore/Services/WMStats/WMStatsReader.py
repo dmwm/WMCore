@@ -2,9 +2,9 @@ from __future__ import division, print_function
 
 from Utils.IteratorTools import nestedDictUpdate
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -23,7 +23,7 @@ REQUEST_PROPERTY_MAP = {
     "OutputDatasets": "outputdatasets",
     "RequestTransition": "request_status",  # Status: status,  UpdateTime: update_time
     "SiteWhitelist": "site_white_list",
-    "Teams": "teams",
+    "Team": "team",
     "TotalEstimatedJobs": "total_jobs",
     "TotalInputEvents": "input_events",
     "TotalInputLumis": "input_lumis",
@@ -208,7 +208,7 @@ class WMStatsReader(object):
         options["group"] = True
         result = self._getCouchView("requestAgentUrl", options)
 
-        if filterRequest == None:
+        if filterRequest is None:
             keys = [row['key'] for row in result["rows"]]
         else:
             keys = [row['key'] for row in result["rows"] if row['key'][0] in filterRequest]
@@ -222,8 +222,7 @@ class WMStatsReader(object):
         if len(keys) == 0:
             return []
         options = {}
-        options["reduce"] = True
-        options["group"] = True
+        options["reduce"] = False
         result = self._getCouchView("latestRequest", options, keys)
         ids = [row['value']['id'] for row in result["rows"]]
         return ids
@@ -259,18 +258,17 @@ class WMStatsReader(object):
 
         for agentInfo in result["rows"]:
             #filtering empty string
-            orgteams = agentInfo['value']['agent_team'].split(',')
-            teams = [t for t in orgteams if t]
-            for team in teams:
-                response.setdefault(team, 0)
+            team = agentInfo['value']['agent_team']
+            if not team:
+                continue
 
+            response.setdefault(team, 0)
             if filterDrain:
                 if not agentInfo['value'].get('drain_mode', False):
-                    for team in teams:
-                        response[team] += 1
-            else:
-                for team in teams:
                     response[team] += 1
+            else:
+                response[team] += 1
+
         return response
 
     def getServerInstance(self):
@@ -415,3 +413,12 @@ class WMStatsReader(object):
             finalStruct["samples"].append(row["doc"])
 
         return jobInfoDoc
+
+    def getAllAgentRequestRevByID(self):
+
+        results = self.couchDB.loadView(self.couchapp, "agentRequests")
+        idRevMap = {}
+        for row in results['rows']:
+            idRevMap[row['key']] = row['value']['rev']
+
+        return idRevMap

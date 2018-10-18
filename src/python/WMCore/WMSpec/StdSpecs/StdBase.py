@@ -4,6 +4,7 @@ _StdBase_
 
 Base class with helper functions for standard WMSpec files.
 """
+from __future__ import division
 import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
@@ -14,6 +15,7 @@ from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
@@ -45,7 +47,6 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
-        self.schema = None
         self.config_cache = {}
 
         return
@@ -58,7 +59,6 @@ class StdBase(object):
         method and pull out any that are setup by this base class.
         """
         self.workloadName = workloadName
-        self.schema = {}
         argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             try:
@@ -68,52 +68,100 @@ class StdBase(object):
                     else:
                         value = arguments[arg]
                         setattr(self, argumentDefinition[arg]["attr"], value)
-                        self.schema[arg] = value
                 elif argumentDefinition[arg]["optional"]:
                     defaultValue = argumentDefinition[arg]["default"]
                     setattr(self, argumentDefinition[arg]["attr"], defaultValue)
-                    self.schema[arg] = defaultValue
             except Exception as ex:
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
 
         return
 
+    # static copy of the skim mapping
+    skimMap = {}
+
     @staticmethod
-    def skimToDataTier():
+    def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent):
         """
-        Map physics skim to a data tier
+        _calcEvtsPerJobLumi_
+        
+        Given EventsPerJob, EventsPerLumi and TimePerEvent information,
+        calculates the final values for EventsPerJob and EventsPerLumi.
+        
+        Final result will always be an EventsPerJob multiple of EventsPerLumi,
+        no matter whether EventsPerJob was provided or not.
+        :param ePerJob: events per job
+        :param ePerLumi: events per lumi
+        :param tPerEvent: time per event
         """
-        skimMap = {'LogError': 'RAW-RECO',
-                   'LogErrorMonitor': 'USER',
-                   'ZElectron': 'RAW-RECO',
-                   'ZMu': 'RAW-RECO',
-                   'MuTau': 'RAW-RECO',
-                   'TopMuEG': 'RAW-RECO',
-                   'EcalActivity': 'RAW-RECO',
-                   'CosmicSP': 'RAW-RECO',
-                   'CosmicTP': 'RAW-RECO',
-                   'ZMM': 'RAW-RECO',
-                   'Onia': 'RECO',
-                   'HighPtJet': 'RAW-RECO',
-                   'D0Meson': 'RECO',
-                   'Photon': 'AOD',
-                   'ZEE': 'AOD',
-                   'BJet': 'AOD',
-                   'OniaCentral': 'RECO',
-                   'OniaPeripheral': 'RECO',
-                   'SingleTrack': 'AOD',
-                   'MinBias': 'AOD',
-                   'OniaUPC': 'RAW-RECO',
-                   'HighMET': 'RECO',
-                   'BPHSkim': 'USER',
-                   'PAMinBias': 'RAW-RECO',
-                   'PAZEE': 'RAW-RECO',
-                   'PAZMM': 'RAW-RECO'
-                   }
-        return skimMap
+        # if not set, let's calculate an 8h job and set it for you
+        if ePerJob is None:
+            ePerJob = int((8.0 * 3600.0) / tPerEvent)
+
+        if ePerLumi is None:
+            ePerLumi = ePerJob
+        elif ePerLumi > ePerJob:
+            ePerLumi = ePerJob
+        else:
+            # then make EventsPerJob multiple of EventsPerLumi and still closer to 8h jobs
+            multiplier = int(round(ePerJob / ePerLumi))
+            # make sure not to have 0 EventsPerJob
+            multiplier = max(multiplier, 1)
+            ePerJob = ePerLumi * multiplier
+
+        return ePerJob, ePerLumi
+
+    @staticmethod
+    def skimToDataTier(cmsswVersion, skim):
+        """
+        Start subprocess and call CMSSW python code to retrieve data tier for given skim
+
+        Detects a usable scram arch for this CMSSW release on this machine
+
+        Cache the results and use cache for lookup if possible
+
+        """
+        if not cmsswVersion:
+            return None
+
+        if cmsswVersion in StdBase.skimMap:
+            if skim in StdBase.skimMap[cmsswVersion]:
+                return StdBase.skimMap[cmsswVersion][skim]
+        else:
+            StdBase.skimMap[cmsswVersion] = {}
+
+        import glob
+        import subprocess
+
+        p = subprocess.Popen("/cvmfs/cms.cern.ch/common/cmsos", stdout=subprocess.PIPE, shell=True)
+        cmsos = p.communicate()[0].strip()
+
+        scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
+        if not scramBaseDirs:
+            scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw-patch/%s" % (cmsos, cmsswVersion))
+            if not scramBaseDirs:
+                return None
+
+        command = "source /cvmfs/cms.cern.ch/cmsset_default.sh\n"
+        command += "cd %s\n" % scramBaseDirs[0]
+        command += "eval `scramv1 runtime -sh`\n"
+
+        command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        command += """dataTier = getSkimDataTier("%s")\n""" % skim
+        command += """if dataTier:\n\tprint dataTier.value()'"""
+
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+        dataTier = p.communicate()[0].strip()
+
+        if dataTier == "None":
+            dataTier = None
+
+        StdBase.skimMap[cmsswVersion][skim] = dataTier
+
+        return dataTier
 
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
-                               configDoc=None, couchDBName=None, configCacheUrl=None):
+                               configDoc=None, couchDBName=None,
+                               configCacheUrl=None, cmsswVersion=None):
         """
         _determineOutputModules_
 
@@ -147,10 +195,13 @@ class StdBase(object):
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
                 for physicsSkim in scenarioArgs.get('PhysicsSkims', []):
-                    dataTier = StdBase.skimToDataTier().get(physicsSkim, 'USER')
-                    moduleLabel = "SKIMStream%s" % physicsSkim
-                    outputModules[moduleLabel] = {'dataTier': dataTier,
-                                                  'filterName': physicsSkim}
+                    dataTier = StdBase.skimToDataTier(cmsswVersion, physicsSkim)
+                    if dataTier:
+                        moduleLabel = "SKIMStream%s" % physicsSkim
+                        outputModules[moduleLabel] = {'dataTier': dataTier,
+                                                      'filterName': physicsSkim}
+                    else:
+                        self.raiseValidationException("Can't find physics skim %s in %s" % (physicsSkim, cmsswVersion))
 
             elif scenarioFunc == "alcaSkim":
 
@@ -166,17 +217,18 @@ class StdBase(object):
 
         return outputModules
 
-    def addDashboardMonitoring(self, task):
+    def addRuntimeMonitors(self, task):
         """
-        _addDashboardMonitoring_
+        _addRuntimeMonitors_
 
         Add dashboard monitoring for the given task.
+        Memory settings are defined in Megabytes and timing in seconds.
         """
-        # A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
-        gb = 1024.0 * 1024.0
-        # Default timeout defined in CMS policy
-        softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
-        hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
+        # Default settings defined by CMS policy
+        maxrss = 2.3 * 1024  # 2.3 GiB, but in MiB
+        vsize = 1 * 1024 * 1024  # 1 TiB, but in MiB
+        softTimeout = 47 * 3600  # 47h
+        hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 300
@@ -185,8 +237,8 @@ class StdBase(object):
         monitoring.DashboardMonitor.destinationHost = self.dashboardHost
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS = 2.3 * gb
-        monitoring.PerformanceMonitor.maxVSize = 2.3 * gb
+        monitoring.PerformanceMonitor.maxRSS = maxrss
+        monitoring.PerformanceMonitor.maxVSize = vsize
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
@@ -245,6 +297,7 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
+        workload.setDbsUrl(self.dbsUrl)
         workload.setPrepID(self.prepID)
         return workload
 
@@ -291,7 +344,7 @@ class StdBase(object):
         splitArgs = splitArgs or {'lumis_per_job': 8}
         userFiles = userFiles or []
 
-        self.addDashboardMonitoring(procTask)
+        self.addRuntimeMonitors(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType(stepType)
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
@@ -307,12 +360,6 @@ class StdBase(object):
         procTask.applyTemplates()
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
-
-        # FIXME (Alan on 27/Mar/17): can we remove it? (I guess T0 needs it...?)
-        # if applySiteLists:
-        #    procTask.setSiteWhitelist(self.siteWhitelist)
-        #    procTask.setSiteBlacklist(self.siteBlacklist)
-        #    procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
 
         newSplitArgs = {}
         for argName in splitArgs.keys():
@@ -347,11 +394,6 @@ class StdBase(object):
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
 
-        procTask.setPerformanceMonitor(taskConf.get("MaxRSS", None),
-                                       taskConf.get("MaxVSize", None),
-                                       taskConf.get("SoftTimeout", None),
-                                       taskConf.get("GracePeriod", None))
-
         if taskType in ["Production", 'PrivateMC'] and totalEvents is not None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalEvents=totalEvents)
@@ -382,7 +424,6 @@ class StdBase(object):
             multicore = taskConf['Multicore']
         if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
-
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
@@ -410,7 +451,7 @@ class StdBase(object):
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
                                                    configDoc, couchDBName,
-                                                   configCacheUrl=configCacheUrl)
+                                                   configCacheUrl, cmsswVersion)
         outputModules = {}
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(procTask,
@@ -438,6 +479,10 @@ class StdBase(object):
         # only in the very end, in order to get it in for the children tasks as well
         prepID = taskConf.get("PrepID") or self.prepID
         procTask.setPrepID(prepID)
+
+        # has to be done in the very end such that child tasks are set too
+        procTask.setPerformanceMonitor(softTimeout=taskConf.get("SoftTimeout", None),
+                                       gracePeriod=taskConf.get("GracePeriod", None))
 
         return outputModules
 
@@ -549,7 +594,7 @@ class StdBase(object):
         cmsswVersion = cmsswVersion or self.frameworkVersion
         scramArch = scramArch or self.scramArch
         logCollectTask = parentTask.addTask(taskName)
-        self.addDashboardMonitoring(logCollectTask)
+        self.addRuntimeMonitors(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectStep.setNewStageoutOverride(self.enableNewStageout)
@@ -585,7 +630,7 @@ class StdBase(object):
         taskConf = taskConf or {}
 
         mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
-        self.addDashboardMonitoring(mergeTask)
+        self.addRuntimeMonitors(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 
@@ -622,7 +667,8 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
@@ -645,9 +691,12 @@ class StdBase(object):
                                         max_wait_time=self.maxWaitTime,
                                         initial_lfn_counter=lfn_counter)
 
-        if getattr(parentOutputModule, "dataTier") == "DQMIO":
+        if dataTier == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
                                                          newDQMIO=True)
+        elif dataTier in ("NANOAOD", "NANOAODSIM"):
+            mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
+                                                         mergeNANO=True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
@@ -659,7 +708,7 @@ class StdBase(object):
                              filterName=getattr(parentOutputModule, "filterName"),
                              forceMerged=True, taskConf=taskConf)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName, dataTier)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy=self.dqmUploadProxy,
@@ -673,7 +722,7 @@ class StdBase(object):
 
         return mergeTask
 
-    def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None):
+    def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None, dataTier=''):
         """
         _addCleanupTask_
 
@@ -683,11 +732,11 @@ class StdBase(object):
             forceTaskName = parentTask.name()
 
         cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (forceTaskName, parentOutputModuleName))
-        self.addDashboardMonitoring(cleanupTask)
+        self.addRuntimeMonitors(cleanupTask)
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
-        cleanupTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        cleanupTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job=50)
 
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
@@ -719,7 +768,7 @@ class StdBase(object):
         harvestTask = parentTask.addTask("%s%sDQMHarvest%s" % (parentTask.name(),
                                                                harvestType,
                                                                parentOutputModuleName))
-        self.addDashboardMonitoring(harvestTask)
+        self.addRuntimeMonitors(harvestTask)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -799,7 +848,12 @@ class StdBase(object):
         _setupPileup_
 
         Setup pileup for every CMSSW step in the task.
+        pileupConfig has the following data structure:
+            {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
         """
+        for puType, puList in pileupConfig.items():
+            task.setInputPileupDatasets(puList)
+
         for stepName in task.listAllStepNames():
             step = task.getStep(stepName)
             if step.stepType() != "CMSSW":
@@ -907,9 +961,6 @@ class StdBase(object):
             return configCache.validate(configID)
         except ConfigCacheException as ex:
             self.raiseValidationException(str(ex))
-
-    def getSchema(self):
-        return self.schema
 
     @staticmethod
     def getWorkloadCreateArgs():
@@ -1031,6 +1082,7 @@ class StdBase(object):
                       "RequestName": {"optional": False, "null": False, "validate": identifier},
                       "RequestStatus": {"optional": False, "validate": lambda x: x == REQUEST_START_STATE},
                       "RequestTransition": {"optional": False, "type": list},
+                      "PriorityTransition": {"optional": False, "type": list},
                       "RequestDate": {"optional": False, "type": list},
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
@@ -1085,7 +1137,7 @@ class StdBase(object):
                      "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
-                                              "validate": lambda x: x in ["Low", "Normal", "High"]},
+                                              "validate": lambda x: x.lower() in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES},
                      "DeleteFromSource": {"default": False, "type": strToBool},
                      # merge settings
                      "UnmergedLFNBase": {"assign_optional": True},
@@ -1103,17 +1155,20 @@ class StdBase(object):
                      "TrustPUSitelists": {"default": False, "type": strToBool},
                      "AllowOpportunistic": {"default": False, "type": strToBool},
                      # from assignment: performance monitoring data
-                     "MaxRSS": {"default": 2411724, "type": int, "validate": lambda x: x > 0},
-                     "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
                      "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
                      "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
+                     "HardTimeout": {"default": 129600 + 300, "type": int, "validate": lambda x: x > 0},
                      # Block closing information
                      "BlockCloseMaxWaitTime": {"default": 66400, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxFiles": {"default": 500, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxEvents": {"default": 25000000, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
                      # dashboard activity
-                     "Dashboard": {"default": "production", "type": str, "validate": activity}
+                     "Dashboard": {"default": "production", "type": str, "validate": activity},
+                     # Override parameters for step (EOS log location, etc
+                     # set to "" string or None for eos-lfn-prefix if you don't want to save the log in eos
+                     "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent"},
+                                  "type": dict},
                      }
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
@@ -1153,6 +1208,7 @@ class StdBase(object):
                      'FilterEfficiency': {'default': 1.0, 'null': False, 'optional': True, 'type': float,
                                           'validate': lambda x: x > 0.0},
                      'GlobalTag': {'optional': False, 'type': str},
+                     "IncludeParents": {"null": False, "default": False, "type": strToBool},
                      'InputDataset': {'null': False, 'optional': generator or not firstTask, 'validate': dataset},
                      'InputFromOutputModule': {'default': None, 'null': False, 'optional': firstTask},
                      'KeepOutput': {'default': True, 'null': False, 'optional': True, 'type': strToBool},
@@ -1226,6 +1282,9 @@ class StdBase(object):
             elif arg == "RequestTransition":
                 from time import time
                 schema[arg] = [{"Status": REQUEST_START_STATE, "UpdateTime": int(time()), "DN": "Fake_DN"}]
+            elif arg == "PriorityTransition":
+                from time import time
+                schema[arg] = [{"Priority": REQUEST_START_STATE, "UpdateTime": int(time()), "DN": "Fake_DN"}]
             elif arg == "RequestStatus":
                 schema[arg] = REQUEST_START_STATE
             elif arg == "CouchDBName":

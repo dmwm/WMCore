@@ -7,7 +7,7 @@ a set of jobs based on lumi sections, failing jobs with too many
 events in a lumi and adapting the number of lumis per job
 according to the average number of events per lumi in the files.
 
-This is adapted from EventAwareByLumi but does its work on lumi sections directly, not files.
+This is adapted from EventAwareLumiBased but does its work on lumi sections directly, not files.
 No correction for lumis split across files is needed, it's automatic. Makes use of the LumiList
 class to simplify the code
 
@@ -18,7 +18,6 @@ from __future__ import (division, print_function)
 import logging
 from collections import defaultdict
 
-from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -36,10 +35,13 @@ class EventAwareLumiByWork(JobFactory):
         super(EventAwareLumiByWork, self).__init__(package, subscription, generators, limit)
 
         self.loadRunLumi = None  # Placeholder for DAO factory if needed
+        self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
         self.perfParameters = {}
         self.deterministicPU = False
         self.maxLumis = 1  # Maximum lumis seen in a job (needed for deterministic pileup only)
         self.maxEvents = 1  # Maximum events seen in a lumi (needed for deterministic pileup only)
+        # TODO this might need to be configurable instead of being hardcoded
+        self.defaultJobTimeLimit = 48 * 3600 # 48 hours
 
         # Job accumulators
         self.eventsInJob = 0
@@ -64,10 +66,10 @@ class EventAwareLumiByWork(JobFactory):
         # TODO: split across sites two different jobs will read the same lumi
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
-        lumiEventLimit = int(kwargs.get('max_events_per_lumi', 20000))
+        jobTimeLimit = int(kwargs.get('job_time_limit', self.defaultJobTimeLimit))
         totalEventLimit = int(kwargs.get('total_events', 0))
         splitOnFile = bool(kwargs.get('halt_job_on_file_boundaries', False))
-        collectionName = kwargs.get('collectionName', None)
+        self.collectionName = kwargs.get('collectionName', None)
         splitOnRun = kwargs.get('splitOnRun', True)
         getParents = kwargs.get('include_parents', False)
         runWhitelist = kwargs.get('runWhitelist', [])
@@ -76,11 +78,19 @@ class EventAwareLumiByWork(JobFactory):
         self.deterministicPU = kwargs.get('deterministicPileup', False)
         self.perfParameters = kwargs.get('performance', {})
 
+        # Calculate and add performance information
+        self.timePerEvent, self.sizePerEvent, self.memoryRequirement = \
+            self.getPerformanceParameters(self.perfParameters)
+
+        if avgEventsPerJob <= 0:
+            msg = "events_per_job parameter must be positive. Its value is: %d" % avgEventsPerJob
+            raise RuntimeError(msg)
+
         # Set the lumi mask for the fileset based on ACDC or runs & lumis and/or runWhitelist
         lumiMask = LumiList()
-        if collectionName:
+        if self.collectionName:
             lumiMask = self.lumiListFromACDC(couchURL=kwargs.get('couchURL'), couchDB=kwargs.get('couchDB'),
-                                             filesetName=kwargs.get('filesetName'), collectionName=collectionName)
+                                             filesetName=kwargs.get('filesetName'), collectionName=self.collectionName)
         elif runs and lumis and runWhitelist:
             lumiMask = LumiList(wmagentFormat=(runs, lumis)) & LumiList(runs=runWhitelist)
         elif runs and lumis:
@@ -90,15 +100,18 @@ class EventAwareLumiByWork(JobFactory):
         logging.debug('%s splitting with lumiMask%s%s', self.__class__.__name__, '\n' if bool(lumiMask) else ' ',
                       lumiMask)
 
-        if self.deterministicPU and self.package == 'WMCore.WMBS':
-            getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
-            self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
-
-        filesByLocation = self.sortByLocation()
-
-        # First we need to load the data
         if self.package == 'WMCore.WMBS':
             self.loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
+            if self.deterministicPU:
+                getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
+                self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
+                logging.info('Creating jobs in DeterministicPileup mode for %s',
+                             self.subscription.workflowName())
+
+        filesByLocation = self.getFilesSortedByLocation(avgEventsPerJob)
+        if not filesByLocation:
+            logging.info("There are not enough events/files to be splitted. Trying again next cycle")
+            return
 
         totalEvents = 0
         lastRun = None
@@ -111,8 +124,8 @@ class EventAwareLumiByWork(JobFactory):
             self.jobLumis = []
             self.jobFiles = set()
             self.lumisProcessed = set()
-            if self.package == 'WMCore.WMBS':
-                self.populateFilesFromWMBS(filesByLocation)
+            if self.loadRunLumi:
+                self.populateFilesFromWMBS(filesAtLocation)
             lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents,
                                                           lumiMask=lumiMask)
             for f in filesAtLocation:
@@ -130,10 +143,12 @@ class EventAwareLumiByWork(JobFactory):
 
                     totalEvents += self.eventsInLumi
                     self.maxEvents = max(self.maxEvents, self.eventsInLumi)
-                    if self.eventsInLumi > lumiEventLimit:
+                    timePerLumi = self.eventsInLumi * self.timePerEvent
+                    if timePerLumi > jobTimeLimit and len(lumisByFile[lfn].getLumis()):
                         # This lumi has too many events. Output this job and a new one with just that lumi
-                        failReason = 'Too many (estimated) events (%s) in run %s, lumi %s' % \
-                                     (self.eventsInLumi, run, lumi)
+                        failReason = "File %s has a single lumi %s, in run %s " % (lfn, lumi, run)
+                        failReason += "with too many events %d and it woud take %d sec to run" \
+                                      % (self.eventsInLumi, timePerLumi)
                         self.stopAndMakeJob(reason='Lumi too big', runLumi=(run, lumi),
                                             failNextJob=True, failReason=failReason)
                     elif abs(self.eventsInLumi + self.eventsInJob - avgEventsPerJob) >= abs(
@@ -221,10 +236,9 @@ class EventAwareLumiByWork(JobFactory):
         else:
             self.newJob()
 
-        # Calculate and add performance information
-        timePerEvent, sizePerEvent, memoryRequirement = self.getPerformanceParameters(self.perfParameters)
-        self.currentJob.addResourceEstimates(jobTime=events * timePerEvent, disk=events * sizePerEvent,
-                                             memory=memoryRequirement)
+        self.currentJob.addResourceEstimates(jobTime=events * self.timePerEvent,
+                                             disk=events * self.sizePerEvent,
+                                             memory=self.memoryRequirement)
         # Add job mask information
         for run, lumiRanges in lumiList.iteritems():
             for lumiRange in lumiRanges:
@@ -258,6 +272,8 @@ class EventAwareLumiByWork(JobFactory):
         This is not implemented yet
         :return:
         """
+        from WMCore.ACDC.DataCollectionService import DataCollectionService
+
         goodRunList = None
         try:
             logging.info('Creating jobs for ACDC fileset %s', filesetName)
@@ -321,6 +337,9 @@ class EventAwareLumiByWork(JobFactory):
         """
 
         fileLumis = self.loadRunLumi.execute(files=filesByLocation)
+        if not fileLumis:
+            logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
+                            self.subscription.workflowName(), self.subscription['id'])
         for f in filesByLocation:
             lumiDict = fileLumis.get(f['id'], {})
             for run in lumiDict.keys():

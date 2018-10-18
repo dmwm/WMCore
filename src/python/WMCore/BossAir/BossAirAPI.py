@@ -20,7 +20,6 @@ import os.path
 import threading
 import logging
 import subprocess
-
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
@@ -45,7 +44,7 @@ class BossAirAPI(WMConnectionBase):
     The API layer for the BossAir prototype
     """
 
-    def __init__(self, config, noSetup=False):
+    def __init__(self, config, insertStates=False):
         """
         __init__
 
@@ -92,11 +91,11 @@ class BossAirAPI(WMConnectionBase):
         self.monitorDAO = self.daoFactory(classname="JobStatusForMonitoring")
 
         self.states = None
-        self.loadPlugin(noSetup)
+        self.loadPlugin(insertStates)
 
         return
 
-    def loadPlugin(self, noSetup=False):
+    def loadPlugin(self, insertStates):
         """
         _loadPlugin_
 
@@ -114,7 +113,7 @@ class BossAirAPI(WMConnectionBase):
         if self.newState not in states:
             states.add(self.newState)
 
-        if not noSetup:
+        if insertStates:
             # Add states only if we're not
             # doing a secondary instantiation
             self.addStates(states=states)
@@ -127,7 +126,8 @@ class BossAirAPI(WMConnectionBase):
         """
         _addStates_
 
-        Add States to bl_status table
+        Add States to bl_status table. Meant to be done only
+        once in an agent lifetime.
         """
         existingTransaction = self.beginTransaction()
 
@@ -260,6 +260,7 @@ class BossAirAPI(WMConnectionBase):
         _deleteJobs_
 
         Delete the job entries in the BossAir database
+        NOTE: only used by unit tests
         """
 
         if len(jobs) < 1:
@@ -293,16 +294,15 @@ class BossAirAPI(WMConnectionBase):
         loadedJobs = []
         for job in jobList:
             rj = RunJob()
-            rj.update(job)
+            rj.buildFromJob(job)
             loadedJobs.append(rj)
 
         if len(loadedJobs) != len(wmbsJobs):
-            logging.error("Mismatch in WMBS load: Some requested jobs not found!")
+            logging.error("Could not load all jobs in BossAir for WMBS input!")
             idList = [x['jobid'] for x in loadedJobs]
             for job in wmbsJobs:
                 if job['id'] not in idList:
-                    logging.error("Could not retrieve job with WMBS ID %i from BossAir database", job['id'])
-                    logging.error("  ... WMBS job info is: %s", job)
+                    logging.error("Failed to retrieve wmbs_id %i and WMBS job info: %s", job['id'], job)
 
         return loadedJobs
 
@@ -353,24 +353,19 @@ class BossAirAPI(WMConnectionBase):
         # IMPORTANT IMPORTANT IMPORTANT
 
         # Put job into RunJob format
-        runJobs = []
+        pluginDict = {}
+
         for job in jobs:
             rj = RunJob()
             rj.buildFromJob(job=job)
             if not job.get('location', False):
                 rj['location'] = job.get('custom', {}).get('location', None)
-            runJobs.append(rj)
+            plugin = rj['plugin']
+            pluginDict.setdefault(plugin, [])
+            pluginDict[plugin].append(rj)
             # Can't add to the cache in submit()
             # It's NOT the same bossAir instance
             # self.jobs.append(rj)
-
-        # Now figure out which plugin we need
-        pluginDict = {}
-        for job in runJobs:
-            plugin = job['plugin']
-            if plugin not in pluginDict.keys():
-                pluginDict[plugin] = []
-            pluginDict[plugin].append(job)
 
         for plugin in pluginDict.keys():
             if plugin not in self.plugins.keys():
@@ -399,6 +394,10 @@ class BossAirAPI(WMConnectionBase):
                 logging.debug("Jobs being submitted: %s\n", jobsToSubmit)
                 logging.debug("Job info: %s\n", info)
                 raise BossAirException(msg)
+            finally:
+                # make sure we release this memory
+                pluginDict.clear()
+                del jobsToSubmit[:]
 
         # Create successful jobs in BossAir
         try:
@@ -578,22 +577,6 @@ class BossAirAPI(WMConnectionBase):
 
         return completeJobs
 
-    def removeComplete(self, jobs):
-        """
-        _removeComplete_
-
-        Remove jobs from BossAir
-        This is meant to operate ONLY on completed jobs
-        It does not operate any plugin cleanup or
-        batch system kills
-        """
-
-        jobsToRemove = self._buildRunningJobs(wmbsJobs=jobs)
-
-        self._deleteJobs(jobs=jobsToRemove)
-
-        return
-
     def kill(self, jobs, workflowName=None, killMsg=None, errorCode=71300):
         """
         _kill_
@@ -607,10 +590,8 @@ class BossAirAPI(WMConnectionBase):
         a standard message associated with the exit code will be used.
         If a previous FWJR exists, this error will be appended to it.
         """
-        if not len(jobs):
-            # Nothing to do here
+        if not jobs:
             return
-        self.check()
         jobsToKill = {}
 
         # Now get a list of which jobs are in the batch system
@@ -619,8 +600,7 @@ class BossAirAPI(WMConnectionBase):
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
-            if plugin not in jobsToKill.keys():
-                jobsToKill[plugin] = []
+            jobsToKill.setdefault(plugin, [])
             jobsToKill[plugin].append(runningJob)
 
         for plugin in jobsToKill.keys():
@@ -737,7 +717,7 @@ class BossAirAPI(WMConnectionBase):
             try:
                 pluginInst = self.plugins[plugin]
                 tempjoblist = pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
-                if tempjoblist != None:
+                if tempjoblist is not None:
                     jobkill.extend(tempjoblist)
             except WMException:
                 raise
@@ -782,30 +762,6 @@ class BossAirAPI(WMConnectionBase):
         compiling it into a runJob object.  This overwrites any information
         from the database with the info from the WMBS Job
         """
+        runJobsLoaded = self.loadByWMBS(wmbsJobs=wmbsJobs)
 
-        finalJobs = []
-        loadedJobs = self.loadByWMBS(wmbsJobs=wmbsJobs)
-
-        if len(wmbsJobs) != len(loadedJobs):
-            logging.error("Could not load all jobs in BossAir for WMBS input")
-
-        for wmbsJob in wmbsJobs:
-            for runJob in loadedJobs:
-                if runJob['jobid'] == wmbsJob['id'] and runJob['retry_count'] == wmbsJob['retry_count']:
-                    rj = RunJob()
-                    rj.buildFromJob(wmbsJob)
-                    rj['id'] = runJob['id']
-                    for key in rj.keys():
-                        if rj[key] is None:
-                            rj[key] = runJob.get(key, None)
-                    finalJobs.append(rj)
-                    break
-            # If we get here, we're sort of screwed
-            # It means that although we sent for it, we couldn't find it.
-            # Possibly means that the job just isn't in there yet.
-            # Make a note of it, then do nothing
-            logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n", wmbsJob['id'],
-                          wmbsJob['retry_count'])
-            logging.debug("WMBS Job: %s\n", wmbsJob)
-
-        return finalJobs
+        return runJobsLoaded

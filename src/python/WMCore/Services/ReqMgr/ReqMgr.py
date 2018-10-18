@@ -1,6 +1,8 @@
 import json
+import logging
 
 from WMCore.Services.Service import Service
+from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
 
 class ReqMgr(Service):
@@ -9,7 +11,7 @@ class ReqMgr(Service):
 
     """
 
-    def __init__(self, url, header=None):
+    def __init__(self, url, header=None, logger=None):
         """
         responseType will be either xml or json
         """
@@ -18,6 +20,7 @@ class ReqMgr(Service):
         header = header or {}
         # url is end point
         httpDict['endpoint'] = "%s/data" % url
+        httpDict['logger'] = logger if logger else logging.getLogger()
 
         # cherrypy converts request.body to params when content type is set
         # application/x-www-form-urlencodeds
@@ -204,16 +207,18 @@ class ReqMgr(Service):
         propDict["RequestName"] = request
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
 
-    def getAbortedAndForceCompleteRequestsFromMemoryCache(self):
+    def getAbortedAndForceCompleteRequestsFromMemoryCache(self, expire=0):
         """
         _getAbortedAndForceCompleteRequestsFromMemoryCache_
         """
-        # imports here to avoid the dependency not using this function
-        from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
         maskStates = ["aborted", "aborted-completed", "force-complete"]
-        return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, initCacheValue=[],
-                                 kwargs={'statusList': maskStates, "detail": False})
+        return self.getRequestByStatusFromMemoryCache(maskStates, expire)
+
+    def getRequestByStatusFromMemoryCache(self, statusList, expire=0):
+
+        return MemoryCacheStruct(expire=expire, func=self.getRequestByStatus, initCacheValue=[],
+                                 kwargs={'statusList': statusList, "detail": False})
 
     def cloneRequest(self, requestName, overwrittenParams=None):
         """

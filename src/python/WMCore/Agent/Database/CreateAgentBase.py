@@ -5,21 +5,16 @@ Base class for creating the WMBS database.
 """
 from __future__ import print_function
 
-
-
-
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
-
 from WMCore.WMException import WMException
-from WMCore.WMExceptions import WMEXCEPTION
+
 
 class CreateAgentBase(DBCreator):
-
     requiredTables = ["01wm_components", "02wm_workers"]
 
-    def __init__(self, logger = None, dbi = None, params = None):
+    def __init__(self, logger=None, dbi=None, params=None):
         """
         _init_
 
@@ -27,9 +22,9 @@ class CreateAgentBase(DBCreator):
         """
         myThread = threading.currentThread()
 
-        if logger == None:
+        if logger is None:
             logger = myThread.logger
-        if dbi == None:
+        if dbi is None:
             dbi = myThread.dbi
 
         tablespaceTable = ""
@@ -43,29 +38,32 @@ class CreateAgentBase(DBCreator):
         DBCreator.__init__(self, logger, dbi)
 
         self.create["01wm_components"] = \
-          """CREATE TABLE wm_components (
-             id               INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             name             VARCHAR(255) NOT NULL,
-             pid              INTEGER      NOT NULL,
-             update_threshold INTEGER      NOT NULL,
-             UNIQUE (name))"""
+            """CREATE TABLE wm_components (
+               id               INTEGER      PRIMARY KEY AUTO_INCREMENT,
+               name             VARCHAR(255) NOT NULL,
+               pid              INTEGER      NOT NULL,
+               update_threshold INTEGER      NOT NULL,
+               UNIQUE (name))"""
 
         self.create["02wm_workers"] = \
-          """CREATE TABLE wm_workers (
-             component_id  INTEGER NOT NULL,
-             name          VARCHAR(255) NOT NULL,
-             last_updated  INTEGER      NOT NULL,
-             state         VARCHAR(255),
-             pid           INTEGER,
-             last_error    INTEGER,
-             error_message VARCHAR(1000),
-             UNIQUE (component_id, name))"""
+            """CREATE TABLE wm_workers (
+               component_id  INTEGER NOT NULL,
+               name          VARCHAR(255) NOT NULL,
+               last_updated  INTEGER      NOT NULL,
+               state         VARCHAR(255),
+               pid           INTEGER,
+               poll_interval INTEGER      NOT NULL,
+               last_error    INTEGER,
+               cycle_time    FLOAT DEFAULT 0 NOT NULL,
+               outcome       VARCHAR(1000),
+               error_message VARCHAR(1000),
+               UNIQUE (name))"""
 
         self.constraints["FK_wm_component_worker"] = \
-              """ALTER TABLE wm_workers ADD CONSTRAINT FK_wm_component_worker
-                 FOREIGN KEY(component_id) REFERENCES wm_components(id)"""
+            """ALTER TABLE wm_workers ADD CONSTRAINT FK_wm_component_worker
+               FOREIGN KEY(component_id) REFERENCES wm_components(id)"""
 
-    def execute(self, conn = None, transaction = None):
+    def execute(self, conn=None, transaction=None):
         """
         _execute_
 

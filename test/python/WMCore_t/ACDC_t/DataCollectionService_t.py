@@ -9,7 +9,9 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
-from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
+from nose.plugins.attrib import attr
+
+from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFilesInfo
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
@@ -35,13 +37,11 @@ class DataCollectionService_t(unittest.TestCase):
         return
 
     @staticmethod
-    def getMinimalJob():
+    def getMinimalJob(wf=None, task=None):
         job = Job()
-        job["task"] = "/ACDCTest/reco"
-        job["workflow"] = "ACDCTest"
-        job["location"] = "cmssrm.fnal.gov"
-        job["owner"] = "cmsdataops"
-        job["group"] = "cmsdataops"
+        job["workflow"] = wf or "ACDCTest"
+        job["task"] = task or "/ACDCTest/reco"
+        job["location"] = "T1_US_FNAL_Disk"
         return job
 
     def testChunking(self):
@@ -163,7 +163,7 @@ class DataCollectionService_t(unittest.TestCase):
                         break
 
                 self.assertIsNotNone(foundFile, "Error: Missing chunk file: %s, %s" % (chunkFiles, goldenChunkFiles))
-                self.assertEqual(foundFile["parents"], chunkFile["parents"], "Error: File parents should match.")
+                self.assertEqual(set(foundFile["parents"]), chunkFile["parents"], "Error: File parents should match.")
                 self.assertEqual(foundFile["merged"], chunkFile["merged"], "Error: File merged status should match.")
                 self.assertEqual(foundFile["locations"], chunkFile["locations"], "Error: File locations should match.")
                 self.assertEqual(foundFile["events"], chunkFile["events"])
@@ -276,74 +276,74 @@ class DataCollectionService_t(unittest.TestCase):
 
         return
 
-    def notestMergeFakeFiles(self):
+    def testFakeMergeFilesInfo(self):
         """
-        _testMergeFakeFiles_
+        _testFakeMergeFilesInfo_
 
         Verify that we can merge MCFakeFiles together when a fileset contains
         several failures for the same input fake file.
         """
-        originalFiles = [{'checksums': {},
-                          'events': 500000,
-                          'first_event': 1,
-                          'id': 40,
-                          'last_event': 0,
-                          'lfn': 'MCFakeFile-File1',
-                          'locations': ['T1_DE_KIT_Disk'],
-                          'merged': '0',
-                          'parents': [],
-                          'runs': [{'lumis': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'run_number': 1}],
-                          'size': 0},
-                         {'checksums': {},
-                          'events': 500000,
-                          'first_event': 1000001,
-                          'id': 40,
-                          'last_event': 0,
-                          'lfn': 'MCFakeFile-File2',
-                          'locations': ['T1_DE_KIT_Disk'],
-                          'merged': '0',
-                          'parents': [],
-                          'runs': [{'lumis': [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
-                                    'run_number': 1}],
-                          'size': 0},
-                         {'checksums': {},
-                          'events': 500000,
-                          'first_event': 2000001,
-                          'id': 40,
-                          'last_event': 0,
-                          'lfn': 'MCFakeFile-File1',
-                          'locations': ['T1_DE_KIT_Disk'],
-                          'merged': '0',
-                          'parents': [],
-                          'runs': [{'lumis': [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
-                                    'run_number': 1}],
-                          'size': 0},
-                         {'checksums': {},
-                          'events': 500000,
-                          'first_event': 7000001,
-                          'id': 40,
-                          'last_event': 0,
-                          'lfn': 'MCFakeFile-File3',
-                          'locations': ['T1_DE_KIT_Disk'],
-                          'merged': '0',
-                          'parents': [],
-                          'runs': [{'lumis': [81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91],
-                                    'run_number': 1}],
-                          'size': 0},
-                         {'checksums': {},
-                          'events': 500000,
-                          'first_event': 4000001,
-                          'id': 40,
-                          'last_event': 0,
-                          'lfn': 'MCFakeFile-File3',
-                          'locations': ['T1_DE_KIT_Disk'],
-                          'merged': '0',
-                          'parents': [],
-                          'runs': [{'lumis': [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
-                                    'run_number': 1}],
-                          'size': 0}]
+        fakeFiles = [{'checksums': {},
+                      'events': 500000,
+                      'first_event': 1,
+                      'id': 40,
+                      'last_event': 0,
+                      'lfn': 'MCFakeFile-File1',
+                      'locations': ['T1_DE_KIT_Disk'],
+                      'merged': '0',
+                      'parents': [],
+                      'runs': [{'lumis': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'run_number': 1}],
+                      'size': 0},
+                     {'checksums': {},
+                      'events': 500000,
+                      'first_event': 1000001,
+                      'id': 40,
+                      'last_event': 0,
+                      'lfn': 'MCFakeFile-File2',
+                      'locations': ['T1_DE_KIT_Disk'],
+                      'merged': '0',
+                      'parents': [],
+                      'runs': [{'lumis': [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+                                'run_number': 1}],
+                      'size': 0},
+                     {'checksums': {},
+                      'events': 500000,
+                      'first_event': 2000001,
+                      'id': 40,
+                      'last_event': 0,
+                      'lfn': 'MCFakeFile-File1',
+                      'locations': ['T1_DE_KIT_Disk'],
+                      'merged': '0',
+                      'parents': [],
+                      'runs': [{'lumis': [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+                                'run_number': 1}],
+                      'size': 0},
+                     {'checksums': {},
+                      'events': 500000,
+                      'first_event': 7000001,
+                      'id': 40,
+                      'last_event': 0,
+                      'lfn': 'MCFakeFile-File3',
+                      'locations': ['T1_DE_KIT_Disk'],
+                      'merged': '0',
+                      'parents': [],
+                      'runs': [{'lumis': [81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91],
+                                'run_number': 1}],
+                      'size': 0},
+                     {'checksums': {},
+                      'events': 500000,
+                      'first_event': 4000001,
+                      'id': 40,
+                      'last_event': 0,
+                      'lfn': 'MCFakeFile-File3',
+                      'locations': ['T1_DE_KIT_Disk'],
+                      'merged': '0',
+                      'parents': [],
+                      'runs': [{'lumis': [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
+                                'run_number': 1}],
+                      'size': 0}]
 
-        mergedFiles = mergeFakeFiles(originalFiles)
+        mergedFiles = mergeFilesInfo(fakeFiles)
         self.assertEqual(len(mergedFiles), 3, "Error: wrong number of files.")
 
         totalEvents = 0
@@ -355,6 +355,113 @@ class DataCollectionService_t(unittest.TestCase):
             if job['lfn'] == 'MCFakeFile-File1':
                 lumiList = job['runs'][0]['lumis']
                 self.assertEqual(len(lumiList), 22)
+
+    def testDataMergeFilesInfo(self):
+        """
+        _testDataMergeFilesInfo_
+
+        Verify that we can properly merge real input files coming from
+        the ACDCServer.
+        """
+        originalFiles = [{u'events': 165,
+                          u'lfn': u'/store/unmerged/fileA.root',
+                          u'locations': [u'T2_CH_CERN', u'T2_CH_CERNBOX'],
+                          u'parents': [],
+                          u'runs': [{u'lumis': [1810823], u'run_number': 1}]},
+                         {u'events': 165,
+                          u'lfn': u'/store/unmerged/fileA.root',
+                          u'locations': [u'T2_CH_CERN', u'T2_CH_CERNBOX'],
+                          u'parents': [],
+                          u'runs': [{u'lumis': [1810823], u'run_number': 2}]},
+                         {u'events': 50,
+                          u'lfn': u'/store/unmerged/fileB.root',
+                          u'locations': [u'T1_US_FNAL_MSS'],
+                          u'parents': ['file1', 'file3'],
+                          u'runs': [{u'lumis': [1, 2, 3], u'run_number': 1}]},
+                         {u'events': 165,
+                          u'lfn': u'/store/unmerged/fileA.root',
+                          u'locations': [u'T2_CH_CERN', u'T2_CH_CERNBOX'],
+                          u'parents': [],
+                          u'runs': [{u'lumis': [1810824], u'run_number': 1}]},
+                         {u'events': 50,
+                          u'lfn': u'/store/unmerged/fileB.root',
+                          u'locations': [u'T1_US_FNAL_MSS'],
+                          u'parents': ['file2'],
+                          u'runs': [{u'lumis': [4, 5, 6], u'run_number': 1}, {u'lumis': [9], u'run_number': 1}]},
+                         {u'events': 10,
+                          u'lfn': u'/store/unmerged/fileC.root',
+                          u'locations': [u'T1_US_FNAL_Disk', u'T2_US_MIT'],
+                          u'parents': [],
+                          u'runs': [{u'lumis': [111], u'run_number': 222}]}]
+
+        mergedFiles = mergeFilesInfo(originalFiles)
+        self.assertEqual(len(mergedFiles), 3, "Error: wrong number of files.")
+        self.assertItemsEqual([i['lfn'] for i in mergedFiles], ['/store/unmerged/fileA.root',
+                                                                '/store/unmerged/fileB.root',
+                                                                '/store/unmerged/fileC.root'])
+
+        for item in mergedFiles:
+            if item['lfn'] == '/store/unmerged/fileA.root':
+                self.assertEqual(item['events'], 165)
+                self.assertItemsEqual(item['locations'], ['T2_CH_CERN', 'T2_CH_CERNBOX'])
+                self.assertItemsEqual(item['runs'], [{'lumis': [1810823], 'run_number': 1},
+                                                     {'lumis': [1810823], 'run_number': 2},
+                                                     {'lumis': [1810824], 'run_number': 1}])
+                self.assertEqual(item['parents'], [])
+            elif item['lfn'] == '/store/unmerged/fileB.root':
+                self.assertEqual(item['events'], 50)
+                self.assertItemsEqual(item['locations'], ['T1_US_FNAL_MSS'])
+                self.assertItemsEqual(item['runs'], [{'lumis': [1, 2, 3], 'run_number': 1},
+                                                     {'lumis': [4, 5, 6], 'run_number': 1},
+                                                     {'lumis': [9], 'run_number': 1}])
+                self.assertItemsEqual(item['parents'], ['file1', 'file2', 'file3'])
+            elif item['lfn'] == '/store/unmerged/fileB.root':
+                self.assertEqual(item['events'], 10)
+                self.assertItemsEqual(item['locations'], ['T1_US_FNAL_Disk', 'T2_US_MIT'])
+                self.assertItemsEqual(item['runs'], [{'lumis': [111], 'run_number': 222}])
+                self.assertEqual(item['parents'], [])
+
+    def jobConfig(self, wf, task, jobid, lfn):
+        """
+        Create a fake job dict to upload to the ACDC server
+        """
+        testFile = File(lfn=lfn, size=1024, events=1024)
+        testFile.setLocation(["T2_CH_CERN", "T2_CH_CERN_HLT"])
+        testFile.addRun(Run(jobid, 1, 2))  # run = jobid
+        testJob = self.getMinimalJob(wf, task)
+        testJob.addFile(testFile)
+
+        return testJob
+
+    @attr('integration')
+    def testFailedJobsUniqueWf(self):
+        """
+        Performance test of failedJobs with all failed jobs belonging
+        to the same workflow and the same task name
+        """
+        loadList = []
+        for i in range(1, 5000):
+            loadList.append(self.jobConfig('wf1', '/wf1/task1', i, 'lfn1'))
+
+        dcs = DataCollectionService(url=self.testInit.couchUrl, database="wmcore-acdc-datacollectionsvc")
+        dcs.failedJobs(loadList)
+        return
+
+    @attr('integration')
+    def testFailedJobsScrambledWf(self):
+        """
+        Performance test of failedJobs where jobs belong to 10 different
+        workflows and 3 different tasks
+        """
+        loadList = []
+        for i in range(1, 5000):
+            wfName = "wf%d" % (i % 10)
+            taskName = "/wf%d/task%d" % (i % 10, i % 3)
+            loadList.append(self.jobConfig(wfName, taskName, i, '/file/name/lfn1'))
+
+        dcs = DataCollectionService(url=self.testInit.couchUrl, database="wmcore-acdc-datacollectionsvc")
+        dcs.failedJobs(loadList)
+        return
 
 
 if __name__ == '__main__':

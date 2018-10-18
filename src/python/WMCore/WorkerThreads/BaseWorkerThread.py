@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=R0902,R0201,W0613,W0703,E1102
+# pylint: disable=R0902,R0201,W0703,E1102
 """
 _BaseWorkerThread_
 
@@ -8,26 +8,25 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-
-
-import threading
 import logging
+import sys
+import threading
 import time
 import traceback
-import sys
 
-from WMCore.Database.Transaction import Transaction
-from WMCore.Database.CMSCouch import CouchError
-from WMCore.Database.CouchUtils import CouchConnectionError
+from WMCore.Database.DBExceptionHandler import db_exception_handler
 from WMCore.Alerts import API as alertAPI
+from WMCore.Database.Transaction import Transaction
 
-class BaseWorkerThread:
+
+class BaseWorkerThread(object):
     """
     A base class for worker threads, used for work that needs to occur at
     regular intervals. Framework (through WorkerThreadManager) ensures that
     a default transaction, trigger and message service are available as in
     event handler threads.
     """
+
     def __init__(self):
         """
         Creates the worker, called from parent thread
@@ -45,6 +44,10 @@ class BaseWorkerThread:
 
         # Termination callback function
         self.terminateCallback = None
+
+        # Init heartbeat flag and worker name
+        self.useHeartbeat = False
+        self.workerName = None
 
         # Init the timing
         self.lastTime = time.time()
@@ -66,7 +69,6 @@ class BaseWorkerThread:
         if hasattr(myThread, 'msgService'):
             self.procid = myThread.msgService.procid
 
-
     def setup(self, parameters):
         """
         Called when thread is being run for the first time. Optional in derived
@@ -77,8 +79,12 @@ class BaseWorkerThread:
     def terminate(self, parameters):
         """
         Called when thread is being terminated. Optional in derived classes.
+        If inherited, then derived class has to call this method.
         """
-        pass
+        msg = "Thread gracefully terminated at %s" % time.strftime("%Y-%m-%dT%H:%M:%S")
+        logging.info(msg)
+        if self.useHeartbeat:
+            self.heartbeatAPI.updateWorkerError(self.workerName, msg)
 
     def algorithm(self, parameters):
         """
@@ -88,6 +94,29 @@ class BaseWorkerThread:
         If this method raises an exception all workers will be terminated
         """
         logging.error("Calling algorithm on BaseWorkerThread: Override me!")
+
+    def setUpHeartbeat(self, myThread):
+        # heartbeat needed to be called in self.initInThread
+        # to get the right name but before the self.setup
+        if hasattr(self.component.config, "Agent"):
+            self.useHeartbeat = getattr(self.component.config.Agent, "useHeartbeat", True)
+            self.workerName = myThread.getName()
+
+        if self.useHeartbeat:
+            self.heartbeatAPI.registerWorker(self.workerName)
+        return
+
+    def setUpLogDB(self, myThread):
+        # setup logDB
+        if hasattr(self.component.config, "General") and \
+                hasattr(self.component.config.General, "central_logdb_url") and \
+                hasattr(self.component.config, "Agent"):
+            from WMCore.Services.LogDB.LogDB import LogDB
+            myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
+                                         self.component.config.Agent.hostName, logger=logging)
+        else:
+            myThread.logdbClient = None
+        return
 
     def initInThread(self, parameters):
         """
@@ -103,19 +132,20 @@ class BaseWorkerThread:
         # Now we're in our own thread, set the logger
         myThread.logger = self.logger
 
-        (connectDialect, junk) = self.component.config.CoreDatabase.connectUrl.split(":", 1)
+        (connectDialect, _junk) = self.component.config.CoreDatabase.connectUrl.split(":", 1)
 
         if connectDialect.lower() == "mysql":
             myThread.dialect = "MySQL"
         elif connectDialect.lower() == "oracle":
             myThread.dialect = "Oracle"
-        elif connectDialect.lower() == "sqlite":
-            myThread.dialect = "SQLite"
 
         logging.info("Initialising default database")
         myThread.dbi = myThread.dbFactory.connect()
         logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
+
+        self.setUpHeartbeat(myThread)
+        self.setUpLogDB(myThread)
 
         # Call worker setup
         self.setup(parameters)
@@ -126,6 +156,7 @@ class BaseWorkerThread:
         Thread entry point; handles synchronisation with run and terminate
         conditions
         """
+        errMsg = ""
         try:
             msg = "Initialising worker thread %s" % str(self)
             logging.info(msg)
@@ -136,23 +167,10 @@ class BaseWorkerThread:
             msg = "Worker thread %s started" % str(self)
             logging.info(msg)
 
-            # heartbeat needed to be called after self.initInThread
-            # to get the right name
             myThread = threading.currentThread()
 
-            if hasattr(self.component.config, "General") and \
-               hasattr(self.component.config.General, "central_logdb_url") and \
-               hasattr(self.component.config, "Agent"):
-                from WMCore.Services.LogDB.LogDB import LogDB
-                myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
-                                         self.component.config.Agent.hostName, logger=logging)
-            else:
-                myThread.logdbClient = None
-
-            if hasattr(self.component.config, "Agent"):
-                if getattr(self.component.config.Agent, "useHeartbeat", True):
-                    self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName())
             # Run event loop while termination is not flagged
+            algorithmWithDBExceptionHandler = db_exception_handler(self.algorithm)
             while not self.notifyTerminate.isSet():
                 # Check manager hasn't paused threads
                 if self.notifyPause.isSet():
@@ -163,45 +181,35 @@ class BaseWorkerThread:
                     if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
-                            try:
-                                # heartbeat needed to be called after self.initInThread
-                                # to get the right name
-                                if hasattr(self.component.config, "Agent"):
-                                    if getattr(self.component.config.Agent, "useHeartbeat", True):
-                                        self.heartbeatAPI.updateWorkerHeartbeat(
-                                            myThread.getName(), "Running")
-                            except (CouchError, CouchConnectionError) as ex:
-                                msg  = " Failed to update heartbeat for worker %s" % str(self)
-                                msg += ":\n %s" % str(ex)
-                                msg += "\n Skipping worker algorithm!"
+                            if self.useHeartbeat:
+                                self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
+
+                            tSpent, results, _ = algorithmWithDBExceptionHandler(parameters)
+                            if tSpent and self.useHeartbeat:
+                                logging.info("%s took %.3f secs to execute", self.workerName, tSpent)
+                                self.heartbeatAPI.updateWorkerCycle(self.workerName, tSpent, results)
+
+                            # Catch if someone forgets to commit/rollback
+                            if myThread.transaction.transaction is not None:
+                                msg = """ Thread %s:  Transaction reached
+                                          end of poll loop.""" % self.workerName
+                                msg += " Raise a bug against me. Rollback."
                                 logging.error(msg)
-                            else:
-                                self.algorithm(parameters)
-                                # Catch if someone forgets to commit/rollback
-                                if myThread.transaction.transaction is not None:
-                                    msg = """ Thread %s:  Transaction reached
-                                              end of poll loop.""" % myThread.getName()
-                                    msg += " Raise a bug against me. Rollback."
-                                    logging.error(msg)
-                                    myThread.transaction.rollback()
+                                myThread.transaction.rollback()
                         except Exception as ex:
                             if myThread.transaction.transaction is not None:
                                 myThread.transaction.rollback()
-                            msg = "Error in worker algorithm (1):\nBacktrace:\n "
-                            msg += (" %s %s" % (str(self), str(ex)))
+                            errMsg = "Error in worker algorithm (1):\nBacktrace:\n "
+                            errMsg += (" %s %s" % (str(self), str(ex)))
                             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                             for stackFrame in stackTrace:
-                                msg += stackFrame
-                            logging.error(msg)
+                                errMsg += stackFrame
+                            logging.error(errMsg)
                             # force entire component to terminate
                             try:
                                 self.component.prepareToStop()
                             except Exception as ex:
-                                logging.error("Failed to halt component after worker crash: %s" % str(ex))
-                            if hasattr(self.component.config, "Agent"):
-                                if getattr(self.component.config.Agent, "useHeartbeat", True):
-                                    self.heartbeatAPI.updateWorkerError(
-                                        myThread.getName(), msg)
+                                logging.error("Failed to halt component after worker crash: %s", str(ex))
                             raise ex
                         # Put the thread to sleep
                         self.sleepThread()
@@ -216,6 +224,13 @@ class BaseWorkerThread:
             for stackFrame in stackTrace:
                 msg += stackFrame
             logging.error(msg)
+            # send heartbeat message that thread is terminated
+            if self.useHeartbeat:
+                msg = errMsg or msg
+                try:
+                    self.heartbeatAPI.updateWorkerError(self.workerName, errMsg)
+                except Exception as ex:
+                    logging.error("Heartbeat error update failed %s", str(ex))
 
         # Indicate to manager that thread is done
         self.terminateCallback(threading.currentThread().name)
@@ -233,12 +248,26 @@ class BaseWorkerThread:
         The default (naiive) time.sleep(self.idleTime) isn't always
         the best idea, let different workers do it differently.
 
+        Wakes the thread up every minute for a quick heartbeat.
+        Need to constantly watch if the thread is terminated for
+        properly stopping/terminating it.
+
         returns control when it's time to wake back up
         doesn't return any values
         """
-        time.sleep( self.idleTime )
+        idleTime = self.idleTime
+        while idleTime > 0:
+            if self.useHeartbeat and idleTime % 60 == 0:
+                # send a heartbeat every minute
+                self.heartbeatAPI.updateWorkerHeartbeat(self.workerName, "Running")
 
-    def initAlerts(self, compName = None):
+            if self.notifyTerminate.isSet():
+                break
+
+            time.sleep(1)
+            idleTime -= 1
+
+    def initAlerts(self, compName=None):
         """
         _initAlerts_
 
@@ -256,12 +285,11 @@ class BaseWorkerThread:
         if not compName:
             compName = self.__class__.__name__
         preAlert, sender = alertAPI.setUpAlertsMessaging(self,
-                                                         compName = compName)
-        sendAlert = alertAPI.getSendAlert(sender = sender,
-                                          preAlert = preAlert)
+                                                         compName=compName)
+        sendAlert = alertAPI.getSendAlert(sender=sender,
+                                          preAlert=preAlert)
         self.sender = sender
         self.sendAlert = sendAlert
-
 
     def __del__(self):
         """

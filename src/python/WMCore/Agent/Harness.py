@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable=E1101, W6501
-# W6501: It doesn't like string formatting in logging messages
+# pylint: disable=E1101
+
 """
 Harness class that wraps standard functionality used in all daemon
 components including:
@@ -21,28 +21,24 @@ including session objects and workflow entities.
 """
 from __future__ import print_function
 
-
-
-
-
-from logging.handlers import RotatingFileHandler
-
 import logging
 import os
 import sys
 import threading
 import time
 import traceback
+from logging.handlers import RotatingFileHandler
 
+from WMCore import WMLogging
+from WMCore.Agent.ConfigDBMap import ConfigDBMap
 from WMCore.Agent.Daemon.Create import createDaemon
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from WMCore import WMLogging
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
-from WMCore.Agent.ConfigDBMap import ConfigDBMap
-from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
+
 
 class HarnessException(WMException):
     """
@@ -52,13 +48,14 @@ class HarnessException(WMException):
     Otherwise, it's just part of WMException.
     """
 
+
 class Harness:
     """
     Harness class that wraps standard functionality used in all daemon
     components
     """
 
-    def __init__(self, config, compName = None):
+    def __init__(self, config, compName=None):
         """
         init
 
@@ -75,43 +72,43 @@ class Harness:
         if not compName:
             compName = self.__class__.__name__
 
-        if not compName in (self.config.listComponents_() + self.config.listWebapps_()):
-            raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
+        if compName not in (self.config.listComponents_() + self.config.listWebapps_()):
+            raise WMException(WMEXCEPTION['WMCORE-8'] + compName, 'WMCORE-8')
         if not hasattr(self.config, "Agent"):
             self.config.section_("Agent")
 
         self.config.Agent.componentName = compName
         compSect = getattr(self.config, compName, None)
-        if compSect == None:
+        if compSect is None:
             # Then we have a major problem - there's no section with this name
-            logging.error("Could not find section %s in config" % compName)
+            logging.error("Could not find section %s in config", compName)
             logging.error("We are returning, and hoping you know what you're doing!")
-            logging.debug("Config: %s" % self.config)
+            logging.debug("Config: %s", self.config)
             return
         # check if componentDir is set if not assign.
-        if getattr(compSect, 'componentDir', None) == None:
+        if getattr(compSect, 'componentDir', None) is None:
             if not hasattr(self.config, "General"):
                 # Don't do anything.  Assume the user knows what they are doing.
                 logging.error("Missing componentDir and General section in config")
                 logging.error("Going to trust you to know what you're doing.")
                 return
 
-            compSect.componentDir =  os.path.join(self.config.General.workDir,
-                                                  'Components',
-                                                  self.config.Agent.componentName)
+            compSect.componentDir = os.path.join(self.config.General.workDir,
+                                                 'Components',
+                                                 self.config.Agent.componentName)
         # we have name and location of the log files. Now make sure there
         # is a directory.
         try:
             if not os.path.isdir(compSect.componentDir):
                 os.makedirs(compSect.componentDir)
         except Exception as ex:
-            logging.error("Encountered exception while making componentDirs: %s" % str(ex))
+            logging.error("Encountered exception while making componentDirs: %s", str(ex))
             logging.error("Ignoring")
 
         self.threadManagerName = ''
-        self.heartbeatAPI      = None
-        self.messages          = {}
-        self.logMsg            = {}
+        self.heartbeatAPI = None
+        self.messages = {}
+        self.logMsg = {}
 
         return
 
@@ -127,33 +124,31 @@ class Harness:
             compSect = getattr(self.config, compName, None)
             if not hasattr(compSect, "logFile"):
                 if not getattr(compSect, 'componentDir', None):
-                    errorMessage =  "No componentDir for log entries found!\n"
+                    errorMessage = "No componentDir for log entries found!\n"
                     errorMessage += "Harness cannot run without componentDir.\n"
                     logging.error(errorMessage)
                     raise HarnessException(errorMessage)
-                compSect.logFile = os.path.join(compSect.componentDir, \
-                    "ComponentLog")
-            print('Log file is: '+compSect.logFile)
+                compSect.logFile = os.path.join(compSect.componentDir, "ComponentLog")
+            print('Log file is: ' + compSect.logFile)
             logHandler = RotatingFileHandler(compSect.logFile,
-                "a", 1000000000, 3)
-            logMsgFormat = getattr(compSect, "logMsgFormat", \
-                           "%(asctime)s:%(thread)d:%(levelname)s:%(module)s:%(message)s")
+                                             "a", 1000000000, 3)
+            logMsgFormat = getattr(compSect, "logMsgFormat",
+                                   "%(asctime)s:%(thread)d:%(levelname)s:%(module)s:%(message)s")
             logFormatter = \
                 logging.Formatter(logMsgFormat)
             logHandler.setFormatter(logFormatter)
             logLevelName = getattr(compSect, 'logLevel', 'INFO')
-            logLevel     = getattr(logging, logLevelName)
+            logLevel = getattr(logging, logLevelName)
             logging.getLogger().addHandler(logHandler)
             logging.getLogger().setLevel(logLevel)
-            self.logMsg = {'DEBUG' :   logging.DEBUG,
-                           'ERROR' :   logging.ERROR,
-                           'NOTSET':   logging.NOTSET,
-                           'CRITICAL' : logging.CRITICAL,
-                           'WARNING'  : logging.WARNING,
-                           'INFO'     : logging.INFO,
-                           'SQLDEBUG' : logging.SQLDEBUG}
-            if hasattr(compSect, "logLevel") and \
-                compSect.logLevel in self.logMsg.keys():
+            self.logMsg = {'DEBUG': logging.DEBUG,
+                           'ERROR': logging.ERROR,
+                           'NOTSET': logging.NOTSET,
+                           'CRITICAL': logging.CRITICAL,
+                           'WARNING': logging.WARNING,
+                           'INFO': logging.INFO,
+                           'SQLDEBUG': logging.SQLDEBUG}
+            if hasattr(compSect, "logLevel") and compSect.logLevel in self.logMsg.keys():
                 logging.getLogger().setLevel(self.logMsg[compSect.logLevel])
             WMLogging.sqldebug("wmcore level debug:")
 
@@ -161,7 +156,7 @@ class Harness:
             if not os.environ.get('WMCORE_CACHE_DIR'):
                 os.environ['WMCORE_CACHE_DIR'] = os.path.join(compSect.componentDir, '.wmcore_cache')
 
-            logging.info(">>>Starting: "+compName+'<<<')
+            logging.info(">>>Starting: " + compName + '<<<')
             # check which backend to use: MySQL, Oracle, etc... for core
             # services.
             # we recognize there can be more than one database.
@@ -202,19 +197,17 @@ class Harness:
 
             logging.info(">>>Initialize transaction dictionary")
 
-            (connectDialect, junk) = dbStr.split(":", 1)
+            (connectDialect, dummy) = dbStr.split(":", 1)
 
             if connectDialect.lower() == 'mysql':
                 myThread.dialect = 'MySQL'
             elif connectDialect.lower() == 'oracle':
                 myThread.dialect = 'Oracle'
-            elif connectDialect.lower() == 'sqlite':
-                myThread.dialect = 'SQLite'
 
             logging.info("Harness part constructor finished")
         except Exception as ex:
-            logging.critical("Problem instantiating "+str(ex))
-            logging.error("Traceback: %s" % str(traceback.format_exc()))
+            logging.critical("Problem instantiating " + str(ex))
+            logging.error("Traceback: %s", str(traceback.format_exc()))
             raise
 
     def preInitialization(self):
@@ -258,10 +251,10 @@ class Harness:
         (should return atring)
         """
         msg = 'No additional state information for ' + \
-            self.config.Agent.componentName
+              self.config.Agent.componentName
         return msg
 
-    def publishItem(self, items ):
+    def publishItem(self, items):
         """
         _publishItem_
 
@@ -270,8 +263,8 @@ class Harness:
         A method that publishes a (dictionary) set or 1 item
         to a monitoring service.
         """
-        #FIXME: do we need this method. If so we need to agree
-        #FIXME: on some default monitoring publication mechanism.
+        # FIXME: do we need this method. If so we need to agree
+        # FIXME: on some default monitoring publication mechanism.
         pass
 
     def __call__(self, event, payload):
@@ -311,7 +304,7 @@ class Harness:
         self.initInThread()
         # note: every component gets a (unique) name:
         # self.config.Agent.componentName
-        logging.info(">>>Registering Component - %s" % self.config.Agent.componentName)
+        logging.info(">>>Registering Component - %s", self.config.Agent.componentName)
 
         if getattr(self.config.Agent, "useHeartbeat", True):
             self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
@@ -338,12 +331,11 @@ class Harness:
         logging.info(">>>Starting worker threads")
         myThread.workerThreadManager.resumeWorkers()
 
-
         logging.info(">>>Initialization finished!\n")
         # wait for messages
         self.state = 'active'
 
-    def prepareToStop(self, wait = False, stopPayload = ""):
+    def prepareToStop(self, wait=False, stopPayload=""):
         """
         _stopComponent
 
@@ -355,13 +347,12 @@ class Harness:
         myThread = threading.currentThread()
         try:
             myThread.workerThreadManager.terminateWorkers()
-        except:
+        except Exception:
             # We may not have a thread manager
             pass
 
-        if(wait):
-            logging.info(">>>Shut down of component "+\
-            "while waiting for threads to finish")
+        if wait:
+            logging.info(">>>Shut down of component while waiting for threads to finish")
             # check if nr of threads is specified.
             activeThreads = 1
             if stopPayload != "":
@@ -369,14 +360,11 @@ class Harness:
                 if activeThreads < 1:
                     activeThreads = 1
             while threading.activeCount() > activeThreads:
-                logging.info('>>>Currently '\
-                +str(threading.activeCount())+' threads active')
-                logging.info('>>>Waiting for less then ' \
-                +str(activeThreads)+' to be active')
+                logging.info('>>>Currently ' + str(threading.activeCount()) + ' threads active')
+                logging.info('>>>Waiting for less than ' + str(activeThreads) + ' to be active')
                 time.sleep(5)
 
-
-    def handleMessage(self, type = '', payload = ''):
+    def handleMessage(self, type='', payload=''):
         """
         __handleMessage_
 
@@ -385,7 +373,7 @@ class Harness:
         """
         return
 
-    def startDaemon(self, keepParent = False, compName = None):
+    def startDaemon(self, keepParent=False, compName=None):
         """
         Same result as start component, except that the comopnent
         is started as a daemon, after which you can close your xterm
@@ -394,23 +382,21 @@ class Harness:
         The keepParent option enables us to keep the parent process
         which is used during testing,
         """
-        msg = "Starting %s as a daemon " % (self.config.Agent.componentName)
+        msg = "Starting %s as a daemon " % self.config.Agent.componentName
         print(msg)
         if not compName:
             compName = self.__class__.__name__
         compSect = getattr(self.config, compName, None)
-        msg = "Log will be in %s " % (compSect.componentDir)
+        msg = "Log will be in %s " % compSect.componentDir
         print(msg)
         # put the daemon config file in the work dir of this component.
         # FIXME: this file will be replaced by a database table.
-        compSect = getattr(self.config, self.config.Agent.componentName , None)
+        compSect = getattr(self.config, self.config.Agent.componentName, None)
         pid = createDaemon(compSect.componentDir, keepParent)
         # if this is not the parent start the component
         if pid == 0:
             self.startComponent()
-        # if this is the parent return control to the testing environment.
-
-
+            # if this is the parent return control to the testing environment.
 
     def startComponent(self):
         """
@@ -443,7 +429,7 @@ class Harness:
                     errormsg += stackFrame
                 logging.error(errormsg)
                 logging.error(">>>Fatal Error, Preparing to Rollback Transaction")
-                if getattr(myThread, 'transaction', None) != None:
+                if getattr(myThread, 'transaction', None) is not None:
                     myThread.transaction.rollback()
                 self.prepareToStop(False)
                 errormsg = """
@@ -470,7 +456,7 @@ while trying to handle msg: %s
         msg += '>>Event Subscriptions --> Handlers<<\n'
         msg += '------------------------------------\n'
         for message in self.messages.keys():
-            msg += message+'-->'+ str(self.messages[message])+'\n'
+            msg += message + '-->' + str(self.messages[message]) + '\n'
         msg += '\n'
         msg += '\n'
         msg += '>>Parameters --> Values<<\n'

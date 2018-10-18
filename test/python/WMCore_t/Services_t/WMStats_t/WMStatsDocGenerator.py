@@ -40,7 +40,7 @@ def generate_reqmgr_schema(number=NUM_OF_REQUEST):
                "Requestor": "cmsdataops",
                "RequestType": "ReReco"
                #"site_white_list": ["T1_DE_KIT"],
-               #"teams": ["cmsdataops"]
+               #"team": "cmsdataops"
                 }
         docs.append(doc)
     return docs
@@ -78,9 +78,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
        "site_white_list": [
            "T1_DE_KIT"
        ],
-       "teams": [
-           "cmsdataops"
-       ]
+       "team": "cmsdataops"
     }
     """
     docs = []
@@ -101,7 +99,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                                   {"status": "assigned", "update_time": 1326304227}
                                  ],
                 "site_white_list": ["T1_DE_KIT"],
-                "teams": ["cmsdataops"]
+                "team": "cmsdataops"
                 }
         docs.append(doc)
     return docs
@@ -169,7 +167,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                              }
                           },
                 "agent": "WMAgentCommissioning",
-                "agent_teams": "team1,team2,cmsdataops",
+                "agent_teams": "cmsdataops",
                 "agent_url": "cms-xen39.fnal.gov",
                 "type": "agent_request"
             }
@@ -331,8 +329,6 @@ sample_request_info = {'AcquisitionEra': 'Integ_Test',
  'LumisPerJob': 1,
  'MaxMergeEvents': 50000,
  'MaxMergeSize': 4294967296,
- 'MaxRSS': 2352000,
- 'MaxVSize': 20294967,
  'Memory': 2300,
  'MergedLFNBase': '/store/backfill/1',
  'MinMergeSize': 2147483648,
@@ -343,7 +339,6 @@ sample_request_info = {'AcquisitionEra': 'Integ_Test',
  'PrimaryDataset': 'QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph',
  'ProcessingString': 'MonteCarloFromGEN_reqmgr2-test',
  'ProcessingVersion': 1,
- 'ReqMgr2Only': True,
  'RequestDate': [2016, 2, 20, 20, 45, 18],
  'RequestName': 'sryu_MonteCarloFromGEN_wq_testt_160220_214518_7489',
  'RequestNumEvents': 50000,
@@ -442,8 +437,6 @@ sample_complete = {'AcquisitionEra': 'Integ_Test',
  'InputDataset': '/MinimumBias/CMSSW_7_3_1_patch1-GR_R_73_V0A_RelVal_run2010A-v1/DQMIO',
  'MaxMergeEvents': 100000,
  'MaxMergeSize': 4294967296,
- 'MaxRSS': 3072000,
- 'MaxVSize': 20294967,
  'Memory': 2200,
  'MergedLFNBase': '/store/relval',
  'MinMergeSize': 2147483648,
@@ -451,7 +444,6 @@ sample_complete = {'AcquisitionEra': 'Integ_Test',
  'OutputDatasets': [],
  'ProcessingString': 'DQMHarvesting_reqmgr2-test',
  'ProcessingVersion': 1,
- 'ReqMgr2Only': True,
  'RequestDate': [2016, 2, 20, 20, 45, 1],
  'RequestName': 'sryu_DQMHarvesting_wq_testt_160220_214501_5235',
  'RequestPriority': 140000,

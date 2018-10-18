@@ -36,13 +36,9 @@ if 'PATH' in buildslave.conf[requestedPython]:
 if 'PYTHONHOME' in buildslave.conf[requestedPython]:
     os.environ['PYTHONHOME'] = buildslave.conf[requestedPython]['PYTHONHOME']
 
-if ( not (requestedDB in buildslave.conf) ):
-    if ( requestedDB == 'sqlite'):
-        # give a default for sqlite, since it doesnt matter
-        os.environ['DATABASE'] = 'sqlite:///temp.db'
-    else:
-        print("Requested database type isn't in the slave configuration")
-        sys.exit(1)
+if requestedDB not in buildslave.conf:
+    print("Requested database type isn't in the slave configuration")
+    sys.exit(1)
 else:
     os.environ['DATABASE'] = buildslave.conf[requestedDB]
 

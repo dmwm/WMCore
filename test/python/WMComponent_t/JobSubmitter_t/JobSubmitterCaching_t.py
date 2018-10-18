@@ -5,34 +5,36 @@ _JobSubmitterCaching_t_
 Verify that the caching of jobs and white/black lists works correctly.
 """
 
-import unittest
 import os
 import pickle
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-
-from WMCore.WMBase import getTestBase
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Job import Job
+import unittest
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBase import getTestBase
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WMQuality.Emulators import EmulatorSetup
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class JobSubmitterCachingTest(unittest.TestCase):
+class JobSubmitterCachingTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Set everything up.
         """
+
+        super(JobSubmitterCachingTest, self).setUp()
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -174,31 +176,31 @@ class JobSubmitterCachingTest(unittest.TestCase):
         mySubmitterPoller.getThresholds()
         mySubmitterPoller.refreshCache()
 
-        self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
+        self.assertEqual(len(mySubmitterPoller.jobDataCache), 0,
                          "Error: The job cache should be empty.")
 
         self.injectJobs()
         mySubmitterPoller.refreshCache()
 
         # Verify the cache is full
-        self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 20,
+        self.assertEqual(len(mySubmitterPoller.jobDataCache), 20,
                          "Error: The job cache should contain 20 jobs.  Contains: %i" % len(
-                             mySubmitterPoller.cachedJobIDs))
+                             mySubmitterPoller.jobDataCache))
 
         killWorkflow("wf001", jobCouchConfig=config)
         mySubmitterPoller.refreshCache()
 
         # Verify that the workflow is gone from the cache
-        self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 10,
+        self.assertEqual(len(mySubmitterPoller.jobDataCache), 10,
                          "Error: The job cache should contain 10 jobs. Contains: %i" % len(
-                             mySubmitterPoller.cachedJobIDs))
+                             mySubmitterPoller.jobDataCache))
 
         killWorkflow("wf002", jobCouchConfig=config)
         mySubmitterPoller.refreshCache()
 
         # Verify that the workflow is gone from the cache
-        self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
-                         "Error: The job cache should be empty.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))
+        self.assertEqual(len(mySubmitterPoller.jobDataCache), 0,
+                         "Error: The job cache should be empty.  Contains: %i" % len(mySubmitterPoller.jobDataCache))
         return
 
 

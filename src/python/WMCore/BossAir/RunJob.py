@@ -11,6 +11,7 @@ It is very simple.
 
 from WMCore.WMBS.Job import Job
 
+
 class RunJob(dict):
     """
     _RunJob_
@@ -19,7 +20,7 @@ class RunJob(dict):
     the necessary fields.
     """
 
-    def __init__(self, jobid = -1):
+    def __init__(self, jobid=-1):
         """
         Just make sure you init the dictionary fields.
 
@@ -43,29 +44,29 @@ class RunJob(dict):
         self.setdefault('status_time', None)
         self.setdefault('packageDir', None)
         self.setdefault('sandbox', None)
-        self.setdefault('priority', None)
-        self.setdefault('taskType', None)
+        self.setdefault('wf_priority', None)
+        self.setdefault('task_type', None)
         self.setdefault('possibleSites', None)
         self.setdefault('swVersion', None)
         self.setdefault('scramArch', None)
         self.setdefault('siteName', None)
         self.setdefault('name', None)
         self.setdefault('proxyPath', None)
-        self.setdefault('requestName', None)
+        self.setdefault('request_name', None)
         self.setdefault('estimatedJobTime', None)
         self.setdefault('estimatedDiskUsage', None)
         self.setdefault('estimatedMemoryUsage', None)
         self.setdefault('numberOfCores', 1)
         self.setdefault('taskPriority', None)
-        self.setdefault('taskName', None)
-        self.setdefault('taskID', None)
+        self.setdefault('task_name', None)
+        self.setdefault('task_id', None)
         self.setdefault('potentialSites', None)
         self.setdefault('inputDataset', None)
         self.setdefault('inputDatasetLocations', None)
+        self.setdefault('inputPileup', None)
         self.setdefault('allowOpportunistic', False)
 
         return
-
 
     def buildFromJob(self, job):
         """
@@ -74,14 +75,13 @@ class RunJob(dict):
         Build a RunJob from a WMBS Job
         """
 
-
         # These two are required
-        self['jobid']       = job.get('id', None)
+        self['jobid'] = job.get('id', None)
         self['retry_count'] = job.get('retry_count', None)
-        self['userdn']      = job.get('owner', None)
-        self['usergroup']      = job.get('usergroup', '')
-        self['userrole']      = job.get('userrole', '')
-        self['siteName']    = job.get('custom', {}).get('location', None)
+        self['userdn'] = job.get('owner', None)
+        self['usergroup'] = job.get('usergroup', '')
+        self['userrole'] = job.get('userrole', '')
+        self['siteName'] = job.get('custom', {}).get('location', None)
 
         # Update the job with all other shared keys
         for key in job.keys():
@@ -89,8 +89,6 @@ class RunJob(dict):
                 self[key] = job[key]
 
         return
-
-
 
     def buildWMBSJob(self):
         """
@@ -101,17 +99,15 @@ class RunJob(dict):
         Also, attach couch_record (since we usually need one)
         """
 
-
-        job                 = Job(id = self['jobid'])
-        job['retry_count']  = self['retry_count']
+        job = Job(id=self['jobid'])
+        job['retry_count'] = self['retry_count']
         job['couch_record'] = None
-        job['owner']        = self['userdn']
-        job['usergroup']      = self['usergroup']
-        job['userrole']      = self['userrole']
+        job['owner'] = self['userdn']
+        job['usergroup'] = self['usergroup']
+        job['userrole'] = self['userrole']
 
         for key in self.keys():
             if key != 'id':
                 job[key] = self[key]
-
 
         return job

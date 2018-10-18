@@ -5,8 +5,6 @@ _AddDupsToFileset_
 Oracle implementation of Files.AddDupsToFileset
 """
 
-import time
-
 from WMCore.WMBS.MySQL.Files.AddDupsToFileset import AddDupsToFileset as MySQLAddDupsToFileset
 
 class AddDupsToFileset(MySQLAddDupsToFileset):

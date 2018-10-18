@@ -41,20 +41,20 @@ deleted from the site it was originally injected at.
 
 """
 
-import threading
 import logging
-import traceback
+import threading
 import time
+import traceback
 from httplib import HTTPException
 
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.WMException import WMException
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from Utils.Timers import timeFunction
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
-
-from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class PhEDExInjectorException(WMException):
@@ -92,7 +92,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.pollCounter = self.subFrequency - 1
 
         # retrieving the node mappings is fickle and can fail quite often
-        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
+        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl},
+                             "json", dbsUrl=self.dbsUrl)
         try:
             nodeMappings = self.phedex.getNodeMap()
         except:
@@ -150,6 +151,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         _algorithm_
@@ -279,7 +281,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 elif "Disk" in self.seMap and siteName in self.seMap["Disk"]:
                     location = self.seMap["Disk"][siteName]
 
-            if location == None:
+            if location is None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
                 continue
@@ -365,7 +367,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 elif "Disk" in self.seMap and siteName in self.seMap["Disk"]:
                     location = self.seMap["Disk"][siteName]
 
-            if location == None:
+            if location is None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
                 continue
@@ -519,12 +521,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                   comments="WMAgent blocks auto-delete from %s" % location,
                                   blocks=blocksToDelete)
 
-        xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
-                                                 deletion.getDatasetsAndBlocks())
-        logging.debug("deleteBlocks XMLData: %s", xmlData)
-
         try:
-            response = self.phedex.delete(deletion, xmlData)
+            response = self.phedex.delete(deletion)
             requestId = response['phedex']['request_created'][0]['id']
             # auto-approve deletion request
             self.phedex.updateRequest(requestId, 'approve', location)
@@ -598,9 +596,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         for subscription in subs.getSubscriptionList():
 
-            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, subscription.getDatasetPaths())
-            logging.debug("subscribeDatasets XMLData: %s", xmlData)
-
             logging.info("Subscribing: %s to %s, with options: Move: %s, Custodial: %s, Request Only: %s",
                          subscription.getDatasetPaths(),
                          subscription.getNodes(),
@@ -609,7 +604,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                          subscription.request_only)
 
             try:
-                self.phedex.subscribe(subscription, xmlData)
+                self.phedex.subscribe(subscription)
             except HTTPException as ex:
                 logging.error("PhEDEx dataset subscribe failed with HTTPException: %s %s", ex.status, ex.result)
             except Exception as ex:

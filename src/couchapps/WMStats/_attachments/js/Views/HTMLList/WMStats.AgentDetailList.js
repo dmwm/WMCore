@@ -6,12 +6,12 @@ WMStats.namespace("AgentDetailList");
         var formatStr = "";
         for (var i in componentList) {
             formatStr += "<details> <summary>" + componentList[i].name +"</summary> <ul>";
-            formatStr += "<li><b>" + componentList[i].worker_name +"</b> </li>";
-            formatStr += "<li><b>status</b>: " + componentList[i].state + "</li>";
-            formatStr += "<li><b>error</b>: " + WMStats.Utils.utcClock(new Date(componentList[i].last_error * 1000)) + "</li>";
-            formatStr += "<li><b>error message</b>: <pre>" + componentList[i].error_message + "</pre></li>";
-            //formatStr += "<li><b>time</b>: " + WMStats.Utils.utcClock(new Date(componentList[i].last_updated * 1000)) + "</li>";
-            formatStr += "<li><b>pid</b>: " + componentList[i].pid + "</li>";
+            formatStr += "<li><b>worker thread:</b> " + componentList[i].worker_name +"</li>";
+            formatStr += "<li><b>status:</b> " + componentList[i].state + "</li>";
+            //formatStr += "<li><b>error:</b> " + WMStats.Utils.utcClock(new Date(componentList[i].last_error * 1000)) + "</li>";
+            formatStr += "<li><b>last updated:</b> " + WMStats.Utils.utcClock(new Date(componentList[i].last_updated * 1000)) + "</li>";
+            formatStr += "<li><b>pid:</b> " + componentList[i].pid + "</li>";
+            formatStr += "<li><b>error message:</b> <pre>" + componentList[i].error_message + "</pre></li>";
             formatStr += "</ul></details>";
         }
         
@@ -40,13 +40,15 @@ WMStats.namespace("AgentDetailList");
             htmlstr += "<li><b>status:</b> " + agentInfo.alert.message + "</li>";
             htmlstr += "<li><b>team:</b> " + agentInfo.agent_team+ "</li>";
         };
-        var detailInfo = agentInfo.down_component_detail;
-        if (detailInfo && (detailInfo.length > 0)) {
-            htmlstr += "<li><b>component errors:</b> ";
-            htmlstr += componentFormat(detailInfo);
+        var componentsDown = agentInfo.down_components;
+        if (componentsDown && (componentsDown.length > 0)) {
+            htmlstr += "<li><b>component errors for:</b> " + componentsDown;
+            if (agentInfo.down_component_detail && (agentInfo.down_component_detail.length > 0)) {
+                htmlstr += componentFormat(agentInfo.down_component_detail);
+            }
             htmlstr +="</li>";
-           };
-           
+        };
+
         var diskInfo = agentInfo.disk_warning;
         if (diskInfo && (diskInfo.length > 0)) {
             htmlstr += "<li><b>disk warning:</b> ";
@@ -57,6 +59,23 @@ WMStats.namespace("AgentDetailList");
         if (agentInfo.proxy_warning) {
             htmlstr += "<li><b>proxy warning:</b> " + agentInfo.proxy_warning + "</li>";
            };
+
+        if (agentInfo.drain_stats) {
+            htmlstr += "<li><b>drain statistics:</b></li><ul>";
+            htmlstr += "<li>workflows completed (" + agentInfo.drain_stats.workflows_completed + ")</li>";
+            if (agentInfo.drain_stats.workflows_completed) {
+                htmlstr += "<li>condor running (" + agentInfo.drain_stats.condor_status.running + ")</li>";
+                htmlstr += "<li>condor idle (" + agentInfo.drain_stats.condor_status.idle + ")</li>";
+                htmlstr += "<li>dbs open blocks (" + agentInfo.drain_stats.upload_status.dbs_open_blocks + ")</li>";
+                htmlstr += "<li>dbs not uploaded (" + agentInfo.drain_stats.upload_status.dbs_notuploaded + ")</li>";
+                htmlstr += "<li>phedex not uploaded (" + agentInfo.drain_stats.upload_status.phedex_notuploaded + ")</li>";
+                for (var key in agentInfo.WMBS_INFO.wmbsCountByState) {
+                    htmlstr += "<li>jobs in '" + key + "' state (" + agentInfo.WMBS_INFO.wmbsCountByState[key] + ")</li>";
+                }
+            }
+            htmlstr += "</ul>"
+        }
+
 
         var dataError = agentInfo.data_error;
         if (dataError && dataError !== 'ok') {

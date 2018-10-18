@@ -3,9 +3,8 @@
         "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": 1155200, 
-        "MaxVSize": 20000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
@@ -20,7 +19,7 @@
         "AcquisitionEra": "RunIISummer15wmLHEGS", 
         "CMSSWVersion": "CMSSW_7_1_25_patch3", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "Automatic splitting 80 EpJ and 2LpJ; Eff. < 1.0; Processed dataset overriden during assignment", 
+        "Comments": "Given 40 EpLumi, set 80 EpJob (instead of 87.3), so 2LpJ; Eff. < 1.0",
         "ConfigCacheID": "3910f87c1c1ff387d33a6415da869b44", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -30,8 +29,8 @@
         "FilterEfficiency": 0.85268792179999997, 
         "GlobalTag": "MCRUN2_71_V1::All",
         "Group": "DATAOPS",
-        "Memory": 1000, 
-        "PrepID": "TEST-EXO-RunIISummer15wmLHEGS-03608", 
+        "Memory": 1000,
+        "PrepID": "TEST-EXO-RunIISummer15wmLHEGS-03608",
         "PrimaryDataset": "SeesawTypeIII_SIGMAplusSIGMAminusHH_M-1180_13TeV-madgraph-pythia8", 
         "ProcessingString": "MCRUN2_71_V1", 
         "ProcessingVersion": 1, 
@@ -43,6 +42,6 @@
         "ScramArch": "slc6_amd64_gcc481", 
         "Seeding": "AutomaticSeeding", 
         "SizePerEvent": 1000, 
-        "TimePerEvent": 360.0
+        "TimePerEvent": 330.0
     }
 }

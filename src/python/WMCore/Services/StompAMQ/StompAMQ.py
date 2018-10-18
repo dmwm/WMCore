@@ -8,44 +8,44 @@ from __future__ import division
 import json
 import logging
 import time
-import uuid
-
 import stomp
+from WMCore.Services.UUIDLib import makeUUID
+
 
 class StompyListener(object):
     """
     Auxiliar listener class to fetch all possible states in the Stomp
     connection.
     """
-    def __init__(self):
-        self.logr = logging.getLogger(__name__)
+    def __init__(self, logger=None):
+        self.logger = logger if logger else logging.getLogger()
 
     def on_connecting(self, host_and_port):
-        self.logr.info('on_connecting %s', str(host_and_port))
+        self.logger.debug('on_connecting %s', str(host_and_port))
 
     def on_error(self, headers, message):
-        self.logr.info('received an error %s %s', str(headers), str(message))
+        self.logger.debug('received an error %s %s', str(headers), str(message))
 
     def on_message(self, headers, body):
-        self.logr.info('on_message %s %s', str(headers), str(body))
+        self.logger.debug('on_message %s %s', str(headers), str(body))
 
     def on_heartbeat(self):
-        self.logr.info('on_heartbeat')
+        self.logger.debug('on_heartbeat')
 
     def on_send(self, frame):
-        self.logr.info('on_send HEADERS: %s, BODY: %s ...', str(frame.headers), str(frame.body)[:160])
+        self.logger.debug('on_send HEADERS: %s, BODY: %s ...', str(frame.headers), str(frame.body)[:160])
 
     def on_connected(self, headers, body):
-        self.logr.info('on_connected %s %s', str(headers), str(body))
+        self.logger.debug('on_connected %s %s', str(headers), str(body))
 
     def on_disconnected(self):
-        self.logr.info('on_disconnected')
+        self.logger.debug('on_disconnected')
 
     def on_heartbeat_timeout(self):
-        self.logr.info('on_heartbeat_timeout')
+        self.logger.debug('on_heartbeat_timeout')
 
     def on_before_message(self, headers, body):
-        self.logr.info('on_before_message %s %s', str(headers), str(body))
+        self.logger.debug('on_before_message %s %s', str(headers), str(body))
 
         return (headers, body)
 
@@ -64,18 +64,16 @@ class StompAMQ(object):
     """
 
     # Version number to be added in header
-    _version = '0.1'
+    _version = '0.2'
 
-    def __init__(self, username, password,
-                 producer='CMS_WMCore_StompAMQ',
-                 topic='/topic/cms.jobmon.wmagent',
-                 host_and_ports=None, verbose=0):
-        self._host_and_ports = host_and_ports or [('agileinf-mb.cern.ch', 61213)]
+    def __init__(self, username, password, producer, topic,
+                 host_and_ports=None, logger=None):
         self._username = username
         self._password = password
         self._producer = producer
         self._topic = topic
-        self.verbose = verbose
+        self._host_and_ports = host_and_ports or [('agileinf-mb.cern.ch', 61213)]
+        self.logger = logger if logger else logging.getLogger()
 
     def send(self, data):
         """
@@ -87,31 +85,33 @@ class StompAMQ(object):
 
         :return: a list of successfully sent notification bodies
         """
+        if not isinstance(data, list):
+            self.logger.error("Argument for send method has to be a list, not %s", type(data))
+            return data
 
         conn = stomp.Connection(host_and_ports=self._host_and_ports)
-        conn.set_listener('StompyListener', StompyListener())
+        conn.set_listener('StompyListener', StompyListener(self.logger))
         try:
             conn.start()
             conn.connect(username=self._username, passcode=self._password, wait=True)
         except stomp.exception.ConnectFailedException as exc:
-            print("ERROR: Connection to %s failed %s" % (repr(self._host_and_ports), str(exc)))
+            self.logger.error("Connection to %s failed %s", repr(self._host_and_ports), str(exc))
             return []
 
-        # If only a single notification, put it in a list
-        if isinstance(data, dict) and 'topic' in data:
-            data = [data]
-
-        successfully_sent = []
+        failedNotifications = []
         for notification in data:
-            body = self._send_single(conn, notification)
-            if body:
-                successfully_sent.append(body)
+            result = self._send_single(conn, notification)
+            if result:
+                failedNotifications.append(result)
 
         if conn.is_connected():
             conn.disconnect()
 
-        print('Sent %d docs to %s' % (len(successfully_sent), repr(self._host_and_ports)))
-        return successfully_sent
+        if failedNotifications:
+            self.logger.warning('Failed to send to %s %i docs out of %i', repr(self._host_and_ports),
+                                len(failedNotifications), len(data))
+
+        return failedNotifications
 
     def _send_single(self, conn, notification):
         """
@@ -120,60 +120,54 @@ class StompAMQ(object):
         :param conn: An already connected stomp.Connection
         :param notification: A dictionary as returned by `make_notification`
 
-        :return: The notification body in case of success, or else None
+        :return: The notification body in case of failure, or else None
         """
         try:
             body = notification.pop('body')
-            destination = notification.pop('topic')
-            conn.send(destination=destination,
+            conn.send(destination=self._topic,
                       headers=notification,
                       body=json.dumps(body),
                       ack='auto')
-            if  self.verbose:
-                print('Notification %s sent' % str(notification))
-            return body
+            self.logger.debug('Notification %s sent', str(notification))
         except Exception as exc:
-            print('ERROR: Notification: %s not send, error: %s' % \
-                          (str(notification), str(exc)))
-            return None
+            self.logger.error('Notification: %s not send, error: %s', str(notification), str(exc))
+            return body
+        return
 
-
-    def make_notification(self, payload, id_, producer=None):
+    def make_notification(self, payload, docType, docId, producer=None, ts=None):
         """
-        Generate a notification with the specified data
+        Given a single payload (or a list of them), generate a list
+        of notifications including the specified data.
 
         :param payload: Actual notification data.
-        :param id_: Id representing the notification.
+        :param docType: document type for the high level metadata.
+        :param docId: document id representing the notification.
         :param producer: The notification producer.
-            Default: StompAMQ._producer
+        :param ts: timestamp to be added to each document metadata.
 
-        :return: the generated notification
+        :return: a list of notifications with the proper metadata
         """
         producer = producer or self._producer
+        ts = ts or int(time.time())
 
-        notification = {}
-        notification['topic'] = self._topic
+        if isinstance(payload, dict):
+            payload = [payload]  # it was a single document
 
-        # Add headers
-        headers = {
-                   'type': 'cms_wmagent_info',
-                   'version': self._version,
-                   'producer': producer
-        }
+        commonHeaders = {'type': docType,
+                         'version': self._version,
+                         'producer': producer}
 
-        notification.update(headers)
+        docs = []
+        for doc in payload:
+            notification = {}
+            notification.update(commonHeaders)
+            # Add body consisting of the payload and metadata
+            body = {'payload': doc,
+                    'metadata': {'timestamp': ts,
+                                 'id': docId,
+                                 'uuid': makeUUID()}
+                   }
+            notification['body'] = body
+            docs.append(notification)
 
-        # Add body consisting of the payload and metadata
-        body = {
-            'payload': payload,
-            'metadata': {
-                'timestamp': int(time.time()),
-                'id': id_,
-                'uuid': str(uuid.uuid1()),
-            }
-        }
-
-        notification['body'] = body
-
-        return notification
-
+        return docs

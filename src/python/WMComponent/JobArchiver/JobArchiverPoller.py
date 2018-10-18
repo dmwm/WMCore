@@ -2,25 +2,24 @@
 """
 The actual jobArchiver algorithm
 """
-__all__ = []
-
-import threading
 import logging
 import os
 import os.path
 import shutil
 import tarfile
+import threading
 
 from Utils.IteratorTools import grouper
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from Utils.Timers import timeFunction
+from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
-
-from WMCore.WMBS.Job import Job
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMException import WMException
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class JobArchiverPollerException(WMException):
@@ -50,10 +49,11 @@ class JobArchiverPoller(BaseWorkerThread):
                                      dbinterface=myThread.dbi)
         self.loadAction = self.daoFactory(classname="Jobs.LoadFromIDWithWorkflow")
 
-
         # Variables
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
+        self.numberOfJobsToArchive = getattr(self.config.JobArchiver,
+                                             "numberOfJobsToArchive", 10000)
 
         # initialize the alert framework (if available)
         self.initAlerts(compName="JobArchiver")
@@ -69,16 +69,16 @@ class JobArchiverPoller(BaseWorkerThread):
             logging.exception(msg)
             raise JobArchiverPollerException(msg)
 
+        self.tier0Mode = hasattr(config, "Tier0Feeder")
+
         try:
-            self.workQueue = queueFromConfig(self.config)
+            if not self.tier0Mode:
+                self.workQueue = queueFromConfig(self.config)
         except Exception as ex:
             msg = "Could not load workQueue"
             msg += str(ex)
             logging.error(msg)
             # raise JobArchiverPollerException(msg)
-
-        self.handleWorkflowInjection = getattr(self.config.JobArchiver,
-                                               'handleInjected', True)
 
         return
 
@@ -98,6 +98,7 @@ class JobArchiverPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the archiveJobs method, looking for each type of failure
@@ -109,8 +110,8 @@ class JobArchiverPoller(BaseWorkerThread):
             self.markInjected()
         except WMException:
             myThread = threading.currentThread()
-            if getattr(myThread, 'transaction', None) != None \
-                    and getattr(myThread.transaction, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None \
+                    and getattr(myThread.transaction, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise
         except Exception as ex:
@@ -118,8 +119,8 @@ class JobArchiverPoller(BaseWorkerThread):
             msg = "Caught exception in JobArchiver\n"
             msg += str(ex)
             msg += "\n\n"
-            if getattr(myThread, 'transaction', None) != None \
-                    and getattr(myThread.transaction, 'transaction', None) != None:
+            if getattr(myThread, 'transaction', None) is not None \
+                    and getattr(myThread.transaction, 'transaction', None) is not None:
                 myThread.transaction.rollback()
             raise JobArchiverPollerException(msg)
 
@@ -169,9 +170,9 @@ class JobArchiverPoller(BaseWorkerThread):
         jobList = []
 
         jobListAction = self.daoFactory(classname="Jobs.GetAllJobs")
-        jobList1 = jobListAction.execute(state="success")
-        jobList2 = jobListAction.execute(state="exhausted")
-        jobList3 = jobListAction.execute(state="killed")
+        jobList1 = jobListAction.execute(state="success", limitRows=self.numberOfJobsToArchive)
+        jobList2 = jobListAction.execute(state="exhausted", limitRows=self.numberOfJobsToArchive)
+        jobList3 = jobListAction.execute(state="killed", limitRows=self.numberOfJobsToArchive)
 
         jobList.extend(jobList1)
         jobList.extend(jobList2)
@@ -294,7 +295,7 @@ class JobArchiverPoller(BaseWorkerThread):
         Mark any workflows that have been fully injected as injected
         """
 
-        if not self.handleWorkflowInjection:
+        if self.tier0Mode:
             logging.debug("Component will not check workflows for injection status")
             return
 
@@ -307,7 +308,7 @@ class JobArchiverPoller(BaseWorkerThread):
         injected = []
         for name in result:
             try:
-                if self.workQueue.getWMBSInjectionStatus(workflowName=name):
+                if self.workQueue.getWMBSInjectionStatus(name, isDrainMode(self.config)):
                     injected.append(name)
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup
@@ -315,6 +316,7 @@ class JobArchiverPoller(BaseWorkerThread):
             except Exception as ex:
                 logging.exception("Injection status checking failed, investigate: %s", str(ex))
 
+        logging.info("Found %d workflows to mark as injected", len(injected))
         # Now, mark as injected those that returned True
         if len(injected) > 0:
             myThread.transaction.begin()
@@ -333,6 +335,7 @@ class JobArchiverPoller(BaseWorkerThread):
 
         closableFilesetDAO = self.daoFactory(classname="Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
+        logging.info("Found %d filesets to be closed", len(closableFilesets))
 
         for closableFileset in closableFilesets:
             openFileset = Fileset(id=closableFileset)

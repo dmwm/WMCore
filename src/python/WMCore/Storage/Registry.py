@@ -10,8 +10,9 @@ extra runtime dependencies.
 
 """
 import WMCore.WMFactory
-from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.StageOutError import StageOutError
+from WMCore.Storage.StageOutImpl import StageOutImpl
+
 
 class RegistryError(StageOutError):
     """
@@ -21,6 +22,7 @@ class RegistryError(StageOutError):
     """
     pass
 
+
 class Registry:
     """
     _Registry_
@@ -29,14 +31,11 @@ class Registry:
     stage out impl class objects
 
     """
-    StageOutImpl   = {}
+    StageOutImpl = {}
 
     def __init__(self):
         msg = "Do not init StageOut.Registry class"
         raise RuntimeError(msg)
-
-
-
 
 
 def registerStageOutImpl(name, classRef):
@@ -50,7 +49,6 @@ def registerStageOutImpl(name, classRef):
         msg = "Duplicate StageOutImpl registered for name: %s\n" % name
         raise RegistryError(msg)
 
-
     if not issubclass(classRef, StageOutImpl):
         msg = "StageOutImpl object registered as %s\n" % name
         msg += "is not a subclass of StageOut.StageOutImpl\n"
@@ -61,7 +59,7 @@ def registerStageOutImpl(name, classRef):
     return
 
 
-def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
+def retrieveStageOutImpl(name, stagein=False, useNewVersion=False):
     """
     _retrieveStageOutImpl_
 
@@ -69,7 +67,7 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
 
     """
     if not useNewVersion:
-        classRef  = Registry.StageOutImpl.get(name, None)
+        classRef = Registry.StageOutImpl.get(name, None)
     else:
         try:
             return _retrieveStageOutImpl2(name)
@@ -81,34 +79,25 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
     else:
         return classRef()
 
+
 pluginLookup = {'test-win': 'TestWinImpl',
                 'test-fail': 'TestFailImpl',
                 'test-copy': 'TestLocalCopyImpl',
-                'cp': 'CPImpl',
-                "dccp-fnal": 'DCCPFNALImpl',
-                "dccp-generic": 'DCCPGenericImpl',
-                "hadoop": 'HadoopImpl',
-                "srmv2-lcg": 'LCGImpl',
-                "pydcap": 'PYDCCPImpl',
-                "rfcp-1": 'RFCP1Impl',
-                "rfcp-2": 'RFCP2Impl',
-                "rfcp-CERN": 'RFCPCERNImpl',
-                "rfcp": 'RFCPImpl',
                 "stageout-xrdcp-fnal": 'FNALImpl',
-                "srm-fnal": 'SRMImpl',
-                "srm": 'SRMImpl',
                 "srmv2": 'SRMV2Impl',
+                "srmv2-lcg": 'LCGImpl',
                 "xrdcp": 'XRDCPImpl',
                 "vandy": 'VandyImpl',
                 "gfal2": 'GFAL2Impl',
                 "awss3": 'AWS3Impl',
                 # NOTE NOTE NOTE:
                 # do NOT implement this
-                "testFallbackToOldBackend" : 'TestBackendForFallbacksDontImplement'}
+                "testFallbackToOldBackend": 'TestBackendForFallbacksDontImplement'}
+
 
 def _retrieveStageOutImpl2(backendName):
-    factory = WMCore.WMFactory.WMFactory(name = 'StageOutFactory',
-                                         namespace = 'WMCore.Storage.Plugins')
+    factory = WMCore.WMFactory.WMFactory(name='StageOutFactory',
+                                         namespace='WMCore.Storage.Plugins')
     className = pluginLookup[backendName]
     stageout = factory.loadObject(className)
     return stageout

@@ -88,9 +88,6 @@ def parseArgs():
                         help='Only injects requests but do not assign them')
     parser.add_argument('-d', '--dryRun', action='store_true', default=False,
                         help='Simulation mode only')
-    parser.add_argument('-1', '--reqmgr1', action='store_true', default=False,
-                        help='Request Manager (one) injection')
-
     args = parser.parse_args()
 
     # sites argument could be "T1_US_FNAL,T2_CH_CERN" ...
@@ -180,7 +177,7 @@ def main():
     blacklist = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
     templates = [item for item in templates if item not in blacklist]
 
-    reqMgrCommand = "reqmgr.py" if args.reqmgr1 else "reqmgr2.py"
+    reqMgrCommand = "reqmgr2.py"
 
     # Temporary place to write the tweaked templates
     tmpFile = '/tmp/%s.json' % pwd.getpwuid(os.getuid()).pw_name

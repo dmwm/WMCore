@@ -95,7 +95,7 @@ WMStats.namespace('JobDetailList');
                     htmlstr += "<ul>";
                     htmlstr += "<li><b>" + jobDoc.errors[errorType][i].type +" (Exit Code: " + jobDoc.errors[errorType][i].exitCode + ")</b></li>";
                     htmlstr += "<ul>";
-                    htmlstr += "<li><pre>" + jobDoc.errors[errorType][i].details +"</pre></li>";
+                    htmlstr += "<li><pre>" + WMStats.Utils.escapeHtml(jobDoc.errors[errorType][i].details) +"</pre></li>";
                     htmlstr += "</ul>";
                     htmlstr += "</ul>";
                 }
@@ -130,7 +130,14 @@ WMStats.namespace('JobDetailList');
                 htmlstr += "</ul>";
             }
             htmlstr += "</li>";
-            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.logArchiveLFN, "log archive", logArchiveFormat) + "</li>"; 
+            if (jobDoc.worker_node_info) {
+                htmlstr += "<li><b>Worker Node:</b>" + jobDoc.worker_node_info.HostName  + "</li>";
+            };
+
+            htmlstr += "<li>" + WMStats.Utils.expandFormat(jobDoc.logArchiveLFN, "log archive", logArchiveFormat) + "</li>";
+            if (jobDoc.eos_log_url) {
+                htmlstr += '<li><b>EOS log URL:</b><a href="' + jobDoc.eos_log_url.replace("eoscmshttp", "eoscmsweb") + '"> download log </a></li>';
+            }
             htmlstr += "</ul>";
             htmlstr += "</div>";
         }

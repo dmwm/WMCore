@@ -2,6 +2,7 @@
 """
 The actual jobTracker algorithm
 """
+
 __all__ = []
 
 import threading
@@ -9,8 +10,9 @@ import logging
 import os
 import os.path
 
+from Utils.Timers import timeFunction
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMException import WMException
 from WMCore.FwkJobReport.Report import Report
@@ -69,6 +71,7 @@ class JobTrackerPoller(BaseWorkerThread):
         self.algorithm(params)
         return
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         Performs the archiveJobs method, looking for each type of failure
@@ -150,8 +153,7 @@ class JobTrackerPoller(BaseWorkerThread):
                 # Something went wrong reading the pickle
                 logging.error("The pickle in %s could not be loaded, generating a new one", jrPath)
                 fwjr = Report()
-                msg = "The job failed due to a timeout, unfortunately the original job report was lost"
-                fwjr.addError("NoJobReport", 99303, "NoJobReport", msg)
+                fwjr.addError("NoJobReport", 99303, "NoJobReport", WM_JOB_ERROR_CODES[99303])
                 fwjr.save(jrPath)
             job["fwjr"] = fwjr
 

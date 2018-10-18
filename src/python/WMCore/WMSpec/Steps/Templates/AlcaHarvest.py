@@ -33,13 +33,18 @@ class AlcaHarvestStepHelper(CoreHelper):
         """
         self.data.condition.outLabel = outLabel
 
-    def setConditionDir(self, dir):
+    def setConditionLFNBase(self, lfnbase):
         """
-        Sets the directory for condition file copy,
-        assumed to be a POSIX accessible path (AFS)
+        Sets the LFNBase for condition file copy
+        (within the EOSCMS CERN EOS instance)
         """
-        self.data.condition.dir = dir
+        self.data.condition.lfnbase = lfnbase
 
+    def setLuminosityURL(self, url):
+        """
+        Sets the ROOT URL for luminosity file copy
+        """
+        self.data.luminosity.url = url
 
 class AlcaHarvest(Template):
     """
@@ -55,7 +60,9 @@ class AlcaHarvest(Template):
         step.section_("condition")
         step.condition.runNumber = None
         step.condition.outLabel = None
-        step.condition.dir = None
+        step.condition.lfnbase = None
+        step.section_("luminosity")
+        step.luminosity.url = None
 
     def helper(self, step):
         """

@@ -25,6 +25,7 @@ from cherrypy.lib.static import serve_file
 
 # import WMCore itself to determine path of modules
 import WMCore
+# WMCore modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
@@ -32,9 +33,9 @@ from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
-# WMCore modules
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.Utils.url_utils import getdata
+from WMCore.Services.pycurl_manager import RequestHandler
+from Utils.CertTools import getKeyCertFromEnv
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import gen_color
@@ -44,6 +45,13 @@ from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
+
+def getdata(url, params, headers=None):
+    "Helper function to get data from the service"
+    ckey, cert = getKeyCertFromEnv()
+    mgr = RequestHandler()
+    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey, cert=cert)
+    return json.loads(res)
 
 def sort_bold(docs):
     "Return sorted list of bold items from provided doc list"
@@ -158,6 +166,7 @@ def check_scripts(scripts, resource, path):
                 resource.update({script: spath})
     return scripts
 
+
 def _map_configcache_url(tConfigs, baseURL, configIDName, configID, taskName=""):
     if configIDName.endswith('ConfigCacheID') and configID is not None:
         url = "%s/reqmgr_config_cache/%s/configFile" % (baseURL, configID)
@@ -165,6 +174,7 @@ def _map_configcache_url(tConfigs, baseURL, configIDName, configID, taskName="")
         task = "%s%s: %s " % (prefix, configIDName, configID)
         tConfigs.setdefault(task, url)
     return
+
 
 def tasks_configs(docs, html=False):
     "Helper function to provide mapping between tasks and configs"
@@ -203,9 +213,10 @@ def tasks_configs(docs, html=False):
         return out
     return tConfigs
 
+
 def state_transition(docs):
     "Helper function to provide mapping between tasks and configs"
-    if  not isinstance(docs, list):
+    if not isinstance(docs, list):
         docs = [docs]
 
     out = '<fieldset><legend>State Transition</legend><ul>'
@@ -219,10 +230,33 @@ def state_transition(docs):
         if multiDocFlag:
             out += '%s<br />' % name
         for sInfo in sTransition:
-            out += '<li><b>%s</b>: %s UTC</li>' % (sInfo["Status"],
-                    datetime.utcfromtimestamp(sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'))
+            out += '<li><b>%s</b>: %s UTC <b>DN</b>: %s</li>' % (sInfo["Status"],
+                    datetime.utcfromtimestamp(sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'), sInfo["DN"])
     out += '</ul></fieldset>'
     return out
+
+
+def priority_transition(docs):
+    "create html for priority transition format"
+    if not isinstance(docs, list):
+        docs = [docs]
+
+    out = '<fieldset><legend>Priority Transition</legend><ul>'
+    multiDocFlag = True if len(docs) > 1 else False
+    for doc in docs:
+        name = doc.get('RequestName', '')
+        pTransition = doc.get('PriorityTransition', '')
+
+        if not name:
+            continue
+        if multiDocFlag:
+            out += '%s<br />' % name
+        for pInfo in pTransition:
+            out += '<li><b>%s</b>: %s UTC <b>DN</b>: %s</li>' % (pInfo["Priority"],
+                    datetime.utcfromtimestamp(pInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'), pInfo["DN"])
+    out += '</ul></fieldset>'
+    return out
+
 
 # code taken from
 # http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
@@ -230,9 +264,9 @@ def toString(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(toString, data.iteritems()))
+        return dict(list(map(toString, data.iteritems())))
     elif isinstance(data, collections.Iterable):
-        return type(data)(map(toString, data))
+        return type(data)(list(map(toString, data)))
     else:
         return data
 
@@ -556,6 +590,7 @@ class ReqMgrService(TemplatedPage):
                                         doc=json.dumps(doc), time=time,
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
+                                        pTransition=priority_transition(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
@@ -563,6 +598,7 @@ class ReqMgrService(TemplatedPage):
                                         table="", jsondata=jsondata, time=time,
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
+                                        pTransition=priority_transition(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid
@@ -606,7 +642,8 @@ class ReqMgrService(TemplatedPage):
             return {'error': 'no input dataset'}
         url = 'https://cmsweb.cern.ch/reqmgr2/data/request?outputdataset=%s' % dataset
         params = {}
-        wdata = getdata(url, params)
+        headers = {'Accept': 'application/json'}
+        wdata = getdata(url, params, headers)
         wdict = dict(date=time.ctime(), team='Team-A', status='Running', ID=genid(wdata))
         winfo = self.templatepage('workflow', wdict=wdict,
                                   dataset=dataset, code=pprint.pformat(wdata))

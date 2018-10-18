@@ -30,7 +30,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "data": "workflow", 
               "title": "workflow",
               "render": function (data, type, row, meta) {
-                            return formatReqDetailUrl(data, row.ReqMgr2Only);
+                            return formatReqDetailUrl(data);
                       }, 
               "width": "150px"
             },
@@ -108,7 +108,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             { "defaultContent": 0,
               "title": "Eestimated Completion", 
               "render": function (data, type, row, meta) {
-                            return (WMStats.Utils.foramtDuration(requestData.estimateCompletionTime(row.workflow)));
+                            return (WMStats.Utils.formatDuration(requestData.estimateCompletionTime(row.workflow)));
                           },
                "type": "num-fmt"
             },

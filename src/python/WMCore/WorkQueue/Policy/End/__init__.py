@@ -4,13 +4,12 @@ WorkQueue End Policy
 
 """
 
-
-
 from WMCore.WMFactory import WMFactory
 
 endFac = WMFactory(__name__, __name__)
 
-def endPolicy(elements, parents = None, args = None):
+
+def endPolicy(elements, parents=None, args=None):
     """Load an end policy"""
 
     # load policy and apply
@@ -27,6 +26,7 @@ def endPolicy(elements, parents = None, args = None):
     args.update(policy)
     return endFac.loadObject(name,
                              args,
-                             storeInCache = False)(elements, parents)
+                             storeInCache=False)(elements, parents)
 
-__all__ = [endPolicy]
+
+__all__ = []

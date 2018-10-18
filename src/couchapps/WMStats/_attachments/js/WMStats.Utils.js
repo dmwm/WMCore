@@ -65,7 +65,7 @@ WMStats.Utils.get = function (baseObj, objStr, val) {
     return WMStats.Utils.getOrDefault(baseObj, objList, val); 
 };
 
-WMStats.Utils.formatReqDetailUrl = function (request, reqmgr2Flag) {
+WMStats.Utils.formatReqDetailUrl = function (request) {
 	urlLink = WMStats.Globals.REQ_DETAIL_URL_PREFIX;
 	return '<a href="' + urlLink + 
             encodeURIComponent(request) + '" target="requestDetailFrame">' + request + '</a>';
@@ -90,8 +90,8 @@ WMStats.Utils.formatDate = function (timestamp) {
            " " + date.getHours() + ":" + date.getMinutes());
 };
 
-WMStats.Utils.foramtDuration = function (timestamp) {
-    if (timestamp == -1) return "N/A";
+WMStats.Utils.formatDuration = function (timestamp) {
+    if (timestamp < 0) return "N/A";
     var totalMin = Math.floor(timestamp / 60);
     var hours = Math.floor(totalMin / 60);
     var min = totalMin % 60;
@@ -228,27 +228,27 @@ WMStats.Utils.delay =  (function(){
 })();
 
 WMStats.Utils.getInputDatasets = function(reqDoc) {
-     if (reqDoc.inputdataset && reqDoc.inputdataset !== "None"){
-     	return [reqDoc.inputdataset];
-     }
-     if (reqDoc.TaskChain) {
+    if (reqDoc.inputdataset && reqDoc.inputdataset !== "None"){
+        return [reqDoc.inputdataset];
+    }
+    if (reqDoc.TaskChain) {
         var inputDatasets = [];
-     	for (var i = 0; i < reqDoc.TaskChain; i++) {
-  			if (reqDoc["Task" + (i+1)].InputDataset && reqDoc["Task" + (i+1)].InputDataset !== "None") {
-  				inputDatasets.push(reqDoc["Task" + (i+1)].InputDataset);
-  			}
-  		}
-  		return inputDatasets;
-  	 }
-  	 if (reqDoc.StepChain) {
+        for (var i = 0; i < reqDoc.TaskChain; i++) {
+            if (reqDoc["Task" + (i+1)].InputDataset && reqDoc["Task" + (i+1)].InputDataset !== "None") {
+                inputDatasets.push(reqDoc["Task" + (i+1)].InputDataset);
+            }
+        }
+        return inputDatasets;
+    }
+    if (reqDoc.StepChain) {
         var inputDatasets = [];
-     	for (var i = 0; i < reqDoc.StepChain; i++) {
-  			if (reqDoc["Step" + (i+1)].InputDataset && reqDoc["Step" + (i+1)].InputDataset !== "None") {
-  				inputDatasets.push(reqDoc["Step" + (i+1)].InputDataset);
-  			}
-  		}
-  		return inputDatasets;
-  	}
+        for (var i = 0; i < reqDoc.StepChain; i++) {
+            if (reqDoc["Step" + (i+1)].InputDataset && reqDoc["Step" + (i+1)].InputDataset !== "None") {
+                inputDatasets.push(reqDoc["Step" + (i+1)].InputDataset);
+            }
+        }
+    return inputDatasets;
+    }
 };
 
 WMStats.Utils.formatStateTransition = function(stateTransition) {
@@ -259,4 +259,21 @@ WMStats.Utils.formatStateTransition = function(stateTransition) {
 	
   	return WMStats.Utils.expandFormat(stateTransition, "detail", transFunc);
   	
+};
+
+WMStats.Utils.entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+};
+
+WMStats.Utils.escapeHtml = function(string) {
+    return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+        return WMStats.Utils.entityMap[s];
+    });
 };

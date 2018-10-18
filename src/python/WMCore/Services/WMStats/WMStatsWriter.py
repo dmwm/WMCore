@@ -4,6 +4,7 @@ from json import JSONEncoder
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
+
 def monitorDocFromRequestSchema(schema):
     """
     prun and convert
@@ -54,6 +55,7 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
 
 
 class WMStatsWriter(WMStatsReader):
+
     def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
         # set the connection for local couchDB call
         WMStatsReader.__init__(self, couchURL, appName, reqdbURL, reqdbCouchApp)
@@ -76,21 +78,31 @@ class WMStatsWriter(WMStatsReader):
             self.couchDB.queue(doc)
         return self.couchDB.commit(returndocs=True)
 
+    def bulkUpdateData(self, docs, existingDocs):
+        """
+        :param docs: docs to insert or update
+        :param existingDocs: docs existing in current
+        :return:
+        """
+        if isinstance(docs, dict):
+            docs = [docs]
+        for doc in docs:
+            if doc['_id'] in existingDocs:
+                revList = existingDocs[doc['_id']].split('-')
+                # update the revision number
+                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
+            else:
+                # just send well formatted revision for the new documents which required by new_edits=False
+                doc['_rev'] = "1-123456789"
+            self.couchDB.queue(doc)
+
+        self.couchDB.commit(new_edits=False)
+        return
+
+
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
         return self.insertGenericRequest(doc)
-
-    def insertGenericRequest(self, doc):
-        result = self.couchDB.updateDocument(doc['_id'], self.couchapp,
-                                             'insertRequest',
-                                             fields={'doc': JSONEncoder().encode(doc)})
-        self.updateRequestStatus(doc['_id'], "new")
-        return result
-
-    def updateRequestStatus(self, request, status):
-        statusTime = {'status': status, 'update_time': int(time.time())}
-        return self.couchDB.updateDocument(request, self.couchapp, 'requestStatus',
-                                           fields={'request_status': JSONEncoder().encode(statusTime)})
 
     def updateTeam(self, request, team):
         return self.couchDB.updateDocument(request, self.couchapp, 'team',
@@ -126,19 +138,36 @@ class WMStatsWriter(WMStatsReader):
                                         'generalFields',
                                         fields={'general_fields': JSONEncoder().encode(doc)})
 
-    def updateAgentInfo(self, agentInfo):
+    def updateAgentInfo(self, agentInfo, propertiesToKeep=None):
         """
         replace the agentInfo document with new one.
+        :param agentInfo: dictionary for agent info
+        :param propertiesToKeep: list of properties to keep original value
+        :return: None
         """
         try:
             exist_doc = self.couchDB.document(agentInfo["_id"])
             agentInfo["_rev"] = exist_doc["_rev"]
+            if propertiesToKeep and isinstance(propertiesToKeep, list):
+                for prop in propertiesToKeep:
+                    if prop in exist_doc:
+                        agentInfo[prop] = exist_doc[prop]
+
         except CouchNotFoundError:
             # this means document is not exist so we will just insert
             pass
         finally:
             result = self.couchDB.commitOne(agentInfo)
         return result
+
+    def updateAgentInfoInPlace(self, agentURL, agentInfo):
+        """
+        :param agentInfo: dictionary for agent info
+        :return: document update status
+
+        update agentInfo in couch in place without replacing a doucment
+        """
+        return self.couchDB.updateDocument(agentURL, self.couchapp, 'agentInfo', fields=agentInfo)
 
     def updateLogArchiveLFN(self, jobNames, logArchiveLFN):
         for jobName in jobNames:

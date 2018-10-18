@@ -20,17 +20,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         """
         sets the list of functions which runs concurrently
         """
-        self.concurrentTasks = [{'func': self.cleanUpOldRequests, 'duration': (config.DataKeepDays * 24 * 60 * 60)},
-                                {'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration}]
-
-    def cleanUpOldRequests(self, config):
-        """
-        clean up wmstats data older then given days
-        """
-        self.logger.info("deleting %s hours old docs", (config.DataKeepDays * 24))
-        result = self.wmstatsDB.deleteOldDocs(config.DataKeepDays)
-        self.logger.info("%s old doc deleted", result)
-        return
+        self.concurrentTasks = [{'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration}]
 
     def cleanUpArchivedRequests(self, config):
         """
@@ -41,7 +31,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         self.logger.info("archived list %s", requestNames)
 
         for req in requestNames:
-            self.logger.info("deleting %s data", req)
+            self.logger.info("Deleting data for: %s", req)
             try:
                 result = self.wmstatsDB.deleteDocsByWorkflow(req)
             except Exception as ex:
@@ -49,5 +39,8 @@ class CleanUpTask(CherryPyPeriodicTask):
                 for line in traceback.format_exc().rstrip().split("\n"):
                     self.logger.error(" " + line)
             else:
-                self.logger.info("%s deleted", len(result))
+                if result is None:
+                    self.logger.info("there were no documents to delete.")
+                else:
+                    self.logger.info("%s docs deleted", len(result))
         return

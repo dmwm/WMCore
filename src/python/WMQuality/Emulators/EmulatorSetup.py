@@ -23,6 +23,11 @@ def setupWMAgentConfig():
 
 def _wmAgentConfig(configFile):
     config = Configuration()
+    config.section_("General")
+    config.General.logdb_name = "unittest_logdb"
+    config.General.central_logdb_url = "http://localhost/central_logdb"
+    config.General.ReqMgr2ServiceURL = "http://localhost/reqmgr2"
+
     config.section_("JobStateMachine")
     # Waring setting couchDB to None will cause the ERROR:
     # but that should be ignored, if you want to test couchDB
@@ -48,9 +53,5 @@ def _wmAgentConfig(configFile):
     config.section_("BossAir")
     config.BossAir.pluginNames = ['TestPlugin', 'SimpleCondorPlugin']
     config.BossAir.pluginDir = 'WMCore.BossAir.Plugins'
-
-    # TaskArchive setup (JobSubmitter needs this)
-    config.component_("TaskArchiver")
-    config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
     saveConfigurationFile(config, configFile)

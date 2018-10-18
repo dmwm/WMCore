@@ -1,10 +1,10 @@
 """
 Provide functions to collect data and upload data
 """
+from __future__ import division
 
 import os
 import time
-import subprocess
 import logging
 
 import WMCore
@@ -151,7 +151,7 @@ class LocalCouchDBData(object):
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'].setdefault(x['key'][1], {})
             data[x['key'][0]]['tasks'][x['key'][1]][x['key'][2]] = x['value']
-            data[x['key'][0]]['skipped'] =  True
+            data[x['key'][0]]['skipped'] = True
 
         return data
 
@@ -200,28 +200,49 @@ class WMAgentDBData(object):
         return monitoring
 
     def getHeartbeatWarning(self):
+        """
+        _getHeartbeatWarning_
+
+        Fetch the status and last hearbeat for every single component
+        and their threads.
+
+        :return: returns a dictionary with a summary of the component
+        status and a short error message, if any.
+        """
 
         results = self.componentStatusAction.execute()
         currentTime = time.time()
         agentInfo = {}
-        agentInfo['down_components'] = []
-
-        agentInfo['down_component_detail'] = []
         agentInfo['status'] = 'ok'
+        agentInfo['down_components'] = []
+        agentInfo['down_component_detail'] = []
+
         for componentInfo in results:
-            hearbeatFlag = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
-            if (componentInfo["state"] != "Error") or hearbeatFlag:
-                agentInfo['down_components'].append(componentInfo['name'])
+            noHeartbeat = (currentTime - componentInfo["last_updated"]) > componentInfo["update_threshold"]
+            if componentInfo["state"] == "Error" or noHeartbeat:
                 agentInfo['status'] = 'down'
+                agentInfo['down_components'].append(componentInfo['name'])
+                if componentInfo["state"] == "Running":
+                    componentInfo["state"] = "Timeout"
+                    lastHeartbeat = (currentTime - componentInfo["last_updated"]) // 60
+                    componentInfo["error_message"] = "Last worker thread heartbeat was %d min ago" % lastHeartbeat
                 agentInfo['down_component_detail'].append(componentInfo)
+
         return agentInfo
 
     def getComponentStatus(self, config):
+        """
+        _getComponentStatus_
+
+        Aggregates the output of getHeartbeatWarning method with the Daemon
+        checks performed.
+        :param config: agent configuration object
+        :return: returns a dictionary with a summary of the component
+        status and a short error message, if any.
+        """
+        agentInfo = self.getHeartbeatWarning()
+
         components = config.listComponents_() + config.listWebapps_()
-        agentInfo = {}
-        agentInfo['down_components'] = set()
-        agentInfo['down_component_detail'] = []
-        agentInfo['status'] = 'ok'
         # check the component status
         for component in components:
             compDir = config.section_(component).componentDir
@@ -234,19 +255,11 @@ class WMAgentDBData(object):
                 daemon = Details(daemonXml)
                 if not daemon.isAlive():
                     downFlag = True
-            if downFlag:
-                agentInfo['down_components'].add(component)
+            if downFlag and component not in agentInfo['down_components']:
                 agentInfo['status'] = 'down'
+                agentInfo['down_components'].append(component)
+                agentInfo['down_component_detail'].append(component)
 
-        # check the thread status
-        results = self.componentStatusAction.execute()
-        for componentInfo in results:
-            if componentInfo["state"] == "Error":
-                agentInfo['down_components'].add(componentInfo['name'])
-                agentInfo['status'] = 'down'
-                agentInfo['down_component_detail'].append(componentInfo)
-
-        agentInfo['down_components'] = list(agentInfo['down_components'])
         return agentInfo
 
     def getBatchJobInfo(self):
@@ -271,7 +284,6 @@ class WMAgentDBData(object):
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['total'] = item['total']
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['updated'] = item['updated']
         return finishedSubs
-
 
 def combineAnalyticsData(a, b, combineFunc=None):
     """
@@ -306,6 +318,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
+        doc['_id'] = '%s-%s' % (agentInfo['agent_url'], request)
         doc.update(agentInfo)
         doc['type'] = "agent_request"
         doc['workflow'] = request
@@ -412,7 +425,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel=None):
     data['status'] = {}
     data['sites'] = {}
 
-    if summaryLevel != None and summaryLevel == 'task':
+    if summaryLevel is not None and summaryLevel == 'task':
         data['tasks'] = {}
         for task, taskData in requestData.items():
             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
@@ -432,16 +445,6 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
 
 
-def isDrainMode(config):
-    """
-    config is loaded WMAgentCofig
-    """
-    if hasattr(config, "Tier0Feeder"):
-        return False
-    else:
-        return config.WorkQueueManager.queueParams.get('DrainMode', False)
-
-
 def initAgentInfo(config):
     agentInfo = {}
     agentInfo['agent_team'] = config.Agent.teamName
@@ -450,56 +453,3 @@ def initAgentInfo(config):
     # temporarly add port for the split test
     agentInfo['agent_url'] = "%s" % config.Agent.hostName
     return agentInfo
-
-
-def diskUse():
-    """
-    This returns the % use of each disk partition
-    """
-    diskPercent = []
-    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
-    output = df.communicate()[0].split("\n")
-    for x in output:
-        split = x.split()
-        if split != [] and split[0] != 'Filesystem':
-            diskPercent.append({'mounted': split[5], 'percent': split[4]})
-
-    return diskPercent
-
-
-def numberCouchProcess():
-    """
-    This returns the number of couch process
-    """
-    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
-    process = ps.communicate()[0].count('couchjs')
-
-    return process
-
-
-class DataUploadTime(object):
-    """
-    Cache class to storage the last time when data was uploaded
-    If data could not be updated, it storages the error message.
-    """
-    data_last_update = 0
-    data_error = ""
-
-    @staticmethod
-    def setInfo(timestamp, message):
-        """
-        Set the time and message
-        """
-        if timestamp:
-            DataUploadTime.data_last_update = timestamp
-        DataUploadTime.data_error = message
-
-    @staticmethod
-    def getInfo():
-        """
-        Returns the last time when data was uploaded and the error message (if any)
-        """
-        answer = {}
-        answer['data_last_update'] = DataUploadTime.data_last_update
-        answer['data_error'] = DataUploadTime.data_error
-        return answer

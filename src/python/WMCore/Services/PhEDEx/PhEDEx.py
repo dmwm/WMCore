@@ -2,6 +2,7 @@ import json
 import logging
 from xml.dom.minidom import parseString
 
+from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.Service import Service
 
 
@@ -13,21 +14,22 @@ class PhEDEx(Service):
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, dict=None, responseType="json", secure=True):
+    def __init__(self, httpDict=None, responseType="json", logger=None,
+                 dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
         """
         responseType will be either xml or json
         """
-        if not dict:
-            dict = {}
+        self.dbsUrl = dbsUrl
+        httpDict = httpDict or {}
         self.responseType = responseType.lower()
 
-        dict["timeout"] = 300
+        httpDict['logger'] = logger if logger else logging.getLogger()
+        httpDict["timeout"] = 300
+        if 'endpoint' not in httpDict:
+            httpDict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
+        httpDict.setdefault('cacheduration', 0)
 
-        if 'endpoint' not in dict:
-            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
-
-        dict.setdefault('cacheduration', 0)
-        Service.__init__(self, dict)
+        Service.__init__(self, httpDict)
 
     def _getResult(self, callname, clearCache=False,
                    args=None, verb="POST"):
@@ -41,13 +43,13 @@ class PhEDEx(Service):
         """
         result = ''
         # make base file name from call name.
-        file = callname.replace("/", "_")
+        ifile = callname.replace("/", "_")
         if clearCache:
-            self.clearCache(file, args, verb=verb)
+            self.clearCache(ifile, args, verb=verb)
 
-        f = self.refreshCache(file, callname, args, verb=verb)
-        result = f.read()
-        f.close()
+        fobj = self.refreshCache(ifile, callname, args, verb=verb)
+        result = fobj.read()
+        fobj.close()
 
         if self.responseType == "json":
             return json.loads(result)
@@ -59,7 +61,7 @@ class PhEDEx(Service):
         """
         _injectBlocksToPhedex_
 
-        xmlData = XMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
+        xmlData = XMLDrop.makePhEDExDrop(self.dbsUrl, datasetPath, *blockNames)
 
         node: node name for injection
         strict: throw an error if it can't insert the data exactly as
@@ -76,7 +78,7 @@ class PhEDEx(Service):
 
         return self._getResult(callname, args=args, verb="POST")
 
-    def subscribe(self, subscription, xmlData):
+    def subscribe(self, subscription):
         """
         _subscribe_
 
@@ -91,6 +93,7 @@ class PhEDEx(Service):
         for node in subscription.nodes:
             args['node'].append(node)
 
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
         args['data'] = xmlData
         args['level'] = subscription.level
         args['priority'] = subscription.priority
@@ -102,14 +105,12 @@ class PhEDEx(Service):
 
         return self._getResult(callname, args=args, verb="POST")
 
-    def delete(self, deletion, xmlData):
+    def delete(self, deletion):
         """
         _delete_
 
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
         Deletion is a PhEDEX deletion structure
         """
-
         callname = 'delete'
         args = {}
 
@@ -117,6 +118,7 @@ class PhEDEx(Service):
         for node in deletion.nodes:
             args['node'].append(node)
 
+        xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl, deletion.getDatasetsAndBlocks())
         args['data'] = xmlData
         args['level'] = deletion.level
         args['rm_subscriptions'] = deletion.subscriptions
@@ -169,6 +171,7 @@ class PhEDEx(Service):
         """
         _getReplicaInfoForFiles_
 
+        TODO: this is only used for the unittest for other API's doesn't need to have RUCIO equvalent
         Retrieve file replica information from PhEDEx.
 
         block          block name, with '*' wildcards, can be multiple (*).  required when no lfn is specified.
@@ -249,7 +252,6 @@ class PhEDEx(Service):
             if len(item.split('#')) > 1:
                 inputs[item.split('#')[0]].add(item)
             else:
-                inputs[item.split('#')[0]]
                 datasetsOnly.add(item)
 
         # Hard to query all at once in one GET call, POST not cacheable
@@ -304,73 +306,6 @@ class PhEDEx(Service):
           id         - Node id
         """
         return self._getResult("nodes", args=None)
-
-    def getBestNodeName(self, se, nodeNameMap=None):
-        """
-        _getBestNodeName_
-
-        Convert SE to Name giving back one of the following types:
-        Buffer, MSS, and Disk (in order). See 2817
-        """
-        if nodeNameMap == None:
-            nodeNameMap = self.getNodeMap()
-        nodeList = nodeNameMap['phedex']['node']
-        ret = None
-        for node in nodeList:
-            if node['se'] == unicode(se):
-                if node['kind'] == 'Buffer':
-                    return node['name']
-                elif node['kind'] == 'MSS':
-                    ret = node['name']
-                elif node['kind'] == 'Disk' and ret == None:
-                    ret = node['name']
-        return ret
-
-    def getNodeNames(self, se):
-        """
-        _getNodeName_
-
-        Convert SE to Name
-        """
-        names = []
-        output = self.getNodeMap()
-        nodeList = output['phedex']['node']
-        for node in nodeList:
-            if node['se'] == se:
-                names.append(node['name'])
-        return names
-
-    def getNodeSE(self, name):
-        """
-        _getNodeSE_
-
-        Convert Name to SE
-        """
-        output = self.getNodeMap()
-        nodeList = output['phedex']['node']
-        for node in nodeList:
-            if node['name'] == name:
-                return node['se']
-        return None
-
-    def getNodeTFC(self, node):
-        data = self._getResult('tfc', args={'node': node}, verb="GET")
-        return data
-
-    def getAuth(self, ability):
-        """
-        _getAuth_
-
-        Determine whether or not the users has permissions to perform the
-        given ability.
-        """
-        data = self._getResult('auth', args={'ability': ability}, verb="GET")
-        node = data['phedex']['auth'][0].get('node', None)
-
-        if node:
-            return True
-        else:
-            return False
 
     def getPFN(self, nodes=None, lfns=None, destination=None, protocol='srmv2', custodial='n'):
         """
@@ -471,48 +406,6 @@ class PhEDEx(Service):
                             if fileInfo['lfn'] in blockFileDict[block]:
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
-
-    def getReplicaSEForBlocks(self, **kwargs):
-        """
-        _blockreplicasSE_
-
-        Get replicas SE for given blocks
-        kwargs are options passed through to phedex
-
-        dataset        dataset name, can be multiple (*)
-        block          block name, can be multiple (*)
-        node           node name, can be multiple (*)
-        se             storage element name, can be multiple (*)
-        update_since  unix timestamp, only return replicas updated since this
-                time
-        create_since   unix timestamp, only return replicas created since this
-                time
-        complete       y or n, whether or not to require complete or incomplete
-                blocks. Default is to return either
-        subscribed     y or n, filter for subscription. default is to return either.
-        custodial      y or n. filter for custodial responsibility.  default is
-                to return either.
-        group          group name.  default is to return replicas for any group.
-
-        Returns a dictionary with se names per block
-        """
-
-        callname = 'blockreplicas'
-        response = self._getResult(callname, args=kwargs)
-
-        blockSE = dict()
-
-        blocksInfo = response['phedex']['block']
-        if not blocksInfo:
-            return {}
-
-        for blockInfo in blocksInfo:
-            se = set()
-            for replica in blockInfo['replica']:
-                se.add(replica['se'])
-            blockSE[blockInfo['name']] = list(se)
-
-        return blockSE
 
     def getReplicaPhEDExNodesForBlocks(self, **kwargs):
         """

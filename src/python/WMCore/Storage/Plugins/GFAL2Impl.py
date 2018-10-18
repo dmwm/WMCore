@@ -3,18 +3,18 @@
 _GFAL2Impl_
 Implementation of StageOutImpl interface for gfal-copy
 """
-import os
 import argparse
 import logging
+import os
 
-from WMCore.Storage.StageOutImplV2 import StageOutImplV2
-from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
+from WMCore.Storage.StageOutError import StageOutFailure
+from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 _CheckExitCodeOption = True
 
 
-class GFAL2Impl(StageOutImpl2):
+class GFAL2Impl(StageOutImplV2):
     """
     _GFAL2Impl_
     Implement interface for GFAL2 commands (gfal-copy, gfal-rm)
@@ -52,7 +52,8 @@ class GFAL2Impl(StageOutImpl2):
         if args.nochecksum:
             transferCommand = "%s -vvv %s %s %s " % (baseTransferCommand, ' '.join(unknown), fromPfn2, toPfn2)
         else:
-            transferCommand = "%s -K adler32 -vvv %s %s %s " % (baseTransferCommand, ' '.join(unknown), fromPfn2, toPfn2)
+            transferCommand = "%s -K adler32 -vvv %s %s %s " % (baseTransferCommand, ' '.join(unknown),
+                                                                fromPfn2, toPfn2)
 
         logging.info("Staging out with gfal-copy")
         logging.info("  commandline: %s", transferCommand)
@@ -62,12 +63,11 @@ class GFAL2Impl(StageOutImpl2):
             try:
                 logging.error("Transfer failed, deleting partial file")
                 self.doDelete(toPfn, None, None, None, None)
-            except:
+            except Exception:
                 pass
             raise StageOutFailure("File transfer failed")
 
         return toPfn
-
 
     def doDelete(self, pfn, pnn, command, options, protocol):
         """

@@ -8,18 +8,30 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
-import sys, os, errno, re, os.path, subprocess, socket, time
-import cherrypy, logging, thread, traceback
+import errno
+import logging
+import os
+import os.path
+import re
+import signal
+import socket
+import sys
+import thread
+import time
+import traceback
+from argparse import ArgumentParser
+from cStringIO import StringIO
+from glob import glob
+from subprocess import Popen, PIPE
+
+import cherrypy
+from cherrypy import Application
+from cherrypy._cplogging import LogManager
+from cherrypy.lib import profiler
+
+### Tools is needed for CRABServer startup: it sets up the tools attributes
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
-from cStringIO import StringIO
-from optparse import OptionParser
-from cherrypy import Application
-from cherrypy.lib import profiler
-from cherrypy._cplogging import LogManager
-from subprocess import Popen, PIPE
-from glob import glob
-from signal import *
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
@@ -29,6 +41,7 @@ COLOR_WARN = "\033[0;31m"
 
 #: Terminal controls to restore normal message colour.
 COLOR_NORMAL = "\033[0;39m"
+
 
 def sig_terminate(signum=None, frame=None):
     """Termination signal handler.
@@ -41,12 +54,14 @@ def sig_terminate(signum=None, frame=None):
     cherrypy.log("INFO: exiting server from termination signal %d" % signum, severity=logging.INFO)
     cherrypy.engine.exit()
 
+
 def sig_reload(signum=None, frame=None):
     """SIGHUP handler to restart the server.
 
     This just adds some logging compared to the CherryPy signal handler."""
     cherrypy.log("INFO: restarting server from hang-up signal %d" % signum, severity=logging.INFO)
     cherrypy.engine.restart()
+
 
 def sig_graceful(signum=None, frame=None):
     """SIGUSR1 handler to restart the server gracefully.
@@ -55,19 +70,25 @@ def sig_graceful(signum=None, frame=None):
     cherrypy.log("INFO: restarting server gracefully from signal %d" % signum, severity=logging.INFO)
     cherrypy.engine.graceful()
 
+
 class ProfiledApp(Application):
     """Wrapper CherryPy Application object which generates aggregated
     profiles for the component on each call. Note that there needs to
     be an instance of this for each mount point to be profiled."""
+
     def __init__(self, app, path):
         Application.__init__(self, app.root, app.script_name, app.config)
         self.profiler = profiler.ProfileAggregator(path)
+
     def __call__(self, env, handler):
         def gather(): return Application.__call__(self, env, handler)
+
         return self.profiler.run(gather)
+
 
 class Logger(LogManager):
     """Custom logger to record information in format we prefer."""
+
     def __init__(self, *args, **kwargs):
         self.host = socket.gethostname()
         LogManager.__init__(self, *args, **kwargs)
@@ -82,34 +103,34 @@ class Logger(LogManager):
         wfile = request.wsgi_environ.get('cherrypy.wfile', None)
         nout = (wfile and wfile.bytes_written) or outheaders.get('Content-Length', 0)
         if hasattr(request, 'start_time'):
-            delta_time = (time.time() - request.start_time)*1e6
+            delta_time = (time.time() - request.start_time) * 1e6
         else:
             delta_time = 0
-        self.access_log.log \
-          (logging.INFO,
-           ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
-            ' [data: %(i)s in %(b)s out %(T).0f us ]'
-            ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
-            ' [ref: "%(f)s" "%(a)s" ]') %
-           { 't': self.time(),
-             'H': self.host,
-             'h': remote.name or remote.ip,
-             'r': request.request_line,
-             's': response.status,
-             # request.rfile.rfile.bytes_read is a custom CMS web
-             # cherrypy patch not always available, hence the test
-             'i': (getattr(request.rfile, 'rfile', None)
-                   and getattr(request.rfile.rfile, "bytes_read", None)
-                   and request.rfile.rfile.bytes_read) or "-",
-             'b': nout or "-",
-             'T': delta_time,
-             'AS': inheaders.get("CMS-Auth-Status", "-"),
-             'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
-             'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
-             'f': inheaders.get("Referer", ""),
-             'a': inheaders.get("User-Agent", "") })
+        msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
+               ' [data: %(i)s in %(b)s out %(T).0f us ]'
+               ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
+               ' [ref: "%(f)s" "%(a)s" ]') % \
+              {'t': self.time(),
+               'H': self.host,
+               'h': remote.name or remote.ip,
+               'r': request.request_line,
+               's': response.status,
+               # request.rfile.rfile.bytes_read is a custom CMS web
+               #  cherrypy patch not always available, hence the test
+               'i': (getattr(request.rfile, 'rfile', None)
+                     and getattr(request.rfile.rfile, "bytes_read", None)
+                     and request.rfile.rfile.bytes_read) or "-",
+               'b': nout or "-",
+               'T': delta_time,
+               'AS': inheaders.get("CMS-Auth-Status", "-"),
+               'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
+               'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
+               'f': inheaders.get("Referer", ""),
+               'a': inheaders.get("User-Agent", "")}
+        self.access_log.log(logging.INFO, msg)
 
-class RESTMain:
+
+class RESTMain(object):
     """Base class for the core CherryPy main application object.
 
     The :class:`~.RESTMain` implements basic functionality of a CherryPy-based
@@ -123,6 +144,7 @@ class RESTMain:
     The main application object takes the server configuration and state
     directory as parametres. It provides methods to create full CherryPy
     serer and configure the application based on configuration description."""
+
     def __init__(self, config, statedir):
         """Prepare the server.
 
@@ -171,6 +193,7 @@ class RESTMain:
 
         # Set default server configuration.
         cherrypy.log = Logger()
+
         cpconfig.update({'server.max_request_body_size': 0})
         cpconfig.update({'server.environment': 'production'})
         cpconfig.update({'server.socket_host': '0.0.0.0'})
@@ -183,7 +206,7 @@ class RESTMain:
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))
+        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 
@@ -249,6 +272,7 @@ class RESTMain:
             cherrypy.tree.mount(app)
             self.views[name] = obj
 
+
 class RESTDaemon(RESTMain):
     """Web server object.
 
@@ -264,6 +288,7 @@ class RESTDaemon(RESTMain):
     The daemon takes the server configuration as a parametre. When the
     server is started, it creates a CherryPy server and configuration
     from the application config contents."""
+
     def __init__(self, config, statedir):
         """Initialise the daemon.
 
@@ -293,7 +318,7 @@ class RESTDaemon(RESTMain):
         except:
             return (False, pid)
 
-    def kill_daemon(self, silent = False):
+    def kill_daemon(self, silent=False):
         """Check if the daemon is running, and if so kill it.
 
         If there is no daemon running and no pid file, does nothing. If there
@@ -324,9 +349,9 @@ class RESTDaemon(RESTMain):
                 sys.stdout.flush()
 
             dead = False
-            for sig, grace in ((SIGINT, .5), (SIGINT, 1),
-                               (SIGINT, 3), (SIGINT, 5),
-                               (SIGKILL, 0)):
+            for sig, grace in ((signal.SIGINT, .5), (signal.SIGINT, 1),
+                               (signal.SIGINT, 3), (signal.SIGINT, 5),
+                               (signal.SIGKILL, 0)):
                 try:
                     if not silent:
                         sys.stdout.write(".")
@@ -341,8 +366,10 @@ class RESTDaemon(RESTMain):
                     raise
 
             if not dead:
-                try: os.killpg(pid, SIGKILL)
-                except: pass
+                try:
+                    os.killpg(pid, signal.SIGKILL)
+                except:
+                    pass
 
             if not silent:
                 sys.stdout.write("\n")
@@ -395,8 +422,10 @@ class RESTDaemon(RESTMain):
                 cherrypy.log("ERROR:   %s" % line)
 
         # Remove pid file once we are done.
-        try: os.remove(self.pidfile)
-        except: pass
+        try:
+            os.remove(self.pidfile)
+        except:
+            pass
 
         # Exit
         sys.exit((error and 1) or 0)
@@ -411,9 +440,9 @@ class RESTDaemon(RESTMain):
         while True:
             serverpid = os.fork()
             if not serverpid: break
-            signal(SIGINT, SIG_IGN)
-            signal(SIGTERM, SIG_IGN)
-            signal(SIGQUIT, SIG_IGN)
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+            signal.signal(signal.SIGQUIT, signal.SIG_IGN)
             (xpid, exitrc) = os.waitpid(serverpid, 0)
             (exitcode, exitsigno, exitcore) = (exitrc >> 8, exitrc & 127, exitrc & 128)
             retval = (exitsigno and ("signal %d" % exitsigno)) or str(exitcode)
@@ -430,8 +459,10 @@ class RESTDaemon(RESTMain):
                     pid = int(open(pidfile).readline())
                     os.remove(pidfile)
                     cherrypy.log("WATCHDOG: killing slave server %d" % pid)
-                    try: os.kill(pid, 9)
-                    except: pass
+                    try:
+                        os.kill(pid, 9)
+                    except:
+                        pass
 
         # Run. Override signal handlers after CherryPy has itself started and
         # installed its own handlers. To achieve this we need to start the
@@ -440,13 +471,15 @@ class RESTDaemon(RESTMain):
         self.setup_server()
         self.install_application()
         cherrypy.log("INFO: starting server in %s" % self.statedir)
+        cherrypy.config.update({'log.screen': bool(getattr(self.srvconfig, "log_screen", True))})
         cherrypy.engine.start()
-        signal(SIGHUP, sig_reload)
-        signal(SIGUSR1, sig_graceful)
-        signal(SIGTERM, sig_terminate)
-        signal(SIGQUIT, sig_terminate)
-        signal(SIGINT, sig_terminate)
+        signal.signal(signal.SIGHUP, sig_reload)
+        signal.signal(signal.SIGUSR1, sig_graceful)
+        signal.signal(signal.SIGTERM, sig_terminate)
+        signal.signal(signal.SIGQUIT, sig_terminate)
+        signal.signal(signal.SIGINT, sig_terminate)
         cherrypy.engine.block()
+
 
 def main():
     # Re-exec if we don't have unbuffered i/o. This is essential to get server
@@ -457,22 +490,22 @@ def main():
         os.environ['PYTHONUNBUFFERED'] = "1"
         os.execvp("python", ["python"] + sys.argv)
 
-    opt = OptionParser(usage = __doc__)
-    opt.add_option("-q", "--quiet", action="store_true", dest="quiet", default=False,
-                   help="be quiet, don't print unnecessary output")
-    opt.add_option("-v", "--verify", action="store_true", dest="verify", default=False,
-                   help="verify daemon is running, restart if not")
-    opt.add_option("-s", "--status", action="store_true", dest="status", default=False,
-                   help="check if the server monitor daemon is running")
-    opt.add_option("-k", "--kill", action="store_true", dest="kill", default=False,
-                   help="kill any existing already running daemon")
-    opt.add_option("-r", "--restart", action="store_true", dest="restart", default=False,
-                   help="restart, kill any existing running daemon first")
-    opt.add_option("-d", "--dir", dest="statedir", metavar="DIR", default=os.getcwd(),
-                   help="server state directory (default: current working directory)")
-    opt.add_option("-l", "--log", dest="logfile", metavar="DEST", default=None,
-                   help="log to DEST, via pipe if DEST begins with '|', otherwise a file")
-    opts, args = opt.parse_args()
+    opt = ArgumentParser(usage=__doc__)
+    opt.add_argument("-q", "--quiet", action="store_true", dest="quiet", default=False,
+                     help="be quiet, don't print unnecessary output")
+    opt.add_argument("-v", "--verify", action="store_true", dest="verify", default=False,
+                     help="verify daemon is running, restart if not")
+    opt.add_argument("-s", "--status", action="store_true", dest="status", default=False,
+                     help="check if the server monitor daemon is running")
+    opt.add_argument("-k", "--kill", action="store_true", dest="kill", default=False,
+                     help="kill any existing already running daemon")
+    opt.add_argument("-r", "--restart", action="store_true", dest="restart", default=False,
+                     help="restart, kill any existing running daemon first")
+    opt.add_argument("-d", "--dir", dest="statedir", metavar="DIR", default=os.getcwd(),
+                     help="server state directory (default: current working directory)")
+    opt.add_argument("-l", "--log", dest="logfile", metavar="DEST", default=None,
+                     help="log to DEST, via pipe if DEST begins with '|', otherwise a file")
+    opts, args = opt.parse_known_args()
 
     if len(args) != 1:
         print("%s: exactly one configuration file required" % sys.argv[0], file=sys.stderr)
@@ -483,8 +516,8 @@ def main():
         sys.exit(1)
 
     if not opts.statedir or \
-       not os.path.isdir(opts.statedir) or \
-       not os.access(opts.statedir, os.W_OK):
+            not os.path.isdir(opts.statedir) or \
+            not os.access(opts.statedir, os.W_OK):
         print("%s: %s: invalid state directory" % (sys.argv[0], opts.statedir), file=sys.stderr)
         sys.exit(1)
 
@@ -503,23 +536,23 @@ def main():
         if running:
             if not opts.quiet:
                 print("%s is %sRUNNING%s, PID %d" \
-                  % (app, COLOR_OK, COLOR_NORMAL, pid))
+                      % (app, COLOR_OK, COLOR_NORMAL, pid))
             sys.exit(0)
         elif pid != None:
             if not opts.quiet:
                 print("%s is %sNOT RUNNING%s, stale PID %d" \
-                  % (app, COLOR_WARN, COLOR_NORMAL, pid))
+                      % (app, COLOR_WARN, COLOR_NORMAL, pid))
             sys.exit(2)
         else:
             if not opts.quiet:
                 print("%s is %sNOT RUNNING%s" \
-                  % (app, COLOR_WARN, COLOR_NORMAL))
+                      % (app, COLOR_WARN, COLOR_NORMAL))
             sys.exit(1)
 
     elif opts.kill:
         # Stop any previously running daemon. If quiet squelch messages,
         # except removal of stale pid file cannot be silenced.
-        server.kill_daemon(silent = opts.quiet)
+        server.kill_daemon(silent=opts.quiet)
 
     else:
         # We are handling a server start, in one of many possible ways:
@@ -537,7 +570,7 @@ def main():
         # daemons is not supported because pid file would be overwritten
         # and we'd lose track of the previous daemon.
         if opts.restart:
-            server.kill_daemon(silent = opts.quiet)
+            server.kill_daemon(silent=opts.quiet)
         else:
             running, pid = server.daemon_pid()
             if running:

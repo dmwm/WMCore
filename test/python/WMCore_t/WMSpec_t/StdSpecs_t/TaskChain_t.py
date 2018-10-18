@@ -14,13 +14,10 @@ import threading
 import unittest
 from copy import deepcopy
 from hashlib import md5
-from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
@@ -136,6 +133,32 @@ REQUEST = {
     },
     "TaskChain": 4,
     "TimePerEvent": 0.5
+}
+
+REQUEST_INPUT = {
+    "AcquisitionEra": "ReleaseValidation",
+    "CMSSWVersion": "CMSSW_8_0_17",
+    "ScramArch": "slc6_amd64_gcc530",
+    "GlobalTag": "GR10_P_v4::All",
+    "ConfigCacheUrl": os.environ["COUCHURL"],
+    "CouchDBName": "taskchain_t",
+    "DashboardHost": "127.0.0.1",
+    "DashboardPort": 8884,
+    "TaskChain": 2,
+    "Task1": {
+        "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
+        "TaskName": "DIGI",
+        "ConfigCacheID": 'DigiHLT',
+        "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
+        "DeterministicPileup": True
+    },
+    "Task2": {
+        "TaskName": "RECO",
+        "InputTask": "DIGI",
+        "InputFromOutputModule": "writeRAWDIGI",
+        "ConfigCacheID": 'Reco',
+        "DataPileup": "/some/minbias-data-v1/GEN-SIM"
+    },
 }
 
 
@@ -312,10 +335,9 @@ def outputModuleList(task):
     util to return list of output module names
 
     """
-    result = []
+    result = {}
     for om in task.getOutputModulesForTask():
-        mods = om.listSections_()
-        result.extend([str(x) for x in mods])
+        result.update(om.dictionary_whole_tree_())
     return result
 
 
@@ -394,7 +416,7 @@ def buildComplexTaskChain(couchdb):
     factory = TaskChainWorkloadFactory()
     testWorkload = factory.factoryWorkloadConstruction("ComplexChain", testArguments)
 
-    return testWorkload
+    return (testWorkload, testArguments)
 
 
 class TaskChainTests(EmulatedUnitTestCase):
@@ -534,7 +556,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         testArguments.update(self.getGeneratorRequest())
         arguments = testArguments
-        print(pformat(testArguments))
         factory = TaskChainWorkloadFactory()
         # Test a malformed task chain definition
         arguments['Task4']['TransientOutputModules'].append('writeAOD')
@@ -570,7 +591,6 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # Verify the output datasets
         outputDatasets = testWorkload.listOutputDatasets()
-        print(pformat(outputDatasets))
         self.assertEqual(len(outputDatasets), 6, "Number of output datasets doesn't match")
         self.assertTrue("/RelValTTBar/ReleaseValidation-GenSimFilter-FAKE-v1/GEN-SIM" in outputDatasets)
         self.assertFalse("/RelValTTBar/ReleaseValidation-reco-FAKE-v1/RECO" in outputDatasets)
@@ -612,24 +632,27 @@ class TaskChainTests(EmulatedUnitTestCase):
         workflow.load()
 
         outputMods = outputModuleList(task)
-        ignoredOutputMods = task.getIgnoredOutputModulesForTask()
-        outputMods = set(outputMods) - set(ignoredOutputMods)
+        for ignoreMod in task.getIgnoredOutputModulesForTask():
+            outputMods.pop(ignoreMod, None)
+
         self.assertEqual(len(workflow.outputMap.keys()), len(outputMods),
                          "Error: Wrong number of WF outputs")
 
-        for outputModule in outputMods:
-            filesets = workflow.outputMap[outputModule][0]
+        for outputModule, value in outputMods.items():
+            tier = value.get('dataTier', '')
+            fset = outputModule + tier
+            filesets = workflow.outputMap[fset][0]
             merged = filesets['merged_output_fileset']
             unmerged = filesets['output_fileset']
 
             merged.loadData()
             unmerged.loadData()
 
-            mergedset = task.getPathName() + "/" + task.name() + "Merge" + outputModule + "/merged-Merged"
+            mergedset = task.getPathName() + "/" + task.name() + "Merge" + outputModule + "/merged-Merged" + tier
             if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) or outputModule in taskConf.get(
                     "TransientOutputModules", []) or outputModule in centralConf.get("IgnoredOutputModules", []):
-                mergedset = task.getPathName() + "/unmerged-" + outputModule
-            unmergedset = task.getPathName() + "/unmerged-" + outputModule
+                mergedset = task.getPathName() + "/unmerged-" + outputModule + tier
+            unmergedset = task.getPathName() + "/unmerged-" + outputModule + tier
 
             self.assertEqual(mergedset, merged.name, "Merged fileset name is wrong")
             self.assertEqual(unmergedset, unmerged.name, "Unmerged fileset name  is wrong")
@@ -642,9 +665,9 @@ class TaskChainTests(EmulatedUnitTestCase):
                 mergeWorkflow = Workflow(name=workload.name(),
                                          task=mergeTask)
                 mergeWorkflow.load()
-                self.assertTrue("Merged" in mergeWorkflow.outputMap,
+                self.assertTrue("Merged%s" % tier in mergeWorkflow.outputMap,
                                 "Merge workflow does not contain a Merged output key")
-                mergedOutputMod = mergeWorkflow.outputMap['Merged'][0]
+                mergedOutputMod = mergeWorkflow.outputMap['Merged%s' % tier][0]
                 mergedFileset = mergedOutputMod['merged_output_fileset']
                 unmergedFileset = mergedOutputMod['output_fileset']
                 mergedFileset.loadData()
@@ -678,36 +701,6 @@ class TaskChainTests(EmulatedUnitTestCase):
                     self.assertEqual("%s-%s-v%s" % (taskConf["AcquisitionEra"], taskConf["ProcessingString"],
                                                     taskConf["ProcessingVersion"]),
                                      "Wrong processed dataset for module")
-
-        # Test subscriptions
-        if taskConf.get("InputTask") is None:
-            inputFileset = "%s-%s-SomeBlock" % (workload.name(), task.name())
-        elif "Merge" in task.getPathName().split("/")[-2]:
-            inpTaskPath = task.getPathName().replace(task.name(), "")
-            inputFileset = inpTaskPath + "merged-Merged"
-        else:
-            inpTaskPath = task.getPathName().replace(task.name(), "")
-            inputFileset = inpTaskPath + "unmerged-%s" % taskConf["InputFromOutputModule"]
-        taskFileset = Fileset(name=inputFileset)
-        taskFileset.loadData()
-
-        taskSubscription = Subscription(fileset=taskFileset, workflow=workflow)
-        taskSubscription.loadData()
-
-        if taskConf.get("InputTask") is None and taskConf.get("InputDataset") is None:
-            # Production type
-            self.assertEqual(taskSubscription["type"], "Production",
-                             "Error: Wrong subscription type for processing task")
-            self.assertEqual(taskSubscription["split_algo"], taskConf["SplittingAlgo"],
-                             "Error: Wrong split algo for generation task")
-        else:
-            # Processing type
-            self.assertEqual(taskSubscription["type"], "Processing", "Wrong subscription type for task")
-            if taskSubscription["split_algo"] != "WMBSMergeBySize":
-                self.assertEqual(taskSubscription["split_algo"], taskConf['SplittingAlgo'], "Splitting algo mismatch")
-            else:
-                self.assertEqual(taskFileset.name, inpTaskPath + "unmerged-%s" % taskConf["InputFromOutputModule"],
-                                 "Subscription uses WMBSMergeBySize on a merge fileset")
 
         return
 
@@ -1063,35 +1056,10 @@ class TaskChainTests(EmulatedUnitTestCase):
         """
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
-        testArguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments = {
-            "AcquisitionEra": "ReleaseValidation",
-            "CMSSWVersion": "CMSSW_8_0_17",
-            "ScramArch": "slc6_amd64_gcc530",
-            "GlobalTag": "GR10_P_v4::All",
-            "ConfigCacheUrl": self.testInit.couchUrl,
-            "CouchDBName": self.testInit.couchDbName,
-            "DashboardHost": "127.0.0.1",
-            "DashboardPort": 8884,
-            "TaskChain": 2,
-            "Task1": {
-                "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
-                "TaskName": "DIGI",
-                "ConfigCacheID": processorDocs['DigiHLT'],
-                "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
-                "DeterministicPileup": True
-            },
-            "Task2": {
-                "TaskName": "RECO",
-                "InputTask": "DIGI",
-                "InputFromOutputModule": "writeRAWDIGI",
-                "ConfigCacheID": processorDocs['Reco'],
-                "DataPileup": "/some/minbias-data-v1/GEN-SIM"
-            },
-        }
-
-        testArguments.update(arguments)
-        arguments = testArguments
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(REQUEST_INPUT)
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
@@ -1111,6 +1079,35 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(pileupData.data.dataset, ["/some/minbias-data-v1/GEN-SIM"])
         splitting = secondTask.jobSplittingParameters()
         self.assertFalse(splitting["deterministicPileup"])
+
+    def testTaskChainIncludeParentsValidation(self):
+        """
+        Check that the test arguments pass basic validation,
+        i.e. no exception should be raised.
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(REQUEST_INPUT)
+        testArguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        testArguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+
+        factory = TaskChainWorkloadFactory()
+        testArguments['Task1']['IncludeParents'] = True
+        testArguments['Task1']['InputDataset'] = '/Cosmics/ComissioningHI-v1/RAW'
+        self.assertRaises(WMSpecFactoryException, factory.factoryWorkloadConstruction,
+                          "TestWorkload", testArguments)
+
+        testArguments['Task1']["InputDataset"] = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Task1']["IncludeParents"] = False
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        testArguments['Task1']["IncludeParents"] = False
+        testArguments['Task1']["InputDataset"] = '/Cosmics/ComissioningHI-v1/RAW'
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        return
 
     def buildMultithreadedTaskChain(self, filename):
         """
@@ -1162,7 +1159,7 @@ class TaskChainTests(EmulatedUnitTestCase):
          * job splitting and performance settings
         """
         # create a taskChain workload
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         # test workload properties
         self.assertEqual(testWorkload.getRequestType(), REQUEST['RequestType'])
@@ -1195,7 +1192,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # workqueue start policy checks
         self.assertEqual(testWorkload.startPolicy(), "MonteCarlo")
-        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 288, 'SliceType': 'NumberOfEvents',
+        self.assertDictEqual(testWorkload.startPolicyParameters(), {'SliceSize': 300, 'SliceType': 'NumberOfEvents',
                                                                     'SplittingAlgo': 'EventBased', 'SubSliceSize': 100,
                                                                     'SubSliceType': 'NumberOfEventsPerLumi',
                                                                     'blowupFactor': 3.4, 'policyName': 'MonteCarlo'})
@@ -1205,7 +1202,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         task1Splitting = splitArgs['/ComplexChain/myTask1']
         self.assertEqual(task1Splitting['type'], 'Production')
         self.assertEqual(task1Splitting['algorithm'], 'EventBased')
-        self.assertEqual(task1Splitting['events_per_job'], 288)
+        self.assertEqual(task1Splitting['events_per_job'], 300)
         self.assertEqual(task1Splitting['events_per_lumi'], 100)
         self.assertFalse(task1Splitting['deterministicPileup'])
         self.assertFalse(task1Splitting['lheInputFiles'])
@@ -1218,7 +1215,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(task2Splitting['type'], 'Processing')
         self.assertEqual(task2Splitting['algorithm'], 'EventAwareLumiBased')
         self.assertEqual(task2Splitting['events_per_job'], 320)
-        self.assertEqual(task2Splitting['max_events_per_lumi'], 20000)
         self.assertFalse(task2Splitting['deterministicPileup'])
         self.assertFalse(task2Splitting['lheInputFiles'])
         self.assertFalse(task2Splitting['trustSitelists'])
@@ -1231,7 +1227,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(task3Splitting['type'], 'Processing')
         self.assertEqual(task3Splitting['algorithm'], 'EventAwareLumiBased')
         self.assertEqual(task3Splitting['events_per_job'], 360)
-        self.assertEqual(task3Splitting['max_events_per_lumi'], 20000)
         self.assertFalse(task3Splitting['deterministicPileup'])
         self.assertFalse(task3Splitting['lheInputFiles'])
         self.assertFalse(task3Splitting['trustSitelists'])
@@ -1244,7 +1239,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertEqual(task4Splitting['type'], 'Processing')
         self.assertEqual(task4Splitting['algorithm'], 'EventAwareLumiBased')
         self.assertEqual(task4Splitting['events_per_job'], 411)
-        self.assertEqual(task4Splitting['max_events_per_lumi'], 20000)
         self.assertFalse(task4Splitting['deterministicPileup'])
         self.assertFalse(task4Splitting['lheInputFiles'])
         self.assertFalse(task4Splitting['trustSitelists'])
@@ -1283,7 +1277,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             return
 
         # Case 1: workflow creation only
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_21', 'CMSSW_8_0_22',
                                                                 'CMSSW_8_0_23', 'CMSSW_8_0_24'])
         _checkCMSSWScram(testWorkload)
@@ -1302,7 +1296,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         """
         Test the prepid settings for the workload and tasks
         """
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         self.assertEqual(testWorkload.getPrepID(), REQUEST['PrepID'])
         for t in ["myTask1", "myTask1MergeLHEoutput", "myTask1MergeRAWSIMoutput"]:
@@ -1423,7 +1417,7 @@ class TaskChainTests(EmulatedUnitTestCase):
             return
 
         # Case 1: only workload creation
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         _checkInputData(testWorkload)
 
         # Case 2: workload assignment. Only the site whitelist is supposed to change
@@ -1493,7 +1487,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         mergedMods['Task4']['MINIAODSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[4 + 5]})
 
         # create a taskChain workload
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
 
         # Case 1: only workload creation
         lfnBases = ("/store/unmerged", "/store/data")
@@ -1517,7 +1511,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.assertItemsEqual(testWorkload.listAllOutputModulesLFNBases(onlyUnmerged=False), outputLFNBases)
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName in mergedMods[t]:
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1526,7 +1520,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                 self._validateOutputModule(step.getOutputModule('Merged'), mergedMods[t][modName])
 
         # Case 3: workload creation and assignment, output dataset overriden with the same values
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"myTask1": "AcqEra_Task1", "myTask2": "AcqEra_Task2",
                                          "myTask3": "AcqEra_Task3", "myTask4": "AcqEra_Task4"},
@@ -1539,7 +1533,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWorkload.updateArguments(assignDict)
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName, value in mergedMods[t].iteritems():
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1548,7 +1542,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                 self._validateOutputModule(step.getOutputModule('Merged'), mergedMods[t][modName])
 
         # Case 4: workload creation and assignment, output dataset overriden with new values
-        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
                       "AcquisitionEra": {"myTask1": "AcqEra_TaskA", "myTask2": "AcqEra_TaskB",
                                          "myTask3": "AcqEra_TaskC", "myTask4": "AcqEra_TaskD"},
@@ -1582,7 +1576,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         lfnBases = ("/store/unmerged", "/store/mc")
         for t in ["Task1", "Task2", "Task3", "Task4"]:
             task = testWorkload.getTaskByName(REQUEST[t]['TaskName'])
-            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases, assigned=True)
+            self._checkOutputDsetsAndMods(task, outMods[t], outDsets[t], lfnBases)
             # then test the merge tasks
             for modName, value in mergedMods[t].iteritems():
                 mergeName = REQUEST[t]['TaskName'] + "Merge" + modName
@@ -1592,13 +1586,12 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         return
 
-    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases, assigned=False):
+    def _checkOutputDsetsAndMods(self, task, outMods, outDsets, lfnBases):
         """
         Validate data related to output dataset, output modules and subscriptions
         :param task: task object
         :param outMods: dictionary with the output module info for this task
         :param outDsets: dictionary with the output datasets info for this task
-        :param assigned: flag saying whether the workload was assigned or not
         """
         self.assertItemsEqual(task.getIgnoredOutputModulesForTask(), [])
 
@@ -1610,14 +1603,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         for modName in outModDict:
             self._validateOutputModule(outModDict[modName], outMods[modName])
 
-        if assigned:
-            defaultSubs = {'Priority': 'Low', 'NonCustodialSites': [], 'AutoApproveSites': [],
-                           'DeleteFromSource': False, 'NonCustodialGroup': 'DataOps', 'CustodialSites': [],
-                           'CustodialSubType': 'Replica', 'CustodialGroup': 'DataOps', 'NonCustodialSubType': 'Replica'}
-            subscription = {dset: defaultSubs for dset in outputDsets}
-        else:
-            subscription = {}
-        self.assertDictEqual(task.getSubscriptionInformation(), subscription)
+        self.assertDictEqual(task.getSubscriptionInformation(), {})
 
         # step level checks
         self.assertEqual(task.getTopStepName(), 'cmsRun1')
@@ -1666,12 +1652,12 @@ class TaskChainTests(EmulatedUnitTestCase):
                       '/TestWorkload/GenSim/LogCollectForGenSim']
         expFsets = ['FILESET_DEFINED_DURING_RUNTIME',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-logArchive',
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-writeRAWDIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI/merged-logArchive',
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI/merged-Merged',
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGI',
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-Merged',
-                    '/TestWorkload/GenSim/unmerged-writeGENSIM',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI/merged-MergedRAW-DIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGIRAW-DIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-MergedGEN-SIM',
+                    '/TestWorkload/GenSim/unmerged-writeGENSIMGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-logArchive',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-logArchive',
                     '/TestWorkload/GenSim/unmerged-logArchive']
@@ -1682,7 +1668,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (4,
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-writeRAWDIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/DigiHLT_newCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
@@ -1697,12 +1683,12 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (9,
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (7,
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGI',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI',
                     'WMBSMergeBySize',
                     'Merge'),
@@ -1712,12 +1698,12 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (3,
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-Merged',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-MergedGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new',
                     'LumiBased',
                     'Processing'),
                    (6,
-                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-Merged',
+                    '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-MergedGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref',
                     'EventBased',
                     'Processing'),
@@ -1727,12 +1713,12 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (12,
-                    '/TestWorkload/GenSim/unmerged-writeGENSIM',
+                    '/TestWorkload/GenSim/unmerged-writeGENSIMGEN-SIM',
                     '/TestWorkload/GenSim/GenSimCleanupUnmergedwriteGENSIM',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (2,
-                    '/TestWorkload/GenSim/unmerged-writeGENSIM',
+                    '/TestWorkload/GenSim/unmerged-writeGENSIMGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM',
                     'ParentlessMergeBySize',
                     'Merge')]
@@ -1753,11 +1739,9 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
@@ -1766,12 +1750,10 @@ class TaskChainTests(EmulatedUnitTestCase):
         expFsets[0] = topFilesetName
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subMaps[0] = (1, topFilesetName, '/TestWorkload/GenSim', 'EventBased', 'Production')
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
         ### create another top level subscription
@@ -1782,7 +1764,6 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
@@ -1791,12 +1772,10 @@ class TaskChainTests(EmulatedUnitTestCase):
         expFsets.append(topFilesetName)
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subMaps.append((14, topFilesetName, '/TestWorkload/GenSim', 'EventBased', 'Production'))
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
     def testInputDataFilesets(self):
@@ -1854,37 +1833,37 @@ class TaskChainTests(EmulatedUnitTestCase):
                       '/TestWorkload/DigiHLT/LogCollectForDigiHLT']
         expFsets = [
             'TestWorkload-DigiHLT-/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#block1',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-Merged',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECO',
-            '/TestWorkload/DigiHLT/unmerged-writeRAWDIGI',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-MergedRAW-DIGI',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECORECO',
+            '/TestWorkload/DigiHLT/unmerged-writeRAWDIGIRAW-DIGI',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-MergedRECO',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1/merged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1/merged-MergedRECO-AOD',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2/merged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2/merged-Merged',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1/merged-Merged',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2/merged-MergedRECO-AOD',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1RECO-AOD',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2RECO-AOD',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1/merged-MergedALCARECO',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1ALCARECO',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-MergedALCARECO',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-logArchive',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCA',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCAALCARECO',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1/merged-logArchive',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2/merged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2/merged-MergedALCARECO',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2ALCARECO',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-logArchive',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-logArchive',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD/merged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD/merged-MergedAOD',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAOD',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAODAOD',
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-logArchive',
-            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-Merged',
+            '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-MergedRAW-DEBUG-DIGI',
             '/TestWorkload/DigiHLT/unmerged-logArchive',
-            '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGI']
+            '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI']
         subMaps = [(33,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/DigiHLTwriteRAWDEBUGDIGIMergeLogCollect',
@@ -1896,7 +1875,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (3,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-Merged',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-MergedRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco',
                     'EventAwareLumiBased',
                     'Processing'),
@@ -1916,22 +1895,22 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (19,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoCleanupUnmergedwriteALCA1',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (17,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (22,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoCleanupUnmergedwriteALCA2',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (20,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -1941,7 +1920,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (16,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-Merged',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-MergedALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco',
                     'EventAwareLumiBased',
                     'Processing'),
@@ -1956,7 +1935,7 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (5,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-Merged',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-MergedRECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims',
                     'EventAwareLumiBased',
                     'Processing'),
@@ -1976,22 +1955,22 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (8,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsCleanupUnmergedwriteSkim1',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (6,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (11,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsCleanupUnmergedwriteSkim2',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (9,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -2001,32 +1980,32 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (25,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCA',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCAALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteALCA',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (15,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCA',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCAALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (28,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAOD',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAODAOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteAOD',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (26,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAOD',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAODAOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (14,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECO',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECORECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteRECO',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (4,
-                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECO',
+                    '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECORECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -2036,22 +2015,22 @@ class TaskChainTests(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (34,
-                    '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGI',
+                    '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTCleanupUnmergedwriteRAWDEBUGDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (32,
-                    '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGI',
+                    '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI',
                     'ParentlessMergeBySize',
                     'Merge'),
                    (31,
-                    '/TestWorkload/DigiHLT/unmerged-writeRAWDIGI',
+                    '/TestWorkload/DigiHLT/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (2,
-                    '/TestWorkload/DigiHLT/unmerged-writeRAWDIGI',
+                    '/TestWorkload/DigiHLT/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -2077,20 +2056,16 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
         ### create another top level subscription
@@ -2101,20 +2076,200 @@ class TaskChainTests(EmulatedUnitTestCase):
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         topFilesetName = 'TestWorkload-DigiHLT-/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#block2'
         expFsets.append(topFilesetName)
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subMaps.append((36, topFilesetName, '/TestWorkload/DigiHLT', 'EventAwareLumiBased', 'Processing'))
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
+
+
+    def testTaskParentageMapping1(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task2-ProcStr_Task2-v22/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task3-ProcStr_Task3-v23/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)
+        testArguments = testWorkload[1]
+        testWorkload = testWorkload[0]
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        parentDset = None
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = outDsets[tNum][0]
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task2-ProcStrNew_Task2-v32/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task3-ProcStrNew_Task3-v33/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = None
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = outDsets[tNum][0]
+
+        return
+
+    def testTaskParentageMapping2(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": [],
+            "Task3": [],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+        complexDocs = makeRealConfigs(self.configDatabase)
+
+        # additional request override
+        del testArguments['ConfigCacheID']
+        testArguments['DQMConfigCacheID'] = complexDocs['Harvest']
+        testArguments['Task1']['ConfigCacheID'] = complexDocs['Scratch']
+        testArguments['Task2']['ConfigCacheID'] = complexDocs['Digi']
+        testArguments['Task3']['ConfigCacheID'] = complexDocs['Aod']
+        testArguments['Task4']['ConfigCacheID'] = complexDocs['MiniAod']
+
+        testArguments['Task1']['InputDataset'] = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        testArguments['Task2']['KeepOutput'] = False
+        testArguments['Task3']['KeepOutput'] = False
+
+
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("ComplexChain", testArguments)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        parentDset = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM'
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getTaskParentageMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": [],
+            "Task3": [],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        for tNum in ["Task1", "Task2", "Task3", "Task4"]:
+            taskName = testArguments[tNum]['TaskName']
+            self.assertEqual(tNum, parentageMap[taskName]['TaskNumber'])
+            self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
+            self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
+            self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
+            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM'
+
+        return
+
+    def testTaskChainParentage(self):
+        """
+        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        """
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task2-ProcStr_Task2-v22/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task3-ProcStr_Task3-v23/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
+        }
+
+        # create a taskChain workload
+        testWorkload = buildComplexTaskChain(self.configDatabase)[0]
+        parentageMap = testWorkload.getChainParentageSimpleMapping()
+
+        parentDset = None
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            self.assertItemsEqual(parentageMap[t]['ChildDsets'], outDsets[t])
+            self.assertEqual(parentageMap[t]['ParentDset'], parentDset)
+            parentDset = outDsets[t][0]
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "AcquisitionEra": {"myTask1": "AcqEraNew_Task1", "myTask2": "AcqEraNew_Task2",
+                                         "myTask3": "AcqEraNew_Task3", "myTask4": "AcqEraNew_Task4"},
+                      "ProcessingString": {"myTask1": "ProcStrNew_Task1", "myTask2": "ProcStrNew_Task2",
+                                           "myTask3": "ProcStrNew_Task3", "myTask4": "ProcStrNew_Task4"},
+                      "ProcessingVersion": {"myTask1": 31, "myTask2": 32, "myTask3": 33, "myTask4": 34},
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged"
+                      }
+        testWorkload.updateArguments(assignDict)
+        parentageMap = testWorkload.getChainParentageSimpleMapping()
+
+        outDsets = {
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
+                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task2": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task2-ProcStrNew_Task2-v32/GEN-SIM-RAW'],
+            "Task3": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task3-ProcStrNew_Task3-v33/AODSIM'],
+            "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
+        }
+        parentDset = None
+        for t in ["Task1", "Task2", "Task3", "Task4"]:
+            self.assertItemsEqual(parentageMap[t]['ChildDsets'], outDsets[t])
+            self.assertEqual(parentageMap[t]['ParentDset'], parentDset)
+            parentDset = outDsets[t][0]
+
+        return
 
 
 if __name__ == '__main__':

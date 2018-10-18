@@ -17,23 +17,12 @@ __all__ = []
 # //
 #//
 
-from . import SRMImpl
-from . import DCCPFNALImpl
-from . import FNALImpl
-from . import DCCPGenericImpl
-from . import RFCPImpl
-from . import RFCP1Impl
-from . import RFCP2Impl
-from . import RFCPCERNImpl
-from . import RFCPRALImpl
-from . import PYDCCPImpl
-from . import SRMV2Impl
-from . import XRDCPImpl
-from . import CPImpl
-from . import LCGImpl
-from . import HadoopImpl
-from . import UnittestImpl
-from . import VandyImpl
-from . import TestFallbackToOldBackend
-from . import GFAL2Impl
-from . import AWSS3Impl
+from WMCore.Storage.Backends import FNALImpl
+from WMCore.Storage.Backends import SRMV2Impl
+from WMCore.Storage.Backends import LCGImpl
+from WMCore.Storage.Backends import XRDCPImpl
+from WMCore.Storage.Backends import VandyImpl
+from WMCore.Storage.Backends import GFAL2Impl
+from WMCore.Storage.Backends import AWSS3Impl
+from WMCore.Storage.Backends import UnittestImpl
+from WMCore.Storage.Backends import TestFallbackToOldBackend

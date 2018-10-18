@@ -4,9 +4,8 @@
         "ProcessingString": "ProcessingString-OVERRIDE-ME",
         "Dashboard": "Dashboard-OVERRIDE-ME",
         "GracePeriod": 300, 
-        "MaxRSS": 2300000, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "SiteBlacklist": [], 
         "SiteWhitelist": [
             "SiteWhitelist-OVERRIDE-ME"
@@ -19,8 +18,8 @@
         "AcquisitionEra": "Integ_Test", 
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["No input data; PU in Step2; Automatic splitting 200 EpJ, 2 LpJ; List gcc530 at top level; Step1 with 7_1_25_patch2/gcc481",
-                     "Step2 with 8_0_21/gcc530; Step3 with 8_0_21/gcc530; PrepID set at top level and in each Step"],
+        "Comments": ["No input data; PU in Step2; Given 160EpJ and 100EpL, tweak EpJ to 200, so2 LpJ; List gcc530 top level;",
+                     "Step1 7_1_25_patch2/gcc481; Step2 8_0_21/gcc530; Step3 8_0_21/gcc530; PrepID set top level and each Step"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 
@@ -40,7 +39,8 @@
         "SizePerEvent": 250, 
         "Step1": {
             "CMSSWVersion": "CMSSW_7_1_25_patch2", 
-            "ConfigCacheID": "526ca0745cd309b7cfef9f23b3d43acb", 
+            "ConfigCacheID": "526ca0745cd309b7cfef9f23b3d43acb",
+            "EventsPerJob": 160,
             "EventsPerLumi": 100, 
             "GlobalTag": "MCRUN2_71_V1::All", 
             "PrepID": "TEST-Step1-RunIISummer15wmLHEGS-00744", 

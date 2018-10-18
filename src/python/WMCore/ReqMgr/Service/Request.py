@@ -16,13 +16,14 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, 
-                                       REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
+from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
+                                                     REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-        validate_clone_create_args, loadRequestSchema, validateOutputDatasets)
+                                            validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+
 
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
@@ -69,6 +70,8 @@ class Request(RESTEntity):
             request_args = json.loads(data)
         else:
             request_args = {}
+        cherrypy.log('Updating request "%s" with these user-provided args: %s' % (requestName, request_args))
+
         # In case key args are also passed and request body also exists.
         # If the request.body is dictionally update the key args value as well
         if isinstance(request_args, dict):
@@ -161,7 +164,7 @@ class Request(RESTEntity):
 
             if method == 'PUT':
                 args_length = len(param.args)
-                
+
                 if args_length == 1:
                     requestName = param.args[0]
                     param.args.pop()
@@ -372,38 +375,46 @@ class Request(RESTEntity):
             childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
         return childrenRequestNames
 
-    def _handleNoStatusUpdate(self, workload, request_args):
+    def _handleNoStatusUpdate(self, workload, request_args, dn):
         """
-        only few values can be updated without state transition involved
-        currently 'RequestPriority' and 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'
+        For no-status update, we only support the following parameters:
+         1. RequestPriority
+         2. Global workqueue statistics, while acquiring a workflow
         """
         if 'RequestPriority' in request_args:
+            # Yes, we completely ignore any other arguments posted by the user (web UI case)
+            request_args = {'RequestPriority': request_args['RequestPriority']}
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
-            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
+            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-        elif "total_jobs" in request_args:
-            # only GQ update this stats
-            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
+            cherrypy.log('Updating priority for request "%s" to %s' % (workload.name(), request_args['RequestPriority']))
+        elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         else:
-            raise InvalidSpecParameterValue("can't update value without state transition: %s" % request_args)
+            msg = "There are invalid arguments for no-status update: %s" % request_args
+            raise InvalidSpecParameterValue(msg)
 
         return report
 
     def _handleAssignmentApprovedTransition(self, workload, request_args, dn):
+        """
+        Allows only two arguments: RequestStatus and RequestPriority
+        """
+        if "RequestPriority" not in request_args:
+            msg = "There are invalid arguments for assignment-approved transition: %s" % request_args
+            raise InvalidSpecParameterValue(msg)
+
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
 
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['SoftTimeout'] = int(request_args['SoftTimeout'])
-            request_args['GracePeriod'] = int(request_args['GracePeriod'])
             request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
 
         # Only allow extra value update for assigned status
-        cherrypy.log("INFO: Assign request %s, input args: %s ..." % (workload.name(), request_args))
+        cherrypy.log("Assign request %s, input args: %s ..." % (workload.name(), request_args))
         try:
             workload.updateArguments(request_args)
         except Exception as ex:
@@ -417,8 +428,12 @@ class Request(RESTEntity):
 
         # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area)
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
-        # legacy update schema to support ops script
-        loadRequestSchema(workload, request_args)
+
+        # Add parentage relation for step chain, task chain:
+        chainMap = workload.getChainParentageSimpleMapping()
+        if chainMap:
+            request_args["ChainParentageMap"] = chainMap
+
         # save the spec first before update the reqmgr request status to prevent race condition
         # when workflow is pulled to GQ before site white list is updated
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
@@ -428,7 +443,7 @@ class Request(RESTEntity):
 
     def _handleOnlyStateTransition(self, workload, request_args, dn):
         """
-        It handles only the state transition, ignoring all the other arguments.
+        It handles only the state transition.
         Special handling needed if a request is aborted or force completed.
         """
         req_status = request_args["RequestStatus"]
@@ -442,6 +457,7 @@ class Request(RESTEntity):
             for req_name in cascade_list:
                 self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
 
+        cherrypy.log('Updating request status for request "%s" to %s. Cascade mode: %s' % (workload.name(), req_status, cascade))
         # then update original workflow status in couchdb
         report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         return report
@@ -450,10 +466,9 @@ class Request(RESTEntity):
         dn = cherrypy.request.user.get("dn", "unknown")
 
         if "RequestStatus" not in request_args:
-            report = self._handleNoStatusUpdate(workload, request_args)
+            report = self._handleNoStatusUpdate(workload, request_args, dn)
         else:
             req_status = request_args["RequestStatus"]
-            # assignment-approved only allow Priority update
             if len(request_args) == 2 and req_status == "assignment-approved":
                 report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
             elif len(request_args) > 1 and req_status == "assigned":
@@ -461,8 +476,8 @@ class Request(RESTEntity):
             elif len(request_args) == 1 or (len(request_args) == 2 and "cascade" in request_args):
                 report = self._handleOnlyStateTransition(workload, request_args, dn)
             else:
-                raise InvalidSpecParameterValue(
-                    "can't update value except transition to assigned status: %s" % request_args)
+                msg = "There are invalid arguments with this status transition: %s" % request_args
+                raise InvalidSpecParameterValue(msg)
 
         if report == 'OK':
             return {workload.name(): "OK"}
@@ -508,8 +523,6 @@ class Request(RESTEntity):
         # Add initial priority only for the creation of the request
         request_args['InitialPriority'] = request_args["RequestPriority"]
 
-        # TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
-        request_args['ReqMgr2Only'] = True
         return
 
     @restcall(formats=[('application/json', JSONFormat())])
@@ -541,10 +554,7 @@ class Request(RESTEntity):
         for workload, request_args in workload_pair_list:
             self._update_additional_request_args(workload, request_args)
 
-            # legacy update schema to support ops script
-            loadRequestSchema(workload, request_args)
-
-            cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
+            cherrypy.log("Create request, input args: %s ..." % request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)
             out.append({'request': workload.name()})

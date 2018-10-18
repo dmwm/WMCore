@@ -9,12 +9,13 @@ Created on Jun 13, 2013
 @author: dballest
 """
 import json
-import logging
 import re
+import inspect
 
-from Utils.Utilities import makeList, strToBool
+from Utils.Utilities import makeList
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 
 
 def makeLumiList(lumiDict):
@@ -33,7 +34,7 @@ def parsePileupConfig(mcPileup, dataPileup):
 
     If the pileup config is defined as MCPileup and DataPileup
     then make sure we get the usual dictionary as
-    PileupConfig : {'mc' : '/mc/procds/tier', 'data': '/minbias/procds/tier'}
+    PileupConfig : {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
     """
     pileUpConfig = {}
     if mcPileup is not None:
@@ -49,14 +50,16 @@ def _validateArgument(argument, value, argumentDefinition):
     """
     validNull = argumentDefinition["null"]
     if not validNull and value is None:
-        raise WMSpecFactoryException("Argument %s can't be None" % argument)
+        raise WMSpecFactoryException("Argument '%s' cannot be None" % argument)
     elif value is None:
         return value
 
     try:
         value = argumentDefinition["type"](value)
     except Exception:
-        raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
+        msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, value)
+        msg += "%s. It must be %s" % (type(value), argumentDefinition["type"])
+        raise WMSpecFactoryException(msg)
 
     _validateArgFunction(argument, value, argumentDefinition["validate"])
     return value
@@ -64,24 +67,18 @@ def _validateArgument(argument, value, argumentDefinition):
 
 def _validateArgumentDict(argument, argValue, argumentDefinition):
     """
-    Validate arguments that carry a dict value type
+    Validate only the basic structure of dict arguments, we anyways
+    don't have the definition of the internal arguments.
     """
-    validNull = argumentDefinition["null"]
-    if not validNull and None in argValue.values():
-        raise WMSpecFactoryException("Argument %s can't be None" % argument)
-    elif all(val is None for val in argValue.values()):
-        return argValue
+    # make sure we're not going to cast a dict to string and let that unnoticed
+    if isinstance(argumentDefinition["type"], type(dict)) and not isinstance(argValue, dict):
+        msg = "Argument '%s' with value %r, has an incorrect data type: " % (argument, argValue)
+        msg += "%s. It must be %s" % (type(argValue), argumentDefinition["type"])
+        raise WMSpecFactoryException(msg)
 
-    for val in argValue.values():
-        try:
-            # sigh.. LumiList has a peculiar type validation.
-            # Task/Step is validated later in the schema
-            if argument in ['LumiList', 'Step1', 'Task1']:
-                val = argumentDefinition["type"](argValue)
-                break
-            val = argumentDefinition["type"](val)
-        except Exception:
-            raise WMSpecFactoryException("Argument: %s, value: %s type is incorrect in schema." % (argument, val))
+    # still an exception, make sure it has the correct format
+    if argument == "LumiList":
+        argValue = argumentDefinition["type"](argValue)
 
     _validateArgFunction(argument, argValue, argumentDefinition["validate"])
     return argValue
@@ -94,12 +91,15 @@ def _validateArgFunction(argument, value, valFunction):
     if valFunction:
         try:
             if not valFunction(value):
-                raise WMSpecFactoryException(
-                    "Argument %s, value: %s doesn't pass the validation function." % (argument, value))
+                msg = "Argument '%s' with value %r, doesn't pass the validate function." % (argument, value)
+                msg += "\nIt's definition is:\n%s" % inspect.getsource(valFunction)
+                raise WMSpecFactoryException(msg)
+        except WMSpecFactoryException:
+            # just re-raise it to keep the error message clear
+            raise
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
-            logging.error(str(ex))
-            raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
+            raise WMSpecFactoryException(str(ex))
     return
 
 
@@ -111,7 +111,7 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     for arg, argDef in argumentDefinition.iteritems():
         optional = argDef.get(optionKey, True)
         if not optional and arg not in arguments:
-            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argDef)
+            msg = "Argument '%s' is mandatory! Its definition is:\n%s" % (arg, inspect.getsource(argDef))
             raise WMSpecFactoryException(msg)
         # specific case when user GUI returns empty string for optional arguments
         elif arg not in arguments:
@@ -132,7 +132,7 @@ def validateInputDatasSetAndParentFlag(arguments):
     inputdataset = _getChainKey(arguments, "InputDataset")
     mcpileup = _getChainKey(arguments, "MCPileup")
     datapileup = _getChainKey(arguments, "DataPileup")
-    includeParents = strToBool(arguments.get("IncludeParents", False))
+    includeParents = _getChainKey(arguments, "IncludeParents")
     dbsURL = arguments.get("DbsUrl")
 
     if includeParents and not inputdataset:
@@ -184,12 +184,12 @@ def _getChainKey(arguments, keyName):
     value regardless of the request type.
     """
     if "TaskChain" in arguments:
-        inputDataset = arguments['Task1'].get(keyName)
+        value = arguments['Task1'].get(keyName)
     elif "StepChain" in arguments:
-        inputDataset = arguments['Step1'].get(keyName)
+        value = arguments['Step1'].get(keyName)
     else:
-        inputDataset = arguments.get(keyName)
-    return inputDataset
+        value = arguments.get(keyName)
+    return value
 
 
 def validatePhEDExSubscription(arguments):
@@ -202,7 +202,7 @@ def validatePhEDExSubscription(arguments):
     for site in arguments.get("AutoApproveSubscriptionSites", []):
         if site.endswith('_MSS'):
             raise WMSpecFactoryException("Auto-approval to MSS endpoint is not allowed: %s" % site)
-    if arguments.get("SubscriptionPriority", "Low") not in ["Low", "Normal", "High"]:
+    if arguments.get("SubscriptionPriority", "Low").lower() not in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES:
         raise WMSpecFactoryException("Invalid subscription priority: %s" % arguments["SubscriptionPriority"])
     if arguments.get("CustodialSubType", "Replica") not in ["Move", "Replica"]:
         raise WMSpecFactoryException("Invalid custodial subscription type: %s" % arguments["CustodialSubType"])

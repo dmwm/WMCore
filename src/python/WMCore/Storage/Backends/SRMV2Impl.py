@@ -6,15 +6,16 @@ Implementation of StageOutImpl interface for SRM Version 2
 
 """
 from __future__ import print_function
-import os, re
-from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutError import StageOutError
 
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
+import os
+import re
+
+from WMCore.Storage.Execute import runCommandWithOutput
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutError import StageOutError
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
 _CheckExitCodeOption = True
-
 
 
 class SRMV2Impl(StageOutImpl):
@@ -24,12 +25,11 @@ class SRMV2Impl(StageOutImpl):
     Implement interface for srmcp v2 command
 
     """
-
-    run = staticmethod(runCommand)
+    # also used in unittests
+    run = staticmethod(runCommandWithOutput)
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
-
 
     def createSourceName(self, protocol, pfn):
         """
@@ -44,7 +44,6 @@ class SRMV2Impl(StageOutImpl):
             return "file:///%s" % os.path.abspath(pfn)
         else:
             return pfn
-
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -62,21 +61,22 @@ class SRMV2Impl(StageOutImpl):
             return
 
         mkdircommand = "srmmkdir -retry_num=0 "
-        checkdircmd="srmls -recursion_depth=0 -retry_num=1 "
+        checkdircmd = "srmls -recursion_depth=0 -retry_num=1 "
 
         #  // Loop from top level checking existence stop when directory exists
         # // assume first 4 slashes are from srm://host:8443/srm/managerv2?SFN=
-        dirs = ["/".join(targetdir.split("/")[0:6+i]) \
-                                        for i in range(targetdir.count("/")-4)]
-        dirsToCheck = dirs[:]; dirsToCheck.reverse()
+        dirs = ["/".join(targetdir.split("/")[0:6 + i]) \
+                for i in range(targetdir.count("/") - 4)]
+        dirsToCheck = dirs[:];
+        dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
         for count, folder in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
             try:
                 exitCode, output = self.run(checkdircmd + folder)
-                levelToCreateFrom = count # create dirs from here (at least)
-                if exitCode: # did srmls fail to execute properly?
-                    raise RuntimeError("Error checking directory existence, %s" % str(output))
-                if not output.count('SRM_FAILURE'): # any other codes?
+                levelToCreateFrom = count  # create dirs from here (at least)
+                if exitCode:  # did srmls fail to execute properly?
+                    raise RuntimeError("ERROR checking directory existence, %s" % str(output))
+                if not output.count('SRM_FAILURE'):  # any other codes?
                     break
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
@@ -84,23 +84,21 @@ class SRMV2Impl(StageOutImpl):
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
 
-        #  // Create needed directory levels from end of previous loop
+        # // Create needed directory levels from end of previous loop
         # //  to end of directory structure
         for folder in dirs[levelToCreateFrom:]:
             print("Create directory: %s" % folder)
             try:
                 exitCode, output = self.run(mkdircommand + folder)
                 if exitCode:
-                    raise RuntimeError("Error creating directory, %s" % str(output))
+                    raise RuntimeError("ERROR creating directory, %s" % str(output))
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircommand + folder
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
 
     def createRemoveFileCommand(self, pfn):
         """
@@ -113,8 +111,7 @@ class SRMV2Impl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -136,18 +133,18 @@ class SRMV2Impl(StageOutImpl):
         result += " %s" % targetPFN
         result += " 2>&1 | tee srm.output.$$ \n"
 
-
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=`cat $REPORT_FILE | cut -f3 -d" "`
             echo "srmcp exit status: $EXIT_STATUS"
             if [[ "X$EXIT_STATUS" == "X" ]] && [[ `grep -c SRM_INVALID_PATH srm.output.$$` != 0 ]]; then
-                exit 1 # dir does not eixst
+                echo "ERROR: srmcp failed with SRM_INVALID_PATH"
+                exit 1   # dir does not exist
             elif [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero srmcp Exit status!!!"
+               echo "ERROR: srmcp exited with $EXIT_STATUS"
                echo "Cleaning up failed file:"
-                %s
-               exit 60311
+               %s
+               exit $EXIT_STATUS
             fi
 
             """ % self.createRemoveFileCommand(targetPFN)
@@ -160,7 +157,7 @@ class SRMV2Impl(StageOutImpl):
         SFN = '?SFN='
         sfn_idx = remotePFN.find(SFN)
         if sfn_idx >= 0:
-            remotePath = remotePFN[sfn_idx+5:]
+            remotePath = remotePFN[sfn_idx + 5:]
         r = re.compile('srm://([A-Za-z\-\.0-9]*)(:[0-9]*)?(/.*)')
         m = r.match(remotePFN)
         if not m:
@@ -175,23 +172,22 @@ class SRMV2Impl(StageOutImpl):
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
 
         metadataCheck = \
-        """
-        SRM_OUTPUT=`srmls -recursion_depth=0 -retry_num=1 %s 2>/dev/null`
-        SRM_SIZE=`echo $SRM_OUTPUT | grep '%s' | grep -v '%s' | awk '{print $1;}'`
-        echo "SRM Size is $SRM_SIZE"
-        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-           exit 0
-        else
-           echo $SRM_OUTPUT
-           echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
-           %s
-           exit 60311
-        fi
-        """ % (remotePFN, remotePath, remoteHost, self.createRemoveFileCommand(targetPFN))
+            """
+            SRM_OUTPUT=`srmls -recursion_depth=0 -retry_num=1 %s 2>/dev/null`
+            SRM_SIZE=`echo $SRM_OUTPUT | grep '%s' | grep -v '%s' | awk '{print $1;}'`
+            echo "SRM Size is $SRM_SIZE"
+            if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+               exit 0
+            else
+               echo $SRM_OUTPUT
+               echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+               %s
+               exit 60311
+            fi
+            """ % (remotePFN, remotePath, remoteHost, self.createRemoveFileCommand(targetPFN))
         result += metadataCheck
 
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

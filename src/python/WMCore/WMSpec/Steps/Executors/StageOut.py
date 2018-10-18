@@ -7,22 +7,20 @@ Implementation of an Executor for a StageOut step
 """
 from __future__ import print_function
 
-import sys
+import logging
 import os
 import os.path
-import logging
 import signal
-
-from WMCore.WMSpec.Steps.Executor           import Executor
-from WMCore.FwkJobReport.Report             import Report
-
-from WMCore.Storage.StageOutMgr import StageOutMgr
-from WMCore.Storage.FileManager import StageOutMgr as FMStageOutMgr
-
-from WMCore.Lexicon                  import lfn     as lfnRegEx
-from WMCore.Lexicon                  import userLfn as userLfnRegEx
+import sys
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
+from WMCore.FwkJobReport.Report import Report
+from WMCore.Lexicon import lfn     as lfnRegEx
+from WMCore.Lexicon import userLfn as userLfnRegEx
+from WMCore.Storage.FileManager import StageOutMgr as FMStageOutMgr
+from WMCore.Storage.StageOutMgr import StageOutMgr
+from WMCore.WMSpec.Steps.Executor import Executor
+
 
 class StageOut(Executor):
     """
@@ -32,7 +30,7 @@ class StageOut(Executor):
 
     """
 
-    def pre(self, emulator = None):
+    def pre(self, emulator=None):
         """
         _pre_
 
@@ -40,26 +38,22 @@ class StageOut(Executor):
 
         """
 
-        #Are we using an emulator?
-        if (emulator != None):
-            return emulator.emulatePre( self.step )
+        # Are we using an emulator?
+        if emulator is not None:
+            return emulator.emulatePre(self.step)
 
-
-
-        print("Steps.Executors.StageOut.pre called")
+        logging.info("Steps.Executors.StageOut.pre called")
         return None
 
-
-    def execute(self, emulator = None):
+    def execute(self, emulator=None):
         """
         _execute_
 
 
         """
-        #Are we using emulators again?
-        if (emulator != None):
-            return emulator.emulate( self.step, self.job )
-
+        # Are we using emulators again?
+        if emulator is not None:
+            return emulator.emulate(self.step, self.job)
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -76,18 +70,17 @@ class StageOut(Executor):
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
         if getattr(self.step, 'newStageout', False) or \
-            ('newStageOut' in overrides and overrides.get('newStageOut')):
+                ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
-
 
         stageOutCall = {}
         if "command" in overrides and "option" in overrides \
-               and "phedex-node" in overrides \
-               and"lfn-prefix" in overrides:
+                and "phedex-node" in overrides \
+                and "lfn-prefix" in overrides:
             logging.critical('using override in StageOut')
-            stageOutCall['command']    = overrides.get('command')
-            stageOutCall['option']     = overrides.get('option')
-            stageOutCall['phedex-node']= overrides.get('phedex-node')
+            stageOutCall['command'] = overrides.get('command')
+            stageOutCall['option'] = overrides.get('option')
+            stageOutCall['phedex-node'] = overrides.get('phedex-node')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real
@@ -96,13 +89,12 @@ class StageOut(Executor):
             # old style
             manager = StageOutMgr(**stageOutCall)
             manager.numberOfRetries = self.step.retryCount
-            manager.retryPauseTime  = self.step.retryDelay
+            manager.retryPauseTime = self.step.retryDelay
         else:
             # new style
             logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
-            print("STAGEOUT IS USING NEW STAGEOUT CODE")
-            manager = FMStageOutMgr(retryPauseTime  = self.step.retryDelay,
-                                    numberOfRetries = self.step.retryCount,
+            manager = FMStageOutMgr(retryPauseTime=self.step.retryDelay,
+                                    numberOfRetries=self.step.retryCount,
                                     **stageOutCall)
 
         # We need to find a list of steps in our task
@@ -113,7 +105,7 @@ class StageOut(Executor):
 
         for step in self.stepSpace.taskSpace.stepSpaces():
             if step == self.stepName:
-                #Don't try to parse your own report; it's not there yet
+                # Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
             logging.info("Beginning report processing for step %s", step)
@@ -134,11 +126,11 @@ class StageOut(Executor):
             # Have the results of that particular step in it,
             # So getting all the files should get ONLY the files
             # for that step; or so I hope
-            files = stepReport.getAllFileRefsFromStep(step = step)
+            files = stepReport.getAllFileRefsFromStep(step=step)
             for fileName in files:
 
                 # make sure the file information is consistent
-                if hasattr(fileName, 'pfn') and ( not hasattr(fileName, 'lfn') or not hasattr(fileName, 'module_label') ):
+                if hasattr(fileName, 'pfn') and (not hasattr(fileName, 'lfn') or not hasattr(fileName, 'module_label')):
                     msg = "Not a valid file: %s" % fileName
                     logging.error(msg)
                     continue
@@ -149,18 +141,22 @@ class StageOut(Executor):
                 #  - are we over the size threshold
                 #  - are we over the event threshold ?
                 straightToMerge = False
-                if not getattr(fileName, 'merged', False) and hasattr(self.step.output, 'minMergeSize'):
-                    if fileName.module_label not in getattr(self.step.output, 'forceUnmergedOutputs', []):
-                        if getattr(fileName, 'size', 0) >= self.step.output.minMergeSize:
+                if not getattr(fileName, 'merged', False):
+                    if hasattr(fileName, 'dataset') and fileName.dataset.get('dataTier', "") in ["NANOAOD",
+                                                                                                 "NANOAODSIM"]:
+                        logging.info("NANOAOD and NANOAODSIM files never go straight to merge!")
+                    elif fileName.module_label not in getattr(self.step.output, 'forceUnmergedOutputs', []):
+                        if hasattr(self.step.output, 'minMergeSize') and getattr(fileName, 'size',
+                                                                                 0) >= self.step.output.minMergeSize:
+                            logging.info("Sending %s straight to merge due to minMergeSize", fileName.lfn)
                             straightToMerge = True
-                        if getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxsize):
+                        elif getattr(fileName, 'events', 0) >= getattr(self.step.output, 'maxMergeEvents', sys.maxsize):
+                            logging.info("Sending %s straight to merge due to maxMergeEvents", fileName.lfn)
                             straightToMerge = True
 
                 if straightToMerge:
-
                     try:
-                        fileName = self.handleLFNForMerge(mergefile = fileName,
-                                                          step = step)
+                        fileName = self.handleLFNForMerge(mergefile=fileName, step=step)
                     except Exception as ex:
                         logging.info("minMergeSize: %s", getattr(self.step.output, 'minMergeSize', None))
                         logging.info("maxMergeEvents: %s", getattr(self.step.output, 'maxMergeEvents', None))
@@ -172,7 +168,7 @@ class StageOut(Executor):
                 # Save the input PFN in case we need it
                 # Undecided whether to move fileName.pfn to the output PFN
                 fileName.InputPFN = fileName.pfn
-                lfn = getattr(fileName, 'lfn')
+                lfn = fileName.lfn
                 fileSource = getattr(fileName, 'Source', None)
                 if fileSource in ['TFileService', 'UserDefined']:
                     userLfnRegEx(lfn)
@@ -181,31 +177,29 @@ class StageOut(Executor):
 
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(fileName, 'pfn'),
-                                   'PNN' : None,
+                                   'PNN': None,
                                    'StageOutCommand': None,
-                                   'Checksums' : getattr(fileName, 'checksums', None)}
+                                   'Checksums': getattr(fileName, 'checksums', None)}
 
                 signal.signal(signal.SIGALRM, alarmHandler)
                 signal.alarm(waitTime)
                 try:
                     manager(fileForTransfer)
-                    #Afterwards, the file should have updated info.
+                    # Afterwards, the file should have updated info.
                     filesTransferred.append(fileForTransfer)
                     fileName.StageOutCommand = fileForTransfer['StageOutCommand']
-                    fileName.location        = fileForTransfer['PNN']
-                    fileName.OutputPFN       = fileForTransfer['PFN']
+                    fileName.location = fileForTransfer['PNN']
+                    fileName.OutputPFN = fileForTransfer['PFN']
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60403, "StageOutTimeout", msg)
-                    stepReport.setStepStatus(self.stepName, 1)
                     # well, if it fails for one file, it fails for the whole job...
                     break
                 except Exception as ex:
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307, "StageOutFailure", str(ex))
-                    stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist(reportLocation)
                     raise
 
@@ -214,27 +208,26 @@ class StageOut(Executor):
             # Am DONE with report. Persist it
             stepReport.persist(reportLocation)
 
-        #Done with all steps, and should have a list of
-        #stagedOut files in fileForTransfer
+        # Done with all steps, and should have a list of
+        # stagedOut files in fileForTransfer
         logging.info("Transferred %i files", len(filesTransferred))
         return
 
-
-    def post(self, emulator = None):
+    def post(self, emulator=None):
         """
         _post_
 
         Post execution checkpointing
 
         """
-        #Another emulator check
-        if (emulator != None):
-            return emulator.emulatePost( self.step )
+        # Another emulator check
+        if emulator is not None:
+            return emulator.emulatePost(self.step)
 
         for step in self.stepSpace.taskSpace.stepSpaces():
 
             if step == self.stepName:
-                #Don't try to parse your own report; it's not there yet
+                # Don't try to parse your own report; it's not there yet
                 continue
 
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
@@ -253,7 +246,7 @@ class StageOut(Executor):
             if not stepReport.stepSuccessful(step):
                 continue
 
-            files = stepReport.getAllFileRefsFromStep(step = step)
+            files = stepReport.getAllFileRefsFromStep(step=step)
             for fileInfo in files:
                 if hasattr(fileInfo, 'lfn') and hasattr(fileInfo, 'location') and hasattr(fileInfo, 'guid'):
                     fileInfo.user_dn = getattr(self.step, "userDN", None)
@@ -263,9 +256,8 @@ class StageOut(Executor):
 
             stepReport.persist(reportLocation)
 
-        print("Steps.Executors.StageOut.post called")
+        logging.info("Steps.Executors.StageOut.post called")
         return None
-
 
     # Accessory methods
     def handleLFNForMerge(self, mergefile, step):
@@ -288,8 +280,8 @@ class StageOut(Executor):
         if outputName.lower() == "merged":
             # Don't skip merge for merged files!
             return mergefile
-        stepHelper = self.task.getStep(stepName = step)
-        outputMod  = stepHelper.getOutputModule(moduleName = outputName)
+        stepHelper = self.task.getStep(stepName=step)
+        outputMod = stepHelper.getOutputModule(moduleName=outputName)
 
         if not outputMod:
             # Then we couldn't get the output module
@@ -297,7 +289,6 @@ class StageOut(Executor):
                           + "due to no output module %s in WMStep" \
                           % (outputName))
             return mergefile
-
 
         # Okay, now we should have the output Module
         # Now we just need a second LFN

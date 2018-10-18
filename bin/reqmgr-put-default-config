@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+"""
+Helper script called via manage script used to update the default configuration
+documents in the ReqMgr Auxiliary DB.
+
+It's supposed to be called at every ReqMgr2 deployment, such that the splitting,
+permissions, etc are always up-to-date
+"""
+from __future__ import print_function, division
+
+import httplib
+import json
+import os
+import sys
+
+if len(sys.argv) != 2:
+    print("Usage: python reqmgr-put-default-config <hostname>")
+    sys.exit(1)
+
+hostName = sys.argv[1].replace("https://", "")
+print("\nPushing DEFAULT configuration into %s ReqMgr Aux DB..." % hostName)
+encodedParams = json.dumps({})
+headers = {"Content-type": "application/json", "Accept": "application/json"}
+
+conn = httplib.HTTPSConnection(hostName,
+                               cert_file=os.getenv('X509_USER_CERT'),
+                               key_file=os.getenv('X509_USER_KEY'))
+conn.request("PUT", "/reqmgr2/data/app_config/DEFAULT", encodedParams, headers)
+resp = conn.getresponse()
+if resp.status != 200:
+    print("Response status: %s\tResponse reason: %s" % (resp.status, resp.reason))
+    if hasattr(resp.msg, "x-error-detail"):
+        print("Error message: %s" % resp.msg["x-error-detail"])
+    sys.exit(2)
+conn.close()
+print("Documents successfully updated!")
+
+sys.exit(0)

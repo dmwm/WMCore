@@ -1,6 +1,10 @@
 #! /usr/bin/env python
+
 from __future__ import division, print_function
-import time
+
+import subprocess
+import os
+import re
 
 
 def makeList(stringList):
@@ -61,20 +65,41 @@ def safeStr(string):
     raise ValueError("We're not supposed to convert %s to string." % string)
 
 
-def timeit(func):
+def diskUse():
     """
-    source: https://www.andreas-jung.com/contents/a-python-decorator-for-measuring-the-execution-time-of-methods
-
-    Decorator function to measure how long a method/function takes to run
-    It returns a tuple with:
-      * wall clock time spent
-      * returned result of the function
-      * the function name
+    This returns the % use of each disk partition
     """
-    def wrapper(*arg, **kw):
-        t1 = time.time()
-        res = func(*arg, **kw)
-        t2 = time.time()
-        return (t2 - t1), res, func.__name__
+    diskPercent = []
+    df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
+    output = df.communicate()[0].split("\n")
+    for x in output:
+        split = x.split()
+        if split != [] and split[0] != 'Filesystem':
+            diskPercent.append({'mounted': split[5], 'percent': split[4]})
 
-    return wrapper
+    return diskPercent
+
+
+def numberCouchProcess():
+    """
+    This returns the number of couch process
+    """
+    ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
+    process = ps.communicate()[0].count('couchjs')
+
+    return process
+
+
+def rootUrlJoin(base, extend):
+    """
+    Adds a path element to the path within a ROOT url
+    """
+    if base:
+        match = re.match("^root://([^/]+)/(.+)", base)
+        if match:
+            host = match.group(1)
+            path = match.group(2)
+            newpath = os.path.join(path, extend)
+            newurl = "root://%s/%s" % (host, newpath)
+            return newurl
+    return None

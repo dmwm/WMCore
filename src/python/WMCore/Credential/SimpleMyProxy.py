@@ -13,9 +13,10 @@
 # on 2013/04/14 for integration on CRAB services.
 
 import logging
-import socket
 import re
-from OpenSSL import crypto, SSL
+import socket
+
+from OpenSSL import SSL, crypto
 
 from WMCore.Credential.Credential import Credential
 
@@ -33,7 +34,8 @@ PASSPHRASE=PASSPHRASE
 LIFETIME=0\0"""
 
 
-class MyProxyException(Exception): pass
+class MyProxyException(Exception):
+    pass
 
 
 def myproxy_ctx(certfile, keyfile):
@@ -89,7 +91,6 @@ def deserialize_certs(inp_dat):
 
     dat = inp_dat
 
-    import base64
     while dat:
 
         # find start of cert, get length
@@ -97,16 +98,16 @@ def deserialize_certs(inp_dat):
         if ind < 0:
             break
 
-        len = 256 * ord(dat[ind + 2]) + ord(dat[ind + 3])
+        length = 256 * ord(dat[ind + 2]) + ord(dat[ind + 3])
 
         # extract der-format cert, and convert to pem
-        c = dat[ind:ind + len + 4]
+        c = dat[ind:ind + length + 4]
         x509 = crypto.load_certificate(crypto.FILETYPE_ASN1, c)
         pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, x509)
         pem_certs.append(pem_cert)
 
         # trim cert from data
-        dat = dat[ind + len + 4:]
+        dat = dat[ind + length + 4:]
 
     return pem_certs
 
@@ -117,7 +118,8 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
 
     Exceptions: MyProxyException or any of the SSL exceptions
     """
-    if op not in ['info', 'get']: raise MyProxyException('Wrong operation. Select "info" or "get".')
+    if op not in ['info', 'get']:
+        raise MyProxyException('Wrong operation. Select "info" or "get".')
 
     logger.debug("debug: connect to myproxy server")
     conn = SSL.Connection(sslctx, socket.socket())
@@ -138,7 +140,8 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
     logger.debug(d)
 
     resp, error, data = deserialize_response(d)
-    if resp: raise MyProxyException(error)
+    if resp:
+        raise MyProxyException(error)
     logger.debug("debug: server response ok")
 
     if op == 'get':
@@ -158,7 +161,8 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
         logger.debug("debug: process server response")
         r = conn.recv(8192)
         resp, error, data = deserialize_response(r)
-        if resp: raise RetrieveProxyException(error)
+        if resp:
+            raise MyProxyException(error)
         logger.debug("debug: server response ok")
 
         # deserialize certs from received cert data
@@ -169,7 +173,8 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
 
         # return proxy, the corresponding privkey, and then the rest of cert chain
         data = pem_certs[0] + privkey
-        for c in pem_certs[1:]: data += c
+        for c in pem_certs[1:]:
+            data += c
 
     return data
 
@@ -213,26 +218,26 @@ class SimpleMyProxy(Credential):
 
 if __name__ == '__main__':
     import sys
-    import optparse
+    import argparse
 
-    parser = optparse.OptionParser()
-    parser.add_option("-o", "--op", dest="op",
-                      help="Operation: info|get")
-    parser.add_option("-s", "--pshost", dest="host", default="myproxy.cern.ch",
-                      help="The hostname of the MyProxy server to contact")
-    parser.add_option("-p", "--psport", dest="port", default=7512,
-                      help="The port of the MyProxy server to contact")
-    parser.add_option("-l", "--username", dest="username",
-                      help="The username with which the credential is stored on the MyProxy server")
-    parser.add_option("-C", "--certfile", dest="cert",
-                      help="Certificate PEM filename to use with myproxy authentication")
-    parser.add_option("-y", "--keyfile", dest="key",
-                      help="Certkey PEM filename to use with myproxy authentication")
-    parser.add_option("-t", "--proxy_lifetime", dest="lifetime", default=43200,
-                      help="The lifetime validity for the fetched proxy.")
-    parser.add_option("-v", "--verbose", action="store_true", dest="debug", default=False,
-                      help="Print debug information to stdout.")
-    (opt, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--op", dest="op",
+                        help="Operation: info|get")
+    parser.add_argument("-s", "--pshost", dest="host", default="myproxy.cern.ch",
+                        help="The hostname of the MyProxy server to contact")
+    parser.add_argument("-p", "--psport", dest="port", default=7512,
+                        help="The port of the MyProxy server to contact")
+    parser.add_argument("-l", "--username", dest="username",
+                        help="The username with which the credential is stored on the MyProxy server")
+    parser.add_argument("-C", "--certfile", dest="cert",
+                        help="Certificate PEM filename to use with myproxy authentication")
+    parser.add_argument("-y", "--keyfile", dest="key",
+                        help="Certkey PEM filename to use with myproxy authentication")
+    parser.add_argument("-t", "--proxy_lifetime", dest="lifetime", default=43200,
+                        help="The lifetime validity for the fetched proxy.")
+    parser.add_argument("-v", "--verbose", action="store_true", dest="debug", default=False,
+                        help="Print debug information to stdout.")
+    opt = parser.parse_args()
 
 
     def getLogging(debug):
@@ -245,7 +250,7 @@ if __name__ == '__main__':
             loglevel = logging.DEBUG
         logging.basicConfig(level=loglevel)
         logger = logging.getLogger(__name__)
-        logger.debug("Logging level initialized to %s." % loglevel)
+        logger.debug("Logging level initialized to %s.", loglevel)
         return logger
 
 

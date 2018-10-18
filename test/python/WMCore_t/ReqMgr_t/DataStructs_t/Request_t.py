@@ -64,14 +64,14 @@ class RequestTests(unittest.TestCase):
         Test some undefined/assignment user arguments in initialize_clone
         """
         # test with unknown key
-        requestArgs = {'Multicore': 1, 'WRONG': 'Alan', 'ReqMgr2Only': False}
+        requestArgs = {'Multicore': 1, 'WRONG': 'Alan'}
         originalArgs = deepcopy(mcOriginalArgs)
         cloneArgs = initialize_clone(requestArgs, originalArgs, MC_ARGS)
         with self.assertRaises(WMSpecFactoryException):
             MonteCarloWorkloadFactory().factoryWorkloadConstruction(cloneArgs["RequestName"], cloneArgs)
 
         # test with assignment key
-        requestArgs = {'Multicore': 1, 'TrustSitelists': False, 'ReqMgr2Only': False}
+        requestArgs = {'Multicore': 1, 'TrustSitelists': False}
         originalArgs = deepcopy(mcOriginalArgs)
         cloneArgs = initialize_clone(requestArgs, originalArgs, MC_ARGS)
         with self.assertRaises(WMSpecFactoryException):

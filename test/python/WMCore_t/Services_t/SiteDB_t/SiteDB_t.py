@@ -26,27 +26,10 @@ class SiteDBTest(EmulatedUnitTestCase):
 
     def testCmsNametoPhEDExNode(self):
         """
-        #Tests CmsNametoSE
+        Tests CMS Name to PhEDEx Node Name
         """
         target = ['T1_US_FNAL_Buffer', 'T1_US_FNAL_MSS']
         results = self.mySiteDB.cmsNametoPhEDExNode('T1_US_FNAL')
-        self.assertItemsEqual(results, target)
-
-    def testSEtoCmsName(self):
-        """
-        Tests CmsNametoSE
-        """
-        target = [u'T1_US_FNAL', u'T1_US_FNAL_Disk']
-        results = self.mySiteDB.seToCMSName("cmsdcadisk01.fnal.gov")
-        self.assertTrue(results == target)
-        target = sorted([u'T2_CH_CERN', u'T2_CH_CERN_HLT'])
-        results = sorted(self.mySiteDB.seToCMSName("srm-eoscms.cern.ch"))
-        self.assertItemsEqual(results, target)
-        target = sorted([u'T0_CH_CERN', u'T1_CH_CERN'])
-        results = sorted(self.mySiteDB.seToCMSName("srm-cms.cern.ch"))
-        self.assertItemsEqual(results, target)
-        target = sorted([u'T2_CH_CERN_AI'])
-        results = sorted(self.mySiteDB.seToCMSName("eoscmsftp.cern.ch"))
         self.assertItemsEqual(results, target)
 
     def testDNUserName(self):
@@ -107,11 +90,60 @@ class SiteDBTest(EmulatedUnitTestCase):
 
         Test converting PhEDEx Node Names to Processing Site Names
         """
-
         result = self.mySiteDB.PNNstoPSNs(['T1_US_FNAL_Disk', 'T1_US_FNAL_Buffer', 'T1_US_FNAL_MSS'])
         self.assertTrue(result == ['T1_US_FNAL'])
         result = self.mySiteDB.PNNstoPSNs(['T2_UK_London_IC', 'T2_US_Purdue'])
         self.assertItemsEqual(result, ['T2_UK_London_IC', 'T2_US_Purdue'])
+        return
+
+    def testPSNtoPNNMap(self):
+        """
+        _PSNtoPNNMap_
+
+        Test API to get a map of PSNs and PNNs 
+        """
+        result = self.mySiteDB.PSNtoPNNMap()
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T1_')])
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T2_')])
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T3_')])
+        self.assertTrue(len(result) > 50)
+
+        result = self.mySiteDB.PSNtoPNNMap(psnPattern='T1.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T1_')])
+        self.assertTrue(len(result) < 10)
+
+        result = self.mySiteDB.PSNtoPNNMap(psnPattern='T2.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T2_')])
+        self.assertTrue(len(result) > 10)
+
+        result = self.mySiteDB.PSNtoPNNMap(psnPattern='T3.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T3_')])
+        self.assertTrue(len(result) > 10)
+
+        return
+
+    def testGetAllPhEDExNodeNames(self):
+        """
+        _testGetAllPhEDExNodeNames_
+
+        Test API to get all PhEDEx Node Names 
+        """
+        result = self.mySiteDB.getAllPhEDExNodeNames(excludeBuffer=True)
+        self.assertFalse([pnn for pnn in result if pnn.endswith('_Buffer')])
+
+        result = self.mySiteDB.getAllPhEDExNodeNames(excludeBuffer=False)
+        self.assertTrue(len([pnn for pnn in result if pnn.endswith('_Buffer')]) > 5)
+
+        result = self.mySiteDB.getAllPhEDExNodeNames(pattern='T1.*', excludeBuffer=True)
+        self.assertFalse([pnn for pnn in result if not pnn.startswith('T1_')])
+        self.assertTrue(len(result) > 10)
+
+        result = self.mySiteDB.getAllPhEDExNodeNames(pattern='.*', excludeBuffer=True)
+        self.assertTrue([pnn for pnn in result if pnn.startswith('T1_')])
+        self.assertTrue([pnn for pnn in result if pnn.startswith('T2_')])
+        self.assertTrue([pnn for pnn in result if pnn.startswith('T3_')])
+        self.assertTrue(len(result) > 60)
+
         return
 
 if __name__ == '__main__':

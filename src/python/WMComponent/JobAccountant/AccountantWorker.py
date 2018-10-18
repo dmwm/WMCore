@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-#pylint: disable=E1103, E1101, C0301
-#E1103: Use DB objects attached to thread
-#E1101: Create config sections
-#C0301: The names for everything are so ridiculously long
+# pylint: disable=E1103, E1101, C0301
+# E1103: Use DB objects attached to thread
+# E1101: Create config sections
+# C0301: The names for everything are so ridiculously long
 # that I'm disabling this.  The rest of you will have to get
 # bigger monitors.
 """
@@ -11,28 +11,25 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
+import collections
+import gc
+import logging
 import os
 import threading
-import logging
-import gc
-import collections
 
-from WMCore.FwkJobReport.Report  import Report
-from WMCore.DAOFactory           import DAOFactory
-from WMCore.WMConnectionBase     import WMConnectionBase
-from WMCore.WMException          import WMException
-
-from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.File       import File
-from WMCore.WMBS.Job        import Job
-
-from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Database.CMSCouch import CouchServer
+from WMCore.FwkJobReport.Report import Report
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Lexicon import sanitizeURL
-from WMCore.ACDC.DataCollectionService  import DataCollectionService
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Job import Job
+from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WMException import WMException
 
 
 class AccountantWorkerException(WMException):
@@ -48,6 +45,7 @@ class AccountantWorker(WMConnectionBase):
     Class that actually does the work of parsing FWJRs for the Accountant
     Run through ProcessPool
     """
+
     def __init__(self, config):
         """
         __init__
@@ -56,40 +54,40 @@ class AccountantWorker(WMConnectionBase):
         """
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                        logger = myThread.logger,
-                                        dbinterface = myThread.dbi)
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
 
-        self.getOutputMapAction      = self.daofactory(classname = "Jobs.GetOutputMap")
-        self.bulkAddToFilesetAction  = self.daofactory(classname = "Fileset.BulkAddByLFN")
-        self.bulkParentageAction     = self.daofactory(classname = "Files.AddBulkParentage")
-        self.getJobTypeAction        = self.daofactory(classname = "Jobs.GetType")
-        self.getParentInfoAction     = self.daofactory(classname = "Files.GetParentInfo")
-        self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
-        self.setParentageByMergeJob  = self.daofactory(classname = "Files.SetParentageByMergeJob")
-        self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
-        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
-        self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
-        self.addFileAction           = self.daofactory(classname = "Files.Add")
-        self.jobCompleteInput        = self.daofactory(classname = "Jobs.CompleteInput")
-        self.setBulkOutcome          = self.daofactory(classname = "Jobs.SetOutcomeBulk")
-        self.getWorkflowSpec         = self.daofactory(classname = "Workflow.GetSpecAndNameFromTask")
-        self.getJobInfoByID          = self.daofactory(classname = "Jobs.LoadFromID")
-        self.getFullJobInfo          = self.daofactory(classname = "Jobs.LoadForErrorHandler")
-        self.getJobTaskNameAction    = self.daofactory(classname = "Jobs.GetFWJRTaskName")
-        self.pnn_to_psn              = self.daofactory(classname = "Locations.GetPNNtoPSNMapping").execute()
+        self.getOutputMapAction = self.daofactory(classname="Jobs.GetOutputMap")
+        self.bulkAddToFilesetAction = self.daofactory(classname="Fileset.BulkAddByLFN")
+        self.bulkParentageAction = self.daofactory(classname="Files.AddBulkParentage")
+        self.getJobTypeAction = self.daofactory(classname="Jobs.GetType")
+        self.getParentInfoAction = self.daofactory(classname="Files.GetParentAndGrandParentInfo")
+        self.setParentageByJob = self.daofactory(classname="Files.SetParentageByJob")
+        self.setParentageByMergeJob = self.daofactory(classname="Files.SetParentageByMergeJob")
+        self.setFileRunLumi = self.daofactory(classname="Files.AddRunLumi")
+        self.setFileLocation = self.daofactory(classname="Files.SetLocationByLFN")
+        self.setFileAddChecksum = self.daofactory(classname="Files.AddChecksumByLFN")
+        self.addFileAction = self.daofactory(classname="Files.Add")
+        self.jobCompleteInput = self.daofactory(classname="Jobs.CompleteInput")
+        self.setBulkOutcome = self.daofactory(classname="Jobs.SetOutcomeBulk")
+        self.getWorkflowSpec = self.daofactory(classname="Workflow.GetSpecAndNameFromTask")
+        self.getJobInfoByID = self.daofactory(classname="Jobs.LoadFromID")
+        self.getFullJobInfo = self.daofactory(classname="Jobs.LoadForErrorHandler")
+        self.getJobTaskNameAction = self.daofactory(classname="Jobs.GetFWJRTaskName")
+        self.pnn_to_psn = self.daofactory(classname="Locations.GetPNNtoPSNMapping").execute()
 
-        self.dbsStatusAction       = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
-        self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
-        self.dbsChildrenAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
-        self.dbsCreateFiles        = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
-        self.dbsSetLocation        = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
-        self.dbsInsertLocation     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
-        self.dbsSetChecksum        = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
-        self.dbsSetRunLumi         = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
-        self.dbsGetWorkflow        = self.dbsDaoFactory(classname = "ListWorkflow")
+        self.dbsStatusAction = self.dbsDaoFactory(classname="DBSBufferFiles.SetStatus")
+        self.dbsParentStatusAction = self.dbsDaoFactory(classname="DBSBufferFiles.GetParentStatus")
+        self.dbsChildrenAction = self.dbsDaoFactory(classname="DBSBufferFiles.GetChildren")
+        self.dbsCreateFiles = self.dbsDaoFactory(classname="DBSBufferFiles.Add")
+        self.dbsSetLocation = self.dbsDaoFactory(classname="DBSBufferFiles.SetLocationByLFN")
+        self.dbsInsertLocation = self.dbsDaoFactory(classname="DBSBufferFiles.AddLocation")
+        self.dbsSetChecksum = self.dbsDaoFactory(classname="DBSBufferFiles.AddChecksumByLFN")
+        self.dbsSetRunLumi = self.dbsDaoFactory(classname="DBSBufferFiles.AddRunLumi")
+        self.dbsGetWorkflow = self.dbsDaoFactory(classname="ListWorkflow")
 
-        self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
+        self.dbsLFNHeritage = self.dbsDaoFactory(classname="DBSBufferFiles.BulkHeritageParent")
 
         self.stateChanger = ChangeState(config)
 
@@ -100,40 +98,39 @@ class AccountantWorker(WMConnectionBase):
         self.specDir = getattr(config.JobAccountant, 'specDir', None)
 
         # maximum RAW EDM size for Repack output before data is put into Error dataset and skips PromptReco
-        self.maxAllowedRepackOutputSize = getattr(config.JobAccountant, 'maxAllowedRepackOutputSize', 12 * 1024 * 1024 * 1024)
+        self.maxAllowedRepackOutputSize = getattr(config.JobAccountant, 'maxAllowedRepackOutputSize',
+                                                  12 * 1024 * 1024 * 1024)
 
         # ACDC service
-        self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
-                                                    database = config.ACDC.database)
+        self.dataCollection = DataCollectionService(url=config.ACDC.couchurl,
+                                                    database=config.ACDC.database)
 
         jobDBurl = sanitizeURL(config.JobStateMachine.couchurl)['url']
-        jobDBName = config.JobStateMachine.couchDBName
-        jobCouchdb  = CouchServer(jobDBurl)
-        self.fwjrCouchDB = jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        self.jobDBName = config.JobStateMachine.couchDBName
+        self.jobCouchdb = CouchServer(jobDBurl)
+        self.fwjrCouchDB = None
         self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL, appName="WMStatsAgent")
 
         # Hold data for later commital
-        self.dbsFilesToCreate  = []
-        self.wmbsFilesToBuild  = []
-        self.wmbsMergeFilesToBuild  = []
-        self.fileLocation      = None
+        self.dbsFilesToCreate = []
+        self.wmbsFilesToBuild = []
+        self.wmbsMergeFilesToBuild = []
         self.mergedOutputFiles = []
-        self.listOfJobsToSave  = []
-        self.listOfJobsToFail  = []
-        self.filesetAssoc      = []
-        self.parentageBinds    = []
-        self.parentageBindsForMerge    = []
+        self.listOfJobsToSave = []
+        self.listOfJobsToFail = []
+        self.filesetAssoc = []
+        self.parentageBinds = []
+        self.parentageBindsForMerge = []
         self.jobsWithSkippedFiles = {}
         self.count = 0
-        self.datasetAlgoID     = collections.deque(maxlen = 1000)
-        self.datasetAlgoPaths  = collections.deque(maxlen = 1000)
-        self.dbsLocations      = set()
-        self.workflowIDs       = collections.deque(maxlen = 1000)
-        self.workflowPaths     = collections.deque(maxlen = 1000)
+        self.datasetAlgoID = collections.deque(maxlen=1000)
+        self.datasetAlgoPaths = collections.deque(maxlen=1000)
+        self.dbsLocations = set()
+        self.workflowIDs = collections.deque(maxlen=1000)
+        self.workflowPaths = collections.deque(maxlen=1000)
 
         self.phedex = PhEDEx()
         self.locLists = self.phedex.getNodeMap()
-
 
         return
 
@@ -143,21 +140,20 @@ class AccountantWorker(WMConnectionBase):
 
         Reset all global vars between runs.
         """
-        self.dbsFilesToCreate  = []
-        self.wmbsFilesToBuild  = []
-        self.wmbsMergeFilesToBuild  = []
-        self.fileLocation      = None
+        self.dbsFilesToCreate = []
+        self.wmbsFilesToBuild = []
+        self.wmbsMergeFilesToBuild = []
         self.mergedOutputFiles = []
-        self.listOfJobsToSave  = []
-        self.listOfJobsToFail  = []
-        self.filesetAssoc      = []
-        self.parentageBinds    = []
+        self.listOfJobsToSave = []
+        self.listOfJobsToFail = []
+        self.filesetAssoc = []
+        self.parentageBinds = []
         self.parentageBindsForMerge = []
         self.jobsWithSkippedFiles = {}
         gc.collect()
         return
 
-    def loadJobReport(self, parameters):
+    def loadJobReport(self, jobReportPath):
         """
         _loadJobReport_
 
@@ -167,34 +163,32 @@ class AccountantWorker(WMConnectionBase):
         """
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
-        jobReportPath = parameters.get("fwjr_path", None)
         if not jobReportPath:
-            logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99999, "FWJR path is empty")
+            logging.error("Bad FwkJobReport Path: %s", jobReportPath)
+            return self.createMissingFWKJR(99999, "FWJR path is empty")
 
-        jobReportPath = jobReportPath.replace("file://","")
+        jobReportPath = jobReportPath.replace("file://", "")
         if not os.path.exists(jobReportPath):
-            logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path: %s' % jobReportPath)
+            logging.error("Bad FwkJobReport Path: %s", jobReportPath)
+            return self.createMissingFWKJR(99999, 'Cannot find file in jobReport path: %s' % jobReportPath)
 
         if os.path.getsize(jobReportPath) == 0:
-            logging.error("Empty FwkJobReport: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0: %s ' % jobReportPath)
+            logging.error("Empty FwkJobReport: %s", jobReportPath)
+            return self.createMissingFWKJR(99998, 'jobReport of size 0: %s ' % jobReportPath)
 
         jobReport = Report()
 
         try:
             jobReport.load(jobReportPath)
         except Exception as ex:
-            msg =  "Error loading jobReport %s\n" % jobReportPath
+            msg = "Error loading jobReport %s\n" % jobReportPath
             msg += str(ex)
             logging.error(msg)
-            logging.debug("Failing job: %s\n" % parameters)
-            return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
+            return self.createMissingFWKJR(99997, 'Cannot load jobReport')
 
         if len(jobReport.listSteps()) == 0:
-            logging.error("FwkJobReport with no steps: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99997, 'jobReport with no steps: %s ' % jobReportPath)
+            logging.error("FwkJobReport with no steps: %s", jobReportPath)
+            return self.createMissingFWKJR(99997, 'jobReport with no steps: %s ' % jobReportPath)
 
         return jobReport
 
@@ -204,11 +198,11 @@ class AccountantWorker(WMConnectionBase):
         recover it getting data from the SQL database.
         """
         if not jobReport.getTaskName():
-            logging.warning("Trying to recover a corrupted FWJR for a %s job with job id %s" % (jobStatus,
-                                                                                                jobReport.getJobID()))
-            jobInfo = self.getJobTaskNameAction.execute(jobId = jobReport.getJobID(),
-                                                        conn = self.getDBConn(),
-                                                        transaction = self.existingTransaction())
+            logging.warning("Trying to recover a corrupted FWJR for a %s job with job id %s", jobStatus,
+                            jobReport.getJobID())
+            jobInfo = self.getJobTaskNameAction.execute(jobId=jobReport.getJobID(),
+                                                        conn=self.getDBConn(),
+                                                        transaction=self.existingTransaction())
 
             jobReport.setTaskName(jobInfo['taskName'])
             jobReport.save(jobInfo['fwjr_path'])
@@ -217,8 +211,8 @@ class AccountantWorker(WMConnectionBase):
                                                                                                    jobReport.getJobID())
                 raise AccountantWorkerException(msg)
             else:
-                logging.info("TaskName '%s' successfully recovered and added to fwjr id %s." % (jobReport.getTaskName(),
-                                                                                                jobReport.getJobID()))
+                logging.info("TaskName '%s' successfully recovered and added to fwjr id %s.", jobReport.getTaskName(),
+                             jobReport.getJobID())
 
         return
 
@@ -233,14 +227,14 @@ class AccountantWorker(WMConnectionBase):
         self.reset()
 
         for job in parameters:
-            logging.info("Handling %s" % job["fwjr_path"])
+            logging.info("Handling %s", job["fwjr_path"])
 
             # Load the job and set the ID
-            fwkJobReport = self.loadJobReport(job)
+            fwkJobReport = self.loadJobReport(job["fwjr_path"])
             fwkJobReport.setJobID(job['id'])
 
-            jobSuccess = self.handleJob(jobID = job["id"],
-                                        fwkJobReport = fwkJobReport)
+            jobSuccess = self.handleJob(jobID=job["id"],
+                                        fwkJobReport=fwkJobReport)
 
             if self.returnJobReport:
                 returnList.append({'id': job["id"], 'jobSuccess': jobSuccess,
@@ -250,7 +244,7 @@ class AccountantWorker(WMConnectionBase):
 
             self.count += 1
 
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
 
         # Now things done at the end of the job
         # Do what we can with WMBS files
@@ -265,41 +259,41 @@ class AccountantWorker(WMConnectionBase):
 
         # Handle filesetAssoc
         if len(self.filesetAssoc) > 0:
-            self.bulkAddToFilesetAction.execute(binds = self.filesetAssoc,
-                                                conn = self.getDBConn(),
-                                                transaction = self.existingTransaction())
+            self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
 
         # Move successful jobs to successful
         if len(self.listOfJobsToSave) > 0:
             idList = [x['id'] for x in self.listOfJobsToSave]
             outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToSave]
-            self.setBulkOutcome.execute(binds = outcomeBinds,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+            self.setBulkOutcome.execute(binds=outcomeBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
-            self.jobCompleteInput.execute(id = idList,
-                                          lfnsToSkip = self.jobsWithSkippedFiles,
-                                          conn = self.getDBConn(),
-                                          transaction = self.existingTransaction())
+            self.jobCompleteInput.execute(id=idList,
+                                          lfnsToSkip=self.jobsWithSkippedFiles,
+                                          conn=self.getDBConn(),
+                                          transaction=self.existingTransaction())
             self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
         # If we have failed jobs, fail them
         if len(self.listOfJobsToFail) > 0:
             outcomeBinds = [{'jobid': x['id'], 'outcome': x['outcome']} for x in self.listOfJobsToFail]
-            self.setBulkOutcome.execute(binds = outcomeBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            self.setBulkOutcome.execute(binds=outcomeBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
             self.stateChanger.propagate(self.listOfJobsToFail, "jobfailed", "complete")
 
         # Arrange WMBS parentage
         if len(self.parentageBinds) > 0:
-            self.setParentageByJob.execute(binds = self.parentageBinds,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+            self.setParentageByJob.execute(binds=self.parentageBinds,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
         if len(self.parentageBindsForMerge) > 0:
-            self.setParentageByMergeJob.execute(binds = self.parentageBindsForMerge,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+            self.setParentageByMergeJob.execute(binds=self.parentageBindsForMerge,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
 
         # Straighten out DBS Parentage
         if len(self.mergedOutputFiles) > 0:
@@ -308,11 +302,11 @@ class AccountantWorker(WMConnectionBase):
         if len(self.jobsWithSkippedFiles) > 0:
             self.handleSkippedFiles()
 
-        self.commitTransaction(existingTransaction = False)
+        self.commitTransaction(existingTransaction)
 
         return returnList
 
-    def outputFilesetsForJob(self, outputMap, merged, moduleLabel):
+    def outputFilesetsForJob(self, outputMap, merged, moduleLabel, datatier):
         """
         _outputFilesetsForJob_
 
@@ -320,21 +314,23 @@ class AccountantWorker(WMConnectionBase):
         this will not return the JobGroup output fileset as all jobs will have
         their output placed there.
         """
+        # output map identifier uses output module + datatier
+        moduleLabel += datatier
         if moduleLabel not in outputMap:
             logging.info("Output module label missing from output map.")
             return []
 
         outputFilesets = []
         for outputFileset in outputMap[moduleLabel]:
-            if merged == False and outputFileset["output_fileset"] != None:
+            if merged is False and outputFileset["output_fileset"] is not None:
                 outputFilesets.append(outputFileset["output_fileset"])
             else:
-                if outputFileset["merged_output_fileset"] != None:
+                if outputFileset["merged_output_fileset"] is not None:
                     outputFilesets.append(outputFileset["merged_output_fileset"])
 
         return outputFilesets
 
-    def addFileToDBS(self, jobReportFile, task, errorDataset = False):
+    def addFileToDBS(self, jobReportFile, task, errorDataset=False):
         """
         _addFileToDBS_
 
@@ -342,17 +338,17 @@ class AccountantWorker(WMConnectionBase):
         """
         datasetInfo = jobReportFile["dataset"]
 
-        dbsFile = DBSBufferFile(lfn = jobReportFile["lfn"],
-                                size = jobReportFile["size"],
-                                events = jobReportFile["events"],
-                                checksums = jobReportFile["checksums"],
-                                status = "NOTUPLOADED",
+        dbsFile = DBSBufferFile(lfn=jobReportFile["lfn"],
+                                size=jobReportFile["size"],
+                                events=jobReportFile["events"],
+                                checksums=jobReportFile["checksums"],
+                                status="NOTUPLOADED",
                                 inPhedex=0)
-        dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
-                             appVer = datasetInfo["applicationVersion"],
-                             appFam = jobReportFile["module_label"],
-                             psetHash = "GIBBERISH",
-                             configContent = jobReportFile.get('configURL'))
+        dbsFile.setAlgorithm(appName=datasetInfo["applicationName"],
+                             appVer=datasetInfo["applicationVersion"],
+                             appFam=jobReportFile["module_label"],
+                             psetHash="GIBBERISH",
+                             configContent=jobReportFile.get('configURL'))
 
         if errorDataset:
             dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"] + "-Error",
@@ -363,16 +359,16 @@ class AccountantWorker(WMConnectionBase):
                                                   datasetInfo["processedDataset"],
                                                   datasetInfo["dataTier"]))
 
-        dbsFile.setValidStatus(validStatus = jobReportFile.get("validStatus", None))
-        dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
-        dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
-        dbsFile.setGlobalTag(globalTag = jobReportFile.get('globalTag', None))
-        #TODO need to find where to get the prep id
-        dbsFile.setPrepID(prep_id = jobReportFile.get('prep_id', None))
+        dbsFile.setValidStatus(validStatus=jobReportFile.get("validStatus", None))
+        dbsFile.setProcessingVer(ver=jobReportFile.get('processingVer', None))
+        dbsFile.setAcquisitionEra(era=jobReportFile.get('acquisitionEra', None))
+        dbsFile.setGlobalTag(globalTag=jobReportFile.get('globalTag', None))
+        # TODO need to find where to get the prep id
+        dbsFile.setPrepID(prep_id=jobReportFile.get('prep_id', None))
         dbsFile['task'] = task
         dbsFile['runs'] = jobReportFile['runs']
 
-        dbsFile.setLocation(pnn = list(jobReportFile["locations"])[0], immediateSave = False)
+        dbsFile.setLocation(pnn=list(jobReportFile["locations"])[0], immediateSave=False)
         self.dbsFilesToCreate.append(dbsFile)
         return
 
@@ -384,8 +380,8 @@ class AccountantWorker(WMConnectionBase):
         This is meant to be called recursively
         """
         parentsInfo = self.getParentInfoAction.execute([lfn],
-                                                       conn = self.getDBConn(),
-                                                       transaction = self.existingTransaction())
+                                                       conn=self.getDBConn(),
+                                                       transaction=self.existingTransaction())
         newParents = set()
         for parentInfo in parentsInfo:
             # This will catch straight to merge files that do not have redneck
@@ -394,7 +390,7 @@ class AccountantWorker(WMConnectionBase):
             if int(parentInfo["merged"]) == 1:
                 newParents.add(parentInfo["lfn"])
 
-            elif parentInfo['gpmerged'] == None:
+            elif parentInfo['gpmerged'] is None:
                 continue
 
             # Handle the files that result from merge jobs that aren't redneck
@@ -407,13 +403,13 @@ class AccountantWorker(WMConnectionBase):
             # If that didn't work, we've reached the great-grandparents
             # And we have to work via recursion
             else:
-                parentSet = self.findDBSParents(lfn = parentInfo['gplfn'])
+                parentSet = self.findDBSParents(lfn=parentInfo['gplfn'])
                 for parent in parentSet:
                     newParents.add(parent)
 
         return newParents
 
-    def addFileToWMBS(self, jobType, fwjrFile, jobMask, task, jobID = None):
+    def addFileToWMBS(self, jobType, fwjrFile, jobMask, task, jobID=None):
         """
         _addFileToWMBS_
 
@@ -421,14 +417,14 @@ class AccountantWorker(WMConnectionBase):
         """
         fwjrFile["first_event"] = jobMask["FirstEvent"]
 
-        if fwjrFile["first_event"] == None:
+        if fwjrFile["first_event"] is None:
             fwjrFile["first_event"] = 0
 
         if jobType == "Merge" and fwjrFile["module_label"] != "logArchive":
             setattr(fwjrFile["fileRef"], 'merged', True)
             fwjrFile["merged"] = True
 
-        wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
+        wmbsFile = self.createFileFromDataStructsFile(fname=fwjrFile, jobID=jobID)
 
         if jobType == "Merge":
             self.wmbsMergeFilesToBuild.append(wmbsFile)
@@ -441,13 +437,6 @@ class AccountantWorker(WMConnectionBase):
 
         return wmbsFile
 
-
-    def _mapLocation(self, fwkJobReport):
-        for file in fwkJobReport.getAllFileRefs():
-            if file and hasattr(file, 'location'):
-                file.location = self.phedex.getBestNodeName(file.location, self.locLists)
-
-
     def handleJob(self, jobID, fwkJobReport):
         """
         _handleJob_
@@ -458,35 +447,40 @@ class AccountantWorker(WMConnectionBase):
         """
         jobSuccess = fwkJobReport.taskSuccessful()
 
-        outputMap = self.getOutputMapAction.execute(jobID = jobID,
-                                                    conn = self.getDBConn(),
-                                                    transaction = self.existingTransaction())
+        outputMap = self.getOutputMapAction.execute(jobID=jobID,
+                                                    conn=self.getDBConn(),
+                                                    transaction=self.existingTransaction())
 
-        jobType = self.getJobTypeAction.execute(jobID = jobID,
-                                                conn = self.getDBConn(),
-                                                transaction = self.existingTransaction())
+        jobType = self.getJobTypeAction.execute(jobID=jobID,
+                                                conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
 
         if jobSuccess:
             fileList = fwkJobReport.getAllFiles()
 
             # consistency check comparing outputMap to fileList
             # they should match except for some limited special cases
+            # as of #7998, workflow output identifier is made of output module name and datatier
             outputModules = set([])
             for fwjrFile in fileList:
-                outputModules.add(fwjrFile['outputModule'])
+                outputModules.add(fwjrFile['outputModule'] + fwjrFile['dataset'].get('dataTier', ''))
             if set(outputMap.keys()) == outputModules:
                 pass
             elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
                 pass
-            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['Merged', 'logArchive']):
+            elif jobType == "Merge" and set(outputMap.keys()) == set(
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedRAW', 'logArchive']):
                 pass
-            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['MergedError', 'logArchive']):
+            elif jobType == "Merge" and set(outputMap.keys()) == set(
+                    ['MergedRAW', 'MergedErrorRAW', 'logArchive']) and outputModules == set(
+                ['MergedErrorRAW', 'logArchive']):
                 pass
-            elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAW']):
+            elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAWRAW']):
                 pass
             else:
                 failJob = True
-                if jobType in [ "Processing", "Production" ]:
+                if jobType in ["Processing", "Production"]:
                     cmsRunSteps = 0
                     for step in fwkJobReport.listSteps():
                         if step.startswith("cmsRun"):
@@ -496,19 +490,22 @@ class AccountantWorker(WMConnectionBase):
 
                 if failJob:
                     jobSuccess = False
-                    logging.error("Job %d , list of expected outputModules does not match job report, failing job", jobID)
+                    logging.error("Job %d , list of expected outputModules does not match job report, failing job",
+                                  jobID)
                     logging.debug("Job %d , expected outputModules %s", jobID, sorted(outputMap.keys()))
                     logging.debug("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
-                    fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+                    fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
                 else:
-                    logging.debug("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
+                    logging.warning(
+                        "Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job",
+                        jobID)
         else:
-            fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+            fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
 
         if jobSuccess:
             logging.info("Job %d , handle successful job", jobID)
         else:
-            logging.warning("Job %d , bad jobReport, failing job",  jobID)
+            logging.warning("Job %d , bad jobReport, failing job", jobID)
 
         # make sure the task name is present in FWJR (recover from WMBS if needed)
         if len(fileList) > 0:
@@ -523,16 +520,17 @@ class AccountantWorker(WMConnectionBase):
             for fwjrFile in fileList:
                 try:
                     # this assumes there is only one file for LogCollect jobs, not sure what happend if that changes
-                    self.associateLogCollectToParentJobsInWMStats(fwkJobReport, fwjrFile["lfn"], fwkJobReport.getTaskName())
+                    self.associateLogCollectToParentJobsInWMStats(fwkJobReport, fwjrFile["lfn"],
+                                                                  fwkJobReport.getTaskName())
                 except Exception as ex:
                     skipLogCollect = True
-                    logging.error("Error occurred: associating log collect location, will try again\n %s" % str(ex))
+                    logging.error("Error occurred: associating log collect location, will try again\n %s", str(ex))
                     break
 
         # now handle the job (unless the special LogCollect check failed)
         if not skipLogCollect:
 
-            wmbsJob = Job(id = jobID)
+            wmbsJob = Job(id=jobID)
             wmbsJob.load()
             outputID = wmbsJob.loadOutputID()
             wmbsJob.getMask()
@@ -549,7 +547,7 @@ class AccountantWorker(WMConnectionBase):
                 logging.debug("Job %d , register output %s", jobID, fwjrFile["lfn"])
 
                 wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                              jobID = jobID, task = fwkJobReport.getTaskName())
+                                              jobID=jobID, task=fwkJobReport.getTaskName())
                 merged = fwjrFile['merged']
                 moduleLabel = fwjrFile["module_label"]
 
@@ -565,7 +563,8 @@ class AccountantWorker(WMConnectionBase):
                 elif jobType == "Repack" and merged and wmbsFile["size"] > self.maxAllowedRepackOutputSize:
                     pass
                 else:
-                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+                    dataTier = fwjrFile['dataset'].get('dataTier', '')
+                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel, dataTier)
                     for outputFileset in outputFilesets:
                         self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
@@ -576,8 +575,6 @@ class AccountantWorker(WMConnectionBase):
                 if skippedFiles and jobType not in ['LogCollect', 'Cleanup']:
                     self.jobsWithSkippedFiles[jobID] = skippedFiles
 
-            # Only save once job is done, and we're sure we made it through okay
-            self._mapLocation(wmbsJob['fwjr'])
             if jobSuccess:
                 self.listOfJobsToSave.append(wmbsJob)
             else:
@@ -591,20 +588,23 @@ class AccountantWorker(WMConnectionBase):
 
         Associate a logArchive output to its parent job
         """
+        if self.fwjrCouchDB is None:
+            self.fwjrCouchDB = self.jobCouchdb.connectDatabase("%s/fwjrs" % self.jobDBName)
+
         inputFileList = fwkJobReport.getAllInputFiles()
         requestName = task.split('/')[1]
         keys = []
         for inputFile in inputFileList:
             keys.append([requestName, inputFile["lfn"]])
         resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN',
-                                               options = {"stale": "update_after"},
-                                               keys = keys)['rows']
+                                               options={"stale": "update_after"},
+                                               keys=keys)['rows']
         if len(resultRows) > 0:
-            #get data from wmbs
+            # get data from wmbs
             parentWMBSJobIDs = []
             for row in resultRows:
                 parentWMBSJobIDs.append({"jobid": row["value"]})
-            #update Job doc in wmstats
+            # update Job doc in wmstats
             results = self.getJobInfoByID.execute(parentWMBSJobIDs)
             parentJobNames = []
 
@@ -616,14 +616,14 @@ class AccountantWorker(WMConnectionBase):
 
             self.localWMStats.updateLogArchiveLFN(parentJobNames, logAchiveLFN)
         else:
-            #TODO: if the couch db is consistent with DB this should be removed (checking resultRow > 0)
-            #It need to be failed and retried.
-            logging.error("job report is missing for updating log archive mapping\n Input file list\n %s" % inputFileList)
+            # TODO: if the couch db is consistent with DB this should be removed (checking resultRow > 0)
+            # It need to be failed and retried.
+            logging.error(
+                "job report is missing for updating log archive mapping\n Input file list\n %s", inputFileList)
 
         return
 
-    def createMissingFWKJR(self, parameters, errorCode = 999,
-                           errorDescription = 'Failure of unknown type'):
+    def createMissingFWKJR(self, errorCode=999, errorDescription='Failure of unknown type'):
         """
         _createMissingFWJR_
 
@@ -646,16 +646,16 @@ class AccountantWorker(WMConnectionBase):
             return
 
         dbsFileTuples = []
-        dbsFileLoc    = []
+        dbsFileLoc = []
         dbsCksumBinds = []
-        runLumiBinds  = []
-        jobLocations  = set()
+        runLumiBinds = []
+        jobLocations = set()
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
             # Also run insertDatasetAlgo
 
-            assocID         = None
+            assocID = None
             datasetAlgoPath = '%s:%s:%s:%s:%s:%s:%s:%s' % (dbsFile['datasetPath'],
                                                            dbsFile["appName"],
                                                            dbsFile["appVer"],
@@ -681,7 +681,7 @@ class AccountantWorker(WMConnectionBase):
                 except WMException:
                     raise
                 except Exception as ex:
-                    msg =  "Unhandled exception while inserting datasetAlgo: %s\n" % datasetAlgoPath
+                    msg = "Unhandled exception while inserting datasetAlgo: %s\n" % datasetAlgoPath
                     msg += str(ex)
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
@@ -701,22 +701,22 @@ class AccountantWorker(WMConnectionBase):
                         workflowID = wf['workflowID']
                         break
             else:
-                result = self.dbsGetWorkflow.execute(workflowName, taskPath, conn = self.getDBConn(),
-                                                         transaction = self.existingTransaction())
+                result = self.dbsGetWorkflow.execute(workflowName, taskPath, conn=self.getDBConn(),
+                                                     transaction=self.existingTransaction())
                 workflowID = result['id']
 
             self.workflowPaths.append(workflowPath)
             self.workflowIDs.append({'workflowPath': workflowPath, 'workflowID': workflowID})
 
-            lfn           = dbsFile['lfn']
+            lfn = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
-            jobLocation   = dbsFile.getLocations()[0]
+            jobLocation = dbsFile.getLocations()[0]
             jobLocations.add(jobLocation)
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
                                   dbsFile['status'], workflowID, dbsFile['in_phedex']))
 
-            dbsFileLoc.append({'lfn': lfn, 'pnn' : jobLocation})
+            dbsFileLoc.append({'lfn': lfn, 'pnn': jobLocation})
             if dbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
 
@@ -724,54 +724,50 @@ class AccountantWorker(WMConnectionBase):
                 # If we have checksums we have to create a bind
                 # For each different checksum
                 for entry in selfChecksums.keys():
-                    dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
-                                          'cktype' : entry})
+                    dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
+                                          'cktype': entry})
 
         try:
 
             diffLocation = jobLocations.difference(self.dbsLocations)
+            self.dbsInsertLocation.execute(siteName=diffLocation,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
+            self.dbsLocations.union(diffLocation)  # update the component cache location list
 
-            for jobLocation in diffLocation:
-                self.dbsInsertLocation.execute(siteName = jobLocation,
-                                               conn = self.getDBConn(),
-                                               transaction = self.existingTransaction())
-                self.dbsLocations.add(jobLocation)
+            self.dbsCreateFiles.execute(files=dbsFileTuples,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
-            self.dbsCreateFiles.execute(files = dbsFileTuples,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            self.dbsSetLocation.execute(binds=dbsFileLoc,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
-            self.dbsSetLocation.execute(binds = dbsFileLoc,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-
-            self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            self.dbsSetChecksum.execute(bulkList=dbsCksumBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
             if len(runLumiBinds) > 0:
-                self.dbsSetRunLumi.execute(file = runLumiBinds,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+                self.dbsSetRunLumi.execute(file=runLumiBinds,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
         except WMException:
             raise
         except Exception as ex:
-            msg =  "Got exception while inserting files into DBSBuffer!\n"
+            msg = "Got exception while inserting files into DBSBuffer!\n"
             msg += str(ex)
             logging.error(msg)
             logging.debug("Listing binds:")
-            logging.debug("jobLocation: %s\n" % jobLocation)
-            logging.debug("dbsFiles: %s\n" % dbsFileTuples)
-            logging.debug("dbsFileLoc: %s\n" %dbsFileLoc)
-            logging.debug("Checksum binds: %s\n" % dbsCksumBinds)
-            logging.debug("RunLumi binds: %s\n" % runLumiBinds)
+            logging.debug("jobLocation: %s", jobLocation)
+            logging.debug("dbsFiles: %s", dbsFileTuples)
+            logging.debug("dbsFileLoc: %s", dbsFileLoc)
+            logging.debug("Checksum binds: %s", dbsCksumBinds)
+            logging.debug("RunLumi binds: %s", runLumiBinds)
             raise AccountantWorkerException(msg)
-
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
         return
-
 
     def handleWMBSFiles(self, wmbsFilesToBuild, parentageBinds):
         """
@@ -783,14 +779,14 @@ class AccountantWorker(WMConnectionBase):
             # Nothing to do
             return
 
-        runLumiBinds   = []
+        runLumiBinds = []
         fileCksumBinds = []
-        fileLocations  = []
-        fileCreate     = []
+        fileLocations = []
+        fileCreate = []
 
         for wmbsFile in wmbsFilesToBuild:
-            lfn           = wmbsFile['lfn']
-            if lfn == None:
+            lfn = wmbsFile['lfn']
+            if lfn is None:
                 continue
 
             selfChecksums = wmbsFile['checksums']
@@ -807,7 +803,7 @@ class AccountantWorker(WMConnectionBase):
                 if self.pnn_to_psn.get(outpnn, None):
                     fileLocations.append({'lfn': lfn, 'location': outpnn})
                 else:
-                    msg = "PNN doesn't exist in wmbs_location_sename table: %s (investigate)" % outpnn
+                    msg = "PNN doesn't exist in wmbs_pnns table: %s (investigate)" % outpnn
                     logging.error(msg)
                     raise AccountantWorkerException(msg)
 
@@ -815,8 +811,8 @@ class AccountantWorker(WMConnectionBase):
                 # If we have checksums we have to create a bind
                 # For each different checksum
                 for entry in selfChecksums.keys():
-                    fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
-                                           'cktype' : entry})
+                    fileCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
+                                           'cktype': entry})
 
             fileCreate.append([lfn,
                                wmbsFile['size'],
@@ -830,65 +826,64 @@ class AccountantWorker(WMConnectionBase):
 
         try:
 
-            self.addFileAction.execute(files = fileCreate,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+            self.addFileAction.execute(files=fileCreate,
+                                       conn=self.getDBConn(),
+                                       transaction=self.existingTransaction())
 
             if runLumiBinds:
-                self.setFileRunLumi.execute(file = runLumiBinds,
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
+                self.setFileRunLumi.execute(file=runLumiBinds,
+                                            conn=self.getDBConn(),
+                                            transaction=self.existingTransaction())
 
-            self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
+            self.setFileAddChecksum.execute(bulkList=fileCksumBinds,
+                                            conn=self.getDBConn(),
+                                            transaction=self.existingTransaction())
 
-            self.setFileLocation.execute(lfn = fileLocations,
-                                         location = self.fileLocation,
-                                         conn = self.getDBConn(),
-                                         transaction = self.existingTransaction())
+            self.setFileLocation.execute(lfn=fileLocations,
+                                         conn=self.getDBConn(),
+                                         transaction=self.existingTransaction())
 
 
         except WMException:
             raise
         except Exception as ex:
-            msg =  "Error while adding files to WMBS!\n"
+            msg = "Error while adding files to WMBS!\n"
             msg += str(ex)
             logging.error(msg)
-            logging.debug("Printing binds: \n")
-            logging.debug("FileCreate binds: %s\n" % fileCreate)
-            logging.debug("Runlumi binds: %s\n" % runLumiBinds)
-            logging.debug("Checksum binds: %s\n" % fileCksumBinds)
-            logging.debug("FileLocation binds: %s\n" % fileLocations)
+            logging.debug("Printing binds:")
+            logging.debug("FileCreate binds: %s", fileCreate)
+            logging.debug("Runlumi binds: %s", runLumiBinds)
+            logging.debug("Checksum binds: %s", fileCksumBinds)
+            logging.debug("FileLocation binds: %s", fileLocations)
             raise AccountantWorkerException(msg)
 
         # Clear out finished files
         wmbsFilesToBuild = []
         return
 
-    def createFileFromDataStructsFile(self, file, jobID):
+    def createFileFromDataStructsFile(self, fname, jobID):
         """
         _createFileFromDataStructsFile_
 
         This function will create a WMBS File given a DataStructs file
         """
         wmbsFile = File()
-        wmbsFile.update(file)
+        wmbsFile.update(fname)
 
-        if isinstance(file["locations"], set):
-            pnn = list(file["locations"])[0]
-        elif isinstance(file["locations"], list):
-            if len(file['locations']) > 1:
-                logging.error("Have more then one location for a file in job %i" % (jobID))
-                logging.error("Choosing location %s" % (file['locations'][0]))
-            pnn = file["locations"][0]
+        if isinstance(fname["locations"], set):
+            pnn = list(fname["locations"])[0]
+        elif isinstance(fname["locations"], list):
+            if len(fname['locations']) > 1:
+                logging.error("Have more then one location for a file in job %i", jobID)
+                logging.error("Choosing location %s", fname['locations'][0])
+            pnn = fname["locations"][0]
         else:
-            pnn = file["locations"]
+            pnn = fname["locations"]
 
         wmbsFile["locations"] = set()
 
         if pnn != None:
-            wmbsFile.setLocation(pnn = pnn, immediateSave = False)
+            wmbsFile.setLocation(pnn=pnn, immediateSave=False)
         wmbsFile['jid'] = jobID
 
         return wmbsFile
@@ -900,9 +895,9 @@ class AccountantWorker(WMConnectionBase):
         Handle all the DBSBuffer Parentage in bulk if you can
         """
         outputLFNs = [f['lfn'] for f in self.mergedOutputFiles]
-        bindList         = []
+        bindList = []
         for lfn in outputLFNs:
-            newParents = self.findDBSParents(lfn = lfn)
+            newParents = self.findDBSParents(lfn=lfn)
             for parentLFN in newParents:
                 bindList.append({'child': lfn, 'parent': parentLFN})
 
@@ -913,13 +908,13 @@ class AccountantWorker(WMConnectionBase):
 
         if len(bindList) > 0:
             try:
-                self.dbsLFNHeritage.execute(binds = bindList,
-                                            conn = self.getDBConn(),
-                                            transaction = self.existingTransaction())
+                self.dbsLFNHeritage.execute(binds=bindList,
+                                            conn=self.getDBConn(),
+                                            transaction=self.existingTransaction())
             except WMException:
                 raise
             except Exception as ex:
-                msg =  "Error while trying to handle the DBS LFN heritage\n"
+                msg = "Error while trying to handle the DBS LFN heritage\n"
                 msg += str(ex)
                 msg += "BindList: %s" % bindList
                 logging.error(msg)
@@ -940,9 +935,9 @@ class AccountantWorker(WMConnectionBase):
         Here ACDC records and created and the file are moved
         to wmbs_sub_files_failed from completed.
         """
-        jobList = self.getFullJobInfo.execute([{'jobid' : x} for x in self.jobsWithSkippedFiles.keys()],
-                                              fileSelection = self.jobsWithSkippedFiles,
-                                              conn = self.getDBConn(),
-                                              transaction = self.existingTransaction())
-        self.dataCollection.failedJobs(jobList, useMask = False)
+        jobList = self.getFullJobInfo.execute([{'jobid': x} for x in self.jobsWithSkippedFiles.keys()],
+                                              fileSelection=self.jobsWithSkippedFiles,
+                                              conn=self.getDBConn(),
+                                              transaction=self.existingTransaction())
+        self.dataCollection.failedJobs(jobList, useMask=False)
         return

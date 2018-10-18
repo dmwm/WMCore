@@ -6,7 +6,7 @@ _MathAlgos_
 Simple mathematical tools and tricks that might prove to
 be useful.
 """
-
+from __future__ import print_function, division
 import math
 import decimal
 import logging
@@ -20,6 +20,7 @@ class MathAlgoException(WMException):
 
     """
     pass
+
 
 def getAverageStdDev(numList):
     """
@@ -57,22 +58,20 @@ def getAverageStdDev(numList):
     if length < 1:
         return average, total
 
-    average = float(total)/length
+    average = total / length
 
     for value in numList:
         tmpValue = value - average
         stdBase += (tmpValue * tmpValue)
 
-    stdDev = math.sqrt(stdBase/length)
+    stdDev = math.sqrt(stdBase / length)
 
     if math.isnan(average) or math.isinf(average):
         average = 0.0
     if math.isnan(stdDev) or math.isinf(average) or not decimal.Decimal(str(stdDev)).is_finite():
         stdDev = 0.0
-    if type(stdDev) != float and type(stdDev) != int:
+    if not isinstance(stdDev, (int, float)):
         stdDev = 0.0
-
-
 
     return average, stdDev
 
@@ -100,15 +99,14 @@ def createHistogram(numList, nBins, limit):
         elif average > value:
             underflow.append(value)
 
-
     if len(underflow) > 0:
-        binAvg, binStdDev = getAverageStdDev(numList = underflow)
+        binAvg, binStdDev = getAverageStdDev(numList=underflow)
         histogram.append({'type': 'underflow',
                           'average': binAvg,
                           'stdDev': binStdDev,
                           'nEvents': len(underflow)})
     if len(overflow) > 0:
-        binAvg, binStdDev = getAverageStdDev(numList = overflow)
+        binAvg, binStdDev = getAverageStdDev(numList=overflow)
         histogram.append({'type': 'overflow',
                           'average': binAvg,
                           'stdDev': binStdDev,
@@ -117,17 +115,16 @@ def createHistogram(numList, nBins, limit):
         # Nothing to do?
         return histogram
 
-
     histEvents.sort()
     upperBound = max(histEvents)
     lowerBound = min(histEvents)
     if lowerBound == upperBound:
         # This is a problem
-        logging.error("Only one value in the histogram!")
+        logging.debug("Only one value in the histogram!")
         nBins = 1
         upperBound = upperBound + 1
         lowerBound = lowerBound - 1
-    binSize = float(upperBound - lowerBound)/nBins
+    binSize = (upperBound - lowerBound)/nBins
     binSize = floorTruncate(binSize)
 
     for x in range(nBins):
@@ -160,19 +157,15 @@ def createHistogram(numList, nBins, limit):
             # Nothing to do here, leave defaults
             continue
 
-        binAvg, binStdDev = getAverageStdDev(numList = binList)
+        binAvg, binStdDev = getAverageStdDev(numList=binList)
         bin['average'] = binAvg
         bin['stdDev']  = binStdDev
         bin['nEvents'] = len(binList)
 
-
-
-
-
     return histogram
 
 
-def floorTruncate(value, precision = 3):
+def floorTruncate(value, precision=3):
     """
     _floorTruncate_
 
@@ -181,13 +174,12 @@ def floorTruncate(value, precision = 3):
     Always truncates to a LOWER value, this is so that using it for
     histogram binning creates values beneath the histogram lower edge.
     """
-
     prec = math.pow(10, precision)
 
-    return math.floor(float(value * prec))/float(prec)
+    return math.floor(value * prec)/prec
 
 
-def sortDictionaryListByKey(dictList, key, reverse = False):
+def sortDictionaryListByKey(dictList, key, reverse=False):
     """
     _sortDictionaryListByKey_
 
@@ -199,10 +191,10 @@ def sortDictionaryListByKey(dictList, key, reverse = False):
     And not all histograms have the same value
     """
 
-    return sorted(dictList, key=lambda k: k.get(key, 0.0), reverse = reverse)
+    return sorted(dictList, key=lambda k: k.get(key, 0.0), reverse=reverse)
 
 
-def getLargestValues(dictList, key, n = 1):
+def getLargestValues(dictList, key, n=1):
     """
     _getLargestValues_
 
@@ -212,10 +204,10 @@ def getLargestValues(dictList, key, n = 1):
     Key must be a numerical key.
     """
 
-    sortedList = sortDictionaryListByKey(dictList = dictList, key = key,
-                                         reverse = True)
+    sortedList = sortDictionaryListByKey(dictList=dictList, key=key, reverse=True)
 
     return sortedList[:n]
+
 
 def validateNumericInput(value):
     """
@@ -231,6 +223,7 @@ def validateNumericInput(value):
         return False
 
     return True
+
 
 def calculateRunningAverageAndQValue(newPoint, n, oldM, oldQ):
     """
@@ -260,6 +253,7 @@ def calculateRunningAverageAndQValue(newPoint, n, oldM, oldQ):
         Q = oldQ + ((n - 1) * (newPoint - oldM) * (newPoint - oldM) / n)
 
     return M, Q
+
 
 def calculateStdDevFromQ(Q, n):
     """

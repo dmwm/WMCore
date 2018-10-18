@@ -127,8 +127,6 @@ class TestInit(object):
         dialectPart = dburl.split(":")[0]
         if dialectPart == 'mysql':
             return 'MySQL'
-        elif dialectPart == 'sqlite':
-            return 'SQLite'
         elif dialectPart == 'oracle':
             return 'Oracle'
         elif dialectPart == 'http':
@@ -235,6 +233,7 @@ class TestInit(object):
         config.section_("General")
         # If you need a testDir, call testInit.generateWorkDir
         # config.General.workDir = os.getenv("TESTDIR")
+        config.General.ReqMgr2ServiceURL = "http://localhost/reqmgr2"
 
         config.section_("CoreDatabase")
         if connectUrl:
@@ -270,8 +269,6 @@ class TestInit(object):
 
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
-        config.TaskArchiver.ReqMgrSeviceURL = "request manager service url"
-        config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         return config
 

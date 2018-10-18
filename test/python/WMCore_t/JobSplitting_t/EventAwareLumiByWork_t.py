@@ -1,9 +1,10 @@
 """
 _EventAwareLumiByWork_t_
 
-Lumi based splitting test with awareness of events per lumi.
+Lumi based splitting test with awareness of events per lumi, using the DataStructs classes.
 It must pass the same tests as the LumiBased algorithm, plus
 specific ones for this algorithm.
+See WMCore/WMBS/JobSplitting/ for the WMBS (SQL database) version.
 """
 
 from __future__ import division, print_function
@@ -392,7 +393,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # Settings are to split on job boundaries, to fail single lumis with more than 800 events
         # and to put 550 events per job
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=550,
-                               max_events_per_lumi=800, performance=self.performanceParams)
+                               job_time_limit=9600, performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -402,7 +403,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         for jobNum in (0, 1, 3, 4):
             self.assertFalse(jobs[jobNum].get('failedOnCreation'))
         self.assertTrue(jobs[2]['failedOnCreation'])
-        self.assertEqual(jobs[2]['failedReason'], 'Too many (estimated) events (1000.0) in run 1, lumi 1')
+        self.assertEqual(jobs[2]['failedReason'], 'File /this/is/file2 has a single lumi 1, in run 1 with too many events 1000 and it woud take 12000 sec to run')
 
         return
 
@@ -430,14 +431,14 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         # Fail single lumis with more than 800 events and put 550 events per job
         jobGroups = jobFactory(halt_job_on_file_boundaries=True, splitOnRun=True, events_per_job=550,
-                               max_events_per_lumi=800, performance=self.performanceParams)
+                               job_time_limit=9600, performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
         for job in jobs:
             self.assertTrue(job['failedOnCreation'])
-            self.assertIn("Too many (estimated) events (1000.0) in", job['failedReason'])
+            self.assertIn(' with too many events 1000 and it woud take 12000 sec to run', job['failedReason'])
 
         return
 

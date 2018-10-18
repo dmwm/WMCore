@@ -7,15 +7,12 @@ Standard Spec to use for development & unit testing
 
 """
 
-
-
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
 
 
 def oneTaskTwoStep():
     workload = newWorkload("OneTaskTwoStepTest")
-
+    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 
@@ -30,11 +27,9 @@ def oneTaskTwoStep():
     return workload
 
 
-
 def oneTaskFourStep():
-
     workload = newWorkload("OneTaskFourStepTest")
-
+    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 
@@ -52,10 +47,10 @@ def oneTaskFourStep():
 
     return workload
 
+
 def twoTaskTree():
-
     workload = newWorkload("TwoTaskTree")
-
+    workload.setDbsUrl("https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
 
     task1 = workload.newTask("FirstTask")
 
@@ -72,7 +67,5 @@ def twoTaskTree():
 
     step4 = step3.addStep("stageOut2")
     step4.setStepType("StageOut")
-
-
 
     return workload

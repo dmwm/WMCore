@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#pylint: disable=
+# -*- coding: utf-8 -*-
+# pylint: disable=
 """
 File       : SummaryDB.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -10,7 +10,9 @@ Description: Set of modules/functions to update WMAgent SummaryDB.
 # system modules
 import logging
 from pprint import pformat
+
 from WMCore.Database.CMSCouch import CouchNotFoundError
+
 
 def fwjr_parser(doc):
     """
@@ -44,9 +46,9 @@ def fwjr_parser(doc):
     # In that case it shouldn't crash but move on.
     dataCollectedFlag = False
 
-    if  'fwjr' in doc:
+    if 'fwjr' in doc:
         fwjr = doc['fwjr']
-        if  not isinstance(fwjr, dict):
+        if not isinstance(fwjr, dict):
             fwjr = fwjr.__to_json__(None)
     else:
         raise Exception('Document does not contain FWJR part')
@@ -65,18 +67,19 @@ def fwjr_parser(doc):
         if not stepName.startswith('logArch') and fwjr['steps'][stepName]['status'] != 0:
             return dataCollectedFlag
 
-    sdict = {} # all sites summary
+    sdict = {}  # all sites summary
     steps = fwjr['steps']
     wrappedTotalJobTime = 0
     pdict = dict(totalJobCPU=0, totalJobTime=0, totalEventCPU=0)
     ddict = {}
     for key, val in steps.items():
-        wrappedTotalJobTime += val['stop'] - val['start']
+        if val['stop'] is not None and val['start'] is not None:
+            wrappedTotalJobTime += val['stop'] - val['start']
         site_name = val['site']
         site_summary = dict(wrappedTotalJobTime=wrappedTotalJobTime,
                             inputEvents=0, dataset=ddict,
                             cmsRunCPUPerformance=pdict)
-        if  key.startswith('cmsRun'):
+        if key.startswith('cmsRun'):
             perf = val['performance']
             pdict['totalJobCPU'] += float(perf['cpu']['TotalJobCPU'])
             pdict['totalJobTime'] += float(perf['cpu']['TotalJobTime'])
@@ -88,22 +91,22 @@ def fwjr_parser(doc):
             odict = val['output']
             for kkk, vvv in odict.items():
                 for row in vvv:
-                    if  row.get('merged', False):
+                    if row.get('merged', False):
                         prim = row['dataset']['primaryDataset']
                         proc = row['dataset']['processedDataset']
                         tier = row['dataset']['dataTier']
                         dataset = '/%s/%s/%s' % (prim, proc, tier)
                         totalLumis = sum([len(r) for r in row['runs'].values()])
                         dataset_summary = \
-                                dict(size=row['size'], events=row['events'], totalLumis=totalLumis)
+                            dict(size=row['size'], events=row['events'], totalLumis=totalLumis)
                         ddict[dataset] = dataset_summary
-            if  ddict: # if we got dataset summary
+            if ddict:  # if we got dataset summary
                 site_summary.update({'dataset': ddict})
 
             idict = val.get('input', {})
-            if  idict:
+            if idict:
                 source = idict.get('source', {})
-                if  isinstance(source, list):
+                if isinstance(source, list):
                     for item in source:
                         site_summary['inputEvents'] += item.get('events', 0)
                 else:
@@ -118,47 +121,50 @@ def fwjr_parser(doc):
     else:
         return dataCollectedFlag
 
+
 def merge_docs(doc1, doc2):
     "Merge two summary documents use dict in place strategy"
     for key in ['_id', '_rev']:
-        if  key in doc1:
+        if key in doc1:
             del doc1[key]
-        if  key in doc2:
+        if key in doc2:
             del doc2[key]
     for key, val in doc1.items():
-        if  key not in doc2:
+        if key not in doc2:
             return False
         if isinstance(val, dict):
-            if  not merge_docs(doc1[key], doc2[key]):
+            if not merge_docs(doc1[key], doc2[key]):
                 return False
         else:
             doc1[key] += doc2[key]
     return True
 
+
 def update_tasks(old_tasks, new_tasks):
     "Update tasks dictionaries"
     for task, tval in new_tasks.items():
-        if  task in old_tasks:
+        if task in old_tasks:
             for site, sval in tval['sites'].items():
-                if  site in old_tasks[task]['sites']:
+                if site in old_tasks[task]['sites']:
                     old_sdict = old_tasks[task]['sites'][site]
                     new_sdict = sval
                     status = merge_docs(old_sdict, new_sdict)
-                    if  not status:
-                        logging.error("Error merge_docs:\n%s\n%s\n" % (pformat(old_sdict),
-                                                                     pformat(new_sdict)))
+                    if not status:
+                        logging.error("Error merge_docs:\n%s\n%s\n", pformat(old_sdict),
+                                      pformat(new_sdict))
                 else:
-                    old_tasks[task]['sites'].update({site:sval})
+                    old_tasks[task]['sites'].update({site: sval})
         else:
             old_tasks.update({task: tval})
     return old_tasks
+
 
 def updateSummaryDB(sumdb, document):
     "Update summary DB with given document"
     # parse input doc and create summary doc
     sum_doc = fwjr_parser(document)
     # check if DB has FWJR statistics
-    if sum_doc == False:
+    if sum_doc is False:
         return False
 
     try:
@@ -173,12 +179,10 @@ def updateSummaryDB(sumdb, document):
         combinedDoc = {'_id': sum_doc['_id'], 'tasks': tasks}
         resp = sumdb.updateDocument(sum_doc['_id'], "SummaryStats",
                                     "genericUpdate",
-                                    fields = combinedDoc,
-                                    useBody = True)
-        #TODO: check response whether update successfull or not
+                                    fields=combinedDoc,
+                                    useBody=True)
+        # TODO: check response whether update successfull or not
         return True
-    except Exception as ex:
-        import traceback
-        logging.error("Error fetching summary doc %s: %s" % (
-                                    sum_doc['_id'], traceback.format_exc()))
+    except Exception:
+        logging.exception("Error fetching summary doc %s:", sum_doc['_id'])
         return False

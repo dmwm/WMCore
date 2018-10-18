@@ -2,7 +2,7 @@
 """
 _LoadFromSpecOwner_
 
-SQLite implementation of Workflow.LoadFromSpecOwner
+Oracle implementation of Workflow.LoadFromSpecOwner
 
 """
 __all__ = []

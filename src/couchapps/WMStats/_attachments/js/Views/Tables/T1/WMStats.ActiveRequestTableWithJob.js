@@ -30,7 +30,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                         }},
             { "data": "workflow", "title": "workflow",
               "render": function (data, type, row, meta) {
-                            return formatReqDetailUrl(row.workflow, row.ReqMgr2Only);
+                            return formatReqDetailUrl(row.workflow);
                   }, 
               "width": "150px"
             },

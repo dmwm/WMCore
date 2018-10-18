@@ -14,7 +14,7 @@ import logging
 import os.path
 import socket
 
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
+from Utils import FileTools
 from WMCore.FwkJobReport.Report import FwkJobReportException
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
@@ -31,7 +31,7 @@ class Exit127(DiagnosticHandler):
         msg = "Executable Not Found at host: %s" % socket.getfqdn()
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  50110, "ExecutableNotFound", msg)
 
 
@@ -45,7 +45,7 @@ class Exit126(DiagnosticHandler):
         msg = "Executable permissions not executable at host: %s" % socket.getfqdn()
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  50111, "ExecutableBadPermissions", msg)
 
 
@@ -72,11 +72,11 @@ class Exit50513(DiagnosticHandler):
                               'scramOutput.log')
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  50513, "SCRAMScriptFailure", msg)
 
         # Then mark the job as failed
@@ -112,22 +112,22 @@ class CMSDefaultHandler(DiagnosticHandler):
             except FwkJobReportException:
                 # Job report is bad, the parse already puts a 50115 in the file
                 pass
-            reportStep = executor.report.retrieveStep(executor.step._internal_name)
+            reportStep = executor.report.retrieveStep(executor.stepName)
             reportStep.status = errCode
 
         # Grab stderr log from CMSSW
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step._internal_name))
+                              '%s-stderr.log' % (executor.stepName))
         outLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stdout.log' % (executor.step._internal_name))
+                              '%s-stdout.log' % (executor.stepName))
 
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
@@ -136,13 +136,13 @@ class CMSDefaultHandler(DiagnosticHandler):
                               'scramOutput.log')
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 25)
+            logTail = FileTools.tail(errLog, 25)
             msg += '\n Adding last ten lines of SCRAM error log:\n'
             msg += logTail
 
         # make sure the report has the error in it
         dummy = getattr(executor.report.report, "errors", None)  # Seems to do nothing
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  errCode, description, msg)
 
         return
@@ -174,31 +174,31 @@ class CMSRunHandler(DiagnosticHandler):
             except FwkJobReportException:
                 # Job report is bad, the parse already puts a 50115 in the file
                 pass
-            reportStep = executor.report.retrieveStep(executor.step._internal_name)
+            reportStep = executor.report.retrieveStep(executor.stepName)
             reportStep.status = self.code
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step._internal_name))
+                              '%s-stderr.log' % (executor.stepName))
         outLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stdout.log' % (executor.step._internal_name))
+                              '%s-stdout.log' % (executor.stepName))
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
-            executor.report.addError(executor.step._internal_name,
+            executor.report.addError(executor.stepName,
                                      self.code, self.desc, msg)
         else:
             if not hasattr(errSection, self.desc):
-                executor.report.addError(executor.step._internal_name,
+                executor.report.addError(executor.stepName,
                                          self.code, self.desc, msg)
 
         print(executor.report.report.errors)
@@ -227,13 +227,13 @@ class EDMExceptionHandler(DiagnosticHandler):
                                  executor.step.output.jobReport)
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step._internal_name))
+                              '%s-stderr.log' % (executor.stepName))
         outLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stdout.log' % (executor.step._internal_name))
+                              '%s-stdout.log' % (executor.stepName))
 
         addOn = '\n'
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
+            logTail = FileTools.tail(errLog, 10)
             addOn += '\nAdding last ten lines of CMSSW stderr:\n'
             addOn += logTail
         else:
@@ -241,19 +241,19 @@ class EDMExceptionHandler(DiagnosticHandler):
             logging.error(os.listdir(os.path.basename(jobRepXml)))
 
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            logTail = FileTools.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg = '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
         # Add the error we were sent
         ex = args.get('ExceptionInstance', None)
-        executor.report.addError(executor.step._internal_name,
+        executor.report.addError(executor.stepName,
                                  errCode, "CMSSWStepFailure", msg + str(ex))
 
         if not os.path.exists(jobRepXml):
             # no report => Error
             msg = "No Job Report Found: %s" % jobRepXml
-            executor.report.addError(executor.step._internal_name,
+            executor.report.addError(executor.stepName,
                                      50115, "MissingJobReport", msg)
             return
 
@@ -270,7 +270,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         if errSection == None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
             msg += addOn
-            executor.report.addError(executor.step._internal_name,
+            executor.report.addError(executor.stepName,
                                      50116, "MissingErrorReport", msg)
             return
 
@@ -279,13 +279,13 @@ class EDMExceptionHandler(DiagnosticHandler):
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
                 msg += addOn
-                executor.report.addError(executor.step._internal_name,
+                executor.report.addError(executor.stepName,
                                          50116, "MissingErrorReport", msg)
 
             else:
                 msg = "Adding extra error in order to hold error report"
                 msg += addOn
-                executor.report.addError(executor.step._internal_name,
+                executor.report.addError(executor.stepName,
                                          99999, "ErrorLoggingAddition", msg)
         return
 

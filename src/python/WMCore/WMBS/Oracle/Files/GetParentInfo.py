@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 """
 _GetParentInfo_
 
-Oracle implementation of Files.GetParentInfo
+Oracle implementation of Files.GetParentAndGrandParentInfo
 """
 
 

@@ -122,6 +122,9 @@ def modifyConfiguration(config, **args):
 
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
+        # t0 agent doesn't have reqmgr2_url
+        if "reqmgr2_url" in args:
+            config.General.ReqMgr2ServiceURL = args["reqmgr2_url"]
 
     if hasattr(config, "WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
@@ -140,21 +143,11 @@ def modifyConfiguration(config, **args):
                                                          config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
         config.TaskArchiver.dqmUrl = args["dqm_url"]
-        # t0 agent doesn't have reqmgr_url
-        if "reqmgr_url" in args:
-            config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
-        if "reqmgr2_url" in args:
-            config.TaskArchiver.ReqMgr2ServiceURL = args["reqmgr2_url"]
 
     if hasattr(config, "ACDC"):
         # t0 agent may not have acdc_url
         if "acdc_url" in args:
             config.ACDC.couchurl, config.ACDC.database = splitCouchServiceURL(args["acdc_url"])
-
-    if hasattr(config, "JobUpdater"):
-        # t0 agent doesn't have reqmgr_url
-        if "reqmgr2_url" in args:
-            config.JobUpdater.reqMgr2Url = args["reqmgr2_url"]
 
     if hasattr(config, "DBS3Upload"):
         config.DBS3Upload.dbsUrl = args["dbs3_url"]
@@ -354,7 +347,7 @@ def main(argv=None):
                                         "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                         "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                         "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
-                                        "reqmgr_url=", "reqmgr2_url=",
+                                        "reqmgr2_url=",
                                         "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=",
                                         "dashboard_url=",
                                         "requestcouch_url=", "central_logdb_url=", "wmarchive_url="])
@@ -377,7 +370,7 @@ def main(argv=None):
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--workload_summary_url',
-                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
+                          '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
                           '--requestcouch_url', '--central_logdb_url', '--wmarchive_url'):
                 parameters[option[2:]] = value

@@ -2,27 +2,27 @@
 """
 _Step.Executor.LogCollect_
 
-Implementation of an Executor for a LogCollect step.
+Implementation of an Executor for a  LogCollect step.
 """
 from __future__ import print_function
 
+import datetime
+import logging
 import os
 import re
-import logging
 import signal
-import tarfile
-import datetime
 import socket
+import tarfile
 
 from Utils.IteratorTools import grouper
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-from WMCore.WMSpec.Steps.Executor import Executor
-from WMCore.Storage.StageOutMgr import StageOutMgr
-from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.DeleteMgr import DeleteMgr
+from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.StageOutError import StageOutFailure
+from WMCore.Storage.StageOutMgr import StageOutMgr
 from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch
+from WMCore.WMSpec.Steps.Executor import Executor
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
 class LogCollect(Executor):
@@ -44,7 +44,7 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        print("Steps.Executors.LogCollect.pre called")
+        logging.info("Steps.Executors.LogCollect.pre called")
         return None
 
     def execute(self, emulator=None):
@@ -104,8 +104,14 @@ class LogCollect(Executor):
         useEdmCopyUtil = False
         if result:
             try:
-                if int(result.group(1)) >= 8:
+                cmssw_major = int(result.group(1))
+                if cmssw_major >= 8:
                     useEdmCopyUtil = True
+                elif cmssw_major < 8 and scramArch.startswith('slc6_amd64_'):
+                    useEdmCopyUtil = True
+                    logging.warning("CMSSW too old to support edmCopyUtil, using CMSSW_10_2_3 instead")
+                    cmsswVersion = "CMSSW_10_2_3"
+                    scramArch = "slc6_amd64_gcc700"
             except ValueError:
                 pass
 
@@ -292,5 +298,5 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print("Steps.Executors.LogCollect.post called")
+        logging.info("Steps.Executors.LogCollect.post called")
         return None

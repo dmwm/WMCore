@@ -37,9 +37,10 @@ from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMQuality.Emulators.WMSpecGenerator.ReqMgrDocGenerator import generate_reqmgr_schema
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 
-class TaskArchiverTest(unittest.TestCase):
+class TaskArchiverTest(EmulatedUnitTestCase):
     """
     TestCase for TestTaskArchiver module
     """
@@ -53,7 +54,7 @@ class TaskArchiverTest(unittest.TestCase):
         """
         setup for test.
         """
-
+        super(TaskArchiverTest, self).setUp()
         myThread = threading.currentThread()
 
         self.testInit = TestInit(__file__)
@@ -98,7 +99,6 @@ class TaskArchiverTest(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
 
         self.testInit.clearDatabase(modules=["WMCore.WMBS"])
         self.testInit.delWorkDir()
@@ -116,6 +116,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         config.section_("General")
         config.General.workDir = "."
+        config.General.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
@@ -128,7 +129,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         config.component_("TaskArchiver")
         config.TaskArchiver.componentDir = self.testDir
-        config.TaskArchiver.WorkQueueParams = {}
+        config.TaskArchiver.WorkQueueParams = {'CacheDir': config.JobCreator.jobCacheDir}
         config.TaskArchiver.pollInterval = 60
         config.TaskArchiver.logLevel = 'INFO'
         config.TaskArchiver.timeOut = 0
@@ -145,7 +146,6 @@ class TaskArchiverTest(unittest.TestCase):
                                                          config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.workloadSummaryCouchURL = config.JobStateMachine.couchurl
         config.TaskArchiver.requireCouch = True
-        config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         config.component_("AnalyticsDataCollector")
         config.AnalyticsDataCollector.centralRequestDBURL = '%s/reqmgrdb_t' % config.JobStateMachine.couchurl
@@ -170,14 +170,14 @@ class TaskArchiverTest(unittest.TestCase):
 
         return config
 
-    def createWorkload(self, workloadName='Test', emulator=True):
+    def createWorkload(self, workloadName):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
+        workload = testWorkload(workloadName)
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -193,13 +193,11 @@ class TaskArchiverTest(unittest.TestCase):
                            filesetName="TestFileset",
                            specLocation="spec.xml", error=False,
                            task="/TestWorkload/ReReco",
-                           type="Processing"):
+                           jobType="Processing"):
         """
         Creates a group of several jobs
 
         """
-
-        myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec=specLocation, owner=self.OWNERDN,
                                 name=name, task=task, owner_vogroup="", owner_vorole="")
@@ -239,7 +237,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         testSubscription = Subscription(fileset=testWMBSFileset,
                                         workflow=testWorkflow,
-                                        type=type)
+                                        type=jobType)
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription=testSubscription)
@@ -462,7 +460,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -533,7 +531,7 @@ class TaskArchiverTest(unittest.TestCase):
                          ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
         # Check histograms
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['AvgEventTime']['histogram'][0][
                 'average'],
             0.89405199999999996, places=2)
@@ -543,11 +541,11 @@ class TaskArchiverTest(unittest.TestCase):
             10)
 
         # Check standard performance
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['average'],
             17.786300000000001,
             places=2)
-        self.assertAlmostEquals(
+        self.assertAlmostEqual(
             workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1']['TotalJobCPU']['stdDev'], 0.0,
             places=2)
 
@@ -570,7 +568,7 @@ class TaskArchiverTest(unittest.TestCase):
             if x in config.TaskArchiver.histogramKeys:
                 continue
             for y in ['average', 'stdDev']:
-                self.assertAlmostEquals(
+                self.assertAlmostEqual(
                     workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'][x][y],
                     workloadSummary['performance']['/TestWorkload/ReReco']['cmsRun1'][x][y],
                     places=2)
@@ -583,8 +581,6 @@ class TaskArchiverTest(unittest.TestCase):
 
         Test with a failed FWJR
         """
-
-        myThread = threading.currentThread()
 
         config = self.getConfig()
         workloadPath = os.path.join(self.testDir, 'specDir', 'spec.pkl')
@@ -599,7 +595,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -668,9 +664,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         DON'T RUN THIS!
         """
-        import cProfile, pstats
-
-        myThread = threading.currentThread()
+        import cProfile
+        import pstats
 
         name = makeUUID()
 
@@ -730,20 +725,20 @@ class TaskArchiverTest(unittest.TestCase):
         listRunsWorkflow = self.dbsDaoFactory(classname="ListRunsWorkflow")
 
         # Didn't like to have done that, but the test doesn't provide all info I need in the system, so faking it:
-        myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')"""
-                                 , transaction=False)
+        myThread.dbi.processData("""insert into dbsbuffer_workflow(id, name) values (1, 'TestWorkload')""",
+                                 transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (1, '/store/t/e/s/t.test', 1, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (1, '/store/t/e/s/t.test', 1, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (2, '/store/t/e/s/t.test2', 1, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file (id, lfn, dataset_algo, workflow) values (2, '/store/t/e/s/t.test2', 1, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207214, 100, 1)"""
-            , transaction=False)
+            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207214, 100, 1)""",
+            transaction=False)
         myThread.dbi.processData(
-            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207215, 200, 2)"""
-            , transaction=False)
+            """insert into dbsbuffer_file_runlumi_map (run, lumi, filename) values (207215, 200, 2)""",
+            transaction=False)
 
         config = self.getConfig()
 
@@ -763,7 +758,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 filesetName="TestFileset_2",
                                                 specLocation=workloadPath,
                                                 task="/TestWorkload/ReReco/LogCollect",
-                                                type="LogCollect")
+                                                jobType="LogCollect")
 
         # Adding request type as ReReco, real ReqMgr requests have it
         workload.data.request.section_("schema")
@@ -779,7 +774,7 @@ class TaskArchiverTest(unittest.TestCase):
             if PD in interestingPDs and dataTier == "DQM":
                 interestingDatasets.append(dataset)
         # We should have found 1 interesting dataset
-        self.assertAlmostEquals(len(interestingDatasets), 1)
+        self.assertAlmostEqual(len(interestingDatasets), 1)
         if len(interestingDatasets) == 0:
             return
         # Request will be only interesting for performance if it's a ReReco or PromptReco
@@ -799,7 +794,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertFalse(isPromptReco)
 
         # We are not interested if it's not a PromptReco or a ReReco
-        if (isReReco or isPromptReco) == False:
+        if not (isReReco or isPromptReco):
             return
         if isReReco:
             release = getattr(workload.data.request.schema, "CMSSWVersion")
@@ -825,7 +820,7 @@ class TaskArchiverTest(unittest.TestCase):
                     self.filterInterestingPerfPoints(responseJSON, perfDashBoardMinLumi, perfDashBoardMaxLumi))
 
             # Publish dataset performance to DashBoard.
-            if self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints) == False:
+            if not self.publishPerformanceDashBoard(dashBoardUrl, PD, release, worthPoints):
                 logging.info("something went wrong when publishing dataset %s to DashBoard", dataset)
 
         return

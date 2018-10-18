@@ -3,9 +3,8 @@
         "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": 2027520, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
@@ -22,7 +21,7 @@
                            "/BuToJpsiKV2_BMuonFilter_TuneCUEP8M1_13TeV-pythia8-evtgen/RunIIWinter15GS-MCRUN2_71_V1_ext1-v2/GEN-SIM#cc0feda2-c027-11e6-8e8a-001e67abef8c"],
         "CMSSWVersion": "CMSSW_7_4_1_patch4", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "ReDigi two cmsRun in the same job; Stageout step2 only; Two blocks whitelisted; Automatic splitting", 
+        "Comments": "Two cmsRun in the same job; Save step2 only; Two blocks whitelisted; Manual splitting at 275 EpJob",
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
@@ -44,11 +43,12 @@
         "Requestor": "amaltaro", 
         "ScramArch": "slc6_amd64_gcc491", 
         "SizePerEvent": 2482, 
-        "SplittingAlgo": "EventAwareLumiBased", 
+        "SplittingAlgo": "EventAwareLumiBased",
+        "EventsPerJob": 275,
         "StepOneConfigCacheID": "8654d0a1dde0b1463693a416ef7a77f0", 
         "StepOneOutputModuleName": "RAWSIMoutput", 
         "StepTwoConfigCacheID": "8654d0a1dde0b1463693a416ef7b6a1f", 
         "StepTwoOutputModuleName": "AODSIMoutput", 
-        "TimePerEvent": 105
+        "TimePerEvent": 125
     }
 }

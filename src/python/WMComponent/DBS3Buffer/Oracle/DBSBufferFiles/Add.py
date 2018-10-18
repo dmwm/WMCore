@@ -3,7 +3,6 @@
 Oracle implementation of AddFile
 """
 
-#This has been modified for Oracle
 
 
 
@@ -14,4 +13,6 @@ class Add(MySQLAdd):
     """
     Oracle implementation of AddFile
     """
-    pass
+    sql = """INSERT /*+ IGNORE_ROW_ON_DUPKEY_INDEX (dbsbuffer_file (lfn)) */ 
+                 INTO dbsbuffer_file (lfn, filesize, events, dataset_algo, status, workflow, in_phedex)
+                      values (:lfn, :filesize, :events, :dataset_algo, :status, :workflow, :in_phedex)"""

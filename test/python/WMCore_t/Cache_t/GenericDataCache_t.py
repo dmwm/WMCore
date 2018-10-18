@@ -37,7 +37,7 @@ class GenericDataCacheTest(unittest.TestCase):
         time.sleep(2)
         after = mc2.getData()
         self.assertFalse(before == after)
-        self.assertFalse(mc2.lastUpdate == -1)
+        self.assertFalse(mc2.lastUpdated == -1)
 
         return
 

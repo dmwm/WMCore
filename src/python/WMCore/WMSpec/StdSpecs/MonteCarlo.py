@@ -12,6 +12,7 @@ fetches from DBS the information about pileup input.
 """
 
 import math
+
 from Utils.Utilities import strToBool
 from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -104,10 +105,10 @@ class MonteCarloWorkloadFactory(StdBase):
         # Tune the splitting, only EventBased is allowed for MonteCarlo
         # 8h jobs are CMS standard, set the default with that in mind
         self.prodJobSplitAlgo = "EventBased"
-        if self.eventsPerJob is None:
-            self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
-        if self.eventsPerLumi is None:
-            self.eventsPerLumi = self.eventsPerJob
+        self.eventsPerJob, self.eventsPerLumi = StdBase.calcEvtsPerJobLumi(self.eventsPerJob,
+                                                                           self.eventsPerLumi,
+                                                                           self.timePerEvent)
+
         self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
                                  "events_per_lumi": self.eventsPerLumi,
                                  "lheInputFiles": self.lheInputFiles}
@@ -123,6 +124,9 @@ class MonteCarloWorkloadFactory(StdBase):
         if self.firstLumi > 1:
             self.previousJobCount = int(math.ceil((self.firstEvent - 1) / self.eventsPerJob))
             self.prodJobSplitArgs["initial_lfn_counter"] = self.previousJobCount
+
+        # Feed values back to save in couch
+        arguments['EventsPerJob'] = self.eventsPerJob
 
         return self.buildWorkload()
 
@@ -154,15 +158,14 @@ class MonteCarloWorkloadFactory(StdBase):
                                   "null": False},
                     "MCPileup": {"validate": dataset, "attr": "mcPileup", "null": True},
                     "DataPileup": {"validate": dataset, "attr": "dataPileup", "null": True},
-                    "SplittingAlgo" : {"default" : "EventBased", "null" : False,
-                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                    "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "prodJobSplitAlgo"},
+                    "SplittingAlgo": {"default": "EventBased", "null": False,
+                                      "validate": lambda x: x in ["EventBased"],
+                                      "attr": "prodJobSplitAlgo"},
                     "DeterministicPileup": {"default": False, "type": strToBool, "null": False},
                     "EventsPerJob": {"type": int, "validate": lambda x: x > 0, "null": True},
                     "EventsPerLumi": {"type": int, "validate": lambda x: x > 0, "null": True},
                     "LheInputFiles": {"default": False, "type": strToBool, "null": False}
-                   }
+                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

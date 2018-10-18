@@ -2,14 +2,15 @@
 """
 Perform cleanup actions
 """
-__all__ = []
-
-
-
 import time
 import random
+import threading
+
+from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.DAOFactory import DAOFactory
+
 
 class WorkQueueManagerCleaner(BaseWorkerThread):
     """
@@ -22,9 +23,12 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.queue = queue
         self.config = config
-        self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-        # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
-        self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
+        self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        self.finishedWorflowCheck = daoFactory(classname="Subscriptions.CountFinishedSubscriptionsByWorkflow")
 
     def setup(self, parameters):
         """
@@ -35,6 +39,7 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         self.logger.info('Sleeping for %d seconds before 1st loop' % t)
         time.sleep(t)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Check & expire negotiation failures
@@ -45,9 +50,14 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
             # this will clean up whatever left over from above clean up.
             # also if the wq replication has problem it won't delay the killing jobs in condor
             # and updating wmbs status
-            abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+            # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
+            # added completed status in the list due to the race condition
+            requests = self.reqmgr2Svc.getRequestByStatusFromMemoryCache(["aborted", "aborted-completed", "force-complete", "completed"]).getData()
+            results = self.finishedWorflowCheck.execute(workflowNames=requests)
 
-            for wf in abortedAndForceCompleteRequests:
+            requestsToKill = [reqInfo["workflow"] for reqInfo in results if reqInfo["open"] > 0]
+
+            for wf in requestsToKill:
                 self.queue.killWMBSWorkflow(wf)
 
         except Exception as ex:

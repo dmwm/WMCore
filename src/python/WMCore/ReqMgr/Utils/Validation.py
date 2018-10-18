@@ -4,10 +4,6 @@ ReqMgr request handling.
 """
 from __future__ import print_function
 
-import json
-import logging
-import time
-
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.Auth import getWritePermission
@@ -19,44 +15,6 @@ from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.WMFactory import WMFactory
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
-
-
-def loadRequestSchema(workload, requestSchema):
-    """
-    _loadRequestSchema_
-    Legacy code to support ops script
-
-    Does modifications to the workload I don't understand
-    Takes a WMWorkloadHelper, operates on it directly with the schema
-    """
-    schema = workload.data.request.section_('schema')
-    for key, value in requestSchema.iteritems():
-        if isinstance(value, dict) and key == 'LumiList':
-            value = json.dumps(value)
-        try:
-            setattr(schema, key, value)
-        except Exception as ex:
-            # Attach TaskChain tasks
-            if isinstance(value, dict) and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
-                newSec = schema.section_(key)
-                for k, v in requestSchema[key].iteritems():
-                    if isinstance(value, dict) and key == 'LumiList':
-                        value = json.dumps(value)
-                    try:
-                        setattr(newSec, k, v)
-                    except Exception as ex:
-                        # this logging need to change to cherry py logging
-                        logging.error("Invalid Value: %s", str(ex))
-            else:
-                # this logging need to change to cherry py logging
-                logging.error("Invalid Value: %s", str(ex))
-
-    schema.timeStamp = int(time.time())
-    schema = workload.data.request.schema
-
-    # might belong in another method to apply existing schema
-    workload.data.owner.Group = schema.Group
-    workload.data.owner.Requestor = schema.Requestor
 
 
 def workqueue_stat_validation(request_args):
@@ -88,7 +46,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     # if the status is not set only ReqMgr Admin can change the values
     # TODO for each step, assigned, approved, announce find out what other values
     # can be set
-    request_args["RequestType"] = workload.requestType()
+    request_args["RequestType"] = workload.getRequestType()
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
     del request_args["RequestType"]
@@ -123,6 +81,10 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     3. convert data from body to arguments (spec instance, argument with default setting)
     TODO: raise right kind of error with clear message
     """
+    ### TODO: backwards compatibility. Remove these 2 lines in ~HG1805
+    request_args.pop('MaxRSS', None)
+    request_args.pop('MaxVSize', None)
+
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
@@ -159,6 +121,8 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         # ACDC of ACDC, we can't validate this case
         # simply copy the whole original dictionary over and accept all args
         createArgs = originalArgs
+        request_args["OriginalRequestType"] = originalArgs["OriginalRequestType"]
+        request_args["ResubmissionCount"] = originalArgs.get("ResubmissionCount", 1) + 1
     else:
         # load arguments definition from the proper/original spec factory
         parentClass = loadSpecClassByType(originalArgs["RequestType"])
@@ -166,8 +130,8 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
         if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
             chainArgs = parentClass.getChainCreateArgs()
         createArgs.update(parentClass.getWorkloadCreateArgs())
+        request_args["OriginalRequestType"] = originalArgs["RequestType"]
 
-    request_args['OriginalRequestType'] = originalArgs["RequestType"]
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
 
@@ -196,7 +160,6 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
     if originalArgs["RequestType"] == 'Resubmission':
         # cloning an ACDC, nothing that we can validate
         # simply copy the whole original dictionary over and accept all args
-        request_args['OriginalRequestType'] = originalArgs["RequestType"]
         createArgs = originalArgs
     else:
         # load arguments definition from the proper/original spec factory
@@ -206,6 +169,10 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
 
     cloned_args = initialize_clone(request_args, originalArgs, createArgs, chainArgs)
     initialize_request_args(cloned_args, config)
+
+    ### TODO: backwards compatibility. Remove these 2 lines in ~HG1805
+    cloned_args.pop('MaxRSS', None)
+    cloned_args.pop('MaxVSize', None)
 
     permission = getWritePermission(cloned_args)
     authz_match(permission['role'], permission['group'])

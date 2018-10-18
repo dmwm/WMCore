@@ -79,7 +79,7 @@ config.General.document_("General Settings Section")
 config.General.workDir = '/tmp/application'
 
 msg = """
-dialect: Choose between oracle, mysql or sqlite
+dialect: Choose between oracle or mysql
 socket:  Set the socket file location for mysql (optional)
 """
 

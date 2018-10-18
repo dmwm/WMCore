@@ -25,13 +25,13 @@ sample usage:
 
 """
 
+import logging
 import os
 import os.path
-import sys
 import subprocess
-import logging
-from PSetTweaks.WMTweak import readAdValues
+import sys
 
+from PSetTweaks.WMTweak import readAdValues
 
 ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
 
@@ -145,10 +145,10 @@ class Scram(object):
 
         """
         result = ""
-        if self.architecture != None:
+        if self.architecture is not None:
             result += "export SCRAM_ARCH=%s\n" % self.architecture
 
-        if self.initialise != None:
+        if self.initialise is not None:
             result += "%s\n" % self.initialise
             result += """if [ "$?" -ne "0" ]; then exit 2; fi\n"""
         return result
@@ -194,7 +194,7 @@ class Scram(object):
         Scram runtime command
 
         """
-        if self.projectArea == None:
+        if self.projectArea is None:
             msg = "Scram Runtime called with Project Area not set"
             self.stdout = msg
             self.stderr = ""
@@ -252,21 +252,20 @@ class Scram(object):
         Run the command in the runtime environment
 
         """
-        if self.projectArea == None:
+        if self.projectArea is None:
             msg = "Scram Project Area not set/project() not called"
             raise RuntimeError(msg)
         if self.runtimeEnv == {}:
             msg = "Scram runtime environment is empty/runtime() not called"
             raise RuntimeError(msg)
         executeIn = runtimeDir
-        if runtimeDir == None:
+        if runtimeDir is None:
             executeIn = self.projectArea
         # if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
         if isinstance(logName, basestring) and not os.path.exists(logName):
-            f = open(logName, 'w')
-            f.write('Log for recording SCRAM command-line output\n')
-            f.write('-------------------------------------------\n')
-            f.close()
+            with open(logName, 'w') as f:
+                f.write('Log for recording SCRAM command-line output\n')
+                f.write('-------------------------------------------\n')
         logFile = open(logName, 'a') if isinstance(logName, basestring) else logName
         bashcmd = "/bin/bash"
         if cleanEnv:
@@ -275,7 +274,7 @@ class Scram(object):
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
-                               )
+                                )
 
         # Passing the environment in to the subprocess call results in all of
         # the variables being quoted which causes problems for search paths.
@@ -289,11 +288,16 @@ class Scram(object):
             if varName == "SCRAM_ARCH":
                 rtScramArch = self.runtimeEnv[varName].replace('\"', '')
 
-        if os.environ.get('VO_CMS_SW_DIR', None) != None:
+        # Make sure to pass PYTHONPATH env (with WMCore path) to CMSSW python
+        # Scram was modified in CMSSW_10_1_0 and it no longer returns this env var
+        if "PYTHONPATH" not in self.runtimeEnv:
+            self.procWriter(proc, 'export PYTHONPATH=%s\n' % os.environ['PYTHONPATH'])
+
+        if os.environ.get('VO_CMS_SW_DIR', None) is not None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])
-        if os.environ.get('OSG_APP', None) != None:
+        if os.environ.get('OSG_APP', None) is not None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n' % os.environ['OSG_APP'])
-        if os.environ.get('CMS_PATH', None) != None:
+        if os.environ.get('CMS_PATH', None) is not None:
             self.procWriter(proc, 'export CMS_PATH=%s\n' % os.environ['CMS_PATH'])
         if os.environ.get('_CONDOR_JOB_AD'):
             self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n' % os.environ['_CONDOR_JOB_AD'])
@@ -305,7 +309,7 @@ class Scram(object):
 
         self.procWriter(proc, "%s\n" % self.preCommand())
 
-        if self.envCmd != None:
+        if self.envCmd is not None:
             self.procWriter(proc, "%s\n" % self.envCmd)
 
         if command.startswith(sys.executable):
@@ -318,7 +322,7 @@ class Scram(object):
                 command = command.replace(sys.executable, python26exec)
             elif hackLdLibPath:
                 # reset python path for DMWM python (scram will have changed env to point at its own)
-                self.procWriter(proc, "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
+                self.procWriter(proc, "export PYTHONPATH=%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
 
         logging.info("    Invoking command: %s", command)
         self.procWriter(proc, "%s\n" % command)

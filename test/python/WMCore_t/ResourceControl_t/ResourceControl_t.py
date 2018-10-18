@@ -39,22 +39,22 @@ class ResourceControlTest(EmulatedUnitTestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMCore.ResourceControl",
-                                                 "WMCore.BossAir"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS",
+                                               "WMCore.ResourceControl",
+                                               "WMCore.BossAir"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        self.baDaoFactory = DAOFactory(package = "WMCore.BossAir",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.baDaoFactory = DAOFactory(package="WMCore.BossAir",
+                                       logger=myThread.logger,
+                                       dbinterface=myThread.dbi)
 
-        self.insertRunJob = self.baDaoFactory(classname = "NewJobs")
-        self.insertState = self.baDaoFactory(classname = "NewState")
+        self.insertRunJob = self.baDaoFactory(classname="NewJobs")
+        self.insertState = self.baDaoFactory(classname="NewState")
         states = ['PEND', 'RUN', 'Idle', 'Running']
         self.insertState.execute(states)
 
@@ -77,18 +77,18 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         Create test jobs in WMBS and BossAir
         """
-        testWorkflow = Workflow(spec = makeUUID(), owner = "tapas",
-                                name = makeUUID(), task = "Test")
+        testWorkflow = Workflow(spec=makeUUID(), owner="tapas",
+                                name=makeUUID(), task="Test")
         testWorkflow.create()
 
-        testFilesetA = Fileset(name = "TestFilesetA")
+        testFilesetA = Fileset(name="TestFilesetA")
         testFilesetA.create()
-        testFilesetB = Fileset(name = "TestFilesetB")
+        testFilesetB = Fileset(name="TestFilesetB")
         testFilesetB.create()
-        testFilesetC = Fileset(name = "TestFilesetC")
+        testFilesetC = Fileset(name="TestFilesetC")
         testFilesetC.create()
 
-        testFileA = File(lfn = "testFileA", locations = set(["testSE1", "testSE2"]))
+        testFileA = File(lfn="testFileA", locations=set(["testSE1", "testSE2"]))
         testFileA.create()
         testFilesetA.addFile(testFileA)
         testFilesetA.commit()
@@ -97,103 +97,103 @@ class ResourceControlTest(EmulatedUnitTestCase):
         testFilesetC.addFile(testFileA)
         testFilesetC.commit()
 
-        testSubscriptionA = Subscription(fileset = testFilesetA,
-                                        workflow = testWorkflow,
-                                        type = "Processing")
+        testSubscriptionA = Subscription(fileset=testFilesetA,
+                                         workflow=testWorkflow,
+                                         type="Processing")
         testSubscriptionA.create()
         testSubscriptionA.addWhiteBlackList([{"site_name": "testSite1", "valid": True}])
-        testSubscriptionB = Subscription(fileset = testFilesetB,
-                                        workflow = testWorkflow,
-                                        type = "Processing")
+        testSubscriptionB = Subscription(fileset=testFilesetB,
+                                         workflow=testWorkflow,
+                                         type="Processing")
         testSubscriptionB.create()
         testSubscriptionB.addWhiteBlackList([{"site_name": "testSite1", "valid": False}])
-        testSubscriptionC = Subscription(fileset = testFilesetC,
-                                        workflow = testWorkflow,
-                                        type = "Merge")
+        testSubscriptionC = Subscription(fileset=testFilesetC,
+                                         workflow=testWorkflow,
+                                         type="Merge")
         testSubscriptionC.create()
 
-        testJobGroupA = JobGroup(subscription = testSubscriptionA)
+        testJobGroupA = JobGroup(subscription=testSubscriptionA)
         testJobGroupA.create()
-        testJobGroupB = JobGroup(subscription = testSubscriptionB)
+        testJobGroupB = JobGroup(subscription=testSubscriptionB)
         testJobGroupB.create()
-        testJobGroupC = JobGroup(subscription = testSubscriptionC)
+        testJobGroupC = JobGroup(subscription=testSubscriptionC)
         testJobGroupC.create()
 
         # Site1, Has been assigned a location and is complete.
-        testJobA = Job(name = "testJobA", files = [testFileA])
+        testJobA = Job(name="testJobA", files=[testFileA])
         testJobA["couch_record"] = makeUUID()
-        testJobA.create(group = testJobGroupA)
+        testJobA.create(group=testJobGroupA)
         testJobA["state"] = "success"
 
         # Site 1, Has been assigned a location and is incomplete.
-        testJobB = Job(name = "testJobB", files = [testFileA])
+        testJobB = Job(name="testJobB", files=[testFileA])
         testJobB["couch_record"] = makeUUID()
         testJobB["cache_dir"] = self.tempDir
-        testJobB.create(group = testJobGroupA)
+        testJobB.create(group=testJobGroupA)
         testJobB["state"] = "executing"
         runJobB = RunJob()
         runJobB.buildFromJob(testJobB)
         runJobB["status"] = "PEND"
 
         # Does not have a location, white listed to site 1
-        testJobC = Job(name = "testJobC", files = [testFileA])
+        testJobC = Job(name="testJobC", files=[testFileA])
         testJobC["couch_record"] = makeUUID()
-        testJobC.create(group = testJobGroupA)
+        testJobC.create(group=testJobGroupA)
         testJobC["state"] = "new"
 
         # Site 2, Has been assigned a location and is complete.
-        testJobD = Job(name = "testJobD", files = [testFileA])
+        testJobD = Job(name="testJobD", files=[testFileA])
         testJobD["couch_record"] = makeUUID()
-        testJobD.create(group = testJobGroupB)
+        testJobD.create(group=testJobGroupB)
         testJobD["state"] = "success"
 
         # Site 2, Has been assigned a location and is incomplete.
-        testJobE = Job(name = "testJobE", files = [testFileA])
+        testJobE = Job(name="testJobE", files=[testFileA])
         testJobE["couch_record"] = makeUUID()
-        testJobE.create(group = testJobGroupB)
+        testJobE.create(group=testJobGroupB)
         testJobE["state"] = "executing"
         runJobE = RunJob()
         runJobE.buildFromJob(testJobE)
         runJobE["status"] = "RUN"
 
         # Does not have a location, site 1 is blacklisted.
-        testJobF = Job(name = "testJobF", files = [testFileA])
+        testJobF = Job(name="testJobF", files=[testFileA])
         testJobF["couch_record"] = makeUUID()
-        testJobF.create(group = testJobGroupB)
+        testJobF.create(group=testJobGroupB)
         testJobF["state"] = "new"
 
         # Site 3, Has been assigned a location and is complete.
-        testJobG = Job(name = "testJobG", files = [testFileA])
+        testJobG = Job(name="testJobG", files=[testFileA])
         testJobG["couch_record"] = makeUUID()
-        testJobG.create(group = testJobGroupC)
+        testJobG.create(group=testJobGroupC)
         testJobG["state"] = "cleanout"
 
         # Site 3, Has been assigned a location and is incomplete.
-        testJobH = Job(name = "testJobH", files = [testFileA])
+        testJobH = Job(name="testJobH", files=[testFileA])
         testJobH["couch_record"] = makeUUID()
-        testJobH.create(group = testJobGroupC)
+        testJobH.create(group=testJobGroupC)
         testJobH["state"] = "new"
 
         # Site 3, Does not have a location.
-        testJobI = Job(name = "testJobI", files = [testFileA])
+        testJobI = Job(name="testJobI", files=[testFileA])
         testJobI["couch_record"] = makeUUID()
-        testJobI.create(group = testJobGroupC)
+        testJobI.create(group=testJobGroupC)
         testJobI["state"] = "new"
 
         # Site 3, Does not have a location and is in cleanout.
-        testJobJ = Job(name = "testJobJ", files = [testFileA])
+        testJobJ = Job(name="testJobJ", files=[testFileA])
         testJobJ["couch_record"] = makeUUID()
-        testJobJ.create(group = testJobGroupC)
+        testJobJ.create(group=testJobGroupC)
         testJobJ["state"] = "cleanout"
 
-        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
-        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC, testJobD,
-                                          testJobE, testJobF, testJobG, testJobH,
-                                          testJobI, testJobJ])
+        changeStateAction = self.daoFactory(classname="Jobs.ChangeState")
+        changeStateAction.execute(jobs=[testJobA, testJobB, testJobC, testJobD,
+                                        testJobE, testJobF, testJobG, testJobH,
+                                        testJobI, testJobJ])
 
         self.insertRunJob.execute([runJobB, runJobE])
 
-        setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
+        setLocationAction = self.daoFactory(classname="Jobs.SetLocation")
         setLocationAction.execute(testJobA["id"], "testSite1")
         setLocationAction.execute(testJobB["id"], "testSite1")
         setLocationAction.execute(testJobD["id"], "testSite1")
@@ -221,48 +221,48 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl.insertThreshold("testSite2", "Processing", 50, 30)
         myResourceControl.insertThreshold("testSite2", "Merge", 135, 100)
 
-        createThresholds =  myResourceControl.listThresholdsForCreate()
+        createThresholds = myResourceControl.listThresholdsForCreate()
 
-        self.assertEqual( len(createThresholds.keys()), 2,
-                          "Error: Wrong number of site in Resource Control DB")
+        self.assertEqual(len(createThresholds.keys()), 2,
+                         "Error: Wrong number of site in Resource Control DB")
 
-        self.assertTrue( "testSite1" in createThresholds.keys(),
-                       "Error: Test Site 1 missing from thresholds.")
+        self.assertTrue("testSite1" in createThresholds.keys(),
+                        "Error: Test Site 1 missing from thresholds.")
 
-        self.assertTrue( "testSite2" in createThresholds.keys(),
-                       "Error: Test Site 2 missing from thresholds." )
+        self.assertTrue("testSite2" in createThresholds.keys(),
+                        "Error: Test Site 2 missing from thresholds.")
 
-        self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
-                          "Error: Wrong number of total slots." )
+        self.assertEqual(createThresholds["testSite1"]["total_slots"], 10,
+                         "Error: Wrong number of total slots.")
 
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 0},
-                          "Error: Wrong number of running jobs: %s" %
-                              createThresholds["testSite1"]["pending_jobs"] )
+        self.assertEqual(createThresholds["testSite1"]["pending_jobs"], {0: 0},
+                         "Error: Wrong number of running jobs: %s" %
+                         createThresholds["testSite1"]["pending_jobs"])
 
-        self.assertEqual( createThresholds["testSite2"]["total_slots"], 100,
-                          "Error: Wrong number of total slots." )
+        self.assertEqual(createThresholds["testSite2"]["total_slots"], 100,
+                         "Error: Wrong number of total slots.")
 
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 0},
-                          "Error: Wrong number of running jobs." )
+        self.assertEqual(createThresholds["testSite2"]["pending_jobs"], {0: 0},
+                         "Error: Wrong number of running jobs.")
 
         thresholds = myResourceControl.listThresholdsForSubmit()
 
-        self.assertEqual( len(thresholds.keys()), 2,
-                       "Error: Wrong number of sites in Resource Control DB" )
+        self.assertEqual(len(thresholds.keys()), 2,
+                         "Error: Wrong number of sites in Resource Control DB")
 
-        self.assertTrue( "testSite1" in thresholds.keys(),
-                       "Error: testSite1 missing from thresholds." )
+        self.assertTrue("testSite1" in thresholds.keys(),
+                        "Error: testSite1 missing from thresholds.")
 
-        self.assertTrue( "testSite2" in thresholds.keys(),
-                       "Error: testSite2 missing from thresholds." )
+        self.assertTrue("testSite2" in thresholds.keys(),
+                        "Error: testSite2 missing from thresholds.")
 
-        site1Info       = thresholds["testSite1"]
-        site2Info       = thresholds["testSite2"]
+        site1Info = thresholds["testSite1"]
+        site2Info = thresholds["testSite2"]
         site1Thresholds = site1Info["thresholds"]
         site2Thresholds = site2Info["thresholds"]
 
-        procThreshold1  = None
-        procThreshold2  = None
+        procThreshold1 = None
+        procThreshold2 = None
         mergeThreshold1 = None
         mergeThreshold2 = None
         for taskType, threshold in site1Thresholds.items():
@@ -277,10 +277,10 @@ class ResourceControlTest(EmulatedUnitTestCase):
                 procThreshold2 = threshold
 
         self.assertEqual(len(site1Thresholds), 2,
-                          "Error: Wrong number of task types.")
+                         "Error: Wrong number of task types.")
 
         self.assertEqual(len(site2Thresholds), 2,
-                          "Error: Wrong number of task types.")
+                         "Error: Wrong number of task types.")
 
         self.assertNotEqual(procThreshold1, None)
         self.assertNotEqual(procThreshold2, None)
@@ -288,77 +288,76 @@ class ResourceControlTest(EmulatedUnitTestCase):
         self.assertNotEqual(mergeThreshold2, None)
 
         self.assertEqual(site1Info["total_pending_slots"], 10,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site1Info["total_running_slots"], 20,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site1Info["total_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site1Info["total_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold1["task_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold1["task_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold1["max_slots"], 20,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold1["pending_slots"], 10,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold1["task_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold1["task_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold1["max_slots"], 250,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold1["pending_slots"], 150,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site2Info["total_pending_slots"], 100,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site2Info["total_running_slots"], 200,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site2Info["total_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(site2Info["total_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold2["task_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold2["task_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold2["max_slots"], 50,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(procThreshold2["pending_slots"], 30,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold2["task_running_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold2["task_pending_jobs"], 0,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold2["max_slots"], 135,
-                          "Error: Site thresholds wrong")
+                         "Error: Site thresholds wrong")
 
         self.assertEqual(mergeThreshold2["pending_slots"], 100,
-                          "Error: Site thresholds wrong")
-
+                         "Error: Site thresholds wrong")
 
     def testList(self):
         """
@@ -381,25 +380,25 @@ class ResourceControlTest(EmulatedUnitTestCase):
         createThresholds = myResourceControl.listThresholdsForCreate()
         submitThresholds = myResourceControl.listThresholdsForSubmit()
 
-        self.assertEqual( len(createThresholds.keys()), 2,
-               "Error: Wrong number of sites in create thresholds" )
+        self.assertEqual(len(createThresholds.keys()), 2,
+                         "Error: Wrong number of sites in create thresholds")
 
-        self.assertEqual( createThresholds["testSite1"]["total_slots"], 10,
-               "Error: Wrong number of slots for site 1" )
+        self.assertEqual(createThresholds["testSite1"]["total_slots"], 10,
+                         "Error: Wrong number of slots for site 1")
 
-        self.assertEqual( createThresholds["testSite2"]["total_slots"], 20,
-               "Error: Wrong number of slots for site 2" )
+        self.assertEqual(createThresholds["testSite2"]["total_slots"], 20,
+                         "Error: Wrong number of slots for site 2")
 
         # We should have two running jobs with locations at site one,
         # two running jobs without locations at site two, and one running
         # job without a location at site one and two.
-        self.assertEqual( createThresholds["testSite1"]["pending_jobs"], {0 : 4},
-               "Error: Wrong number of pending jobs for site 1" )
+        self.assertEqual(createThresholds["testSite1"]["pending_jobs"], {0: 4},
+                         "Error: Wrong number of pending jobs for site 1")
 
         # We should have one running job with a location at site 2 and
         # another running job without a location.
-        self.assertEqual( createThresholds["testSite2"]["pending_jobs"], {0 : 2},
-               "Error: Wrong number of pending jobs for site 2" )
+        self.assertEqual(createThresholds["testSite2"]["pending_jobs"], {0: 2},
+                         "Error: Wrong number of pending jobs for site 2")
 
         # We should also have a phedex_name
         self.assertEqual(createThresholds["testSite1"]["cms_name"], "T1_US_FNAL")
@@ -407,8 +406,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         mergeThreshold1 = None
         mergeThreshold2 = None
-        procThreshold1  = None
-        procThreshold2  = None
+        procThreshold1 = None
+        procThreshold2 = None
         self.assertEqual(set(submitThresholds.keys()), set(["testSite1", "testSite2"]))
         for taskType, threshold in submitThresholds["testSite1"]["thresholds"].items():
             if taskType == "Merge":
@@ -461,20 +460,20 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
-        self.assertEqual( siteInfo["site_name"], "testSite1",
-                          "Error: Site name is wrong." )
+        self.assertEqual(siteInfo["site_name"], "testSite1",
+                         "Error: Site name is wrong.")
 
-        self.assertEqual( siteInfo["pnn"], ["testSE1"],
-                          "Error: SE name is wrong." )
+        self.assertEqual(siteInfo["pnn"], ["testSE1"],
+                         "Error: SE name is wrong.")
 
-        self.assertEqual( siteInfo["ce_name"], "testCE1",
-                          "Error: CE name is wrong." )
+        self.assertEqual(siteInfo["ce_name"], "testCE1",
+                         "Error: CE name is wrong.")
 
-        self.assertEqual( siteInfo["pending_slots"], 10,
-                          "Error: Pending slots is wrong." )
+        self.assertEqual(siteInfo["pending_slots"], 10,
+                         "Error: Pending slots is wrong.")
 
-        self.assertEqual( siteInfo["running_slots"], 20,
-                          "Error: Pending slots is wrong." )
+        self.assertEqual(siteInfo["running_slots"], 20,
+                         "Error: Pending slots is wrong.")
 
         return
 
@@ -492,14 +491,13 @@ class ResourceControlTest(EmulatedUnitTestCase):
         self.assertEqual(siteInfo["pending_slots"], 10, "Error: Pending slots is wrong.")
         self.assertEqual(siteInfo["running_slots"], 20, "Error: Running slots is wrong.")
 
-
-        myResourceControl.setJobSlotsForSite("testSite1", pendingJobSlots = 20)
+        myResourceControl.setJobSlotsForSite("testSite1", pendingJobSlots=20)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
         self.assertEqual(siteInfo["pending_slots"], 20, "Error: Pending slots is wrong.")
 
-        myResourceControl.setJobSlotsForSite("testSite1", runningJobSlots = 40)
+        myResourceControl.setJobSlotsForSite("testSite1", runningJobSlots=40)
 
         siteInfo = myResourceControl.listSiteInfo("testSite1")
 
@@ -514,7 +512,6 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         return
 
-
     def testThresholdsForSite(self):
         """
         _testThresholdsForSite_
@@ -528,7 +525,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl.insertThreshold("testSite1", "Processing", 10, 8)
         myResourceControl.insertThreshold("testSite1", "Merge", 5, 3)
 
-        result   = myResourceControl.thresholdBySite(siteName = "testSite1")
+        result = myResourceControl.thresholdBySite(siteName="testSite1")
         procInfo = {}
         mergInfo = {}
         for res in result:
@@ -547,7 +544,6 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         return
 
-
     def testThresholdPriority(self):
         """
         _testThresholdPriority_
@@ -562,7 +558,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         # test default task priorities
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 5)
+        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 4)
         self.assertEqual(result['testSite1']['thresholds']['Processing']['priority'], 0)
 
         myResourceControl.changeTaskPriority("Merge", 3)
@@ -601,8 +597,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
         result = myResourceControl.listThresholdsForCreate()
         self.assertEqual(result['testSite1']['state'], 'Down', 'Error: Wrong site state')
 
-        #If you set the value to 'Normal' instead of 'Down' this test should FAIL
-        #self.assertEqual(result['testSite1']['state'], 'Normal', 'Error: Wrong site state')
+        # If you set the value to 'Normal' instead of 'Down' this test should FAIL
+        # self.assertEqual(result['testSite1']['state'], 'Normal', 'Error: Wrong site state')
 
     def testAbortedState(self):
         """
@@ -649,7 +645,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket = os.getenv("DBSOCK")
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
+        config.JobStateMachine.couchurl = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName = "bossair_t"
         config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
         config.JobStateMachine.summaryStatsDBName = 'stat_summary_t'
@@ -658,8 +654,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
         config.BossAir.pluginNames = ["MockPlugin"]
         config.BossAir.section_("MockPlugin")
         config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
-                                                         'WMComponent_t/JobAccountant_t/fwjrs',
-                                                         "MergeSuccess.pkl")
+                                                            'WMComponent_t/JobAccountant_t/fwjrs',
+                                                            "MergeSuccess.pkl")
 
         configHandle = open(os.path.join(self.tempDir, "config.py"), "w")
         configHandle.write(str(config))
@@ -668,84 +664,11 @@ class ResourceControlTest(EmulatedUnitTestCase):
         os.environ["WMAGENT_CONFIG"] = os.path.join(self.tempDir, "config.py")
         return config
 
-    def testInsertAllSEs(self):
+    def testInsertSite(self):
         """
-        _testInsertAllPNNs_
+        _testInsertSite_
 
-        Test to see if we can insert all PNNs and Thresholds at once
-        Depending on the WMCore.Services.SiteDB interface
-        """
-        self.createConfig()
-
-        resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
-        env = os.environ
-        env['PYTHONPATH'] = ":".join(sys.path)
-        cmdline = [resControlPath, "--add-all-sites", "--plugin=PyCondorPlugin", "--pending-slots=100", "--running-slots=500" , "--emulator"]
-        retval = subprocess.Popen( cmdline,
-                                   stdout = subprocess.PIPE,
-                                   stderr = subprocess.STDOUT,
-                                   env = env)
-        (_, _) = retval.communicate()
-
-        cmdline = [resControlPath, "--priority=20", "--task-type=Processing"]
-        retval = subprocess.Popen( cmdline,
-                                   stdout = subprocess.PIPE,
-                                   stderr = subprocess.STDOUT,
-                                   env = env)
-        (_, _) = retval.communicate()
-
-        myResourceControl = ResourceControl()
-        result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue('T1_US_FNAL' in result.keys())
-        for x in result.keys():
-            self.assertEqual(len(result[x]['thresholds']), 7)
-            self.assertEqual(result[x]['total_pending_slots'], 100)
-            self.assertEqual(result[x]['total_running_slots'], 500)
-            for taskType, thresh in result[x]['thresholds'].items():
-                if taskType == 'Processing':
-                    self.assertEqual(thresh['priority'], 20)
-                    self.assertEqual(thresh['max_slots'], 500)
-
-        # Verify that sites with more than one SE were added correctly.
-        nebInfo = myResourceControl.listSiteInfo("T2_US_Nebraska")
-        self.assertTrue(len(nebInfo["pnn"]) == 1)
-        return
-
-    def testInsertAllSEs2(self):
-        """
-        _testInsertAllSEs2_
-
-        Test to see if we can insert all SEs and Thresholds at once
-        Depending on the WMCore.Services.SiteDB interface
-        """
-        myResourceControl = ResourceControl()
-        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'pendingSlots': 80},
-                    {'taskType': 'Merge', 'maxSlots': 50, 'pendingSlots': 30}]
-        myResourceControl.insertAllSEs(siteName='test', pendingSlots=200, runningSlots=400,
-                                       ceName='glidein-ce.fnal.gov', plugin='CondorPlugin', taskList=taskList)
-        result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue('test_T1_US_FNAL_Buffer' in result.keys())
-        self.assertGreaterEqual(len(result), 1)
-        for siteName in result.iterkeys():
-            self.assertEqual(len(result[siteName]['thresholds']), 2)
-            self.assertEqual(result[siteName]['total_pending_slots'], 200)
-            self.assertEqual(result[siteName]['total_running_slots'], 400)
-            for taskType, thresh in result[siteName]['thresholds'].iteritems():
-                if taskType == 'Processing':
-                    self.assertEqual(thresh['priority'], 0)
-                    self.assertEqual(thresh['max_slots'], 100)
-                    self.assertEqual(thresh['pending_slots'], 80)
-                else:
-                    self.assertEqual(thresh['priority'], 5)
-                    self.assertEqual(thresh['max_slots'], 50)
-                    self.assertEqual(thresh['pending_slots'], 30)
-        return
-
-    def testInsertT0(self):
-        """
-        _testInsertT0_
-
-        Test to see if we can insert the Tier-0 alone
+        Test to see if we can insert a fake test site alone
         with a single option
         """
         self.createConfig()
@@ -753,29 +676,30 @@ class ResourceControlTest(EmulatedUnitTestCase):
         resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
-        cmdline = [resControlPath, "--add-T0" ]
-        retval = subprocess.Popen( cmdline,
-                                   stdout = subprocess.PIPE,
-                                   stderr = subprocess.STDOUT,
-                                   env = env)
+        cmdline = [resControlPath, "--add-Test"]
+        retval = subprocess.Popen(cmdline,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT,
+                                  env=env)
         (_, _) = retval.communicate()
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
         self.assertEqual(len(result), 1)
         self.assertTrue('CERN' in result)
         for x in result:
-            self.assertEqual(len(result[x]['thresholds']), 9)
+            self.assertEqual(len(result[x]['thresholds']), 7)
             self.assertEqual(result[x]['total_pending_slots'], 500)
-            self.assertEqual(result[x]['total_running_slots'], -1)
+            self.assertEqual(result[x]['total_running_slots'], 1)
             for taskType, thresh in result[x]['thresholds'].items():
                 if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
-                    self.assertEqual(thresh['max_slots'], -1)
+                    self.assertEqual(thresh['max_slots'], 1)
 
         # Verify that sites with more than one SE were added correctly.
         cernInfo = myResourceControl.listSiteInfo("CERN")
         self.assertTrue(len(cernInfo["pnn"]) == 2)
         return
+
 
 if __name__ == '__main__':
     unittest.main()

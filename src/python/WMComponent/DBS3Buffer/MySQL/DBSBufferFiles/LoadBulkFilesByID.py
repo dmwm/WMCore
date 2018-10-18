@@ -5,12 +5,8 @@ _GetByID_
 MySQL implementation of DBSBufferFiles.GetByID
 """
 
-
-
-
-import logging
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class LoadBulkFilesByID(DBFormatter):
     fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
@@ -34,28 +30,20 @@ class LoadBulkFilesByID(DBFormatter):
                           INNER JOIN dbsbuffer_file ON dbsbuffer_file.id = dfl.filename
                           WHERE dbsbuffer_file.id = :fileid"""
 
-
     getChecksumSQL = """SELECT cst.type AS cktype, fcs.cksum AS cksum, fcs.fileid AS id FROM
                            dbsbuffer_file_checksums fcs INNER JOIN
                            dbsbuffer_checksum_type cst ON fcs.typeid = cst.id
                            WHERE fcs.fileid = :fileid"""
-
 
     getRunLumiSQL = """SELECT flr.run AS run, flr.lumi AS lumi, dbsbuffer_file.id AS id
                           FROM dbsbuffer_file_runlumi_map flr
                           INNER JOIN dbsbuffer_file ON dbsbuffer_file.id = flr.filename
                           WHERE dbsbuffer_file.id = :fileid"""
 
-
     getParentLFNSQL = """SELECT dbfa.lfn AS lfn, dbfb.id AS id FROM dbsbuffer_file dbfa
                             INNER JOIN dbsbuffer_file_parent dfp ON dfp.parent = dbfa.id
                             INNER JOIN dbsbuffer_file dbfb ON dfp.child = dbfb.id
                             WHERE dbfb.id = :fileid """
-
-
-
-
-
 
     def formatFileInfo(self, result):
         """
@@ -91,7 +79,6 @@ class LoadBulkFilesByID(DBFormatter):
 
         return resultList
 
-
     def locInfo(self, result):
         """
         Format the location info so that it matches
@@ -107,23 +94,18 @@ class LoadBulkFilesByID(DBFormatter):
                 interimDictionary[entry['id']] = set()
             interimDictionary[entry['id']].add(entry['location'])
 
-
         finalList = []
         for entry in interimDictionary.keys():
             tmpDict = {'id': entry, 'locations': interimDictionary[entry]}
             finalList.append(tmpDict)
 
-
         return finalList
-
-
 
     def ckInfo(self, result):
         """
         Assemble the checksums into the appropriate format.
 
         """
-
 
         resultList = self.formatDict(result)
 
@@ -134,15 +116,12 @@ class LoadBulkFilesByID(DBFormatter):
                 interimDictionary[entry['id']] = {}
             interimDictionary[entry['id']][entry['cktype']] = entry['cksum']
 
-
         finalList = []
         for entry in interimDictionary.keys():
             tmpDict = {'id': entry, 'checksums': interimDictionary[entry]}
             finalList.append(tmpDict)
 
-
         return finalList
-
 
     def runInfo(self, result):
         """
@@ -161,15 +140,12 @@ class LoadBulkFilesByID(DBFormatter):
                 interimDictionary[entry['id']][entry['run']] = []
             interimDictionary[entry['id']][entry['run']].append(entry['lumi'])
 
-
         finalList = []
         for entry in interimDictionary.keys():
             tmpDict = {'id': entry, 'runInfo': interimDictionary[entry]}
             finalList.append(tmpDict)
 
-
         return finalList
-
 
     def parentInfo(self, result):
         """
@@ -186,16 +162,12 @@ class LoadBulkFilesByID(DBFormatter):
                 interimDictionary[entry['id']] = []
             interimDictionary[entry['id']].append(entry['lfn'])
 
-
         finalList = []
         for entry in interimDictionary.keys():
             tmpDict = {'id': entry, 'parentLFNs': interimDictionary[entry]}
             finalList.append(tmpDict)
 
-
         return finalList
-
-
 
     def getBinds(self, files):
         binds = []
@@ -204,57 +176,49 @@ class LoadBulkFilesByID(DBFormatter):
             binds.append({'fileid': f})
         return binds
 
-    def execute(self, files, conn = None, transaction = False):
+    def execute(self, files, conn=None, transaction=False):
         """
         Execute multiple SQL queries to extract all binding information
 
         """
-        binds    = self.getBinds(files)
-        result   = self.dbi.processData(self.fileInfoSQL, binds,
-                                        conn = conn,
-                                        transaction = transaction)
+        binds = self.getBinds(files)
+        result = self.dbi.processData(self.fileInfoSQL, binds,
+                                      conn=conn,
+                                      transaction=transaction)
         fileInfo = self.formatFileInfo(result)
 
-
         # Do locations
-        result   = self.dbi.processData(self.getLocationSQL, binds,
-                                        conn = conn,
-                                        transaction = transaction)
-        locInfo  = self.locInfo(result)
+        result = self.dbi.processData(self.getLocationSQL, binds,
+                                      conn=conn,
+                                      transaction=transaction)
+        locInfo = self.locInfo(result)
         fullResults = self.merge(fileInfo, locInfo)
 
-
         # Do checksums
-        result   = self.dbi.processData(self.getChecksumSQL, binds,
-                                        conn = conn,
-                                        transaction = transaction)
+        result = self.dbi.processData(self.getChecksumSQL, binds,
+                                      conn=conn,
+                                      transaction=transaction)
 
-        ckInfo      = self.ckInfo(result)
+        ckInfo = self.ckInfo(result)
         fullResults = self.merge(fullResults, ckInfo)
 
-
         # Do runLumi
-        result      = self.dbi.processData(self.getRunLumiSQL, binds,
-                                           conn = conn,
-                                           transaction = transaction)
-        runInfo  = self.runInfo(result)
+        result = self.dbi.processData(self.getRunLumiSQL, binds,
+                                      conn=conn,
+                                      transaction=transaction)
+        runInfo = self.runInfo(result)
         fullResults = self.merge(fullResults, runInfo)
 
-
-
         # Do parents
-        result   = self.dbi.processData(self.getParentLFNSQL, binds,
-                                        conn = conn,
-                                        transaction = transaction)
-        parInfo  = self.parentInfo(result)
+        result = self.dbi.processData(self.getParentLFNSQL, binds,
+                                      conn=conn,
+                                      transaction=transaction)
+        parInfo = self.parentInfo(result)
         fullResults = self.merge(fullResults, parInfo)
-
-
 
         return fullResults
 
-
-    def merge(self, listA, listB, field = 'id'):
+    def merge(self, listA, listB, field='id'):
         """
         _merge_
 
@@ -268,9 +232,7 @@ class LoadBulkFilesByID(DBFormatter):
                     entryA.update(entryB)
                     break
 
-
         return listA
-
 
     def groupByID(self, inputList, key):
         """
@@ -286,11 +248,9 @@ class LoadBulkFilesByID(DBFormatter):
                 interimDictionary[entry['id']] = set()
             interimDictionary[entry['id']].add(entry[key])
 
-
         finalList = []
         for entry in interimDictionary.keys():
-            tmpDict = {'id': entry, key: interimDictionry[entry]}
+            tmpDict = {'id': entry, key: interimDictionary[entry]}
             finalList.append(tmpDict)
-
 
         return finalList

@@ -1,4 +1,11 @@
 #!/bin/bash
+# On some sites we know there were some problems with environment cleaning
+# with using 'env -i'. To overcome this issue, whenever we start a job, we have
+# to save full current environment into file, and whenever it is needed we can load
+# it. Be aware, that there are some read-only variables, like: BASHOPTS, BASH_VERSINFO,
+# EUID, PPID, SHELLOPTS, UID, etc.
+set | sed 's/^/export /g' > startup_environment.sh
+
 # Function to check the exit code of this bootstrap script and the job/python
 # wrapper exit code.
 # 1) If the bootstrap exit code is not 0, then something is wrong with the worker
@@ -46,19 +53,11 @@ WMA_SCRAM_ARCH=slc6_amd64_gcc493
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
 
-# On some sites we know there was some problems with environment cleaning
-# with using 'env -i'. To overcome this issue, whenever we start a job, we have
-# to save full current environment into file, and whenever it is needed we can load
-# it. Be aware, that there are some read-only variables, like: BASHOPTS, BASH_VERSINFO,
-# EUID, PPID, SHELLOPTS, UID, etc.
-set > startup_environment.sh
-sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
-mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
 
 if [ "X$_CONDOR_JOB_AD" != "X" ];
 then
-   outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g'`
+   outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g' | sed 's/,/ /g'`
    WMA_SiteName=`grep '^MachineAttrGLIDEIN_CMSSite0 =' $_CONDOR_JOB_AD | tr -d '"' | awk '{print $NF;}'`
    echo "Site name:  $WMA_SiteName"
    echo "======== HTCondor jobAds start at $(TZ=GMT date) ========"
@@ -71,7 +70,7 @@ fi
 # We need to create the expected output files in advance just in case
 # some problem happens during the job bootstrap
 if [ -z "$outputFile" ]; then
-    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl"
+    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl wmagentJob.log"
 fi
 touch $outputFile
 
@@ -79,13 +78,13 @@ touch $outputFile
 echo "======== WMAgent validate arguments starting at $(TZ=GMT date) ========"
 if [ -z "$1" ]
 then
-    echo "WMAgent bootstrap: Error: A sandbox must be specified" >&2
-    exit 1
+    echo "Error during job bootstrap: A sandbox must be specified" >&2
+    exit 11001
 fi
 if [ -z "$2" ]
 then
-    echo "WMAgent bootstrap: Error: An index must be specified" >&2
-    exit 1
+    echo "Error during job bootstrap: A job index must be specified" >&2
+    exit 11002
 fi
 # assign arguments
 SANDBOX=$1
@@ -108,9 +107,9 @@ then  # ok, lets call it CVMFS then
     export CVMFS=/cvmfs/cms.cern.ch
     . $CVMFS/cmsset_default.sh
 else
-    echo "WMAgent bootstrap: Error: VO_CMS_SW_DIR, OSG_APP, CVMFS environment variables were not set and /cvmfs is not present" >&2
-    echo "WMAgent bootstrap: Error: Because of this, we can't load CMSSW. Not good." >&2
-    exit 2
+    echo "Error during job bootstrap: VO_CMS_SW_DIR, OSG_APP, CVMFS  or /cvmfs were not found." >&2
+    echo "  Because of this, we can't load CMSSW. Not good." >&2
+    exit 11003
 fi
 echo "WMAgent bootstrap: WMAgent thinks it found the correct CMSSW setup script"
 echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ========\n"
@@ -128,9 +127,9 @@ elif [ -d "$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
     prefix="$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python
 else
-    echo "WMAgent bootstrap: Error: OSG_APP, VO_CMS_SW_DIR, CVMFS, /cvmfs/cms.cern.ch environment does not contain init.sh" >&2
-    echo "WMAgent bootstrap: Error: Because of this, we can't load CMSSW. Not good." >&2
-    exit 4
+    echo "Error during job bootstrap: job environment does not contain the init.sh script." >&2
+    echo "  Because of this, we can't load CMSSW. Not good." >&2
+    exit 11004
 fi
 
 latestPythonVersion=`ls -t "$prefix"/*/"$suffix" | head -n1 | sed 's|.*/external/python/||' | cut -d '/' -f1`
@@ -143,14 +142,14 @@ command -v $pythonCommand > /dev/null
 rc=$?
 if [[ $rc != 0 ]]
 then
-    echo "WMAgent bootstrap: Error: python isn't available on this worker node." >&2
-    echo "WMAgent bootstrap: Error: WMCore/WMAgent REQUIRES at least python2" >&2
-    exit 3	
+    echo "Error during job bootstrap: python isn't available on the worker node." >&2
+    echo "  WMCore/WMAgent REQUIRES at least python2" >&2
+    exit 11005
 else
     echo "WMAgent bootstrap: found $pythonCommand at.."
     echo `which $pythonCommand`
 fi
-echo -e "======== WMAgent Python boostrap finished at $(TZ=GMT date) ========\n"
+echo -e "======== WMAgent Python bootstrap finished at $(TZ=GMT date) ========\n"
 
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
@@ -175,8 +174,10 @@ echo -e "======== WMAgent Run the job FINISH at $(TZ=GMT date) ========\n"
 
 
 echo "WMAgent bootstrap: WMAgent finished the job, it's copying the pickled report"
+set -x
 cp WMTaskSpace/Report*.pkl ../
 ls -l WMTaskSpace
 ls -l WMTaskSpace/*
+set +x
 echo -e "======== WMAgent bootstrap FINISH at $(TZ=GMT date) ========\n"
-exit 0
+exit $jobrc

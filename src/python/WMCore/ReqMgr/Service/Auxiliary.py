@@ -8,15 +8,14 @@ from __future__ import print_function, division
 
 import json
 import cherrypy
+import time
 
 import WMCore
-from WMCore.Database.CMSCouch import Document
-from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Database.CMSCouch import Document, CouchNotFoundError, CouchError
+from WMCore.REST.Error import RESTError, NoSuchInstance, APINotSpecified
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
-from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-from WMCore.REST.Error import RESTError, NoSuchInstance, APINotSpecified
-
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 
 
@@ -29,10 +28,12 @@ class MissingPostData(RESTError):
         RESTError.__init__(self)
         self.message = "Empty data has passed"
 
+
 class Info(RESTEntity):
     """
     general information about reqmgr2, i.e. version, etc
     """
+
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
@@ -41,8 +42,7 @@ class Info(RESTEntity):
     def validate(self, apiobj, method, api, param, safe):
         pass
 
-
-    @restcall
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self):
         # authorization / access control:
@@ -50,11 +50,11 @@ class Info(RESTEntity):
         # from HTTP headers. CMS web frontend puts this information into
         # headers as read from SiteDB (or on private VM from a fake
         # SiteDB file)
-#        print "cherrypy.request", cherrypy.request
-#        print "DN: %s" % cherrypy.request.user['dn']
-#        print "Requestor/login: %s" % cherrypy.request.user['login']
-#        print "cherrypy.request: %s" % cherrypy.request
-#        print "cherrypy.request.user: %s" % cherrypy.request.user
+        #        print "cherrypy.request", cherrypy.request
+        #        print "DN: %s" % cherrypy.request.user['dn']
+        #        print "Requestor/login: %s" % cherrypy.request.user['login']
+        #        print "cherrypy.request: %s" % cherrypy.request
+        #        print "cherrypy.request.user: %s" % cherrypy.request.user
         # from WMCore.REST.Auth import authz_match
         # authz_match(role=["Global Admin"], group=["global"])
         # check SiteDB/DataWhoAmI.py
@@ -81,7 +81,6 @@ class Info(RESTEntity):
 
 
 class ReqMgrConfigData(RESTEntity):
-
     def __init__(self, app, api, config, mount):
         # CouchDB auxiliary database name
         RESTEntity.__init__(self, app, api, config, mount)
@@ -109,7 +108,7 @@ class ReqMgrConfigData(RESTEntity):
 
         if data:
             config_args = json.loads(data)
-            #TODO need to validate the args depending on the config
+            # TODO need to validate the args depending on the config
             safe.kwargs["config_dict"] = config_args
 
     def validate(self, apiobj, method, api, param, safe):
@@ -125,21 +124,22 @@ class ReqMgrConfigData(RESTEntity):
         elif method == "PUT":
             self._validate_put_args(param, safe)
 
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     def get(self, doc_name):
         """
         """
         config = ReqMgrConfigDataCache.getConfig(doc_name)
         return rows([config])
 
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
-    def put(self, doc_name, config_dict = None):
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    def put(self, doc_name, config_dict=None):
         """
         """
         if doc_name == "DEFAULT":
             return ReqMgrConfigDataCache.putDefaultConfig()
         else:
             return ReqMgrConfigDataCache.replaceConfig(doc_name, config_dict)
+
 
 class AuxBaseAPI(RESTEntity):
     """
@@ -151,44 +151,96 @@ class AuxBaseAPI(RESTEntity):
         # CouchDB auxiliary database name
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         self.setName()
-    
+
     def setName(self):
         "Sets the document name"
         raise NotImplementedError("Couch document id(name) should be specified. i.e. self.name='software'")
 
-
     def validate(self, apiobj, method, api, param, safe):
-        pass
-
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["subName"] = param.args.pop(0)
+            return
+        return
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
-    def get(self):
+    def get(self, subName=None):
         """
         Return entire self.name document
-
+        subName is subcategory of document which is added as postfix string
         """
         try:
-            sw = self.reqmgr_aux_db.document(self.name)
+            if subName:
+                docName = "%s_%s" % (self.name, subName)
+            else:
+                docName = self.name
+            sw = self.reqmgr_aux_db.document(docName)
             del sw["_id"]
             del sw["_rev"]
         except CouchNotFoundError:
             raise NoSuchInstance
-            
+
         return rows([sw])
-    
-    @restcall
-    def post(self):
+
+    @restcall(formats=[('application/json', JSONFormat())])
+    def post(self, subName=None):
         """
-        post sofware version doucment
+        Inserts a new document into the database
         """
         data = cherrypy.request.body.read()
         if not data:
             raise MissingPostData()
         else:
             doc = json.loads(data)
-        doc = Document(self.name, doc)
+        if subName:
+            docName = "%s_%s" % (self.name, subName)
+        else:
+            docName = self.name
+
+        doc["ConfigType"] = self.name
+        doc = Document(docName, doc)
         result = self.reqmgr_aux_db.commitOne(doc)
         return result
+
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    def put(self, subName=None):
+        """
+        update document for the given  self.name and subName
+        """
+        data = cherrypy.request.body.read()
+        if not data:
+            raise MissingPostData()
+        else:
+            propertyDict = json.loads(data)
+
+        try:
+            result = None
+            if subName:
+                docName = "%s_%s" % (self.name, subName)
+            else:
+                docName = self.name
+
+            if propertyDict:
+                existDoc = self.reqmgr_aux_db.document(docName)
+                existDoc.update(propertyDict)
+
+                result = self.reqmgr_aux_db.commitOne(existDoc)
+        except CouchNotFoundError:
+            raise NoSuchInstance
+
+        return result
+
+    @restcall(formats=[('application/json', JSONFormat())])
+    def delete(self, subName):
+        """
+        Delete a document from ReqMgrAux
+        """
+        docName = "%s_%s" % (self.name, subName)
+        try:
+            self.reqmgr_aux_db.delete_doc(docName)
+        except (CouchError, CouchNotFoundError) as ex:
+            msg = "ERROR: failed to delete document: %s\nReason: %s" % (docName, str(ex))
+            cherrypy.log(msg)
 
 
 class CMSSWVersions(AuxBaseAPI):
@@ -196,6 +248,7 @@ class CMSSWVersions(AuxBaseAPI):
     CMSSWVersions - handle CMSSW versions and scram architectures.
     Stored in stored in the ReqMgr reqmgr_auxiliary database,
     """
+
     def setName(self):
         self.name = "CMSSW_VERSIONS"
 
@@ -204,12 +257,33 @@ class WMAgentConfig(AuxBaseAPI):
     """
     Config which used for Agent
     """
+
     def setName(self):
         self.name = "WMAGENT_CONFIG"
 
-class PermissionsConig(AuxBaseAPI):
+
+class PermissionsConfig(AuxBaseAPI):
     """
     Pemissions' config for REST call, i.e. certain group and role can only update specific data.
     """
+
     def setName(self):
         self.name = "PERMISSION_BY_REQUEST_TYPE"
+
+
+class CampaignConfig(AuxBaseAPI):
+    """
+    Config which used for Agent
+    """
+
+    def setName(self):
+        self.name = "CAMPAIGN_CONFIG"
+
+class UnifiedConfig(AuxBaseAPI):
+    """
+    CMSSWVersions - handle CMSSW versions and scram architectures.
+    Stored in stored in the ReqMgr reqmgr_auxiliary database,
+    """
+
+    def setName(self):
+        self.name = "UNIFIED_CONFIG"

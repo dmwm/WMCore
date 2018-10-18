@@ -37,10 +37,16 @@ class EventBased(JobFactory):
         acdcFileList = []
         deterministicPileup = kwargs.get('deterministicPileup', False)
 
+        if eventsPerJob <= 0 or eventsPerLumi <= 0:
+            msg = "events_per_job and events_per_lumi must be positive. Their values are: "
+            msg += "events_per_job: %d, events_per_lumi: %d" % (eventsPerJob, eventsPerLumi)
+            raise RuntimeError(msg)
+
         if deterministicPileup and self.package == 'WMCore.WMBS':
             getJobNumber = self.daoFactory(classname="Jobs.GetNumberOfJobsPerWorkflow")
             self.nJobs = getJobNumber.execute(workflow=self.subscription.getWorkflow().id)
-            logging.info('Creating %d jobs in DeterministicPileup mode', self.nJobs)
+            logging.info('Creating jobs in DeterministicPileup mode for %s',
+                         self.subscription.workflowName())
 
         # If we have runLumi info, we need to load it from couch
         if collectionName:
@@ -77,6 +83,9 @@ class EventBased(JobFactory):
                 if self.package == 'WMCore.WMBS':
                     loadRunLumi = self.daoFactory(classname="Files.GetBulkRunLumi")
                     fileLumis = loadRunLumi.execute(files=fileList)
+                    if not fileLumis:
+                        logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
+                                        self.subscription.workflowName(), self.subscription['id'])
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
                         for run in lumiDict.keys():
@@ -241,7 +250,7 @@ class EventBased(JobFactory):
                                                          disk=diskRequired)
                     if deterministicPileup:
                         self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                    logging.info("ACDC job created with %s", self.currentJob)
+                    logging.debug("ACDC job created with %s", self.currentJob)
                     eventsToRun -= eventsPerJob
                     currentEvent += eventsPerJob
                     currentLumi += lumisPerJob

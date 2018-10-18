@@ -15499,3 +15499,90 @@ Short exit status: 151
 ======== Finished condor_chirp -ing the exit code of the job. Exit code of condor_chirp: 0 ========
 Job Running time in seconds:  312
 Job runtime is less than 20minutes. Sleeping  1
+//== Test for condor error ==//
+INFO:root:Executing CMSSW. args: ['/bin/bash', '/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMTaskSpace/cmsRun1/cmsRun1-main.sh', '', 'slc6_amd64_gcc481', 'scramv1', 'CMSSW', 'CMSSW_7_1_25_patch3', 'FrameworkJobReport.xml', 'cmsRun', 'PSet.py', '', '', '']
+INFO:root:Retrieved following performance figures:
+INFO:root:RSS: 690400;  VSize: 1259272; PCPU: 58.4; PMEM: 0.5
+ERROR:root:Error in periodicUpdate for monitor class WMCore.WMRuntime.Monitors.PerformanceMonitor.PerformanceMonitor in Watchdog:
+PerformanceMonitor instance has no attribute 'numberOfCores'Traceback (most recent call last):
+  File "/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMCore.zip/WMCore/WMRuntime/Watchdog.py", line 307, in run
+    monitor.periodicUpdate()
+  File "/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/job/WMCore.zip/WMCore/WMRuntime/Monitors/PerformanceMonitor.py", line 214, in periodicUpdate
+    msg += 'Number of Cores: %s\n' % self.numberOfCores
+AttributeError: PerformanceMonitor instance has no attribute 'numberOfCores'
+This is a CRITICAL error because this kills the monitoring.
+Terminate thread and retry.
+
+/storage/local/data1/condor/execute/dir_4043646/glide_iI01t7/execute/dir_1015418/condor_exec.exe: line 172: 1016411 Aborted                 (core dumped) $pythonCommand Startup.py
+cp: cannot stat `WMTaskSpace/Report*.pkl': No such file or directory
+//== Test for condor log ==//
+450 <c>
+451     <a n="Proc"><i>2</i></a>
+452     <a n="Size"><i>1772288</i></a>
+453     <a n="EventTime"><s>2017-09-18T17:14:46</s></a>
+454     <a n="EnteredCurrentStatus"><i>1505744063</i></a>
+455     <a n="WMAgent_JobID"><i>1543</i></a>
+456     <a n="QDate"><i>1505743998</i></a>
+457     <a n="TriggerEventTypeName"><s>ULOG_IMAGE_SIZE</s></a>
+458     <a n="MemoryUsage"><i>807</i></a>
+459     <a n="DESIRED_Sites"><s>T1_US_FNAL,T2_CH_CERN</s></a>
+460     <a n="JobStartDate"><i>1505744063</i></a>
+461     <a n="ResidentSetSize"><i>826200</i></a>
+462     <a n="MyType"><s>JobAdInformationEvent</s></a>
+463     <a n="TriggerEventTypeNumber"><i>6</i></a>
+464     <a n="Cluster"><i>19315</i></a>
+465     <a n="JobStatus"><i>2</i></a>
+466     <a n="Subproc"><i>0</i></a>
+467     <a n="EventTypeNumber"><i>28</i></a>
+468     <a n="MachineAttrGLIDEIN_CMSSite0"><s>T1_US_FNAL</s></a>
+469     <a n="ExtDESIRED_Sites"><s>T1_US_FNAL,T2_CH_CERN</s></a>
+470 </c>
+471 <c>
+472     <a n="Proc"><i>2</i></a>
+473     <a n="TerminatedAndRequeued"><b v="f"/></a>
+474     <a n="Checkpointed"><b v="f"/></a>
+475     <a n="EventTime"><s>2017-09-18T17:15:40</s></a>
+476     <a n="TerminatedNormally"><b v="f"/></a>
+477     <a n="ReceivedBytes"><r>2.996012000000000E+06</r></a>
+478     <a n="RunLocalUsage"><s>Usr 0 00:00:00, Sys 0 00:00:00</s></a>
+479     <a n="SentBytes"><r>0.0</r></a>
+480     <a n="RunRemoteUsage"><s>Usr 0 00:57:14, Sys 0 00:01:13</s></a>
+481     <a n="MyType"><s>JobEvictedEvent</s></a>
+482     <a n="Cluster"><i>19315</i></a>
+483     <a n="Subproc"><i>0</i></a>
+484     <a n="EventTypeNumber"><i>4</i></a>
+485 </c>
+486 <c>
+487     <a n="Proc"><i>2</i></a>
+488     <a n="TerminatedAndRequeued"><b v="f"/></a>
+489     <a n="Checkpointed"><b v="f"/></a>
+490     <a n="EventTime"><s>2017-09-18T17:15:40</s></a>
+491     <a n="EnteredCurrentStatus"><i>1505744063</i></a>
+492     <a n="WMAgent_JobID"><i>1543</i></a>
+493     <a n="TerminatedNormally"><b v="f"/></a>
+494     <a n="QDate"><i>1505743998</i></a>
+495     <a n="TriggerEventTypeName"><s>ULOG_JOB_EVICTED</s></a>
+496     <a n="ReceivedBytes"><r>2.996012000000000E+06</r></a>
+497     <a n="RunLocalUsage"><s>Usr 0 00:00:00, Sys 0 00:00:00</s></a>
+498     <a n="DESIRED_Sites"><s>T1_US_FNAL,T2_CH_CERN</s></a>
+499     <a n="JobStartDate"><i>1505744063</i></a>
+500     <a n="SentBytes"><r>0.0</r></a>
+501     <a n="RunRemoteUsage"><s>Usr 0 00:57:14, Sys 0 00:01:13</s></a>
+502     <a n="MyType"><s>JobAdInformationEvent</s></a>
+503     <a n="TriggerEventTypeNumber"><i>4</i></a>
+504     <a n="Cluster"><i>19315</i></a>
+505     <a n="JobStatus"><i>2</i></a>
+506     <a n="Subproc"><i>0</i></a>
+507     <a n="EventTypeNumber"><i>28</i></a>
+508     <a n="MachineAttrGLIDEIN_CMSSite0"><s>T1_US_FNAL</s></a>
+509     <a n="ExtDESIRED_Sites"><s>T1_US_FNAL,T2_CH_CERN</s></a>
+510 </c>
+511 <c>
+512     <a n="Reason"><s>via condor_rm (by user cmst1)</s></a>
+513     <a n="MyType"><s>JobAbortedEvent</s></a>
+514     <a n="Proc"><i>2</i></a>
+515     <a n="Cluster"><i>19315</i></a>
+516     <a n="EventTime"><s>2017-09-18T17:15:40</s></a>
+517     <a n="Subproc"><i>0</i></a>
+518     <a n="EventTypeNumber"><i>9</i></a>
+519 </c>

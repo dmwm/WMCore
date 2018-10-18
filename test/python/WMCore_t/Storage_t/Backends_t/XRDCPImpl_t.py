@@ -111,13 +111,13 @@ class XRDCPImplTest(unittest.TestCase):
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % \
                            checksums
-            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"ERROR: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
         else:
             copyCommand += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
-            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"ERROR: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
         return copyCommand
 
-    @mock.patch('WMCore.Storage.Backends.XRDCPImpl.execute')
+    @mock.patch('WMCore.Storage.Backends.XRDCPImpl.XRDCPImpl.executeCommand')
     def testRemoveFile(self, mock_executeCommand):
         self.XRDCPImpl.removeFile("gsiftp://site.com/inputs/f.a")
         mock_executeCommand.assert_called_with("xrdfs site.com rm inputs/f.a")

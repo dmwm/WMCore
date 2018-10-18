@@ -14,12 +14,9 @@ express processing -> FEVT/RAW/RECO/whatever -> express merge
 from __future__ import division
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
 from Utils.Utilities import makeList, makeNonEmptyList
 from WMCore.Lexicon import procstringT0
-
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -29,6 +26,7 @@ class ExpressWorkloadFactory(StdBase):
 
     Stamp out Express workflows.
     """
+
     def __init__(self):
         StdBase.__init__(self)
 
@@ -70,43 +68,43 @@ class ExpressWorkloadFactory(StdBase):
         # one is direct reco from the streamer files
         # the other is conversion and then reco
         #
-        if self.recoFrameworkVersion == None or self.recoFrameworkVersion == self.frameworkVersion:
+        if self.recoFrameworkVersion is None or self.recoFrameworkVersion == self.frameworkVersion:
 
             expressRecoStepName = "cmsRun1"
 
-            scenarioArgs = { 'globalTag' : self.globalTag,
-                             'globalTagTransaction' : self.globalTagTransaction,
-                             'skims' : self.alcaSkims,
-                             'dqmSeq' : self.dqmSequences,
-                             'outputs' : self.outputs,
-                             'inputSource' : "DAT" }
+            scenarioArgs = {'globalTag': self.globalTag,
+                            'globalTagTransaction': self.globalTagTransaction,
+                            'skims': self.alcaSkims,
+                            'dqmSeq': self.dqmSequences,
+                            'outputs': self.outputs,
+                            'inputSource': "DAT"}
 
             if self.globalTagConnect:
                 scenarioArgs['globalTagConnect'] = self.globalTagConnect
 
             expressOutMods = self.setupProcessingTask(expressTask, taskType,
-                                                      scenarioName = self.procScenario,
-                                                      scenarioFunc = "expressProcessing",
-                                                      scenarioArgs = scenarioArgs,
-                                                      splitAlgo = "Express",
-                                                      splitArgs = mySplitArgs,
-                                                      stepType = cmsswStepType,
-                                                      forceUnmerged = True)
+                                                      scenarioName=self.procScenario,
+                                                      scenarioFunc="expressProcessing",
+                                                      scenarioArgs=scenarioArgs,
+                                                      splitAlgo="Express",
+                                                      splitArgs=mySplitArgs,
+                                                      stepType=cmsswStepType,
+                                                      forceUnmerged=True)
         else:
 
             expressRecoStepName = "cmsRun2"
 
             conversionOutMods = self.setupProcessingTask(expressTask, taskType,
-                                                         scenarioName = self.procScenario,
-                                                         scenarioFunc = "repack",
-                                                         scenarioArgs = { 'outputs' : [ { 'dataTier' : "RAW",
-                                                                                          'eventContent' : "ALL",
-                                                                                          'primaryDataset' : self.specialDataset,
-                                                                                          'moduleLabel' : "write_RAW" } ] },
-                                                         splitAlgo = "Express",
-                                                         splitArgs = mySplitArgs,
-                                                         stepType = cmsswStepType,
-                                                         forceUnmerged = True)
+                                                         scenarioName=self.procScenario,
+                                                         scenarioFunc="repack",
+                                                         scenarioArgs={'outputs': [{'dataTier': "RAW",
+                                                                                    'eventContent': "ALL",
+                                                                                    'primaryDataset': self.specialDataset,
+                                                                                    'moduleLabel': "write_RAW"}]},
+                                                         splitAlgo="Express",
+                                                         splitArgs=mySplitArgs,
+                                                         stepType=cmsswStepType,
+                                                         forceUnmerged=True)
 
             # there is only one
             conversionOutLabel = conversionOutMods.keys()[0]
@@ -131,16 +129,16 @@ class ExpressWorkloadFactory(StdBase):
 
             stepTwoCmsswHelper.setGlobalTag(self.globalTag)
             stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", conversionOutLabel)
-            stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                          scramArch = self.scramArch)
+            stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                          scramArch=self.scramArch)
 
             scenarioFunc = "expressProcessing"
-            scenarioArgs = { 'globalTag' : self.globalTag,
-                             'globalTagTransaction' : self.globalTagTransaction,
-                             'skims' : self.alcaSkims,
-                             'dqmSeq' : self.dqmSequences,
-                             'outputs' : self.outputs,
-                             'inputSource' : "EDM" }
+            scenarioArgs = {'globalTag': self.globalTag,
+                            'globalTagTransaction': self.globalTagTransaction,
+                            'skims': self.alcaSkims,
+                            'dqmSeq': self.dqmSequences,
+                            'outputs': self.outputs,
+                            'inputSource': "EDM"}
 
             if self.globalTagConnect:
                 scenarioArgs['globalTagConnect'] = self.globalTagConnect
@@ -154,7 +152,7 @@ class ExpressWorkloadFactory(StdBase):
                                                     configOutput[outputModuleName]['primaryDataset'],
                                                     configOutput[outputModuleName]['dataTier'],
                                                     configOutput[outputModuleName].get('filterName', None),
-                                                    stepName = "cmsRun2", forceUnmerged = True)
+                                                    stepName="cmsRun2", forceUnmerged=True)
                 expressOutMods[outputModuleName] = outputModule
 
             if 'outputs' in scenarioArgs:
@@ -168,10 +166,9 @@ class ExpressWorkloadFactory(StdBase):
                                                        scenarioFunc,
                                                        **scenarioArgs)
 
-
         expressTask.setTaskType("Express")
 
-        self.addLogCollectTask(expressTask, taskName = "ExpressLogCollect")
+        self.addLogCollectTask(expressTask, taskName="ExpressLogCollect")
 
         for expressOutLabel, expressOutInfo in expressOutMods.items():
 
@@ -184,44 +181,46 @@ class ExpressWorkloadFactory(StdBase):
                 alcaSkimTask = expressTask.addTask("%sAlcaSkim%s" % (expressTask.name(), expressOutLabel))
 
                 alcaSkimTask.setInputReference(expressTask.getStep(expressRecoStepName),
-                                               outputModule = expressOutLabel)
+                                               outputModule=expressOutLabel,
+                                               dataTier="ALCARECO")
 
                 alcaTaskConf = {'Multicore': 1,
                                 'EventStreams': 0}
 
-                scenarioArgs = { 'globalTag' : self.globalTag,
-                                 'globalTagTransaction' : self.globalTagTransaction,
-                                 'skims' : self.alcaSkims,
-                                 'primaryDataset' : self.specialDataset }
+                scenarioArgs = {'globalTag': self.globalTag,
+                                'globalTagTransaction': self.globalTagTransaction,
+                                'skims': self.alcaSkims,
+                                'primaryDataset': self.specialDataset}
 
                 if self.globalTagConnect:
                     scenarioArgs['globalTagConnect'] = self.globalTagConnect
 
                 alcaSkimOutMods = self.setupProcessingTask(alcaSkimTask, taskType,
-                                                           scenarioName = self.procScenario,
-                                                           scenarioFunc = "alcaSkim",
-                                                           scenarioArgs = scenarioArgs,
-                                                           splitAlgo = "ExpressMerge",
-                                                           splitArgs = mySplitArgs,
-                                                           stepType = cmsswStepType,
-                                                           forceMerged = True,
+                                                           scenarioName=self.procScenario,
+                                                           scenarioFunc="alcaSkim",
+                                                           scenarioArgs=scenarioArgs,
+                                                           splitAlgo="ExpressMerge",
+                                                           splitArgs=mySplitArgs,
+                                                           stepType=cmsswStepType,
+                                                           forceMerged=True,
                                                            taskConf=alcaTaskConf)
 
                 alcaSkimTask.setTaskType("Express")
 
-                self.addLogCollectTask(alcaSkimTask, taskName = "AlcaSkimLogCollect")
-                self.addCleanupTask(expressTask, expressOutLabel)
+                self.addLogCollectTask(alcaSkimTask, taskName="AlcaSkimLogCollect")
+                self.addCleanupTask(expressTask, expressOutLabel, dataTier=expressOutInfo['dataTier'])
 
                 for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
 
-                    if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and self.alcaHarvestDir != None:
-
+                    if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and \
+                            (self.alcaHarvestCondLFNBase is not None or self.alcaHarvestLumiURL is not None):
                         harvestTask = self.addAlcaHarvestTask(alcaSkimTask, alcaSkimOutLabel,
-                                                              alcapromptdataset = alcaSkimOutInfo['filterName'],
-                                                              condOutLabel = self.alcaHarvestOutLabel,
-                                                              condUploadDir = self.alcaHarvestDir,
-                                                              uploadProxy = self.dqmUploadProxy,
-                                                              doLogCollect = True)
+                                                              alcapromptdataset=alcaSkimOutInfo['filterName'],
+                                                              condOutLabel=self.alcaHarvestOutLabel,
+                                                              condLFNBase=self.alcaHarvestCondLFNBase,
+                                                              lumiURL=self.alcaHarvestLumiURL,
+                                                              uploadProxy=self.dqmUploadProxy,
+                                                              doLogCollect=True)
 
                         self.addConditionTask(harvestTask, self.alcaHarvestOutLabel)
 
@@ -229,17 +228,11 @@ class ExpressWorkloadFactory(StdBase):
 
                 mergeTask = self.addExpressMergeTask(expressTask, expressRecoStepName, expressOutLabel)
 
-                if expressOutInfo['dataTier'] in [ "DQM", "DQMIO" ]:
-
+                if expressOutInfo['dataTier'] in ["DQM", "DQMIO"]:
                     self.addDQMHarvestTask(mergeTask, "Merged",
-                                           uploadProxy = self.dqmUploadProxy,
-                                           periodic_harvest_interval = self.periodicHarvestInterval,
-                                           doLogCollect = True)
-
-        workload.setBlockCloseSettings(self.blockCloseDelay,
-                                       workload.getBlockCloseMaxFiles(),
-                                       workload.getBlockCloseMaxEvents(),
-                                       workload.getBlockCloseMaxSize())
+                                           uploadProxy=self.dqmUploadProxy,
+                                           periodic_harvest_interval=self.periodicHarvestInterval,
+                                           doLogCollect=True)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
@@ -248,7 +241,7 @@ class ExpressWorkloadFactory(StdBase):
         # set the LFN bases (normally done by request manager)
         # also pass run number to add run based directories
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -268,9 +261,10 @@ class ExpressWorkloadFactory(StdBase):
 
         mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModuleName))
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
-        self.addDashboardMonitoring(mergeTask)
+        self.addRuntimeMonitors(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
 
@@ -281,21 +275,21 @@ class ExpressWorkloadFactory(StdBase):
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
-        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+        self.addLogCollectTask(mergeTask, taskName="%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.applyTemplates()
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                        scramArch=self.scramArch)
 
-        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
-        #mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
-        #mergeTaskStageHelper.setMinMergeSize(0, 0)
+        # mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
+        # mergeTaskStageHelper.setMinMergeSize(0, 0)
 
         mergeTask.setTaskType("Merge")
 
@@ -305,27 +299,27 @@ class ExpressWorkloadFactory(StdBase):
         #  only harvest every 15 min
         #                => higher limits for latency (disabled for now)
         dataTier = getattr(parentOutputModule, "dataTier")
-        if dataTier in [ "DQM", "DQMIO" ]:
+        if dataTier in ["DQM", "DQMIO"]:
             mySplitArgs['maxInputSize'] *= 100
 
         mergeTask.setSplittingAlgorithm("ExpressMerge",
                                         **mySplitArgs)
         mergeTaskCmsswHelper.setDataProcessingConfig(self.procScenario, "merge",
-                                                     newDQMIO = (dataTier == "DQMIO"))
+                                                     newDQMIO=(dataTier == "DQMIO"))
 
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                             dataTier = getattr(parentOutputModule, "dataTier"),
-                             filterName = getattr(parentOutputModule, "filterName"),
-                             forceMerged = True)
+                             primaryDataset=getattr(parentOutputModule, "primaryDataset"),
+                             dataTier=getattr(parentOutputModule, "dataTier"),
+                             filterName=getattr(parentOutputModule, "filterName"),
+                             forceMerged=True)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, dataTier=getattr(parentOutputModule, "dataTier"))
 
         return mergeTask
 
     def addAlcaHarvestTask(self, parentTask, parentOutputModuleName,
-                           alcapromptdataset, condOutLabel, condUploadDir, uploadProxy,
-                           parentStepName = "cmsRun1", doLogCollect = True):
+                           alcapromptdataset, condOutLabel, condLFNBase, lumiURL,
+                           uploadProxy, parentStepName="cmsRun1", doLogCollect=True):
         """
         _addAlcaHarvestTask_
 
@@ -339,7 +333,7 @@ class ExpressWorkloadFactory(StdBase):
         mySplitArgs['timeout'] = self.alcaHarvestTimeout
 
         harvestTask = parentTask.addTask("%sAlcaHarvest%s" % (parentTask.name(), parentOutputModuleName))
-        self.addDashboardMonitoring(harvestTask)
+        self.addRuntimeMonitors(harvestTask)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 
@@ -352,16 +346,17 @@ class ExpressWorkloadFactory(StdBase):
 
         harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:
-            self.addLogCollectTask(harvestTask, taskName = "%s%sAlcaHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
+            self.addLogCollectTask(harvestTask,
+                                   taskName="%s%sAlcaHarvestLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                          scramArch = self.scramArch)
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                          scramArch=self.scramArch)
 
-        harvestTaskCmsswHelper.setErrorDestinationStep(stepName = harvestTaskLogArch.name())
+        harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())
         harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
         harvestTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
@@ -370,17 +365,18 @@ class ExpressWorkloadFactory(StdBase):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        harvestTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         harvestTask.setSplittingAlgorithm("AlcaHarvest",
                                           **mySplitArgs)
 
-        scenarioArgs = { 'globalTag' : self.globalTag,
-                         'datasetName' : "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
-                                                        getattr(parentOutputModule, "processedDataset"),
-                                                        getattr(parentOutputModule, "dataTier")),
-                         'runNumber' : self.runNumber,
-                         'alcapromptdataset' : alcapromptdataset }
+        scenarioArgs = {'globalTag': self.globalTag,
+                        'datasetName': "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
+                                                      getattr(parentOutputModule, "processedDataset"),
+                                                      dataTier),
+                        'runNumber': self.runNumber,
+                        'alcapromptdataset': alcapromptdataset}
 
         if self.globalTagConnect:
             scenarioArgs['globalTagConnect'] = self.globalTagConnect
@@ -391,13 +387,14 @@ class ExpressWorkloadFactory(StdBase):
 
         harvestTaskConditionHelper = harvestTaskCondition.getTypeHelper()
         harvestTaskConditionHelper.setRunNumber(self.runNumber)
-        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel)
-        harvestTaskConditionHelper.setConditionDir(condUploadDir)
+        harvestTaskConditionHelper.setConditionOutputLabel(condOutLabel + "ALCAPROMPT")
+        harvestTaskConditionHelper.setConditionLFNBase(condLFNBase)
+        harvestTaskConditionHelper.setLuminosityURL(lumiURL)
 
         self.addOutputModule(harvestTask, condOutLabel,
-                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                             dataTier = getattr(parentOutputModule, "dataTier"),
-                             filterName = getattr(parentOutputModule, "filterName"))
+                             primaryDataset=getattr(parentOutputModule, "primaryDataset"),
+                             dataTier=getattr(parentOutputModule, "dataTier"),
+                             filterName=getattr(parentOutputModule, "filterName"))
 
         harvestTaskUploadHelper = harvestTaskUpload.getTypeHelper()
         harvestTaskUploadHelper.setProxyFile(uploadProxy)
@@ -423,6 +420,7 @@ class ExpressWorkloadFactory(StdBase):
         mySplitArgs['streamName'] = self.streamName
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
+        parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
         conditionTask = parentTask.addTask("%sCondition%s" % (parentTask.name(), parentOutputModuleName))
 
@@ -430,7 +428,8 @@ class ExpressWorkloadFactory(StdBase):
         conditionTaskBogus = conditionTask.makeStep("bogus")
         conditionTaskBogus.setStepType("DQMUpload")
 
-        conditionTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        dataTier = getattr(parentOutputModule, "dataTier")
+        conditionTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName, dataTier=dataTier)
 
         conditionTask.applyTemplates()
 
@@ -482,11 +481,10 @@ class ExpressWorkloadFactory(StdBase):
                     "StreamName": {"optional": False},
                     "SpecialDataset": {"optional": False},
                     "AlcaHarvestTimeout": {"type": int, "optional": False},
-                    "AlcaHarvestDir": {"optional": False, "null": True},
+                    "AlcaHarvestCondLFNBase": {"optional": False, "null": True},
+                    "AlcaHarvestLumiURL": {"optional": False, "null": True},
                     "AlcaSkims": {"type": makeList, "optional": False},
                     "DQMSequences": {"type": makeList, "attr": "dqmSequences", "optional": False},
-                    "BlockCloseDelay": {"type": int, "optional": False,
-                                        "validate": lambda x : x > 0},
                     "Outputs": {"type": makeList, "optional": False},
                     "MaxInputRate": {"type": int, "optional": False},
                     "MaxInputEvents": {"type": int, "optional": False},
@@ -495,6 +493,17 @@ class ExpressWorkloadFactory(StdBase):
                     "MaxLatency": {"type": int, "optional": False},
 
                     }
+        baseArgs.update(specArgs)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        baseArgs = StdBase.getWorkloadAssignArgs()
+        specArgs = {
+            "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/Express"},
+                         "type": dict},
+            }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

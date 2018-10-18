@@ -9,8 +9,6 @@ WMStats.RequestLogModel.setTrigger(WMStats.CustomEvents.LOG_LOADED);
 $(WMStats.Globals.Event).on(WMStats.CustomEvents.REQUESTS_LOADED, 
     function(event) {
         var options = {"stale": "update_after"};
-    	var requestData = WMStats.ActiveRequestModel.getData();
-    	options.keys = requestData.getRequestNames();
-        
+
         WMStats.RequestLogModel.retrieveData("logByRequest", options);
 });

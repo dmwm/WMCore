@@ -38,7 +38,7 @@ class LAExceptionHandler(DiagnosticHandler):
         if not os.path.exists(jobRepXml):
             # no report => Error
             msg = "No Job Report Found: %s" % jobRepXml
-            executor.report.addError(50115, "MissingJobReport", msg)
+            executor.report.addError(executor.stepName, 50115, "MissingJobReport", msg)
             return
 
         # job report XML exists, load the exception information from it
@@ -49,17 +49,17 @@ class LAExceptionHandler(DiagnosticHandler):
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
             msg = "Job Report contains no error report, but LogArchiveManager exited non-zero: %s" % errCode
-            executor.report.addError(executor.step._internal_name,
+            executor.report.addError(executor.stepName,
                                      errCode, description, msg)
-            executor.report.addError(50116, "MissingErrorReport", msg)
+            executor.report.addError(executor.stepName, 50116, "MissingErrorReport", msg)
             return
 
         else:
             #check exit code in report is non zero
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but LogArchiveManager exited non-zero: %s" % errCode
-                executor.report.addError(50116, "MissingErrorReport", msg)
-            executor.report.addError(executor.step._internal_name,
+                executor.report.addError(executor.stepName, 50116, "MissingErrorReport", msg)
+            executor.report.addError(executor.stepName,
                                      errCode, description, msg)
         return
 

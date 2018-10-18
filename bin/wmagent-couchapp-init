@@ -3,22 +3,22 @@
 wmagent-couchapp-init
 
 """
+from __future__ import print_function, division
 
+import argparse
 import os
-import tempfile
-import sys
-import urllib
-import optparse
 import shutil
+import sys
+import tempfile
+import urllib
 from urlparse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
-from WMCore.Database.CMSCouch import CouchServer
-from WMCore.WMBase import getWMBASE
 from WMCore.Lexicon import splitCouchServiceURL
+from WMCore.WMBase import getWMBASE
 
 
 def couchAppRoot(couchapp):
@@ -31,9 +31,10 @@ def couchAppRoot(couchapp):
         return os.path.join(wmcoreroot, 'xdata', 'couchapps')
     elif os.path.exists(os.path.join(wmcoreroot, 'data', 'couchapps', couchapp)):
         return os.path.join(wmcoreroot, 'data', 'couchapps')
-    raise OSError, 'Cannot find couchapp: %s' % couchapp
+    raise OSError('Cannot find couchapp: %s' % couchapp)
 
-def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
+
+def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     """
     _installCouchApp_
 
@@ -42,20 +43,20 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
     """
     if not basePath:
         basePath = couchAppRoot(couchAppName)
-    print "Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName))
+    print("Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName)))
 
-    couchServer = CouchServer(couchUrl)
     couchappConfig = Config()
 
     couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
                  "%s/%s" % (couchUrl, couchDBName))
     return
 
+
 def installWorkQueueCouchApp(couchUrl, couchDBName):
     """Workqueue has to install yui to couchapp - handle this here"""
     yui = os.environ.get('YUI_ROOT', '')
     if not yui or not os.path.exists(yui):
-        raise RuntimeError, "Can't locate YUI, set YUI_ROOT env variable"
+        raise RuntimeError("Can't locate YUI, set YUI_ROOT env variable")
     basePath = couchAppRoot('WorkQueue')
     # make a temporary directory to create the couchapp structure
     tempDir = os.path.join(tempfile.mkdtemp(), 'WorkQueue')
@@ -63,16 +64,17 @@ def installWorkQueueCouchApp(couchUrl, couchDBName):
         # copy over main WorkQueue couchapp
         shutil.copytree(os.path.join(basePath, 'WorkQueue'), tempDir)
         # link to required structure from yui
-        for file in files_needed_from_yui:
-            dest = os.path.join(tempDir, 'vendor', 'yui', '_attachments', file)
+        for yFile in files_needed_from_yui:
+            dest = os.path.join(tempDir, 'vendor', 'yui', '_attachments', yFile)
             try:
                 os.makedirs(os.path.dirname(dest))
             except OSError:
                 pass
-            os.symlink(os.path.join(yui, file), dest)
-        installCouchApp(couchUrl, couchDBName, "WorkQueue", basePath = os.path.dirname(tempDir))
+            os.symlink(os.path.join(yui, yFile), dest)
+        installCouchApp(couchUrl, couchDBName, "WorkQueue", basePath=os.path.dirname(tempDir))
     finally:
-        shutil.rmtree(tempDir, ignore_errors = True)
+        shutil.rmtree(tempDir, ignore_errors=True)
+
 
 def createCronEntries(crontabLines):
     tempDir = tempfile.mkdtemp()
@@ -88,6 +90,7 @@ def createCronEntries(crontabLines):
     os.remove(cname)
     os.rmdir(tempDir)
 
+
 def setupCron(couchUrl, couchDBName):
     """
     _setupCron_
@@ -98,7 +101,7 @@ def setupCron(couchUrl, couchDBName):
     so we need to employ a hacky sed command to filter out the quoting of the
     quoted slash.
     """
-    print "Setting up cron jobs for the job dump."
+    print("Setting up cron jobs for the job dump.")
     fwjrDumpName = urllib.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
     jobDumpName = urllib.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
 
@@ -125,162 +128,162 @@ def setupCronCompaction(couchUrl, couchDbName):
     cronLine = "0 1 * * * %s" % (compactCmd % compactUrl)
     createCronEntries([cronLine])
 
-files_needed_from_yui = [
-'build/animation/animation-min.js',
-'build/assets/skins/sam/ajax-loader.gif',
-'build/assets/skins/sam/asc.gif',
-'build/assets/skins/sam/autocomplete.css',
-'build/assets/skins/sam/back-h.png',
-'build/assets/skins/sam/back-v.png',
-'build/assets/skins/sam/bar-h.png',
-'build/assets/skins/sam/bar-v.png',
-'build/assets/skins/sam/bg-h.gif',
-'build/assets/skins/sam/bg-v.gif',
-'build/assets/skins/sam/blankimage.png',
-'build/assets/skins/sam/button.css',
-'build/assets/skins/sam/calendar.css',
-'build/assets/skins/sam/carousel.css',
-'build/assets/skins/sam/check0.gif',
-'build/assets/skins/sam/check1.gif',
-'build/assets/skins/sam/check2.gif',
-'build/assets/skins/sam/colorpicker.css',
-'build/assets/skins/sam/container.css',
-'build/assets/skins/sam/datatable.css',
-'build/assets/skins/sam/desc.gif',
-'build/assets/skins/sam/dt-arrow-dn.png',
-'build/assets/skins/sam/dt-arrow-up.png',
-'build/assets/skins/sam/editor-knob.gif',
-'build/assets/skins/sam/editor-sprite-active.gif',
-'build/assets/skins/sam/editor-sprite.gif',
-'build/assets/skins/sam/editor.css',
-'build/assets/skins/sam/header_background.png',
-'build/assets/skins/sam/hue_bg.png',
-'build/assets/skins/sam/imagecropper.css',
-'build/assets/skins/sam/layout.css',
-'build/assets/skins/sam/layout_sprite.png',
-'build/assets/skins/sam/loading.gif',
-'build/assets/skins/sam/logger.css',
-'build/assets/skins/sam/menu-button-arrow-disabled.png',
-'build/assets/skins/sam/menu-button-arrow.png',
-'build/assets/skins/sam/menu.css',
-'build/assets/skins/sam/menubaritem_submenuindicator.png',
-'build/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
-'build/assets/skins/sam/menuitem_checkbox.png',
-'build/assets/skins/sam/menuitem_checkbox_disabled.png',
-'build/assets/skins/sam/menuitem_submenuindicator.png',
-'build/assets/skins/sam/menuitem_submenuindicator_disabled.png',
-'build/assets/skins/sam/paginator.css',
-'build/assets/skins/sam/picker_mask.png',
-'build/assets/skins/sam/profilerviewer.css',
-'build/assets/skins/sam/progressbar.css',
-'build/assets/skins/sam/resize.css',
-'build/assets/skins/sam/simpleeditor.css',
-'build/assets/skins/sam/skin.css',
-'build/assets/skins/sam/slider.css',
-'build/assets/skins/sam/split-button-arrow-active.png',
-'build/assets/skins/sam/split-button-arrow-disabled.png',
-'build/assets/skins/sam/split-button-arrow-focus.png',
-'build/assets/skins/sam/split-button-arrow-hover.png',
-'build/assets/skins/sam/split-button-arrow.png',
-'build/assets/skins/sam/sprite.png',
-'build/assets/skins/sam/sprite.psd',
-'build/assets/skins/sam/tabview.css',
-'build/assets/skins/sam/treeview-loading.gif',
-'build/assets/skins/sam/treeview-sprite.gif',
-'build/assets/skins/sam/treeview.css',
-'build/assets/skins/sam/wait.gif',
-'build/assets/skins/sam/yuitest.css',
-'build/connection/connection-min.js',
-'build/connection/connection_core-min.js',
-'build/container/assets/alrt16_1.gif',
-'build/container/assets/blck16_1.gif',
-'build/container/assets/close12_1.gif',
-'build/container/assets/container-core.css',
-'build/container/assets/container.css',
-'build/container/assets/hlp16_1.gif',
-'build/container/assets/info16_1.gif',
-'build/container/assets/skins/sam/container-skin.css',
-'build/container/assets/skins/sam/container.css',
-'build/container/assets/tip16_1.gif',
-'build/container/assets/warn16_1.gif',
-'build/container/container-min.js',
-'build/container/container_core-min.js',
-'build/datasource/datasource-min.js',
-'build/datatable/assets/datatable-core.css',
-'build/datatable/assets/datatable.css',
-'build/datatable/assets/skins/sam/datatable-skin.css',
-'build/datatable/assets/skins/sam/datatable.css',
-'build/datatable/assets/skins/sam/dt-arrow-dn.png',
-'build/datatable/assets/skins/sam/dt-arrow-up.png',
-'build/datatable/datatable-min.js',
-'build/dragdrop/dragdrop-min.js',
-'build/element/element-min.js',
-'build/fonts/fonts-min.css',
-'build/fonts/fonts.css',
-'build/json/json-min.js',
-'build/layout/assets/layout-core.css',
-'build/layout/assets/skins/sam/layout-skin.css',
-'build/layout/assets/skins/sam/layout.css',
-'build/layout/assets/skins/sam/layout_sprite.png',
-'build/layout/layout-min.js',
-'build/menu/assets/menu-core.css',
-'build/menu/assets/menu.css',
-'build/menu/assets/menu_down_arrow.png',
-'build/menu/assets/menu_down_arrow_disabled.png',
-'build/menu/assets/menu_up_arrow.png',
-'build/menu/assets/menu_up_arrow_disabled.png',
-'build/menu/assets/menubaritem_submenuindicator.png',
-'build/menu/assets/menubaritem_submenuindicator_disabled.png',
-'build/menu/assets/menubaritem_submenuindicator_selected.png',
-'build/menu/assets/menuitem_checkbox.png',
-'build/menu/assets/menuitem_checkbox_disabled.png',
-'build/menu/assets/menuitem_checkbox_selected.png',
-'build/menu/assets/menuitem_submenuindicator.png',
-'build/menu/assets/menuitem_submenuindicator_disabled.png',
-'build/menu/assets/menuitem_submenuindicator_selected.png',
-'build/menu/assets/skins/sam/menu-skin.css',
-'build/menu/assets/skins/sam/menu.css',
-'build/menu/assets/skins/sam/menubaritem_submenuindicator.png',
-'build/menu/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
-'build/menu/assets/skins/sam/menuitem_checkbox.png',
-'build/menu/assets/skins/sam/menuitem_checkbox_disabled.png',
-'build/menu/assets/skins/sam/menuitem_submenuindicator.png',
-'build/menu/assets/skins/sam/menuitem_submenuindicator_disabled.png',
-'build/menu/menu-min.js',
-'build/paginator/assets/paginator-core.css',
-'build/paginator/assets/skins/sam/paginator-skin.css',
-'build/paginator/assets/skins/sam/paginator.css',
-'build/paginator/paginator-min.js',
-'build/progressbar/assets/progressbar-core.css',
-'build/progressbar/assets/skins/sam/back-h.png',
-'build/progressbar/assets/skins/sam/back-v.png',
-'build/progressbar/assets/skins/sam/bar-h.png',
-'build/progressbar/assets/skins/sam/bar-v.png',
-'build/progressbar/assets/skins/sam/progressbar-skin.css',
-'build/progressbar/assets/skins/sam/progressbar.css',
-'build/progressbar/progressbar-min.js',
-'build/reset-fonts-grids/reset-fonts-grids.css',
-'build/resize/assets/resize-core.css',
-'build/resize/assets/skins/sam/layout_sprite.png',
-'build/resize/assets/skins/sam/resize-skin.css',
-'build/resize/assets/skins/sam/resize.css',
-'build/resize/resize-min.js',
-'build/utilities/utilities.js',
-'build/yahoo-dom-event/yahoo-dom-event.js',
-]
 
+files_needed_from_yui = [
+    'build/animation/animation-min.js',
+    'build/assets/skins/sam/ajax-loader.gif',
+    'build/assets/skins/sam/asc.gif',
+    'build/assets/skins/sam/autocomplete.css',
+    'build/assets/skins/sam/back-h.png',
+    'build/assets/skins/sam/back-v.png',
+    'build/assets/skins/sam/bar-h.png',
+    'build/assets/skins/sam/bar-v.png',
+    'build/assets/skins/sam/bg-h.gif',
+    'build/assets/skins/sam/bg-v.gif',
+    'build/assets/skins/sam/blankimage.png',
+    'build/assets/skins/sam/button.css',
+    'build/assets/skins/sam/calendar.css',
+    'build/assets/skins/sam/carousel.css',
+    'build/assets/skins/sam/check0.gif',
+    'build/assets/skins/sam/check1.gif',
+    'build/assets/skins/sam/check2.gif',
+    'build/assets/skins/sam/colorpicker.css',
+    'build/assets/skins/sam/container.css',
+    'build/assets/skins/sam/datatable.css',
+    'build/assets/skins/sam/desc.gif',
+    'build/assets/skins/sam/dt-arrow-dn.png',
+    'build/assets/skins/sam/dt-arrow-up.png',
+    'build/assets/skins/sam/editor-knob.gif',
+    'build/assets/skins/sam/editor-sprite-active.gif',
+    'build/assets/skins/sam/editor-sprite.gif',
+    'build/assets/skins/sam/editor.css',
+    'build/assets/skins/sam/header_background.png',
+    'build/assets/skins/sam/hue_bg.png',
+    'build/assets/skins/sam/imagecropper.css',
+    'build/assets/skins/sam/layout.css',
+    'build/assets/skins/sam/layout_sprite.png',
+    'build/assets/skins/sam/loading.gif',
+    'build/assets/skins/sam/logger.css',
+    'build/assets/skins/sam/menu-button-arrow-disabled.png',
+    'build/assets/skins/sam/menu-button-arrow.png',
+    'build/assets/skins/sam/menu.css',
+    'build/assets/skins/sam/menubaritem_submenuindicator.png',
+    'build/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
+    'build/assets/skins/sam/menuitem_checkbox.png',
+    'build/assets/skins/sam/menuitem_checkbox_disabled.png',
+    'build/assets/skins/sam/menuitem_submenuindicator.png',
+    'build/assets/skins/sam/menuitem_submenuindicator_disabled.png',
+    'build/assets/skins/sam/paginator.css',
+    'build/assets/skins/sam/picker_mask.png',
+    'build/assets/skins/sam/profilerviewer.css',
+    'build/assets/skins/sam/progressbar.css',
+    'build/assets/skins/sam/resize.css',
+    'build/assets/skins/sam/simpleeditor.css',
+    'build/assets/skins/sam/skin.css',
+    'build/assets/skins/sam/slider.css',
+    'build/assets/skins/sam/split-button-arrow-active.png',
+    'build/assets/skins/sam/split-button-arrow-disabled.png',
+    'build/assets/skins/sam/split-button-arrow-focus.png',
+    'build/assets/skins/sam/split-button-arrow-hover.png',
+    'build/assets/skins/sam/split-button-arrow.png',
+    'build/assets/skins/sam/sprite.png',
+    'build/assets/skins/sam/sprite.psd',
+    'build/assets/skins/sam/tabview.css',
+    'build/assets/skins/sam/treeview-loading.gif',
+    'build/assets/skins/sam/treeview-sprite.gif',
+    'build/assets/skins/sam/treeview.css',
+    'build/assets/skins/sam/wait.gif',
+    'build/assets/skins/sam/yuitest.css',
+    'build/connection/connection-min.js',
+    'build/connection/connection_core-min.js',
+    'build/container/assets/alrt16_1.gif',
+    'build/container/assets/blck16_1.gif',
+    'build/container/assets/close12_1.gif',
+    'build/container/assets/container-core.css',
+    'build/container/assets/container.css',
+    'build/container/assets/hlp16_1.gif',
+    'build/container/assets/info16_1.gif',
+    'build/container/assets/skins/sam/container-skin.css',
+    'build/container/assets/skins/sam/container.css',
+    'build/container/assets/tip16_1.gif',
+    'build/container/assets/warn16_1.gif',
+    'build/container/container-min.js',
+    'build/container/container_core-min.js',
+    'build/datasource/datasource-min.js',
+    'build/datatable/assets/datatable-core.css',
+    'build/datatable/assets/datatable.css',
+    'build/datatable/assets/skins/sam/datatable-skin.css',
+    'build/datatable/assets/skins/sam/datatable.css',
+    'build/datatable/assets/skins/sam/dt-arrow-dn.png',
+    'build/datatable/assets/skins/sam/dt-arrow-up.png',
+    'build/datatable/datatable-min.js',
+    'build/dragdrop/dragdrop-min.js',
+    'build/element/element-min.js',
+    'build/fonts/fonts-min.css',
+    'build/fonts/fonts.css',
+    'build/json/json-min.js',
+    'build/layout/assets/layout-core.css',
+    'build/layout/assets/skins/sam/layout-skin.css',
+    'build/layout/assets/skins/sam/layout.css',
+    'build/layout/assets/skins/sam/layout_sprite.png',
+    'build/layout/layout-min.js',
+    'build/menu/assets/menu-core.css',
+    'build/menu/assets/menu.css',
+    'build/menu/assets/menu_down_arrow.png',
+    'build/menu/assets/menu_down_arrow_disabled.png',
+    'build/menu/assets/menu_up_arrow.png',
+    'build/menu/assets/menu_up_arrow_disabled.png',
+    'build/menu/assets/menubaritem_submenuindicator.png',
+    'build/menu/assets/menubaritem_submenuindicator_disabled.png',
+    'build/menu/assets/menubaritem_submenuindicator_selected.png',
+    'build/menu/assets/menuitem_checkbox.png',
+    'build/menu/assets/menuitem_checkbox_disabled.png',
+    'build/menu/assets/menuitem_checkbox_selected.png',
+    'build/menu/assets/menuitem_submenuindicator.png',
+    'build/menu/assets/menuitem_submenuindicator_disabled.png',
+    'build/menu/assets/menuitem_submenuindicator_selected.png',
+    'build/menu/assets/skins/sam/menu-skin.css',
+    'build/menu/assets/skins/sam/menu.css',
+    'build/menu/assets/skins/sam/menubaritem_submenuindicator.png',
+    'build/menu/assets/skins/sam/menubaritem_submenuindicator_disabled.png',
+    'build/menu/assets/skins/sam/menuitem_checkbox.png',
+    'build/menu/assets/skins/sam/menuitem_checkbox_disabled.png',
+    'build/menu/assets/skins/sam/menuitem_submenuindicator.png',
+    'build/menu/assets/skins/sam/menuitem_submenuindicator_disabled.png',
+    'build/menu/menu-min.js',
+    'build/paginator/assets/paginator-core.css',
+    'build/paginator/assets/skins/sam/paginator-skin.css',
+    'build/paginator/assets/skins/sam/paginator.css',
+    'build/paginator/paginator-min.js',
+    'build/progressbar/assets/progressbar-core.css',
+    'build/progressbar/assets/skins/sam/back-h.png',
+    'build/progressbar/assets/skins/sam/back-v.png',
+    'build/progressbar/assets/skins/sam/bar-h.png',
+    'build/progressbar/assets/skins/sam/bar-v.png',
+    'build/progressbar/assets/skins/sam/progressbar-skin.css',
+    'build/progressbar/assets/skins/sam/progressbar.css',
+    'build/progressbar/progressbar-min.js',
+    'build/reset-fonts-grids/reset-fonts-grids.css',
+    'build/resize/assets/resize-core.css',
+    'build/resize/assets/skins/sam/layout_sprite.png',
+    'build/resize/assets/skins/sam/resize-skin.css',
+    'build/resize/assets/skins/sam/resize.css',
+    'build/resize/resize-min.js',
+    'build/utilities/utilities.js',
+    'build/yahoo-dom-event/yahoo-dom-event.js',
+    ]
 
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-    parser.add_option("--skip-cron", dest = "cron",
-                     default = True, action = "store_false",
-                     help = "Do not install maintenance cron jobs")
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--skip-cron", dest = "cron",
+                        default = True, action = "store_false",
+                        help = "Do not install maintenance cron jobs")
+    options = parser.parse_args()
 
-    if not os.environ.has_key("WMAGENT_CONFIG"):
-        print "The WMAGENT_CONFIG environment variable needs to be set before"
-        print "this can run."
+    if "WMAGENT_CONFIG" not in os.environ:
+        print("The WMAGENT_CONFIG environment variable needs to be set before")
+        print("this can run.")
         sys.exit(1)
 
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
@@ -367,6 +370,19 @@ if __name__ == "__main__":
     
     if hasattr(wmagentConfig, "Tier0Feeder"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
+        centralWMStatsURL = wmagentConfig.AgentStatusWatcher.centralWMStatsURL
+        # checks whether this is test agent. if T0 agent is setting local wmstats as central it creates the db
+        if "localhost:" in centralWMStatsURL:
+            couchURL, wmstatsDBName = splitCouchServiceURL(centralWMStatsURL)
+            installCouchApp(couchURL, wmstatsDBName, "WMStats")
         if options.cron:
             setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName)
+
+    if hasattr(wmagentConfig, "General") and hasattr(wmagentConfig.General, "central_logdb_url") and \
+            "localhost" in wmagentConfig.General.central_logdb_url:
+        couchURL, logDBName = splitCouchServiceURL(wmagentConfig.General.central_logdb_url)
+        installCouchApp(couchURL, logDBName, "LogDB")
+        if options.cron:
+            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, logDBName)
+
     sys.exit(0)

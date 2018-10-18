@@ -5,14 +5,14 @@ acdcserver-tools
 Utility script for mantaining the acdcserver
 """
 
-from optparse import OptionParser, OptionGroup
+import logging
 import os
 import sys
-import time
-import logging
+from argparse import ArgumentParser
 
-from WMCore.Configuration import loadConfigurationFile
 from WMCore.ACDC.CouchService import CouchService
+from WMCore.Configuration import loadConfigurationFile
+
 
 def createOptionParser():
     """
@@ -21,18 +21,18 @@ def createOptionParser():
     Create an option parser that knows the options
     available to this script.
     """
-    myOptParser = OptionParser()
-    myOptParser.add_option("--cleanup", dest = "cleanupAction",
-                           default = False, action = "store_true",
-                           help = "Cleanup old documents in ACDC database")
+    myOptParser = ArgumentParser()
+    myOptParser.add_argument("--cleanup", dest="cleanupAction",
+                             default=False, action="store_true",
+                             help="Cleanup old documents in ACDC database")
 
-    group = OptionGroup(myOptParser, "General options.",
-                    "General options to direct behavior")
-    group.add_option("--config", dest = "config", help = "WMAgent config",
-                     default = os.environ.get("WMAGENT_CONFIG", None))
-    myOptParser.add_option_group(group)
+    group = myOptParser.add_argument_group("General options.",
+                                           "General options to direct behavior")
+    group.add_argument("--config", dest="config", help="WMAgent config",
+                       default=os.environ.get("WMAGENT_CONFIG", None))
 
     return myOptParser
+
 
 def cleanupDocuments(config):
     """
@@ -41,14 +41,15 @@ def cleanupDocuments(config):
     Cleanup old documents in the database according
     to the configuration values.
     """
-    acdcService = CouchService(url = config.ACDC.couchurl, database = config.ACDC.dbname)
+    acdcService = CouchService(url=config.ACDC.couchurl, database=config.ACDC.dbname)
     deleted = acdcService.removeOldFilesets(config.ACDC.cleaningInterval)
-    logging.info("Deleted %d documents older than %d days" % (deleted, config.ACDC.cleaningInterval))
+    logging.info("Deleted %d documents older than %d days", deleted, config.ACDC.cleaningInterval)
     return
+
 
 def main():
     myOptParser = createOptionParser()
-    (options, args) = myOptParser.parse_args()
+    options = myOptParser.parse_args()
 
     if not options.config or not os.path.exists(options.config):
         msg = "No Config file provided\n"
@@ -63,6 +64,7 @@ def main():
         cleanupDocuments(cfgObject)
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

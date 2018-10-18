@@ -1,52 +1,61 @@
 """
 """
-import unittest
-import os
+import StringIO
 import logging
 import logging.config
-import socket
-import time
-import tempfile
+import os
 import shutil
-from httplib import HTTPException
+import socket
+import tempfile
+import time
+import unittest
 from httplib import BadStatusLine, IncompleteRead
+from httplib import HTTPException
 
+import cherrypy
 from nose.plugins.attrib import attr
 
-from WMCore.Services.Service import Service
 from WMCore.Services.Requests import Requests
-from WMCore.Algorithms import Permissions
+from WMCore.Services.Service import Service, isfile, cache_expired
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-import cherrypy
 
 
 class CrappyServer(object):
     def truncated(self):
         cherrypy.response.headers['Content-Length'] = 500
         return "Hello World!"
+
     truncated.exposed = True
+
 
 class SlowServer(object):
     def slow(self):
         time.sleep(300)
         return "Hello World!"
+
     slow.exposed = True
 
+
 class CrappyRequest(Requests):
-    def makeRequest(self, uri=None, data={}, verb='GET', incoming_headers={},
-                     encoder=True, decoder=True, contentType=None):
+    def makeRequest(self, uri=None, data=None, verb='GET', incoming_headers=None,
+                    encoder=True, decoder=True, contentType=None):
         # METAL \m/
         raise BadStatusLine(666)
+
 
 class RegularServer(object):
     def regular(self):
         return "This is silly."
+
     regular.exposed = True
+
 
 class BackupServer(object):
     def regular(self):
         return "This is nuts."
+
     regular.exposed = True
+
 
 class ServiceTest(unittest.TestCase):
     def setUp(self):
@@ -58,16 +67,16 @@ class ServiceTest(unittest.TestCase):
         testname = self.id().split('.')[-1]
 
         logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='service_unittests.log',
-                    filemode='w')
+                            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                            datefmt='%m-%d %H:%M',
+                            filename='service_unittests.log',
+                            filemode='w')
 
         logger_name = 'Service%s' % testname.replace('test', '', 1)
 
         self.logger = logging.getLogger(logger_name)
 
-        #self.cache_path = tempfile.mkdtemp()
+        # self.cache_path = tempfile.mkdtemp()
         test_dict = {'logger': self.logger,
                      'endpoint': 'https://github.com/dmwm'}
 
@@ -80,128 +89,172 @@ class ServiceTest(unittest.TestCase):
         self.port = 8888
         cherrypy.config.update({'server.socket_port': self.port})
 
-
     def tearDown(self):
         self.testInit.delWorkDir()
         # There was old code here to see if the test passed and send a message to
         # self.logger.info It broke in 2.7, so if needed find a supported way to do it
         return
 
+    def testIsFile(self):
+        """
+        Test the `isfile` utilitarian function
+        """
+        f = tempfile.NamedTemporaryFile(prefix="testIsFile", delete=True)
+        self.assertTrue(isfile(f))
+        f.close()
+        self.assertTrue(isfile(f))
+
+        strio = StringIO.StringIO()
+        self.assertTrue(isfile(strio))
+        strio.close()
+        self.assertTrue(isfile(strio))
+
+        self.assertFalse(isfile("/data/srv/alan.txt"))
+        self.assertFalse(isfile(1))
+        self.assertFalse(isfile(None))
+
+    def testCacheExpired(self):
+        """
+        Test the `cache_expired` utilitarian function. Delta is in hours
+        """
+        # file-like object is always considered expired
+        fcache = tempfile.NamedTemporaryFile(prefix="testIsFile", delete=True)
+        self.assertTrue(cache_expired(fcache, delta=0))
+        self.assertTrue(cache_expired(fcache, delta=100))
+        fcache.close()
+        self.assertTrue(cache_expired(fcache, delta=0))
+        self.assertTrue(cache_expired(fcache, delta=100))
+
+        # path to a file that does not exist, always expired
+        newfile = fcache.name + 'testCacheExpired'
+        self.assertTrue(cache_expired(newfile, delta=0))
+        self.assertTrue(cache_expired(newfile, delta=100))
+
+        # now create and write something to it
+        with open(newfile, 'w') as f:
+            f.write("whatever")
+
+        self.assertFalse(cache_expired(newfile, delta=1))
+        time.sleep(1)
+        self.assertTrue(cache_expired(newfile, delta=0))
+        self.assertFalse(cache_expired(newfile, delta=1))
+
     def testClear(self):
         """
         Populate the cache, and then check that it's deleted
         """
         f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
-        assert os.path.exists(f.name)
+        self.assertTrue(os.path.exists(f.name))
         f.close()
 
         self.myService.clearCache('testClear')
-        assert not os.path.exists(f.name)
+        self.assertFalse(os.path.exists(f.name))
 
     def testClearAndRepopulate(self):
         """
         Populate the cache, and then check that it's deleted
         """
         f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
-        assert os.path.exists(f.name)
+        self.assertTrue(os.path.exists(f.name))
         f.close()
 
         self.myService.clearCache('testClear')
-        assert not os.path.exists(f.name)
+        self.assertFalse(os.path.exists(f.name))
 
         f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
-        assert os.path.exists(f.name)
+        self.assertTrue(os.path.exists(f.name))
         f.close()
 
     def testCachePath(self):
         cache_path = tempfile.mkdtemp()
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cachepath' : cache_path,
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cachepath': cache_path,
                 'req_cache_path': '%s/requests' % cache_path
                 }
-        service = Service(dict)
+        service = Service(myConfig)
         # We append hostname to the cachepath, so that we can talk to two
         # services on different hosts
         self.assertEqual(service['cachepath'],
-                         '%s/cmssw.cvs.cern.ch' % dict['cachepath'] )
-        shutil.rmtree(cache_path, ignore_errors = True)
+                         '%s/cmssw.cvs.cern.ch' % myConfig['cachepath'])
+        shutil.rmtree(cache_path, ignore_errors=True)
 
-    @attr("integration")
     def testCacheLifetime(self):
         """Cache deleted if created by Service - else left alone"""
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cacheduration': 100}
-        os.environ.pop('TMPDIR', None) # Mac sets this by default
-        service = Service(dict)
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': 24}
+        os.environ.pop('TMPDIR', None)  # Mac sets this by default
+        service = Service(myConfig)
         cache_path = service['cachepath']
         self.assertTrue(os.path.isdir(cache_path))
         del service
         self.assertFalse(os.path.exists(cache_path))
 
         cache_path = tempfile.mkdtemp()
-        dict['cachepath'] = cache_path
-        service = Service(dict)
+        myConfig['cachepath'] = cache_path
+        service = Service(myConfig)
         del service
         self.assertTrue(os.path.isdir(cache_path))
-        Permissions.owner_readwriteexec(cache_path)
 
     def testCachePermissions(self):
         """Raise error if pre-defined cache permission loose"""
         cache_path = tempfile.mkdtemp()
         sub_cache_path = os.path.join(cache_path, 'cmssw.cvs.cern.ch')
         os.makedirs(sub_cache_path, 0o777)
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': 100,
-                'cachepath' : cache_path}
-        self.assertRaises(AssertionError, Service, dict)
+                'cachepath': cache_path}
+        self.assertRaises(AssertionError, Service, myConfig)  # it has to be 0o700
 
     def testCacheDuration(self):
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
-                'cacheduration': 100,
-                #'cachepath' : self.cache_path,
-                #'req_cache_path': '%s/requests' % self.cache_path
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': 100
                 }
-        service = Service(dict)
-        self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
+        service = Service(myConfig)
+        self.assertEqual(service['cacheduration'], myConfig['cacheduration'])
 
     def testNoCacheDuration(self):
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': None,
-                #'cachepath' : self.cache_path,
-                #'req_cache_path': '%s/requests' % self.cache_path
+                # 'cachepath' : self.cache_path,
+                # 'req_cache_path': '%s/requests' % self.cache_path
                 }
-        service = Service(dict)
-        self.assertEqual( service['cacheduration'] ,  dict['cacheduration'] )
+        service = Service(myConfig)
+        self.assertEqual(service['cacheduration'], myConfig['cacheduration'])
 
     def testSocketTimeout(self):
-        dict = {'logger': self.logger,
+        myConfig = {'logger': self.logger,
                 'endpoint': 'https://github.com/dmwm',
                 'cacheduration': None,
                 'timeout': 10,
                 }
-        service = Service(dict)
-        deftimeout = socket.getdefaulttimeout()
+        service = Service(myConfig)
         service.getData('%s/socketresettest' % self.testDir, '/WMCore/blob/master/setup.py#L11')
-        assert deftimeout == socket.getdefaulttimeout()
+        self.assertEqual(service['timeout'], myConfig['timeout'])
 
-    @attr("integration")
     def testStaleCache(self):
+        myConfig = {'logger': self.logger,
+                'endpoint': 'https://github.com/dmwm',
+                'usestalecache': True,
+                }
+        service = Service(myConfig)
+        service.getData('%s/socketresettest' % self.testDir, '/WMCore/blob/master/setup.py#L11')
+        self.assertEqual(service['usestalecache'], myConfig['usestalecache'])
 
-        dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch',
-                'cacheduration': 0.0002,
-                'maxcachereuse': 0.001,
+    def testUsingStaleCache(self):
+        myConfig = {'logger': self.logger,
+                'endpoint': 'http://cmssw.cvs.cern.ch',
+                'cacheduration': 0.0005,  # cache file lasts 1.8 secs
                 'timeout': 10,
                 'usestalecache': True,
-                #'cachepath' : self.cache_path,
-                #'req_cache_path': '%s/requests' % self.cache_path
+                # 'cachepath' : self.cache_path,
+                # 'req_cache_path': '%s/requests' % self.cache_path
                 }
-        service = Service(dict)
+        service = Service(myConfig)
         cache = 'stalecachetest'
 
         # Start test from a clear cache
@@ -209,80 +262,79 @@ class ServiceTest(unittest.TestCase):
 
         cachefile = service.cacheFileName(cache)
 
-        # first check that the exception raises when the file doesn't exist
-        self.logger.info('first call to refreshCache - should fail')
-
+        self.logger.info('1st call to refreshCache - should fail, there is no cache file')
         self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
 
         cacheddata = 'this data is mouldy'
-        f = open(cachefile, 'w')
-        f.write(cacheddata)
-        f.close()
+        with open(cachefile, 'w') as f:
+            f.write(cacheddata)
 
-        self.logger.info('second call to refreshCache - should pass')
+        self.logger.info('2nd call to refreshCache - should pass, data comes from the valid cache')
         data = service.refreshCache(cache, '/lies').read()
         self.assertEqual(cacheddata, data)
 
-        # sleep a while so the file expires in the cache
-        # FIXME: RACY
+        # power nap to avoid letting the cache expire
+        time.sleep(1)
+        self.logger.info('3rd call to refreshCache - should pass, cache is still valid')
+        data = service.refreshCache(cache, '/lies').read()
+        self.assertEqual(cacheddata, data)
+
+        # sleep a while longer so the cache dies out
         time.sleep(2)
-        self.logger.info('third call to refreshCache - should return stale cache')
-        data = service.refreshCache(cache, '/lies').read()
-        self.assertEqual(cacheddata, data)
-
-        # sleep a while longer so the cache is dead
-        # FIXME: RACY
-        time.sleep(5)
-        self.logger.info('fourth call to refreshCache - cache should be dead')
+        self.logger.info('4th call to refreshCache - should fail, cache is dead now')
         self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
 
-        # touch the file and expire it
-        f = open(cachefile, 'w')
-        f.write('foo')
-        f.close()
-        time.sleep(2)
+        # touch/renew the file again
+        cacheddata = 'foo'
+        with open(cachefile, 'w') as f:
+            f.write(cacheddata)
 
-        self.logger.info('fifth call to refreshCache - do not use stale cache')
-        # now our service cache is less permissive, the following should fail
+        # disable usage of stale cache, so doesn't call the endpoint if cache is valid
         service['usestalecache'] = False
-        self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
+        self.logger.info('5th call to refreshCache - should pass, cache is still valid')
+        data = service.refreshCache(cache, '/lies').read()
+        self.assertEqual(cacheddata, data)
 
-        service.cacheFileName(cache)
+        # consider the cache dead
+        service['cacheduration'] = 0
+        time.sleep(1)
+        self.logger.info('6th call to refreshCache - should fail, cache is dead now')
+        self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
 
     def testCacheFileName(self):
         """Hash url + data to get cache file name"""
         hashes = {}
-        inputdata = [{}, {'fred' : 'fred'},
-                     {'fred' : 'fred', 'carl' : [1, 2]},
-                     {'fred' : 'fred', 'carl' : ["1", "2"]},
-                     {'fred' : 'fred', 'carl' : ["1", "2"], 'jim' : {}}
+        inputdata = [{}, {'fred': 'fred'},
+                     {'fred': 'fred', 'carl': [1, 2]},
+                     {'fred': 'fred', 'carl': ["1", "2"]},
+                     {'fred': 'fred', 'carl': ["1", "2"], 'jim': {}}
                      ]
         for data in inputdata:
-            thishash = self.myService.cacheFileName('bob', inputdata = data)
-            thishash2 = self.myService2.cacheFileName('bob', inputdata = data)
+            thishash = self.myService.cacheFileName('bob', inputdata=data)
+            thishash2 = self.myService2.cacheFileName('bob', inputdata=data)
             self.assertNotEqual(thishash, thishash2)
             self.assertTrue(thishash not in hashes, '%s is not unique' % thishash)
             self.assertTrue(thishash2 not in hashes,
-                         '%s is not unique' % thishash2)
+                            '%s is not unique' % thishash2)
             hashes[thishash], hashes[thishash2] = None, None
 
     def testNoCache(self):
         """Cache disabled"""
-        dict = {'logger': self.logger,
+        myConfig = {'logger': self.logger,
                 'endpoint': 'https://github.com/dmwm',
                 'cachepath': None,
                 }
-        service = Service(dict)
+        service = Service(myConfig)
 
-        self.assertEqual(service['cachepath'], dict['cachepath'])
-        self.assertEqual(service['requests']['cachepath'], dict['cachepath'])
-        self.assertEqual(service['requests']['req_cache_path'], dict['cachepath'])
+        self.assertEqual(service['cachepath'], myConfig['cachepath'])
+        self.assertEqual(service['requests']['cachepath'], myConfig['cachepath'])
+        self.assertEqual(service['requests']['req_cache_path'], myConfig['cachepath'])
 
         out = service.refreshCache('shouldntbeused', '/').read()
         self.assertTrue('html' in out)
 
     @attr("integration")
-    def testTruncatedResponse(self):
+    def notestTruncatedResponse(self):
         """
         _TruncatedResponse_
 
@@ -292,7 +344,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         dummyLogger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/truncated' % self.port,
+        test_dict = {'logger': self.logger, 'endpoint': 'http://127.0.0.1:%i/truncated' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         self.assertRaises(IncompleteRead, myService.getData, 'foo', '')
@@ -300,7 +352,7 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.stop()
 
     @attr("integration")
-    def testSlowResponse(self):
+    def notestSlowResponse(self):
         """
         _SlowResponse_
 
@@ -310,7 +362,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         dummyLogger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/slow' % self.port,
+        test_dict = {'logger': self.logger, 'endpoint': 'http://127.0.0.1:%i/slow' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         startTime = int(time.time())
@@ -328,7 +380,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         dummyLogger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/badstatus' % self.port,
+        test_dict = {'logger': self.logger, 'endpoint': 'http://127.0.0.1:%i/badstatus' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
         # Have to fudge the status line in the Request object as cherrypy won't
@@ -337,7 +389,7 @@ class ServiceTest(unittest.TestCase):
         self.assertRaises(BadStatusLine, myService.getData, 'foo', '')
 
     @attr("integration")
-    def testZ_InterruptedConnection(self):
+    def notestZ_InterruptedConnection(self):
         """
         _InterruptedConnection_
 
@@ -352,7 +404,7 @@ class ServiceTest(unittest.TestCase):
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
         dummyLogger = logging.getLogger('john')
-        test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/reg1/regular' % self.port,
+        test_dict = {'logger': self.logger, 'endpoint': 'http://127.0.0.1:%i/reg1/regular' % self.port,
                      'usestalecache': True, "cacheduration": 0.005}
         myService = Service(test_dict)
         self.assertRaises(HTTPException, myService.getData, 'foo', 'THISISABADURL')

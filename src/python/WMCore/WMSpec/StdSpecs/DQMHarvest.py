@@ -84,7 +84,7 @@ class DQMHarvestWorkloadFactory(DataProcessing):
 
         harvestTask = self.workload.newTask("%sDQMHarvest" % harvestType)
 
-        self.addDashboardMonitoring(harvestTask)
+        self.addRuntimeMonitors(harvestTask)
         harvestTaskCmssw = harvestTask.makeStep("cmsRun1")
         harvestTaskCmssw.setStepType("CMSSW")
 

@@ -2,6 +2,7 @@ from __future__ import (division, print_function)
 
 import socket
 import copy
+from collections import defaultdict
 
 # From top level
 
@@ -35,7 +36,11 @@ PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                             'TotalJobCPU': float,
                             'TotalJobTime': float,
                             'EventThroughput': float,
-                            'TotalLoopCPU': float},
+                            'TotalLoopCPU': float,
+                            'TotalInitTime': float,
+                            'TotalInitCPU': float,
+                            'NumberOfThreads': int,
+                            'NumberOfStreams': int},
                     'memory': {'PeakValueRss': float,
                                'PeakValueVsize': float},
                     'storage': {'readAveragekB': float,
@@ -180,20 +185,27 @@ def typeCastError(errorList):
     return errorList
 
 def typeCastPerformance(performDict):
-    for key in performDict:
-        for param in performDict[key]:
-            if key in PERFORMANCE_TYPE:
-                if param in PERFORMANCE_TYPE[key]:
+    newPerfDict = defaultdict(dict)
+    for key in PERFORMANCE_TYPE:
+        if key in performDict:
+            for param in PERFORMANCE_TYPE[key]:
+                if param in performDict[key]:
                     try:
                         value = performDict[key][param]
                         if value in ["-nan", "nan", "inf", ""]:
                             value = -1
-                        performDict[key][param] = PERFORMANCE_TYPE[key][param](value)
+                        if PERFORMANCE_TYPE[key][param] == int:
+                        # the received value comes from CMSSW FWJR and its type is string
+                        # Although type is int, CMSSW FWJR string is constructed as float i.e. "3.0"
+                        # In that case we convert to float first before type cast to int.
+                        # since int("3.0") will raise an exception but int(float("3.0") won't
+                            value = float(value)
+                        newPerfDict[key][param] = PERFORMANCE_TYPE[key][param](value)
                     except ValueError as ex:
-                        performDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
+                        newPerfDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
                         print("key: %s, param: %s, value: %s \n%s" % (key, param,
                                                     performDict[key][param], str(ex)))
-    return performDict
+    return dict(newPerfDict)
 
 
 def convertOutput(outputList):
@@ -405,8 +417,13 @@ def createArchiverDoc(job, version=None):
         import WMCore
         version = WMCore.__version__
     # append meta data in fwjr
+    wnName = ""
+    if "WorkerNodeInfo" in fwjr:
+        wnName = fwjr["WorkerNodeInfo"].get("HostName", "")
+
     newfwjr['meta_data'] = {'agent_ver': version,
                          'host': socket.gethostname().lower(),
+                         'wn_name': wnName,
                          'fwjr_id': job_id,
                          'jobtype': jobtype,
                          'jobstate': jobstate,

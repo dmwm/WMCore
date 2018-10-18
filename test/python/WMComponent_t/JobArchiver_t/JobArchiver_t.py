@@ -39,6 +39,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
         """
         setup for test.
         """
+        super(JobArchiverTest, self).setUp()
 
         myThread = threading.currentThread()
         super(JobArchiverTest, self).setUp()

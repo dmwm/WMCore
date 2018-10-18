@@ -7,22 +7,21 @@ this will let us test that the fallback works properly
 
 """
 from __future__ import print_function
+
 import os
+
+from WMCore.Storage.Execute import runCommandWithOutput
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-
-from WMCore.Storage.Execute import runCommand
 
 
 class TestFallbackToOldBackendImpl(StageOutImpl):
     """
-    _CPImpl_
+    _TestFallbackToOldBackendImpl_
 
     Implement interface for plain cp command
 
     """
-
-    run = staticmethod(runCommand)
 
     def createSourceName(self, protocol, pfn):
         """
@@ -39,37 +38,39 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
 
         create dir with group permission
         """
-        targetdir= os.path.dirname(targetPFN)
+        targetdir = os.path.dirname(targetPFN)
 
-        checkdircmd="/bin/ls %s > /dev/null " % targetdir
-        print("Check dir existence : %s" %checkdircmd)
+        checkdircmd = "/bin/ls %s > /dev/null " % targetdir
+        print("Check dir existence : %s" % checkdircmd)
         try:
-            checkdirexitCode = self.run(checkdircmd)
+            checkdirexitCode, output = runCommandWithOutput(checkdircmd)
         except Exception as ex:
             msg = "Warning: Exception while invoking command:\n"
             msg += "%s\n" % checkdircmd
             msg += "Exception: %s\n" % str(ex)
             msg += "Go on anyway..."
             print(msg)
-            pass
 
         if checkdirexitCode:
             mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-            print("=> creating the dir : %s" %mkdircmd)
+            print("=> creating the dir : %s" % mkdircmd)
             try:
-                self.run(mkdircmd)
+                exitCode, output = runCommandWithOutput(mkdircmd)
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircmd
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
-                pass
+            if exitCode:
+                msg = "Warning: failed to create the dir %s with the following error:\n%s" % (targetdir, output)
+                print(msg)
+            else:
+                print("=> dir %s correctly created" % targetdir)
         else:
             print("=> dir already exists... do nothing.")
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -83,10 +84,17 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s " % targetPFN
-        result += "; DEST_SIZE=`/bin/ls -l %s | awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' -eq $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+        result += """
+        DEST_SIZE=`/bin/ls -l %s | awk '{print $5}'`
+        if [ $DEST_SIZE ] && [ '%s' -eq $DEST_SIZE ]; then
+            exit 0
+        else
+            echo "ERROR: Size Mismatch between local and SE"
+            exit 60311
+        fi
+        """ % (targetPFN, original_size)
         print(result)
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

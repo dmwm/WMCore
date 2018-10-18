@@ -1,23 +1,24 @@
 from __future__ import (print_function, division)
 
 import json
+import traceback
 
 import cherrypy
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from Utils.Utilities import strToBool
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
+from WMCore.REST.Error import MethodWithoutQueryString
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 
-def format_algo_web_list(task_name, task_type, split_param):
-
-    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
-
+def format_algo_web_list(task_name, task_type, split_param, algo_config):
     fdict = {"taskName": task_name}
     fdict["taskType"] = task_type
     default_algo = split_param["algorithm"]
@@ -46,20 +47,47 @@ def format_algo_web_list(task_name, task_type, split_param):
     fdict["splitParamList"] = param_list
     return fdict
 
+
 def create_web_splitting_format(split_info):
     web_form = []
+    splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+
     for sp in split_info:
         # skip Cleanup and LogCollect: don't allow change the param
         if sp["taskType"] not in ["Cleanup", "LogCollect"]:
             web_form.append(format_algo_web_list(sp["taskName"], sp["taskType"],
-                                               sp["splitParams"]))
+                                                 sp["splitParams"], splitSettings))
     return web_form
 
-def _validate_split_param(split_algo, split_param):
+
+def create_updatable_splitting_format(split_info):
+    """
+    _create_updatable_splitting_format_
+
+    Returns the workflow job splitting without parameters that
+    cannot be updated in the POST call.
+    """
+    splitInfo = []
+    splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+
+    for taskInfo in split_info:
+        if taskInfo["taskType"] not in ["Cleanup", "LogCollect"]:
+            splittingAlgo = taskInfo["splitAlgo"]
+            submittedParams = taskInfo["splitParams"]
+            splitParams = {}
+            for param in submittedParams:
+                validFlag, _ = _validate_split_param(splittingAlgo, param, splitSettings)
+                if validFlag:
+                    splitParams[param] = taskInfo["splitParams"][param]
+            taskInfo["splitParams"] = splitParams
+            splitInfo.append(taskInfo)
+    return splitInfo
+
+
+def _validate_split_param(split_algo, split_param, algo_config):
     """
     validate param for editing, also returns param type
     """
-    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
 
     valid_params = algo_config["algo_params"][split_algo]
     if split_param in valid_params:
@@ -71,20 +99,21 @@ def _validate_split_param(split_algo, split_param):
     else:
         return (False, None)
 
-def _assign_if_key_exsit(key, original_params, return_params, cast_type):
-    if key in original_params:
-        if cast_type == None:
-            return_params[key] = original_params[key]
-        elif cast_type == bool:
-            if str(original_params[key]).lower() == "true":
-                return_params[key] = True
-            else:
-                return_params[key] = False
-        else:
-            return_params[key] = cast_type(original_params[key])
+
+def _assign_key_value(keyname, keyvalue, return_params, cast_type):
+    if cast_type is None:
+        return_params[keyname] = keyvalue
+    elif cast_type == bool:
+        try:
+            return_params[keyname] = strToBool(keyvalue)
+        except ValueError:
+            msg = "%s expects a boolean value, you provided %s" % (keyname, keyvalue)
+            raise cherrypy.HTTPError(400, msg)
+    else:
+        return_params[keyname] = cast_type(keyvalue)
+
 
 class RequestSpec(RESTEntity):
-
     def validate(self, apiobj, method, api, param, safe):
         """
         Validate request input data.
@@ -95,8 +124,7 @@ class RequestSpec(RESTEntity):
         """
         validate_str("name", param, safe, rx.RX_REQUEST_NAME, optional=False)
 
-
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """
@@ -109,8 +137,8 @@ class RequestSpec(RESTEntity):
         result = get_request_template_from_type(name)
         return [result]
 
-class WorkloadConfig(RESTEntity):
 
+class WorkloadConfig(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
@@ -122,8 +150,9 @@ class WorkloadConfig(RESTEntity):
         if args_length == 1:
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
+        else:
+            raise MethodWithoutQueryString
         return
-
 
     def validate(self, apiobj, method, api, param, safe):
         """
@@ -136,8 +165,7 @@ class WorkloadConfig(RESTEntity):
 
         self._validate_args(param, safe)
 
-
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """
@@ -156,27 +184,32 @@ class WorkloadConfig(RESTEntity):
 
         return str(helper.data)
 
-class WorkloadSplitting(RESTEntity):
 
+class WorkloadSplitting(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqdb_url = "%s/%s" % (config.couch_host, config.couch_reqmgr_db)
 
-
-    def _validate_args(self, param, safe):
+    def _validate_get_args(self, param, safe):
         # TODO: need proper validation but for now pass everything
         args_length = len(param.args)
         if args_length == 1:
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
-        elif args_length == 2 and  param.args[0] == "web_form":
+        elif args_length == 2 and param.args[0] == "web_form":
             safe.kwargs["web_form"] = True
             safe.kwargs["name"] = param.args[1]
             param.args.pop()
             param.args.pop()
+        elif args_length == 2 and param.args[0] == "update_only":
+            safe.kwargs["update_only"] = True
+            safe.kwargs["name"] = param.args[1]
+            param.args.pop()
+            param.args.pop()
+        else:
+            raise MethodWithoutQueryString
         return
-
 
     def validate(self, apiobj, method, api, param, safe):
         """
@@ -186,12 +219,32 @@ class WorkloadSplitting(RESTEntity):
         are not passed in the method at all.
 
         """
-        self._validate_args(param, safe)
+        try:
+            if method == 'GET':
+                self._validate_get_args(param, safe)
 
+            if method == 'POST':
+                args_length = len(param.args)
+                if args_length == 1:
+                    safe.kwargs["name"] = param.args[0]
+                    param.args.pop()
+        except InvalidSpecParameterValue as ex:
+            raise ex
+        except Exception as ex:
+            msg = traceback.format_exc()
+            cherrypy.log("Error: %s" % msg)
+            if hasattr(ex, "message"):
+                if hasattr(ex.message, '__call__'):
+                    msg = ex.message()
+                else:
+                    msg = str(ex)
+            else:
+                msg = str(ex)
+            raise InvalidSpecParameterValue(msg)
 
-    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
-    def get(self, name, web_form=False):
+    def get(self, name, web_form=False, update_only=False):
         """
         getting job splitting algorithm.
 
@@ -206,9 +259,8 @@ class WorkloadSplitting(RESTEntity):
         except Exception:
             raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
 
-        splittingDict = helper.listJobSplittingParametersByTask(performance = False)
+        splittingDict = helper.listJobSplittingParametersByTask(performance=False)
         taskNames = sorted(splittingDict.keys())
-
         splitInfo = []
         for taskName in taskNames:
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
@@ -217,10 +269,12 @@ class WorkloadSplitting(RESTEntity):
                               "taskName": taskName})
         if web_form:
             splitInfo = create_web_splitting_format(splitInfo)
+        elif update_only:
+            splitInfo = create_updatable_splitting_format(splitInfo)
 
         return splitInfo
 
-    @restcall(formats = [('application/json', JSONFormat())])
+    @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def post(self, name):
         """
@@ -232,32 +286,30 @@ class WorkloadSplitting(RESTEntity):
         data = cherrypy.request.body.read()
         splittingInfo = json.loads(data)
 
+        helper = WMWorkloadHelper()
+        try:
+            helper.loadSpecFromCouch(self.reqdb_url, name)
+        except Exception:
+            raise cherrypy.HTTPError(404, "Cannot find workload for: %s" % name)
+
+        splitSettings = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
         for taskInfo in splittingInfo:
             splittingTask = taskInfo["taskName"]
             splittingAlgo = taskInfo["splitAlgo"]
             submittedParams = taskInfo["splitParams"]
             splitParams = {}
             for param in submittedParams:
-                validFlag, castType = _validate_split_param(splittingAlgo, param)
+                validFlag, castType = _validate_split_param(splittingAlgo, param, splitSettings)
                 if validFlag:
-                    _assign_if_key_exsit(param, submittedParams, splitParams, castType)
+                    _assign_key_value(param, submittedParams[param], splitParams, castType)
                 else:
-                    #TO Maybe raise the error messge
-                    pass
+                    msg = "Parameter '%s' is not supported in the algorithm '%s'" % (param, splittingAlgo)
+                    raise cherrypy.HTTPError(400, msg)
 
-            #TODO: this is only gets updated through script. Maybe we should disallow it.
-            _assign_if_key_exsit("include_parents", submittedParams, splitParams, bool)
+            helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams, updateOnly=True)
 
-            helper = WMWorkloadHelper()
-            try:
-                helper.loadSpecFromCouch(self.reqdb_url, name)
-            except Exception:
-                raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
+        # Now persist all these changes in the workload
+        url = "%s/%s" % (self.reqdb_url, name)
+        result = helper.saveCouchUrl(url)
 
-            helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
-
-            # Not sure why it needs to updated per each task but if following lines are outside the loop
-            # it doesn't work
-            url = "%s/%s" % (self.reqdb_url, name)
-            result = helper.saveCouchUrl(url)
         return result

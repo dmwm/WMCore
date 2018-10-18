@@ -6,9 +6,9 @@ Implementation of StageOutImpl interface for lcg-cp
 
 """
 import os
+
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
@@ -20,8 +20,6 @@ class LCGImpl(StageOutImpl):
     Implement interface for srmcp v2 command with lcg-* commands
 
     """
-
-    run = staticmethod(runCommand)
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
@@ -135,10 +133,10 @@ class LCGImpl(StageOutImpl):
             cat stageout.log
             echo -e "\nlcg-cp exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-                echo "Non-zero lcg-cp Exit status!!!"
+                echo "ERROR: lcg-cp exited with $EXIT_STATUS"
                 echo "Cleaning up failed file:"
                 %s
-                exit 60311
+                exit $EXIT_STATUS
             fi
 
             """ % self.createRemoveFileCommand(targetPFN)
@@ -169,9 +167,8 @@ class LCGImpl(StageOutImpl):
                         %s
                         exit 60311
                     fi
-                else
-                    exit 0
                 fi
+                exit 0
                 """ % (localAdler32, removeCommand)
         else:
             checksumCommand = "exit 0"

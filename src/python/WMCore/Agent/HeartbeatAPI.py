@@ -4,78 +4,108 @@ _HartbeatAPI_
 A simple object representing a file in WMBS.
 """
 
-
-
-
-import threading
 import os
-import logging
 
+from WMCore.Database.DBExceptionHandler import db_exception_handler
 from WMCore.WMConnectionBase import WMConnectionBase
+
 
 class HeartbeatAPI(WMConnectionBase):
     """
     Generic methods used by all of the WMBS classes.
     """
-    def __init__(self, componentName, logger=None, dbi=None):
+
+    def __init__(self, componentName, pollInterval=None, heartbeatTimeout=7200,
+                 logger=None, dbi=None):
         """
         ___init___
 
         Initialize all the database connection attributes and the logging
-        attritbutes.  Create a DAO factory for WMCore.WorkQueue as well. Finally,
-        check to see if a transaction object has been created.  If none exists,
-        create one but leave the transaction closed.
+        attributes.
+        Every worker has a different instance of this class, thus they can have
+        a different polling interval and a different heartbeat timeout.
+        Finally, check to see if a transaction object has been created.
+        If none exists, create one but leave the transaction closed.
         """
-        WMConnectionBase.__init__(self, daoPackage = "WMCore.Agent.Database",
-                                  logger = logger, dbi = dbi)
-
         self.componentName = componentName
-        self.pid = os.getpid()
+        self.pollInterval = pollInterval
+        self.heartbeatTimeout = heartbeatTimeout or 7200
+        self.compId = os.getpid()
+
+        WMConnectionBase.__init__(self, daoPackage="WMCore.Agent.Database",
+                                  logger=logger, dbi=dbi)
+
+        self.insertComp = self.daofactory(classname="InsertComponent")
+        self.existWorker = self.daofactory(classname="ExistWorker")
+        self.insertWorker = self.daofactory(classname="InsertWorker")
+        self.updateWorker = self.daofactory(classname="UpdateWorker")
+        self.updateErrorWorker = self.daofactory(classname="UpdateWorkerError")
+        self.getHeartbeat = self.daofactory(classname="GetHeartbeatInfo")
+        self.getAllHeartbeat = self.daofactory(classname="GetAllHeartbeatInfo")
 
     def registerComponent(self):
+        """
+        Deletes any leftover for a component with the same name and then
+        inserts it again with a new PID into wm_components table
+        """
+        self.insertComp.execute(self.componentName, self.compId, self.heartbeatTimeout,
+                                conn=self.getDBConn(), transaction=self.existingTransaction())
 
-        insertAction = self.daofactory(classname = "InsertComponent")
-        insertAction.execute(self.componentName, self.pid,
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+    def registerWorker(self, workerName, state="Start"):
+        """
+        Inserts a worker thread into the database, setting an initial state
+        and a polling cycle.
+        """
+        self.insertWorker.execute(self.componentName, workerName, state,
+                                  self.compId, self.pollInterval, cycleTime=0,
+                                  conn=self.getDBConn(),
+                                  transaction=self.existingTransaction())
 
-    def updateWorkerHeartbeat(self, workerName, state = "Start", pid = None):
+    def getComponentID(self, workerName):
+        """Retrieve the component_id from the workers table"""
 
-        existAction = self.daofactory(classname = "ExistWorker")
-        componentID = existAction.execute(self.componentName, workerName,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-        if not componentID:
-            action = self.daofactory(classname = "InsertWorker")
-            action.execute(self.componentName, workerName, state, pid,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-        else:
-            action = self.daofactory(classname = "UpdateWorker")
-            action.execute(componentID, workerName, state, pid,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+        componentID = self.existWorker.execute(self.componentName, workerName,
+                                               conn=self.getDBConn(),
+                                               transaction=self.existingTransaction())
+        return componentID
 
+    def updateWorkerHeartbeat(self, workerName, state):
+        """
+        Update a worker's heartbeat and its state
+        """
+        try:
+            self.updateWorker.execute(workerName, state, conn=self.getDBConn(),
+                                      transaction=self.existingTransaction())
+        except Exception as ex:
+            self.logger.warning("Heartbeat update failed! Wait for the next time...:\n%s", str(ex))
+
+    @db_exception_handler
+    def updateWorkerCycle(self, workerName, timeSpent, results):
+        """
+        Update a worker's heartbeat as well as the time spent on that
+        cycle and any results returned.
+        """
+        self.updateWorker.execute(workerName, "Running", timeSpent, results,
+                                  conn=self.getDBConn(),
+                                  transaction=self.existingTransaction())
+
+    @db_exception_handler
     def updateWorkerError(self, workerName, errorMessage):
 
-        action = self.daofactory(classname = "UpdateWorkerError")
-        action.execute(self.componentName, workerName, errorMessage,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+        self.updateErrorWorker.execute(self.componentName, workerName, errorMessage,
+                                       conn=self.getDBConn(),
+                                       transaction=self.existingTransaction())
 
     def getHeartbeatInfo(self):
 
-        heartbeatInfo = self.daofactory(classname = "GetHeartbeatInfo")
-        results = heartbeatInfo.execute(conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+        results = self.getHeartbeat.execute(self.componentName, conn=self.getDBConn(),
+                                            transaction=self.existingTransaction())
 
         return results
 
-
     def getAllHeartbeatInfo(self):
 
-        heartbeatInfo = self.daofactory(classname = "GetAllHeartbeatInfo")
-        results = heartbeatInfo.execute(conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+        results = self.getAllHeartbeat.execute(conn=self.getDBConn(),
+                                               transaction=self.existingTransaction())
 
         return results

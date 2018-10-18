@@ -61,7 +61,7 @@ WMStats.Agents = function (couchData) {
             if (lastUpdatedDuration > agentPollingCycle * 2) {
                 agentData.agentNumber.error += 1;
                 report.status = "error"; 
-                report.message += "Data is not updated: AnalyticsDataCollector Down; ";
+                report.message += "Agent Data is not updated: AgentStatusWatcher is Down; ";
             }
             
             if (agentInfo.down_components.length > 0) {
@@ -81,8 +81,8 @@ WMStats.Agents = function (couchData) {
                 report.message = "OK";
             };
             
-            report["agent_update"] =  WMStats.Utils.foramtDuration(lastUpdatedDuration);
-            report["data_update"] = WMStats.Utils.foramtDuration(dataUpdateDuration);
+            report["agent_update"] =  WMStats.Utils.formatDuration(lastUpdatedDuration);
+            report["data_update"] = WMStats.Utils.formatDuration(dataUpdateDuration);
             return report;
         };
         

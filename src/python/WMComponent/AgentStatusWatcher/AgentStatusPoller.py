@@ -5,23 +5,23 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
-__all__ = []
-
-import threading
-import logging
-import time
 import json
-from Utils.Utilities import timeit
+import logging
+import threading
+import time
+
+from Utils.Timers import timeFunction
+from Utils.Utilities import numberCouchProcess
+from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import (WMAgentDBData, convertToAgentCouchDoc, initAgentInfo)
 from WMCore.Credential.Proxy import Proxy
-from WMCore.Lexicon import sanitizeURL
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
+from WMCore.Lexicon import sanitizeURL
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, listDiskUsageOverThreshold
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
-    convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
-    diskUse, numberCouchProcess
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class AgentStatusPoller(BaseWorkerThread):
@@ -101,6 +101,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)
         self.setUpCouchDBReplication()
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         get information from wmbs, workqueue and local couch
@@ -114,10 +115,12 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo["WMBS_INFO"] = wmbsInfo
             logging.info("WMBS data collected in: %d secs", timeSpent)
 
-            timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
-            localWQInfo['total_query_time'] = int(timeSpent)
-            agentInfo["LocalWQ_INFO"] = localWQInfo
-            logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
+            if not hasattr(self.config, "Tier0Feeder"):
+                # Tier0 Agent doesn't have LQ.
+                timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
+                localWQInfo['total_query_time'] = int(timeSpent)
+                agentInfo["LocalWQ_INFO"] = localWQInfo
+                logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
 
             uploadTime = int(time.time())
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
@@ -129,7 +132,7 @@ class AgentStatusPoller(BaseWorkerThread):
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
 
-    @timeit
+    @timeFunction
     def collectWorkQueueInfo(self):
         """
         Collect information from local workqueue database
@@ -180,9 +183,12 @@ class AgentStatusPoller(BaseWorkerThread):
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
 
+        agentInfo['disk_warning'] = listDiskUsageOverThreshold(self.config, updateDB=True)
+
         if isDrainMode(self.config):
             logging.info("Agent is in DrainMode")
             agentInfo['drain_mode'] = True
+            agentInfo['drain_stats'] = DrainStatusPoller.getDrainInfo()
         else:
             agentInfo['drain_mode'] = False
 
@@ -191,15 +197,6 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo['down_components'].append(couchInfo['name'])
             agentInfo['status'] = couchInfo['status']
             agentInfo['down_component_detail'].append(couchInfo)
-
-        # Disk space warning
-        diskUseList = diskUse()
-        diskUseThreshold = float(self.config.AnalyticsDataCollector.diskUseThreshold)
-        agentInfo['disk_warning'] = []
-        for disk in diskUseList:
-            if float(disk['percent'].strip('%')) >= diskUseThreshold and \
-                            disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
-                agentInfo['disk_warning'].append(disk)
 
         # Couch process warning
         couchProc = numberCouchProcess()
@@ -210,13 +207,6 @@ class AgentStatusPoller(BaseWorkerThread):
         else:
             agentInfo['couch_process_warning'] = 0
 
-        # This adds the last time and message when data was updated to agentInfo
-        lastDataUpload = DataUploadTime.getInfo()
-        if lastDataUpload['data_last_update']:
-            agentInfo['data_last_update'] = lastDataUpload['data_last_update']
-        if lastDataUpload['data_error']:
-            agentInfo['data_error'] = lastDataUpload['data_error']
-
         # Change status if there is data_error, couch process maxed out or disk full problems.
         if agentInfo['status'] == 'ok' and (agentInfo['drain_mode'] or agentInfo['disk_warning']):
             agentInfo['status'] = "warning"
@@ -225,17 +215,16 @@ class AgentStatusPoller(BaseWorkerThread):
             if agentInfo.get('data_error', 'ok') != 'ok' or agentInfo.get('couch_process_warning', 0):
                 agentInfo['status'] = "error"
 
-        if agentInfo['down_components']:
-            logging.info("List of agent components down: %s", agentInfo['down_components'])
+        logging.info("List of agent components down: %s", agentInfo['down_components'])
 
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
         # direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
-        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
+        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs, propertiesToKeep=["data_last_update", "data_error"])
 
-    @timeit
+    @timeFunction
     def collectWMBSInfo(self):
         """
         Fetches WMBS job information.
@@ -275,7 +264,6 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         secsLeft = self.proxy.getTimeLeft(proxy=self.proxyFile)
         logging.debug("Proxy '%s' lifetime is %d secs", self.proxyFile, secsLeft)
-
 
         if secsLeft <= 86400 * 3:  # 3 days
             proxyWarning = True

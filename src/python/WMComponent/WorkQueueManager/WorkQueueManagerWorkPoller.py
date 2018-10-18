@@ -4,14 +4,17 @@ _WorkQueueManagerPoller_
 
 Pull work out of the work queue.
 """
-
+import logging
 import time
 import random
 import traceback
 import threading
-
+from Utils.Timers import timeFunction
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.PyCondor.PyCondorAPI import isScheddOverloaded
+from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
+from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
 
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
@@ -23,8 +26,15 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+        myThread = threading.currentThread()
+
         self.queue = queue
         self.config = config
+        self.condorAPI = PyCondorAPI()
+
+        self.daoFactory = DAOFactory(package="WMCore.WMBS", logger=logging, dbinterface=myThread.dbi)
+        self.listSubsWithoutJobs = self.daoFactory(classname="Subscriptions.GetSubsWithoutJobGroup")
+
 
     def setup(self, parameters):
         """
@@ -35,6 +45,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         self.logger.info('Sleeping for %d seconds before 1st loop' % t)
         time.sleep(t)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         Pull in work
@@ -51,16 +62,31 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             self.queue.logger.error("Error in new work split loop: %s" % str(ex))
         return
 
-    def retrieveCondition(self):
+    def passRetrieveCondition(self):
         """
-        _retrieveCondition_
-        set true or false for given retrieve condion
-        TODO: only condition it checks now is schedd limit
-        But we can add other conditions.
-        i.e. user config for enabling schedd limit check or threshold on workqueue, etc
+        _passRetrieveCondition_
+        Return true if the component can proceed with fetching work.
+        False if the component should skip pulling work this cycle.
+
+        For now, it only checks whether the agent is in drain mode or
+        MAX_JOBS_PER_OWNER is reached or if the condor schedd is overloaded.
         """
 
-        return (not isScheddOverloaded())
+        passCond = "OK"
+        myThread = threading.currentThread()
+        if isDrainMode(self.config):
+            passCond = "No work will be pulled: Agent is in drain"
+        elif availableScheddSlots(myThread.dbi) <= 0:
+            passCond = "No work will be pulled: schedd slot is maxed: MAX_JOBS_PER_OWNER"
+        elif self.condorAPI.isScheddOverloaded():
+            passCond = "No work will be pulled: schedd is overloaded"
+        else:
+            subscriptions = self.listSubsWithoutJobs.execute()
+            if subscriptions:
+                passCond = "No work will be pulled: "
+                passCond += "JobCreator hasn't created jobs for subscriptions %s" % subscriptions
+
+        return passCond
 
     def pullWork(self):
         """Get work from parent"""
@@ -70,13 +96,13 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         try:
-            if self.retrieveCondition():
+            cond = self.passRetrieveCondition()
+            if cond == "OK":
                 work = self.queue.pullWork()
                 myThread.logdbClient.delete("LocalWorkQueue_pullWork", "warning", this_thread=True)
             else:
-                msg = "Workqueue didn't pass the retrieve condition: NOT pulling work"
-                self.queue.logger.warning(msg)
-                myThread.logdbClient.post("LocalWorkQueue_pullWork", msg, "warning")
+                self.queue.logger.warning(cond)
+                myThread.logdbClient.post("LocalWorkQueue_pullWork", cond, "warning")
         except IOError as ex:
             self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
                                     (str(ex), traceback.format_exc()))

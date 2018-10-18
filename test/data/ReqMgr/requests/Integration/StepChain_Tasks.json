@@ -12,9 +12,8 @@
         }, 
         "Dashboard": "Dashboard-OVERRIDE-ME",
         "GracePeriod": 300, 
-        "MaxRSS": 2300000, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "SiteBlacklist": [], 
         "SiteWhitelist": [
             "SiteWhitelist-OVERRIDE-ME"
@@ -27,8 +26,8 @@
         "AcquisitionEra": "Integ_Test", 
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["No input data; PU in Step2; Automatic splitting 200 EpJ, 2 LpJ; Main dict with double scram for slc6",
-                     "Step1 using diff 7_1_25_patch2/gcc481; Step2 with 8_0_21 single slc6 scram; Step3 with 8_0_21 and top level scram"],
+        "Comments": ["No input data; PU in Step2; Automatic splitting 200 EpJ, 2 LpJ; Assigned with diff AcqEra/ProcStr; Diff PrepID/CMSSW/ScramArch",
+                     "Top level with double scram for slc6; Step1 with 7_1_25_patch2/gcc481; Step2 with 8_0_21 single slc6 scram; Step3 with 8_0_21 and top level scram"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 

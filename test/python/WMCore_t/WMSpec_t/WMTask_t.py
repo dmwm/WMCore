@@ -7,9 +7,11 @@ Unit tests for the WMTask class.
 
 import unittest
 
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.WMTask import WMTask, makeWMTask
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 
 class WMTaskTest(unittest.TestCase):
@@ -260,17 +262,17 @@ class WMTaskTest(unittest.TestCase):
         """
         testTask = makeWMTask("TestTask")
 
-        assert testTask.getInputDatasetPath() == None, \
+        assert testTask.getInputDatasetPath() is None, \
             "Error: Input dataset path should be None."
-        assert testTask.dbsUrl() == None, \
+        assert testTask.dbsUrl() is None, \
             "Error: Input DBS URL should be None."
-        assert testTask.inputBlockWhitelist() == None, \
+        assert testTask.inputBlockWhitelist() is None, \
             "Error: Input block white list should be None."
-        assert testTask.inputBlockBlacklist() == None, \
+        assert testTask.inputBlockBlacklist() is None, \
             "Error: Input block black list should be None."
-        assert testTask.inputRunWhitelist() == None, \
+        assert testTask.inputRunWhitelist() is None, \
             "Error: Input run white list should be None."
-        assert testTask.inputRunBlacklist() == None, \
+        assert testTask.inputRunBlacklist() is None, \
             "Error: Input run black list should be None."
 
         testTask.addInputDataset(name="/PrimaryDataset/ProcessedDataset/DataTier",
@@ -354,6 +356,28 @@ class WMTaskTest(unittest.TestCase):
 
         return
 
+    def testInputPileup(self):
+        """
+        _testInputPileup_
+
+        Verify that the input pileup dataset getter/setter methods work correctly
+        """
+        testTask = makeWMTask("TestTask")
+        self.assertEqual(testTask.getInputPileupDatasets(), [])
+
+        pileupConfig = parsePileupConfig("/MC/ProcessedDataset/DataTier",
+                                         "/Data/ProcessedDataset/DataTier")
+        # then mimic the setupPileup method
+        thesePU = []
+        for puType, puList in pileupConfig.items():
+            # there should be only one type and one PU dataset
+            testTask.setInputPileupDatasets(puList)
+            thesePU.extend(puList)
+            self.assertItemsEqual(testTask.getInputPileupDatasets(), thesePU)
+
+        with self.assertRaises(ValueError):
+            testTask.setInputPileupDatasets(None)
+
     def testAddNotifications(self):
         """
         _testAddNotifications_
@@ -383,12 +407,12 @@ class WMTaskTest(unittest.TestCase):
 
         testTask = makeWMTask("TestTask")
 
-        testTask.setPerformanceMonitor(maxRSS=100, maxVSize=101, softTimeout=100,
+        testTask.setPerformanceMonitor(softTimeout=100,
                                        gracePeriod=1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 100)
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
+        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxRSS"))
+        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxVSize"))
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return
@@ -484,8 +508,9 @@ class WMTaskTest(unittest.TestCase):
 
         Check the three methods related to the subscription information in a task
         Make sure that we can set the subscription information for all datasets produced by this task
-        and we can select only some primaryDatasets/DataTiers, and check that we can update the dataset
-        in a subscription information section.
+        and we can select only some primaryDatasets/DataTiers.
+        Since subscriptions are defined during request assignment, there is no more need to update
+        them, they are set once only.
         """
         testTask = makeWMTask("TestTask")
         cmsswStep = testTask.makeStep("cmsRun1")
@@ -498,6 +523,14 @@ class WMTaskTest(unittest.TestCase):
                                     processedDataset="DawnOfAnEra-v1", dataTier="DQM")
         cmsswHelper.addOutputModule("outputAOD", primaryDataset="OneParticle",
                                     processedDataset="DawnOfAnEra-v1", dataTier="AOD")
+
+        childStep = cmsswHelper.addTopStep("cmsRun2")
+        childStep.setStepType("CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(childStep.data)
+        childStep = childStep.getTypeHelper()
+        childStep.addOutputModule("outputAOD", primaryDataset="ThreeParticles",
+                                  processedDataset="DawnOfAnEra-v1", dataTier="MINIAOD")
 
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
@@ -512,7 +545,6 @@ class WMTaskTest(unittest.TestCase):
                                             deleteFromSource=True,
                                             primaryDataset="OneParticle")
         subInfo = testTask.getSubscriptionInformation()
-
         outputRecoSubInfo = {"CustodialSites": ["mercury"],
                              "NonCustodialSites": ["mars", "earth"],
                              "AutoApproveSites": ["earth"],
@@ -523,30 +555,57 @@ class WMTaskTest(unittest.TestCase):
                              "Priority": "Normal",
                              "DeleteFromSource": True}
 
-        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
-                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
+                         "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
         self.assertFalse("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+        self.assertFalse("/ThreeParticles/DawnOfAnEra-v1/MINIAOD" in subInfo)
 
         testTask.setSubscriptionInformation(custodialSites=["jupiter"],
                                             primaryDataset="TwoParticles")
 
         subInfo = testTask.getSubscriptionInformation()
+        outputDQMSubInfo = {"CustodialSites": ["jupiter"],
+                            "NonCustodialSites": [],
+                            "AutoApproveSites": [],
+                            "CustodialSubType": "Replica",
+                            "NonCustodialSubType": "Replica",
+                            "CustodialGroup": "DataOps",
+                            "NonCustodialGroup": "DataOps",
+                            "Priority": "Low",
+                            "DeleteFromSource": False}
 
-        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
-                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
+                         "The RECO subscription information is wrong")
+        self.assertEqual(subInfo["/TwoParticles/DawnOfAnEra-v1/DQM"], outputDQMSubInfo,
+                         "The DQM subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
         self.assertTrue("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+        self.assertFalse("/ThreeParticles/DawnOfAnEra-v1/MINIAOD" in subInfo)
 
-        recoutOutputModule = cmsswHelper.getOutputModule("outputRECO")
-        setattr(recoutOutputModule, "primaryDataset", "ThreeParticles")
-
-        testTask.updateSubscriptionDataset("outputRECO", recoutOutputModule)
+        testTask.setSubscriptionInformation(nonCustodialSites=["jupiter"],
+                                            primaryDataset="ThreeParticles")
 
         subInfo = testTask.getSubscriptionInformation()
-        self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
-                         outputRecoSubInfo, "The RECO subscription information is wrong")
-        self.assertFalse("/OneParticle/DawnOfAnEra-v1/RECO" in subInfo, "The RECO subscription information is wrong")
+        outputAODSubInfo = {"CustodialSites": [],
+                            "NonCustodialSites": ["jupiter"],
+                            "AutoApproveSites": [],
+                            "CustodialSubType": "Replica",
+                            "NonCustodialSubType": "Replica",
+                            "CustodialGroup": "DataOps",
+                            "NonCustodialGroup": "DataOps",
+                            "Priority": "Low",
+                            "DeleteFromSource": False}
+
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"], outputRecoSubInfo,
+                         "The RECO subscription information is wrong")
+        self.assertEqual(subInfo["/TwoParticles/DawnOfAnEra-v1/DQM"], outputDQMSubInfo,
+                         "The DQM subscription information is wrong")
+        self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/MINIAOD"], outputAODSubInfo,
+                         "The AOD subscription information is wrong")
+        self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
+        self.assertTrue("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+        self.assertTrue("/ThreeParticles/DawnOfAnEra-v1/MINIAOD" in subInfo)
 
     def testDeleteChild(self):
         """
@@ -569,6 +628,100 @@ class WMTaskTest(unittest.TestCase):
                 self.fail("Error: It was possible to find the deleted child")
             childrenNumber += 1
         self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
+
+        return
+
+    def testMaxRSS(self):
+        """
+        _testMaxRSS_
+
+        Test whether we can properly add MaxRSS performance monitor
+        to this task.
+        """
+        testTask = makeWMTask("TestTask")
+
+        testTask.setMaxRSS(123)
+
+        self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 123)
+        return
+
+    def testGetSwVersionAndScramArch(self):
+        """
+        _testGetSwVersionAndScramArch_
+
+        Test whether we can fetch the CMSSW release and ScramArch
+        being used in a task
+        """
+        testTask = makeWMTask("MultiTask")
+
+        taskCmssw = testTask.makeStep("cmsRun1")
+        taskCmssw.setStepType("CMSSW")
+        taskCmsswStageOut = taskCmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+
+        testTask.applyTemplates()
+
+        taskCmsswHelper = taskCmssw.getTypeHelper()
+        taskCmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        self.assertEqual(testTask.getSwVersion(), "CMSSW_1_2_3")
+        self.assertEqual(testTask.getSwVersion(allSteps=True), ["CMSSW_1_2_3"])
+
+        self.assertEqual(testTask.getScramArch(), "slc7_amd64_gcc123")
+        self.assertEqual(testTask.getScramArch(allSteps=True), ["slc7_amd64_gcc123"])
+
+        return
+
+    def testGetSwVersionAndScramArchMulti(self):
+        """
+        _testGetSwVersionAndScramArchMulti_
+
+        Test whether we can fetch the CMSSW release and ScramArch
+        being used in a task
+        """
+        testTask = makeWMTask("MultiTask")
+
+        taskCmssw = testTask.makeStep("cmsRun1")
+        taskCmssw.setStepType("CMSSW")
+        taskCmsswStageOut = taskCmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+
+        testTask.applyTemplates()
+        taskCmsswHelper = taskCmssw.getTypeHelper()
+        taskCmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        # setup step2/cmsRun2
+        step1Cmssw = testTask.getStep("cmsRun1")
+        step2Cmssw = step1Cmssw.addTopStep("cmsRun2")
+        step2Cmssw.setStepType("CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(step2Cmssw.data)
+
+        step2CmsswHelper = step2Cmssw.getTypeHelper()
+        step2CmsswHelper.setupChainedProcessing("cmsRun1", "RAWSIMoutput")
+        step2CmsswHelper.cmsswSetup("CMSSW_2_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc223")
+
+        # setup step3/cmsRun3 --> duplicate CMSSW and ScramArch
+        step3Cmssw = step2Cmssw.addTopStep("cmsRun3")
+        step3Cmssw.setStepType("CMSSW")
+        template = StepFactory.getStepTemplate("CMSSW")
+        template(step3Cmssw.data)
+
+        step3CmsswHelper = step3Cmssw.getTypeHelper()
+        step3CmsswHelper.setupChainedProcessing("cmsRun2", "AODoutput")
+        step3CmsswHelper.cmsswSetup("CMSSW_1_2_3", softwareEnvironment="", scramArch="slc7_amd64_gcc123")
+
+        self.assertEqual(testTask.getSwVersion(), "CMSSW_1_2_3")
+        self.assertEqual(testTask.getSwVersion(allSteps=True), ["CMSSW_1_2_3", "CMSSW_2_2_3", "CMSSW_1_2_3"])
+
+        self.assertEqual(testTask.getScramArch(), "slc7_amd64_gcc123")
+        self.assertEqual(testTask.getScramArch(allSteps=True),
+                         ["slc7_amd64_gcc123", "slc7_amd64_gcc223", "slc7_amd64_gcc123"])
 
         return
 

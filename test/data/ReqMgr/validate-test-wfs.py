@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+import argparse
+import httplib
+import json
 import os
+import pwd
 import sys
 import urllib
 import urllib2
-import httplib
-import json
-import argparse
-import pwd
-from urllib2 import HTTPError, URLError
 from pprint import pprint
+from urllib2 import HTTPError, URLError
 
 # table parameters
 SEPARATELINE = "|" + "-" * 51 + "|"
@@ -67,21 +67,12 @@ def getContent(url, params=None):
         print("The server couldn't fulfill the request at %s" % url)
         print("Error code: ", e.code)
         output = '{}'
-        #sys.exit(1)
+        # sys.exit(1)
     except URLError as e:
         print('Failed to reach server at %s' % url)
         print('Reason: ', e.reason)
         sys.exit(2)
     return output
-
-
-def getReqMgrOutput(reqName, baseUrl):
-    """
-    Queries reqmgr db for the output datasets
-    """
-    reqmgrUrl = baseUrl + "/reqmgr/reqMgr/outputDatasetsByRequestName?requestName=" + reqName
-    outputDsets = json.loads(getContent(reqmgrUrl))
-    return outputDsets
 
 
 def getCouchSummary(reqName, baseUrl):
@@ -166,7 +157,7 @@ def harvesting(workload, outDsets):
     Parse the request spec and query DQMGui in case harvesting is enabled
     """
     if workload['RequestType'] == 'DQMHarvest':
-        wantedOutput = workload['InputDatasets']
+        wantedOutput = [workload['InputDataset']]
     elif str(workload.get('EnableHarvesting', 'False')) == 'True':
         wantedOutput = [dset for dset in outDsets if dset.endswith('/DQMIO') or dset.endswith('/DQM')]
     else:
@@ -255,6 +246,7 @@ def handleReqMgr(reqName, reqmgrUrl):
       1. It gathers the input dataset information
       2. It gathers the list of output datasets according to reqmgr API
       3. If harvesting is enabled, it looks up for the files in the DQM server
+      4. It also calculates the workflow runtime (completed - assigned time)
 
     Returns two dictionaries:
       - (dict) reqmgrInputDset: contains information about the input data
@@ -266,6 +258,7 @@ def handleReqMgr(reqName, reqmgrUrl):
         print("We cannot validate wfs in this state: %s\n" % reqmgrOut['RequestStatus'])
         return (None, None)
 
+    reqmgrInputDset = {}
     try:
         reqmgrInputDset = {'TotalEstimatedJobs': reqmgrOut['TotalEstimatedJobs'],
                            'TotalInputEvents': reqmgrOut['TotalInputEvents'],
@@ -273,7 +266,16 @@ def handleReqMgr(reqName, reqmgrUrl):
                            'TotalInputFiles': reqmgrOut['TotalInputFiles'],
                            'lumis': reqmgrOut['TotalInputLumis']}  # this lumis is needed for comparison
     except KeyError:
-        raise AttributeError("Total* parameter not found in reqmgr_workload_cache database")
+        raise AttributeError("Total* parameters not found in reqmgr_workload_cache database")
+
+    # calculates workflow runtime
+    startTime, endTime = 0, 0
+    for entry in reqmgrOut['RequestTransition']:
+        if entry['Status'] == 'assigned':
+            startTime = entry['UpdateTime']
+        elif entry['Status'] == 'completed':
+            endTime = entry['UpdateTime']
+    reqmgrInputDset['Runtime'] = (endTime - startTime) / 3600.  # result in hours
 
     reqmgrInputDset['InputDataset'] = reqmgrOut['InputDataset'] if 'InputDataset' in reqmgrOut else ''
     if 'Task1' in reqmgrOut and 'InputDataset' in reqmgrOut['Task1']:
@@ -287,10 +289,17 @@ def handleReqMgr(reqName, reqmgrUrl):
     elif 'Step1' in reqmgrOut and 'RequestNumEvents' in reqmgrOut['Step1']:
         reqmgrInputDset['RequestNumEvents'] = reqmgrOut['Step1']['RequestNumEvents']
 
-    if reqmgrOut.get('ReqMgr2Only'):
-        reqmgrOutDsets = reqmgrOut['OutputDatasets']
-    else:
-        reqmgrOutDsets = getReqMgrOutput(reqName, reqmgrUrl)
+    reqmgrOutDsets = reqmgrOut['OutputDatasets']
+
+    ### Handle new StepChain/TaskChain output parentage map
+    if reqmgrOut['RequestType'] in ('StepChain', 'TaskChain'):
+        chainMap = reqmgrOut.get('ChainParentageMap', {})
+        if chainMap:
+            chainMap = [dset for k, v in chainMap.items() for dset in v['ChildDsets']]
+            if set(chainMap) != set(reqmgrOut['OutputDatasets']):
+                print("ERROR: list of output datasets doesn't match the chain parentage map")
+        else:
+            print("WARNING: StepChain/TaskChain workflow without a 'ChainParentageMap' argument!")
 
     ### Handle harvesting case
     print(" - Comments: %s" % reqmgrOut.get('Comments', ''))

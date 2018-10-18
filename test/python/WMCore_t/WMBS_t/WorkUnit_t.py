@@ -17,6 +17,8 @@ from WMCore.WMBS.WorkUnit import WorkUnit
 from WMCore.WMBS.Workflow import Workflow
 from WMQuality.TestInit import TestInit
 
+WF_NAME = 'Test'
+
 
 class WMBSWorkUnitTest(unittest.TestCase):
     """
@@ -64,7 +66,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         Create a dummy workflow we can use later
         """
 
-        self.testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task='Test', wfType="ReReco")
+        self.testWorkflow = Workflow(spec="spec.xml", owner="Simon", name="wf001", task=WF_NAME, wfType="ReReco")
         self.testWorkflow.create()
 
         self.testFile = File(lfn="/this/is/a/test/file0", size=1024, events=10)
@@ -77,7 +79,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
-        Test the create(), delete() and exists() methods of the file class
+        Test the create(), delete() and exists() methods of the WorkUnit class
         by creating and deleting a WorkUnit.  The exists() method will be
         called before and after creation and after deletion.
         """
@@ -619,9 +621,9 @@ class WMBSWorkUnitTest(unittest.TestCase):
         #
         #     return
         #
-        # def testGetBulkLocations(self):
+        # def testGetLocationBulk(self):
         #     """
-        #     _testGetBulkLocations_
+        #     _testGetLocationBulk_
         #
         #     Checks to see whether the code that we have will enable us to get the locations
         #     of all files at once
@@ -662,7 +664,7 @@ class WMBSWorkUnitTest(unittest.TestCase):
         #
         #     files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
         #
-        #     locationFac = daoFactory(classname="Files.GetBulkLocation")
+        #     locationFac = daoFactory(classname="Files.GetLocationBulk")
         #     location = locationFac.execute(files=files)
         #
         #     for f in files:

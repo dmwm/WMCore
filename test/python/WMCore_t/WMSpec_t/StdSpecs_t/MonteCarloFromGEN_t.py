@@ -9,7 +9,6 @@ from __future__ import print_function
 import os
 import threading
 import unittest
-from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -179,11 +178,11 @@ class MonteCarloFromGENTest(EmulatedUnitTestCase):
                       '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeRECOoutput/MonteCarloFromGENRECOoutputMergeLogCollect']
         expFsets = ['TestWorkload-MonteCarloFromGEN-/MinimumBias/ComissioningHI-v1/RAW',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeALCARECOoutput/merged-logArchive',
-                    '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeALCARECOoutput/merged-Merged',
+                    '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeALCARECOoutput/merged-MergedALCARECO',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeRECOoutput/merged-logArchive',
-                    '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeRECOoutput/merged-Merged',
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutput',
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutput',
+                    '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeRECOoutput/merged-MergedRECO',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutputALCARECO',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutputRECO',
                     '/TestWorkload/MonteCarloFromGEN/unmerged-logArchive']
         subMaps = [(6,
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeALCARECOoutput/merged-logArchive',
@@ -196,12 +195,12 @@ class MonteCarloFromGENTest(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (7,
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutput',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutputALCARECO',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENCleanupUnmergedALCARECOoutput',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (5,
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutput',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-ALCARECOoutputALCARECO',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeALCARECOoutput',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -211,12 +210,12 @@ class MonteCarloFromGENTest(EmulatedUnitTestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (4,
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutput',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutputRECO',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENCleanupUnmergedRECOoutput',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (2,
-                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutput',
+                    '/TestWorkload/MonteCarloFromGEN/unmerged-RECOoutputRECO',
                     '/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeRECOoutput',
                     'ParentlessMergeBySize',
                     'Merge'),
@@ -239,20 +238,16 @@ class MonteCarloFromGENTest(EmulatedUnitTestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
 

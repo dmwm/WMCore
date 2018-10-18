@@ -5,10 +5,11 @@ _ReDigi_
 Standard two/three step redigi workflow.
 """
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
+from Utils.Utilities import strToBool
 from WMCore.Lexicon import dataset
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
+
 
 class ReDigiWorkloadFactory(DataProcessing):
     """
@@ -16,6 +17,20 @@ class ReDigiWorkloadFactory(DataProcessing):
 
     Stamp out ReDigi workflows.
     """
+    def __init__(self):
+        """
+        __init__
+
+        Setup parameters that will be later overwritten in the call,
+        otherwise pylint will complain about them.
+        """
+        DataProcessing.__init__(self)
+        self.stepTwoMemory = None
+        self.stepTwoSizePerEvent = None
+        self.stepTwoTimePerEvent = None
+        self.stepThreeMemory = None
+        self.stepThreeSizePerEvent = None
+        self.stepThreeTimePerEvent = None
 
     def addMergeTasks(self, parentTask, parentStepName, outputMods):
         """
@@ -40,15 +55,15 @@ class ReDigiWorkloadFactory(DataProcessing):
         """
         parentCmsswStep = parentMergeTask.getStep("cmsRun1")
         newTask = parentMergeTask.addTask(taskName)
-        outputMods = self.setupProcessingTask(newTask, "Processing", inputStep = parentCmsswStep,
-                                              inputModule = "Merged", couchDBName = self.couchDBName,
-                                              configDoc = configCacheID,
-                                              configCacheUrl = self.configCacheUrl,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
-                                              timePerEvent = timePerEvent, sizePerEvent = sizePerEvent,
-                                              memoryReq = memoryReq)
-        self.addLogCollectTask(newTask, taskName = taskName + "LogCollect")
+        outputMods = self.setupProcessingTask(newTask, "Processing", inputStep=parentCmsswStep,
+                                              inputModule="Merged", couchDBName=self.couchDBName,
+                                              configDoc=configCacheID,
+                                              configCacheUrl=self.configCacheUrl,
+                                              splitAlgo=self.procJobSplitAlgo,
+                                              splitArgs=self.procJobSplitArgs, stepType="CMSSW",
+                                              timePerEvent=timePerEvent, sizePerEvent=sizePerEvent,
+                                              memoryReq=memoryReq)
+        self.addLogCollectTask(newTask, taskName=taskName + "LogCollect")
         mergeTasks = self.addMergeTasks(newTask, "cmsRun1", outputMods)
         return mergeTasks
 
@@ -72,8 +87,8 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
         stepTwoCmsswHelper.setGlobalTag(self.globalTag)
         stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
-        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                      scramArch = self.scramArch)
+        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                      scramArch=self.scramArch)
 
         stepTwoCmsswHelper.setConfigCache(self.configCacheUrl, self.stepTwoConfigCacheID,
                                           self.couchDBName)
@@ -85,8 +100,8 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepThreeCmsswHelper = stepThreeCmssw.getTypeHelper()
         stepThreeCmsswHelper.setGlobalTag(self.globalTag)
         stepThreeCmsswHelper.setupChainedProcessing("cmsRun2", self.stepTwoOutputModuleName)
-        stepThreeCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        stepThreeCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                        scramArch=self.scramArch)
         stepThreeCmsswHelper.setConfigCache(self.configCacheUrl, self.stepThreeConfigCacheID,
                                             self.couchDBName)
 
@@ -98,7 +113,7 @@ class ReDigiWorkloadFactory(DataProcessing):
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
-                                                stepName = "cmsRun2")
+                                                stepName="cmsRun2")
 
         configOutput = self.determineOutputModules(None, None, self.stepThreeConfigCacheID,
                                                    self.couchDBName, self.configCacheUrl)
@@ -109,7 +124,7 @@ class ReDigiWorkloadFactory(DataProcessing):
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
-                                                stepName = "cmsRun3")
+                                                stepName="cmsRun3")
             outputMods[outputModuleName] = outputModule
 
         self.addMergeTasks(stepOneTask, "cmsRun3", outputMods)
@@ -134,9 +149,9 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoMergeTasks = self.addDependentProcTask("StepTwoProc",
                                                       stepOneMergeTask,
                                                       self.stepTwoConfigCacheID,
-                                                      timePerEvent = self.stepTwoTimePerEvent,
-                                                      sizePerEvent = self.stepTwoSizePerEvent,
-                                                      memoryReq = self.stepTwoMemory)
+                                                      timePerEvent=self.stepTwoTimePerEvent,
+                                                      sizePerEvent=self.stepTwoSizePerEvent,
+                                                      memoryReq=self.stepTwoMemory)
 
         if self.stepThreeConfigCacheID is None:
             return
@@ -144,9 +159,9 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoMergeTask = stepTwoMergeTasks[self.stepTwoOutputModuleName]
         self.addDependentProcTask("StepThreeProc", stepTwoMergeTask,
                                   self.stepThreeConfigCacheID,
-                                  timePerEvent = self.stepThreeTimePerEvent,
-                                  sizePerEvent = self.stepThreeSizePerEvent,
-                                  memoryReq = self.stepThreeMemory)
+                                  timePerEvent=self.stepThreeTimePerEvent,
+                                  sizePerEvent=self.stepThreeSizePerEvent,
+                                  memoryReq=self.stepThreeMemory)
         return
 
     def setupChainedProcessing(self, stepOneTask):
@@ -169,8 +184,8 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoCmsswHelper = stepTwoCmssw.getTypeHelper()
         stepTwoCmsswHelper.setGlobalTag(self.globalTag)
         stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
-        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                      scramArch = self.scramArch)
+        stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                      scramArch=self.scramArch)
         stepTwoCmsswHelper.setConfigCache(self.configCacheUrl, self.stepTwoConfigCacheID,
                                           self.couchDBName)
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
@@ -182,7 +197,7 @@ class ReDigiWorkloadFactory(DataProcessing):
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
-                                                stepName = "cmsRun2")
+                                                stepName="cmsRun2")
             outputMods[outputModuleName] = outputModule
 
         mergeTasks = self.addMergeTasks(stepOneTask, "cmsRun2", outputMods)
@@ -195,9 +210,9 @@ class ReDigiWorkloadFactory(DataProcessing):
         mergeTask = mergeTasks[self.stepTwoOutputModuleName]
         self.addDependentProcTask("StepThreeProc", mergeTask,
                                   self.stepThreeConfigCacheID,
-                                  timePerEvent = self.stepThreeTimePerEvent,
-                                  sizePerEvent = self.stepThreeSizePerEvent,
-                                  memoryReq = self.stepThreeMemory)
+                                  timePerEvent=self.stepThreeTimePerEvent,
+                                  sizePerEvent=self.stepThreeSizePerEvent,
+                                  memoryReq=self.stepThreeMemory)
         return
 
     def buildWorkload(self):
@@ -215,16 +230,16 @@ class ReDigiWorkloadFactory(DataProcessing):
         workload = self.createWorkload()
         workload.setDashboardActivity("reprocessing")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs,
-                                         OpenRunningTimeout = self.openRunningTimeout)
+                                         OpenRunningTimeout=self.openRunningTimeout)
         stepOneTask = workload.newTask("StepOneProc")
 
         outputMods = self.setupProcessingTask(stepOneTask, "Processing", self.inputDataset,
-                                              couchDBName = self.couchDBName,
-                                              configCacheUrl = self.configCacheUrl,
-                                              configDoc = self.stepOneConfigCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs,
-                                              stepType = "CMSSW")
+                                              couchDBName=self.couchDBName,
+                                              configCacheUrl=self.configCacheUrl,
+                                              configDoc=self.stepOneConfigCacheID,
+                                              splitAlgo=self.procJobSplitAlgo,
+                                              splitArgs=self.procJobSplitArgs,
+                                              stepType="CMSSW")
         self.addLogCollectTask(stepOneTask)
 
         if self.keepStepOneOutput and self.keepStepTwoOutput:
@@ -248,7 +263,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
@@ -281,58 +296,56 @@ class ReDigiWorkloadFactory(DataProcessing):
         if self.stepThreeMemory is None:
             self.stepThreeMemory = self.memory
 
-
         return self.buildWorkload()
 
     @staticmethod
     def getWorkloadCreateArgs():
         baseArgs = DataProcessing.getWorkloadCreateArgs()
-        specArgs = {"RequestType" : {"default" : "ReDigi", "optional" : False},
-                    "StepOneOutputModuleName" : {"null" : True},
-                    "StepTwoOutputModuleName" : {"null" : True},
+        specArgs = {"RequestType": {"default": "ReDigi", "optional": False},
+                    "StepOneOutputModuleName": {"null": True},
+                    "StepTwoOutputModuleName": {"null": True},
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "StepOneConfigCacheID" : {"optional" : False, "null" : True},
-                    "StepTwoConfigCacheID" : {"null" : True},
-                    "StepThreeConfigCacheID" : {"null" : True},
-                    "KeepStepOneOutput" : {"default" : True, "type" : strToBool, "null" : False},
-                    "KeepStepTwoOutput" : {"default" : True, "type" : strToBool, "null" : False},
-                    "StepTwoTimePerEvent" : {"type" : float, "null" : True,
-                                             "validate" : lambda x : x > 0},
-                    "StepThreeTimePerEvent" : {"type" : float, "null" : True,
-                                               "validate" : lambda x : x > 0},
-                    "StepTwoSizePerEvent" : {"type" : float, "null" : True,
-                                             "validate" : lambda x : x > 0},
-                    "StepThreeSizePerEvent" : {"type" : float, "null" : True,
-                                               "validate" : lambda x : x > 0},
-                    "StepTwoMemory" : {"type" : float, "null" : True,
-                                       "validate" : lambda x : x > 0},
-                    "StepThreeMemory" : {"type" : float, "null" : True,
-                                         "validate" : lambda x : x > 0},
-                    "MCPileup" : {"validate" : dataset, "attr" : "mcPileup", "null" : True},
-                    "DataPileup" : {"null" : True, "validate" : dataset},
-                    "DeterministicPileup" : {"default" : False, "type" : strToBool, "null" : False}}
+                    "StepOneConfigCacheID": {"optional": False, "null": True},
+                    "StepTwoConfigCacheID": {"null": True},
+                    "StepThreeConfigCacheID": {"null": True},
+                    "KeepStepOneOutput": {"default": True, "type": strToBool, "null": False},
+                    "KeepStepTwoOutput": {"default": True, "type": strToBool, "null": False},
+                    "StepTwoTimePerEvent": {"type": float, "null": True,
+                                            "validate": lambda x: x > 0},
+                    "StepThreeTimePerEvent": {"type": float, "null": True,
+                                              "validate": lambda x: x > 0},
+                    "StepTwoSizePerEvent": {"type": float, "null": True,
+                                            "validate": lambda x: x > 0},
+                    "StepThreeSizePerEvent": {"type": float, "null": True,
+                                              "validate": lambda x: x > 0},
+                    "StepTwoMemory": {"type": float, "null": True,
+                                      "validate": lambda x: x > 0},
+                    "StepThreeMemory": {"type": float, "null": True,
+                                        "validate": lambda x: x > 0},
+                    "MCPileup": {"validate": dataset, "attr": "mcPileup", "null": True},
+                    "DataPileup": {"null": True, "validate": dataset},
+                    "DeterministicPileup": {"default": False, "type": strToBool, "null": False}}
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     def validateSchema(self, schema):
-        self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
-                                       configCacheUrl = schema['ConfigCacheUrl'],
-                                       couchDBName = schema["CouchDBName"],
+        self.validateConfigCacheExists(configID=schema["StepOneConfigCacheID"],
+                                       configCacheUrl=schema['ConfigCacheUrl'],
+                                       couchDBName=schema["CouchDBName"],
                                        getOutputModules=False)
         if schema.get("StepTwoConfigCacheID") is not None:
-            self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
-                                           configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"],
+            self.validateConfigCacheExists(configID=schema["StepTwoConfigCacheID"],
+                                           configCacheUrl=schema['ConfigCacheUrl'],
+                                           couchDBName=schema["CouchDBName"],
                                            getOutputModules=False)
             if schema.get("StepOneOutputModuleName") is None:
                 self.raiseValidationException("StepTwoConfigCacheID is specified but StepOneOutputModuleName isn't")
         if schema.get("StepThreeConfigCacheID") is not None:
-            self.validateConfigCacheExists(configID = schema["StepThreeConfigCacheID"],
-                                           configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"],
+            self.validateConfigCacheExists(configID=schema["StepThreeConfigCacheID"],
+                                           configCacheUrl=schema['ConfigCacheUrl'],
+                                           couchDBName=schema["CouchDBName"],
                                            getOutputModules=False)
             if schema.get("StepTwoOutputModuleName") is None:
                 self.raiseValidationException("StepThreeConfigCacheID is specified but StepTwoOutputModuleName isn't")
         return
-

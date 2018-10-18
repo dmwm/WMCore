@@ -8,6 +8,9 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
 import logging
+import threading
+from operator import itemgetter
+from WMCore.DAOFactory import DAOFactory
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 import WMCore.Database.CouchUtils as CouchUtils
@@ -20,26 +23,38 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMException import WMException
 
 
-def mergeFakeFiles(chunkFiles):
+def mergeFilesInfo(chunkFiles):
     """
-    _mergeFakeFiles_
+    _mergeFilesInfo_
 
-    Receive a list of dicts with acdc files info and merge them together
-    (sum up events) belonging to the same MCFakeFile.
+    Receive a list of dicts with acdc files info and merge them together.
+    Different process for different input type (data x fake file)
     """
-    # do not do anything for real files
-    if not chunkFiles[0]['lfn'].startswith('MCFakeFile'):
-        return chunkFiles
-
-    logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
     mergedFiles = {}
-    for acdcFile in chunkFiles:
-        if acdcFile['lfn'] not in mergedFiles:
-            mergedFiles[acdcFile['lfn']] = acdcFile
-        else:
-            mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
-            mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
-    logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
+
+    # Merge ACDC docs without any real input data (aka MCFakeFile)
+    if chunkFiles[0]['lfn'].startswith('MCFakeFile'):
+        logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
+        for acdcFile in chunkFiles:
+            if acdcFile['lfn'] not in mergedFiles:
+                mergedFiles[acdcFile['lfn']] = acdcFile
+            else:
+                mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
+                mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
+        logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
+    else:
+        logging.info("Merging %d real input files...", len(chunkFiles))
+        for acdcFile in chunkFiles:
+            fName = acdcFile['lfn']
+            if acdcFile['lfn'] not in mergedFiles:
+                mergedFiles[fName] = acdcFile
+            else:
+                # union of parents
+                allParents = list(set(mergedFiles[fName]['parents']).union(acdcFile['parents']))
+                mergedFiles[fName]['parents'] = allParents
+                # just add up run/lumi pairs (don't try to merge them)
+                mergedFiles[fName]['runs'].extend(acdcFile['runs'])
+        logging.info("resulted in %d final real files.", len(mergedFiles))
 
     return mergedFiles.values()
 
@@ -76,25 +91,48 @@ class DataCollectionService(CouchService):
 
         NOTE: jobs must have a non-standard task, workflow attributes assigned to them.
         """
+        # first we sort the list of dictionary by two keys: workflow then task
+        failedJobs.sort(key=itemgetter('workflow'))
+        failedJobs.sort(key=itemgetter('task'))
+
+        previousWorkflow = ""
+        previousTask = ""
         for job in failedJobs:
             try:
-                taskName = job['task']
                 workflow = job['workflow']
+                taskName = job['task']
             except KeyError as ex:
                 msg = "Missing required, non-standard key %s in job in ACDC.DataCollectionService" % (str(ex))
                 logging.error(msg)
                 raise ACDCDCSException(msg)
 
-            coll = CouchCollection(database=self.database, url=self.url,
-                                   name=workflow,
-                                   type=CollectionTypes.DataCollection)
-            fileset = CouchFileset(database=self.database, url=self.url,
-                                   name=taskName)
+            if workflow != previousWorkflow:
+                coll = CouchCollection(database=self.database, url=self.url,
+                                       name=workflow,
+                                       type=CollectionTypes.DataCollection)
+            if taskName != previousTask:
+                fileset = CouchFileset(database=self.database, url=self.url,
+                                       name=taskName)
             coll.addFileset(fileset)
+            inputFiles = job['input_files']
+            for fInfo in inputFiles:
+                if int(fInfo["merged"]) == 1:  # Looks like Oracle and MySQL return diff type
+                    fInfo["parents"] = []
+                elif fInfo.get("parents", []):
+                    firstParent = next(iter(fInfo["parents"]))
+                    if "/store/unmerged/" in firstParent:
+                        # parents and input files are unmerged files - need to find merged ascendant
+                        fInfo["parents"] = list(getMergedParents(fInfo["parents"]))
+                    elif "MCFakeFile" in firstParent:
+                        fInfo["parents"] = []
+                    # other case, fInfo["parents"] all or merged parents
             if useMask:
-                fileset.add(files=job['input_files'], mask=job['mask'])
+                fileset.add(files=inputFiles, mask=job['mask'])
             else:
-                fileset.add(files=job['input_files'])
+                fileset.add(files=inputFiles)
+
+            previousWorkflow = workflow
+            previousTask = taskName
 
         return
 
@@ -245,7 +283,7 @@ class DataCollectionService(CouchService):
         chunkFiles = []
         files = self._getFilesetInfo(collectionName, filesetName, chunkOffset, chunkSize)
 
-        files = mergeFakeFiles(files)
+        files = mergeFilesInfo(files)
         for fileInfo in files:
             newFile = File(lfn=fileInfo["lfn"], size=fileInfo["size"],
                            events=fileInfo["events"], parents=set(fileInfo["parents"]),
@@ -344,3 +382,30 @@ class DataCollectionService(CouchService):
 
         lumiList = LumiList(compactList=self.getLumiWhitelist(collectionID, taskName))
         return lumiList
+
+
+def getMergedParents(childLFNs):
+
+    myThread = threading.currentThread()
+    daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+
+    getParentInfoAction = daoFactory(classname="Files.GetParentInfo")
+
+    parentsInfo = getParentInfoAction.execute(childLFNs)
+    newParents = set()
+    unmergedParents = set()
+    for parentInfo in parentsInfo:
+        # This will catch straight to merge files that do not have redneck
+        # parents.  We will mark the straight to merge file from the job
+        # as a child of the merged parent.
+        if int(parentInfo["merged"]) == 1:
+            newParents.add(parentInfo["lfn"])
+        else:
+            unmergedParents.add(parentInfo["lfn"])
+
+    if len(unmergedParents) > 0:
+        grandParentSet = getMergedParents(unmergedParents)
+        newParents.union(grandParentSet)
+
+    return newParents

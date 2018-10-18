@@ -8,14 +8,8 @@
         }, 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": {
-            "myTask1": 1155200, 
-            "myTask2": 4141600, 
-            "myTask3": 3041600, 
-            "myTask4": 2041600
-        }, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "ProcessingString": {
             "myTask1": "ProcessingString-OVERRIDE-ME", 
             "myTask2": "ProcessingString-OVERRIDE-ME", 

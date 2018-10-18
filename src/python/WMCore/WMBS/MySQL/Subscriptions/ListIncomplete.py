@@ -8,8 +8,7 @@ MySQL implementation of Subscription.ListIncomplete
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListIncomplete(DBFormatter):
-    sql = """SELECT DISTINCT subscription AS id FROM wmbs_sub_files_available
-             WHERE subscription >= :minsub"""
+    sql = "SELECT DISTINCT subscription AS id FROM wmbs_sub_files_available"
 
     def format(self, result):
         results = DBFormatter.format(self, result)
@@ -20,7 +19,6 @@ class ListIncomplete(DBFormatter):
 
         return subIDs
 
-    def execute(self, minSub = 0, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, binds = {"minsub": minSub},
-                                      conn = conn, transaction = transaction)
+    def execute(self, conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
         return self.format(result)

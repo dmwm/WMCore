@@ -11,8 +11,9 @@ import cherrypy
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
-
 from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Error import MethodWithoutQueryString
+
 
 class WMStatsInfo(RESTEntity):
     """
@@ -30,6 +31,8 @@ class WMStatsInfo(RESTEntity):
         if args_length == 1:
             safe.args.append(param.args[0])
             param.args.pop()
+        else:
+            raise MethodWithoutQueryString
         return
 
 

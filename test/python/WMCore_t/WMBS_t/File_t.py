@@ -274,33 +274,20 @@ class FileTest(unittest.TestCase):
         testFileC = File(id=testFileA["id"])
         testFileC.load()
 
-        assert testFileA == testFileB, \
-            "ERROR: File load by LFN didn't work"
+        self.assertEqual(testFileA, testFileB, "File load by LFN didn't work")
+        self.assertEqual(testFileA, testFileC, "File load by ID didn't work")
 
-        assert testFileA == testFileC, \
-            "ERROR: File load by ID didn't work"
+        self.assertTrue(isinstance(testFileB["id"], int), "File id is not an integer type.")
+        self.assertTrue(isinstance(testFileB["size"], int), "File size is not an integer type.")
+        self.assertTrue(isinstance(testFileB["events"], int), "File events is not an integer type.")
+        self.assertTrue(isinstance(testFileB["checksums"], dict), "File cksum is not a string type.")
+        self.assertTrue(isinstance(testFileB["first_event"], int), "File first_event is not an integer type.")
 
-        assert type(testFileB["id"]) == int, \
-            "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int, \
-            "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int, \
-            "ERROR: File events is not an integer type."
-        assert type(testFileB["checksums"]) == dict, \
-            "ERROR: File cksum is not a string type."
-        assert type(testFileB["first_event"]) == int, \
-            "ERROR: File first_event is not an integer type."
-
-        assert type(testFileC["id"]) == int, \
-            "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int, \
-            "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int, \
-            "ERROR: File events is not an integer type."
-        assert type(testFileC["checksums"]) == dict, \
-            "ERROR: File cksum is not an string type."
-        assert type(testFileC["first_event"]) == int, \
-            "ERROR: File first_event is not an integer type."
+        self.assertTrue(isinstance(testFileC["id"], int), "File id is not an integer type.")
+        self.assertTrue(isinstance(testFileC["size"], int), "File size is not an integer type.")
+        self.assertTrue(isinstance(testFileC["events"], int), "File events is not an integer type.")
+        self.assertTrue(isinstance(testFileC["checksums"], dict), "File cksum is not an string type.")
+        self.assertTrue(isinstance(testFileC["first_event"], int), "File first_event is not an integer type.")
 
         self.assertEqual(testFileC['checksums'], {'cksum': '101'})
 
@@ -702,9 +689,9 @@ class FileTest(unittest.TestCase):
 
         return
 
-    def testGetBulkLocations(self):
+    def testGetLocationBulk(self):
         """
-        _testGetBulkLocations_
+        _testGetLocationBulk_
 
         Checks to see whether the code that we have will enable us to get the locations
         of all files at once
@@ -744,9 +731,11 @@ class FileTest(unittest.TestCase):
         testFileF.create()
 
         files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
+        # get the file ids only
+        ids = [f['id'] for f in files]
 
-        locationFac = daoFactory(classname="Files.GetBulkLocation")
-        location = locationFac.execute(files=files)
+        locationFac = daoFactory(classname="Files.GetLocationBulk")
+        location = locationFac.execute(files=ids)
 
         for f in files:
             self.assertEqual(location[f.exists()], list(f['locations']))

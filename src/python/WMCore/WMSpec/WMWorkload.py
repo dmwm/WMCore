@@ -6,15 +6,16 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 from __future__ import print_function
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
-from WMCore.WMSpec.ConfigSectionTree import findTop
-from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
-                                           setAssignArgumentsWithDefault)
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
+from WMCore.WMSpec.ConfigSectionTree import findTop
+from WMCore.WMSpec.Persistency import PersistencyHelper
+from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+                                           setAssignArgumentsWithDefault)
 
 parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
 
@@ -93,9 +94,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data._internal_name = workloadName
         return
 
-    def requestType(self):
-        return self.data.requestType
-
     def setRequestType(self, requestType):
         self.data.requestType = requestType
 
@@ -117,7 +115,11 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         stepNameMapping = self.getStepMapping()
+        # it has only one top level task
         for task in self.taskIterator():
+            # Merge task has cmsRun1 step, so it gets messy on Merge ACDC of StepChain
+            if task.taskType() == "Merge":
+                continue
             task.updateLFNsAndDatasets(dictValues=assignArgs, stepMapping=stepNameMapping)
 
         return
@@ -132,13 +134,162 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.stepMapping = mapping
 
+    def setStepParentageMapping(self, mapping):
+        """
+        _setStepParentageMapping_
+
+        Used for StepChains. Set a wider dictionary structure with a mapping between
+        parent and child steps as well as dataset parentage
+        """
+        self.data.properties.stepParentageMapping = mapping
+
     def getStepMapping(self):
         """
         _getStepMapping_
 
-        Mostly used for StepChains.
+        Only important for StepChains. Map from step name to step number
+        and cmsRun number.
         """
         return getattr(self.data.properties, "stepMapping", None)
+
+    def getStepParentageMapping(self):
+        """
+        _getStepParentageMapping_
+
+        Only important for StepChains. Map from step name to step and parent
+        step properties, including a map of output datasets to the parent dataset.
+        """
+        return getattr(self.data.properties, "stepParentageMapping", {})
+
+    def getStepParentDataset(self, childDataset):
+        """
+        :param childDataset: child dataset which is looking for parent dataset
+        :return: str parent dataset if exist, otherwise None
+
+        Correct parentage mapping is set when workflow is assigned, Shouldn't call this method before workflow is assigned
+        Assumes there is only one parent dataset given childDataset
+        """
+        ### FIXME: Seangchan, I don't think we need this method, since we'll add the
+        # map to the dbsbuffer_dataset table and then use it from there. So,
+        # wmbsHelper should actually fetch the simple map data and insert that into db
+        stepParentageMap = self.getStepParentageMapping()
+        if stepParentageMap:
+            for stepName in stepParentageMap:
+                stepItem = stepParentageMap[stepName]
+                outDSMap = stepItem["OutputDatasetMap"]
+                for outmodule in outDSMap:
+                    if childDataset in outDSMap[outmodule] and stepItem['ParentDataset']:
+                        return stepItem['ParentDataset']
+        else:
+            return None
+
+    def setTaskParentageMapping(self, mapping):
+        """
+        _setTaskParentageMapping_
+
+        Used for TaskChains. Sets a dictionary with the task / parent task /
+        parent dataset / and output datasets relationship.
+        """
+        self.data.properties.taskParentageMapping = mapping
+
+    def getTaskParentageMapping(self):
+        """
+        _getTaskParentageMapping_
+
+        Only important for TaskChains. Returns a map of task name to
+        parent dataset and output datasets.
+        """
+        return getattr(self.data.properties, "taskParentageMapping", {})
+
+    def getChainParentageSimpleMapping(self):
+        """
+        Creates a simple map of task or step to parent and output datasets
+        such that it can be friendly stored in the reqmgr workload cache doc.
+        :return:  {'Step1': {'ParentDset': 'blah1', 'ChildDsets': ['blah2']},
+                   'Step2': {'ParentDset': 'blah2', 'ChildDsets': ['blah3', 'blah4],
+                   ...} if stepParentageMapping exist otherwise None
+        """
+        if self.getRequestType() == "TaskChain":
+            chainMap = self.getTaskParentageMapping()
+        elif self.getRequestType() == "StepChain":
+            chainMap = self.getStepParentageMapping()
+        else:
+            return {}
+
+        newMap = {}
+        if chainMap:
+            for _, cData in chainMap.items():
+                cNum = cData.get('TaskNumber', cData.get('StepNumber'))
+                newMap[cNum] = {'ParentDset': cData['ParentDataset'],
+                                'ChildDsets': []}
+                for outMod in cData['OutputDatasetMap']:
+                    newMap[cNum]['ChildDsets'].append(cData['OutputDatasetMap'][outMod])
+        return newMap
+
+    def updateStepParentageMap(self):
+        """
+        _updateStepParentageMap
+        Used to update the step parentage mapping of StepChain requests at the
+        end of the assignment process, given that we might have new output
+        dataset names
+        :return: just updates the workload property: stepParentageMapping
+        """
+        topLevelTask = next(self.taskIterator())
+
+        parentMap = self.getStepParentageMapping()
+        listOfStepNames = parentMap.keys()
+        for stepName in listOfStepNames:
+            if parentMap[stepName]['OutputDatasetMap']:
+                # then there is output dataset, let's update it
+                cmsRunNumber = parentMap[stepName]['StepCmsRun']
+                stepHelper = topLevelTask.getStepHelper(cmsRunNumber)
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                   outputModule.processedDataset,
+                                                   outputModule.dataTier)
+
+                    # now find and replace the old dataset by the new dataset name
+                    oldOutputDset = parentMap[stepName]['OutputDatasetMap'][outputModuleName]
+                    for s in listOfStepNames:
+                        if parentMap[s]['ParentDataset'] == oldOutputDset:
+                            parentMap[s]['ParentDataset'] = outputDataset
+                        if oldOutputDset == parentMap[s]['OutputDatasetMap'].get(outputModuleName, ""):
+                            parentMap[s]['OutputDatasetMap'][outputModuleName] = outputDataset
+
+        self.setStepParentageMapping(parentMap)
+
+        return
+
+    def updateTaskParentageMap(self):
+        """
+        _updateTaskParentageMap_
+        Used to update the task dataset parentage mapping of TaskChain requests
+        at the end of the assignment process, given that we might have new output
+        dataset names
+        :return: just updates the workload property: taskParentageMapping
+        """
+        taskMap = self.getTaskParentageMapping()
+
+        for tName in taskMap.keys():
+            if not taskMap[tName]['OutputDatasetMap']:
+                continue
+
+            taskO = self.getTaskByName(tName)
+            if taskO is None:
+                # Resubmission requests might not have certain tasks
+                continue
+
+            for outInfo in taskO.listOutputDatasetsAndModules():
+                oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
+                taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']
+                for tt in taskMap.keys():
+                    if taskMap[tt]['ParentDataset'] == oldOutputDset:
+                        taskMap[tt]['ParentDataset'] = outInfo['outputDataset']
+
+        self.setTaskParentageMapping(taskMap)
+
+        return
 
     def getInitialJobCount(self):
         """
@@ -364,7 +515,7 @@ class WMWorkloadHelper(PersistencyHelper):
             raise RuntimeError(msg)
 
         topTask = self.getTask(taskList[1])
-        if topTask == None:
+        if topTask is None:
             msg = "Task /%s/%s Not Found in Workload" % (taskList[0],
                                                          taskList[1])
             raise RuntimeError(msg)
@@ -783,6 +934,8 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setTaskProperties(self, requestArgs):
+        # FIXME (Alan): I don't think it works, given that the assignment
+        # parameters never have the TaskChain parameter...
         if not 'TaskChain' in requestArgs:
             return
         numTasks = requestArgs['TaskChain']
@@ -911,16 +1064,27 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'prepID', None)
 
+    def setDbsUrl(self, dbsUrl):
+        """
+        _setDbsUrl_
+
+        Set the workload level DbsUrl.
+        """
+        self.data.dbsUrl = dbsUrl
+
     def getDbsUrl(self):
         """
         _getDbsUrl_
 
         Get the DbsUrl specified for the input dataset.
         """
-        if not getattr(self.data.request, "schema", None):
-            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-        elif not getattr(self.data.request.schema, "DbsUrl", None):
-            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        if getattr(self.data, 'dbsUrl', None):
+            return getattr(self.data, "dbsUrl")
+
+        if hasattr(self.data, "request"):
+            if hasattr(self.data.request, "schema"):
+                if not getattr(self.data.request.schema, "DbsUrl", None):
+                    return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
         return getattr(self.data.request.schema, "DbsUrl")
 
@@ -1027,7 +1191,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setEndPolicy("SingleShot")
         return
 
-    def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs):
+    def setJobSplittingParameters(self, taskPath, splitAlgo, splitArgs, updateOnly=False):
         """
         _setJobSplittingParameters_
 
@@ -1063,16 +1227,21 @@ class WMWorkloadHelper(PersistencyHelper):
                 childSplitParams = childTask.jobSplittingParameters()
                 minMergeSize = childSplitParams["min_merge_size"]
                 maxMergeEvents = childSplitParams["max_merge_events"]
-                del childSplitParams["algorithm"]
-                del childSplitParams["siteWhitelist"]
-                del childSplitParams["siteBlacklist"]
-                childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
-
+                if not updateOnly:
+                    del childSplitParams["algorithm"]
+                    del childSplitParams["siteWhitelist"]
+                    del childSplitParams["siteBlacklist"]
+                    childTask.setSplittingAlgorithm(mergeAlgo, **childSplitParams)
+                else:
+                    childTask.updateSplittingParameters(mergeAlgo, **childSplitParams)
         # Set the splitting algorithm for the task.  If the split algo is
         # EventBased, we need to disable straight to merge.  If this isn't an
         # EventBased algo we need to enable straight to merge. If straight
         # to merge is disabled then keep it that way.
-        taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        if not updateOnly:
+            taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
+        else:
+            taskHelper.updateSplittingParameters(splitAlgo, **splitArgs)
         for stepName in taskHelper.listAllStepNames():
             stepHelper = taskHelper.getStepHelper(stepName)
             if stepHelper.stepType() == "StageOut":
@@ -1084,10 +1253,9 @@ class WMWorkloadHelper(PersistencyHelper):
                     and stepHelper.getSkipBadFiles():
                 stepHelper.setSkipBadFiles(False)
 
-            if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
-                    and taskHelper.taskType() == "Production":
-                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
-                                                          None))
+            if taskHelper.isTopOfTree() and taskHelper.taskType() == "Production" and stepName == "cmsRun1":
+                # set it only for the first cmsRun in multi-steps tasks
+                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi", None))
         return
 
     def listJobSplittingParametersByTask(self, initialTask=None, performance=True):
@@ -1364,6 +1532,26 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.section_('overrides')
 
+    def setWorkloadOverrides(self, overrides):
+        """
+        _setWorkloadOverrides_
+
+        Set the override parameters for all logArch steps
+        in all tasks.
+        """
+        if overrides:
+            for task in self.getAllTasks():
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+                    if stepHelper.stepType() == "LogArchive":
+                        for key, value in overrides.items():
+                            stepHelper.addOverride(key, value)
+            # save it at workload level as well
+            for key, value in overrides.items():
+                setattr(self.data.overrides, key, value)
+
+        return
+
     def setBlockCloseSettings(self, blockCloseMaxWaitTime,
                               blockCloseMaxFiles, blockCloseMaxEvents,
                               blockCloseMaxSize):
@@ -1563,7 +1751,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return
 
     def setCMSSWVersions(self, cmsswVersion=None, globalTag=None,
-                       scramArch=None, initialTask=None):
+                         scramArch=None, initialTask=None):
         """
         _setCMSSWVersions_
 
@@ -1632,7 +1820,7 @@ class WMWorkloadHelper(PersistencyHelper):
                    'input': [],
                    'output': [],
                    'owner': {},
-                  }
+                   }
 
         summary['tasks'] = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()
@@ -1644,17 +1832,14 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
-                                   gracePeriod):
+    def setupPerformanceMonitoring(self, softTimeout, gracePeriod):
         """
         _setupPerformanceMonitoring_
 
         Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            task.setPerformanceMonitor(maxRSS=maxRSS, maxVSize=maxVSize,
-                                       softTimeout=softTimeout,
-                                       gracePeriod=gracePeriod)
+            task.setPerformanceMonitor(softTimeout=softTimeout, gracePeriod=gracePeriod)
 
         return
 
@@ -1701,7 +1886,7 @@ class WMWorkloadHelper(PersistencyHelper):
         return {'trustlists': False, 'trustPUlists': False}
 
     def validateArgumentForAssignment(self, schema):
-        specClass = loadSpecClassByType(self.requestType())
+        specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         validateArgumentsUpdate(schema, argumentDefinition)
         return
@@ -1715,10 +1900,11 @@ class WMWorkloadHelper(PersistencyHelper):
         Input data should have been validated already using
         validateArgumentForAssignment.
         """
-        specClass = loadSpecClassByType(self.requestType())
+        specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         setAssignArgumentsWithDefault(kwargs, argumentDefinition)
 
+        self.setWorkloadOverrides(kwargs["Override"])
         self.setSiteWhitelist(kwargs["SiteWhitelist"])
         self.setSiteBlacklist(kwargs["SiteBlacklist"])
         self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
@@ -1740,24 +1926,11 @@ class WMWorkloadHelper(PersistencyHelper):
         if kwargs.get("ProcessingVersion") is not None:
             self.setProcessingVersion(kwargs["ProcessingVersion"])
 
-        self.setupPerformanceMonitoring(kwargs["MaxRSS"],
-                                        kwargs["MaxVSize"],
-                                        kwargs["SoftTimeout"],
-                                        kwargs["GracePeriod"])
+        self.setupPerformanceMonitoring(softTimeout=kwargs["SoftTimeout"],
+                                        gracePeriod=kwargs["GracePeriod"])
 
         # Check whether we should check location for the data
         self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
-
-        # Set phedex subscription information
-        self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
-                                        nonCustodialSites=kwargs["NonCustodialSites"],
-                                        autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                        custodialSubType=kwargs["CustodialSubType"],
-                                        nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                        custodialGroup=kwargs["CustodialGroup"],
-                                        nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                        priority=kwargs["SubscriptionPriority"],
-                                        deleteFromSource=kwargs["DeleteFromSource"])
 
         # Block closing information
         self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
@@ -1773,11 +1946,26 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 
         # MUST be set after AcqEra/ProcStr/ProcVer
-        if self.requestType() == "StepChain":
+        if self.getRequestType() == "StepChain":
             self.setStepProperties(kwargs)
+            self.updateStepParentageMap()
+        elif self.getRequestType() == "TaskChain":
+            # TODO: need to define proper task form maybe kwargs['Tasks']?
+            self.setTaskProperties(kwargs)
+            self.updateTaskParentageMap()
 
-        # TODO: need to define proper task form maybe kwargs['Tasks']?
-        self.setTaskProperties(kwargs)
+        # Since it lists the output datasets, it has to be done in the very end
+        # Set phedex subscription information
+        if kwargs.get("CustodialSites") or kwargs.get("NonCustodialSites"):
+            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                            nonCustodialSites=kwargs["NonCustodialSites"],
+                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                            custodialSubType=kwargs["CustodialSubType"],
+                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                            custodialGroup=kwargs["CustodialGroup"],
+                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                            priority=kwargs["SubscriptionPriority"],
+                                            deleteFromSource=kwargs["DeleteFromSource"])
 
         return
 
@@ -1863,9 +2051,9 @@ class WMWorkload(ConfigSection):
         self.section_("tasks")
         self.tasks.tasklist = []
 
-        #  worklaod spec type
-        self.section_("request_type")
+        #  workload spec type
         self.requestType = ""
+        self.dbsUrl = None
 
         self.sandbox = None
         self.initialJobCount = 0

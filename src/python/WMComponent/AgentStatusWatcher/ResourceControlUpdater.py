@@ -3,14 +3,15 @@ Perform cleanup actions
 """
 __all__ = []
 
-import urllib2
-import threading
 import logging
 import traceback
-import json
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
+from Utils.Timers import timeFunction
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.Dashboard.Dashboard import Dashboard
+from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class ResourceControlUpdater(BaseWorkerThread):
@@ -23,19 +24,19 @@ class ResourceControlUpdater(BaseWorkerThread):
         Initialize
         """
         BaseWorkerThread.__init__(self)
-        # set the workqueue service for REST call
         self.config = config
-        self.setVariables(self.config)
 
-    def setVariables(self, config):
-        """
-        load all the variables from the config file
-        """
+        self.tasksCPU = ['Processing', 'Production']
+        self.tasksIO = ['Merge', 'Cleanup', 'Harvesting', 'LogCollect', 'Skim']
+        self.minCPUSlots = 50
+        self.minIOSlots = 25
+
         # get dashboard url, set metric columns from config
         self.dashboard = config.AgentStatusWatcher.dashboard
         self.siteStatusMetric = config.AgentStatusWatcher.siteStatusMetric
         self.cpuBoundMetric = config.AgentStatusWatcher.cpuBoundMetric
         self.ioBoundMetric = config.AgentStatusWatcher.ioBoundMetric
+        self.ssb = Dashboard(self.dashboard)
 
         # set pending percentages from config
         self.pendingSlotsSitePercent = config.AgentStatusWatcher.pendingSlotsSitePercent
@@ -46,8 +47,8 @@ class ResourceControlUpdater(BaseWorkerThread):
         # sites forced to down
         self.forceSiteDown = getattr(config.AgentStatusWatcher, 'forceSiteDown', [])
 
-        # agent teams (for dynamic threshold) and queueParams (drain mode)
-        self.teamNames = config.Agent.teamName
+        # agent team (for dynamic threshold) and queueParams (drain mode)
+        self.teamName = config.Agent.teamName
         self.agentsNumByTeam = getattr(config.AgentStatusWatcher, 'defaultAgentsNumByTeam', 5)
 
         # only SSB sites
@@ -60,18 +61,13 @@ class ResourceControlUpdater(BaseWorkerThread):
         # switch this component on/off
         self.enabled = getattr(config.AgentStatusWatcher, 'enabled', True)
 
-    def setup(self, parameters):
-        """
-        Set db connection and prepare resource control
-        """
-        # Interface to WMBS/BossAir db
-        myThread = threading.currentThread()
         # set resource control
         self.resourceControl = ResourceControl(config=self.config)
 
         # wmstats connection
         self.centralCouchDBReader = WMStatsReader(self.config.AgentStatusWatcher.centralWMStatsURL)
 
+    @timeFunction
     def algorithm(self, parameters):
         """
         _algorithm_
@@ -85,8 +81,6 @@ class ResourceControlUpdater(BaseWorkerThread):
             5. Change site thresholds when needed (and task thresholds)
         Sites from SSB are validated with PhEDEx node names
         """
-        # set variables every polling cycle
-        self.setVariables(self.config)
         if not self.enabled:
             logging.info("This component is not enabled in the configuration. Doing nothing.")
             return
@@ -94,19 +88,23 @@ class ResourceControlUpdater(BaseWorkerThread):
         try:
             sitesRC = self.resourceControl.listSitesSlots()
             logging.debug("Info from resource control: %s", sitesRC)
+            # first, update site status
+            ssbSiteStatus = self.getSiteStatus()
+            self.checkStatusChanges(sitesRC, ssbSiteStatus)
+
+            # now fetch site slots thresholds
             sitesSSB = self.getInfoFromSSB()
             if not sitesSSB:
+                logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
                 return
-            logging.debug("Info from SSB: %s", sitesSSB)
 
-            # Check which site states need to be updated in the database
-            sitesRC = self.checkStatusChanges(sitesRC, sitesSSB)
+            logging.debug("Info from SSB: %s", sitesSSB)
 
             # get number of agents working in the same team (not in DrainMode)
             self.getAgentsByTeam()
 
             # Check which site slots need to be updated in the database
-            self.checkSlotsChanges(sitesRC, sitesSSB, self.agentsNumByTeam)
+            self.checkSlotsChanges(sitesRC, sitesSSB)
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
@@ -117,26 +115,23 @@ class ResourceControlUpdater(BaseWorkerThread):
         """
         _getAgentsByTeam_
 
-        Get the WMStats view about agents and teams
+        Get the WMStats view for agents and teams
         """
+        if isDrainMode(self.config):
+            # maximize pending thresholds to get this agent drained ASAP
+            self.agentsNumByTeam = 1
+            return
+
         agentsByTeam = {}
         try:
             agentsByTeam = self.centralCouchDBReader.agentsByTeam(filterDrain=True)
-        except Exception as ex:
+        except Exception:
             logging.error("WMStats is not available or is unresponsive.")
 
         if not agentsByTeam:
-            logging.debug("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
+            logging.warning("agentInfo couch view is not available, use default value %s", self.agentsNumByTeam)
         else:
-            self.agentsByTeam = agentsByTeam
-            agentsCount = []
-            for team in self.teamNames.split(','):
-                if team not in self.agentsByTeam:
-                    agentsCount.append(1)
-                else:
-                    agentsCount.append(self.agentsByTeam[team])
-            # If agent is in several teams, we choose the team with less agents
-            self.agentsNumByTeam = min(agentsCount, self.agentsNumByTeam)
+            self.agentsNumByTeam = agentsByTeam.get(self.teamName, self.agentsNumByTeam)
             logging.debug("Agents connected to the same team (not in DrainMode): %d", self.agentsNumByTeam)
         return
 
@@ -148,36 +143,10 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Returns a dict of dicts where the first key is the site name.
         """
-        # urls from site status board
-        urlSiteState = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.siteStatusMetric)
-        urlCpuBound = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.cpuBoundMetric)
-        urlIoBound = self.dashboard + '/request.py/getplotdata?columnid=%s&batch=1&lastdata=1' % str(
-            self.ioBoundMetric)
+        ssbCpuSlots = self.ssb.getMetric(self.cpuBoundMetric)
+        ssbIoSlots = self.ssb.getMetric(self.ioBoundMetric)
 
-        # get info from dashboard
-        sites = urllib2.urlopen(urlSiteState).read()
-        cpuBound = urllib2.urlopen(urlCpuBound).read()
-        ioBound = urllib2.urlopen(urlIoBound).read()
-
-        # parse from json format to dictionary, get only 'csvdata'
-        ssbSiteState = json.loads(sites)['csvdata']
-        ssbCpuSlots = json.loads(cpuBound)['csvdata']
-        ssbIoSlots = json.loads(ioBound)['csvdata']
-
-        # dict updated by these methods with status/thresholds info keyed by the site name
-        ssbSiteSlots = {}
-        self.siteStatusByVOName(ssbSiteState, ssbSiteSlots)
-        self.thresholdsByVOName(ssbCpuSlots, ssbSiteSlots, slotsType='slotsCPU')
-        self.thresholdsByVOName(ssbIoSlots, ssbSiteSlots, slotsType='slotsIO')
-
-        # Now remove sites with state only, such that no updates are applied to them
-        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.iteritems() if len(v) == 3}
-
-        if not ssbSiteSlots:
-            logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
-            return ssbSiteSlots
+        ssbSiteSlots = self.thresholdsByVOName(ssbCpuSlots, ssbIoSlots)
 
         return ssbSiteSlots
 
@@ -189,16 +158,13 @@ class ResourceControlUpdater(BaseWorkerThread):
         resource control, based on:
           1. settings defined for the component (config.py)
           2. site state changes between SSB and RC
-
-        Returns the new infoRC dict (where a few key/value pairs were
-        deleted - no need to update slots information)
         """
         # First sets list of forced sites to down (HLT @FNAL is an example)
         for site in self.forceSiteDown:
             if site in infoRC and infoRC[site]['state'] != 'Down':
                 logging.info("Forcing site %s to Down", site)
                 self.updateSiteState(site, 'Down')
-            infoRC.pop(site, None)
+            infoSSB.pop(site, None)
 
         # if onlySSB sites, force all the sites not in SSB to down
         if self.onlySSB:
@@ -206,16 +172,15 @@ class ResourceControlUpdater(BaseWorkerThread):
                 if infoRC[site]['state'] != 'Down':
                     logging.info('Only SSBsites, forcing site %s to Down', site)
                     self.updateSiteState(site, 'Down')
-                infoRC.pop(site, None)
 
-        # this time don't update infoRC since we still want to update slots info
+        # normally set all the others
         for site in set(infoRC).intersection(set(infoSSB)):
             if infoRC[site]['state'] != infoSSB[site]['state']:
                 logging.info('Changing %s state from %s to %s', site, infoRC[site]['state'], infoSSB[site]['state'])
                 self.updateSiteState(site, infoSSB[site]['state'])
-        return infoRC
+        return
 
-    def checkSlotsChanges(self, infoRC, infoSSB, agentsCount):
+    def checkSlotsChanges(self, infoRC, infoSSB):
         """
         _checkSlotsChanges_
 
@@ -224,101 +189,88 @@ class ResourceControlUpdater(BaseWorkerThread):
           1. number of agents connected to the same team
           2. and slots provided by the Dashboard team (SSB)
 
-        If site slots are updated, then also updates its tasks.
+        If site slots are updated, then updates the task level too.
         """
-        tasksCPU = ['Processing', 'Production']
-        tasksIO = ['Merge', 'Cleanup', 'Harvesting', 'LogCollect', 'Skim']
-        minCPUSlots, minIOSlots = 50, 25
-
         logging.debug("Settings for site and task pending slots: %s%% and %s%%", self.pendingSlotsSitePercent,
-                                                                                 self.pendingSlotsTaskPercent)
+                      self.pendingSlotsTaskPercent)
 
         for site in set(infoRC).intersection(set(infoSSB)):
-            if self.tier0Mode and 'T1_' in site:
+            if self.tier0Mode and site.startswith('T1_'):
                 # T1 cores utilization for Tier0
-                infoSSB[site]['slotsCPU'] = infoSSB[site]['slotsCPU'] * self.t1SitesCores / 100
-                infoSSB[site]['slotsIO'] = infoSSB[site]['slotsIO'] * self.t1SitesCores / 100
-
-            # round very small sites to the bare minimum
-            if infoSSB[site]['slotsCPU'] < minCPUSlots:
-                infoSSB[site]['slotsCPU'] = minCPUSlots
-            if infoSSB[site]['slotsIO'] < minIOSlots:
-                infoSSB[site]['slotsIO'] = minIOSlots
-
+                infoSSB[site]['slotsCPU'] *= self.t1SitesCores / 100
+                infoSSB[site]['slotsIO'] *= self.t1SitesCores / 100
+            else:
+                # round very small sites to the bare minimum
+                infoSSB[site]['slotsCPU'] = max(infoSSB[site]['slotsCPU'], self.minCPUSlots)
+                infoSSB[site]['slotsIO'] = max(infoSSB[site]['slotsIO'], self.minIOSlots)
             CPUBound = infoSSB[site]['slotsCPU']
             IOBound = infoSSB[site]['slotsIO']
-            sitePending = max(int(CPUBound / agentsCount * self.pendingSlotsSitePercent / 100), minCPUSlots)
-            taskCPUPending = max(int(CPUBound / agentsCount * self.pendingSlotsTaskPercent / 100), minCPUSlots)
-            taskIOPending = max(int(IOBound / agentsCount * self.pendingSlotsTaskPercent / 100), minIOSlots)
 
+            sitePending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsSitePercent / 100),
+                              self.minCPUSlots)
+
+            # update site slots, if needed
             if infoRC[site]['running_slots'] != CPUBound or infoRC[site]['pending_slots'] != sitePending:
                 # Update site running and pending slots
                 logging.info("Updating %s site thresholds for pend/runn: %d/%d", site, sitePending, CPUBound)
                 self.resourceControl.setJobSlotsForSite(site, pendingJobSlots=sitePending,
                                                         runningJobSlots=CPUBound)
-                # Update site CPU tasks running and pending slots (large running slots)
-                logging.debug("Updating %s tasksCPU thresholds for pend/runn: %d/%d", site, taskCPUPending,
-                              CPUBound)
-                for task in tasksCPU:
-                    self.resourceControl.insertThreshold(site, taskType=task, maxSlots=CPUBound,
-                                                         pendingSlots=taskCPUPending)
-                # Update site IO tasks running and pending slots
-                logging.debug("Updating %s tasksIO thresholds for pend/runn: %d/%d", site, taskIOPending,
-                              IOBound)
-                for task in tasksIO:
-                    self.resourceControl.insertThreshold(site, taskType=task, maxSlots=IOBound,
-                                                         pendingSlots=taskIOPending)
 
-            if self.tier0Mode:
-                # Set task thresholds for Tier0
-                logging.debug("Updating %s Express and Repack task thresholds.", site)
-                expressSlots = int(CPUBound * self.runningExpressPercent / 100)
-                pendingExpress = int(expressSlots * self.pendingSlotsTaskPercent / 100)
-                self.resourceControl.insertThreshold(site, 'Express', expressSlots, pendingExpress)
+            # now handle the task level thresholds
+            self.checkTaskSlotsChanges(site, CPUBound, IOBound)
 
-                repackSlots = int(CPUBound * self.runningRepackPercent / 100)
-                pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent / 100)
-                self.resourceControl.insertThreshold(site, 'Repack', repackSlots, pendingRepack)
-
-    def thresholdsByVOName(self, sites, ssbSiteSlots, slotsType):
+    def thresholdsByVOName(self, infoCpu, infoIo):
         """
         _thresholdsByVOName_
 
-        Updates the dict with CPU and IO slots, only for sites with a valid state
+        Creates a dictionary with CPU and IO slots keyed by the site name.
+        If any of the thresholds is missing or has an invalid value, the whole
+        site thresholds is skipped.
         """
-        for site in sites:
-            voname = site['VOName']
-            value = site['Value']
-            if voname in ssbSiteSlots:
-                if value is None:
-                    logging.warn('Site %s does not have thresholds in SSB. Taking no action', voname)
-                    # then we better remove this site from our final dict
-                    ssbSiteSlots.pop(voname)
-                else:
-                    ssbSiteSlots[voname][slotsType] = int(value)
+        ssbSiteSlots = {}
+        for entry in infoCpu:
+            if entry['Value'] is None:
+                logging.warn('Site %s has invalid CPU thresholds in SSB. Taking no action', entry['VOName'])
             else:
-                logging.warn('Found %s thresholds for site %s which has no state in SSB', slotsType, voname)
-        return
+                ssbSiteSlots[entry['VOName']] = {'slotsCPU': int(entry['Value'])}
 
-    def siteStatusByVOName(self, sites, ssbSiteSlots):
-        """
-        _siteStatusByVOName_
+        # then iterate over the IO slots
+        for entry in infoIo:
+            if entry['Value'] is None:
+                logging.warn('Site %s has invalid IO thresholds in SSB. Taking no action', entry['VOName'])
+            else:
+                ssbSiteSlots[entry['VOName']]['slotsIO'] = int(entry['Value'])
 
-        Creates an inner dictionary for each site that will contain
-        the site state and the number of slots
+        # Before proceeding, remove sites without both metrics
+        for site in ssbSiteSlots.keys():
+            if len(ssbSiteSlots[site]) != 2:
+                logging.warn("Site: %s has incomplete SSB metrics, see %s", site, ssbSiteSlots[site])
+                ssbSiteSlots.pop(site)
+
+        return ssbSiteSlots
+
+    def getSiteStatus(self):
         """
-        for site in sites:
+        _getSiteStatus_
+
+        Fetch site state from SSB and map it to agent state
+        """
+        ssbState = self.ssb.getMetric(self.siteStatusMetric)
+
+        ssbSiteState = {}
+        for site in ssbState:
             voname = site['VOName']
             status = site['Status']
-            if voname not in ssbSiteSlots:
+            if voname not in ssbSiteState:
                 statusAgent = self.getState(str(status))
                 if not statusAgent:
-                    logging.error("Unkwown status '%s' for site %s, please check SSB", status, voname)
+                    logging.error("Unknown status '%s' for site %s, please check SSB", status, voname)
                 else:
-                    ssbSiteSlots[voname] = {'state': statusAgent}
+                    ssbSiteState[voname] = {'state': statusAgent}
             else:
-                logging.error('I have a duplicated status entry in SSB for %s', voname)
-        return
+                logging.warning('I have a duplicated status entry in SSB for %s', voname)
+
+        return ssbSiteState
 
     def getState(self, stateSSB):
         """
@@ -348,3 +300,41 @@ class ResourceControlUpdater(BaseWorkerThread):
             logging.error(str(ex))
             logging.error("Traceback: \n%s", traceback.format_exc())
         return
+
+    def checkTaskSlotsChanges(self, siteName, CPUBound, IOBound):
+        """
+        _checkTaskSlotsChanges_
+
+        Update the CPU and IOBound slots for a given site.
+        """
+        siteTaskSlots = self.resourceControl.thresholdBySite(siteName)
+        taskCPUPending = max(int(CPUBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100),
+                             self.minCPUSlots)
+        taskIOPending = max(int(IOBound / self.agentsNumByTeam * self.pendingSlotsTaskPercent / 100), self.minIOSlots)
+
+        updateTasks = False
+        if siteTaskSlots[0]['task_type'] in self.tasksCPU and siteTaskSlots[0]['task_pending_slots'] != taskCPUPending:
+            updateTasks = True
+        elif siteTaskSlots[0]['task_type'] in self.tasksIO and siteTaskSlots[0]['task_pending_slots'] != taskIOPending:
+            updateTasks = True
+
+        if updateTasks:
+            logging.info("Updating %s CPU tasks thresholds for pend/runn: %d/%d", siteName,
+                         taskCPUPending, CPUBound)
+            self.resourceControl.insertThreshold(siteName, taskType=self.tasksCPU, maxSlots=CPUBound,
+                                                 pendingSlots=taskCPUPending)
+            logging.info("Updating %s IO tasks thresholds for pend/runn: %d/%d", siteName,
+                         taskIOPending, IOBound)
+            self.resourceControl.insertThreshold(siteName, taskType=self.tasksIO, maxSlots=IOBound,
+                                                 pendingSlots=taskIOPending)
+
+        if self.tier0Mode:
+            # Set task thresholds for Tier0
+            logging.debug("Updating %s Express and Repack task thresholds.", siteName)
+            expressSlots = int(CPUBound * self.runningExpressPercent / 100)
+            pendingExpress = int(expressSlots * self.pendingSlotsTaskPercent / 100)
+            self.resourceControl.insertThreshold(siteName, 'Express', expressSlots, pendingExpress)
+
+            repackSlots = int(CPUBound * self.runningRepackPercent / 100)
+            pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent / 100)
+            self.resourceControl.insertThreshold(siteName, 'Repack', repackSlots, pendingRepack)

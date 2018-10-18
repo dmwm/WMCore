@@ -2,13 +2,8 @@
     "assignRequest": {
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": {
-            "ALCAFull_2017": 1580000, 
-            "DigiFull_2017": 25080000, 
-            "RecoFull_2017": 6080000
-        }, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "SiteBlacklist": [], 
         "SiteWhitelist": [
             "SiteWhitelist-OVERRIDE-ME"
@@ -21,7 +16,7 @@
         "AcquisitionEra": "CMSSW_8_1_0", 
         "CMSSWVersion": "CMSSW_8_1_0", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["MC with input and 3 tasks; Proc dset defined at creation; Diff LumisPerJob and MaxRSS per task",
+        "Comments": ["MC with input and 3 tasks; Proc dset defined at creation; Diff LumisPerJob per task",
                     "Tasks inheriting values from main dict; Memory override in Task2; Memory/Multicore override in Task3"], 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 

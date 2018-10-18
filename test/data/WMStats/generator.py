@@ -1,21 +1,21 @@
 from __future__ import print_function
-import json
-import time, datetime
-import random, string
-import os
 
-from uuid import uuid1
-from optparse import OptionParser
+import os
+import random
+import time
+from argparse import ArgumentParser
+
+from couchapp.commands import push as couchapppush
+from couchapp.config import Config
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMBase import getWMBASE
-from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 
 NUM_OF_REQUEST = 20
-ITERATIONS =100
+ITERATIONS = 100
 NUM_OF_JOBS_PER_REQUEST = 10
+
 
 def couchAppRoot():
     """Return path to couchapp dir"""
@@ -27,7 +27,8 @@ def couchAppRoot():
         basePath = develPath
     return basePath
 
-def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
+
+def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     """
     _installCouchApp_
 
@@ -45,62 +46,63 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
                  "%s/%s" % (couchUrl, couchDBName))
     return
 
+
 def parse_opts():
-    parser = OptionParser()
-    parser.add_option("-d", "--dburl",
-                    dest="dburl",
-                    help="CouchDB URL which data will be populated")
-    parser.add_option("-c", "--couchapp-base",
-                    dest="couchapp_base",
-                    help="Couch sapp base path")
-    parser.add_option("--no-couchapp",
-                    action="store_false",
-                    default=True,
-                    dest="add_couchapp",
-                    help="Don't update couchapp")
-    parser.add_option("--no-reqmgr-data",
-                    action="store_false",
-                    default=True,
-                    dest="add_reqmgr_data",
-                    help="Don't update reqmgr data")
-    parser.add_option("--no-agent-data",
-                    action="store_false",
-                    default=True,
-                    dest="add_agent_data",
-                    help="Don't update reqmgr data")
-    parser.add_option("-u", "--users",
-                    dest="users",
-                    default=10,
-                    type="int",
-                    help="The number of users, default=10")
-    parser.add_option("-s", "--sites",
-                    dest="sites",
-                    default=5,
-                    type="int",
-                    help="The number of sites, default=5")
-    parser.add_option("-a", "--agents",
-                    dest="agents",
-                    default=2,
-                    type="int",
-                    help="The number of agents, default=2")
-    parser.add_option("-i", "--iterations",
-                    dest="iterations",
-                    default=ITERATIONS,
-                    type="int",
-                    help="The number of iterations to make, default=%s" % ITERATIONS)
-    parser.add_option("-r", "--requests",
-                    dest="requests",
-                    default=NUM_OF_REQUEST,
-                    type="int",
-                    help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
-    parser.add_option("-w", "--wait",
-                    dest="wait",
-                    default=0,
-                    type="int",
-                    help="Wait W seconds between iterations, default=0")
+    parser = ArgumentParser()
+    parser.add_argument("-d", "--dburl",
+                        dest="dburl",
+                        help="CouchDB URL which data will be populated")
+    parser.add_argument("-c", "--couchapp-base",
+                        dest="couchapp_base",
+                        help="Couch sapp base path")
+    parser.add_argument("--no-couchapp",
+                        action="store_false",
+                        default=True,
+                        dest="add_couchapp",
+                        help="Don't update couchapp")
+    parser.add_argument("--no-reqmgr-data",
+                        action="store_false",
+                        default=True,
+                        dest="add_reqmgr_data",
+                        help="Don't update reqmgr data")
+    parser.add_argument("--no-agent-data",
+                        action="store_false",
+                        default=True,
+                        dest="add_agent_data",
+                        help="Don't update reqmgr data")
+    parser.add_argument("-u", "--users",
+                        dest="users",
+                        default=10,
+                        type=int,
+                        help="The number of users, default=10")
+    parser.add_argument("-s", "--sites",
+                        dest="sites",
+                        default=5,
+                        type=int,
+                        help="The number of sites, default=5")
+    parser.add_argument("-a", "--agents",
+                        dest="agents",
+                        default=2,
+                        type=int,
+                        help="The number of agents, default=2")
+    parser.add_argument("-i", "--iterations",
+                        dest="iterations",
+                        default=ITERATIONS,
+                        type=int,
+                        help="The number of iterations to make, default=%s" % ITERATIONS)
+    parser.add_argument("-r", "--requests",
+                        dest="requests",
+                        default=NUM_OF_REQUEST,
+                        type=int,
+                        help="The number of requests to simulate, default=%s" % NUM_OF_REQUEST)
+    parser.add_argument("-w", "--wait",
+                        dest="wait",
+                        default=0,
+                        type=int,
+                        help="Wait W seconds between iterations, default=0")
 
+    return parser.parse_args()
 
-    return parser.parse_args()[0]
 
 def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     """
@@ -134,9 +136,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
        "site_white_list": [
            "T1_DE_KIT"
        ],
-       "teams": [
-           "cmsdataops"
-       ]
+       "team": "cmsdataops"
     }
     """
     docs = []
@@ -152,13 +152,13 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
                "request_type": "ReReco",
                "type": "reqmgr_request",
                "request_status": [
-                                  {"status": "new", "update_time": 1326304190},
-                                  {"status": "assignment-approved", "update_time": 1326304216},
-                                  {"status": "assigned", "update_time": 1326304227}
-                                 ],
-                "site_white_list": ["T1_DE_KIT"],
-                "teams": ["cmsdataops"]
-                }
+                   {"status": "new", "update_time": 1326304190},
+                   {"status": "assignment-approved", "update_time": 1326304216},
+                   {"status": "assigned", "update_time": 1326304227}
+               ],
+               "site_white_list": ["T1_DE_KIT"],
+               "team": "cmsdataops"
+               }
         docs.append(doc)
     return docs
 
@@ -201,34 +201,34 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "canceled": 2,
                               "cooloff": 2,
                               "success": 2
-                             },
+                              },
 
-                "workflow": "test_workflow_%s" % i,
-                "timestamp": current_time + (cycle * 10),
-                "sites": {"T1_DE_KIT":
-                             {
-                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1},
-                              "queued": {"retry": 1, "first": 1},
-                              "canceled": 1,
-                              "cooloff": 1,
-                              "success": 1
-                             },
-                          "T1_US_FNAL":
-                             {
-                              "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
-                              "failure": {"exception": 1, "create": 1, "submit": 1},
-                              "queued": {"retry": 1, "first": 1},
-                              "canceled": 1,
-                              "cooloff": 1,
-                              "success": 1
-                             }
-                          },
-                "agent": "WMAgentCommissioning",
-                "agent_teams": "team1,team2,cmsdataops",
-                "agent_url": "cms-xen39.fnal.gov",
-                "type": "agent_request"
-            }
+                   "workflow": "test_workflow_%s" % i,
+                   "timestamp": current_time + (cycle * 10),
+                   "sites": {"T1_DE_KIT":
+                       {
+                           "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
+                           "failure": {"exception": 1, "create": 1, "submit": 1},
+                           "queued": {"retry": 1, "first": 1},
+                           "canceled": 1,
+                           "cooloff": 1,
+                           "success": 1
+                       },
+                       "T1_US_FNAL":
+                           {
+                               "submitted": {"retry": 1, "running": 1, "pending": 1, "first": 1},
+                               "failure": {"exception": 1, "create": 1, "submit": 1},
+                               "queued": {"retry": 1, "first": 1},
+                               "canceled": 1,
+                               "cooloff": 1,
+                               "success": 1
+                           }
+                   },
+                   "agent": "WMAgentCommissioning",
+                   "agent_teams": "cmsdataops",
+                   "agent_url": "cms-xen39.fnal.gov",
+                   "type": "agent_request"
+                   }
             docs.append(doc)
     return docs
 
@@ -267,14 +267,14 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
      'exhausted', 'killed']
     """
 
-    #TODO: Make more realistic
+    # TODO: Make more realistic
     docs = []
     statusList = ['new', 'created', 'executing', 'complete', 'createfailed', 'submitfailed',
-     'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
-     'exhausted', 'killed']
+                  'jobfailed', 'createcooloff', 'submitcooloff', 'jobcooloff', 'success',
+                  'exhausted', 'killed']
 
     for i in xrange(number):
-        status = statusList[random.randint(0, len(statusList)-1)]
+        status = statusList[random.randint(0, len(statusList) - 1)]
         errmsgs = {}
         if status.find("failed"):
             exitCode = 666
@@ -285,26 +285,26 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
             exitCode = 0
 
         jobSummary = {"_id": "jobid_%s_%s" % (request, i),
-                  "type": "jobsummary",
-                  "retrycount": random.randint(0,5),
-                  "workflow": request,
-                  "task": "/%s/task_%s" % (request, i),
-                  "state": status,
-                  "site": "T1_US_FNAL",
-                  "exitcode": exitCode,
-                  "errors": errmsgs,
-                  "lumis": [[123, 124], [567, 879]],
-                  "output": [ {'type': "test-type",
-                               'lfn': "/somewhere/file.root",
-                               'location': ['T1_US_FNAL'],
-                               'checksums': {'adler32': 'abc123', 'cksum': 'cdf123'},
-                               'size': "1000" }  ]
-            }
+                      "type": "jobsummary",
+                      "retrycount": random.randint(0, 5),
+                      "workflow": request,
+                      "task": "/%s/task_%s" % (request, i),
+                      "state": status,
+                      "site": "T1_US_FNAL",
+                      "exitcode": exitCode,
+                      "errors": errmsgs,
+                      "lumis": [[123, 124], [567, 879]],
+                      "output": [{'type': "test-type",
+                                  'lfn': "/somewhere/file.root",
+                                  'location': ['T1_US_FNAL'],
+                                  'checksums': {'adler32': 'abc123', 'cksum': 'cdf123'},
+                                  'size': "1000"}]
+                      }
         docs.append(jobSummary)
     return docs
 
 
-#def generate_sites(request):
+# def generate_sites(request):
 #
 #    sites = [ 'T2_AT_Vienna', 'T2_BE_IIHE', 'T2_BE_UCL', 'T2_BR_SPRACE',
 #              'T2_BR_UERJ', 'T2_CH_CAF', 'T2_CH_CSCS', 'T2_CN_Beijing', 'T2_DE_DESY',
@@ -341,7 +341,7 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
 #    for k, v in status.items():
 #      request["sites"][site][k] += v
 #
-#def start_clock(iterations):
+# def start_clock(iterations):
 #    difference = iterations * datetime.timedelta(minutes=15)
 #    weeks, days = divmod(difference.days, 7)
 #    minutes, seconds = divmod(difference.seconds, 60)
@@ -370,7 +370,6 @@ def main(options):
         db.commit()
         print("Added %s reqmgr requests" % len(reqmgr_requests))
 
-
     if options.add_agent_data:
         for req in agent_requests:
             db.queue(req)
@@ -380,6 +379,7 @@ def main(options):
         db.commit()
         print("Added %s agent requests" % len(agent_requests))
         print("Added %s job Docs" % (len(agent_requests) * len(jobDocs)))
+
 
 if __name__ == "__main__":
     main(parse_opts())

@@ -11,14 +11,14 @@ Created on Apr 16, 2013
 
 import logging
 import threading
-
+from Utils.Timers import timeFunction
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
-from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CMSCouch import CouchConflictError, CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
 
 
@@ -46,7 +46,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         self.config = config
 
         self.bossAir = BossAirAPI(config=self.config)
-        self.reqmgr2 = ReqMgr(self.config.JobUpdater.reqMgr2Url)
+        self.reqmgr2 = ReqMgr(self.config.General.ReqMgr2ServiceURL)
         self.workqueue = WorkQueue(self.config.WorkQueueManager.couchurl,
                                    self.config.WorkQueueManager.dbname)
 
@@ -74,6 +74,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         """
         pass
 
+    @timeFunction
     def algorithm(self, parameters=None):
         """
         _algorithm_
@@ -92,11 +93,19 @@ class JobUpdaterPoller(BaseWorkerThread):
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
+        except CouchError as ex:
+            if ex.status is None and ex.reason is None:
+                msg = "Couch Server error occured. Mostly due to time out\n"
+                msg += str(ex)
+                logging.exception(msg)
+            else:
+                raise JobUpdaterException(str(ex))
         except Exception as ex:
-            if 'Connection refused' in str(ex):
+            errorStr = str(ex)
+            if 'Connection refused' in errorStr or "timed out" in errorStr:
                 logging.warn("Failed to sync priorities. Trying in the next cycle")
             else:
-                msg = "Caught unexpected exception in JobUpdater: %s\n" % str(ex)
+                msg = "Caught unexpected exception in JobUpdater: %s\n" % errorStr
                 logging.exception(msg)
                 raise JobUpdaterException(msg)
 

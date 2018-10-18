@@ -8,20 +8,20 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
+import logging
 import os.path
 import time
 
-import WMCore.WMSpec.Utilities as SpecUtils
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-
+import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.Configuration import ConfigSection
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
-from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
-from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
-from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
-from WMCore.DataStructs.LumiList import LumiList
+from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 
 
 def getTaskFromStep(stepRef):
@@ -61,7 +61,8 @@ def buildLumiMask(runs, lumis):
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
-    lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x
+    lumiLists = [list(map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))))
+                 for x
                  in lumis]
     strRuns = [str(run) for run in runs]
 
@@ -376,8 +377,9 @@ class WMTaskHelper(TreeHelper):
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
-        [setattr(self.data.input, key, val)
-         for key, val in extras.items()]
+        for key, val in extras.items():
+            setattr(self.data.input, key, val)
+
         return
 
     def setInputStep(self, stepName):
@@ -448,8 +450,9 @@ class WMTaskHelper(TreeHelper):
 
         Set the job splitting parameters.
         """
-        [setattr(self.data.input.splitting, key, val)
-         for key, val in params.items()]
+        for key, val in params.items():
+            setattr(self.data.input.splitting, key, val)
+
         return
 
     def setSplittingAlgorithm(self, algoName, **params):
@@ -500,6 +503,23 @@ class WMTaskHelper(TreeHelper):
             self.data.input.splitting.performance = performanceConfig
         return
 
+    def updateSplittingParameters(self, algoName, **params):
+        """
+        _updateSplittingAlgorithm_
+        :param algoName: string Algorithm name
+        :param params: splitting parameters
+        :return:
+
+        Only updates specific parameters in splitting Algorithm but doesn't remove the existing splitting parameters
+        """
+        performanceConfig = getattr(self.data.input.splitting, "performance", None)
+        setattr(self.data.input.splitting, "algorithm", algoName)
+        self.data.input.splitting.section_("performance")
+        self.setSplittingParameters(**params)
+        if performanceConfig is not None:
+            self.data.input.splitting.performance = performanceConfig
+        return
+
     def jobSplittingAlgorithm(self):
         """
         _jobSplittingAlgorithm_
@@ -529,9 +549,9 @@ class WMTaskHelper(TreeHelper):
         splittingParams["trustSitelists"] = self.getTrustSitelists().get('trustlists')
         splittingParams["trustPUSitelists"] = self.getTrustSitelists().get('trustPUlists')
 
-        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
+        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() is not None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
-        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() != None:
+        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() is not None:
             splittingParams["runBlacklist"] = self.inputRunBlacklist()
 
         return splittingParams
@@ -560,6 +580,8 @@ class WMTaskHelper(TreeHelper):
             performanceParams.sizePerEvent = sizePerEvent or getattr(performanceParams, "sizePerEvent")
         if memoryReq or getattr(performanceParams, "memoryRequirement", None):
             performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
+            # if we change memory requirements, then we must change MaxRSS as well
+            self.setMaxRSS(performanceParams.memoryRequirement)
 
         return
 
@@ -810,10 +832,37 @@ class WMTaskHelper(TreeHelper):
         """
 
         if hasattr(self.data.input, 'dataset'):
-            if hasattr(self.data.input.dataset, 'name') and self.data.input.dataset.name:
-                return self.data.input.dataset.name
+            return getattr(self.data.input.dataset, 'name', None)
 
         return None
+
+    def setInputPileupDatasets(self, dsetName):
+        """
+        _setInputPileupDatasets_
+
+        Create a list of pileup datasets to be used by this task (possible
+        multiple CMSSW steps)
+        """
+        self.data.input.section_("pileup")
+        if not hasattr(self.data.input.pileup, "datasets"):
+            self.data.input.pileup.datasets = []
+
+        if isinstance(dsetName, list):
+            self.data.input.pileup.datasets.extend(dsetName)
+        elif isinstance(dsetName, basestring):
+            self.data.input.pileup.datasets.append(dsetName)
+        else:
+            raise ValueError("Pileup dataset must be either a list or basestring")
+
+    def getInputPileupDatasets(self):
+        """
+        _getInputPileupDatasets_
+
+        Get a list of the input pileup dataset name(s) for this task.
+        """
+        if hasattr(self.data.input, 'pileup'):
+            return getattr(self.data.input.pileup, 'datasets', [])
+        return []
 
     def siteWhitelist(self):
         """
@@ -905,37 +954,39 @@ class WMTaskHelper(TreeHelper):
 
         Set the subscription information for this task's datasets
         The subscriptions information is structured as follows:
-        data.subscriptions.outputModules is a list of all output modules with configured datasets
-        data.subscriptions.<outputModule>.dataset
-        data.subscriptions.<outputModule>.custodialSites
-        data.subscriptions.<outputModule>.nonCustodialSites
-        data.subscriptions.<outputModule>.autoApproveSites
-        data.subscriptions.<outputModule>.priority
-        data.subscriptions.<outputModule>.custodialSubType
-        data.subscriptions.<outputModule>.nonCustodialSubType
+        data.subscriptions.outputSubs is a list with the output section names (1 per dataset)
+        data.subscriptions.<outputSection>.dataset
+        data.subscriptions.<outputSection>.outputModule
+        data.subscriptions.<outputSection>.custodialSites
+        data.subscriptions.<outputSection>.nonCustodialSites
+        data.subscriptions.<outputSection>.autoApproveSites
+        data.subscriptions.<outputSection>.priority
+        data.subscriptions.<outputSection>.custodialSubType
+        data.subscriptions.<outputSection>.nonCustodialSubType
 
         The filters arguments allow to define a dataTier and primaryDataset. Only datasets
         matching those values will be configured.
         """
+        custodialSites = custodialSites or []
+        nonCustodialSites = nonCustodialSites or []
+        autoApproveSites = autoApproveSites or []
 
         if not hasattr(self.data, "subscriptions"):
             self.data.section_("subscriptions")
-            self.data.subscriptions.outputModules = []
+            self.data.subscriptions.outputSubs = []
 
         outputDatasets = self.listOutputDatasetsAndModules()
 
-        for entry in outputDatasets:
-            outputDataset = entry["outputDataset"]
-            outputModule = entry["outputModule"]
+        for entry in enumerate(outputDatasets, start=1):
+            subSectionName = "output%s" % entry[0]
+            outputDataset = entry[1]["outputDataset"]
+            outputModule = entry[1]["outputModule"]
 
             dsSplit = outputDataset.split('/')
-
             primDs = dsSplit[1]
-
+            tier = dsSplit[3]
             procDsSplit = dsSplit[2].split('-')
             skim = (len(procDsSplit) == 4)
-
-            tier = dsSplit[3]
 
             if primaryDataset and primDs != primaryDataset:
                 continue
@@ -944,51 +995,20 @@ class WMTaskHelper(TreeHelper):
             if dataTier and tier != dataTier:
                 continue
 
-            if outputModule not in self.data.subscriptions.outputModules:
-                self.data.subscriptions.outputModules.append(outputModule)
-                outputModuleSection = self.data.subscriptions.section_(outputModule)
-                outputModuleSection.dataset = outputDataset
-                outputModuleSection.custodialSites = []
-                outputModuleSection.nonCustodialSites = []
-                outputModuleSection.autoApproveSites = []
-                outputModuleSection.custodialSubType = "Replica"
-                outputModuleSection.nonCustodialSubType = "Replica"
-                outputModuleSection.custodialGroup = "DataOps"
-                outputModuleSection.nonCustodialGroup = "DataOps"
-                outputModuleSection.priority = "Low"
-                outputModuleSection.deleteFromSource = False
+            self.data.subscriptions.outputSubs.append(subSectionName)
+            outputSection = self.data.subscriptions.section_(subSectionName)
+            outputSection.dataset = outputDataset
+            outputSection.outputModule = outputModule
+            outputSection.custodialSites = custodialSites
+            outputSection.nonCustodialSites = nonCustodialSites
+            outputSection.autoApproveSites = autoApproveSites
+            outputSection.custodialSubType = custodialSubType
+            outputSection.nonCustodialSubType = nonCustodialSubType
+            outputSection.custodialGroup = custodialGroup
+            outputSection.nonCustodialGroup = nonCustodialGroup
+            outputSection.priority = priority
+            outputSection.deleteFromSource = deleteFromSource
 
-            outputModuleSection = getattr(self.data.subscriptions, outputModule)
-            if custodialSites is not None:
-                outputModuleSection.custodialSites = custodialSites
-            if nonCustodialSites is not None:
-                outputModuleSection.nonCustodialSites = nonCustodialSites
-            if autoApproveSites is not None:
-                outputModuleSection.autoApproveSites = autoApproveSites
-            outputModuleSection.priority = priority
-            outputModuleSection.deleteFromSource = deleteFromSource
-            outputModuleSection.custodialSubType = custodialSubType
-            outputModuleSection.nonCustodialSubType = nonCustodialSubType
-            outputModuleSection.custodialGroup = custodialGroup
-            outputModuleSection.nonCustodialGroup = nonCustodialGroup
-
-        return
-
-    def updateSubscriptionDataset(self, outputModuleName, outputModuleInfo):
-        """
-        _updateSubscriptionDataset_
-
-        Updates the dataset in the subscription information for the given output module,
-        if the given output module doesn't exist it does nothing.
-        """
-        if not hasattr(self.data, "subscriptions"):
-            return
-
-        if hasattr(self.data.subscriptions, outputModuleName):
-            subscriptionInfo = getattr(self.data.subscriptions, outputModuleName)
-            subscriptionInfo.dataset = '/%s/%s/%s' % (getattr(outputModuleInfo, "primaryDataset"),
-                                                      getattr(outputModuleInfo, "processedDataset"),
-                                                      getattr(outputModuleInfo, "dataTier"))
         return
 
     def getSubscriptionInformation(self):
@@ -1009,22 +1029,29 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, "subscriptions"):
             return {}
 
+        # FIXME making it backwards compatible.
+        # New key is 'outputSubs', remove the outputModule handle around HG1710
+        subKeyName = 'outputModules'
+        if hasattr(self.data.subscriptions, 'outputSubs'):
+            subKeyName = 'outputSubs'
+
         subInformation = {}
-        for outputModule in self.data.subscriptions.outputModules:
-            outputModuleSection = getattr(self.data.subscriptions, outputModule)
-            dataset = outputModuleSection.dataset
-            subInformation[dataset] = {"CustodialSites": outputModuleSection.custodialSites,
-                                       "NonCustodialSites": outputModuleSection.nonCustodialSites,
-                                       "AutoApproveSites": outputModuleSection.autoApproveSites,
-                                       "Priority": outputModuleSection.priority,
+        for outputSub in getattr(self.data.subscriptions, subKeyName):
+            outputSection = getattr(self.data.subscriptions, outputSub)
+            dataset = outputSection.dataset
+
+            subInformation[dataset] = {"CustodialSites": outputSection.custodialSites,
+                                       "NonCustodialSites": outputSection.nonCustodialSites,
+                                       "AutoApproveSites": outputSection.autoApproveSites,
+                                       "Priority": outputSection.priority,
                                        # These might not be present in all specs
-                                       "CustodialGroup": getattr(outputModuleSection, "custodialGroup", "DataOps"),
-                                       "NonCustodialGroup": getattr(outputModuleSection, "nonCustodialGroup",
+                                       "CustodialGroup": getattr(outputSection, "custodialGroup", "DataOps"),
+                                       "NonCustodialGroup": getattr(outputSection, "nonCustodialGroup",
                                                                     "DataOps"),
-                                       "DeleteFromSource": getattr(outputModuleSection, "deleteFromSource", False),
+                                       "DeleteFromSource": getattr(outputSection, "deleteFromSource", False),
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
-                                       "CustodialSubType": getattr(outputModuleSection, "custodialSubType", "Replica"),
-                                       "NonCustodialSubType": getattr(outputModuleSection, "nonCustodialSubType",
+                                       "CustodialSubType": getattr(outputSection, "custodialSubType", "Replica"),
+                                       "NonCustodialSubType": getattr(outputSection, "nonCustodialSubType",
                                                                       "Replica")}
         return subInformation
 
@@ -1073,7 +1100,7 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.taskType
 
-    def completeTask(self, jobLocation, logLocation):
+    def completeTask(self, jobLocation, reportName):
         """
         _completeTask_
 
@@ -1081,34 +1108,44 @@ class WMTaskHelper(TreeHelper):
 
         If necessary, output to Dashboard
         """
-        import WMCore.FwkJobReport.Report as Report
+        from WMCore.FwkJobReport.Report import Report
 
-        finalReport = Report.Report()
-        # We left the master report somewhere way up at the top
-        testPath = os.path.join(jobLocation, '../../', logLocation)
+        finalReport = Report()
+        # We left the master report at the pilot scratch area level
+        testPath = os.path.join(jobLocation, '../../', reportName)
+        logging.info("Looking for master report at %s", testPath)
         if os.path.exists(testPath):
+            logging.info("  found it!")
             # If a report already exists, we load it and
             # append our steps to it
             finalReport.load(testPath)
         taskSteps = self.listAllStepNames()
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
+            logging.info("Looking for a taskStep report at %s", reportPath)
             if os.path.isfile(reportPath):
-                stepReport = Report.Report()
+                logging.info("  found it!")
+                stepReport = Report()
                 stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
+                logURL = stepReport.getLogURL()
+                if logURL:
+                    finalReport.setLogURL(logURL)
             else:
+                msg = "  failed to find it."
+                msg += "Files in the directory are:\n%s" % os.listdir(os.path.join(jobLocation, taskStep))
+                logging.error(msg)
                 # Then we have a missing report
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname=taskStep, status=1)
-                finalReport.addError(stepName=taskStep, exitCode=99999, errorType="ReportManipulatingError",
-                                     errorDetails="Could not find report file for step %s!" % taskStep)
+                finalReport.addError(stepName=taskStep, exitCode=99996, errorType="ReportManipulatingError",
+                                     errorDetails="Failed to find a step report for %s!" % taskStep)
 
         finalReport.data.completed = True
-        finalReport.persist(logLocation)
+        finalReport.persist(reportName)
 
-        return
+        return finalReport
 
     def taskLogBaseLFN(self):
         """
@@ -1150,7 +1187,7 @@ class WMTaskHelper(TreeHelper):
         """
         if config section for the PerformanceMonitor. If not set, it will set one
         """
-        if self.monitoring != None:
+        if self.monitoring is not None:
             return
 
         self.monitoring = self.data.section_("watchdog")
@@ -1162,6 +1199,16 @@ class WMTaskHelper(TreeHelper):
         return
 
     def setMaxRSS(self, maxRSS):
+        """
+        _setMaxRSS_
+
+        Set MaxRSS performance monitoring for this task.
+        :param maxRSS: maximum RSS memory comsumption in MiB
+        """
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+            # keep the default settings (from StdBase) for these task types
+            return
+
         if isinstance(maxRSS, dict):
             maxRSS = maxRSS.get(self.name(), None)
 
@@ -1173,6 +1220,16 @@ class WMTaskHelper(TreeHelper):
         return
 
     def setMaxVSize(self, maxVSize):
+        """
+        _setMaxVSize_
+
+        Set maxVSize performance monitoring for this task.
+        :param maxVSize: maximum VSize memory comsumption in MiB
+        """
+        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
+            # keep the default settings (from StdBase) for these task types
+            return
+
         if isinstance(maxVSize, dict):
             maxVSize = maxVSize.get(self.name(), None)
 
@@ -1183,24 +1240,20 @@ class WMTaskHelper(TreeHelper):
                 task.setMaxVSize(maxVSize)
         return
 
-    def setPerformanceMonitor(self, maxRSS=None, maxVSize=None,
-                              softTimeout=None, gracePeriod=None):
+    def setPerformanceMonitor(self, softTimeout=None, gracePeriod=None):
         """
         _setPerformanceMonitor_
 
         Set/Update the performance monitor options for the task
         """
-        if not maxRSS and not maxVSize and not softTimeout and not gracePeriod:
-            # if no values is specified do nothing
-            return
+        # make sure there is a PerformanceMonitor section in the task
+        self._setPerformanceMonitorConfig()
 
-        self.setMaxRSS(maxRSS)
-        self.setMaxVSize(maxVSize)
         if softTimeout:
-            self._setPerformanceMonitorConfig()
             self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
             if gracePeriod:
                 self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)
+
         return
 
     def getSwVersion(self, allSteps=False):
@@ -1212,14 +1265,14 @@ class WMTaskHelper(TreeHelper):
          used in this task
         :return: a string with the release name or a list of releases if allSteps is True.
         """
-        versions = set()
+        versions = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
                 if not allSteps:
                     return stepHelper.getCMSSWVersion()
                 else:
-                    versions.add(stepHelper.getCMSSWVersion(allSteps))
+                    versions.append(stepHelper.getCMSSWVersion())
         return versions
 
     def getScramArch(self, allSteps=False):
@@ -1229,14 +1282,14 @@ class WMTaskHelper(TreeHelper):
         Get the scram architecture for the first CMSSW step of workload.
         Set allSteps to true to retrieve all the scramArchs used in this task.
         """
-        scrams = set()
+        scrams = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
             if stepHelper.stepType() == "CMSSW":
                 if not allSteps:
                     return stepHelper.getScramArch()
                 else:
-                    scrams.add(stepHelper.getScramArch(allSteps))
+                    scrams.append(stepHelper.getScramArch())
         return scrams
 
     def setPrimarySubType(self, subType):
@@ -1366,7 +1419,6 @@ class WMTaskHelper(TreeHelper):
 
         return versions
 
-
     def setNumberOfCores(self, cores, nStreams):
         """
         _setNumberOfCores_
@@ -1407,7 +1459,6 @@ class WMTaskHelper(TreeHelper):
         :param keyDict: a dict with either AcqEra/ProcStr/ProcVer key/value pairs,
         where the key corresponds to the StepName
         """
-        value = None
         if self.taskType() == "Merge":
             extractedTaskName = self.name().split("Merge")[0]
             value = keyDict.get(extractedTaskName)
@@ -1503,10 +1554,8 @@ class WMTaskHelper(TreeHelper):
         """
         propMap = {"ProcessingVersion": self.setProcessingVersion,
                    "AcquisitionEra": self.setAcquisitionEra,
-                   "ProcessingString": self.setProcessingString,
-                   "MaxRSS": self.setMaxRSS,
-                   "MaxVSize": self.setMaxVSize
-                  }
+                   "ProcessingString": self.setProcessingString
+                   }
         return propMap
 
     def setProperties(self, properties):
@@ -1657,7 +1706,7 @@ class WMTaskHelper(TreeHelper):
                                                     getattr(outputModule, "dataTier"),
                                                     processingString)
 
-                    if runNumber != None and runNumber > 0:
+                    if runNumber is not None and runNumber > 0:
                         runString = str(runNumber).zfill(9)
                         lfnSuffix = "/%s/%s/%s" % (runString[0:3],
                                                    runString[3:6],
@@ -1668,9 +1717,6 @@ class WMTaskHelper(TreeHelper):
                     lfnBase(unmergedLFN)
                     lfnBase(mergedLFN)
                     setattr(outputModule, "processedDataset", processedDataset)
-
-                    # Once we change an output module we must update the subscription information
-                    self.updateSubscriptionDataset(outputModuleName, outputModule)
 
                     # For merge tasks, we want all output to go to the merged LFN base.
                     if taskType == "Merge":
@@ -1747,7 +1793,7 @@ class WMTask(ConfigSectionTree):
         self.constraints.sites.blacklist = []
         self.constraints.sites.trustlists = False
         self.constraints.sites.trustPUlists = False
-        self.subscriptions.outputModules = []
+        self.subscriptions.outputSubs = []
         self.input.section_("WMBS")
 
 

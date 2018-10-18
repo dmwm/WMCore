@@ -548,6 +548,84 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(jobGroups[0].jobs[0]['input_files'][0]['runs'][0].run, 1)
         return
 
+    def test_NotEnoughEvents(self):
+        """
+        _test_NotEnoughEvents_
+
+        Checks whether jobs are not created when there are not enough files (actually, events)
+        according to the events_per_job requested to the splitter algorithm
+        """
+        splitter = SplitterFactory()
+
+        # Very small fileset (single file) without enough events
+        testSubscription = self.createSubscription(nFiles=1, lumisPerFile=2)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(lumis_per_job=5,
+                               performance=self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 0)
+
+        # Still a small fileset (two files) without enough events
+        testSubscription = self.createSubscription(nFiles=2, lumisPerFile=2)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(lumis_per_job=5,
+                               performance=self.performanceParams,
+                               splitOnRun=False)
+
+        self.assertEqual(len(jobGroups), 0)
+
+        # Finally an acceptable fileset size (three files) with enough events
+        testSubscription = self.createSubscription(nFiles=3, lumisPerFile=2)
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(lumis_per_job=5,
+                               performance=self.performanceParams,
+                               splitOnRun=False)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(len(jobs[0]['input_files']), 3)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]], 1: [[100, 101]], 2: [[200, 200]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[201, 201]]})
+
+        # Test fileset with a single run and splitOnRun=True
+        testFileset = Fileset(name="FilesetA")
+        for i in range(3):
+            testFile = File(lfn="/this/is/file%s" % i, size=1024, events=200, locations="T1_US_FNAL_Disk")
+            lumis = [i *  2 + val for val in range(1, 3)]
+            testFile.addRun(Run(1, lumis))
+            testFile.create()
+            testFileset.addFile(testFile)
+        testFileset.create()
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="LumiBased",
+                                        type="Processing")
+        testSubscription.create()
+
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroups = jobFactory(lumis_per_job=5,
+                               performance=self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+        self.assertEqual(len(jobs[0]['input_files']), 3)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[1, 2], [3, 4], [5, 5]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[6, 6]]})
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

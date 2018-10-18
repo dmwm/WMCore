@@ -10,7 +10,6 @@ from __future__ import division, print_function
 import threading
 import unittest
 from copy import deepcopy
-from pprint import pformat
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
@@ -105,18 +104,19 @@ class RepackTests(unittest.TestCase):
         self.assertEqual(len(repackWorkflow.outputMap.keys()), len(testArguments["Outputs"]) + 1,
                          "Error: Wrong number of WF outputs in the Repack WF.")
 
-        goldenOutputMods = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = repackWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = repackWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
+        goldenOutputMods = {"write_PrimaryDataset1_RAW": "RAW", "write_PrimaryDataset2_RAW": "RAW"}
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            mergedOutput = repackWorkflow.outputMap[fset][0]["merged_output_fileset"]
+            unmergedOutput = repackWorkflow.outputMap[fset][0]["output_fileset"]
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
             if goldenOutputMod != "write_PrimaryDataset1_RAW":
                 self.assertEqual(mergedOutput.name,
-                                 "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+                                 "/TestWorkload/Repack/RepackMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                                  "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/Repack/unmerged-%s" % goldenOutputMod,
+            self.assertEqual(unmergedOutput.name, "/TestWorkload/Repack/unmerged-%s" % fset,
                              "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
 
         logArchOutput = repackWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -129,8 +129,7 @@ class RepackTests(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Repack/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        goldenOutputMods = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
-        for goldenOutputMod in goldenOutputMods:
+        for goldenOutputMod, tier in goldenOutputMods.items():
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Repack/RepackMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
@@ -138,17 +137,17 @@ class RepackTests(unittest.TestCase):
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 3,
                              "Error: Wrong number of WF outputs.")
 
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
+            mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
+            unmergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["output_fileset"]
 
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
             self.assertEqual(mergedMergeOutput.name,
-                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Merged output fileset is wrong.")
             self.assertEqual(unmergedMergeOutput.name,
-                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged" % goldenOutputMod,
+                             "/TestWorkload/Repack/RepackMerge%s/merged-Merged%s" % (goldenOutputMod, tier),
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -174,9 +173,10 @@ class RepackTests(unittest.TestCase):
         self.assertEqual(repackSubscription["split_algo"], "Repack",
                          "Error: Wrong split algorithm. %s" % repackSubscription["split_algo"])
 
-        unmergedOutputs = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
-        for unmergedOutput in unmergedOutputs:
-            unmergedDataTier = Fileset(name="/TestWorkload/Repack/unmerged-%s" % unmergedOutput)
+        unmergedOutputs = {"write_PrimaryDataset1_RAW": "RAW", "write_PrimaryDataset2_RAW": "RAW"}
+        for unmergedOutput, tier in unmergedOutputs.items():
+            fset = unmergedOutput + tier
+            unmergedDataTier = Fileset(name="/TestWorkload/Repack/unmerged-%s" % fset)
             unmergedDataTier.loadData()
             dataTierMergeWorkflow = Workflow(name="TestWorkload",
                                              task="/TestWorkload/Repack/RepackMerge%s" % unmergedOutput)
@@ -189,9 +189,9 @@ class RepackTests(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "RepackMerge",
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
-        goldenOutputMods = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
-        for goldenOutputMod in goldenOutputMods:
-            unmergedFileset = Fileset(name="/TestWorkload/Repack/unmerged-%s" % goldenOutputMod)
+        for goldenOutputMod, tier in goldenOutputMods.items():
+            fset = goldenOutputMod + tier
+            unmergedFileset = Fileset(name="/TestWorkload/Repack/unmerged-%s" % fset)
             unmergedFileset.loadData()
             cleanupWorkflow = Workflow(name="TestWorkload",
                                        task="/TestWorkload/Repack/RepackCleanupUnmerged%s" % goldenOutputMod)
@@ -217,8 +217,7 @@ class RepackTests(unittest.TestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algorithm.")
 
-        goldenOutputMods = ["write_PrimaryDataset1_RAW", "write_PrimaryDataset2_RAW"]
-        for goldenOutputMod in goldenOutputMods:
+        for goldenOutputMod, tier in goldenOutputMods.items():
             repackMergeLogCollect = Fileset(
                 name="/TestWorkload/Repack/RepackMerge%s/merged-logArchive" % goldenOutputMod)
             repackMergeLogCollect.loadData()
@@ -307,13 +306,13 @@ class RepackTests(unittest.TestCase):
                       '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect']
         expFsets = ['TestWorkload-Repack-StreamerFiles',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
-                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-Merged',
-                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-MergedError',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-MergedRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-MergedErrorRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
-                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-Merged',
-                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedError',
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedRAW',
+                    '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-MergedErrorRAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/unmerged-logArchive']
         subMaps = [(3,
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
@@ -331,22 +330,22 @@ class RepackTests(unittest.TestCase):
                     'MinFileBased',
                     'LogCollect'),
                    (4,
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_RAW',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (2,
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
                     'RepackMerge',
                     'Merge'),
                    (7,
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
                     'SiblingProcessingBased',
                     'Cleanup'),
                    (5,
-                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAW',
+                    '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
                     'RepackMerge',
                     'Merge'),
@@ -367,20 +366,16 @@ class RepackTests(unittest.TestCase):
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        print("Tasks producing output:\n%s" % pformat(testWorkload.listOutputProducingTasks()))
         self.assertItemsEqual(testWorkload.listOutputProducingTasks(), expOutTasks)
 
         workflows = self.listTasksByWorkflow.execute(workflow="TestWorkload")
-        print("List of workflow tasks:\n%s" % pformat([item['task'] for item in workflows]))
         self.assertItemsEqual([item['task'] for item in workflows], expWfTasks)
 
         # returns a tuple of id, name, open and last_update
         filesets = self.listFilesets.execute()
-        print("List of filesets:\n%s" % pformat([item[1] for item in filesets]))
         self.assertItemsEqual([item[1] for item in filesets], expFsets)
 
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
-        print("List of subscriptions:\n%s" % pformat(subscriptions))
         self.assertItemsEqual(subscriptions, subMaps)
 
 

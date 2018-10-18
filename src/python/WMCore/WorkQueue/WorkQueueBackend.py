@@ -8,14 +8,13 @@ Interface to WorkQueue persistent storage
 import json
 import random
 import time
-import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements, WorkQueueError
 
 
 def formatReply(answer, *items):
@@ -48,7 +47,7 @@ class WorkQueueBackend(object):
             import logging
             self.logger = logging
 
-        if inbox_name == None:
+        if inbox_name is None:
             inbox_name = "%s_inbox" % db_name
 
         self.server = CouchServer(db_url)
@@ -61,6 +60,7 @@ class WorkQueueBackend(object):
         self.hostWithAuth = db_url
         self.inbox = self.server.connectDatabase(inbox_name, create=False, size=10000)
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
+        self.eleKey = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'
 
     def forceQueueSync(self):
         """Force a blocking replication - used only in tests"""
@@ -167,7 +167,7 @@ class WorkQueueBackend(object):
                        'StartPolicy': spec.startPolicyParameters(),
                        'EndPolicy': spec.endPolicyParameters(),
                        'OpenForNewData': False
-                      })
+                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams=kwargs)
         unit.id = spec.name()
         return unit
@@ -265,32 +265,32 @@ class WorkQueueBackend(object):
             self.logger.error(msg % (failed['id'], failed['error'], failed['reason']))
         return result
 
+    def _raiseConflictErrorAndLog(self, conflictIDs, updatedParams, dbName="workqueue"):
+        errorMsg = "Need to update this element manually from %s\n ids:%s\n, parameters:%s\n" % (
+            dbName, conflictIDs, updatedParams)
+        self.logger.error(errorMsg)
+        raise WorkQueueError(errorMsg)
+
     def updateElements(self, *elementIds, **updatedParams):
         """Update given element's (identified by id) with new parameters"""
         if not elementIds:
             return
-        uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        optionsArg = {}
-        if "options" in updatedParams:
-            optionsArg.update(updatedParams.pop("options"))
-        data = {"updates": json.dumps(updatedParams),
-                "options": json.dumps(optionsArg)}
-        for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
-            self.db.makeRequest(uri=thisuri, type='PUT')
+        eleParams = {}
+        eleParams[self.eleKey] = updatedParams
+        conflictIDs = self.db.updateBulkDocumentsWithConflictHandle(elementIds, eleParams)
+        if conflictIDs:
+            self._raiseConflictErrorAndLog(conflictIDs, updatedParams)
         return
 
     def updateInboxElements(self, *elementIds, **updatedParams):
         """Update given inbox element's (identified by id) with new parameters"""
-        uri = "/" + self.inbox.name + "/_design/WorkQueue/_update/in-place/"
-        optionsArg = {}
-        if "options" in updatedParams:
-            optionsArg.update(updatedParams.pop("options"))
-        data = {"updates": json.dumps(updatedParams),
-                "options": json.dumps(optionsArg)}
-        for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
-            self.inbox.makeRequest(uri=thisuri, type='PUT')
+        if not elementIds:
+            return
+        eleParams = {}
+        eleParams[self.eleKey] = updatedParams
+        conflictIDs = self.inbox.updateBulkDocumentsWithConflictHandle(elementIds, eleParams)
+        if conflictIDs:
+            self._raiseConflictErrorAndLog(conflictIDs, updatedParams, "workqueue_inbox")
         return
 
     def deleteElements(self, *elements):
@@ -317,7 +317,7 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None,
+    def availableWork(self, thresholds, siteJobCounts, team=None, wfs=None,
                       excludeWorkflows=None, numElems=9999999):
         """
         Get work which is available to be run
@@ -355,9 +355,9 @@ class WorkQueueBackend(object):
         options['include_docs'] = True
         options['descending'] = True
         options['resources'] = thresholds
-        if teams:
-            options['teams'] = teams
-            self.logger.info("setting teams %s" % teams)
+        if team:
+            options['team'] = team
+            self.logger.info("setting team to %s" % team)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):
@@ -400,7 +400,7 @@ class WorkQueueBackend(object):
             for site in sites:
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
-                    curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site
@@ -415,7 +415,7 @@ class WorkQueueBackend(object):
                 siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
                                                     element['Jobs'] * element.get('blowupFactor', 1.0)
             else:
-                self.logger.info("No available resources for %s with doc id %s", element['RequestName'], element.id)
+                self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
         return elements, thresholds, siteJobCounts
 

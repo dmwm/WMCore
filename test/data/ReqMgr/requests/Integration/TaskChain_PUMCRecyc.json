@@ -6,12 +6,8 @@
         }, 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MaxRSS": {
-            "DigiFullPU_2017PU": 4580000, 
-            "RecoFullPU_2017PU": 9080000
-        }, 
-        "MaxVSize": 40000000, 
-        "MergedLFNBase": "/store/backfill/1", 
+        "MergedLFNBase": "/store/backfill/1",
+        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
         "ProcessingString": {
             "DigiFullPU_2017PU": "ProcessingString-OVERRIDE-ME", 
             "RecoFullPU_2017PU": "ProcessingString-OVERRIDE-ME"

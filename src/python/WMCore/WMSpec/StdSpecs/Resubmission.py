@@ -43,6 +43,10 @@ class ResubmissionWorkloadFactory(StdBase):
             helper.setPriority(arguments["RequestPriority"])
         if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
             helper.setMemory(arguments['Memory'])
+            helper.setupPerformanceMonitoring(softTimeout=arguments.get("SoftTimeout"),
+                                              gracePeriod=arguments.get("GracePeriod"))
+        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
+            helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
         if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
             helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
@@ -56,6 +60,7 @@ class ResubmissionWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadCreateArgs():
         specArgs = {"RequestType": {"default": "Resubmission"},
+                    "ResubmissionCount": {"default": 1, "type": int},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
                     "InitialTaskPath": {"optional": False,
@@ -79,7 +84,12 @@ class ResubmissionWorkloadFactory(StdBase):
         Since we skip the master validation for Resubmission specs, we better have
         some specific validation
         """
+        #TODO: for the legacy code if ACDC is created before the updated. remove in next release (Mar 2018)
         if schema.get('OriginalRequestType') == 'Resubmission':
+            # we cannot validate such schema
+            return
+
+        if schema.get("ResubmissionCount", 1) > 1:
             # we cannot validate such schema
             return
 

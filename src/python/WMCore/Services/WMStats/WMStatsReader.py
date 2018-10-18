@@ -423,3 +423,18 @@ class WMStatsReader(object):
             idRevMap[row['key']] = row['value']['rev']
 
         return idRevMap
+
+    def getAllAgentRequestFromCentralServer(self, keys=None):
+
+        if keys:
+            results = self.couchDB.loadView(self.couchapp, "requestAgentUrl", options={"reduce": False, "include_docs": True},
+                                  keys=keys)
+        else:
+            results = self.couchDB.loadView(self.couchapp, "requestAgentUrl", options={"reduce": False,
+                                                                                       "include_docs": True})
+        idRevMap = {}
+
+        for row in results['rows']:
+            idRevMap[row['id']] = row['doc']['_rev']
+
+        return idRevMap

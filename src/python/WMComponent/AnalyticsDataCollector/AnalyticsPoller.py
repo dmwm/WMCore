@@ -36,6 +36,9 @@ class AnalyticsPoller(BaseWorkerThread):
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
         self.pluginName = getattr(config.AnalyticsDataCollector, "pluginName", None)
         self.plugin = None
+        self.revCache = {} # key: doc id, value doc rev
+        self.loopCount = 0
+        self.crashFlag = False
 
     def setup(self, parameters):
         """
@@ -138,8 +141,27 @@ class AnalyticsPoller(BaseWorkerThread):
             if self.plugin != None:
                 self.plugin(requestDocs, self.localSummaryCouchDB, self.centralRequestCouchDB)
 
-            existingDocs = self.localSummaryCouchDB.getAllAgentRequestRevByID()
-            self.localSummaryCouchDB.bulkUpdateData(requestDocs, existingDocs)
+            if self.loopCount < 2 and not self.revCache:
+                try:
+                    logging.info("Populating cache of revision number...")
+                    start = int(time.time())
+                    self.revCache = self.centralWMStatsCouchDB.getAllAgentRequestFromCentralServer()
+                    end = int(time.time())
+                    logging.info("Cache populated - took %s sec", (end - start))
+                except Exception as ex:
+                    logging.warning("Populating cache failed: %s ", str(ex))
+
+            if self.loopCount >= 2 and not self.revCache:
+                self.crashFlag = True
+                raise Exception("CacheUpload failed")
+
+            notInCacheDoc, notInCacheKey = self.centralWMStatsCouchDB.bulkUpdateDataAnUpdateCache(requestDocs, self.revCache)
+
+            if notInCacheKey:
+                missingDocs = self.centralWMStatsCouchDB.getAllAgentRequestFromCentralServer(notInCacheKey)
+                self.centralWMStatsCouchDB.bulkUpdateDataAnUpdateCache(notInCacheDoc, missingDocs, secondTry=True)
+
+            self.loopCount += 1
 
             logging.info("Request data upload success\n %s request, \nsleep for next cycle", len(requestDocs))
 
@@ -148,7 +170,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
         except Exception as ex:
             msg = str(ex)
-            logging.exception("Error occurred, will retry later: %s", msg)
+            if self.crashFlag:
+                raise
+            else:
+                logging.exception("Error occurred, will retry later: %s", msg)
 
             try:
                 self.centralWMStatsCouchDB.updateAgentInfoInPlace(self.agentInfo["agent_url"], {"data_error": msg})

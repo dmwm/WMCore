@@ -378,21 +378,21 @@ class DBS3Reader(object):
         """
         Get dataset summary includes # of files, events, blocks and total size
         """
-        # FIXME: Doesnt raise exceptions on missing data as old api did
         if dataset:
             self.checkDatasetPath(dataset)
         try:
             if block:
                 summary = self.dbs.listFileSummaries(block_name=block, validFileOnly=1)
-            else:  # dataset case dataset shouldn't be None
+            else:
                 summary = self.dbs.listFileSummaries(dataset=dataset, validFileOnly=1)
         except Exception as ex:
             msg = "Error in DBSReader.getDBSSummaryInfo(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-        if not summary or summary[0].get('file_size') is None:  # appears to indicate missing dataset
-            msg = "DBSReader.listDatasetSummary(%s, %s): No matching data"
-            raise DBSReaderError(msg % (dataset, block))
+
+        if not summary:  # missing data or all files invalid
+            return {}
+
         result = remapDBS3Keys(summary[0], stringify=True)
         result['path'] = dataset if dataset else ''
         result['block'] = block if block else ''

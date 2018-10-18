@@ -1113,6 +1113,9 @@ class WorkQueue(WorkQueueBase):
                         if not self.params.get("UnittestFlag", False):
                             self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
+                    if rejectedWork:
+                        msg = "Request with the following unprocessable input data: %s" % rejectedWork
+                        self.logdb.post(inbound['RequestName'], msg, 'warning')
             except TERMINAL_EXCEPTIONS as ex:
                 msg = 'Terminal exception splitting WQE: %s' % inbound
                 self.logger.error(msg)

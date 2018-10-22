@@ -1,0 +1,60 @@
+{"sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040": {
+  "PrepID": "TEST-Harvest-ReReco-Run2016F-v1-NoBPTX-23Sep2016-0001",
+  "MaxMergeEvents": 100000000,
+  "Comments": "Harvest 3 runs out of 37. Only 277934, 278273 and 278805.",
+  "Requestor": "sryu",
+  "RunBlacklist": [],
+  "TotalInputFiles": 4,
+  "CustodialGroup": "DataOps",
+  "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+  "SubRequestType": "",
+  "TrustPUSitelists": false,
+  "HardTimeout": 129900,
+  "OpenRunningTimeout": 0,
+  "LumiList": {},
+  "AgentJobInfo": {
+    "vocms0193.cern.ch": {
+      "status": {
+        "success": 4
+      },
+      "agent_team": "testbed-dev",
+      "workflow": "sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040",
+      "timestamp": 1540953273,
+      "_rev": "3495-123456791",
+      "sites": {
+        "T2_CH_CERN": {
+          "success": 4
+        }
+      },
+      "agent": "WMAgentCommissioning",
+      "skipped": false,
+      "tasks": {
+        "/sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect": {
+          "status": {
+            "success": 1
+          },
+          "sites": {
+            "T2_CH_CERN": {
+              "inputEvents": 0,
+              "cmsRunCPUPerformance": {
+                "totalJobCPU": 0,
+                "totalJobTime": 0,
+                "totalEventCPU": 0
+              },
+              "wrappedTotalJobTime": 26,
+              "success": 1,
+              "dataset": {}
+            }
+          },
+          "jobtype": "LogCollect",
+          "subscription_status": {
+            "updated": 1538586363,
+            "total": 1,
+            "open": 0,
+            "finished": 1
+          }
+        }
+      }
+    }
+  }
+}}

@@ -1,5 +1,76 @@
 import time
+
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
+
+def _updateFilteredResult(result, key, value, currentExcluisveList, childExclusiveList):
+    """
+
+    :param result: nested dict of original data, this will have pruned result after the function call
+    :param key: key of the dictionary whose value need to be pruned.
+    :param value: dictionary fo the original result[key] with will be pruned
+    :param currentExcluisveList: key level exculive list. if key is in exclusive list it will be pruned.
+    :param childExclusiveList: child level exclusive list, result[key][some_property],
+           childExclusive list will be checked with 'some_property'
+    :return:
+    """
+    if key not in currentExcluisveList:
+        childKeyFlag = False
+        if len(childExclusiveList) > 0:
+            for prop, cExList in childExclusiveList[0].items():
+                if key == prop:
+                    childKeyFlag = True
+                    result[key] = filterExcludeList(value, cExList, childExclusiveList[1:])
+
+            if not childKeyFlag:
+                result[key] = value
+    return
+
+def filterExcludeList(wmstatsCache, exclude, childExclusiveList):
+    """
+
+    :param wmstatsCache: wmstats cache data
+    :param exclude: dict format of {"key": "skip"|"start", "list": list of excluding property]
+    :param childExclusiveList: list of exculding property for child level. it is chained
+           - first item is a child, second item is grand child, etc (it doesn't support multiple child
+
+    :return: filtered data of wmstatsCache
+    """
+    result = {}
+    for k, v in wmstatsCache.items():
+        # when keys are not know ahead and we have to filter next level. i.e. task name, site name as key
+        if exclude["key"] == "skip":
+            result[k] = {}
+            for sk, sv in v.items():
+                _updateFilteredResult(result[k], sk, sv, exclude["list"], childExclusiveList)
+        else:
+            _updateFilteredResult(result, k, v, exclude["list"], childExclusiveList)
+
+    return result
+
+def wmstatsFilter(wmstatsCache):
+    """
+    filtering out some of the
+    :param data:
+    :return:
+    """
+    # There are 2 types of keys. One type is unique values as key, i.e. request name, task name.
+    # These type of key we can't filter it since we are not filtering out specific data.
+    # Other keys are property name {'task', 'site', etc} which can filter.
+    # So filtering function traverse down to lower level, it the key is unique key, it skips.
+    # if "key"'s value is "start", it will start the compare key with items on "list" value
+    # if "key"'s value is "skip",  it will skip the first level and to compare with next level property
+    # list of top level property to exclude
+
+    requestExcludeList = {"key": "start", "list": ["Comments", "DN", "ChainParentageMap", "_id",
+                                                   "ValidStatus", "VoGroup", "VoRole"]}
+    # list of AgentJobInfo[agent_url] level filtering.
+    childExclusiveList = [{"AgentJobInfo": {"key": "skip", "list": ["_id", "_rev", "workflow", "agent_url",
+                                                                    "type", "agent_version", "timestamp"]}}]
+    # list of ["AgentJobInfo"][agent_url]["task"][taskname] level filtering.
+    childExclusiveList.append({"tasks": {"key": "skip", "list": []}})
+    # list of ["AgentJobInfo"][agent_url]["task"][taskname]["sites"][sitename] level filtering.
+    childExclusiveList.append({"sites": {"key": "skip", "list": ["cmsRunCPUPerformance", "wrappedTotalJobTime"]}})
+    return filterExcludeList(wmstatsCache, requestExcludeList, childExclusiveList)
 
 class DataCache(object):
     # TODO: need to change to  store in  db instead of storing in the memory
@@ -74,6 +145,19 @@ class DataCache(object):
                     for prop in maskList:
                         resultItem[prop] = reqInfo.get(prop, None)
                     yield resultItem
+
+    @staticmethod
+    def wmstatsCacheData():
+        """
+        filter out unused data from wmstats
+        :return: filtered data
+        """
+
+        filteredData = {}
+        reqData = DataCache.getlatestJobData()
+        for request, reqDict in reqData.iteritems():
+            filteredData[request] = wmstatsFilter(reqDict)
+        return filteredData
 
     @staticmethod
     def getProtectedLFNs():

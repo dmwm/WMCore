@@ -50,11 +50,30 @@ class FilteredActiveRequestJobInfo(RESTEntity):
         return
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
-    @tools.expires(secs=-1)
+    @tools.expires(secs=300)
     def get(self, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         return rows(DataCache.filterDataByRequest(input_condition, mask))
+
+class ActiveRequestJobInfoForWMStats(RESTEntity):
+    """
+    get all the active requests with job information attatched
+    """
+
+    def __init__(self, app, api, config, mount):
+        # main CouchDB database where requests/workloads are stored
+        RESTEntity.__init__(self, app, api, config, mount)
+
+    def validate(self, apiobj, method, api, param, safe):
+        return
+
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @tools.expires(secs=300)
+    def get(self):
+        # This assumes DataCahe is periodically updated.
+        # If data is not updated, need to check, dataCacheUpdate log
+        return rows([DataCache.wmstatsCacheData()])
 
 class ProtectedLFNList(RESTEntity):
     """

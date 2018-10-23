@@ -49,6 +49,11 @@
   },
 
   {
+    "from": "_view/byAgentURL",
+    "to": "../WMStatsErl/_view/byAgentURL"
+  },
+
+  {
     "from": "_view/cooledoffRequests",
     "to": "../WMStatsErl/_view/cooledoffRequests"
   },

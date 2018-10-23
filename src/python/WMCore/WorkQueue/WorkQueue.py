@@ -150,7 +150,7 @@ class WorkQueue(WorkQueueBase):
         elif self.params.get('PopulateFilesets'):
             raise RuntimeError('CacheDir mandatory for local queue')
 
-        if os.getenv("WMAGENT_USE_CRIC", False):
+        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
             if self.params.get('CRIC'):
                 self.SiteDB = self.params['CRIC']  # FIXME: rename the attr to self.cric
             else:

@@ -5,6 +5,7 @@ WorkQueue splitting by block
 """
 from __future__ import print_function, division
 import os
+import logging
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
@@ -127,7 +128,8 @@ class Block(StartPolicyInterface):
             block = dbs.getDBSSummaryInfo(datasetPath, block=blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
-            if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
+            if int(block.get('NumberOfFiles', 0)) == 0:
+                logging.warning("Block %s being rejected for lack of valid files to process", blockName)
                 self.rejectedWork.append(blockName)
                 continue
 
@@ -159,6 +161,7 @@ class Block(StartPolicyInterface):
                     runs = runs.intersection(runWhiteList)
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
+                    logging.warning("Block %s doesn't pass the runs constraints", blockName)
                     self.rejectedWork.append(blockName)
                     continue
 

@@ -9,6 +9,7 @@ make it generic enough that could be used by other spec types.
 """
 __all__ = []
 import os
+import logging
 from math import ceil
 from WMCore import Lexicon
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
@@ -105,12 +106,13 @@ class Dataset(StartPolicyInterface):
                 continue
 
             blockSummary = dbs.getDBSSummaryInfo(block=blockName)
-            if self.args['SliceType'] == 'NumberOfRuns':
-                blockSummary['NumberOfRuns'] = dbs.listRuns(block=blockName)
-
-            if int(blockSummary['NumberOfFiles']) == 0:
+            if int(blockSummary.get('NumberOfFiles', 0)) == 0:
+                logging.warning("Block %s being rejected for lack of valid files to process", blockName)
                 self.rejectedWork.append(blockName)
                 continue
+
+            if self.args['SliceType'] == 'NumberOfRuns':
+                blockSummary['NumberOfRuns'] = dbs.listRuns(block=blockName)
 
             # check lumi restrictions
             if lumiMask:
@@ -139,6 +141,7 @@ class Dataset(StartPolicyInterface):
                     runs = runs.intersection(runWhiteList)
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
+                    logging.warning("Block %s doesn't pass the runs constraints", blockName)
                     self.rejectedWork.append(blockName)
                     continue
 

@@ -155,8 +155,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
         except DBSReaderError as ex:
             # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
-            # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
-            if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):
+            if 'Invalid parameters' in str(ex):
                 data = task.data.input.pythonise_() if task.data.input else 'None'
                 msg = """data: %s, mask: %s, pileup: %s. %s""" % (str(data), str(mask), str(pileupDatasets), str(ex))
                 error = WorkQueueNoWorkError(self.wmspec, msg)

@@ -7,20 +7,22 @@ Readonly DBS Interface
 """
 from __future__ import print_function, division
 
-import time
 import logging
+import time
 import traceback
 from collections import defaultdict
 
+from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import dbsClientException
 
-from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from Utils.IteratorTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
+
+### Needed for the pycurl comment, leave it out for now
+# from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
 
 def remapDBS3Keys(data, stringify=False, **others):
@@ -37,10 +39,10 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    format = lambda x: str(x) if stringify and isinstance(x, unicode) else x
+    formatFunc = lambda x: str(x) if stringify and isinstance(x, unicode) else x
     for name, newname in mapping.iteritems():
         if name in data:
-            data[newname] = format(data[name])
+            data[newname] = formatFunc(data[name])
     return data
 
 
@@ -82,7 +84,7 @@ class DBS3Reader(object):
             elif lfns:
                 lumiLists = []
                 for slfn in grouper(lfns, 50):
-                    lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name = slfn))
+                    lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name=slfn))
             else:
                 # shouldn't call this with both blockName and lfns empty
                 # but still returns empty dict for that case
@@ -184,7 +186,8 @@ class DBS3Reader(object):
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-        [runs.extend(x['run_num']) for x in results]
+        for x in results:
+            runs.extend(x['run_num'])
         return runs
 
     def listRunLumis(self, dataset=None, block=None):
@@ -378,21 +381,21 @@ class DBS3Reader(object):
         """
         Get dataset summary includes # of files, events, blocks and total size
         """
-        # FIXME: Doesnt raise exceptions on missing data as old api did
         if dataset:
             self.checkDatasetPath(dataset)
         try:
             if block:
                 summary = self.dbs.listFileSummaries(block_name=block, validFileOnly=1)
-            else:  # dataset case dataset shouldn't be None
+            else:
                 summary = self.dbs.listFileSummaries(dataset=dataset, validFileOnly=1)
         except Exception as ex:
             msg = "Error in DBSReader.getDBSSummaryInfo(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-        if not summary or summary[0].get('file_size') is None:  # appears to indicate missing dataset
-            msg = "DBSReader.listDatasetSummary(%s, %s): No matching data"
-            raise DBSReaderError(msg % (dataset, block))
+
+        if not summary:  # missing data or all files invalid
+            return {}
+
         result = remapDBS3Keys(summary[0], stringify=True)
         result['path'] = dataset if dataset else ''
         result['block'] = block if block else ''
@@ -693,7 +696,7 @@ class DBS3Reader(object):
             "PhEDExNodeNames": self.listFileBlockLocation(fileBlockName, dbsOnly),
             "Files": self.listFilesInBlock(fileBlockName),
             "IsOpen": self.blockIsOpen(fileBlockName)
-            }
+        }
         }
         return result
 
@@ -722,7 +725,7 @@ class DBS3Reader(object):
             "PhEDExNodeNames": self.listFileBlockLocation(fileBlockName),
             "Files": self.listFilesInBlockWithParents(fileBlockName),
             "IsOpen": self.blockIsOpen(fileBlockName)
-            }
+        }
         }
         return result
 
@@ -738,7 +741,8 @@ class DBS3Reader(object):
         result = {}
         blocks = self.listFileBlocks(dataset, onlyClosedBlocks)
 
-        [result.update(self.getFileBlock(x)) for x in blocks]
+        for x in blocks:
+            result.update(self.getFileBlock(x))
 
         return result
 
@@ -927,7 +931,6 @@ class DBS3Reader(object):
             parentFiles[f['logical_file_name']] = parentFiles[f['logical_file_name']].union(pFiles)
         return parentFiles
 
-
     def getParentFilesByLumi(self, childLFN):
         """
         get the parent file's lfns by lumi (This might not be the actual parentage relations in DBS just parentage by Lumis).
@@ -945,13 +948,14 @@ class DBS3Reader(object):
                 result.append({"ParentDataset": parent['parent_dataset'], "ParentFiles": list(parentFiles)})
         return result
 
-    def listParentsByLumi(self, childBlockName, childLFNs=[]):
+    def listParentsByLumi(self, childBlockName, childLFNs=None):
         """
         :param childBlockName: child block name
         :param childLFNs: list of child lfns if it is not specified, all the file in the block will be used,
                if specified, dbs validate child lfns from the childBlockName
         :return: list of list with child and parent id pair.  [[1,2], [3,4]...]
         """
+        childLFNs = childLFNs or []
         return self.dbs.listFileParentsByLumi(block_name=childBlockName, logical_file_name=childLFNs)
 
     def insertFileParents(self, childBlockName, childParentsIDPairs):
@@ -961,15 +965,16 @@ class DBS3Reader(object):
                 dbs validate child ids from the childBlockName
         :return: None
         """
-        return self.dbs.insertFileParents({"block_name": childBlockName, "child_parent_id_list":childParentsIDPairs})
+        return self.dbs.insertFileParents({"block_name": childBlockName, "child_parent_id_list": childParentsIDPairs})
 
-    def findAndInsertMissingParentage(self, childBlockName, childLFNs=[], insertFlag=True):
+    def findAndInsertMissingParentage(self, childBlockName, childLFNs=None, insertFlag=True):
         """
         :param childBlockName: child block name
         :param childLFNs: list of child lfns if it is not specified, all the file in the block will be used,
                if specified, dbs validate child lfns from the childBlockName
         :return: number of file parents pair inserted
         """
+        childLFNs = childLFNs or []
         fileParents = self.dbs.listFileParentsByLumi(block_name=childBlockName, logical_file_name=childLFNs)
         childParentsIDPairs = fileParents[0]["child_parent_id_list"]
 
@@ -1038,7 +1043,6 @@ class DBS3Reader(object):
                 failedBlocks.append(blockName)
 
         return failedBlocks
-
 
     def insertMissingParentageForAllFiles(self, childDataset, filterFilesWithParents=True, insertFlag=False):
         """

@@ -182,3 +182,4 @@ class LogDBBackend(object):
         docs = self.db.loadView(self.design, self.tsview, spec)
         ids = [d['id'] for d in docs.get('rows', [])]
         self.db.bulkDeleteByIDs(ids)
+        return ids

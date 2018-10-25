@@ -6,6 +6,7 @@ from __future__ import (division, print_function)
 import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
+from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
@@ -69,13 +70,12 @@ def moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, logger):
     return
 
 
-def moveToArchived(wmstatsSvc, reqmgrSvc, archiveDelayHours, logger):
+def moveToArchived(wmstatsSvc, reqmgrSvc, logdb, archiveDelayHours, logger):
     """
-    Handle normal-archived transition.
+    Handle transitions to archived and cleanup of request information from LogDB.
     By checking AgentJobInfo status we can check whether all the agent deleted the data.
     TODO: still need to handle the case whether agent couch is not updated for a while and agent data gets deleted
     """
-
     currentTime = int(time.time())
     threshold = archiveDelayHours * 3600
     count = 0
@@ -89,13 +89,20 @@ def moveToArchived(wmstatsSvc, reqmgrSvc, archiveDelayHours, logger):
     for status, nextStatus in statusTransition.items():
         inputConditon = {"RequestStatus": [status], "AgentJobInfo": "CLEANED"}
         for reqInfo in wmstatsSvc.getFilteredActiveData(inputConditon, outputMask):
-            if reqInfo["RequestName"] and (not reqInfo["RequestTransition"] or
+            reqName = reqInfo["RequestName"]
+            if reqName and (not reqInfo["RequestTransition"] or
                 (currentTime - reqInfo["RequestTransition"][-1]["UpdateTime"]) > threshold):
                 try:
-                    reqmgrSvc.updateRequestStatus(reqInfo["RequestName"], nextStatus)
+                    logger.info("Deleting %s from LogDB WMStats...", reqName)
+                    res = logdb.delete(reqName, agent=False)
+                    if res == 'delete-error':
+                        logger.error("  Failed to delete logdb docs")
+                        continue
+                    # only proceed with status transition if logdb deletion worked fine
+                    reqmgrSvc.updateRequestStatus(reqName, nextStatus)
                     count += 1
                 except Exception as ex:
-                    logger.error("Fail to update %s: %s", reqInfo["RequestName"], str(ex))
+                    logger.error("Fail to update %s: %s", reqName, str(ex))
         # convert to start status for the logging purpose
         initStatus = "aborted" if status == "aborted-completed" else status
         logger.info("Total %s-archived: %d", initStatus, count)
@@ -109,18 +116,18 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
     def setConcurrentTasks(self, config):
         """
-        sets the list of functions which
+        Define which function to periodically run
         """
         self.concurrentTasks = [{'func': self.advanceStatus, 'duration': config.checkStatusDuration}]
 
     def advanceStatus(self, config):
         """
-        gather active data statistics
+        Advance the request status based on the global workqueue elements status
         """
-
         reqmgrSvc = ReqMgr(config.reqmgr2_url, logger=self.logger)
         gqService = WorkQueue(config.workqueue_url)
         wmstatsSvc = WMStatsServer(config.wmstats_url, logger=self.logger)
+        logdb = LogDB(config.central_logdb_url, config.log_reporter)
 
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
@@ -128,7 +135,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         self.logger.info("Advancing status")
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
-        moveToArchived(wmstatsSvc, reqmgrSvc, config.archiveDelayHours, self.logger)
+        moveToArchived(wmstatsSvc, reqmgrSvc, logdb, config.archiveDelayHours, self.logger)
 
         self.logger.info("Done advancing status")
 

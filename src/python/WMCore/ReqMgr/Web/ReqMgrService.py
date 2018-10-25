@@ -27,7 +27,7 @@ from cherrypy.lib.static import serve_file
 import WMCore
 # WMCore modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION, REQUEST_HUMAN_STATES
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
@@ -591,7 +591,8 @@ class ReqMgrService(TemplatedPage):
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
                                         pTransition=priority_transition(doc),
-                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
+                                        transitions=transitions, humanStates=REQUEST_HUMAN_STATES,
+                                        ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
@@ -599,7 +600,8 @@ class ReqMgrService(TemplatedPage):
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
                                         pTransition=priority_transition(doc),
-                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
+                                        transitions=transitions, humanStates=REQUEST_HUMAN_STATES,
+                                        ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid
         return self.abs_page('request', content)

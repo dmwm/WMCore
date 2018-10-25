@@ -54,6 +54,16 @@ REQUEST_STATE_TRANSITION = {
     "rejected-archived": []
 }
 
+# List of requests that a human user can change a request to
+REQUEST_HUMAN_STATES = ["assignment-approved",
+                        "assigned",
+                        "force-complete",
+                        "closed-out",
+                        "announced",
+                        "rejected",
+                        "aborted"]
+
+
 ACTIVE_STATUS = ["new",
                  "assignment-approved",
                  "assigned",

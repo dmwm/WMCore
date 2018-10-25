@@ -28,7 +28,7 @@ class Dataset(StartPolicyInterface):
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
         self.sites = []
-        if os.getenv("WMAGENT_USE_CRIC", False):
+        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
             self.cric = CRIC()
         else:
             self.cric = None

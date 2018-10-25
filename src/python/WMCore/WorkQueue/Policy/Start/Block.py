@@ -29,7 +29,7 @@ class Block(StartPolicyInterface):
 
         # Initialize modifiers of the policy
         self.blockBlackListModifier = []
-        if os.getenv("WMAGENT_USE_CRIC", False):
+        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
             self.cric = CRIC()
         else:
             self.cric = None

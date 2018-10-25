@@ -38,7 +38,7 @@ def get_dbs(url):
         __dbses[url] = DBSReader(url)
         return __dbses[url]
 
-__USE_CRIC = os.getenv("WMAGENT_USE_CRIC", False)
+__USE_CRIC = os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False)
 __sitedb = None  # FIXME: rename it to __cric
 __cmsSiteNames = []
 

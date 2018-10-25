@@ -25,7 +25,7 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
+from WMCore.Services.CRIC.CRIC import CRIC
 
 class ResubmitBlockTest(EmulatedUnitTestCase):
     """
@@ -58,9 +58,9 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         self.acdcDBName = 'resubmitblock_t'
         self.validLocations = ['T2_US_Nebraska', 'T1_US_FNAL_Disk', 'T1_UK_RAL_Disk']
         self.siteWhitelist = ['T2_XX_SiteA']
-        siteDB = SiteDB()
+        cric = CRIC()
         #Convert phedex node name to a valid processing site name
-        self.PSNs = siteDB.PNNstoPSNs(self.validLocations)
+        self.PSNs = cric.PNNstoPSNs(self.validLocations)
         self.workflowName = 'dballest_ReReco_workflow'
         couchServer = CouchServer(dburl=self.couchUrl)
         self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create=False)

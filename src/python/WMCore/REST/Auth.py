@@ -1,5 +1,9 @@
 import cherrypy, hmac, hashlib, logging, re
 
+def get_user_info():
+    "Helper function to return user based information of the request"
+    return cherrypy.request.user
+
 def user_info_from_headers(key, verbose=False):
     """Read the user information HTTP request headers added by front-end.
     Validates the HMAC on them to check for tampering, and if all is ok,
@@ -58,7 +62,7 @@ def authz_canonical(val):
 
 def authz_match(role=[], group=[], site=[], verbose=False):
     """Match user against authorisation requirements."""
-    user = cherrypy.request.user
+    user = get_user_info()
     log = cherrypy.log
 
     # If role, group or site are strings, convert to list first.

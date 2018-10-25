@@ -14,6 +14,8 @@ from WMCore.Lexicon import sanitizeURL
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
+from WMCore.REST.Auth import get_user_info
+
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
@@ -463,7 +465,7 @@ class Request(RESTEntity):
         return report
 
     def _updateRequest(self, workload, request_args):
-        dn = cherrypy.request.user.get("dn", "unknown")
+        dn = get_user_info().get("dn", "unknown")
 
         if "RequestStatus" not in request_args:
             report = self._handleNoStatusUpdate(workload, request_args, dn)

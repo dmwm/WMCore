@@ -22,6 +22,7 @@ import time
 
 import cherrypy
 
+from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
 
@@ -38,8 +39,9 @@ def initialize_request_args(request, config):
     """
 
     # user information for cert. (which is converted to cherry py log in)
-    request["Requestor"] = cherrypy.request.user["login"]
-    request["RequestorDN"] = cherrypy.request.user.get("dn", "unknown")
+    user = get_user_info()
+    request["Requestor"] = user["login"]
+    request["RequestorDN"] = user.get("dn", "unknown")
     # service certificates carry @hostname, remove it if it exists
     request["Requestor"] = request["Requestor"].split('@')[0]
 

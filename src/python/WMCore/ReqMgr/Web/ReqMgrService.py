@@ -14,8 +14,8 @@ import os
 import pprint
 import sys
 import time
-from datetime import datetime
 from copy import deepcopy
+from datetime import datetime
 
 # cherrypy modules
 import cherrypy
@@ -25,17 +25,16 @@ from cherrypy.lib.static import serve_file
 
 # import WMCore itself to determine path of modules
 import WMCore
+from Utils.CertTools import getKeyCertFromEnv
 # WMCore modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION, REQUEST_HUMAN_STATES
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
-from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
+from WMCore.ReqMgr.Tools.cms import releases, dashboardActivities
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.Services.pycurl_manager import RequestHandler
-from Utils.CertTools import getKeyCertFromEnv
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import gen_color
@@ -43,6 +42,7 @@ from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tst
 from WMCore.Services.LogDB.LogDB import LogDB
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -52,6 +52,7 @@ def getdata(url, params, headers=None):
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey, cert=cert)
     return json.loads(res)
+
 
 def sort_bold(docs):
     "Return sorted list of bold items from provided doc list"
@@ -178,12 +179,12 @@ def _map_configcache_url(tConfigs, baseURL, configIDName, configID, taskName="")
 
 def tasks_configs(docs, html=False):
     "Helper function to provide mapping between tasks and configs"
-    if  not isinstance(docs, list):
+    if not isinstance(docs, list):
         docs = [docs]
     tConfigs = {}
     for doc in docs:
         name = doc.get('RequestName', '')
-        if "TaskChain" in doc: 
+        if "TaskChain" in doc:
             chainTypeFlag = True
             ctype = "Task"
         elif "StepChain" in doc:
@@ -192,11 +193,11 @@ def tasks_configs(docs, html=False):
         else:
             chainTypeFlag = False
             ctype = None
-        
+
         curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch/couchdb')
-        if  curl == None or curl == "none":
+        if curl == None or curl == "none":
             curl = 'https://cmsweb.cern.ch/couchdb'
-        if  not name:
+        if not name:
             continue
         for key, val in doc.items():
             _map_configcache_url(tConfigs, curl, key, val)
@@ -205,7 +206,7 @@ def tasks_configs(docs, html=False):
                     # append task/step number and name
                     keyStr = "%s: %s" % (key, val.get("%sName" % ctype, ''))
                     _map_configcache_url(tConfigs, curl, kkk, val[kkk], keyStr)
-    if  html:
+    if html:
         out = '<fieldset><legend>Config Cache List</legend><ul>'
         for task in sorted(tConfigs):
             out += '<li><a href="%s" target="config_page">%s</a></li>' % (tConfigs[task], task)
@@ -231,7 +232,9 @@ def state_transition(docs):
             out += '%s<br />' % name
         for sInfo in sTransition:
             out += '<li><b>%s</b>: %s UTC <b>DN</b>: %s</li>' % (sInfo["Status"],
-                    datetime.utcfromtimestamp(sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'), sInfo["DN"])
+                                                                 datetime.utcfromtimestamp(
+                                                                     sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'),
+                                                                 sInfo["DN"])
     out += '</ul></fieldset>'
     return out
 
@@ -253,7 +256,9 @@ def priority_transition(docs):
             out += '%s<br />' % name
         for pInfo in pTransition:
             out += '<li><b>%s</b>: %s UTC <b>DN</b>: %s</li>' % (pInfo["Priority"],
-                    datetime.utcfromtimestamp(pInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'), pInfo["DN"])
+                                                                 datetime.utcfromtimestamp(
+                                                                     pInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'),
+                                                                 pInfo["DN"])
     out += '</ul></fieldset>'
     return out
 
@@ -337,7 +342,7 @@ class ReqMgrService(TemplatedPage):
         cherryconf.update({'tools.encode.on': True,
                            'tools.gzip.on': True,
                            'tools.gzip.mime_types': mime_types,
-                          })
+                           })
         self._cache = {}
 
         # initialize access to reqmgr2 APIs
@@ -376,7 +381,6 @@ class ReqMgrService(TemplatedPage):
         # fetch assignment arguments specification from StdBase
         self.assignArgs = StdBase().getWorkloadAssignArgs()
         self.assignArgs = {key: val['default'] for key, val in self.assignArgs.items()}
-
 
     def getTeams(self):
         "Helper function to get teams from wmstats or local cache"
@@ -522,7 +526,8 @@ class ReqMgrService(TemplatedPage):
         self.update_scripts()
         code = self.sdict.get(script, '')
         if code.find('def genobjs(jsondict)') == -1:
-            return self.error("Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
+            return self.error(
+                "Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
         exec (code)  # code snippet must starts with genobjs function
         return [r for r in genobjs(jsondict)]
 
@@ -591,7 +596,8 @@ class ReqMgrService(TemplatedPage):
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
                                         pTransition=priority_transition(doc),
-                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
+                                        transitions=transitions, humanStates=REQUEST_HUMAN_STATES,
+                                        ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
@@ -599,7 +605,8 @@ class ReqMgrService(TemplatedPage):
                                         tasksConfigs=tasks_configs(doc, html=True),
                                         sTransition=state_transition(doc),
                                         pTransition=priority_transition(doc),
-                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
+                                        transitions=transitions, humanStates=REQUEST_HUMAN_STATES,
+                                        ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid
         return self.abs_page('request', content)

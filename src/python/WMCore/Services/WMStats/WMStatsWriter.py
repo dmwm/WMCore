@@ -99,6 +99,49 @@ class WMStatsWriter(WMStatsReader):
         self.couchDB.commit(new_edits=False)
         return
 
+    def bulkUpdateDataAnUpdateCache(self, docs, revCache, secondTry=False):
+        """
+        :param docs: docs to insert or update
+        :param existingDocs: docs existing in current
+        :return:
+        """
+        if isinstance(docs, dict):
+            docs = [docs]
+
+        notInCacheKey = []
+        notInCacheDoc = []
+        for doc in docs:
+            if doc['_id'] in revCache:
+                revList = revCache[doc['_id']].split('-')
+                # update the revision number
+                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
+                self.couchDB.queue(doc)
+                revCache[doc['_id']] = doc['_rev']
+            else:
+                if secondTry:
+                    doc['_rev'] = "1-123456789"
+                    self.couchDB.queue(doc)
+                    revCache[doc['_id']] = doc['_rev']
+                else:
+                    magicStr = ".fnal.gov-"
+                    idParts = doc['_id'].split(magicStr)
+                    if len(idParts) == 2:
+                        agentURL = "%s.fnal.gov" % idParts[1]
+                    else:
+                        magicStr = ".cern.ch-"
+                        idParts = doc['_id'].split(magicStr)
+                        if len(idParts) == 2:
+                            agentURL = "%s.cern.ch" % idParts[1]
+                        else:
+                            raise Exception("wrong id %s" % doc['_id'])
+
+                    notInCacheKey.append([agentURL, idParts[0]])
+                    notInCacheDoc.append(doc)
+
+        self.couchDB.commit(new_edits=False)
+
+
+        return notInCacheDoc, notInCacheKey
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
@@ -263,6 +306,17 @@ class WMStatsWriter(WMStatsReader):
         for j in docs:
             doc = {}
             doc["_id"] = j['value']['id']
+            doc["_rev"] = j['value']['rev']
+            self.couchDB.queueDelete(doc)
+        committed = self.couchDB.commit()
+        return committed
+
+    def deleteAllAgentRequestDocument(self):
+        docs = self.couchDB.loadView(self.couchapp, 'agentRequests')['rows']
+
+        for j in docs:
+            doc = {}
+            doc["_id"] = j['key']
             doc["_rev"] = j['value']['rev']
             self.couchDB.queueDelete(doc)
         committed = self.couchDB.commit()

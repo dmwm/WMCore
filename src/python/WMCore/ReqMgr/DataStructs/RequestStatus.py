@@ -18,7 +18,8 @@ REQUEST_STATE_TRANSITION = {
                  "failed"],
 
     "acquired": ["running-open",
-                 "aborted"],
+                 "aborted",
+                 "failed"],
 
     "running-open": ["running-closed",
                      "force-complete",  # manual transition

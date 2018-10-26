@@ -226,6 +226,15 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # workflows failed
         self.assertEqual(convertWQElementsStatusToWFStatus(set(["Failed"])), "failed")
 
+        # non-failed workflows but with Failed elements
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Failed"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done", "Failed"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done", "Canceled", "Failed"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Failed"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "Canceled", "Failed"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Failed"])), "completed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled", "Failed"])), "completed")
+
         # workflows in a temporary state, nothing to do with them yet
         self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Done", "CancelRequested"])))
         self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested"])))

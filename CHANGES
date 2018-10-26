@@ -1,3 +1,60 @@
+1.1.17 to 1.1.18.pre4:
+  - Merge pull request #8865 from amaltaro/fix-8828
+  - Merge pull request #8871 from ticoann/replace_cherrypy_user
+  - Merge pull request #8870 from amaltaro/fix-7808
+  - Delete LogDB wmstats docs when wfs are archived
+  - add correct path
+  - replace cherrypy.request.user
+  - Merge pull request #8868 from vkuznet/cherrypy-user
+  - Merge pull request #8869 from amaltaro/status-gui
+  - Merge pull request #8866 from amaltaro/more-8863
+  - pylint fixes
+  - raise exception if SiteDB is used when it should not!
+  - Grey out status not allowed to humans in ReqMgr2 Gui
+  - Add get_user_info helper function to encapsulate underlying technology
+  - Use CRIC in ReqMgr2 GUI
+  - Merge pull request #8863 from amaltaro/use-cric-reqmgr
+  - pylint and unit test updates
+  - Allow acquired to failed status transition; allow Failed GQEs to exist among others
+  - update tests
+  - Add CRIC flag for central services
+  - 1.1.18.pre3
+  - Merge pull request #8855 from ticoann/post_wmstats_summary
+  - Merge pull request #8856 from amaltaro/fix-8846
+  - post wmstats summary directly to central wmstats
+  - Merge pull request #8857 from ticoann/add_wq_filter
+  - pylint fixes for DBS3Reader
+  - add filter for Global WorkQueue db rotation
+  - Does not raise DBSReaderError when block has no valid files
+  - 1.1.18.pre2
+  - Merge pull request #8852 from amaltaro/fix-8849
+  - Correctly define int arguments for argparse
+  - 1.1.18.pre1
+  - Merge pull request #8849 from amaltaro/fix-7158
+  - Merge pull request #8850 from amaltaro/fix-8848
+  - Merge pull request #8842 from amaltaro/fix-8841
+  - Improved CRIC unit tests
+  - unit tests and pylint fixes
+  - Properly check whether Services cache is expired or not
+  - pylint fixes
+  - Migrate from optparse to argparse
+  - Merge pull request #8838 from amaltaro/fix-8792
+  - Merge pull request #8836 from ticoann/wmstats_remove_time_series
+  - Merge pull request #8848 from amaltaro/fix-8847
+  - Merge pull request #8844 from amaltaro/fix-8839
+  - Add required files for agent deployment; improved initial node setup
+  - Catch other failures in the DQMUpload step
+  - test code into the test commit
+  - Added support to a config dict for further parameters
+  - Merge pull request #8822 from amaltaro/remove-agentdrain
+  - Merge pull request #8682 from amaltaro/use-cric
+  - Merge pull request #8835 from amaltaro/log-no-locations
+  - remove the deleteing old doc
+  - keep only one job summary docs per agent and request
+  - Add files to ACDC docs even if they have no location
+  - Create flag to enable CRIC (default to false) in WMAgent
+  - Remove specific updateAgentDrainingMode method
+
 1.1.17 to 1.1.18.pre3:
   - Merge pull request #8855 from ticoann/post_wmstats_summary
   - Merge pull request #8856 from amaltaro/fix-8846

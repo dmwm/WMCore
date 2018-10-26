@@ -26,6 +26,7 @@ from cherrypy.lib.static import serve_file
 # import WMCore itself to determine path of modules
 import WMCore
 from Utils.CertTools import getKeyCertFromEnv
+from WMCore.REST.Auth import get_user_info
 # WMCore modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION, REQUEST_HUMAN_STATES
@@ -142,7 +143,7 @@ def user():
     Return user name associated with this instance.
     """
     try:
-        return cherrypy.request.user['login']
+        return get_user_info()['login']
     except:
         return 'testuser'
 
@@ -150,7 +151,7 @@ def user():
 def user_dn():
     "Return user DN"
     try:
-        return cherrypy.request.user['dn']
+        return get_user_info()['dn']
     except:
         return '/CN/bla/foo'
 

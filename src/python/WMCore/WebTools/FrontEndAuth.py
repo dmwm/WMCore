@@ -3,7 +3,9 @@
 import cherrypy
 import hmac
 import hashlib
-import logging
+
+from WMCore.REST.Auth import get_user_info
+
 #-----------------------------------------------------------------------------
 class FrontEndAuth(cherrypy.Tool):
     """
@@ -102,7 +104,7 @@ class FrontEndAuth(cherrypy.Tool):
             site = [site]
 
         # Finally checks if the user is allowed
-        if not authzfunc(cherrypy.request.user, role, group, site):
+        if not authzfunc(get_user_info(), role, group, site):
             # Authorization denied
             raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
 

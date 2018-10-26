@@ -1,6 +1,7 @@
 from cherrypy import expose, tools
 import cherrypy
 from WMCore.WebTools.Page import TemplatedPage
+from WMCore.REST.Auth import get_user_info
 from os import listdir
 
 class SecureDocumentation(TemplatedPage):
@@ -11,7 +12,7 @@ class SecureDocumentation(TemplatedPage):
     @tools.secmodv2()
     def index(self):
         templates = listdir(self.templatedir)
-        user = cherrypy.request.user
+        user = get_user_info()
         index = "<h1>Secure Documentation</h1>"
         index += "<div>\n"
         index += "Hello <b>%s</b>!\n" % user['name']

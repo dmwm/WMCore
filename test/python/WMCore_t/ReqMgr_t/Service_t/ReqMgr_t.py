@@ -78,7 +78,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.default_status_header = getAuthHeader(self.test_authz_key.data, DEFAULT_STATUS_PERMISSION)
 
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
-        rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
+        rerecoFile = open(os.path.join(requestPath, "ReReco_RunBlockWhite.json"), 'r')
 
         rerecoArgs = json.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]

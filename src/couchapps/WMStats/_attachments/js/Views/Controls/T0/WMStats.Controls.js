@@ -15,11 +15,11 @@ WMStats.Controls = function($){
         _filterSelector = selector + ' div[name="filter"] input';
         
         $(document).on('keyup', selector + " input", 
-                function() {
+                function() { WMStats.Utils.delay(function() {
                     //change the view model filter value
                     WMStats.ViewModel.ActiveRequestPage.filter(WMStats.Utils.createInputFilter(_filterSelector));
                     
-                });
+                }, 300)});
     }
     
     function setCategoryButton(selector) {

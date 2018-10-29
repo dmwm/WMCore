@@ -122,6 +122,7 @@ class Block(StartPolicyInterface):
                 # Don't duplicate blocks rejected before or blocks that were included and therefore are now in the blacklist
                 continue
             if task.getLumiMask() and blockName not in maskedBlocks:
+                logging.warning("Block %s doesn't pass the lumi mask constraints", blockName)
                 self.rejectedWork.append(blockName)
                 continue
 
@@ -130,7 +131,7 @@ class Block(StartPolicyInterface):
             # - ideally they would be deleted but dbs can't delete blocks
             if int(block.get('NumberOfFiles', 0)) == 0:
                 logging.warning("Block %s being rejected for lack of valid files to process", blockName)
-                self.rejectedWork.append(blockName)
+                self.badWork.append(blockName)
                 continue
 
             # check lumi restrictions

@@ -108,7 +108,7 @@ class Dataset(StartPolicyInterface):
             blockSummary = dbs.getDBSSummaryInfo(block=blockName)
             if int(blockSummary.get('NumberOfFiles', 0)) == 0:
                 logging.warning("Block %s being rejected for lack of valid files to process", blockName)
-                self.rejectedWork.append(blockName)
+                self.badWork.append(blockName)
                 continue
 
             if self.args['SliceType'] == 'NumberOfRuns':
@@ -117,6 +117,7 @@ class Dataset(StartPolicyInterface):
             # check lumi restrictions
             if lumiMask:
                 if blockName not in maskedBlocks:
+                    logging.warning("Block %s doesn't pass the lumi mask constraints", blockName)
                     self.rejectedWork.append(blockName)
                     continue
 

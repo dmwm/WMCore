@@ -29,6 +29,7 @@ class StartPolicyInterface(PolicyInterface):
         self.lumi = None
         self.couchdb = None
         self.rejectedWork = []  # List of inputs that were rejected
+        self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
 
     def split(self):
@@ -170,7 +171,7 @@ class StartPolicyInterface(PolicyInterface):
             error = WorkQueueNoWorkError(self.wmspec, msg)
             raise error
 
-        return self.workQueueElements, self.rejectedWork
+        return self.workQueueElements, self.rejectedWork, self.badWork
 
     def dbs(self, dbs_url=None):
         """Get DBSReader"""

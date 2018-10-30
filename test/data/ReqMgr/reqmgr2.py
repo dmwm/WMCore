@@ -300,18 +300,18 @@ class ReqMgrClient(RESTClient):
 # ---------------------------------------------------------------------------
 
 
-def process_cli_args(args):
+def process_cli_args():
     def err_exit(msg, parser):
         print('\n')
         parser.print_help()
         print("\n\n%s" % msg)
         sys.exit(1)
 
-    parser = ArgumentParser(usage="usage: %prog options", add_help=False)
+    parser = ArgumentParser( usage='%(prog)s [options]', add_help=False)
     actions = define_cli_options(parser)
     # opts - new processed options
     # args - remainder of the input array
-    opts = parser.parse_args(args=args)
+    opts = parser.parse_args()
     # check command line arguments validity
     if not opts.reqmgrurl:
         err_exit("Missing mandatory --reqmgrurl.", parser)
@@ -445,9 +445,9 @@ def process_request_args(intput_config_file, command_line_json):
     return request_args
 
 
-def initialization(cli_args):
-    print("Processing command line arguments: '%s' ..." % cli_args)
-    config, actions = process_cli_args(cli_args)
+def initialization():
+    print("Processing command line arguments: '%s' ..." % sys.argv)
+    config, actions = process_cli_args()
     logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
     logging.debug("Set verbose console output.")
     reqmgr_client = ReqMgrClient(config.reqmgrurl, config)
@@ -458,7 +458,7 @@ def initialization(cli_args):
 
 
 def main():
-    reqmgr_client, config, defined_actions = initialization(sys.argv)
+    reqmgr_client, config, defined_actions = initialization()
     # definedAction are all actions as defined for CLI
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None

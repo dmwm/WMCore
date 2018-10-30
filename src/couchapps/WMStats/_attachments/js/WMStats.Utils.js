@@ -219,6 +219,10 @@ WMStats.Utils.addToSet = function(array, value) {
 };
 
 WMStats.Utils.delay =  (function(){
+    // only need to be used in one place.
+    // since timer is singlton, if it is used multiple places
+    // unintented clearTimeout could happen.
+    // currently only used only used in filter function.
   	var timer = 0;
   	return function(callback, ms){
     	var ms = ms || 1000;     	// default 1 sec delay 

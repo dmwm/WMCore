@@ -71,7 +71,7 @@ class ResponseHeader(object):
             row = row.replace('\n', '')
             if  not row:
                 continue
-            if  row.find('HTTP') != -1 and \
+            if  row.find('HTTP/') == 0 and \
                 row.find('100') == -1: #HTTP/1.1 100 found: real header is later
                 res = row.replace('HTTP/1.1', '')
                 res = res.replace('HTTP/1.0', '')

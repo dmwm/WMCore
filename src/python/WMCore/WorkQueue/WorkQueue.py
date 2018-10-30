@@ -1035,7 +1035,7 @@ class WorkQueue(WorkQueueBase):
                 policy.modifyPolicyForWorkAddition(inbound)
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                                           policyName, self.params['SplittingMapping']))
-            units, rejectedWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
+            units, rejectedWork, badWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                                                   unit['Task'].getPathName(),
@@ -1047,7 +1047,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info(msg)
             totalUnits.extend(units)
 
-        return (totalUnits, rejectedWork)
+        return (totalUnits, rejectedWork, badWork)
 
     def _getTotalStats(self, units):
         totalToplevelJobs = 0
@@ -1087,9 +1087,9 @@ class WorkQueue(WorkQueueBase):
                 if work:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
-                                                         mask=inbound['Mask'], inbound=inbound,
-                                                         continuous=continuous)
+                    work, rejectedWork, badWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
+                                                                  mask=inbound['Mask'], inbound=inbound,
+                                                                  continuous=continuous)
 
                     # save inbound work to signal we have completed queueing
                     # if this fails, rerunning will pick up here
@@ -1113,8 +1113,8 @@ class WorkQueue(WorkQueueBase):
                         if not self.params.get("UnittestFlag", False):
                             self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
-                    if rejectedWork:
-                        msg = "Request with the following unprocessable input data: %s" % rejectedWork
+                    if badWork:
+                        msg = "Request with the following unprocessable input data: %s" % badWork
                         self.logdb.post(inbound['RequestName'], msg, 'warning')
             except TERMINAL_EXCEPTIONS as ex:
                 msg = 'Terminal exception splitting WQE: %s' % inbound

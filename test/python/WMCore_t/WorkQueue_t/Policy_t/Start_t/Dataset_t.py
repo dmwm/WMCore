@@ -4,13 +4,14 @@
 """
 
 import unittest
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
@@ -64,7 +65,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
         for task in DQMHarvWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(47, unit['Jobs'])
@@ -89,7 +90,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
         for task in DQMHarvWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(4, unit['Jobs'])
@@ -114,7 +115,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
         for task in DQMHarvWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
@@ -139,7 +140,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
         for task in DQMHarvWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(DQMHarvWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
@@ -161,7 +162,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).getInputDatasetPath()
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(15, unit['Jobs'])
@@ -182,7 +183,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
             inputDataset = task.getInputDatasetPath()
             datasets.append(inputDataset)
         for task in MultiTaskProcessingWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(MultiTaskProcessingWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(22, unit['Jobs'])
@@ -202,7 +203,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         Tier1ReRecoWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, _, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(2428, unit['Jobs'])
@@ -221,11 +222,11 @@ class DatasetTestCase(EmulatedUnitTestCase):
         parentProcArgs2.update(parentProcArgs)
         parentProcArgs2.update({'InputDataset': '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO'})
         parentProcSpec = rerecoWorkload('ReRecoWorkload', parentProcArgs2,
-                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
+                                        assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         parentProcSpec.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(parentProcSpec).getInputDatasetPath()
         for task in parentProcSpec.taskIterator():
-            units, _ = Dataset(**splitArgs)(parentProcSpec, task)
+            units, _, _ = Dataset(**splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(847, unit['Jobs'])

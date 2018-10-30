@@ -58,7 +58,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
+            units, _, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
             for unit in units:
                 self.assertEqual(69, unit['Priority'])
@@ -84,7 +84,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
 
         for task in MultiTaskProcessingWorkload.taskIterator():
-            units, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            units, _, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(58, len(units))
 
             for unit in units:
@@ -110,9 +110,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 47)
         self.assertEqual(len(rejectedWork), 0)
+        self.assertEqual(len(badWork), 0)
 
         # Block blacklist
         newArgs = {}
@@ -122,9 +123,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 46)
         self.assertEqual(len(rejectedWork), 0)
+        self.assertEqual(len(badWork), 0)
         self.assertNotEqual(units[0]['Inputs'].keys(), newArgs['BlockBlacklist'])
 
         # Block Whitelist
@@ -135,9 +137,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
+        self.assertEqual(len(badWork), 0)
         self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
 
         # Block Mixed Whitelist
@@ -149,9 +152,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
+        self.assertEqual(len(badWork), 0)
         self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
 
         # Run Whitelist
@@ -162,9 +166,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
+        self.assertEqual(len(badWork), 0)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace'])
 
         # Run Blacklist
@@ -175,9 +180,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 45)
         self.assertEqual(len(rejectedWork), 2)
+        self.assertEqual(len(badWork), 0)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#217ea8d8-0c4f-11e1-b764-003048caaace'])
 
         # Run Mixed Whitelist
@@ -188,9 +194,10 @@ class BlockTestCase(EmulatedUnitTestCase):
                                   assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
-        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
+        self.assertEqual(len(badWork), 0)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])
 
     def testLumiMask(self):
@@ -203,14 +210,15 @@ class BlockTestCase(EmulatedUnitTestCase):
 
         # Block blacklist
         lumiWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs2,
-                                       assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
+                                      assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         task = getFirstTask(lumiWorkload)
-        #task.data.input.splitting.runs = ['1']
+        # task.data.input.splitting.runs = ['1']
         task.data.input.splitting.runs = ['180992']
         task.data.input.splitting.lumis = ['1,1']
-        units, rejectedWork = Block(**self.splitArgs)(lumiWorkload, task)
+        units, rejectedWork, badWork = Block(**self.splitArgs)(lumiWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
+        self.assertEqual(len(badWork), 0)
 
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
@@ -223,7 +231,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             # Take dataset and force to run over only 1 block
-            units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task, {dataset + '#28315b28-0c5c-11e1-b764-003048caaace': []})
+            units, _, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task,
+                                                  {dataset + '#28315b28-0c5c-11e1-b764-003048caaace': []})
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
@@ -241,11 +250,12 @@ class BlockTestCase(EmulatedUnitTestCase):
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
 
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, rejectedWork, badWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
             for unit in units:
                 self.assertTrue(1 <= unit['Jobs'])
             self.assertEqual(0, len(rejectedWork))
+            self.assertEqual(0, len(badWork))
 
     def testRunWhitelist(self):
         """
@@ -263,10 +273,11 @@ class BlockTestCase(EmulatedUnitTestCase):
 
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
+            units, rejectedWork, badWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
             # Blocks 1 and 2 match run distribution
             self.assertEqual(2, len(units))
             self.assertEqual(len(rejectedWork), 45)
+            self.assertEqual(len(badWork), 0)
             # Check number of jobs in element match number for
             # dataset in run whitelist
             wq_jobs = 0
@@ -327,11 +338,9 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in parentProcSpec.taskIterator():
-            units, _ = Block(**self.splitArgs)(parentProcSpec, task)
+            units, _, _ = Block(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(47, len(units))
             for unit in units:
-                import pdb
-                pdb.set_trace()
                 self.assertTrue(1 <= unit['Jobs'])
                 self.assertEqual(parentProcSpec, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
@@ -362,7 +371,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            units, _ = policyInstance(Tier1ReRecoWorkload, task)
+            units, _, _ = policyInstance(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
             blocks = []  # fill with blocks as we get work units for them
             inputs = {}
@@ -420,7 +429,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         if it is present in the workload.
         """
         for task in MultiTaskProcessingWorkload.taskIterator():
-            units, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
+            units, _, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(58, len(units))
             for unit in units:
                 pileupData = unit["PileupData"]
@@ -445,7 +454,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
         lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
-        units, dummyRejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
+        units, _, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
 
         nLumis = 0
         for unit in units:

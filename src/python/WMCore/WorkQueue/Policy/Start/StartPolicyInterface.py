@@ -29,6 +29,7 @@ class StartPolicyInterface(PolicyInterface):
         self.lumi = None
         self.couchdb = None
         self.rejectedWork = []  # List of inputs that were rejected
+        self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
 
     def split(self):
@@ -155,8 +156,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
         except DBSReaderError as ex:
             # Hacky way of identifying non-existant data, DbsBadRequest chomped by DBSReader
-            # DbsConnectionError: Database exception,Invalid parameters thrown by Summary api
-            if 'DbsBadRequest' in str(ex) or 'Invalid parameters' in str(ex):
+            if 'Invalid parameters' in str(ex):
                 data = task.data.input.pythonise_() if task.data.input else 'None'
                 msg = """data: %s, mask: %s, pileup: %s. %s""" % (str(data), str(mask), str(pileupDatasets), str(ex))
                 error = WorkQueueNoWorkError(self.wmspec, msg)
@@ -171,7 +171,7 @@ class StartPolicyInterface(PolicyInterface):
             error = WorkQueueNoWorkError(self.wmspec, msg)
             raise error
 
-        return self.workQueueElements, self.rejectedWork
+        return self.workQueueElements, self.rejectedWork, self.badWork
 
     def dbs(self, dbs_url=None):
         """Get DBSReader"""

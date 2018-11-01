@@ -97,7 +97,7 @@ class WorkQueueReqMgrInterface(object):
 
                 self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
                 units = queue.queueWork(workLoadUrl, request=reqName, team=team)
-                self.logdb.delete(reqName, "error", this_thread=True)
+                self.logdb.delete(reqName, "error", this_thread=True, agent=False)
             except TERMINAL_EXCEPTIONS as ex:
                 # fatal error - report back to ReqMgr
                 self.logger.error('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
@@ -298,7 +298,7 @@ class WorkQueueReqMgrInterface(object):
             try:
                 self.logger.info("Processing request %s" % (reqName))
                 units = queue.addWork(requestName=reqName)
-                self.logdb.delete(reqName, 'error', True)
+                self.logdb.delete(reqName, 'error', True, agent=False)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - but at least it was split the first time. Log and skip.
                 msg = 'Error adding further work to request "%s". Will try again later' % reqName

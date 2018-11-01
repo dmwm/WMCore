@@ -104,7 +104,7 @@ class PeriodicWorker(Thread):
 
     def heartBeatInfoToLogDB(self):
         if self.logDB:
-            self.logDB.delete(mtype="error", this_thread=True)
+            self.logDB.delete(mtype="error", this_thread=True, agent=False)
             self.logDB.post(mtype="info")
         return
 

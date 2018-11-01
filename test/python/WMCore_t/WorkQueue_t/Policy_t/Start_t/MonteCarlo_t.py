@@ -35,7 +35,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         getFirstTask(BasicProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in BasicProductionWorkload.taskIterator():
-            units, _ = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
+            units, _, _ = MonteCarlo(**splitArgs)(BasicProductionWorkload, task)
 
             SliceSize = BasicProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
@@ -83,7 +83,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         getFirstTask(LHEProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
@@ -132,7 +132,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         getFirstTask(LHEProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
@@ -173,7 +173,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         getFirstTask(LHEProductionWorkload).setFirstEventAndLumi(50, 100)
         getFirstTask(LHEProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         for task in LHEProductionWorkload.taskIterator():
-            units, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
+            units, _, _ = MonteCarlo(**splitArgs)(LHEProductionWorkload, task)
 
             SliceSize = LHEProductionWorkload.startPolicyParameters()['SliceSize']
             self.assertEqual(math.ceil(totalevents / (SliceSize * splitArgs['MaxJobsPerElement'])), len(units))
@@ -207,7 +207,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         getFirstTask(MultiMergeProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(MultiMergeProductionWorkload).setFirstEventAndLumi(1, 1)
         for task in MultiMergeProductionWorkload.taskIterator():
-            units, _ = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
+            units, _, _ = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
             self.assertEqual(10.0, len(units))
             for unit in units:
@@ -222,7 +222,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
             task.setFirstEventAndLumi(1, 1)
-            units, _ = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
+            units, _, _ = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
 
             self.assertEqual(10 * count, len(units))
             for unit in units:

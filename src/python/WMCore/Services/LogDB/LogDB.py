@@ -106,7 +106,7 @@ class LogDB(object):
         self.logger.debug("LogDB get_all_requests request, res=%s", res)
         return res
 
-    def delete(self, request=None, mtype=None, this_thread=False):
+    def delete(self, request=None, mtype=None, this_thread=False, agent=True):
         """
         Delete entry in LogDB for given request
         if mtype == None - delete all the log for that request
@@ -115,7 +115,7 @@ class LogDB(object):
         try:
             if request == None:
                 request = self.default_user
-            res = self.backend.delete(request, mtype, this_thread)
+            res = self.backend.delete(request, mtype, this_thread, agent)
         except Exception as exc:
             self.logger.error("LogDBBackend delete API failed, error=%s", str(exc))
             res = 'delete-error'
@@ -124,10 +124,12 @@ class LogDB(object):
 
     def cleanup(self, thr, backend='local'):
         """Clean-up back-end LogDB"""
+        docs = []
         try:
-            self.backend.cleanup(thr)
+            docs = self.backend.cleanup(thr)
         except Exception as exc:
             self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s', backend, str(exc))
+        return docs
 
     def heartbeat_report(self):
         report = defaultdict(dict)

@@ -33,9 +33,9 @@ class SiteDBAPI(Service):
 
     def __init__(self, config={}, logger=None):
         config = dict(config)
-        if os.getenv("WMAGENT_USE_CRIC", False):
+        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
             # just to make sure we don't use SiteDB anywhere when CRIC flag is true
-            config.setdefault('endpoint', "https://BLAH.cern.ch/sitedb/data/prod/")
+            raise RuntimeError("Stop using SiteDB, use CRIC instead!")
         else:
             config.setdefault('endpoint', "https://cmsweb.cern.ch/sitedb/data/prod/")
         config.setdefault('logger', logging.getLogger())

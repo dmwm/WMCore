@@ -9,9 +9,11 @@ Description: CMS modules
 
 from __future__ import (division, print_function)
 
+import os
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.TagCollector.TagCollector import TagCollector
 
 # initialize TagCollector instance to be used in this module
@@ -30,8 +32,12 @@ def sites():
     "Return known CMS site list from SiteDB"
     try:
         # Download a list of all the sites from SiteDB, uses v2 API.
-        sitedb = SiteDBJSON()
-        site_list = sorted(sitedb.getAllCMSNames())
+        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
+            cric = CRIC()
+            site_list = sorted(cric.getAllPSNs())
+        else:
+            sitedb = SiteDBJSON()
+            site_list = sorted(sitedb.getAllCMSNames())
     except Exception as exc:
         msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % str(exc)
         raise Exception(msg)
@@ -44,8 +50,12 @@ def pnns():
     """
     Returns all PhEDEx node names, excluding Buffer endpoints
     """
-    try:
+    if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
+        sitedb = CRIC()  # FIXME: rename it to cric
+    else:
         sitedb = SiteDBJSON()
+
+    try:
         pnn_list = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
     except Exception as exc:
         msg = "ERROR: Could not retrieve PNNs from SiteDB, reason: %s" % str(exc)

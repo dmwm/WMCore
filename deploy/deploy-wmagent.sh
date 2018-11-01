@@ -97,16 +97,9 @@ basic_checks()
     echo -e "\n  Could not find $CERTS_DIR, but I'm creating it now"
     mkdir -p $CERTS_DIR
     chmod 755 $CERTS_DIR
-    echo "... and now trying to copy the certificates from another node, you might be prompted for a password."
-    if [[ "$IAM" == cmst1 ]]; then
-      scp cmst1@vocms0250:/data/certs/* /data/certs/
-    else
-      scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
-    fi
     check_certs
   else
     check_certs
-    echo -e "  OK!\n"
   fi
 
   check_process
@@ -134,14 +127,21 @@ update_secrets_file(){
 
 check_certs()
 {
-  echo -n "Checking whether the certificates and proxy are in place ..."
+  echo -ne "\nChecking whether the certificates and proxy are in place ..."
   if [ ! -f $CERTS_DIR/myproxy.pem ] || [ ! -f $CERTS_DIR/servicecert.pem ] || [ ! -f $CERTS_DIR/servicekey.pem ]; then
-    echo "  FAILED!\n Failed to find one of the required grid certificates"
-    exit 7
+    echo -e "\n  ... nope, trying to copy them from another node, you might be prompted for the cmst1 password."
+    set -e
+    if [[ "$IAM" == cmst1 ]]; then
+      scp cmst1@vocms0250:/data/certs/* /data/certs/
+    else
+      scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
+    fi
+    set +e
+    chmod 600 $CERTS_DIR/*
   else
     chmod 600 $CERTS_DIR/*
-    echo -e "  OK!\n"
   fi
+  echo -e "  OK!\n"
 }
 
 check_process()
@@ -158,21 +158,25 @@ check_process()
 
 check_oracle()
 {
-  echo -n "Checking whether there are any leftover processes from the previous agent ..."
-  cd $CURRENT_DIR/config/wmagent/
-  echo -e "SELECT COUNT(*) from USER_TABLES;" > check_db_status.sql
+  echo "Checking whether the oracle database is clean and not used by other agents ..."
 
-  tmpf=`mktemp`
-  ./manage db-prompt < check_db_status.sql > $tmpf
-  tables=`cat $tmpf | grep -A1 '\-\-\-\-' | tail -n 1`
+  tmpdir=`mktemp -d`
+  cd $tmpdir
+
+  wget -nv https://raw.githubusercontent.com/dmwm/deployment/master/wmagent/manage -O manage
+  chmod +x manage
+  echo -e "SELECT COUNT(*) from USER_TABLES;" > check_db_status.sql
+  ### FIXME: new nodes don't have sqlplus ... what to do now?
+  ./manage db-prompt < check_db_status.sql > db_check_output
+  tables=`cat db_check_output | grep -A1 '\-\-\-\-' | tail -n 1`
   if [ "$tables" -gt 0 ]; then
     echo "  FAILED!\n This database is likely being used by another agent! Found $tables tables. Quitting!"
     exit 9
   else
     echo -e "  OK!\n"
   fi
-  rm -f $tmpf
   cd -
+  rm -rf $tmpdir
 }
 
 for arg; do

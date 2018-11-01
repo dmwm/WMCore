@@ -126,16 +126,16 @@ class WMStatsWriter(WMStatsReader):
                     magicStr = ".fnal.gov-"
                     idParts = doc['_id'].split(magicStr)
                     if len(idParts) == 2:
-                        agentURL = "%s.fnal.gov" % idParts[1]
+                        agentURL = "%s.fnal.gov" % idParts[0]
                     else:
                         magicStr = ".cern.ch-"
                         idParts = doc['_id'].split(magicStr)
                         if len(idParts) == 2:
-                            agentURL = "%s.cern.ch" % idParts[1]
+                            agentURL = "%s.cern.ch" % idParts[0]
                         else:
                             raise Exception("wrong id %s" % doc['_id'])
 
-                    notInCacheKey.append([agentURL, idParts[0]])
+                    notInCacheKey.append([agentURL, idParts[1]])
                     notInCacheDoc.append(doc)
 
         self.couchDB.commit(new_edits=False)

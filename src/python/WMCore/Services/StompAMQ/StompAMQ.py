@@ -69,7 +69,7 @@ class StompAMQ(object):
     _version = '0.2'
 
     def __init__(self, username, password, producer, topic,
-                 host_and_ports=None, logger=None, cert=None, key=None, use_ssl=False):
+                 host_and_ports=None, logger=None, cert=None, key=None):
         self._username = username
         self._password = password
         self._producer = producer
@@ -78,7 +78,7 @@ class StompAMQ(object):
         self.logger = logger if logger else logging.getLogger()
         self._cert=cert
         self._key=key
-        self._use_ssl=use_ssl
+        self._use_ssl = True if key and cert else False
 
     def send(self, data):
         """
@@ -96,14 +96,14 @@ class StompAMQ(object):
 
         conn = stomp.Connection(host_and_ports=self._host_and_ports)
 
-        if(self._use_ssl):
-           conn.set_ssl(for_hosts=self._host_and_ports, key_file=self._key, cert_file=slef._cert)
+        if self._use_ssl:
+           conn.set_ssl(for_hosts=self._host_and_ports, key_file=self._key, cert_file=self._cert)
 
         conn.set_listener('StompyListener', StompyListener(self.logger))
         try:
             conn.start()
             # If cert/key are used, ignore username and password
-            if(self._use_ssl):
+            if self._use_ssl:
                 conn.connect(wait=True)
             else:
                 conn.connect(username=self._username, passcode=self._password, wait=True)

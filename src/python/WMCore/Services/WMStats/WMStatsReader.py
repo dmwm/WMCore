@@ -222,7 +222,8 @@ class WMStatsReader(object):
         if len(keys) == 0:
             return []
         options = {}
-        options["reduce"] = False
+        options["reduce"] = True
+        options["group"] = True
         result = self._getCouchView("latestRequest", options, keys)
         ids = [row['value']['id'] for row in result["rows"]]
         return ids

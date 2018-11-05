@@ -93,7 +93,7 @@ class WMStatsWriter(WMStatsReader):
                 doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(int(revList[1]) + 1), revList[1]]}
             else:
                 # just send well formatted revision for the new documents which required by new_edits=False
-                doc['_rev'] = "1-1234567890"
+                doc['_revisions'] = {"start": 1, "ids": ["1234567890"]}
             self.couchDB.queue(doc)
 
         self.couchDB.commit(new_edits=False)

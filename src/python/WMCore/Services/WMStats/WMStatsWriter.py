@@ -1,6 +1,9 @@
 import WMCore
 import time
+import logging
+import random
 from json import JSONEncoder
+from Utils.IteratorTools import grouper
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
@@ -80,68 +83,31 @@ class WMStatsWriter(WMStatsReader):
 
     def bulkUpdateData(self, docs, existingDocs):
         """
+        Update documents to WMStats in bulk, breaking down to 100 docs chunks.
         :param docs: docs to insert or update
-        :param existingDocs: docs existing in current
-        :return:
+        :param existingDocs: dict of docId: docRev of docs already existent in wmstats
         """
         if isinstance(docs, dict):
             docs = [docs]
-        for doc in docs:
-            if doc['_id'] in existingDocs:
-                revList = existingDocs[doc['_id']].split('-')
-                # update the revision number
-                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
-            else:
-                # just send well formatted revision for the new documents which required by new_edits=False
-                doc['_rev'] = "1-123456789"
-            self.couchDB.queue(doc)
-
-        self.couchDB.commit(new_edits=False)
-        return
-
-    def bulkUpdateDataAnUpdateCache(self, docs, revCache, secondTry=False):
-        """
-        :param docs: docs to insert or update
-        :param existingDocs: docs existing in current
-        :return:
-        """
-        if isinstance(docs, dict):
-            docs = [docs]
-
-        notInCacheKey = []
-        notInCacheDoc = []
-        for doc in docs:
-            if doc['_id'] in revCache:
-                revList = revCache[doc['_id']].split('-')
-                # update the revision number
-                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
-                self.couchDB.queue(doc)
-                revCache[doc['_id']] = doc['_rev']
-            else:
-                if secondTry:
-                    doc['_rev'] = "1-123456789"
-                    self.couchDB.queue(doc)
-                    revCache[doc['_id']] = doc['_rev']
+        for chunk in grouper(docs, 100):
+            for doc in chunk:
+                if doc['_id'] in existingDocs:
+                    revList = existingDocs[doc['_id']].split('-')
+                    try:
+                        # update the revision number and keep the history of the revision
+                        doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(int(revList[1]) + 1), revList[1]]}
+                    except ValueError:
+                        logging.warning("Doc id: %s does not have the correct _rev format: %s", doc['_id'], existingDocs[doc['_id']])
+                        doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(1234567890 + 1), revList[1]]}
                 else:
-                    magicStr = ".fnal.gov-"
-                    idParts = doc['_id'].split(magicStr)
-                    if len(idParts) == 2:
-                        agentURL = "%s.fnal.gov" % idParts[0]
-                    else:
-                        magicStr = ".cern.ch-"
-                        idParts = doc['_id'].split(magicStr)
-                        if len(idParts) == 2:
-                            agentURL = "%s.cern.ch" % idParts[0]
-                        else:
-                            raise Exception("wrong id %s" % doc['_id'])
+                    # then create a random 10 digits uid for the first revision number, required by new_edits=False
+                    firstId = "%10d" % random.randrange(9999999999)
+                    doc['_revisions'] = {"start": 1, "ids": [firstId]}
+                self.couchDB.queue(doc)
 
-                    notInCacheKey.append([agentURL, idParts[1]])
-                    notInCacheDoc.append(doc)
-
-        self.couchDB.commit(new_edits=False)
-
-
-        return notInCacheDoc, notInCacheKey
+            logging.info("Committing bulk of %i docs ...", len(chunk))
+            self.couchDB.commit(new_edits=False)
+        return
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
@@ -306,17 +272,6 @@ class WMStatsWriter(WMStatsReader):
         for j in docs:
             doc = {}
             doc["_id"] = j['value']['id']
-            doc["_rev"] = j['value']['rev']
-            self.couchDB.queueDelete(doc)
-        committed = self.couchDB.commit()
-        return committed
-
-    def deleteAllAgentRequestDocument(self):
-        docs = self.couchDB.loadView(self.couchapp, 'agentRequests')['rows']
-
-        for j in docs:
-            doc = {}
-            doc["_id"] = j['key']
             doc["_rev"] = j['value']['rev']
             self.couchDB.queueDelete(doc)
         committed = self.couchDB.commit()

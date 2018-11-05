@@ -89,59 +89,15 @@ class WMStatsWriter(WMStatsReader):
         for doc in docs:
             if doc['_id'] in existingDocs:
                 revList = existingDocs[doc['_id']].split('-')
-                # update the revision number
-                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
+                # update the revision number and keep the history of the revision
+                doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(int(revList[1]) + 1), revList[1]]}
             else:
                 # just send well formatted revision for the new documents which required by new_edits=False
-                doc['_rev'] = "1-123456789"
+                doc['_revisions'] = {"start": 1, "ids": ["1234567890"]}
             self.couchDB.queue(doc)
 
         self.couchDB.commit(new_edits=False)
         return
-
-    def bulkUpdateDataAnUpdateCache(self, docs, revCache, secondTry=False):
-        """
-        :param docs: docs to insert or update
-        :param existingDocs: docs existing in current
-        :return:
-        """
-        if isinstance(docs, dict):
-            docs = [docs]
-
-        notInCacheKey = []
-        notInCacheDoc = []
-        for doc in docs:
-            if doc['_id'] in revCache:
-                revList = revCache[doc['_id']].split('-')
-                # update the revision number
-                doc['_rev'] = "%s-%s" % (int(revList[0]) + 1, revList[1])
-                self.couchDB.queue(doc)
-                revCache[doc['_id']] = doc['_rev']
-            else:
-                if secondTry:
-                    doc['_rev'] = "1-123456789"
-                    self.couchDB.queue(doc)
-                    revCache[doc['_id']] = doc['_rev']
-                else:
-                    magicStr = ".fnal.gov-"
-                    idParts = doc['_id'].split(magicStr)
-                    if len(idParts) == 2:
-                        agentURL = "%s.fnal.gov" % idParts[0]
-                    else:
-                        magicStr = ".cern.ch-"
-                        idParts = doc['_id'].split(magicStr)
-                        if len(idParts) == 2:
-                            agentURL = "%s.cern.ch" % idParts[0]
-                        else:
-                            raise Exception("wrong id %s" % doc['_id'])
-
-                    notInCacheKey.append([agentURL, idParts[1]])
-                    notInCacheDoc.append(doc)
-
-        self.couchDB.commit(new_edits=False)
-
-
-        return notInCacheDoc, notInCacheKey
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)
@@ -306,17 +262,6 @@ class WMStatsWriter(WMStatsReader):
         for j in docs:
             doc = {}
             doc["_id"] = j['value']['id']
-            doc["_rev"] = j['value']['rev']
-            self.couchDB.queueDelete(doc)
-        committed = self.couchDB.commit()
-        return committed
-
-    def deleteAllAgentRequestDocument(self):
-        docs = self.couchDB.loadView(self.couchapp, 'agentRequests')['rows']
-
-        for j in docs:
-            doc = {}
-            doc["_id"] = j['key']
             doc["_rev"] = j['value']['rev']
             self.couchDB.queueDelete(doc)
         committed = self.couchDB.commit()

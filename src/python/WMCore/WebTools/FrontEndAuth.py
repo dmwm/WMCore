@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
-import cherrypy
-import hmac
 import hashlib
+import hmac
+
+import cherrypy
 
 from WMCore.REST.Auth import get_user_info
 
-#-----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 class FrontEndAuth(cherrypy.Tool):
     """
     Transparently allows a back-end cmsweb app to do
@@ -16,27 +18,30 @@ class FrontEndAuth(cherrypy.Tool):
     def __init__(self, config):
         """Read hmac secret  and define cherrypy hook point."""
         # reads the bin key used to verify the hmac
-        f = open(config.key_file,"rb")
+        f = open(config.key_file, "rb")
         self.key = f.read()
         f.close()
 
         # Defines the hook point for cherrypy
         self._name = None
         self._point = 'before_request_body'
-        self._priority = 60 # Just after the sessions being enabled
+        self._priority = 60  # Just after the sessions being enabled
 
-    def callable(self, role=[], group=[], site=[], authzfunc=None):
+    def callable(self, role=None, group=None, site=None, authzfunc=None):
         """
         This is the method that is called in the cherrypy hook point (whenever
         the user-agent requests a page of the back-end app.
         """
+        role = role or []
+        group = group or []
+        site = site or []
         # Sets initial user information for this request
-        assert(getattr(cherrypy.request, "user", None) == None)
+        assert (getattr(cherrypy.request, "user", None) == None)
         cherrypy.request.user = {'dn': None,
-                                'method': None,
-                                'login': None,
-                                'name': None,
-                                'roles': {} }
+                                 'method': None,
+                                 'login': None,
+                                 'name': None,
+                                 'roles': {}}
 
         # Checks authn by reading front-end headers
         self.check_authentication()
@@ -60,32 +65,31 @@ class FrontEndAuth(cherrypy.Tool):
 
         if headers['cms-auth-status'] == 'NONE':
             # User authentication is optional
-            return # authn accepted
+            return  # authn accepted
 
         # User information is available on headers
         prefix = suffix = ""
-        hkeys = headers.keys()
-        hkeys.sort()
+        hkeys = sorted(headers.keys())
         for hk in hkeys:
-            hk=hk.lower()
-            if hk[0:9] in ["cms-authn","cms-authz"] and hk != "cms-authn-hmac":
-                prefix += "h%xv%x" % (len(hk),len(headers[hk]))
-                suffix += "%s%s" % (hk,headers[hk])
-                hkname = hk.split('-',2)[-1]
+            hk = hk.lower()
+            if hk[0:9] in ["cms-authn", "cms-authz"] and hk != "cms-authn-hmac":
+                prefix += "h%xv%x" % (len(hk), len(headers[hk]))
+                suffix += "%s%s" % (hk, headers[hk])
+                hkname = hk.split('-', 2)[-1]
                 if hk.startswith("cms-authn"):
                     user[hkname] = headers[hk]
                 if hk.startswith("cms-authz"):
-                    user['roles'][hkname] = {'site':set(), 'group':set()}
+                    user['roles'][hkname] = {'site': set(), 'group': set()}
                     for r in headers[hk].split():
                         ste_or_grp, name = r.split(':')
                         user['roles'][hkname][ste_or_grp].add(name);
 
-        vfy = hmac.new(self.key, prefix+"#"+suffix, hashlib.sha1).hexdigest()
+        vfy = hmac.new(self.key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
         if vfy != headers["cms-authn-hmac"]:
             # HMAC does not match
             raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
 
-        # User authn accepted
+            # User authn accepted
 
     def check_authorization(self, role, group, site, authzfunc):
         """Format the authorization rules into lists and verify if the given
@@ -128,27 +132,31 @@ class FrontEndAuth(cherrypy.Tool):
                     return True
         return False
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 class NullAuth(cherrypy.Tool):
     def __init__(self, config):
         # Defines the hook point for cherrypy
         self._name = None
         self._point = 'before_request_body'
-        self._priority = 60 # Just after the sessions being enabled
+        self._priority = 60  # Just after the sessions being enabled
         if cherrypy.server.environment == 'production':
             cherrypy.log.access_log.critical('You MUST NOT use the NullAuth in a production environment')
             raise cherrypy.CherryPyException('Invalid server authentication')
         else:
             cherrypy.log.access_log.warning("You are using the NullAuth, I hope you know what you're doing")
 
-    def callable(self, role=[], group=[], site=[], authzfunc=None):
+    def callable(self, role=None, group=None, site=None, authzfunc=None):
+        role = role or []
+        group = group or []
+        site = site or []
         cherrypy.log.access_log.warning('NullAuth called for:')
         cherrypy.log.access_log.warning('\trole(s): %s \n\tgroup(s): %s \n\tsite(s): %s' % (role, group, site))
 
         if authzfunc:
             cherrypy.log.access_log.warning('\tusing authorisation function %s' % authzfunc.__name__)
         cherrypy.request.user = {'dn': 'None',
-                                'method': 'Null Auth - totally insecure!',
-                                'login': 'fbloggs',
-                                'name': 'Fred Bloggs',
-                                'roles': {} }
+                                 'method': 'Null Auth - totally insecure!',
+                                 'login': 'fbloggs',
+                                 'name': 'Fred Bloggs',
+                                 'roles': {}}

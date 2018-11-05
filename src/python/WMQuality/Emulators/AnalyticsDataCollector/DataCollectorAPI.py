@@ -28,11 +28,12 @@ BATCH_JOB_STATUS = ['submitted_pending', 'submitted_running']
 
 class LocalCouchDBData():
 
-    def __init__(self, couchURL, summaryLevel):
+    def __init__(self, couchURL, statSummaryDB, summaryLevel, ):
         # set the connection for local couchDB call
         print("Using LocalCouchDBData Emulator")
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
+        self.summaryStatsDB = None
         self.summaryLevel = summaryLevel
         logging.info("connect couch %s:  %s" % (self.couchURLBase, self.dbName))
 
@@ -71,6 +72,13 @@ class LocalCouchDBData():
         Returns an empty dict in the emulator
         """
         return {}
+
+    def getJobPerformanceByTaskAndSiteFromSummaryDB(self):
+        return {}
+
+    def getSkippedFilesSummaryByWorkflow(self):
+        return {}
+
 
 class ReqMonDBData():
 
@@ -120,3 +128,6 @@ class WMAgentDBData():
             doc['job_slots'] = JOB_SLOTS
             results.append(doc)
         return results
+
+    def getFinishedSubscriptionByTask(self):
+        return {}

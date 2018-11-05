@@ -46,6 +46,11 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
+        self.testInit.setSchema(customModules=["WMComponent.DBS3Buffer"],
+                                useDefault=False)
         self.reqmonDBName = "wmstat_t"
         self.localDBName = "wmstat_t_local"
         self.testInit.setupCouch(self.reqmonDBName, "WMStats")
@@ -99,7 +104,9 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (couchURL, "workqueue")
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (couchURL, self.localDBName)
         config.AnalyticsDataCollector.centralWMStatsURL = "%s/%s" % (couchURL, self.reqmonDBName)
+        config.AnalyticsDataCollector.centralRequestDBURL = "%s/%s" % (couchURL, "requset_db_t")
         config.AnalyticsDataCollector.reqMonURL = "%s/%s" % (couchURL, self.reqmonDBName)
+        config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
         config.AnalyticsDataCollector.summaryLevel = "task"
 
         return config

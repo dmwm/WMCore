@@ -4,7 +4,14 @@ from functools import wraps
 import logging
 import threading
 
-DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545",
+### Don't crash the components on the following database exceptions
+# ORA-03113: end-of-file on communication channel
+# ORA-03114: Not Connected to Oracle
+# ORA-03135: connection lost contact
+# ORA-12545: Connect failed because target host or object does not exist
+# ORA-00060: deadlock detected while waiting for resource
+# and those two MySQL exceptions
+DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545", "ORA-00060",
                            "MySQL server has gone away", "Lock wait timeout exceeded"]
 
 

@@ -1,6 +1,10 @@
-import WMCore
+import logging
+import random
 import time
 from json import JSONEncoder
+
+import WMCore
+from Utils.IteratorTools import grouper
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
@@ -55,7 +59,6 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
 
 
 class WMStatsWriter(WMStatsReader):
-
     def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
         # set the connection for local couchDB call
         WMStatsReader.__init__(self, couchURL, appName, reqdbURL, reqdbCouchApp)
@@ -80,25 +83,27 @@ class WMStatsWriter(WMStatsReader):
 
     def bulkUpdateData(self, docs, existingDocs):
         """
+        Update documents to WMStats in bulk, breaking down to 100 docs chunks.
         :param docs: docs to insert or update
-        :param existingDocs: docs existing in current
-        :return:
+        :param existingDocs: dict of docId: docRev of docs already existent in wmstats
         """
         if isinstance(docs, dict):
             docs = [docs]
-        for doc in docs:
-            if doc['_id'] in existingDocs:
-                revList = existingDocs[doc['_id']].split('-')
-                # update the revision number and keep the history of the revision
-                doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(int(revList[1]) + 1), revList[1]]}
-            else:
-                # just send well formatted revision for the new documents which required by new_edits=False
-                doc['_rev'] = "1-1234567890"
-            self.couchDB.queue(doc)
+        for chunk in grouper(docs, 100):
+            for doc in chunk:
+                if doc['_id'] in existingDocs:
+                    revList = existingDocs[doc['_id']].split('-')
+                    # update the revision number and keep the history of the revision
+                    doc['_revisions'] = {"start": int(revList[0]) + 1, "ids": [str(int(revList[1]) + 1), revList[1]]}
+                else:
+                    # then create a random 10 digits uid for the first revision number, required by new_edits=False
+                    firstId = "%10d" % random.randrange(9999999999)
+                    doc['_revisions'] = {"start": 1, "ids": [firstId]}
+                self.couchDB.queue(doc)
 
-        self.couchDB.commit(new_edits=False)
+            logging.info("Committing bulk of %i docs ...", len(chunk))
+            self.couchDB.commit(new_edits=False)
         return
-
 
     def insertRequest(self, schema):
         doc = monitorDocFromRequestSchema(schema)

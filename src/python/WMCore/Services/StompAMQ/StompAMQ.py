@@ -9,6 +9,7 @@ import json
 import logging
 import time
 import stomp
+from WMCore.Services.UUIDLib import makeUUID
 
 
 class StompyListener(object):
@@ -96,7 +97,7 @@ class StompAMQ(object):
         conn = stomp.Connection(host_and_ports=self._host_and_ports)
 
         if self._use_ssl:
-           # The set_ssl method requires stompy >= 4.1.15
+           # This requires stomp >= 4.1.15
            conn.set_ssl(for_hosts=self._host_and_ports, key_file=self._key, cert_file=self._cert)
 
         conn.set_listener('StompyListener', StompyListener(self.logger))
@@ -178,31 +179,10 @@ class StompAMQ(object):
             # Add body consisting of the payload and metadata
             body = {'payload': doc,
                     'metadata': {'timestamp': ts,
-                                 'id': docId}
+                                 'id': docId,
+                                 'uuid': makeUUID()}
                    }
             notification['body'] = body
             docs.append(notification)
 
         return docs
-
-logging.basicConfig(level=logging.DEBUG)
-log = logging.getLogger(__name__)
-
-my_cert="/etc/grid-security/hostcert.pem"
-my_key="/etc/grid-security/hostkey.pem"
-
-
-amq=StompAMQ("","","monit_prod_cms_si_condor","/topic/cms.si.condor", [('dashb-test-mb.cern.ch', 61123)], logger=log, cert=my_cert, key=my_key)
-
-ts=int(time.time())
-basic_document = {"attr1": "val1",
-                    "attr2": "val2" }
-
-doc=[basic_document]
-notification=amq.make_notification(doc,"test_raw", 1)
-
-failedNotifications=amq.send(notification)
-for failed in failedNotifications:
-    print("Failed")
-    print(failed)
-

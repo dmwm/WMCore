@@ -41,6 +41,9 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         logging.info("Running agent drain algorithm...")
         self.agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
+        if not self.agentConfig:
+            logging.error("Failed to fetch agent configuration from the auxiliary DB")
+            return
 
         if isDrainMode(self.config):
             # check to see if the agent hit any speed drain thresholds

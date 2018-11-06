@@ -1,0 +1,64 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "Override": {
+                "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+            }
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "TrustSitelists": true,
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2018A", 
+        "CMSSWVersion": "CMSSW_10_2_4_patch1", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "Large RunWhitelist which will match some blocks with only invalid files; Trust flag enabled", 
+        "ConfigCacheID": "573976a90ba04b7a9dbdd98e43ffcc9d", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "573976a90ba04b7a9dbdd98e43fcfeea", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "EnableHarvesting": false, 
+        "EventsPerJob": 2215, 
+        "FilesPerJob": 1, 
+        "GlobalTag": "102X_dataRun2_Sep2018Rereco_v1", 
+        "IncludeParents": false, 
+        "InputDataset": "/DoubleMuon/Run2018A-v1/RAW", 
+        "LumisPerJob": 8, 
+        "Memory": 14000, 
+        "Multicore": 8, 
+        "PrepID": "TEST-ReReco-Run2018A-DoubleMuon-17Sep2018-0002", 
+        "ProcessingString": "17Sep2018", 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 210000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "ReReco", 
+        "Requestor": "amaltaro", 
+        "RunWhitelist": [
+            316877, 
+            316879, 
+            316928, 
+            316985
+        ], 
+        "Scenario": "pp", 
+        "ScramArch": [
+            "slc6_amd64_gcc700"
+        ], 
+        "SizePerEvent": 800, 
+        "SplittingAlgo": "EventAwareLumiBased", 
+        "TimePerEvent": 13
+    }
+}

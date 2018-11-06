@@ -67,15 +67,18 @@ class ResponseHeader(object):
 
     def parse(self, response):
         """Parse response header and assign class member data"""
+        startRegex = r"^HTTP/\d.\d \d{3}"
+        continueRegex = r"^HTTP/\d.\d 100"  # Continue: client should continue its request
+        replaceRegex = r"^HTTP/\d.\d"
+
         for row in response.split('\r'):
             row = row.replace('\n', '')
             if  not row:
                 continue
-            if  row.find('HTTP') != -1 and \
-                row.find('100') == -1: #HTTP/1.1 100 found: real header is later
-                res = row.replace('HTTP/1.1', '')
-                res = res.replace('HTTP/1.0', '')
-                res = res.strip()
+            if re.search(startRegex, row):
+                if re.search(continueRegex, row):
+                    continue
+                res = re.sub(replaceRegex, "", row).strip()
                 status, reason = res.split(' ', 1)
                 self.status = int(status)
                 self.reason = reason

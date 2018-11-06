@@ -67,6 +67,7 @@ class AnalyticsDataCollector_t(unittest.TestCase):
 
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        self.testInit.clearDatabase()
         EmulatorHelper.resetEmulators()
         return
 

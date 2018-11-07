@@ -61,19 +61,24 @@ class StompAMQ(object):
     :param topic: The topic to be used on the broker
     :param host_and_ports: The hosts and ports list of the brokers.
         E.g.: [('agileinf-mb.cern.ch', 61213)]
+    :param cert: path to certificate file
+    :param key: path to key file
     """
 
     # Version number to be added in header
     _version = '0.2'
 
     def __init__(self, username, password, producer, topic,
-                 host_and_ports=None, logger=None):
+                 host_and_ports=None, logger=None, cert=None, key=None):
         self._username = username
         self._password = password
         self._producer = producer
         self._topic = topic
         self._host_and_ports = host_and_ports or [('agileinf-mb.cern.ch', 61213)]
         self.logger = logger if logger else logging.getLogger()
+        self._cert = cert
+        self._key = key
+        self._use_ssl = True if key and cert else False
 
     def send(self, data):
         """
@@ -90,10 +95,20 @@ class StompAMQ(object):
             return data
 
         conn = stomp.Connection(host_and_ports=self._host_and_ports)
+
+        if self._use_ssl:
+            # This requires stomp >= 4.1.15
+            conn.set_ssl(for_hosts=self._host_and_ports, key_file=self._key, cert_file=self._cert)
+
         conn.set_listener('StompyListener', StompyListener(self.logger))
         try:
             conn.start()
-            conn.connect(username=self._username, passcode=self._password, wait=True)
+            # If cert/key are used, ignore username and password
+            if self._use_ssl:
+                conn.connect(wait=True)
+            else:
+                conn.connect(username=self._username, passcode=self._password, wait=True)
+
         except stomp.exception.ConnectFailedException as exc:
             self.logger.error("Connection to %s failed %s", repr(self._host_and_ports), str(exc))
             return []

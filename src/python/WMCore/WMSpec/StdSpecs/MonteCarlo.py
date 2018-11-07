@@ -26,6 +26,17 @@ class MonteCarloWorkloadFactory(StdBase):
     Stamp out Monte Carlo workflows.
     """
 
+    def __init__(self):
+        """
+        __init__
+
+        Setup parameters that will be later overwritten in the call,
+        otherwise pylint will complain about them.
+        """
+        super(MonteCarloWorkloadFactory, self).__init__()
+        self.eventsPerLumi = None
+        self.eventsPerJob = None
+
     def buildWorkload(self):
         """
         _buildWorkload_
@@ -95,8 +106,10 @@ class MonteCarloWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        # Adjust the events by the filter efficiency
+        # Adjust the events and lumi size by the filter efficiency
         self.totalEvents = int(self.requestNumEvents / self.filterEfficiency)
+        if self.eventsPerLumi:
+            self.eventsPerLumi /= self.filterEfficiency
 
         # We don't write out every event in MC,
         # adjust the size per event accordingly

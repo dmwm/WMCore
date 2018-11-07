@@ -4,17 +4,11 @@
 WorkQueuManager test
 """
 
-import os
-import logging
 import threading
 import unittest
-import time
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators.AnalyticsDataCollector.DataCollectorAPI import REQUEST_NAME_PREFIX, NUM_REQUESTS
 
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.DAOFactory import DAOFactory
-from WMComponent.AnalyticsDataCollector.AnalyticsDataCollector import AnalyticsDataCollector
 from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import EmulatorHelper
 
@@ -30,8 +24,8 @@ class MockLocalQService():
         status = {}
         inputDataset = {}
         for i in range(NUM_REQUESTS + 1):
-            status['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = {'inQueue': 1, 'inWMBS': 1}
-            inputDataset['%s%s' % (REQUEST_NAME_PREFIX, i+1)] = 'inputdataset-%s' % (i+1)
+            status['%s%s' % (REQUEST_NAME_PREFIX, i + 1)] = {'inQueue': 1, 'inWMBS': 1}
+            inputDataset['%s%s' % (REQUEST_NAME_PREFIX, i + 1)] = 'inputdataset-%s' % (i + 1)
 
         return {'status': status, 'input_dataset': inputDataset}
 
@@ -56,17 +50,18 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         self.testInit.setupCouch(self.reqmonDBName, "WMStats")
         self.testInit.setupCouch(self.localDBName, "WMStats")
         self.testDir = self.testInit.generateWorkDir()
-        EmulatorHelper.setEmulators(localCouch = True, reqMon = False, wmagentDB = True)
+        EmulatorHelper.setEmulators(localCouch=True, reqMon=False, wmagentDB=True)
         return
 
     def tearDown(self):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
+        threading.currentThread()
 
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        self.testInit.clearDatabase()
         EmulatorHelper.resetEmulators()
         return
 
@@ -76,9 +71,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
 
         General config file
         """
-        #configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
-        #                        'src/python/WMComponent/WorkQueueManager/DefaultConfig.py')):
-
         couchURL = self.testInit.couchUrl
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
@@ -116,7 +108,7 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         Tests the components, as in sees if they load.
         Otherwise does nothing.
         """
-        myThread = threading.currentThread()
+        threading.currentThread()
         config = self.getConfig()
         analytics = AnalyticsPoller(config)
 

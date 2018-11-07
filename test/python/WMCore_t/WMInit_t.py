@@ -6,6 +6,8 @@ WMInit_t.py
 Created by Dave Evans on 2011-05-20.
 Copyright (c) 2011 Fermilab. All rights reserved.
 """
+from __future__ import print_function
+
 import os
 import threading
 import unittest
@@ -30,7 +32,7 @@ class WMInit_t(unittest.TestCase):
 
         init = WMInit()
         url = os.environ.get("DATABASE")
-        dialect = os.environ.get("DIALECT")
+        dialect = os.environ.get("DIALECT", "MySQL")
         sock = os.environ.get("DBSOCK", None)
 
         init.setDatabaseConnection(url, dialect, sock)

@@ -229,7 +229,7 @@ def listDiskUsageOverThreshold(config, updateDB):
 
     if updateDB and not t0Flag:
         agentDrainMode = bool(len(overThresholdDisks))
-        if agentDrainMode != agentConfig["AgentDrainMode"]:
+        if agentConfig and (agentDrainMode != agentConfig["AgentDrainMode"]):
             reqMgrAux.updateAgentConfig(config.Agent.hostName, "AgentDrainMode", agentDrainMode)
 
     return overThresholdDisks

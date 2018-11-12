@@ -42,6 +42,11 @@ function(doc, req)
     		// don't update the status just ignore
     		return "not allowed transition " + doc.RequestStatus + " to " + newStatus;
     	}
+    	if (doc.RequestStatus === newStatus) {
+    	    // If it is the same transition don't update the couch doc
+    	    return "OK"
+    	}
+
     	doc.RequestStatus = newStatus;
     	
         var currentTS =  Math.round((new Date()).getTime() / 1000);

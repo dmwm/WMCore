@@ -45,6 +45,11 @@ class AgentStatusPoller(BaseWorkerThread):
         proxyArgs = {'logger': logging.getLogger()}
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
+        self.userCertFile = self.proxy.getUserCertFilename() # X509_USER_CERT
+        # credential lifetime warning/error thresholds, in days
+        self.credThresholds = {'proxy': {'error': 3, 'warning': 5},
+                               'certificate': {'error': 10, 'warning': 20}}
+
 
         localWQUrl = config.AnalyticsDataCollector.localQueueURL
         self.workqueueDS = WorkQueueDS(localWQUrl)
@@ -108,7 +113,8 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         try:
             agentInfo = self.collectAgentInfo()
-            self.checkProxyLifetime(agentInfo)
+            self.checkCredLifetime(agentInfo, "proxy")
+            self.checkCredLifetime(agentInfo, "certificate")
 
             timeSpent, wmbsInfo, _ = self.collectWMBSInfo()
             wmbsInfo['total_query_time'] = int(timeSpent)
@@ -255,29 +261,41 @@ class AgentStatusPoller(BaseWorkerThread):
 
         return results
 
-    def checkProxyLifetime(self, agInfo):
+    def checkCredLifetime(self, agInfo, credType):
         """
-        Check the proxy lifetime (usually X509_USER_CERT) and raise either
-        a warning or an error if the proxy validity is about to expire.
+        Check the credential lifetime. Usually X509_USER_PROXY or X509_USER_CERT
+        and raise either a warning or an error if the proxy validity is about to expire.
         :param agInfo: dictionary with plenty of agent monitoring information in place.
+        :param credType: credential type, can be: "proxy" or "certificate"
         :return: same dictionary object plus additional keys/values if needed.
         """
-        secsLeft = self.proxy.getTimeLeft(proxy=self.proxyFile)
-        logging.debug("Proxy '%s' lifetime is %d secs", self.proxyFile, secsLeft)
+        if credType == "proxy":
+            credFile = self.proxyFile
+            secsLeft = self.proxy.getTimeLeft(proxy=credFile)
+        elif credType == "certificate":
+            credFile = self.userCertFile
+            secsLeft = self.proxy.getUserCertTimeLeft(openSSL=True)
+        else:
+            logging.error("Unknown credential type. Available options are: [proxy, certificate]")
+            return
 
-        if secsLeft <= 86400 * 3:  # 3 days
-            proxyWarning = True
+        logging.debug("%s '%s' lifetime is %d seconds", credType, credFile, secsLeft)
+
+        daysLeft = secsLeft / (60. * 60 * 24)
+
+        if daysLeft <= self.credThresholds[credType]['error']:
+            credWarning = True
             agInfo['status'] = "error"
-        elif secsLeft <= 86400 * 5:  # 5 days
-            proxyWarning = True
+        elif daysLeft <= self.credThresholds[credType]['warning']:
+            credWarning = True
             if agInfo['status'] == "ok":
                 agInfo['status'] = "warning"
         else:
-            proxyWarning = False
+            credWarning = False
 
-        if proxyWarning:
-            warnMsg = "Agent proxy '%s' must be renewed ASAP. " % self.proxyFile
-            warnMsg += "Its time left is: %.2f hours." % (secsLeft / 3600.)
-            agInfo['proxy_warning'] = warnMsg
+        if credWarning:
+            warnMsg = "Agent %s '%s' must be renewed ASAP. " % (credType, credFile)
+            warnMsg += "Its time left is: %.2f hours;" % (secsLeft / 3600.)
+            agInfo['proxy_warning'] = agInfo.get('proxy_warning', "") + warnMsg
 
         return

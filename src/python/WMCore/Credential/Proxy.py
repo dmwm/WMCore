@@ -174,21 +174,31 @@ class Proxy(Credential):
     def cmd_exists(self, cmd):
         return subprocess.call(self.setEnv("type " + cmd), shell=True,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
+    def getUserCertFilename(self):
+        if 'X509_USER_CERT' not in os.environ:
+            ucFilename = '~/.globus/usercert.pem'
+        else:
+            ucFilename = os.environ['X509_USER_CERT']
+        return ucFilename
 
-    def getUserCertEnddate(self, openSSL=True):
+    def getUserCertTimeLeft(self, openSSL=True):
         """
-        Return the number of days until the expiration of the user cert in .globus/usercert.pem or $X509_USER_CERT if set
+        Return the number of seconds until the expiration of the user cert
+        in .globus/usercert.pem or $X509_USER_CERT if set
         Uses openssl by default and fallback to voms-proxy-info in case of problems
         """
-        certLocation = '~/.globus/usercert.pem' if 'X509_USER_CERT' not in os.environ else os.environ['X509_USER_CERT']
+        certLocation = self.getUserCertFilename()
         if openSSL:
-            out, _, retcode = execute_command('openssl x509 -noout -in %s -dates' % certLocation, self.logger,
+            out, _, retcode = execute_command('openssl x509 -noout -in %s -dates'
+                                              % certLocation, self.logger,
                                               self.commandTimeout)
             if retcode == 0:
                 out = out.split('notAfter=')[1]
                 if out[-1] == '\n':
                     out = out[:-1]
-                possibleFormats = ['%b  %d  %H:%M:%S %Y %Z', '%b %d %H:%M:%S %Y %Z']
+
+                possibleFormats = ['%b  %d  %H:%M:%S %Y %Z',
+                                   '%b %d %H:%M:%S %Y %Z']
                 exptime = None
                 for frmt in possibleFormats:
                     try:
@@ -196,20 +206,31 @@ class Proxy(Credential):
                     except ValueError:
                         pass  # try next format
                 if not exptime:
-                    # If we cannot decode the output in any way print a message and fallback to voms-proxy-info command
+                    # If we cannot decode the output in any way print
+                    # a message and fallback to voms-proxy-info command
                     self.logger.warning(
                         'Cannot decode "openssl x509 -noout -in %s -dates" date format. Falling back to voms-proxy-info' % certLocation)
                 else:
                     # if everything is fine then we are ready to return!!
-                    daystoexp = (exptime - datetime.utcnow()).days
-                    return daystoexp
+                    timeleft = (exptime - datetime.utcnow()).total_seconds()
+                    return int(timeleft)
 
         # uses this as a fallback
         timeleft = self.getTimeLeft(proxy=certLocation, checkVomsLife=False)
         if self.retcode:
             raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
 
-        daystoexp = int(timeleft / (60 * 60 * 24))
+        return timeleft
+
+    def getUserCertEnddate(self, openSSL=True):
+        """
+        Return the number of days until the expiration of the user cert
+        in .globus/usercert.pem or $X509_USER_CERT if set
+        Uses openssl by default and fallback to voms-proxy-info in case of problems
+        """
+        timeleft = self.getUserCertTimeLeft(openSSL)
+        daystoexp = int(timeleft / (60. * 60 * 24))
+
         return daystoexp
 
     def getProxyDetails(self):

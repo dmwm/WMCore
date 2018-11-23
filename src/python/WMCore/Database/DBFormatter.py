@@ -40,7 +40,8 @@ class DBFormatter(WMObject):
 
     def format(self, result):
         """
-        Some standard formatting, put all records into a list
+        Some standard formatting, put all records into a list.
+        Returns a list of lists
         """
         out = []
         for r in result:
@@ -85,6 +86,23 @@ class DBFormatter(WMObject):
             r.close()
 
         return dictOut
+
+    def formatList(self, result):
+        """
+        Returns a flat array with the results.
+        Ideally used for single column queries
+        """
+        listOut = []
+        for r in result:
+            descriptions = r.keys
+            for i in r.fetchall():
+                for index in xrange(0, len(descriptions)):
+                    if isinstance(i[index], unicode):
+                        listOut.append(str(i[index]))
+                    else:
+                        listOut.append(i[index])
+            r.close()
+        return listOut
 
     def formatOneDict(self, result):
         """

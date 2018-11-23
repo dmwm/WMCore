@@ -2,6 +2,7 @@ from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer, CouchConflictError
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 
 
 def convertWQElementsStatusToWFStatus(elementsStatusSet):
@@ -76,6 +77,7 @@ class WorkQueue(object):
         self.inboxDB = self.server.connectDatabase(inboxDBName, create=False)
         self.defaultOptions = {'stale': "update_after", 'reduce': True, 'group': True}
         self.eleKey = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'
+        self.states = STATES
 
     def getTopLevelJobsByRequest(self):
         """Get data items we have work in the queue for"""
@@ -104,7 +106,9 @@ class WorkQueue(object):
         for x in data.get('rows', []):
             item = {'agent_name': self._getShortName(x['key'][0]),
                     'status': x['key'][1]}
-            item.update(x['value'])
+            item.update(dict(sum_jobs=x['value']['sum'],
+                             num_elem=x['value']['count'],
+                             max_jobs_elem=x['value']['max']))
             result.append(item)
 
         return result
@@ -122,7 +126,9 @@ class WorkQueue(object):
         for x in data.get('rows', []):
             item = {'agent_name': self._getShortName(x['key'][0]),
                     'priority': int(x['key'][1])}
-            item.update(x['value'])
+            item.update(dict(sum_jobs=x['value']['sum'],
+                             num_elem=x['value']['count'],
+                             max_jobs_elem=x['value']['max']))
             result.append(item)
 
         return result
@@ -312,14 +318,12 @@ class WorkQueue(object):
 
     def getJobsByStatus(self, inboxFlag=False, group=True):
         """
-        Returns some stats for the workqueue elements in each status, like:
-         1. total number of expected Jobs
-         2. count of elements
-         3. minimum number of expected Jobs in an element
-         4. maximum number of expected Jobs in an element
-         5. sum of the squares of the expected Job in each element
+        For each WorkQueue element status, returns:
+         * total number of jobs (sum)
+         * number of workqueue elements (count)
+         * biggest number of jobs found in all those elements (max)
 
-        Provide group=False in order to get a final summary of all the elements.
+        Use group=False in order to get a final summary of all the elements.
         """
         if inboxFlag:
             db = self.inboxDB
@@ -328,36 +332,43 @@ class WorkQueue(object):
         options = {'reduce': True, 'group': group, 'stale': 'update_after'}
 
         data = db.loadView('WorkQueue', 'jobsByStatus', options)
-        result = []
+        result = {}
+        # Add all WorkQueueElement status to the output
+        for st in self.states:
+            result[st] = {}
+
         for x in data.get('rows', []):
-            item = {'status': x['key']}
-            item.update(x['value'])
-            result.append(item)
+            item = dict(sum_jobs=x['value']['sum'],
+                        num_elem=x['value']['count'],
+                        max_jobs_elem=x['value']['max'])
+            result[x['key']] = item
 
         return result
 
     def getJobsByStatusAndPriority(self, stale=True):
         """
-        Returns some stats for the workqueue elements in each status and their priority.
-         1. total number of expected Jobs (sum)
-         2. count of elements (count)
-         3. minimum number of expected Jobs in an element
-         4. maximum number of expected Jobs in an element
-         5. sum of the squares of the expected Job in each element
-
-        Provide group=False in order to get a final summary of all the elements.
+        For each WorkQueue element status, returns a list of:
+         * workqueue element priority
+         * total number of jobs (sum)
+         * number of workqueue elements (count)
+         * biggest number of jobs found in all those elements (max)
         """
         options = {'reduce': True, 'group_level': 2}
         if stale:
             options['stale'] = 'update_after'
 
         data = self.db.loadView('WorkQueue', 'jobsByStatusAndPriority', options)
-        result = []
+        result = {}
+        # Add all WorkQueueElement status to the output
+        for st in self.states:
+            result[st] = []
+
         for x in data.get('rows', []):
-            item = {'status': x['key'][0],
-                    'priority': int(x['key'][1])}
-            item.update(x['value'])
-            result.append(item)
+            st = x['key'][0]
+            prio = x['key'][1]
+            item = dict(priority=int(prio), sum_jobs=x['value']['sum'],
+                        num_elem=x['value']['count'], max_jobs_elem=x['value']['max'])
+            result[st].append(item)
 
         return result
 

@@ -42,8 +42,8 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     possibleJobsSummary = {}
 
     for st in activeStatus:
-        uniqueJobsSummary.setdefault(st, [])
-        possibleJobsSummary.setdefault(st, [])
+        uniqueJobsSummary.setdefault(st, {})
+        possibleJobsSummary.setdefault(st, {})
         uniqueJobs = {}
         possibleJobs = {}
         for elem in elements.get(st, []):
@@ -60,18 +60,16 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
                 jobsPerSite = elem['Jobs']
 
             for site in commonSites:
-                uniqueJobs.setdefault(site, {'Jobs': 0, 'NumElems': 0, 'site_name': site})
-                possibleJobs.setdefault(site, {'Jobs': 0, 'NumElems': 0, 'site_name': site})
+                uniqueJobs.setdefault(site, {'sum_jobs': 0, 'num_elem': 0})
+                possibleJobs.setdefault(site, {'sum_jobs': 0, 'num_elem': 0})
 
-                uniqueJobs[site]['Jobs'] += ceil(jobsPerSite)
-                uniqueJobs[site]['NumElems'] += 1
-                possibleJobs[site]['Jobs'] += ceil(elem['Jobs'])
-                possibleJobs[site]['NumElems'] += 1
-        # now make it a list of dicts to be elastic search friendly
-        for site in uniqueJobs:
-            uniqueJobsSummary[st].append(uniqueJobs[site])
-        for site in possibleJobs:
-            possibleJobsSummary[st].append(possibleJobs[site])
+                uniqueJobs[site]['sum_jobs'] += ceil(jobsPerSite)
+                uniqueJobs[site]['num_elem'] += 1
+                possibleJobs[site]['sum_jobs'] += ceil(elem['Jobs'])
+                possibleJobs[site]['num_elem'] += 1
+
+        uniqueJobsSummary[st].update(uniqueJobs)
+        possibleJobsSummary[st].update(possibleJobs)
 
     return uniqueJobsSummary, possibleJobsSummary
 

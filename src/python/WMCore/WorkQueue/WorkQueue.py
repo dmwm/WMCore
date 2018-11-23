@@ -1162,10 +1162,10 @@ class WorkQueue(WorkQueueBase):
 
         # now the heavy procesing for the site information
         elements = self.workqueueDS.getElementsByStatus(status)
-        uniSites, posSites = getGlobalSiteStatusSummary(elements)
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, status=status)
         results['uniqueJobsPerSiteAAA'] = uniSites
         results['possibleJobsPerSiteAAA'] = posSites
-        uniSites, posSites = getGlobalSiteStatusSummary(elements, dataLocality=True)
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, status=status, dataLocality=True)
         results['uniqueJobsPerSite'] = uniSites
         results['possibleJobsPerSite'] = posSites
 

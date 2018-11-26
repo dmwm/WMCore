@@ -158,11 +158,13 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
                          [{'total_jobs': 339, 'request_name': specName}])
+
+        results = wqApi.getJobsByStatus()
+        self.assertEqual(results['Available']['sum_jobs'], 339)
         results = wqApi.getJobsByStatusAndPriority()
-        self.assertItemsEqual(set([item['status'] for item in results]), ['Available'])
-        resultsPrio = set([item['priority'] for item in results if item['status'] == 'Available'])
+        resultsPrio = set([item['priority'] for item in results.get('Available')])
         self.assertItemsEqual(resultsPrio, [8000])
-        resultsJobs = sum([item['sum'] for item in results if item['status'] == 'Available' and item['priority'] == 8000])
+        resultsJobs = sum([item['sum_jobs'] for item in results.get('Available') if item['priority'] == 8000])
         self.assertTrue(resultsJobs, 339)
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
@@ -178,7 +180,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                   'reduce': False})
         self.assertEqual(len(wqApi.getCompletedWorkflow(stale=False)), 1)
         results = wqApi.getJobsByStatusAndPriority()
-        self.assertItemsEqual(set([item['status'] for item in results]), ['Canceled'])
+        resultsPrio = set([item['priority'] for item in results.get('Canceled')])
+        self.assertItemsEqual(resultsPrio, [8000])
 
     def testConvertWQElementsStatusToWFStatus(self):
         """

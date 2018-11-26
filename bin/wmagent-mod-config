@@ -9,6 +9,7 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 Note: this script is also used by ASO deployment, see:
 https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 """
+from __future__ import print_function
 
 import sys
 import getopt
@@ -19,14 +20,21 @@ import os
 from urlparse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
-from WMCore.Lexicon import sanitizeURL, splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL
 
 help_message = "The help message goes here."
 
 
 class Usage(Exception):
     def __init__(self, msg):
+        super(Usage, self).__init__(msg)
         self.msg = msg
+
+
+### Code extracted from:
+# https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 def importConfigTemplate(filename):
@@ -40,7 +48,7 @@ def importConfigTemplate(filename):
     config = getattr(mod, 'config', None)
     if config == None:
         msg = "No config attribute found in %s" % filename
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return config
 
 
@@ -52,7 +60,7 @@ def saveConfiguration(configObject, outputPath):
 
     """
     saveConfigurationFile(configObject, outputPath)
-    os.chmod(outputPath, 0600)
+    os.chmod(outputPath, 0o600)
 
 
 def modifyConfiguration(config, **args):
@@ -329,7 +337,7 @@ def main(argv=None):
             # input, output, couch_url, working_dir, host_dn, wmstats_url
             # ufc_service_url, ops_proxy and amq_auth_file
             ### in case we ever decide to clean this up
-            opts, args = getopt.getopt(argv[1:], "h",
+            opts, _args = getopt.getopt(argv[1:], "h",
                                        ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
                                         "working_dir=", "global_workqueue_url=",
                                         "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=",
@@ -366,8 +374,8 @@ def main(argv=None):
 
 
     except Usage as err:
-        print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
-        print >> sys.stderr, "\t for help use --help"
+        eprint(sys.argv[0].split("/")[-1] + ": " + str(err.msg))
+        eprint("\t for help use --help")
         return 2
 
     try:
@@ -375,21 +383,21 @@ def main(argv=None):
     except Exception as ex:
         msg = "Failed to import template config: %s\n" % inputFile
         msg += str(ex)
-        print >> sys.stderr, msg
+        eprint(msg)
         return 3
     try:
         cfg = modifyConfiguration(cfg, **parameters)
     except Exception as ex:
         msg = "Error modifying configuration:\n %s" % str(ex)
-        print >> sys.stderr, msg
-        print >> sys.stderr, traceback.format_exc()
+        eprint(msg)
+        eprint(traceback.format_exc())
         return 4
     try:
         saveConfiguration(cfg, outputFile)
     except Exception as ex:
         msg = "Error saving output configuration file:\n %s\n" % outputFile
         msg += str(ex)
-        print >> sys.stderr, msg
+        eprint(msg)
         return 5
 
 

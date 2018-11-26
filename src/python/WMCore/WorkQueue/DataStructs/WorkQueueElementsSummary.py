@@ -3,11 +3,12 @@ WorkQueueElementsSummary
 
 """
 from __future__ import (print_function, division)
+
 from collections import defaultdict
 from math import ceil
 
-from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
+from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult
 
 
 def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):

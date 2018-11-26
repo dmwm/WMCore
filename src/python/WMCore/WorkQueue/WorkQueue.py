@@ -21,12 +21,12 @@ from collections import defaultdict
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper

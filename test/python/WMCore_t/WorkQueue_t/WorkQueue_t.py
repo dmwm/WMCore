@@ -36,9 +36,9 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoMatchingElements,
                                                   WorkQueueNoWorkError)
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
@@ -291,7 +291,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # High priority ReReco spec
         self.rerecoArgs.update(kwargs)
         highPrioReReco = rerecoWorkload('highPrioSpec', self.rerecoArgs, assignArgs=assignArgs)
-        highPrioReReco.data.request.priority = 100000000
+        highPrioReReco.data.request.priority = 999998
         highPrioReReco.setSpecUrl(os.path.join(self.workDir, 'highPrioSpec.spec'))
         highPrioReReco.save(highPrioReReco.specUrl())
         return highPrioReReco
@@ -948,7 +948,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         syncQueues(self.localQueue)
         # local cancelded
-        print(self.localQueue.status())
         # self.assertEqual(len(self.localQueue.status(status='Canceled')), 1)
         # clear global
         self.globalQueue.deleteWorkflows(processingSpec.name())
@@ -1490,6 +1489,88 @@ class WorkQueueTest(WorkQueueTestCase):
                          1)
         self.assertEqual(len(self.localQueue.backend.getElements(WorkflowName=highPrioReReco.name())),
                          NBLOCKS_HICOMM)
+
+    def testMonitorWorkQueue(self):
+        """
+        Test several WorkQueue couch queries to monitor amount of work in the system
+        """
+        # Run some bootstrap, same code as in the test above...
+        highPrioReReco = self.setupHighPrioReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
+        self.globalQueue.queueWork(highPrioReReco.specUrl())
+
+        initialStatus = ['Available', 'Negotiating', 'Acquired']
+        metrics = self.globalQueue.monitorWorkQueue(status=initialStatus)
+        time.sleep(1)  # HACKY: query again to get the up-to-date views
+        metrics = self.globalQueue.monitorWorkQueue(status=initialStatus)
+
+        expectedMetrics = ('workByStatus', 'workByStatusAndPriority', 'workByAgentAndStatus',
+                           'workByAgentAndPriority', 'uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA',
+                           'uniqueJobsPerSite', 'possibleJobsPerSite', 'total_query_time')
+        self.assertItemsEqual(metrics.keys(), expectedMetrics)
+
+        self.assertItemsEqual(metrics['workByStatus'].keys(), STATES)
+        self.assertEqual(metrics['workByStatus']['Available']['sum_jobs'], 678)
+        self.assertEqual(metrics['workByStatus']['Acquired'], {})
+
+        self.assertItemsEqual(metrics['workByStatusAndPriority'].keys(), STATES)
+        prios = [item['priority'] for item in metrics['workByStatusAndPriority']['Available']]
+        self.assertItemsEqual(prios, [8000, 999998])
+        self.assertEqual(metrics['workByStatusAndPriority']['Acquired'], [])
+
+        self.assertEqual(len(metrics['workByAgentAndStatus']), 1)
+        self.assertEqual(metrics['workByAgentAndStatus'][0]['agent_name'], 'AgentNotDefined')
+        self.assertEqual(metrics['workByAgentAndStatus'][0]['status'], 'Available')
+
+        self.assertEqual(len(metrics['workByAgentAndPriority']), 2)
+        self.assertEqual(metrics['workByAgentAndPriority'][0]['agent_name'], 'AgentNotDefined')
+        self.assertEqual([item['priority'] for item in metrics['workByAgentAndPriority']], [8000, 999998])
+
+        for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
+            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertEqual(len(metrics[met]['Available']), 2)
+            self.assertEqual(len(metrics[met]['Acquired']), 0)
+            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+
+        self.assertTrue(metrics['total_query_time'] >= 0)
+
+        # Pull all into local queue (get them into Acquired status)
+        self.localQueue.pullWork({'T2_XX_SiteA': 500})
+        syncQueues(self.localQueue)
+        metrics = self.globalQueue.monitorWorkQueue(status=initialStatus)
+        time.sleep(1)  # HACKY: query again to get the up-to-date views
+        metrics = self.globalQueue.monitorWorkQueue(status=initialStatus)
+
+        self.assertTrue(metrics['workByStatus']['Available']['sum_jobs'] < 200)
+        self.assertTrue(metrics['workByStatus']['Acquired']['sum_jobs'] >= 500)
+
+        self.assertEqual(len(metrics['workByStatusAndPriority']['Available']), 1)
+        self.assertEqual(len(metrics['workByStatusAndPriority']['Acquired']), 2)
+        self.assertEqual(metrics['workByStatusAndPriority']['Available'][0]['priority'], 8000)
+        prios = [item['priority'] for item in metrics['workByStatusAndPriority']['Acquired']]
+        self.assertItemsEqual(prios, [8000, 999998])
+
+        self.assertEqual(len(metrics['workByAgentAndStatus']), 2)
+        for elem in metrics['workByAgentAndStatus']:
+            if elem['status'] == 'Available':
+                self.assertEqual(elem['agent_name'], 'AgentNotDefined')
+            else:  # in Acquired
+                self.assertTrue(elem['agent_name'] != 'AgentNotDefined')
+
+        self.assertEqual(len(metrics['workByAgentAndPriority']), 3)
+        prios = []
+        for item in metrics['workByAgentAndPriority']:
+            if item['agent_name'] != 'AgentNotDefined':
+                prios.append(item['priority'])
+        self.assertItemsEqual(prios, [8000, 999998])
+
+        for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
+            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertEqual(len(metrics[met]['Available']), 2)
+            self.assertEqual(len(metrics[met]['Acquired']), 2)
+            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(metrics[met]['Acquired'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
 
 if __name__ == "__main__":

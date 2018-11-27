@@ -25,7 +25,7 @@ dependencies = {
                     'WMCore.WMBase', 'WMCore.WMLogging', 'WMCore.Algorithms.Permissions'],
     },
     'wmc-component': {
-        'packages': ['WMCore.MsgService', 'WMCore.WorkerThreads', 'WMCore.Alerts+', 'WMCore.ThreadPool'],
+        'packages': ['WMCore.MsgService', 'WMCore.WorkerThreads', 'WMCore.ThreadPool'],
         'modules': ['WMComponent.__init__'],
         'systems': ['wmc-base']
     },
@@ -42,7 +42,7 @@ dependencies = {
         'systems': ['wmc-base']
     },
     'wmc-web': {
-        'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads', 'WMCore.Alerts+'],
+        'packages': ['WMCore.WebTools', 'WMCore.Agent+', 'WMCore.WorkerThreads'],
         'systems': ['wmc-database', 'wmc-base'],
         'statics': ['src/javascript/WMCore/WebTools',
                     'src/javascript/external/yui',
@@ -81,7 +81,7 @@ dependencies = {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
                      'WMCore.Wrappers+', 'WMCore.Services+',
                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
-                     'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
+                     'WMCore.ACDC', 'WMCore.GroupUser'],
         'modules': ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                     'WMCore.Algorithms.MiscAlgos', 'WMCore.Algorithms.ParseXMLFile',
                     'WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
@@ -109,7 +109,7 @@ dependencies = {
     'asyncstageout': {
         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
                      'WMCore.Credential', 'WMCore.WorkerThreads',
-                     'WMCore.ACDC', 'WMCore.Alerts+',
+                     'WMCore.ACDC',
                      'WMCore.Services+'],
         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
                     'WMCore.Services.pycurl_manager', 'WMComponent.__init__'],
@@ -159,10 +159,6 @@ dependencies = {
                     'src/couchapps/LogDB+',
                     'src/html/WMStats+'],
     },
-    'alertscollector':
-        {
-            'statics': ['src/couchapps/AlertsCollector+'],
-        },
     'acdcserver': {
         'packages': ['WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.DataStructs',
                      'WMCore.Wrappers+', 'WMCore.Database'],

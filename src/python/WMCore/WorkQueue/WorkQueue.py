@@ -20,7 +20,6 @@ from collections import defaultdict
 
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
-from WMCore.Alerts import API as alertAPI
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -81,7 +80,7 @@ class WorkQueue(WorkQueueBase):
         self.params = params
 
         # config argument (within params) shall be reference to
-        # Configuration instance (will later be checked for presence of "Alert")
+        # Configuration instance
         self.config = params.get("Config", None)
         self.params.setdefault('CouchUrl', os.environ.get('COUCHURL'))
         if not self.params.get('CouchUrl'):
@@ -220,14 +219,6 @@ class WorkQueue(WorkQueueBase):
             # This is need for getting post call
             # TODO: Change ReqMgr api to accept post for for retrieving the data and remove this
             self.requestDB = RequestDBReader(self.params['RequestDBURL'])
-
-        # initialize alerts sending client (self.sendAlert() method)
-        # usage: self.sendAlert(levelNum, msg = msg) ; level - integer 1 .. 10
-        #    1 - 4 - lower levels ; 5 - 10 higher levels
-        preAlert, self.alertSender = \
-            alertAPI.setUpAlertsMessaging(self, compName="WorkQueueManager")
-        self.sendAlert = alertAPI.getSendAlert(sender=self.alertSender,
-                                               preAlert=preAlert)
 
         # set the thread name before create the log db.
         # only sets that when it is not set already
@@ -974,9 +965,6 @@ class WorkQueue(WorkQueueBase):
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:
                         self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
-                    if not updated_elements and (
-                                float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
-                        self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
                     for x in updated_elements:
                         self.backend.updateElements(x.id, **x.statusMetrics())
 

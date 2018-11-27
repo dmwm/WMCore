@@ -15,7 +15,6 @@ import time
 import traceback
 
 from WMCore.Database.DBExceptionHandler import db_exception_handler
-from WMCore.Alerts import API as alertAPI
 from WMCore.Database.Transaction import Transaction
 
 
@@ -51,10 +50,6 @@ class BaseWorkerThread(object):
 
         # Init the timing
         self.lastTime = time.time()
-
-        # Init alert system
-        self.sender = None
-        self.sendAlert = None
 
         # Get the current DBFactory
         myThread = threading.currentThread()
@@ -266,35 +261,3 @@ class BaseWorkerThread(object):
 
             time.sleep(1)
             idleTime -= 1
-
-    def initAlerts(self, compName=None):
-        """
-        _initAlerts_
-
-        Setup the alerts for the rest of the system.
-
-        sender: instance of the Alert messages Sender
-        sendAlert: the code what sends the actual Alerts
-            (documented in WMCore/Alerts/APIgetSendAlert)
-
-        note:
-            Tests are done in the API_t belonging to Alerts fw.
-            This particular method is called from a number of
-                components and some have particular tests on alerts sending.
-        """
-        if not compName:
-            compName = self.__class__.__name__
-        preAlert, sender = alertAPI.setUpAlertsMessaging(self,
-                                                         compName=compName)
-        sendAlert = alertAPI.getSendAlert(sender=sender,
-                                          preAlert=preAlert)
-        self.sender = sender
-        self.sendAlert = sendAlert
-
-    def __del__(self):
-        """
-        Unregister itself with Alert Receiver.
-
-        """
-        if self.sender:
-            self.sender.unregister()

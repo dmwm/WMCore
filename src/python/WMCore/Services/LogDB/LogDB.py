@@ -9,7 +9,7 @@ import re
 import logging
 import threading
 from collections import defaultdict
-
+from httplib import HTTPException
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 from WMCore.Lexicon import splitCouchServiceURL
@@ -112,13 +112,15 @@ class LogDB(object):
         if mtype == None - delete all the log for that request
         mtype != None - only delete specified mtype
         """
+        res = 'delete-error'
         try:
-            if request == None:
-                request = self.default_user
+            request = request or self.default_user
             res = self.backend.delete(request, mtype, this_thread, agent)
-        except Exception as exc:
-            self.logger.error("LogDBBackend delete API failed, error=%s", str(exc))
-            res = 'delete-error'
+        except HTTPException as ex:
+            msg = "Failed to delete doc in LogDB. Reason: %s, status: %s" % (ex.reason, ex.status)
+            self.logger.error(msg)
+        except Exception as ex:
+            self.logger.error("LogDBBackend delete API failed, error=%s", str(ex))
         self.logger.debug("LogDB delete request, res=%s", res)
         return res
 

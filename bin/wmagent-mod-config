@@ -214,20 +214,6 @@ def modifyConfiguration(config, **args):
         config.UserFileCache.views.active.userfilecache.serviceURL = args["ufc_service_url"]
         config.UserFileCache.userCacheDir = args["ufc_cachedir"]
 
-    if hasattr(config, "reqmgr"):
-        config.reqmgr.Webtools.host = args["reqmgr_hostname"]
-        config.reqmgr.Webtools.port = int(args["reqmgr_port"])
-        config.reqmgr.couchUrl = args["couch_url"]
-        config.reqmgr.views.active.create.requestor = "cmsdataops"
-        config.reqmgr.admin = "gutsche@fnal.gov"
-        config.reqmgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
-        config.reqmgr.views.active.create.requestor = "cmsdataops"
-        config.reqmgr.database.connectUrl = args["mysql_url"]
-        config.reqmgr.database.socket = args["mysql_socket"]
-        config.reqmgr.views.active.monitorSvc.serviceURL = "http://%s:%s/reqmgr/reqMgr" % (
-            localhost, config.reqmgr.Webtools.port)
-        config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
-
     # hating having to add this when WMAgentConfig.py has everything set up ...
     if hasattr(config, "AlertProcessor"):
         if hasattr(config.AlertProcessor.critical.sinks, "couch"):
@@ -272,14 +258,10 @@ def modifyConfiguration(config, **args):
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
-        reqMgrSvc = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
-        config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(),
                                                                             config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = args["reqmgr2_url"]
         config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
-        config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
-        config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = "TEST_global_queue"
 
@@ -321,7 +303,7 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "AgentStatusWatcher"):
         config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
         config.AgentStatusWatcher.dashboard = args["dashboard_url"]
-        amquser, amqpass, amqtopic =  args["amq_credentials"].split('@@@')  # e.g.: user@@@pass@@@topic
+        amquser, amqpass, amqtopic = args["amq_credentials"].split('@@@')  # e.g.: user@@@pass@@@topic
         config.AgentStatusWatcher.userAMQ = amquser
         config.AgentStatusWatcher.passAMQ = amqpass
         config.AgentStatusWatcher.topicAMQ = amqtopic
@@ -349,7 +331,7 @@ def main(argv=None):
             ### in case we ever decide to clean this up
             opts, args = getopt.getopt(argv[1:], "h",
                                        ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
-                                        "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
+                                        "working_dir=", "global_workqueue_url=",
                                         "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=",
                                         "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                         "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
@@ -370,7 +352,7 @@ def main(argv=None):
             if option == "--input":
                 inputFile = value
             if option in ('--mysql_socket', '--mysql_url', '--coredb_url', '--couch_url',
-                          '--working_dir', '--reqmgr_hostname', '--reqmgr_port',
+                          '--working_dir',
                           '--global_workqueue_url', '--workqueue_db_name',
                           '--cs_hostname', '--cs_port', '--host_dn',
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',

@@ -4,15 +4,16 @@ LogDB provides functionality to post/search messages into LogDB.
 https://github.com/dmwm/WMCore/issues/5705
 """
 
+import logging
 # standard modules
 import re
-import logging
 import threading
 from collections import defaultdict
 from httplib import HTTPException
+
+from WMCore.Lexicon import splitCouchServiceURL
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
-from WMCore.Lexicon import splitCouchServiceURL
 
 
 def getLogDBInstanceFromThread():
@@ -21,9 +22,10 @@ def getLogDBInstanceFromThread():
     """
     myThread = threading.currentThread()
     if not hasattr(myThread, "logdbClient") or not isinstance(myThread.logdbClient, LogDB):
-        #logdb is not set do nothting
+        # logdb is not set do anything
         return None
     return myThread.logdbClient
+
 
 class LogDB(object):
     """
@@ -31,6 +33,7 @@ class LogDB(object):
 
     LogDB object - interface to LogDB functionality.
     """
+
     def __init__(self, url, identifier, logger=None, **kwds):
         self.logger = logger if logger else logging.getLogger()
         self.url = url if url else 'https://cmsweb.cern.ch/couchdb/wmstats_logdb'
@@ -45,19 +48,19 @@ class LogDB(object):
         self.user_pat = re.compile(r'^/[a-zA-Z][a-zA-Z0-9/\=\s()\']*\=[a-zA-Z0-9/\=\.\-_/#:\s\']*$')
         self.agent = 0 if self.user_pat.match(self.identifier) else 1
         couch_url, db_name = splitCouchServiceURL(self.url)
-        self.backend = LogDBBackend(couch_url, db_name, identifier, \
-                self.thread_name, agent=self.agent, **kwds)
+        self.backend = LogDBBackend(couch_url, db_name, identifier,
+                                    self.thread_name, agent=self.agent, **kwds)
         self.logger.info(self)
 
     def __repr__(self):
         "Return representation for class"
         return "<LogDB(url=%s, identifier=%s, agent=%d)>" \
-                % (self.url, self.identifier, self.agent)
+               % (self.url, self.identifier, self.agent)
 
     def post(self, request=None, msg="", mtype="comment"):
         """Post new entry into LogDB for given request"""
         try:
-            if request == None:
+            if request is None:
                 request = self.default_user
             if self.user_pat.match(self.identifier):
                 res = self.backend.user_update(request, msg, mtype)
@@ -73,7 +76,7 @@ class LogDB(object):
         """Retrieve all entries from LogDB for given request"""
         res = []
         try:
-            if request == None:
+            if request is None:
                 request = self.default_user
             if self.user_pat.match(self.identifier):
                 agent = False
@@ -85,7 +88,7 @@ class LogDB(object):
                 thr = row['doc']['thr']
                 mtype = row['doc']['type']
                 for rec in row['doc']['messages']:
-                    rec.update({'request':request, 'identifier':identifier, 'thr': thr, 'type':mtype})
+                    rec.update({'request': request, 'identifier': identifier, 'thr': thr, 'type': mtype})
                     res.append(rec)
         except Exception as exc:
             self.logger.error("LogDBBackend get API failed, error=%s", str(exc))
@@ -114,7 +117,8 @@ class LogDB(object):
         """
         res = 'delete-error'
         try:
-            request = request or self.default_user
+            if request is None:
+                request = self.default_user
             res = self.backend.delete(request, mtype, this_thread, agent)
         except HTTPException as ex:
             msg = "Failed to delete doc in LogDB. Reason: %s, status: %s" % (ex.reason, ex.status)
@@ -143,7 +147,7 @@ class LogDB(object):
             identifier = row['doc']['identifier']
             # wmstats thread can run in multiple boxed.
             if self.identifier == identifier or identifier.startswith(self.identifier):
-                #this will handle wmstats DataCacheUpdate thread with multiple machine
+                # this will handle wmstats DataCacheUpdate thread with multiple machine
                 postfix = identifier.replace(self.identifier, "")
                 thr = "%s%s" % (row['doc']['thr'], postfix)
                 mtype = row['doc']['type']
@@ -159,9 +163,9 @@ class LogDB(object):
 
     def _append_down_component_detail(self, report, thr, msg, ts=0, state="error"):
         report['down_components'].append(thr)
-        detail = {'name':thr,'worker_name':thr, 'state': state,
-                  'last_error': ts,'error_message': msg,
-                  'pid': 'N/A' }
+        detail = {'name': thr, 'worker_name': thr, 'state': state,
+                  'last_error': ts, 'error_message': msg,
+                  'pid': 'N/A'}
         report['down_component_detail'].append(detail)
         return
 
@@ -182,4 +186,3 @@ class LogDB(object):
             if info['type'] == 'agent-error':
                 self._append_down_component_detail(report, thr, info['msg'], info['ts'])
         return report
-

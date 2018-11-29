@@ -57,7 +57,8 @@ dependencies = {
                      'WMCore.WMDataMining+',
                      'WMCore.Services+',
                      'WMCore.ACDC',
-                     'Utils'
+                     'Utils',
+                     'WMCore.WorkQueue.DataStructs+'
                      ],
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': ['src/couchapps/ReqMgr+',

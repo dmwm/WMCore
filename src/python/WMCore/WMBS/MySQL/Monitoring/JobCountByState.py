@@ -9,9 +9,9 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 
 class JobCountByState(DBFormatter):
-    sql = """SELECT count(wmbs_job.state) AS job_count, wmbs_job_state.name AS job_state
-             FROM wmbs_job
-             INNER JOIN wmbs_job_state ON wmbs_job.state=wmbs_job_state.id
+    sql = """SELECT wmbs_job_state.name AS job_state, count(wmbs_job.state) AS job_count
+               FROM wmbs_job_state
+               LEFT OUTER JOIN wmbs_job ON wmbs_job.state=wmbs_job_state.id
              GROUP BY wmbs_job_state.name"""
 
     def formatDict(self, results):

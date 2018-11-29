@@ -5,7 +5,11 @@ wmagent-mod-config.py
 
 Created by Dave Evans on 2011-01-19.
 Copyright (c) 2011 Fermilab. All rights reserved.
+
+Note: this script is also used by ASO deployment, see:
+https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 """
+from __future__ import print_function
 
 import sys
 import getopt
@@ -16,16 +20,21 @@ import os
 from urlparse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
-from WMCore.Lexicon import sanitizeURL, splitCouchServiceURL
+from WMCore.Lexicon import splitCouchServiceURL
 
-help_message = '''
-The help message goes here.
-'''
+help_message = "The help message goes here."
 
 
 class Usage(Exception):
     def __init__(self, msg):
+        super(Usage, self).__init__(msg)
         self.msg = msg
+
+
+### Code extracted from:
+# https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 def importConfigTemplate(filename):
@@ -39,7 +48,7 @@ def importConfigTemplate(filename):
     config = getattr(mod, 'config', None)
     if config == None:
         msg = "No config attribute found in %s" % filename
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return config
 
 
@@ -51,7 +60,7 @@ def saveConfiguration(configObject, outputPath):
 
     """
     saveConfigurationFile(configObject, outputPath)
-    os.chmod(outputPath, 0600)
+    os.chmod(outputPath, 0o600)
 
 
 def modifyConfiguration(config, **args):
@@ -82,8 +91,6 @@ def modifyConfiguration(config, **args):
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
         elif component == "JobAccountant":
             compCfg.specDir = "%s/%s/SpecCache" % (args['working_dir'], component)
-        elif component == "AgentStatusWatcher":
-            compCfg.jsonFile = "%s/%s/WMA_monitoring.json" % (args['working_dir'], component)
 
     localhost = socket.getfqdn()
     for webapp in config.listWebapps_():
@@ -215,20 +222,6 @@ def modifyConfiguration(config, **args):
         config.UserFileCache.views.active.userfilecache.serviceURL = args["ufc_service_url"]
         config.UserFileCache.userCacheDir = args["ufc_cachedir"]
 
-    if hasattr(config, "reqmgr"):
-        config.reqmgr.Webtools.host = args["reqmgr_hostname"]
-        config.reqmgr.Webtools.port = int(args["reqmgr_port"])
-        config.reqmgr.couchUrl = args["couch_url"]
-        config.reqmgr.views.active.create.requestor = "cmsdataops"
-        config.reqmgr.admin = "gutsche@fnal.gov"
-        config.reqmgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
-        config.reqmgr.views.active.create.requestor = "cmsdataops"
-        config.reqmgr.database.connectUrl = args["mysql_url"]
-        config.reqmgr.database.socket = args["mysql_socket"]
-        config.reqmgr.views.active.monitorSvc.serviceURL = "http://%s:%s/reqmgr/reqMgr" % (
-            localhost, config.reqmgr.Webtools.port)
-        config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
-
     # hating having to add this when WMAgentConfig.py has everything set up ...
     if hasattr(config, "AlertProcessor"):
         if hasattr(config.AlertProcessor.critical.sinks, "couch"):
@@ -273,14 +266,10 @@ def modifyConfiguration(config, **args):
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
-        reqMgrSvc = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
-        config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(),
                                                                             config.WorkQueueManager.wmstatDBName)
         config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = args["reqmgr2_url"]
         config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
-        config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
-        config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = "TEST_global_queue"
 
@@ -322,6 +311,10 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "AgentStatusWatcher"):
         config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
         config.AgentStatusWatcher.dashboard = args["dashboard_url"]
+        amquser, amqpass, amqtopic = args["amq_credentials"].split('@@@')  # e.g.: user@@@pass@@@topic
+        config.AgentStatusWatcher.userAMQ = amquser
+        config.AgentStatusWatcher.passAMQ = amqpass
+        config.AgentStatusWatcher.topicAMQ = amqtopic
 
      # custom WMArchiveReporter
     if hasattr(config, "ArchiveDataReporter"):
@@ -340,17 +333,20 @@ def main(argv=None):
 
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "h",
+            ### For the record, options used by ASO deployment are:
+            # input, output, couch_url, working_dir, host_dn, wmstats_url
+            # ufc_service_url, ops_proxy and amq_auth_file
+            ### in case we ever decide to clean this up
+            opts, _args = getopt.getopt(argv[1:], "h",
                                        ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
-                                        "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
-                                        "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
+                                        "working_dir=", "global_workqueue_url=",
+                                        "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=",
                                         "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                         "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                         "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
-                                        "reqmgr2_url=",
-                                        "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=",
-                                        "dashboard_url=",
-                                        "requestcouch_url=", "central_logdb_url=", "wmarchive_url="])
+                                        "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
+                                        "dqm_url=", "dashboard_url=", "requestcouch_url=", "central_logdb_url=",
+                                        "wmarchive_url=", "amq_credentials="])
 
         except getopt.error as msg:
             raise Usage(msg)
@@ -364,21 +360,22 @@ def main(argv=None):
             if option == "--input":
                 inputFile = value
             if option in ('--mysql_socket', '--mysql_url', '--coredb_url', '--couch_url',
-                          '--working_dir', '--reqmgr_hostname', '--reqmgr_port',
+                          '--working_dir',
                           '--global_workqueue_url', '--workqueue_db_name',
-                          '--cs_hostname', '--cs_port', '--host_dn', '--couch_url',
+                          '--cs_hostname', '--cs_port', '--host_dn',
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
-                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
-                          '--requestcouch_url', '--central_logdb_url', '--wmarchive_url'):
+                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
+                          '--dashboard_url', '--requestcouch_url', '--central_logdb_url',
+                          '--wmarchive_url', '--amq_credentials'):
                 parameters[option[2:]] = value
 
 
     except Usage as err:
-        print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
-        print >> sys.stderr, "\t for help use --help"
+        eprint(sys.argv[0].split("/")[-1] + ": " + str(err.msg))
+        eprint("\t for help use --help")
         return 2
 
     try:
@@ -386,21 +383,21 @@ def main(argv=None):
     except Exception as ex:
         msg = "Failed to import template config: %s\n" % inputFile
         msg += str(ex)
-        print >> sys.stderr, msg
+        eprint(msg)
         return 3
     try:
         cfg = modifyConfiguration(cfg, **parameters)
     except Exception as ex:
         msg = "Error modifying configuration:\n %s" % str(ex)
-        print >> sys.stderr, msg
-        print >> sys.stderr, traceback.format_exc()
+        eprint(msg)
+        eprint(traceback.format_exc())
         return 4
     try:
         saveConfiguration(cfg, outputFile)
     except Exception as ex:
         msg = "Error saving output configuration file:\n %s\n" % outputFile
         msg += str(ex)
-        print >> sys.stderr, msg
+        eprint(msg)
         return 5
 
 

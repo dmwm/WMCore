@@ -4,7 +4,8 @@
 AgentStatusWatcher test
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
+
 import threading
 import unittest
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit

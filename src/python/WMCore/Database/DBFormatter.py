@@ -6,13 +6,12 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-
-
 import datetime
 import time
 import types
 
 from WMCore.DataStructs.WMObject import WMObject
+
 
 class DBFormatter(WMObject):
     def __init__(self, logger, dbinterface):
@@ -40,7 +39,8 @@ class DBFormatter(WMObject):
 
     def format(self, result):
         """
-        Some standard formatting, put all records into a list
+        Some standard formatting, put all records into a list.
+        Returns a list of lists
         """
         out = []
         for r in result:
@@ -70,12 +70,12 @@ class DBFormatter(WMObject):
         for r in result:
             descriptions = r.keys
             for i in r.fetchall():
-                #WARNING: this can generate errors for some stupid reason
+                # WARNING: this can generate errors for some stupid reason
                 # in both oracle and mysql.
                 entry = {}
-                for index in xrange(0,len(descriptions)):
+                for index in xrange(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if type(i[index]) == unicode:
+                    if isinstance(i[index], unicode):
                         entry[str(descriptions[index].lower())] = str(i[index])
                     else:
                         entry[str(descriptions[index].lower())] = i[index]
@@ -85,6 +85,23 @@ class DBFormatter(WMObject):
             r.close()
 
         return dictOut
+
+    def formatList(self, result):
+        """
+        Returns a flat array with the results.
+        Ideally used for single column queries
+        """
+        listOut = []
+        for r in result:
+            descriptions = r.keys
+            for i in r.fetchall():
+                for index in xrange(0, len(descriptions)):
+                    if isinstance(i[index], unicode):
+                        listOut.append(str(i[index]))
+                    else:
+                        listOut.append(i[index])
+            r.close()
+        return listOut
 
     def formatOneDict(self, result):
         """
@@ -100,7 +117,6 @@ class DBFormatter(WMObject):
 
         return dict(list(zip(description, r.fetchone())))
 
-
     def formatCursor(self, cursor, size=10):
         """
         Fetch the driver cursor directly.
@@ -109,24 +125,24 @@ class DBFormatter(WMObject):
         Use fetchmany(size = default arraysize = 50)
 
         """
-        if type(cursor.keys) == types.MethodType:
+        if isinstance(cursor.keys, types.MethodType):
             keys = [x.lower() for x in cursor.keys()]
         else:
             keys = [x.lower() for x in cursor.keys]
         result = []
         while True:
-            if not cursor.closed :
+            if not cursor.closed:
                 rows = cursor.fetchmany(size=size)
                 if not rows:
                     cursor.close()
                     break
                 for r in rows:
                     result.append(dict(list(zip(keys, r))))
-            else: break
+            else:
+                break
         if not cursor.closed:
             cursor.close()
         return result
-
 
     def getBinds(self, **kwargs):
         binds = {}
@@ -134,20 +150,20 @@ class DBFormatter(WMObject):
             binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
         return binds
 
-    def execute(self, conn = None, transaction = False, returnCursor = False):
+    def execute(self, conn=None, transaction=False, returnCursor=False):
         """
         A simple select with no binds/arguments is the default
         """
         result = self.dbi.processData(self.sql, self.getBinds(),
-                         conn = conn, transaction = transaction,
-                                      returnCursor = returnCursor)
+                                      conn=conn, transaction=transaction,
+                                      returnCursor=returnCursor)
         return self.format(result)
 
-    def executeOne(self, conn = None, transaction = False, returnCursor = False):
+    def executeOne(self, conn=None, transaction=False, returnCursor=False):
         """
         A simple select with no binds/arguments is the default
         """
         result = self.dbi.processData(self.sql, self.getBinds(),
-                         conn = conn, transaction = transaction,
-                                      returnCursor = returnCursor)
+                                      conn=conn, transaction=transaction,
+                                      returnCursor=returnCursor)
         return self.formatOne(result)

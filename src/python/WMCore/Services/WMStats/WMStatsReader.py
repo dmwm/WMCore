@@ -115,8 +115,7 @@ class WMStatsReader(object):
 
         if len(requestNames) > 0:
             requestAndAgentKey = self._getRequestAndAgent(requestNames)
-            jobDocIds = self._getLatestJobInfo(requestAndAgentKey)
-            jobInfoByRequestAndAgent = self._getAllDocsByIDs(jobDocIds)
+            jobInfoByRequestAndAgent = self._getLatestJobInfo(requestAndAgentKey)
         return jobInfoByRequestAndAgent
 
     def _updateRequestInfoWithJobInfo(self, requestInfo):
@@ -221,12 +220,10 @@ class WMStatsReader(object):
         """
         if len(keys) == 0:
             return []
-        options = {}
-        options["reduce"] = True
-        options["group"] = True
+        options = {"include_docs": True}
+        options["reduce"] = False
         result = self._getCouchView("latestRequest", options, keys)
-        ids = [row['value']['id'] for row in result["rows"]]
-        return ids
+        return result
 
     def _getAllDocsByIDs(self, ids, include_docs=True):
         """

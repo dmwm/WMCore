@@ -172,14 +172,14 @@ class WMAgentDBData(object):
             self.batchJobAction = bossAirDAOFactory(classname="JobStatusByTaskAndSite")
         else:
             self.batchJobAction = bossAirDAOFactory(classname="JobStatusByWorkflowAndSite")
+        self.runJobByStatus = bossAirDAOFactory(classname="RunJobByStatus")
 
         self.jobSlotAction = wmbsDAOFactory(classname="Locations.GetJobSlotsByCMSName")
         self.finishedTaskAndJobType = wmbsDAOFactory(classname="Subscriptions.CountFinishedSubscriptionsByTask")
-        self.jobCountByStatus = wmbsDAOFactory(classname="Monitoring.JobCountByState")
+        self.jobCountByState = wmbsDAOFactory(classname="Monitoring.JobCountByState")
         self.jobTypeCountByStatus = wmbsDAOFactory(classname="Monitoring.JobTypeCountByState")
-        self.runJobByStatus = wmbsDAOFactory(classname="Monitoring.RunJobByStatus")
         self.componentStatusAction = wmAgentDAOFactory(classname="GetAllHeartbeatInfo")
-        self.components = None
+        self.listWorkers = wmAgentDAOFactory(classname="MonitorWorkers")
 
     def getAgentMonitoring(self):
         """
@@ -188,9 +188,11 @@ class WMAgentDBData(object):
         monitoring = {}
         monitoring['wmbsCreatedTypeCount'] = self.jobTypeCountByStatus.execute('created')
         monitoring['wmbsExecutingTypeCount'] = self.jobTypeCountByStatus.execute('executing')
-        monitoring['wmbsCountByState'] = self.jobCountByStatus.execute()
-        monitoring['activeRunJobByStatus'] = self.runJobByStatus.execute(active=True)
-        monitoring['completeRunJobByStatus'] = self.runJobByStatus.execute(active=False)
+        monitoring['wmbsCountByState'] = self.jobCountByState.execute()
+
+        runJobs = self.runJobByStatus.execute()
+        monitoring['activeRunJobByStatus'] = runJobs['active']
+        monitoring['completeRunJobByStatus'] = runJobs['completed']
 
         # get thresholds for job creation (GQ to LQ), only for sites in Normal state
         # also get the number of pending jobs and their priority per site
@@ -260,6 +262,7 @@ class WMAgentDBData(object):
                 agentInfo['down_components'].append(component)
                 agentInfo['down_component_detail'].append(component)
 
+        agentInfo['workers'] = self.listWorkers.execute()
         return agentInfo
 
     def getBatchJobInfo(self):
@@ -360,18 +363,6 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
             doc['tasks'] = combineAnalyticsData(doc['tasks'], finishedTasks[request]['tasks'])
         requestDocs.append(doc)
     return requestDocs
-
-
-def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
-    # sets the _id using agent url, need to be unique
-    aInfo = {}
-    aInfo.update(agentInfo)
-    aInfo['_id'] = agentInfo["agent_url"]
-    acdcURL = '%s/%s' % (acdcConfig.couchurl, acdcConfig.database)
-    aInfo['acdc'] = _getCouchACDCHtmlBase(acdcURL)
-    aInfo['timestamp'] = uploadTime
-    aInfo['type'] = "agent_info"
-    return aInfo
 
 
 def _setMultiLevelStatus(statusData, status, value):

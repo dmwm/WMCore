@@ -5,21 +5,21 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
-import json
+import time
 import logging
 import threading
-import time
-
+from pprint import pformat
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
-from WMComponent.AnalyticsDataCollector.DataCollectAPI import (WMAgentDBData, convertToAgentCouchDoc, initAgentInfo)
+from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, initAgentInfo
 from WMCore.Credential.Proxy import Proxy
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, listDiskUsageOverThreshold
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
+from WMCore.Services.StompAMQ.StompAMQ import StompAMQ
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -40,19 +40,24 @@ class AgentStatusPoller(BaseWorkerThread):
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
-        self.jsonFile = config.AgentStatusWatcher.jsonFile
 
         proxyArgs = {'logger': logging.getLogger()}
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
-        self.userCertFile = self.proxy.getUserCertFilename() # X509_USER_CERT
+        self.userCertFile = self.proxy.getUserCertFilename()  # X509_USER_CERT
         # credential lifetime warning/error thresholds, in days
         self.credThresholds = {'proxy': {'error': 3, 'warning': 5},
                                'certificate': {'error': 10, 'warning': 20}}
 
-
         localWQUrl = config.AnalyticsDataCollector.localQueueURL
         self.workqueueDS = WorkQueueDS(localWQUrl)
+
+        # Monitoring setup
+        self.userAMQ = getattr(config.AgentStatusWatcher, "userAMQ", None)
+        self.passAMQ = getattr(config.AgentStatusWatcher, "passAMQ", None)
+        self.postToAMQ = getattr(config.AgentStatusWatcher, "enableAMQ", False)
+        self.topicAMQ = getattr(config.AgentStatusWatcher, "topicAMQ", None)
+        self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('dashb-mb.cern.ch', 61113)])
 
     def setUpCouchDBReplication(self):
 
@@ -128,12 +133,9 @@ class AgentStatusPoller(BaseWorkerThread):
                 agentInfo["LocalWQ_INFO"] = localWQInfo
                 logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
 
-            uploadTime = int(time.time())
-            self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
+            self.uploadAgentInfoToCentralWMStats(agentInfo)
 
-            # save locally json file as well
-            with open(self.jsonFile, 'w') as outFile:
-                json.dump(agentInfo, outFile, indent=2)
+            self.buildMonITDocs(agentInfo)
 
         except Exception as ex:
             logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
@@ -145,12 +147,13 @@ class AgentStatusPoller(BaseWorkerThread):
         :return:
         """
         results = {}
+        wqStates = ['Available', 'Acquired']
 
         results['workByStatus'] = self.workqueueDS.getJobsByStatus()
         results['workByStatusAndPriority'] = self.workqueueDS.getJobsByStatusAndPriority()
 
-        elements = self.workqueueDS.getElementsByStatus(['Available', 'Acquired'])
-        uniSites, posSites = getGlobalSiteStatusSummary(elements, dataLocality=True)
+        elements = self.workqueueDS.getElementsByStatus(wqStates)
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, status=wqStates, dataLocality=True)
         results['uniqueJobsPerSite'] = uniSites
         results['possibleJobsPerSite'] = posSites
 
@@ -225,10 +228,21 @@ class AgentStatusPoller(BaseWorkerThread):
 
         return agentInfo
 
-    def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
-        # direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
-        agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
-        self.centralWMStatsCouchDB.updateAgentInfo(agentDocs, propertiesToKeep=["data_last_update", "data_error"])
+    def uploadAgentInfoToCentralWMStats(self, agentInfo):
+        """
+        Add some required fields to the document before it can get uploaded
+        to WMStats.
+        :param agentInfo: dict with agent stats to be posted to couchdb
+        """
+        agentInfo['_id'] = agentInfo["agent_url"]
+        agentInfo['timestamp'] = int(time.time())
+        agentInfo['type'] = "agent_info"
+        # directly upload to the remote to prevent data conflict when agent is cleaned up and redeployed
+        try:
+            self.centralWMStatsCouchDB.updateAgentInfo(agentInfo,
+                                                       propertiesToKeep=["data_last_update", "data_error"])
+        except Exception as e:
+            logging.error("Failed to upload agent statistics to WMStats. Error: %s", str(e))
 
     @timeFunction
     def collectWMBSInfo(self):
@@ -297,5 +311,227 @@ class AgentStatusPoller(BaseWorkerThread):
             warnMsg = "Agent %s '%s' must be renewed ASAP. " % (credType, credFile)
             warnMsg += "Its time left is: %.2f hours;" % (secsLeft / 3600.)
             agInfo['proxy_warning'] = agInfo.get('proxy_warning', "") + warnMsg
+            logging.warning(warnMsg)
+
+        return
+
+    def buildMonITDocs(self, dataStats):
+        """
+        Convert agent statistics into MonIT-friendly documents to be posted
+        to AMQ/ES. It creates 5 different type of documents:
+         * priority information
+         * site information
+         * work information
+         * agent information
+         * agent health information
+        Note that the internal methods are popping some metrics out of dataStats
+        """
+        if not self.postToAMQ:
+            return
+
+        logging.info("Preparing documents to be posted to AMQ/MonIT..")
+        allDocs = self._buildMonITPrioDocs(dataStats)
+        allDocs.extend(self._buildMonITSitesDocs(dataStats))
+        allDocs.extend(self._buildMonITWorkDocs(dataStats))
+        allDocs.extend(self._buildMonITAgentDocs(dataStats))
+        allDocs.extend(self._buildMonITHealthDocs(dataStats))
+
+        # and finally post them all to AMQ
+        logging.info("Found %d documents to post to AMQ", len(allDocs))
+        self.uploadToAMQ(allDocs, "wmagent", dataStats['agent_url'], dataStats['timestamp'])
+
+
+    def _buildMonITPrioDocs(self, dataStats):
+        """
+        Uses the `sitePendCountByPrio` metric in order to build documents
+        reporting the site name, job priority and amount of jobs within that
+        priority.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_prio_info MonIT docs
+        """
+        docType = "wma_prio_info"
+        prioDocs = []
+        sitePendCountByPrio = dataStats['WMBS_INFO'].pop('sitePendCountByPrio', [])
+
+        for site, item in sitePendCountByPrio.iteritems():
+            # it seems sites with no jobs are also always here as "Sitename": {0: 0}
+            if item.keys() == [0]:
+                continue
+            for prio, jobs in item.iteritems():
+                prioDoc = {}
+                prioDoc['site_name'] = site
+                prioDoc['type'] = docType
+                prioDoc['priority'] = prio
+                prioDoc['job_count'] = jobs
+                prioDocs.append(prioDoc)
+        return prioDocs
+
+    def _buildMonITSitesDocs(self, dataStats):
+        """
+        Uses the site thresholds and job information for each site in order
+        to build a `site_info` document type for MonIT.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_site_info MonIT docs
+        """
+        docType = "wma_site_info"
+        siteDocs = []
+        thresholds = dataStats['WMBS_INFO'].pop('thresholds', {})
+        thresholdsGQ2LQ = dataStats['WMBS_INFO'].pop('thresholdsGQ2LQ', {})
+        possibleJobsPerSite = dataStats['LocalWQ_INFO'].pop('possibleJobsPerSite', {})
+        uniqueJobsPerSite = dataStats['LocalWQ_INFO'].pop('uniqueJobsPerSite', {})
+
+        for site in sorted(thresholds):
+            siteDoc = {}
+            siteDoc['site_name'] = site
+            siteDoc['type'] = docType
+            siteDoc['thresholds'] = thresholds[site]
+            siteDoc['state'] = siteDoc['thresholds'].pop('state', 'Unknown')
+            siteDoc['thresholdsGQ2LQ'] = thresholdsGQ2LQ.get(site, 0)
+
+            for status in possibleJobsPerSite.keys():
+                if site in possibleJobsPerSite[status]:
+                    jobKey = "possible_%s_jobs" % status.lower()
+                    elemKey = "num_%s_elem" % status.lower()
+                    siteDoc[jobKey] = possibleJobsPerSite[status][site]['sum_jobs']
+                    siteDoc[elemKey] = possibleJobsPerSite[status][site]['num_elem']
+                if site in uniqueJobsPerSite[status]:
+                    uniJobKey = "unique_%s_jobs" % status.lower()
+                    siteDoc[uniJobKey] = uniqueJobsPerSite[status][site]['sum_jobs']
+
+            siteDocs.append(siteDoc)
+
+        return siteDocs
+
+    def _buildMonITWorkDocs(self, dataStats):
+        """
+        Uses the local workqueue information order by WQE status and build
+        statistics for the workload in terms of workqueue elements and top
+        level jobs.
+        Using the WMBS data, also builds documents to show the amount of
+        work in 'created' and 'executing' WMBS status.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_work_info MonIT docs
+        """
+        docType = "wma_work_info"
+        workDocs = []
+        workByStatus = dataStats['LocalWQ_INFO'].pop('workByStatus', {})
+        for status, info in workByStatus.items():
+            workDoc = {}
+            workDoc['type'] = docType
+            workDoc['status'] = status
+            workDoc['num_elem'] = info.get('num_elem', 0)
+            workDoc['sum_jobs'] = info.get('sum_jobs', 0)
+            workDocs.append(workDoc)
+
+        wmbsCreatedTypeCount = dataStats['WMBS_INFO'].pop('wmbsCreatedTypeCount', {})
+        wmbsExecutingTypeCount = dataStats['WMBS_INFO'].pop('wmbsExecutingTypeCount', {})
+        for jobType in wmbsCreatedTypeCount:
+            workDoc = {}
+            workDoc['type'] = docType
+            workDoc['job_type'] = jobType
+            workDoc['created_jobs'] = wmbsCreatedTypeCount[jobType]
+            workDoc['executing_jobs'] = wmbsExecutingTypeCount[jobType]
+            workDocs.append(workDoc)
+
+        return workDocs
+
+    def _buildMonITAgentDocs(self, dataStats):
+        """
+        Uses the BossAir and WMBS table information in order to build a
+        view of amount of jobs in different statuses.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_agent_info MonIT docs
+        """
+        docType = "wma_agent_info"
+        agentDocs = []
+        activeRunJobByStatus = dataStats['WMBS_INFO'].pop('activeRunJobByStatus', {})
+        completeRunJobByStatus = dataStats['WMBS_INFO'].pop('completeRunJobByStatus', {})
+        for schedStatus in activeRunJobByStatus:
+            agentDoc = {}
+            agentDoc['type'] = docType
+            agentDoc['schedd_status'] = schedStatus
+            agentDoc['active_jobs'] = activeRunJobByStatus[schedStatus]
+            agentDoc['completed_jobs'] = completeRunJobByStatus[schedStatus]
+            agentDocs.append(agentDoc)
+
+        wmbsCountByState = dataStats['WMBS_INFO'].pop('wmbsCountByState', {})
+        for wmbsStatus in wmbsCountByState:
+            agentDoc = {}
+            agentDoc['type'] = docType
+            agentDoc['wmbs_status'] = wmbsStatus
+            agentDoc['num_jobs'] = wmbsCountByState[wmbsStatus]
+            agentDocs.append(agentDoc)
+
+        return agentDocs
+
+
+    def _buildMonITHealthDocs(self, dataStats):
+        """
+        Creates documents with specific agent information, status of
+        each component and worker thread (similar to what is shown in
+        wmstats) and also some very basic performance numbers.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_health_info MonIT docs
+        """
+        docType = "wma_health_info"
+        healthDocs = []
+        workersStatus = dataStats.pop('workers', {})
+        for worker in workersStatus:
+            healthDoc = {}
+            healthDoc['type'] = docType
+            healthDoc['worker_name'] = worker['name']
+            healthDoc['worker_state'] = worker['state']
+            healthDoc['worker_poll'] = worker['poll_interval']
+            healthDoc['worker_last_hb'] = worker['last_updated']
+            healthDoc['worker_cycle_time'] = worker['cycle_time']
+            healthDocs.append(healthDoc)
+
+        # and last document ...
+        healthDoc = {}
+        healthDoc['type'] = docType
+        healthDoc['agent_team'] = dataStats['agent_team']
+        healthDoc['agent_version'] = dataStats['agent_version']
+        healthDoc['agent_status'] = dataStats['status']
+        healthDoc['wq_query_time'] = dataStats['LocalWQ_INFO']['total_query_time']
+        healthDoc['wmbs_query_time'] = dataStats['WMBS_INFO']['total_query_time']
+        healthDoc['drain_mode'] = dataStats['drain_mode']
+        healthDoc['down_components'] = dataStats['down_components']
+        healthDocs.append(healthDoc)
+
+        return healthDocs
+
+    def uploadToAMQ(self, docs, producer, agentUrl, timeS):
+        """
+        _uploadToAMQ_
+
+        Sends data to AMQ, which ends up in elastic search.
+        :param docs: list of documents/dicts to be posted
+        :param producer: service name that's providing this info
+        """
+        if not docs:
+            logging.info("There are no documents to send to AMQ")
+            return
+        # add mandatory information for every single document
+        for doc in docs:
+            doc['agent_url'] = agentUrl
+            doc['timestamp'] = timeS
+
+        docType = "cms_%s_info" % producer
+        logging.debug("Sending the following data to AMQ %s", pformat(docs))
+        try:
+            stompSvc = StompAMQ(username=self.userAMQ,
+                                password=self.passAMQ,
+                                producer=producer,
+                                topic=self.topicAMQ,
+                                host_and_ports=self.hostPortAMQ,
+                                logger=logging)
+
+            notifications = stompSvc.make_notification(payload=docs, docType=docType,
+                                                       docId=producer)
+
+            failures = stompSvc.send(notifications)
+            logging.info("%i docs successfully sent to AMQ", len(notifications) - len(failures))
+        except Exception as ex:
+            logging.exception("Failed to send data to StompAMQ. Error %s", str(ex))
 
         return

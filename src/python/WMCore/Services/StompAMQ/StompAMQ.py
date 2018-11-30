@@ -79,6 +79,9 @@ class StompAMQ(object):
         self._cert = cert
         self._key = key
         self._use_ssl = True if key and cert else False
+        # silence the INFO log records from the stomp library, until this issue gets fixed:
+        # https://github.com/jasonrbriggs/stomp.py/issues/226
+        logging.getLogger("stomp.py").setLevel(logging.WARNING)
 
     def send(self, data):
         """

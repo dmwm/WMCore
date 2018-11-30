@@ -5,9 +5,7 @@ fun({Doc}) ->
     <<"agent_request">> ->
       Workflow = couch_util:get_value(<<"workflow">>, Doc),
       AgentUrl = couch_util:get_value(<<"agent_url">>, Doc),
-      Id = couch_util:get_value(<<"_id">>, Doc),
-      Timestamp = couch_util:get_value(<<"timestamp">>, Doc),
-      Emit([Workflow, AgentUrl], {[{id,Id},{timestamp,Timestamp}]});
+      Emit([Workflow, AgentUrl], null);
     _ -> ok
   end
 end.

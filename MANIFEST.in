@@ -1,1 +1,4 @@
 include setup_*.py
+include requirements.txt
+include LICENSE
+include NOTICE

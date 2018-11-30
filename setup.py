@@ -126,5 +126,6 @@ setup(name='wmcore',
       packages=DEFAULT_PACKAGES,
       data_files=list_static_files(),
       url="https://github.com/dmwm/WMCore",
+      license="Apache License, Version 2.0",
       download_url="https://github.com/dmwm/WMCore/tarball/%s" % wmcore_version
       )

@@ -88,8 +88,8 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
                     doc["type"] = mapMetricToType[metric]
                     doc["status"] = status
                     doc["site_name"] = site
-                    doc['num_elem'] = site['num_elem']
-                    doc['sum_jobs'] = int(site['sum_jobs'])
+                    doc['num_elem'] = sites[site]['num_elem']
+                    doc['sum_jobs'] = int(sites[site]['sum_jobs'])
                     docs.append(doc)
 
         # mark every single document as being from global_workqueue

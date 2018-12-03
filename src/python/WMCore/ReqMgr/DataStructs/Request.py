@@ -20,8 +20,6 @@ from __future__ import print_function, division
 import re
 import time
 
-import cherrypy
-
 from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
@@ -250,8 +248,11 @@ class RequestInfo(object):
 
             reqValue = self.get(key)
             if reqValue is not None:
-                if isinstance(reqValue, list):
+                if isinstance(reqValue, list) and isinstance(value, list):
                     if not set(reqValue).intersection(set(value)):
+                        return False
+                elif isinstance(reqValue, list):
+                    if value not in reqValue:
                         return False
                 elif isinstance(reqValue, bool):
                     if reqValue is not value:

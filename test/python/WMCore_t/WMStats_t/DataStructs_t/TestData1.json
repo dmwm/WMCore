@@ -1,0 +1,239 @@
+{"sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040": {
+    "PrepID": "TEST-Harvest-ReReco-Run2016F-v1-NoBPTX-23Sep2016-0001",
+    "MaxMergeEvents": 100000000,
+    "Comments": "Harvest 3 runs out of 37. Only 277934, 278273 and 278805.",
+    "Requestor": "sryu",
+    "RunBlacklist": [],
+    "TotalInputFiles": 4,
+    "CustodialGroup": "DataOps",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "SubRequestType": "",
+    "TrustPUSitelists": false,
+    "HardTimeout": 129900,
+    "OpenRunningTimeout": 0,
+    "LumiList": {},
+    "AgentJobInfo": {
+      "vocms0193.cern.ch": {
+        "status": {
+          "success": 4
+        },
+        "agent_team": "testbed-dev",
+        "workflow": "sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040",
+        "timestamp": 1540953273,
+        "_rev": "3495-123456791",
+        "sites": {
+          "T2_CH_CERN": {
+            "success": 4
+          }
+        },
+        "agent": "WMAgentCommissioning",
+        "skipped": false,
+        "tasks": {
+          "/sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect": {
+            "status": {
+              "success": 1
+            },
+            "sites": {
+              "T2_CH_CERN": {
+                "inputEvents": 0,
+                "cmsRunCPUPerformance": {
+                  "totalJobCPU": 0,
+                  "totalJobTime": 0,
+                  "totalEventCPU": 0
+                },
+                "wrappedTotalJobTime": 26,
+                "success": 1,
+                "dataset": {}
+              }
+            },
+            "jobtype": "LogCollect",
+            "subscription_status": {
+              "updated": 1538586363,
+              "total": 1,
+              "open": 0,
+              "finished": 1
+            }
+          },
+          "/sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040/EndOfRunDQMHarvest": {
+            "status": {
+              "success": 3
+            },
+            "sites": {
+              "T2_CH_CERN": {
+                "inputEvents": 0,
+                "cmsRunCPUPerformance": {
+                  "totalJobCPU": 383.3715,
+                  "totalJobTime": 596.298,
+                  "totalEventCPU": 356.5408
+                },
+                "wrappedTotalJobTime": 1032,
+                "success": 3,
+                "dataset": {}
+              }
+            },
+            "jobtype": "Harvesting",
+            "subscription_status": {
+              "updated": 1538585641,
+              "total": 1,
+              "open": 0,
+              "finished": 1
+            }
+          }
+        },
+        "agent_url": "vocms0193.cern.ch",
+        "_id": "vocms0193.cern.ch-sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040",
+        "type": "agent_request",
+        "agent_version": "1.1.15.patch5"
+      }
+    },
+    "DashboardHost": "cms-jobmon.cern.ch",
+    "EnableHarvesting": false,
+    "Scenario": null,
+    "BlockCloseMaxWaitTime": 66400,
+    "SiteWhitelist": [
+      "T2_CH_CERN"
+    ],
+    "VoRole": "unknown",
+    "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135",
+    "ValidStatus": "PRODUCTION",
+    "PriorityTransition": [
+      {
+        "Priority": 999999,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "UpdateTime": 1538583222
+      }
+    ],
+    "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
+    "Campaign": "HG1810_wmstats",
+    "ScramArch": [
+      "slc6_amd64_gcc530"
+    ],
+    "CouchDBName": "reqmgr_config_cache",
+    "NonCustodialGroup": "DataOps",
+    "EventsPerJob": 28800,
+    "InputDataset": "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO",
+    "DeleteFromSource": false,
+    "TotalInputEvents": 0,
+    "SizePerEvent": 1600,
+    "ConfigCacheID": null,
+    "CustodialSubType": "Replica",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "EnableNewStageout": false,
+    "SubscriptionPriority": "Low",
+    "RobustMerge": true,
+    "SplittingAlgo": "EventAwareLumiBased",
+    "Team": "testbed-dev",
+    "AllowOpportunistic": false,
+    "DQMHarvestUnit": "byRun",
+    "AutoApproveSubscriptionSites": [],
+    "RequestWorkflow": "https://reqmgr2-dev.cern.ch/couchdb/reqmgr_workload_cache/sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040/spec",
+    "BlockBlacklist": [],
+    "BlockCloseMaxFiles": 500,
+    "VoGroup": "unknown",
+    "RequestType": "DQMHarvest",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "SiteBlacklist": [],
+    "RequestStatus": "completed",
+    "SoftTimeout": 129600,
+    "Group": "DATAOPS",
+    "BlockCloseMaxEvents": 25000000,
+    "CustodialSites": [],
+    "ProcessingString": "DQMHarvesting_RunWhitelist_SRYU",
+    "Multicore": 1,
+    "TrustSitelists": false,
+    "UnmergedLFNBase": "/store/unmerged",
+    "DashboardPort": 8884,
+    "TimePerEvent": 1,
+    "DQMSequences": [],
+    "OutputModulesLFNBases": [],
+    "OutputDatasets": [],
+    "PrimaryDataset": null,
+    "NonCustodialSubType": "Replica",
+    "BlockCloseMaxSize": 5000000000000,
+    "MaxMergeSize": 4294967296,
+    "OverrideCatalog": null,
+    "PeriodicHarvestInterval": 0,
+    "TotalEstimatedJobs": 3,
+    "MaxWaitTime": 86400,
+    "RequestString": "DQMHarvesting_RunWhitelist_syu",
+    "RequestorDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+    "RunWhitelist": [
+      277934,
+      278273,
+      278805
+    ],
+    "RequestDate": [
+      2018,
+      10,
+      3,
+      16,
+      13,
+      42
+    ],
+    "InitialPriority": 999999,
+    "RunNumber": 0,
+    "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+    "EventStreams": null,
+    "Memory": 1100,
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "FilesPerJob": 1,
+    "IncludeParents": false,
+    "BlockWhitelist": [],
+    "LumisPerJob": 8,
+    "AcquisitionEra": "Integ_Test",
+    "CMSSWVersion": "CMSSW_8_0_20",
+    "NonCustodialSites": [],
+    "GlobalTagConnect": null,
+    "MinMergeSize": 2147483648,
+    "RequestPriority": 999999,
+    "ProcessingVersion": 11,
+    "TotalInputLumis": 392,
+    "RequestName": "sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040",
+    "CouchURL": "https://reqmgr2-dev.cern.ch/couchdb",
+    "CouchWorkloadDBName": "reqmgr_workload_cache",
+    "RequestTransition": [
+      {
+        "Status": "new",
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "UpdateTime": 1538583222
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "assignment-approved",
+        "UpdateTime": 1538583231
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "assigned",
+        "UpdateTime": 1538583232
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "acquired",
+        "UpdateTime": 1538584127
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "running-open",
+        "UpdateTime": 1538584730
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "running-closed",
+        "UpdateTime": 1538584730
+      },
+      {
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sryu/CN=676041/CN=Seang Chan Ryu",
+        "Status": "completed",
+        "UpdateTime": 1538585936
+      }
+    ],
+    "DQMUploadProxy": null,
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "_id": "sryu_DQMHarvesting_RunWhitelist_syu_181003_181342_1040",
+    "Dashboard": "integration"
+  }
+}

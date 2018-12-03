@@ -20,8 +20,6 @@ from __future__ import print_function, division
 import re
 import time
 
-import cherrypy
-
 from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 

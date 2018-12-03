@@ -250,8 +250,11 @@ class RequestInfo(object):
 
             reqValue = self.get(key)
             if reqValue is not None:
-                if isinstance(reqValue, list):
+                if isinstance(reqValue, list) and isinstance(value, list):
                     if not set(reqValue).intersection(set(value)):
+                        return False
+                elif isinstance(reqValue, list):
+                    if value not in reqValue:
                         return False
                 elif isinstance(reqValue, bool):
                     if reqValue is not value:

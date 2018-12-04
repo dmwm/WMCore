@@ -87,7 +87,7 @@ def moveToArchived(wmstatsSvc, reqmgrSvc, logdb, archiveDelayHours, logger):
     outputMask = ["RequestTransition"]
 
     for status, nextStatus in statusTransition.items():
-        inputConditon = {"RequestStatus": [status], "AgentJobInfo": "CLEANED"}
+        inputConditon = {"RequestStatus": [status]}
         for reqInfo in wmstatsSvc.getFilteredActiveData(inputConditon, outputMask):
             reqName = reqInfo["RequestName"]
             if reqName and (not reqInfo["RequestTransition"] or

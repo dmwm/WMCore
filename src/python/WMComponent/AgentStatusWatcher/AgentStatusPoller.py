@@ -333,8 +333,10 @@ class AgentStatusPoller(BaseWorkerThread):
         allDocs = self._buildMonITPrioDocs(dataStats)
         allDocs.extend(self._buildMonITSitesDocs(dataStats))
         allDocs.extend(self._buildMonITWorkDocs(dataStats))
+        allDocs.extend(self._buildMonITWMBSDocs(dataStats))
         allDocs.extend(self._buildMonITAgentDocs(dataStats))
         allDocs.extend(self._buildMonITHealthDocs(dataStats))
+        allDocs.extend(self._buildMonITSummaryDocs(dataStats))
 
         # and finally post them all to AMQ
         logging.info("Found %d documents to post to AMQ", len(allDocs))
@@ -389,13 +391,15 @@ class AgentStatusPoller(BaseWorkerThread):
             siteDoc['thresholdsGQ2LQ'] = thresholdsGQ2LQ.get(site, 0)
 
             for status in possibleJobsPerSite.keys():
+                # make sure these keys are always present in the documents
+                jobKey = "possible_%s_jobs" % status.lower()
+                elemKey = "num_%s_elem" % status.lower()
+                uniJobKey = "unique_%s_jobs" % status.lower()
+                siteDoc[jobKey], siteDoc[elemKey], siteDoc[uniJobKey] = 0, 0, 0
                 if site in possibleJobsPerSite[status]:
-                    jobKey = "possible_%s_jobs" % status.lower()
-                    elemKey = "num_%s_elem" % status.lower()
                     siteDoc[jobKey] = possibleJobsPerSite[status][site]['sum_jobs']
                     siteDoc[elemKey] = possibleJobsPerSite[status][site]['num_elem']
                 if site in uniqueJobsPerSite[status]:
-                    uniJobKey = "unique_%s_jobs" % status.lower()
                     siteDoc[uniJobKey] = uniqueJobsPerSite[status][site]['sum_jobs']
 
             siteDocs.append(siteDoc)
@@ -423,17 +427,38 @@ class AgentStatusPoller(BaseWorkerThread):
             workDoc['sum_jobs'] = info.get('sum_jobs', 0)
             workDocs.append(workDoc)
 
+        return workDocs
+
+    def _buildMonITWMBSDocs(self, dataStats):
+        """
+        Using the WMBS data, builds documents to show the amount of work in
+        'created' and 'executing' WMBS status.
+        It also builds a document for every single wmbs_status in the database.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_wmbs_info and wma_wmbs_state_info docs
+        """
+        docType = "wma_wmbs_info"
+        wmbsDocs = []
         wmbsCreatedTypeCount = dataStats['WMBS_INFO'].pop('wmbsCreatedTypeCount', {})
         wmbsExecutingTypeCount = dataStats['WMBS_INFO'].pop('wmbsExecutingTypeCount', {})
         for jobType in wmbsCreatedTypeCount:
-            workDoc = {}
-            workDoc['type'] = docType
-            workDoc['job_type'] = jobType
-            workDoc['created_jobs'] = wmbsCreatedTypeCount[jobType]
-            workDoc['executing_jobs'] = wmbsExecutingTypeCount[jobType]
-            workDocs.append(workDoc)
+            wmbsDoc = {}
+            wmbsDoc['type'] = docType
+            wmbsDoc['job_type'] = jobType
+            wmbsDoc['created_jobs'] = wmbsCreatedTypeCount[jobType]
+            wmbsDoc['executing_jobs'] = wmbsExecutingTypeCount[jobType]
+            wmbsDocs.append(wmbsDoc)
 
-        return workDocs
+        docType = "wma_wmbs_state_info"
+        wmbsCountByState = dataStats['WMBS_INFO'].pop('wmbsCountByState', {})
+        for wmbsStatus in wmbsCountByState:
+            wmbsDoc = {}
+            wmbsDoc['type'] = docType
+            wmbsDoc['wmbs_status'] = wmbsStatus
+            wmbsDoc['num_jobs'] = wmbsCountByState[wmbsStatus]
+            wmbsDocs.append(wmbsDoc)
+
+        return wmbsDocs
 
     def _buildMonITAgentDocs(self, dataStats):
         """
@@ -454,16 +479,7 @@ class AgentStatusPoller(BaseWorkerThread):
             agentDoc['completed_jobs'] = completeRunJobByStatus[schedStatus]
             agentDocs.append(agentDoc)
 
-        wmbsCountByState = dataStats['WMBS_INFO'].pop('wmbsCountByState', {})
-        for wmbsStatus in wmbsCountByState:
-            agentDoc = {}
-            agentDoc['type'] = docType
-            agentDoc['wmbs_status'] = wmbsStatus
-            agentDoc['num_jobs'] = wmbsCountByState[wmbsStatus]
-            agentDocs.append(agentDoc)
-
         return agentDocs
-
 
     def _buildMonITHealthDocs(self, dataStats):
         """
@@ -486,19 +502,28 @@ class AgentStatusPoller(BaseWorkerThread):
             healthDoc['worker_cycle_time'] = worker['cycle_time']
             healthDocs.append(healthDoc)
 
-        # and last document ...
-        healthDoc = {}
-        healthDoc['type'] = docType
-        healthDoc['agent_team'] = dataStats['agent_team']
-        healthDoc['agent_version'] = dataStats['agent_version']
-        healthDoc['agent_status'] = dataStats['status']
-        healthDoc['wq_query_time'] = dataStats['LocalWQ_INFO']['total_query_time']
-        healthDoc['wmbs_query_time'] = dataStats['WMBS_INFO']['total_query_time']
-        healthDoc['drain_mode'] = dataStats['drain_mode']
-        healthDoc['down_components'] = dataStats['down_components']
-        healthDocs.append(healthDoc)
-
         return healthDocs
+
+    def _buildMonITSummaryDocs(self, dataStats):
+        """
+        Creates a document with the very basic agent info used
+        in the wmstats monitoring tab.
+        :param dataStats: dictionary with metrics previously posted to WMStats
+        :return: list of dictionaries with the wma_health_info MonIT docs
+        """
+        docType = "wma_summary_info"
+        summaryDocs = []
+        summaryDoc = {}
+        summaryDoc['type'] = docType
+        summaryDoc['agent_team'] = dataStats['agent_team']
+        summaryDoc['agent_version'] = dataStats['agent_version']
+        summaryDoc['agent_status'] = dataStats['status']
+        summaryDoc['wq_query_time'] = dataStats['LocalWQ_INFO']['total_query_time']
+        summaryDoc['wmbs_query_time'] = dataStats['WMBS_INFO']['total_query_time']
+        summaryDoc['drain_mode'] = dataStats['drain_mode']
+        summaryDoc['down_components'] = dataStats['down_components']
+        summaryDocs.append(summaryDoc)
+        return summaryDocs
 
     def uploadToAMQ(self, docs, producer, agentUrl, timeS):
         """
@@ -514,7 +539,6 @@ class AgentStatusPoller(BaseWorkerThread):
         # add mandatory information for every single document
         for doc in docs:
             doc['agent_url'] = agentUrl
-            doc['timestamp'] = timeS
 
         docType = "cms_%s_info" % producer
         logging.debug("Sending the following data to AMQ %s", pformat(docs))
@@ -527,7 +551,7 @@ class AgentStatusPoller(BaseWorkerThread):
                                 logger=logging)
 
             notifications = stompSvc.make_notification(payload=docs, docType=docType,
-                                                       docId=producer)
+                                                       docId=producer, ts=timeS)
 
             failures = stompSvc.send(notifications)
             logging.info("%i docs successfully sent to AMQ", len(notifications) - len(failures))

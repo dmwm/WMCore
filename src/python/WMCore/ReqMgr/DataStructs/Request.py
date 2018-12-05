@@ -243,19 +243,15 @@ class RequestInfo(object):
                 value = False
             elif value in ["true", "True", "TRUE"]:
                 value = True
-            elif not isinstance(value, list):
+
+            # Now make value list if value is not in list form including bool value
+            if not isinstance(value, list):
                 value = [value]
 
             reqValue = self.get(key)
             if reqValue is not None:
-                if isinstance(reqValue, list) and isinstance(value, list):
+                if isinstance(reqValue, list):
                     if not set(reqValue).intersection(set(value)):
-                        return False
-                elif isinstance(reqValue, list):
-                    if value not in reqValue:
-                        return False
-                elif isinstance(reqValue, bool):
-                    if reqValue is not value:
                         return False
                 elif reqValue not in value:
                     return False

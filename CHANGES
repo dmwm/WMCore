@@ -1,3 +1,62 @@
+1.1.18 to 1.1.19.pre5:
+  - Merge pull request #8941 from ticoann/fix_filtered_call
+  - fix filtered api with bool
+  - Merge pull request #8940 from amaltaro/more-for-8923
+  - Rename a few MonIT document type
+  - 1.1.19.pre4
+  - Merge pull request #8938 from ticoann/aborted_completed_clean
+  - move to archived status only depends on the time
+  - Merge pull request #8937 from amaltaro/fix-8936
+  - New unit tests for WMStats DataCache
+  - Fix wmstats filtered_requests for Chain wfs
+  - 1.1.19.pre3
+  - Merge pull request #8933 from amaltaro/fix-8932
+  - Merge pull request #8892 from ticoann/fix_latestRequest
+  - Fix work_site_* docs from global workqueue
+  - remove reduce from latestRequest view
+  - Merge pull request #8931 from amaltaro/fix-8930
+  - Fix ReqMgr2 dependency on WorkQueue
+  - 1.1.19.pre2
+  - Merge pull request #8923 from amaltaro/wmagent-monit
+  - pylint and unit test fixes
+  - remove reqmgr1 configuration options
+  - Make some WMAgent/WorkQueue metrics MonIT-friendly
+  - Merge pull request #8927 from amaltaro/logdb-delete-error
+  - pylint fixes
+  - Fix error message for failed LogDB delete request
+  - Merge pull request #8925 from ticoann/clean_up_alert2
+  - remove alert manager
+  - Merge pull request #8911 from amaltaro/fix-8903
+  - Merge pull request #8917 from amaltaro/deploy-1118patch1
+  - Bump deployment script to 1.1.18.patch1
+  - Merge pull request #8899 from khurtado/checkcertificate
+  - Check for service certificate expiration time and create a unit test for it.
+  - Fix KeyError when auxiliary db isnt available
+  - 1.1.19.pre1
+  - 1.1.18.patch1
+  - Merge pull request #8907 from amaltaro/fix-8873
+  - Merge pull request #8908 from ddavila0/fix2-8890
+  - Adding support to use certificates on StompAMQ
+  - change rev to revision for initial revision
+  - Merge pull request #8906 from khurtado/patch-1
+  - Fix analytics data collector Clear database when tearing down. Remove unused imports.
+  - Merge pull request #8902 from amaltaro/fix-8901
+  - Merge pull request #8900 from amaltaro/fix-8882
+  - Unit tests and pylint fixes
+  - Only run draining algorithm if we have a valid agent config
+  - Handle HTTP in the pycurl response header
+  - Merge pull request #8881 from amaltaro/py3-sorted
+  - Merge pull request #8887 from amaltaro/deploy-oracle
+  - Merge pull request #8888 from ticoann/AnalyticsDataCollector_test_fix
+  - Merge pull request #8896 from amaltaro/badBlocks-templates
+  - Merge pull request #8895 from amaltaro/fix-8893
+  - ReReco templates with invalid work and/or all files invalid in a block
+  - Catch ORA-00060 deadlock to avoid crashing the component
+  - fix AnalyticsDataCollector test
+  - Fix cert and oracle check in the deployment
+  - pylint fixes
+  - Replace sort by sorted to make py3 happy
+
 1.1.18 to 1.1.19.pre4:
   - Merge pull request #8938 from ticoann/aborted_completed_clean
   - move to archived status only depends on the time

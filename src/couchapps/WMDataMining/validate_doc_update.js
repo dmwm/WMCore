@@ -43,6 +43,7 @@ function(newDoc, oldDoc, userCtx) {
 
    // The following rule aplies for all operation types
    var allowed = isGlobalAdm || matchesRole("web-service","group:facops");
+                             || matchesRole("web-service","group:FacOps");
 
    // Throw if user not validated
    if(!allowed) {

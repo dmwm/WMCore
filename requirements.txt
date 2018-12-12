@@ -14,6 +14,6 @@ pyOpenSSL==0.12
 pycurl-client==3.3.160
 pycurl==7.19.3
 python-cjson==1.2.1
-pyzmq=2.1.9
+pyzmq==2.1.9
 retry==0.9.1
 stomp.py==4.1.15

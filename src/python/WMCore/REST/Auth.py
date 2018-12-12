@@ -88,7 +88,7 @@ def authz_match(role=[], group=[], site=[], verbose=False):
                 if verbose:
                     log("DEBUG: authz accepted role '%s' for user %s" % (r, user))
                 return
-            if set(group) & authz['group']:
+            if set(group) & set(list(map(authz_canonical, authz['group']))):
                 if verbose:
                     log("DEBUG: authz accepted role '%s' group %s for user %s" % (r, group, user))
                 return

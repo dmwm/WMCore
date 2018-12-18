@@ -48,6 +48,8 @@ WMStats.CommonControls = function($){
                               <option value="outputdataset" data-search-type="stringMatch"> output dataset </option>\
                               <option value="inputdataset" data-search-type="stringMatch">input dataset</option>\
                               <option value="prep_id" data-search-type="stringMatch">prep id</option>\
+                              <option value="data_pileup" data-search-type="stringMatch">data pileup</option>\
+                              <option value="mc_pileup" data-search-type="stringMatch">mc pileup</option>\
                               <option value="request_date" data-search-type="dateRange">date range</option>\
                             </select>\
                         </div>\

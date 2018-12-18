@@ -191,6 +191,12 @@ WMStats.ViewModel = (function (){
             } else if (selectedSearch === 'prep_id') {
                 view = "byprepid";
                 options.key = searchStr;
+            } else if (selectedSearch === 'data_pileup') {
+                view = "bydatapileup";
+                options.key = searchStr;
+            } else if (selectedSearch === 'mc_pileup') {
+                view = "bymcpileup";
+                options.key = searchStr;
             } else if (selectedSearch === 'request_date') {
                 view = "bydate";
                 var beginDate = $('input[name="dateRange1"]').val().split("/");

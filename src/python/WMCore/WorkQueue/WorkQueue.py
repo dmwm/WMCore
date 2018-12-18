@@ -238,15 +238,6 @@ class WorkQueue(WorkQueueBase):
         """Returns number of Available elements in queue"""
         return self.backend.queueLength()
 
-    def __del__(self):
-        """
-        Unregister itself with Alert Receiver.
-        The registration happened in the constructor when initializing.
-
-        """
-        if self.alertSender:
-            self.alertSender.unregister()
-
     def setStatus(self, status, elementIDs=None, SubscriptionId=None, WorkflowName=None):
         """
         _setStatus_, throws an exception if no elements are updated

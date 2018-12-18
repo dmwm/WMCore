@@ -89,7 +89,7 @@ def UnpackUserTarball():
             logging.info("Fetching tarball %s through xrootd", tarball)
             try:
                 subprocess.check_call(['xrdcp', '-d', '1', '-f', tarball, 'TEMP_TARBALL.tgz'])
-                subprocess.check_call(['tar', 'xzf', 'TEMP_TARBALL.tgz'])
+                subprocess.check_call(['tar', 'xf', 'TEMP_TARBALL.tgz'])
             except subprocess.CalledProcessError:
                 logging.error("Couldn't retrieve/extract file from xrootd")
                 raise
@@ -113,12 +113,12 @@ def UnpackUserTarball():
                     fileName, headers = retriever(tarball, tempFile.name)
 
                 try:
-                    subprocess.check_call(['tar', 'xzf', fileName])
+                    subprocess.check_call(['tar', 'xf', fileName])
                 except subprocess.CalledProcessError:
                     raise RuntimeError('Error extracting %s' % tarball)
         elif os.path.isfile(tarFile):
             logging.info("Untarring %s", tarFile)
-            subprocess.check_call(['tar', 'xzf', tarFile])
+            subprocess.check_call(['tar', 'xf', tarFile])
         else:
             raise IOError('%s does not exist' % tarFile)
 

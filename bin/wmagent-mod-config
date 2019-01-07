@@ -311,10 +311,13 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "AgentStatusWatcher"):
         config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
         config.AgentStatusWatcher.dashboard = args["dashboard_url"]
-        amquser, amqpass, amqtopic = args["amq_credentials"].split('@@@')  # e.g.: user@@@pass@@@topic
-        config.AgentStatusWatcher.userAMQ = amquser
-        config.AgentStatusWatcher.passAMQ = amqpass
-        config.AgentStatusWatcher.topicAMQ = amqtopic
+        if args.get("amq_credentials"):
+            # e.g.: user@@@pass@@@topic
+            amquser, amqpass, amqtopic = args["amq_credentials"].split('@@@')
+            config.AgentStatusWatcher.userAMQ = amquser
+            config.AgentStatusWatcher.passAMQ = amqpass
+            config.AgentStatusWatcher.topicAMQ = amqtopic
+            config.AgentStatusWatcher.enableAMQ = True
 
      # custom WMArchiveReporter
     if hasattr(config, "ArchiveDataReporter"):

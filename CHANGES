@@ -1,3 +1,18 @@
+1.1.19 to 1.1.20.pre1:
+  - Merge pull request #8954 from dmwm/belforte-patch-1
+  - Merge pull request #8959 from amaltaro/fix-8953
+  - pylint changes
+  - Properly parse AMQ creds; only enable it when there are valid creds
+  - Merge pull request #8957 from ticoann/add_docs
+  - add document
+  - Merge pull request #8956 from ticoann/add_pile_up_search
+  - add pile up dataset search
+  - Merge pull request #8955 from ticoann/alert_remove
+  - allow other compressions beside gzip for tarball
+  - remove alert unregister code
+  - Merge pull request #8951 from goughes/fix_requirements
+  - Fix pyzmq line in requirements.txt
+
 1.1.18 to 1.1.19:
   - 1.1.19.pre5
   - Merge pull request #8941 from ticoann/fix_filtered_call

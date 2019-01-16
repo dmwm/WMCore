@@ -75,7 +75,7 @@ class Request(RESTEntity):
         cherrypy.log('Updating request "%s" with these user-provided args: %s' % (requestName, request_args))
 
         # In case key args are also passed and request body also exists.
-        # If the request.body is dictionally update the key args value as well
+        # If the request.body is dictionary update the key args value as well
         if isinstance(request_args, dict):
             for prop in param.kwargs.keys():
                 request_args[prop] = param.kwargs.pop(prop)
@@ -164,7 +164,7 @@ class Request(RESTEntity):
             if method == 'GET':
                 self._validateGET(param, safe)
 
-            if method == 'PUT':
+            elif method == 'PUT':
                 args_length = len(param.args)
 
                 if args_length == 1:
@@ -174,7 +174,7 @@ class Request(RESTEntity):
                     requestName = None
                 self._validateRequestBase(param, safe, validate_request_update_args, requestName)
 
-            if method == 'POST':
+            elif method == 'POST':
                 args_length = len(param.args)
                 if args_length == 2 and param.args[0] == "clone":
                     # handles clone workflow.- don't validtate args here
@@ -391,7 +391,7 @@ class Request(RESTEntity):
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-            cherrypy.log('Updating priority for request "%s" to %s' % (workload.name(), request_args['RequestPriority']))
+            cherrypy.log('Updated priority of "%s" to %s' % (workload.name(), request_args['RequestPriority']))
         elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         else:
@@ -488,7 +488,7 @@ class Request(RESTEntity):
 
     @restcall(formats=[('application/json', JSONFormat())])
     def put(self, workload_pair_list):
-        """workloadPairList is a list of tuple containing (workload, requeat_args)"""
+        """workloadPairList is a list of tuple containing (workload, request_args)"""
         report = []
         for workload, request_args in workload_pair_list:
             result = self._updateRequest(workload, request_args)

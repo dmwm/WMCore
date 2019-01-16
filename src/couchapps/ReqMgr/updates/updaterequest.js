@@ -5,7 +5,7 @@ function(doc, req) {
     	return [null, "Error: document not found"];
     };
     
-    function updateTransition(key) {
+    function updateTransition(key, dn) {
         var keyAllowed = {"RequestStatus": "RequestTransition",
                           "RequestPriority": "PriorityTransition"};
         var keyMap = {"RequestStatus": "Status",
@@ -17,7 +17,6 @@ function(doc, req) {
         }
 
         var currentTS =  Math.round((new Date()).getTime() / 1000);
-        var dn = doc.DN || null;
         var statusObj = {"UpdateTime": currentTS, "DN": dn};
         statusObj[keyMap[key]] = doc[key];
 
@@ -57,7 +56,8 @@ function(doc, req) {
  
     //TODO: only accepts request body for the argument
     var fromQuery = false;
-    
+    var dn = null;
+
     var newValues = {};
     if (isEmpty(req.query)) {
         newValues = JSON.parse(req.body);
@@ -65,7 +65,13 @@ function(doc, req) {
         fromQuery = true;
         newValues = req.query;
     }
-    
+
+    // DN is not an allowed argument in StdBase, do not persist it
+    if (newValues.hasOwnProperty("DN")) {
+        dn = newValues.DN;
+        delete newValues.DN;
+     }
+
     for (key in newValues)
     {
     
@@ -89,8 +95,8 @@ function(doc, req) {
 
         doc[key] = newValues[key];
 
-        // If key is RequestStatus, also update the transition
-        updateTransition(key);
+        // Also update the transition dict if necessary
+        updateTransition(key, dn);
         
         updateTaskStepChain("Task", key, newValues[key]);
         updateTaskStepChain("Step", key, newValues[key]);

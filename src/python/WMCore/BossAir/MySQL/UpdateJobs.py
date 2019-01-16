@@ -5,8 +5,8 @@ _UpdateJobs_
 MySQL implementation for updating jobs
 """
 
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class UpdateJobs(DBFormatter):
     """
@@ -14,7 +14,6 @@ class UpdateJobs(DBFormatter):
 
     Update jobs with new values
     """
-
 
     sql = """UPDATE bl_runjob SET wmbs_id = :jobid, grid_id = :gridid,
                bulk_id = :bulkid, status_time = :status_time,
@@ -24,9 +23,7 @@ class UpdateJobs(DBFormatter):
                WHERE id = :id
                """
 
-
-
-    def execute(self, jobs, conn = None, transaction = False):
+    def execute(self, jobs, conn=None, transaction=False):
         """
         _execute_
 
@@ -44,8 +41,6 @@ class UpdateJobs(DBFormatter):
                           'status_time': job.get('status_time', None), 'owner': job['userdn'],
                           'usergroup': job['usergroup'], 'userrole': job['userrole']})
 
-
-        self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        self.dbi.processData(self.sql, binds, conn=conn, transaction=transaction)
 
         return

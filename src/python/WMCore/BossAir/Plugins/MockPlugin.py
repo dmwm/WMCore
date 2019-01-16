@@ -196,7 +196,7 @@ class MockPlugin(BasePlugin):
 
         return runningList, changeList, completeList
 
-    def kill(self, jobs):
+    def kill(self, jobs, raiseEx=False):
         """
         _kill_
 

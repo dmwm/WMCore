@@ -45,7 +45,7 @@ class UpdateJobs(DBFormatter):
                           'usergroup': job['usergroup'], 'userrole': job['userrole']})
 
 
-        result = self.dbi.processData(self.sql, binds, conn = conn,
+        self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 
         return

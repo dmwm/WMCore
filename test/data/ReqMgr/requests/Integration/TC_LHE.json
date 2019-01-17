@@ -1,0 +1,80 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "Override": {
+                "eos-lfn-prefix": ""
+            }
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "CMSSWVersion": "CMSSW_9_3_7", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "From scratch reading LHE articles; Two tasks; Logs not written to EOS HTTP",
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+        "GlobalTag": "93X_upgrade2023_realistic_v5",
+        "Memory": 3000,
+        "Multicore": 1, 
+        "PrepID": "TEST-CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982-DarkSUSY_14TeV", 
+        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "slc6_amd64_gcc630"
+        ], 
+        "SizePerEvent": 8000, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_9_3_7", 
+            "Campaign": "CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982", 
+            "ConfigCacheID": "a46ab47e0d46279933674d7eee454c89", 
+            "EventsPerJob": 500,
+            "EventsPerLumi": 100, 
+            "GlobalTag": "93X_upgrade2023_realistic_v5", 
+            "KeepOutput": true, 
+            "LheInputFiles": true, 
+            "Memory": 2000,
+            "Multicore": 8, 
+            "PrimaryDataset": "RelValDarkSUSY_14TeV", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "RequestNumEvents": 10000, 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased", 
+            "TaskName": "DarkSUSY_14TeV_2023D17_GenSimHLBeamSpotFull14"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_9_3_7", 
+            "Campaign": "CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982", 
+            "ConfigCacheID": "a46ab47e0d46279933674d7eee4808e5", 
+            "GlobalTag": "93X_upgrade2023_realistic_v5", 
+            "InputFromOutputModule": "FEVTDEBUGoutput", 
+            "InputTask": "DarkSUSY_14TeV_2023D17_GenSimHLBeamSpotFull14", 
+            "KeepOutput": true, 
+            "LumisPerJob": 10, 
+            "Memory": 7000,
+            "Multicore": 8, 
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DigiFullTrigger_2023D17"
+        },
+        "TaskChain": 2,
+        "TimePerEvent": 40
+    }
+}

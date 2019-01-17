@@ -1,5 +1,6 @@
 {"createRequest": {
-    "Comments": "StepChain ReDigi with 3 steps; PU for the 1st step; Keep Step1 and Step3, drop AODSIM; Multicore 8 for all steps; EventAware 1000EpJ (~1LpJ)",
+    "Comments": ["StepChain ReDigi with 3 steps; PU for the 1st step; Keep Step1 and Step3, drop AODSIM;",
+        "Step1 with CMSSW_9_4_0; Step2 with top level 9_4_0_patch1; Step3 with 9_4_1"],
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_9_4_0_patch1",
@@ -21,6 +22,7 @@
     "OpenRunningTimeout" : 3600,
     "Step1": {
         "ConfigCacheID": "c2ec78ab26b32d18525a1f9c276e3bb8",
+        "CMSSWVersion": "CMSSW_9_4_0",
         "GlobalTag": "94X_mc2017_realistic_v10",
         "InputDataset": "/Chib2PToUpsilon2SGamma_TuneCP5_13TeV-pythia8-evtgen/RunIIFall17GS-93X_mc2017_realistic_v3-v1/GEN-SIM",
         "RunWhitelist": [],
@@ -42,6 +44,7 @@
         "StepName": "RECO"},
     "Step3": {
         "ConfigCacheID": "c2ec78ab26b32d18525a1f9c277072af",
+        "CMSSWVersion": "CMSSW_9_4_1",
         "GlobalTag": "94X_mc2017_realistic_v10",
         "InputFromOutputModule": "AODSIMoutput",
         "InputStep": "RECO",

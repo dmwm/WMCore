@@ -147,7 +147,7 @@ check_certs()
 check_process()
 {
   echo -n "Checking whether there are any leftover processes ..."
-  output=`ps aux | egrep 'couch|wmcore|mysql|beam' | wc -l`
+  output=`ps aux | egrep 'couch|wmcore|mysql|beam' | grep -v deploy-wmagent.sh | wc -l`
   if [ "$output" -gt 1 ]; then
     echo "  FAILED!\n There are still $output WMCore process running. Quitting!"
     exit 8

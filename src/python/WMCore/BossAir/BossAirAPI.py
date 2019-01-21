@@ -615,9 +615,15 @@ class BossAirAPI(WMConnectionBase):
                 try:
                     pluginInst = self.plugins[plugin]
                     if workflowName:
+                        # jobs are completed regardless whether the kill succeeded or not
+                        self._completeKill(jobs=jobsToKill[plugin])
                         pluginInst.killWorkflowJobs(workflow=workflowName)
                     else:
-                        pluginInst.kill(jobs=jobsToKill[plugin])
+                        # raise an exception if it fails to kill jobs, such that the same
+                        # jobs are retried again in the next cycle
+                        pluginInst.kill(jobs=jobsToKill[plugin], raiseEx=True)
+                        self._completeKill(jobs=jobsToKill[plugin])
+
                     # Register the killed jobs
                     for job in jobsToKill[plugin]:
                         if job.get('cache_dir') is None or job.get('retry_count') is None:
@@ -644,6 +650,8 @@ class BossAirAPI(WMConnectionBase):
                             errorReport.save(filename=reportName)
                         except IOError as ioe:
                             logging.warning('Cannot write report %s because of %s', reportName, ioe)
+                except RuntimeError:
+                    logging.warning("Plugin failed to remove jobs. It will be retried in the next cycle.")
                 except WMException:
                     raise
                 except Exception as ex:
@@ -652,9 +660,6 @@ class BossAirAPI(WMConnectionBase):
                     logging.error(msg)
                     logging.debug("Interrupted while killing following jobs: %s\n", jobsToKill[plugin])
                     raise BossAirException(msg)
-                finally:
-                    # Even if kill fails, complete the jobs
-                    self._completeKill(jobs=jobsToKill[plugin])
         return
 
     def update(self, jobs):

@@ -407,7 +407,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         return jobtokill
 
-    def kill(self, jobs):
+    def kill(self, jobs, raiseEx=False):
         """
         _kill_
 
@@ -422,6 +422,8 @@ class SimpleCondorPlugin(BasePlugin):
             schedd.act(htcondor.JobAction.Remove, gridIds)
         except RuntimeError:
             logging.warn("Error while killing jobs on the schedd: %s", gridIds)
+            if raiseEx:
+                raise
 
         return
 

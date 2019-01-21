@@ -112,6 +112,9 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
     response = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
     originalArgs = response.values()[0]
 
+    ### not a nice fix for #8245, but we cannot inherit the CollectionName attr
+    originalArgs.pop("CollectionName", None)
+
     chainArgs = None
     if originalArgs["RequestType"] == 'Resubmission':
         # ACDC of ACDC, we can't validate this case

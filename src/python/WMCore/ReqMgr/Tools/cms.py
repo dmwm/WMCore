@@ -175,7 +175,6 @@ def web_ui_names():
 #             "Minmergesize": "Min merge size",
 #             "Maxmergesize": "Max merge size",
 #             "Maxmergeevents": "Max merge events",
-#             "Maxvsize": "Maximum VSize",
 #             "Blockclosemaxwaittime": "Block close max wait time",
 #             "Blockclosemaxfiles": "Block close max files",
 #             "Blockclosemaxevents": "Block close max events",

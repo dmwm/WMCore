@@ -99,17 +99,12 @@ class Watchdog(threading.Thread):
                 # We decided to only touch Watchdog settings if the number of cores changed.
                 # (even if this means the watchdog memory is wrong for a slot this size).
                 changedCores = origCores != resources['cores']
-                # HTCondor doesn't explicitly scale VSize; it's also not clear what
-                # resources this manages (as we already watch the memory use) or how
-                # it should relate to other resources (such as memory or cores used).
-                # Hence, we simply remove it if we change anything about the memory.
                 # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
                 # Add the new number of cores to the args such that DashboardInterface can see it
                 args['cores'] = resources['cores']
                 if changedCores:
                     if origMaxRSS:
-                        args.pop('maxVSize', None)
                         args['maxRSS'] = resources['memory'] - 50
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)

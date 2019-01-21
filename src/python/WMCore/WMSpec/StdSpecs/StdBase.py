@@ -226,7 +226,6 @@ class StdBase(object):
         """
         # Default settings defined by CMS policy
         maxrss = 2.3 * 1024  # 2.3 GiB, but in MiB
-        vsize = 1 * 1024 * 1024  # 1 TiB, but in MiB
         softTimeout = 47 * 3600  # 47h
         hardTimeout = 47 * 3600 + 5 * 60  # 47h + 5 minutes
 
@@ -238,7 +237,6 @@ class StdBase(object):
         monitoring.DashboardMonitor.destinationPort = self.dashboardPort
         monitoring.section_("PerformanceMonitor")
         monitoring.PerformanceMonitor.maxRSS = maxrss
-        monitoring.PerformanceMonitor.maxVSize = vsize
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task

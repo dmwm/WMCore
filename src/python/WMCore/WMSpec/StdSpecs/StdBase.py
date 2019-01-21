@@ -83,10 +83,10 @@ class StdBase(object):
     def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent):
         """
         _calcEvtsPerJobLumi_
-        
+
         Given EventsPerJob, EventsPerLumi and TimePerEvent information,
         calculates the final values for EventsPerJob and EventsPerLumi.
-        
+
         Final result will always be an EventsPerJob multiple of EventsPerLumi,
         no matter whether EventsPerJob was provided or not.
         :param ePerJob: events per job

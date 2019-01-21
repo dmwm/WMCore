@@ -16,7 +16,7 @@ import signal
 import time
 
 import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
-import WMCore.FwkJobReport.Report        as Report
+import WMCore.FwkJobReport.Report as Report
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Monitors.DashboardMonitor import getStepPID
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
@@ -184,7 +184,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         # Now we run the monitor command and collate the data
         cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, stderr, retcode = subprocessAlgos.runCommand(cmd)
+        stdout, _stderr, _retcode = subprocessAlgos.runCommand(cmd)
 
         output = stdout.split()
         if not len(output) > 6:

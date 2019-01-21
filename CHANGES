@@ -1,3 +1,33 @@
+1.1.19 to 1.1.20.pre2:
+  - Merge pull request #8973 from amaltaro/fix-8245
+  - Merge pull request #8972 from amaltaro/fix-8221
+  - Merge pull request #8885 from amaltaro/reqmgr2-requirements
+  - Add list of dependencies for the other WMCore services
+  - Support ACDC for recovery workflows
+  - unit tests and pylint fixes
+  - Remove MaxVSize argument; retry softKill with hardKill; remove RSS backwards compatibility
+  - Merge pull request #8968 from amaltaro/fix-8963
+  - Merge pull request #8967 from amaltaro/fix-8916
+  - Merge pull request #8969 from dmwm/deploy-wmagent1
+  - Fix count of leftover processes in deploy-wmagent
+  - pylint and unit test fixes
+  - Retry condor job removal for timeout
+  - Set the correct DN for priority transition
+  - 1.1.20.pre1
+  - Merge pull request #8954 from dmwm/belforte-patch-1
+  - Merge pull request #8959 from amaltaro/fix-8953
+  - pylint changes
+  - Properly parse AMQ creds; only enable it when there are valid creds
+  - Merge pull request #8957 from ticoann/add_docs
+  - add document
+  - Merge pull request #8956 from ticoann/add_pile_up_search
+  - add pile up dataset search
+  - Merge pull request #8955 from ticoann/alert_remove
+  - allow other compressions beside gzip for tarball
+  - remove alert unregister code
+  - Merge pull request #8951 from goughes/fix_requirements
+  - Fix pyzmq line in requirements.txt
+
 1.1.19 to 1.1.20.pre1:
   - Merge pull request #8954 from dmwm/belforte-patch-1
   - Merge pull request #8959 from amaltaro/fix-8953

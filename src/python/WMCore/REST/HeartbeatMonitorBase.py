@@ -71,8 +71,8 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
                                 host_and_ports=self.hostPortAMQ,
                                 logger=self.logger)
 
-            notifications = stompSvc.make_notification(payload=docs, docType=self.docTypeAMQ,
-                                                       docId=producer, ts=ts)
+            notifications = [stompSvc.make_notification(payload=doc, docType=self.docTypeAMQ,
+                                                        ts=ts) for doc in docs]
 
             failures = stompSvc.send(notifications)
             self.logger.info("%i docs successfully sent to Stomp AMQ", len(notifications) - len(failures))

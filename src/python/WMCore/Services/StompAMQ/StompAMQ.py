@@ -66,7 +66,7 @@ class StompAMQ(object):
     """
 
     # Version number to be added in header
-    _version = '0.2'
+    _version = '0.3'
 
     def __init__(self, username, password, producer, topic,
                  host_and_ports=None, logger=None, cert=None, key=None):
@@ -91,11 +91,11 @@ class StompAMQ(object):
         :param data: Either a single notification (as returned by
             `make_notification`) or a list of such.
 
-        :return: a list of successfully sent notification bodies
+        :return: a list of notification bodies that failed to send
         """
-        if not isinstance(data, list):
-            self.logger.error("Argument for send method has to be a list, not %s", type(data))
-            return data
+        # If only a single notification, put it in a list
+        if isinstance(data, dict) and 'body' in data:
+            data = [data]
 
         conn = stomp.Connection(host_and_ports=self._host_and_ports)
 
@@ -152,40 +152,55 @@ class StompAMQ(object):
             return body
         return
 
-    def make_notification(self, payload, docType, docId, producer=None, ts=None):
+    def make_notification(self, payload, docType, docId=None, producer=None, ts=None, metadata=None,
+                          dataSubfield="data"):
         """
-        Given a single payload (or a list of them), generate a list
-        of notifications including the specified data.
+        Produce a notification from a single payload, adding the necessary
+        headers and metadata. Generic metadata is generated to include a
+        timestamp, producer name, document id, and a unique id. User can
+        pass additional metadata which updates the generic metadata.
 
-        :param payload: Actual notification data.
-        :param docType: document type for the high level metadata.
-        :param docId: document id representing the notification.
-        :param producer: The notification producer.
-        :param ts: timestamp to be added to each document metadata.
+        If payload already contains a metadata field, it is overwritten.
 
-        :return: a list of notifications with the proper metadata
+        :param payload: Actual data.
+        :param docType: document type for metadata.
+        :param docId: document id representing the notification. If none provided,
+               a unique id is created.
+        :param producer: The notification producer name, taken from the StompAMQ
+               instance producer name by default.
+        :param ts: timestamp to be added to metadata. Set as time.time() by default
+        :param metadata: dictionary of user metadata to be added. (Updates generic
+               metadata.)
+        :param dataSubfield: field name to use for the actual data. If none, the data
+               is put directly in the body. Default is "data"
+
+        :return: a single notifications with the proper headers and metadata
         """
         producer = producer or self._producer
+        umetadata = metadata or {}
         ts = ts or int(time.time())
+        uuid = makeUUID()
+        docId = docId or uuid
 
-        if isinstance(payload, dict):
-            payload = [payload]  # it was a single document
+        headers = {'type': docType,
+                   'version': self._version,
+                   'producer': producer}
 
-        commonHeaders = {'type': docType,
-                         'version': self._version,
-                         'producer': producer}
+        metadata = {'timestamp': ts,
+                    'producer': producer,
+                    '_id': docId,
+                    'uuid': uuid}
+        metadata.update(umetadata)
 
-        docs = []
-        for doc in payload:
-            notification = {}
-            notification.update(commonHeaders)
-            # Add body consisting of the payload and metadata
-            body = {'payload': doc,
-                    'metadata': {'timestamp': ts,
-                                 'id': docId,
-                                 'uuid': makeUUID()}
-                   }
-            notification['body'] = body
-            docs.append(notification)
+        body = {}
+        if dataSubfield:
+            body[dataSubfield] = payload
+        else:
+            body.update(payload)
+        body['metadata'] = metadata
 
-        return docs
+        notification = {}
+        notification.update(headers)
+        notification['body'] = body
+
+        return notification

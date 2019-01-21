@@ -497,7 +497,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "%s-v0" % (acquisitionEra)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -506,7 +506,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
                                                             dataTier, filterName, 'v0')
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
@@ -539,7 +539,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -548,7 +548,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
                                                             dataTier, filterName, "v2")
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
@@ -577,7 +577,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -586,7 +586,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
                                                             dataTier, filterName, "Test-v2")
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
@@ -625,7 +625,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -634,7 +634,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
                                                                    dataTier, filterName, 'Test-v2')
                 unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset,
@@ -699,7 +699,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "%s-v0" % (acquisitionEras["ProcessingTask"])
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -708,7 +708,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
                                                             primaryDataset, dataTier, filterName, 'v0')
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
@@ -740,7 +740,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -749,7 +749,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
                                                             primaryDataset, dataTier, filterName, "v3")
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
@@ -781,7 +781,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -790,7 +790,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
                                                             primaryDataset, dataTier, filterName, "SkimTest-v3")
                 unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
@@ -825,7 +825,7 @@ class WMWorkloadTest(unittest.TestCase):
             dataTier = outputModule.dataTier
             filterName = outputModule.filterName
 
-            if filterName == None:
+            if filterName is None:
                 procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
@@ -834,7 +834,7 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
-            if filterName != None:
+            if filterName is not None:
                 mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
                                                                    primaryDataset, dataTier, filterName, 'SkimTest-v3')
                 unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"],
@@ -1607,7 +1607,6 @@ class WMWorkloadTest(unittest.TestCase):
 
         testWorkload.setupPerformanceMonitoring(softTimeout=100, gracePeriod=1)
         self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor, "maxRSS"))
-        self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor, "maxVSize"))
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.hardTimeout, 101)
         self.assertTrue(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))

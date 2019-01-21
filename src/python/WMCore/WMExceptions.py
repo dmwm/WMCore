@@ -154,7 +154,6 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       50116: "Could not determine exit code of cmsRun executable at runtime.",  # (WMA)
                       50513: "Failure to run SCRAM setup scripts.",  # (WMA, CRAB3)
                       50660: "Application terminated by wrapper because using too much RAM (RSS).",  # (WMA, CRAB3)
-                      50661: "Application terminated by wrapper because using too much Virtual Memory (VSIZE).",  # (WMA)
                       50662: "Application terminated by wrapper because using too much disk.",  # (CRAB3)
                       50664: "Application terminated by wrapper because using too much Wall Clock time.",  # (WMA, CRAB3)
                       50665: "Application terminated by wrapper because it stay idle too long.",  # (CRAB3)

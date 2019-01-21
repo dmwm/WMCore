@@ -14,10 +14,9 @@ import os
 import os.path
 import signal
 import time
-import traceback
 
 import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
-import WMCore.FwkJobReport.Report        as Report
+import WMCore.FwkJobReport.Report as Report
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Monitors.DashboardMonitor import getStepPID
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
@@ -60,22 +59,21 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid = None
         self.uid = os.getuid()
-        self.monitorBase = "ps -p %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd -ww | grep %i"
+        self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
         self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None
 
         self.rss = []
-        self.vsize = []
         self.pcpu = []
         self.pmem = []
 
         self.maxRSS = None
-        self.maxVSize = None
         self.softTimeout = None
         self.hardTimeout = None
         self.logPath = None
         self.startTime = None
+        self.killRetry = False  # will trigger a hard (SIGTERM) instead of soft kill
 
         self.watchStepTypes = []
 
@@ -98,7 +96,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.watchStepTypes = args.get('WatchStepTypes', ['CMSSW', 'PerfTest'])
 
         self.maxRSS = args.get('maxRSS', None)
-        self.maxVSize = args.get('maxVSize', None)
         self.softTimeout = args.get('softTimeout', None)
         self.hardTimeout = args.get('hardTimeout', None)
         self.numOfCores = args.get('cores', None)
@@ -163,7 +160,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
         killHard = False
         reason = ''
         errorCodeLookup = {'RSS': 50660,
-                           'VSZ': 50661,
                            'Wallclock time': 50664,
                            '': 99999}
 
@@ -188,29 +184,22 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         # Now we run the monitor command and collate the data
         cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, stderr, retcode = subprocessAlgos.runCommand(cmd)
+        stdout, _stderr, _retcode = subprocessAlgos.runCommand(cmd)
 
         output = stdout.split()
-        if not len(output) > 7:
+        if not len(output) > 6:
             # Then something went wrong in getting the ps data
             msg = "Error when grabbing output from process ps\n"
             msg += "output = %s\n" % output
             msg += "command = %s\n" % self.monitorCommand
             logging.error(msg)
             return
-        # FIXME: making it backwards compatible. Keep only the "else" block in HG1801
-        if self.maxRSS is not None and self.maxRSS >= (1024 * 1024):
-            # then workload value is still in KiB (old way)
-            rss = int(output[2])
-            vsize = int(output[3])
-        else:
-            # ps returns data in kiloBytes, let's make it megaBytes
-            # I'm so confused with these megabytes and mebibytes...
-            rss = int(output[2]) // 1000  # convert it to MiB
-            vsize = int(output[3]) // 1000  # convert it to MiB
+
+        # ps returns data in kiloBytes, let's make it megaBytes
+        # I'm so confused with these megabytes and mebibytes...
+        rss = int(output[2]) // 1000  # convert it to MiB
         logging.info("Retrieved following performance figures:")
-        logging.info("RSS: %s;  VSize: %s; PCPU: %s; PMEM: %s", output[2], output[3],
-                     output[4], output[5])
+        logging.info("RSS: %s; PCPU: %s; PMEM: %s", output[2], output[3], output[4])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores
@@ -220,11 +209,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
             msg += "Job has RSS: %s\n" % rss
             killProc = True
             reason = 'RSS'
-        elif self.maxVSize is not None and vsize >= self.maxVSize:
-            msg += "Job has exceeded maxVSize: %s\n" % self.maxVSize
-            msg += "Job has VSize: %s\n" % vsize
-            killProc = True
-            reason = 'VSZ'
         elif self.hardTimeout is not None and self.softTimeout is not None:
             currentTime = time.time()
             if (currentTime - self.startTime) > self.softTimeout:
@@ -236,7 +220,12 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 killHard = True
                 msg += "Job exceeded soft timeout"
 
-        if killProc:
+        if not killProc:
+            # then job is behaving well, there is nothing to do
+            return
+
+        # make sure we persist the performance error only once
+        if not self.killRetry:
             logging.error(msg)
             report = Report.Report()
             # Find the global report
@@ -260,19 +249,20 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 # Kill anyway, and hope the logging file gets written out
                 msg2 = "Exception while writing out jobReport.\n"
                 msg2 += "Aborting job anyway: unlikely you'll get any error report.\n"
-                msg2 += str(ex)
-                msg2 += str(traceback.format_exc()) + '\n'
-                logging.error(msg2)
+                msg2 += "Error: %s" % str(ex)
+                logging.exception(msg2)
 
-            try:
-                if not killHard:
-                    logging.error("Attempting to kill step using SIGUSR2")
-                    os.kill(stepPID, signal.SIGUSR2)
-                else:
-                    logging.error("Attempting to kill step using SIGTERM")
-                    os.kill(stepPID, signal.SIGTERM)
-            except Exception:
+        try:
+            if not killHard and not self.killRetry:
+                logging.error("Attempting to kill step using SIGUSR2")
+                os.kill(stepPID, signal.SIGUSR2)
+            else:
                 logging.error("Attempting to kill step using SIGTERM")
                 os.kill(stepPID, signal.SIGTERM)
+        except Exception:
+            logging.error("Attempting to kill step using SIGTERM")
+            os.kill(stepPID, signal.SIGTERM)
+        finally:
+            self.killRetry = True
 
         return

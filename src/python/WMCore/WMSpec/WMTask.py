@@ -1219,27 +1219,6 @@ class WMTaskHelper(TreeHelper):
                 task.setMaxRSS(maxRSS)
         return
 
-    def setMaxVSize(self, maxVSize):
-        """
-        _setMaxVSize_
-
-        Set maxVSize performance monitoring for this task.
-        :param maxVSize: maximum VSize memory comsumption in MiB
-        """
-        if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
-            # keep the default settings (from StdBase) for these task types
-            return
-
-        if isinstance(maxVSize, dict):
-            maxVSize = maxVSize.get(self.name(), None)
-
-        if maxVSize:
-            self._setPerformanceMonitorConfig()
-            self.monitoring.PerformanceMonitor.maxVSize = int(maxVSize)
-            for task in self.childTaskIterator():
-                task.setMaxVSize(maxVSize)
-        return
-
     def setPerformanceMonitor(self, softTimeout=None, gracePeriod=None):
         """
         _setPerformanceMonitor_

@@ -412,7 +412,6 @@ class WMTaskTest(unittest.TestCase):
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
         self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxRSS"))
-        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxVSize"))
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return

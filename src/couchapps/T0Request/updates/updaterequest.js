@@ -57,18 +57,18 @@ function(doc, req)
     }
     // req.query is dictionary fields into the 
     // CMSCouch.Database.updateDocument() method, which is a dictionary
-    var massege = "OK";
+    var message = "OK";
     var newValues = req.query;
     for (key in newValues)
-    {   
-        if (key == "RequestTransition") {
-    		 doc[key] = JSON.parse(newValues[key]);
-    	} if (key == "RequestStatus") {
+    {
+        if (key == "RequestStatus") {
         	message = updateTransition(newValues[key]);
-        } else {
+        } else if (key == "RequestTransition") {
+    	    doc[key] = JSON.parse(newValues[key]);
+    	} else {
     		doc[key] = newValues[key];
     	}
-       
+
     }
     
     return [doc, message];

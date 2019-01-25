@@ -272,7 +272,7 @@ value - is a list, which has dictionaries with the following content:
            b) CRAB3 Postjob decides should it retry job or not;
            c) ASO decides should it resubmit transfer to FTS;
 """
-STAGEOUT_ERRORS = {60317: [{"regex": ".*cancelled aso transfer after timeout.*",
+STAGEOUT_ERRORS = {60317: [{"regex": ".*Cancelled ASO transfer after timeout.*",
                             "error-msg": "ASO Transfer canceled due to timeout.",
                             "isPermanent": True}
                           ],

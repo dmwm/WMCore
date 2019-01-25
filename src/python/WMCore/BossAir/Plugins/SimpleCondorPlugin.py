@@ -516,6 +516,10 @@ class SimpleCondorPlugin(BasePlugin):
         ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
                                        "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
 
+        # entries required for monitoring
+        ad['CMS_WMTool'] = 'WMAgent'
+        ad['CMS_SubmissionTool'] = 'WMAgent'
+
         # TODO: remove when 8.5.7 is deployed (seems to be still needed as of 8.6.11 ...)
         paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
         paramsToSkip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']
@@ -569,14 +573,17 @@ class SimpleCondorPlugin(BasePlugin):
             ad['WMAgent_JobID'] = job['jobid']
             ad['WMAgent_SubTaskName'] = job['task_name']
             ad['CMS_JobType'] = job['task_type']
+            ad['CMS_Type'] = job['activity']
 
             # Handling for AWS, cloud and opportunistic resources
             ad['AllowOpportunistic'] = job.get('allowOpportunistic', False)
 
             if job.get('inputDataset'):
                 ad['DESIRED_CMSDataset'] = job['inputDataset']
+                ad['CMS_PrimaryInputLocation'] = "Mixed" if job['trustSitelists'] else "Onsite"  # or Offsite
             else:
                 ad['DESIRED_CMSDataset'] = classad.Value.Undefined
+                ad['CMS_PrimaryInputLocation'] = "NONE"
             if job.get('inputDatasetLocations'):
                 sites = ','.join(sorted(job['inputDatasetLocations']))
                 ad['DESIRED_CMSDataLocations'] = sites
@@ -585,8 +592,10 @@ class SimpleCondorPlugin(BasePlugin):
 
             if job.get('inputPileup'):
                 ad['DESIRED_CMSPileups'] = ','.join(sorted(job['inputPileup']))
+                ad['CMS_SecondaryInputLocation'] = "Mixed" if job['trustPUSitelists'] else "Onsite"  # or Offsite
             else:
                 ad['DESIRED_CMSPileups'] = classad.Value.Undefined
+                ad['CMS_SecondaryInputLocation'] = "NONE"
 
             # HighIO and repack jobs
             ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0

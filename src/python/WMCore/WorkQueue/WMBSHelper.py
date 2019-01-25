@@ -278,7 +278,7 @@ class WMBSHelper(WMConnectionBase):
                             owner_vogroup=self.wmSpec.getOwner().get("vogroup", "DEFAULT"),
                             owner_vorole=self.wmSpec.getOwner().get("vorole", "DEFAULT"),
                             name=self.wmSpec.name(), task=task.getPathName(),
-                            wfType=self.wmSpec.getDashboardActivity(),
+                            wfType=self.wmSpec.getDashboardActivity(),  # FIXME should it be wfActivity?
                             alternativeFilesetClose=alternativeFilesetClose,
                             priority=self.wmSpec.priority())
         workflow.create()

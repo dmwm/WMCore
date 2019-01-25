@@ -120,7 +120,7 @@ class JobFactory(WMObject):
 
     def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
         """
-        Instantiate a new Job onject, apply all the generators to it
+        Instantiate a new Job object, apply all the generators to it
         """
         if name is None:
             name = self.getJobName()
@@ -128,8 +128,11 @@ class JobFactory(WMObject):
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()
         self.currentJob["jobType"] = self.subscription["type"]
-        self.currentJob["taskType"] = self.subscription.workflowType()
+        self.currentJob["activity"] = self.subscription.workflowType()
         self.currentJob["owner"] = self.subscription.owner()
+        # needed for job monitoring via job classads
+        self.currentJob["trustSitelists"] = self.trustSitelists
+        self.currentJob["trustPUSitelists"] = self.trustPUSitelists
 
         # All production jobs must be run 1
         if self.subscription["type"] == "Production":

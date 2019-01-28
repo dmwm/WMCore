@@ -550,8 +550,8 @@ class AgentStatusPoller(BaseWorkerThread):
                                 host_and_ports=self.hostPortAMQ,
                                 logger=logging)
 
-            notifications = stompSvc.make_notification(payload=docs, docType=docType,
-                                                       docId=producer, ts=timeS)
+            notifications = [stompSvc.make_notification(payload=doc, docType=docType,
+                                                        ts=timeS) for doc in docs]
 
             failures = stompSvc.send(notifications)
             logging.info("%i docs successfully sent to AMQ", len(notifications) - len(failures))

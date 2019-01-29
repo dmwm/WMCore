@@ -16,14 +16,15 @@ import xml.etree.cElementTree as ET
 int_number_pattern = re.compile(r'(^[0-9-]$|^[0-9-][0-9]*$)')
 float_number_pattern = re.compile(r'(^[-]?\d+\.\d*$|^\d*\.{1,1}\d+$)')
 
+
 def adjust_value(value):
     """
     Change null value to None.
     """
-    pat_float   = float_number_pattern
+    pat_float = float_number_pattern
     pat_integer = int_number_pattern
-    if  isinstance(value, str):
-        if  value == 'null' or value == '(null)':
+    if isinstance(value, str):
+        if value == 'null' or value == '(null)':
             return None
         elif pat_float.match(value):
             return float(value)
@@ -34,47 +35,27 @@ def adjust_value(value):
     else:
         return value
 
-def xml_parser(data, prim_key, tags=None):
+
+def xml_parser(data, prim_key):
     "Generic XML parser"
-    if  isinstance(data, basestring):
+    if isinstance(data, basestring):
         stream = StringIO.StringIO()
         stream.write(data)
         stream.seek(0)
     else:
         stream = data
-    context = ET.iterparse(stream, events=("start", "end"))
-    root = None
-    sup = {}
-    for item in context:
-        event, elem = item
-        if  event == "start" and root is None:
-            root = elem # the first element is root
+
+    context = ET.iterparse(stream)
+    for event, elem in context:
         row = {}
-        if  tags and not sup:
-            for tag in tags:
-                if  tag.find(".") != -1:
-                    atag, attr = tag.split(".")
-                    if  elem.tag == atag and attr in elem.attrib:
-                        att_value = elem.attrib[attr]
-                        if  isinstance(att_value, dict):
-                            att_value = elem.attrib[attr]
-                        if  isinstance(att_value, str):
-                            att_value = adjust_value(att_value)
-                        sup[atag] = {attr:att_value}
-                else:
-                    if  elem.tag == tag:
-                        sup[tag] = elem.attrib
         key = elem.tag
-        if  key != prim_key:
+        if key != prim_key:
             continue
         row[key] = elem.attrib
-        row[key].update(sup)
         get_children(elem, event, row, key)
-        if  event == 'end':
-            elem.clear()
-            yield row
-    if  root:
-        root.clear()
+        elem.clear()
+        yield row
+
 
 def get_children(elem, event, row, key):
     """
@@ -84,35 +65,27 @@ def get_children(elem, event, row, key):
     parsing step by using provided notations dictionary.
     """
     for child in elem.getchildren():
-        child_key  = child.tag
+        child_key = child.tag
         child_data = child.attrib
-        if  not child_data:
+        if not child_data:
             child_dict = adjust_value(child.text)
         else:
             child_dict = child_data
 
-        if  isinstance(row[key], dict) and child_key in row[key]:
-            val = row[key][child_key]
-            if  isinstance(val, list):
-                val.append(child_dict)
-                row[key][child_key] = val
-            else:
-                row[key][child_key] = [val] + [child_dict]
-        else:
-            if  child.getchildren(): # we got grand-children
-                if  child_dict:
-                    row[key][child_key] = child_dict
-                else:
-                    row[key][child_key] = {}
-                if  isinstance(child_dict, dict):
-                    newdict = {child_key: child_dict}
-                else:
-                    newdict = {child_key: {}}
-                get_children(child, event, newdict, child_key)
-                row[key][child_key] = newdict[child_key]
-            else:
-                if  not isinstance(row[key], dict):
-                    row[key] = {}
+        if child.getchildren():  # we got grand-children
+            if child_dict:
                 row[key][child_key] = child_dict
-        if  event == 'end':
-            child.clear()
+            else:
+                row[key][child_key] = {}
+            if isinstance(child_dict, dict):
+                newdict = {child_key: child_dict}
+            else:
+                newdict = {child_key: {}}
+            get_children(child, event, newdict, child_key)
+            row[key][child_key] = newdict[child_key]
+        else:
+            if not isinstance(row[key], dict):
+                row[key] = {}
+            row[key].setdefault(child_key, [])
+            row[key][child_key].append(child_dict)
+        child.clear()

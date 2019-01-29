@@ -80,28 +80,33 @@ class PersistencyHelper:
         return
 
 
-    def saveCouch(self, couchUrl, couchDBName, metadata={}):
+    def saveCouch(self, couchUrl, couchDBName, metadata=None):
         """ Save this spec in CouchDB.  Returns URL """
-        import WMCore.Database.CMSCouch
-        server = WMCore.Database.CMSCouch.CouchServer(couchUrl)
+        from WMCore.Database.CMSCouch import CouchServer, CouchInternalServerError
+        metadata = metadata or {}
+        server = CouchServer(couchUrl)
         database = server.connectDatabase(couchDBName)
-        uri = '/%s/%s' % (couchDBName, self.name())
-        specuri = uri + '/spec'
         name = self.name()
-        if not database.documentExists(self.name()):
+        uri = '/%s/%s' % (couchDBName, name)
+        specuri = uri + '/spec'
+        if not database.documentExists(name):
             self.setSpecUrl(couchUrl + specuri)
             doc = database.put(uri, data=metadata, contentType='application/json')
             #doc = database.commitOne(self.name(), metadata)
             rev = doc['rev']
         else:
             #doc = database.get(uri+'?revs=true')
-            doc = database.document(self.name())
+            doc = database.document(name)
             rev = doc['_rev']
 
         #specuriwrev = specuri + '?rev=%s' % rev
         workloadString = pickle.dumps(self.data)
         #result = database.put(specuriwrev, workloadString, contentType='application/text')
-        result = database.addAttachment(name, rev, workloadString, 'spec')
+        retval = database.addAttachment(name, rev, workloadString, 'spec')
+        if retval.get('ok', False) is not True:
+            msg = "Failed to save a spec attachment in CouchDB for %s" % name
+            raise CouchInternalServerError(msg, data=None, result=retval)
+
         url = couchUrl + specuri
         return url
 

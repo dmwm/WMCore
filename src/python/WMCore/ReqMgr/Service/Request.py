@@ -557,9 +557,16 @@ class Request(RESTEntity):
             self._update_additional_request_args(workload, request_args)
 
             cherrypy.log("Create request, input args: %s ..." % request_args)
-            workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
-                               metadata=request_args)
-            out.append({'request': workload.name()})
+            try:
+                workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
+                                   metadata=request_args)
+                out.append({'request': workload.name()})
+            except Exception as ex:
+                # then it failed to add the spec file as attachment
+                # we better delete the original request to avoid confusion in wmstats
+                cherrypy.log("Error saving request spec to couch: %s " % str(ex))
+                self.delete(request_args['RequestName'])
+
         return out
 
 

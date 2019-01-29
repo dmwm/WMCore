@@ -16,14 +16,15 @@ import xml.etree.cElementTree as ET
 int_number_pattern = re.compile(r'(^[0-9-]$|^[0-9-][0-9]*$)')
 float_number_pattern = re.compile(r'(^[-]?\d+\.\d*$|^\d*\.{1,1}\d+$)')
 
+
 def adjust_value(value):
     """
     Change null value to None.
     """
-    pat_float   = float_number_pattern
+    pat_float = float_number_pattern
     pat_integer = int_number_pattern
-    if  isinstance(value, str):
-        if  value == 'null' or value == '(null)':
+    if isinstance(value, str):
+        if value == 'null' or value == '(null)':
             return None
         elif pat_float.match(value):
             return float(value)
@@ -37,7 +38,7 @@ def adjust_value(value):
 
 def xml_parser(data, prim_key):
     "Generic XML parser"
-    if  isinstance(data, basestring):
+    if isinstance(data, basestring):
         stream = StringIO.StringIO()
         stream.write(data)
         stream.seek(0)
@@ -48,7 +49,7 @@ def xml_parser(data, prim_key):
     for event, elem in context:
         row = {}
         key = elem.tag
-        if  key != prim_key:
+        if key != prim_key:
             continue
         row[key] = elem.attrib
         get_children(elem, event, row, key)
@@ -64,14 +65,14 @@ def get_children(elem, event, row, key):
     parsing step by using provided notations dictionary.
     """
     for child in elem.getchildren():
-        child_key  = child.tag
+        child_key = child.tag
         child_data = child.attrib
-        if  not child_data:
+        if not child_data:
             child_dict = adjust_value(child.text)
         else:
             child_dict = child_data
 
-        if  child.getchildren():  # we got grand-children
+        if child.getchildren():  # we got grand-children
             if child_dict:
                 row[key][child_key] = child_dict
             else:

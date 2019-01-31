@@ -11,6 +11,7 @@ import os
 import os.path
 import pickle
 import socket
+import sys
 import threading
 from logging.handlers import RotatingFileHandler
 
@@ -28,12 +29,14 @@ class BootstrapException(WMException):
     """ An awesome exception """
     pass
 
+
 def readFloatFromFile(filePath):
     try:
         with open(filePath, "r") as nf:
             return float(nf.readline())
     except:
         return None
+
 
 # Copied direct from ProdAgent to find the damn CE name
 def getSyncCE():
@@ -230,7 +233,6 @@ def createInitialReport(job, reportName):
     report.data.hostName = socket.gethostname()
     report.data.ceName = getSyncCE()
 
-
     # TODO: need to check what format it returns and what features need to extract.
     # currently
     # $MACHINEFEATURES/hs06: HS06 score of the host
@@ -297,27 +299,39 @@ def createErrorReport(exitCode, errorType, errorDetails=None,
     return
 
 
-def setupLogging(logDir):
+def setupLogging(logDir, logName="wmagentJob.log", useStdout=False):
     """
     _setupLogging_
 
-    Setup logging for the slave process.  Each slave process will have its own
+    Setup logging for the slave process. Each slave process will have its own
     log file.
+    useStdout adds a stdout handler to the logger object such that records are
+    also written to the main job log object.
     """
     try:
-        logFile = "%s/wmagentJob.log" % logDir
-
-        logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
+        # create a root logger
+        logger = logging.getLogger()
+        # create a log formatter
         logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
-        logHandler.setFormatter(logFormatter)
-        logging.getLogger().addHandler(logHandler)
-        logging.getLogger().setLevel(logging.INFO)
+
+        if useStdout:
+            consoleHandler = logging.StreamHandler(sys.stdout)
+            consoleHandler.setFormatter(logFormatter)
+            logger.addHandler(consoleHandler)
+        else:
+            # create a file handler
+            logFile = "%s/%s" % (logDir, logName)
+            logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
+            logHandler.setFormatter(logFormatter)
+            logger.addHandler(logHandler)
+
+        logger.setLevel(logging.INFO)
+
         # This is left in as a reminder for debugging purposes
         # SQLDEBUG turns your log files into horrible messes
         # logging.getLogger().setLevel(logging.SQLDEBUG)
-
         myThread = threading.currentThread()
-        myThread.logger = logging.getLogger()
+        myThread.logger = logger
     except Exception as ex:
         msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)

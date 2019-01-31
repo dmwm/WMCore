@@ -12,12 +12,16 @@ environment in which the Runtime Script implementation needs to be called.
 
 """
 
+from __future__ import print_function
+
+import logging
 import os
 import sys
 import traceback
 
-from WMCore.WMRuntime.ScriptFactory import getScript
 import WMCore.WMRuntime.Bootstrap as Bootstrap
+from WMCore.WMRuntime.ScriptFactory import getScript
+
 
 class ScriptInvoke:
     """
@@ -28,6 +32,7 @@ class ScriptInvoke:
     - module name of the Script implementation to be invoked
 
     """
+
     def __init__(self, stepModule, scriptModule):
         self.stepModule = stepModule
         self.module = scriptModule
@@ -37,6 +42,9 @@ class ScriptInvoke:
         self.step = None
         self.task = None
         self.job = None
+        currentDir = os.getcwd()
+        Bootstrap.setupLogging(currentDir, useStdout=True)
+        logging.info("Invoking scripts in current directory: %s", currentDir)
 
     def boot(self):
         """
@@ -49,7 +57,6 @@ class ScriptInvoke:
         self.job = Bootstrap.loadJobDefinition()
         self.task = Bootstrap.loadTask(self.job)
 
-
         stepSpaceMod = __import__(self.stepModule,
                                   globals(), locals(), ['stepSpace'], -1)
 
@@ -57,15 +64,11 @@ class ScriptInvoke:
 
         self.step = self.task.getStep(self.stepSpace.stepName)
 
-
-
         self.script = getScript(scriptModule)
         self.script.task = self.task
         self.script.step = self.step
         self.script.job = self.job
         self.script.stepSpace = self.stepSpace
-
-
 
     def invoke(self):
         """
@@ -75,9 +78,6 @@ class ScriptInvoke:
 
         """
         self.exitCode = self.script()
-
-
-
 
     def exit(self):
         return self.exitCode

@@ -244,8 +244,7 @@ class Scram(object):
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
 
-    def __call__(self, command, hackLdLibPath=True,
-                 logName="scramOutput.log", runtimeDir=None, cleanEnv=True):
+    def __call__(self, command, hackLdLibPath=True, runtimeDir=None, cleanEnv=True):
         """
         _operator(command)_
 
@@ -261,18 +260,16 @@ class Scram(object):
         executeIn = runtimeDir
         if runtimeDir is None:
             executeIn = self.projectArea
-        # if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
-        if isinstance(logName, basestring) and not os.path.exists(logName):
-            with open(logName, 'w') as f:
-                f.write('Log for recording SCRAM command-line output\n')
-                f.write('-------------------------------------------\n')
-        logFile = open(logName, 'a') if isinstance(logName, basestring) else logName
+
         bashcmd = "/bin/bash"
         if cleanEnv:
             bashcmd = "env - " + bashcmd
+
+        logging.info("Creating a subprocess to run the PSet setup.")
+        logging.info("Also recording SCRAM command-line related output.")
         proc = subprocess.Popen([bashcmd], shell=True, cwd=executeIn,
-                                stdout=logFile,
-                                stderr=logFile,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
                                 stdin=subprocess.PIPE,
                                 )
 
@@ -328,11 +325,11 @@ class Scram(object):
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()
+        logging.info("Subprocess stdout was:\n%s", self.stdout)
+        logging.info("Subprocess stderr was:\n%s", self.stderr)
         self.code = proc.returncode
         self.lastExecuted = command
-        # close the logfile if one has been created from the name. Let the caller close it if he passed a file object.
-        if isinstance(logName, basestring):
-            logFile.close()
+
         return self.code
 
     def diagnostic(self):

@@ -174,7 +174,7 @@ def isCMSSWSupported(thisCMSSW, supportedCMSSW):
     feature. Only the first 2 digits are supported.
     """
     if not thisCMSSW or not supportedCMSSW:
-        logging.info("You must provide the CMSSW version being used by this job and a supported version")
+        logging.warning("You must provide the CMSSW version being used by this job and a supported version")
         return False
 
     thisCMSSW = thisCMSSW.split('_', 3)
@@ -209,6 +209,7 @@ class SetupCMSSWPset(ScriptInterface):
         ScriptInterface.__init__(self)
         self.crabPSet = crabPSet
         self.process = None
+        self.logger = logging.getLogger()
 
     def createProcess(self, scenario, funcName, funcArgs):
         """
@@ -228,7 +229,7 @@ class SetupCMSSWPset(ScriptInterface):
                 self.process = mergeProcess(**funcArgs)
             except Exception as ex:
                 msg = "Failed to create a merge process."
-                logging.exception(msg)
+                self.logger.exception(msg)
                 raise ex
         elif funcName == "repack":
             try:
@@ -236,7 +237,7 @@ class SetupCMSSWPset(ScriptInterface):
                 self.process = repackProcess(**funcArgs)
             except Exception as ex:
                 msg = "Failed to create a repack process."
-                logging.exception(msg)
+                self.logger.exception(msg)
                 raise ex
         else:
             try:
@@ -247,13 +248,13 @@ class SetupCMSSWPset(ScriptInterface):
                 msg += str(scenario)
                 msg += "\nWith Error:"
                 msg += str(ex)
-                logging.error(msg)
+                self.logger.error(msg)
                 raise ex
             try:
                 self.process = getattr(scenarioInst, funcName)(**funcArgs)
             except Exception as ex:
                 msg = "Failed to load process from Scenario %s (%s)." % (scenario, scenarioInst)
-                logging.error(msg)
+                self.logger.error(msg)
                 raise ex
 
         return
@@ -273,7 +274,7 @@ class SetupCMSSWPset(ScriptInterface):
         except ImportError as ex:
             msg = "Unable to import process from %s:\n" % psetModule
             msg += str(ex)
-            logging.error(msg)
+            self.logger.error(msg)
             raise ex
 
         return
@@ -329,6 +330,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         baggage = self.job.getBaggage()
         seeding = getattr(baggage, "seeding", None)
+        self.logger.info("Job seeding set to: %s", seeding)
         if seeding == "ReproducibleSeeding":
             randService = self.process.RandomNumberGeneratorService
             tweak = PSetTweak()
@@ -370,6 +372,7 @@ class SetupCMSSWPset(ScriptInterface):
         This method creates particular mapping in a working Trivial
         File Catalog (TFC).
         """
+        self.logger.info("Handling chained processing job")
         # first, create an instance of TrivialFileCatalog to override
         tfc = TrivialFileCatalog()
         # check the jobs input files
@@ -385,9 +388,8 @@ class SetupCMSSWPset(ScriptInterface):
 
         tfcName = "override_catalog.xml"
         tfcPath = os.path.join(os.getcwd(), tfcName)
-        logging.info("Creating override TFC, contents below, saving into '%s'", tfcPath)
+        self.logger.info("Creating override TFC and saving into '%s'", tfcPath)
         tfcStr = tfc.getXML()
-        logging.info(tfcStr)
         with open(tfcPath, 'w') as tfcFile:
             tfcFile.write(tfcStr)
 
@@ -404,7 +406,7 @@ class SetupCMSSWPset(ScriptInterface):
         # find out local site SE name
         siteConfig = loadSiteLocalConfig()
         PhEDExNodeName = siteConfig.localStageOut["phedex-node"]
-        logging.info("Running on site '%s', local PNN: '%s'", siteConfig.siteName, PhEDExNodeName)
+        self.logger.info("Running on site '%s', local PNN: '%s'", siteConfig.siteName, PhEDExNodeName)
 
         pileupDict = self._getPileupConfigFromJson()
 
@@ -451,19 +453,24 @@ class SetupCMSSWPset(ScriptInterface):
         each type of modules instances can have either "secsource"
         or "input" attribute, so need to probe both, one shall succeed.
         """
+        self.logger.info("Requested pileup type %s with %d mixing modules", requestedPileupType, len(modules))
+
         baggage = self.job.getBaggage()
 
         for m in modules:
+            self.logger.info("Loaded module type: %s", m.type_())
             for pileupType in self.step.data.pileup.listSections_():
                 # there should be either "input" or "secsource" attributes
                 # and both "MixingModule", "DataMixingModule" can have both
                 inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
+                self.logger.info("pileupType: %s with input attributes: %s", pileupType, bool(inputTypeAttrib))
                 if not inputTypeAttrib:
                     continue
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     eventsAvailable = 0
                     useAAA = True if getattr(baggage, 'trustPUSitelists', False) else False
+                    self.logger.info("Pileup set to read data remotely: %s", useAAA)
                     for blockName in sorted(pileupDict[pileupType].keys()):
                         blockDict = pileupDict[pileupType][blockName]
                         if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
@@ -476,13 +483,15 @@ class SetupCMSSWPset(ScriptInterface):
                             # For deterministic pileup, we want to shuffle the list the
                             # same for every job in the task and skip events
                             random.seed(self.job['task'])
-                            logging.info("Skipping %d pileup events for deterministic data mixing",
-                                         baggage.skipPileupEvents)
+                            self.logger.info("Skipping %d pileup events for deterministic data mixing",
+                                             baggage.skipPileupEvents)
                             inputTypeAttrib.skipEvents = cms.untracked.uint32(
                                 int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
                     # Shuffle according to the seed above or randomly
                     random.shuffle(inputTypeAttrib.fileNames)
+                    self.logger.info("Added %s events from the pileup blocks", eventsAvailable)
+
         return
 
     def _getPileupMixingModules(self):
@@ -518,7 +527,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         workingDir = self.stepSpace.location
         jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
-        logging.info("Pileup JSON configuration file: '%s'", jsonPileupConfig)
+        self.logger.info("Pileup JSON configuration file: '%s'", jsonPileupConfig)
         try:
             with open(jsonPileupConfig) as jdata:
                 pileupDict = json.load(jdata)
@@ -557,6 +566,8 @@ class SetupCMSSWPset(ScriptInterface):
         runIsComplete = getattr(baggage, "runIsComplete", False)
         multiRun = getattr(baggage, "multiRun", False)
         runLimits = getattr(baggage, "runLimits", "")
+        self.logger.info("DQMFileSaver set to multiRun: %s, runIsComplete: %s, runLimits: %s",
+                         multiRun, runIsComplete, runLimits)
 
         self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
         if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_X"):
@@ -579,7 +590,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         Repacking small events is super inefficient reading directly from EOS.
         """
-        logging.info("Hardcoding read/cache strategies for repack")
+        self.logger.info("Hardcoding read/cache strategies for repack")
         self.process.add_(
             cms.Service("SiteLocalConfigService",
                         overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
@@ -617,11 +628,11 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for all merge jobs
         """
         if self.getCmsswVersion().startswith("CMSSW_7_5") and False:
-            logging.info("Using fastCloning/lazydownload")
+            self.logger.info("Using fastCloning/lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
                                           overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")))
         elif funcName == "merge":
-            logging.info("Using lazydownload")
+            self.logger.info("Using lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
                                           overrideSourceCacheHintDir=cms.untracked.string("lazy-download")))
         return
@@ -633,7 +644,7 @@ class SetupCMSSWPset(ScriptInterface):
         Enable CondorStatusService for CMSSW releases that support it.
         """
         if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_X"):
-            logging.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
+            self.logger.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
             self.process.add_(cms.Service("CondorStatusService",
                                           tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
 
@@ -659,9 +670,11 @@ class SetupCMSSWPset(ScriptInterface):
 
         """
         self.process = None
+        self.logger.info("Executing SetupCMSSWPSet...")
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario is not None and scenario != "":
+            self.logger.info("Setting up job scenario/process")
             funcName = getattr(self.step.data.application.configuration, "function", None)
             if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
                 funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
@@ -670,7 +683,7 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception as ex:
-                logging.exception("Error creating process for Config/DataProcessing:")
+                self.logger.exception("Error creating process for Config/DataProcessing:")
                 raise ex
 
             if funcName == "repack":
@@ -686,14 +699,14 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 self.loadPSet()
             except Exception as ex:
-                logging.exception("Error loading PSet:")
+                self.logger.exception("Error loading PSet:")
                 raise ex
 
         # Check process.source exists
         if getattr(self.process, "source", None) is None:
             msg = "Error in CMSSW PSet: process is missing attribute 'source'"
             msg += " or process.source is defined with None value."
-            logging.error(msg)
+            self.logger.error(msg)
             raise RuntimeError(msg)
 
         self.handleCondorStatusService()
@@ -709,7 +722,7 @@ class SetupCMSSWPset(ScriptInterface):
                 resizeResources(resources)
                 numCores = resources['cores']
                 if numCores != origCores:
-                    logging.info(
+                    self.logger.info(
                         "Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
                     eventStreams = 0
                 options = getattr(self.process, "options", None)
@@ -719,7 +732,7 @@ class SetupCMSSWPset(ScriptInterface):
                 options.numberOfThreads = cms.untracked.uint32(numCores)
                 options.numberOfStreams = cms.untracked.uint32(eventStreams)
             except AttributeError as ex:
-                logging.error("Failed to override numberOfThreads: %s", str(ex))
+                self.logger.error("Failed to override numberOfThreads: %s", str(ex))
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak is not None:
@@ -784,7 +797,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application, 'overrideCatalog'):
-            logging.info("Found a TFC override: %s", self.step.data.application.overrideCatalog)
+            self.logger.info("Found a TFC override: %s", self.step.data.application.overrideCatalog)
             self.process.source.overrideCatalog = \
                 cms.untracked.string(self.step.data.application.overrideCatalog)
 
@@ -801,7 +814,8 @@ class SetupCMSSWPset(ScriptInterface):
                 handle.write("with open('%s', 'rb') as handle:\n" % configPickle)
                 handle.write("    process = pickle.load(handle)\n")
         except Exception as ex:
-            logging.exception("Error writing out PSet:")
+            self.logger.exception("Error writing out PSet:")
             raise ex
+        self.logger.info("CMSSW PSet setup completed!")
 
         return 0

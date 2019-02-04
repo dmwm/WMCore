@@ -64,7 +64,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.replicatorDocs = []
         # set up common replication code
         wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
-        wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
+        wmstatsTarget = self.config.General.centralWMStatsURL
 
         self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
                                     'filter': "WMStatsAgent/repfilter"})
@@ -106,7 +106,7 @@ class AgentStatusPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
 
-        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        self.centralWMStatsCouchDB = WMStatsWriter(self.config.General.centralWMStatsURL)
 
         self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)
         self.setUpCouchDBReplication()

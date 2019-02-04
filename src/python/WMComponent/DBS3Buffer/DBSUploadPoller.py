@@ -168,8 +168,8 @@ class DBSUploadPoller(BaseWorkerThread):
         if hasattr(self.config, "Tier0Feeder"):
             self.wmstatsServerSvc = None
         else:
-            wmstatsSvcURL = (self.config.AgentStatusWatcher.centralWMStatsURL).replace("couchdb/wmstats",
-                                                                                       "wmstatsserver")
+            wmstatsSvcURL = self.config.General.centralWMStatsURL.replace("couchdb/wmstats",
+                                                                          "wmstatsserver")
             self.wmstatsServerSvc = WMStatsServer(wmstatsSvcURL)
 
         self.dbsUtil = DBSBufferUtil()

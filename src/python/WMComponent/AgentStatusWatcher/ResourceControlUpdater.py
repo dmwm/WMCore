@@ -65,7 +65,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         self.resourceControl = ResourceControl(config=self.config)
 
         # wmstats connection
-        self.centralCouchDBReader = WMStatsReader(self.config.AgentStatusWatcher.centralWMStatsURL)
+        self.centralCouchDBReader = WMStatsReader(self.config.General.centralWMStatsURL)
 
     @timeFunction
     def algorithm(self, parameters):

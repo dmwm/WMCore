@@ -24,17 +24,16 @@ if __name__ == "__main__":
     else:
         agentUrl = args[0]
 
-    msg = "Are you sure you want to remove agent info record for %s from wmstats? Type 'Y' or 'N' (type quotes too!): "
+    msg = "Are you sure you want to remove agent info record for %s from wmstats? Type 'yes' or 'no' (type quotes too!): "
     answer = input(msg % agentUrl)
-    if answer != "Y":
+    if answer != "yes":
         print("Aborting... no changes were made.")
         sys.exit(1)
 
-    if hasattr(wmagentConfig, "AnalyticsDataCollector") and hasattr(wmagentConfig.AnalyticsDataCollector,
-                                                                    "centralWMStatsURL"):
-        wmstats = WMStatsWriter(wmagentConfig.AnalyticsDataCollector.centralWMStatsURL)
+    if hasattr(wmagentConfig, "General") and hasattr(wmagentConfig.General, "centralWMStatsURL"):
+        wmstats = WMStatsWriter(wmagentConfig.General.centralWMStatsURL)
     else:
-        print("AnalyticsDataCollector.centralWMStatsURL is not specified")
+        print("General.centralWMStatsURL is not specified")
         sys.exit(1)
 
     report = wmstats.deleteDocsByIDs([agentUrl])

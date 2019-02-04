@@ -66,7 +66,7 @@ class AnalyticsPoller(BaseWorkerThread):
 
         self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL,
                                                      couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
-        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        self.centralWMStatsCouchDB = WMStatsWriter(self.config.General.centralWMStatsURL)
 
         #TODO: change the config to hold couch url
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)

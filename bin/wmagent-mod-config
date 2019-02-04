@@ -129,6 +129,7 @@ def modifyConfiguration(config, **args):
 
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
+        config.General.centralWMStatsURL = args["wmstats_url"]
         # t0 agent doesn't have reqmgr2_url
         if "reqmgr2_url" in args:
             config.General.ReqMgr2ServiceURL = args["reqmgr2_url"]
@@ -148,7 +149,6 @@ def modifyConfiguration(config, **args):
                                                        config.WorkQueueManager.dbname)
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
                                                          config.JobStateMachine.jobSummaryDBName)
-        config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
         config.TaskArchiver.dqmUrl = args["dqm_url"]
 
     if hasattr(config, "ACDC"):
@@ -303,13 +303,11 @@ def modifyConfiguration(config, **args):
                                                                  config.WorkQueueManager.dbname)
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
                                                                    config.JobStateMachine.jobSummaryDBName)
-        config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
         config.AnalyticsDataCollector.centralRequestDBURL = args["requestcouch_url"]
         config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
 
     # custom AgentStatusWatcher
     if hasattr(config, "AgentStatusWatcher"):
-        config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
         config.AgentStatusWatcher.dashboard = args["dashboard_url"]
         if args.get("amq_credentials"):
             # e.g.: user@@@pass@@@topic

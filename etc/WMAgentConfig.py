@@ -82,6 +82,7 @@ config.General.workDir = workDirectory
 config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
+config.General.centralWMStatsURL = "Central WMStats URL"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -305,7 +306,6 @@ config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager
                                                          config.WorkQueueManager.dbname)
 config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl,
                                                            config.JobStateMachine.jobSummaryDBName)
-config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.couchProcessThreshold = 50
@@ -329,7 +329,6 @@ config.AgentStatusWatcher.siteStatusMetric = 237  # [column number in SSB] The s
 config.AgentStatusWatcher.cpuBoundMetric = 160  # [column number in SSB] The source of the information in SSB for CPUBound
 config.AgentStatusWatcher.ioBoundMetric = 161  # [column number in SSB] The source of the information in SSB for IOBound
 config.AgentStatusWatcher.dashboard = "Dashboard URL"
-config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
 config.AgentStatusWatcher.pendingSlotsSitePercent = 75  # [percent] Pending slots percent over site max running for a site
 config.AgentStatusWatcher.pendingSlotsTaskPercent = 70  # [percent] Pending slots percent over task max running for tasks
 config.AgentStatusWatcher.runningExpressPercent = 30  # [percent] Only used for tier0 agent

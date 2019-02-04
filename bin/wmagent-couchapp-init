@@ -370,7 +370,7 @@ if __name__ == "__main__":
     
     if hasattr(wmagentConfig, "Tier0Feeder"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
-        centralWMStatsURL = wmagentConfig.AgentStatusWatcher.centralWMStatsURL
+        centralWMStatsURL = wmagentConfig.General.centralWMStatsURL
         # checks whether this is test agent. if T0 agent is setting local wmstats as central it creates the db
         if "localhost:" in centralWMStatsURL:
             couchURL, wmstatsDBName = splitCouchServiceURL(centralWMStatsURL)

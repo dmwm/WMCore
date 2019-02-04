@@ -83,6 +83,9 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         config.Agent.useTrigger = False
         config.Agent.useHeartbeat = False
 
+        config.section_("General")
+        config.General.centralWMStatsURL = "%s/%s" % (couchURL, self.reqmonDBName)
+
         config.section_("ACDC")
         config.ACDC.couchurl = couchURL
         config.ACDC.database = "acdc"
@@ -95,7 +98,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (couchURL, "jobDump")
         config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (couchURL, "workqueue")
         config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (couchURL, self.localDBName)
-        config.AnalyticsDataCollector.centralWMStatsURL = "%s/%s" % (couchURL, self.reqmonDBName)
         config.AnalyticsDataCollector.centralRequestDBURL = "%s/%s" % (couchURL, "requset_db_t")
         config.AnalyticsDataCollector.reqMonURL = "%s/%s" % (couchURL, self.reqmonDBName)
         config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"

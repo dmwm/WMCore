@@ -22,7 +22,8 @@ class ListThresholdsForSubmit(DBFormatter):
                     job_count.wf_highest_priority,
                     wmbs_sub_types.priority,
                     wmbs_location_state.name AS state,
-                    wmbs_location.plugin AS plugin
+                    wmbs_location.plugin AS plugin,
+                    wmbs_location.state_time AS state_time
                     FROM wmbs_location
                INNER JOIN rc_threshold ON
                  wmbs_location.id = rc_threshold.site_id
@@ -103,6 +104,7 @@ class ListThresholdsForSubmit(DBFormatter):
                 siteInfo = {}
                 siteInfo['pnns'] = mappedPNNs.get(siteName, [])
                 siteInfo['state'] = result['state']
+                siteInfo['state_time'] = result['state_time']
                 siteInfo['total_pending_slots'] = result['pending_slots']
                 siteInfo['total_running_slots'] = result['running_slots']
                 siteInfo['total_pending_jobs'] = task_pending_jobs

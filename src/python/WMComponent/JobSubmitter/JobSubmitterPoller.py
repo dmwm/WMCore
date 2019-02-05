@@ -13,6 +13,7 @@ import logging
 import os.path
 import threading
 import json
+import time
 from collections import defaultdict, Counter
 try:
     import cPickle as pickle
@@ -88,6 +89,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.condorFraction = 0.75  # update during every algorithm cycle
         self.condorOverflowFraction = 0.2
         self.ioboundTypes = ('LogCollect', 'Merge', 'Cleanup', 'Harvesting')
+        self.drainGracePeriod = getattr(self.config.JobSubmitter, 'drainGraceTime', 2 * 24 * 60 * 60)  # 2 days
 
         # Used for speed draining the agent
         self.enableAllSites = False
@@ -97,7 +99,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.jobDataCache = {}  # key'ed by the job id, containing the whole job info dict
         self.jobsToPackage = {}
         self.locationDict = {}
-        self.drainSites = set()
+        self.drainSites = dict()
+        self.drainSitesSet = set()
         self.abortSites = set()
         self.refreshPollingCount = 0
 
@@ -265,6 +268,9 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to sanbox
           - Path to cache directory
         """
+        # make a counter for jobs pending to sites in drain mode within the grace period
+        countDrainingJobs = 0
+        timeNow = int(time.time())
         badJobs = dict([(x, []) for x in range(71101, 71105)])
         newJobIds = set()
 
@@ -351,10 +357,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                     nonDrainingSites = [x for x in possibleLocations if x not in self.drainSites]
                     if nonDrainingSites:  # if >1 viable non-draining site remove draining ones
                         possibleLocations = nonDrainingSites
-                    else:
+                    elif self.failJobDrain(timeNow, possibleLocations):
                         newJob['possibleSites'] = possibleLocations
                         logging.warning("Job id %s can only run at a sites in Draining state", jobID)
                         badJobs[71104].append(newJob)
+                        continue
+                    else:
+                        countDrainingJobs += 1
                         continue
 
             # Sigh...make sure the job added to the package has the proper retry_count
@@ -415,8 +424,25 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobIDsToPurge = set(self.jobDataCache.keys()) - newJobIds
         self._purgeJobsFromCache(jobIDsToPurge)
 
+        logging.info("Found %d jobs pending to sites in drain within the grace period", countDrainingJobs)
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
+
+    def failJobDrain(self, timeNow, possibleLocations):
+        """
+        Check whether sites are in drain for too long such that the job
+        has to be marked as failed or not.
+        :param timeNow: timestamp for this cycle
+        :param possibleLocations: list of possible locations where the job can run
+        :return: a boolean saying whether the job has to fail or not
+        """
+        fail = True
+        for siteName in set(possibleLocations).union(self.drainSitesSet):
+            if timeNow - self.drainSites[siteName] < self.drainGracePeriod:
+                # then let this job be, it's a fresh draining site
+                fail = False
+                break
+        return fail
 
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
@@ -491,7 +517,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         Also update the list of draining and abort/down sites.
         Finally, creates a map between task type and its priority.
         """
-        newDrainSites = set()
+        # lets store also a timestamp for when a site joined the Drain state
+        newDrainSites = dict()
         newAbortSites = set()
 
         rcThresholds = self.resourceControl.listThresholdsForSubmit()
@@ -501,13 +528,13 @@ class JobSubmitterPoller(BaseWorkerThread):
             state = rcThresholds[siteName]["state"]
 
             if state == "Draining":
-                newDrainSites.add(siteName)
+                newDrainSites.update({siteName: rcThresholds[siteName]["state_time"]})
             if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
 
         # When the list of drain/abort sites change between iteration then a location
         # refresh is needed, for now it forces a full cache refresh
-        if newDrainSites != self.drainSites or newAbortSites != self.abortSites:
+        if set(newDrainSites.keys()) != self.drainSitesSet or newAbortSites != self.abortSites:
             logging.info("Draining or Aborted sites have changed, the cache will be rebuilt.")
             self.jobsByPrio = {}
             self.jobDataCache = {}
@@ -515,6 +542,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.currentRcThresholds = rcThresholds
         self.abortSites = newAbortSites
         self.drainSites = newDrainSites
+        self.drainSitesSet = set(newDrainSites.keys())
 
         return
 
@@ -677,8 +705,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                     exitLoop = True
                     break
 
-        logging.info("Site submission report: %s", json.dumps(jobSubmitLogBySites, indent=4))
-        logging.info("Priority submission report: %s", json.dumps(jobSubmitLogByPriority, indent=4))
+        logging.info("Site submission report ...")
+        for site in jobSubmitLogBySites:
+            logging.info("    %s : %s", site, json.dumps(jobSubmitLogBySites[site]))
+        logging.info("Priority submission report ...")
+        for prio in jobSubmitLogByPriority:
+            logging.info("    %s : %s", prio, json.dumps(jobSubmitLogByPriority[prio]))
         logging.info("Have %s packages to submit.", len(jobsToSubmit))
         logging.info("Have %s jobs to submit.", jobsCount)
         logging.info("Done assigning site locations.")

@@ -52,12 +52,15 @@ WMA_SCRAM_ARCH=slc6_amd64_gcc493
 # Saving START_TIME and when job finishes END_TIME.
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
+# assign arguments
+SANDBOX=$1
+INDEX=$2
+RETRY_NUM=$3
 
 export JOBSTARTDIR=$PWD
 
 if [ "X$_CONDOR_JOB_AD" != "X" ];
 then
-   outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g' | sed 's/,/ /g'`
    WMA_SiteName=`grep '^MachineAttrGLIDEIN_CMSSite0 =' $_CONDOR_JOB_AD | tr -d '"' | awk '{print $NF;}'`
    echo "Site name:  $WMA_SiteName"
    echo "======== HTCondor jobAds start at $(TZ=GMT date) ========"
@@ -67,11 +70,9 @@ then
    echo -e "======== HTCondor jobAds finished at $(TZ=GMT date) ========\n"
 fi
 
-# We need to create the expected output files in advance just in case
+# We need to create the expected output file in advance, just in case
 # some problem happens during the job bootstrap
-if [ -z "$outputFile" ]; then
-    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl wmagentJob.log"
-fi
+outputFile="Report.$RETRY_NUM.pkl"
 touch $outputFile
 
 
@@ -86,9 +87,7 @@ then
     echo "Error during job bootstrap: A job index must be specified" >&2
     exit 11002
 fi
-# assign arguments
-SANDBOX=$1
-INDEX=$2
+
 echo -e "======== WMAgent validate arguments finished at $(TZ=GMT date) ========\n"
 
 

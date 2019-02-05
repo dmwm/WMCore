@@ -538,7 +538,7 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Iwd'] = job['cache_dir']
             ad['TransferInput'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
                                                    'JobPackage.pkl', self.unpacker)
-            ad['Arguments'] = "%s %i" % (os.path.basename(job['sandbox']), job['id'])
+            ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
 
             ad['TransferOutput'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
 

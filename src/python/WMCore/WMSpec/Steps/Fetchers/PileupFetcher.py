@@ -9,6 +9,7 @@ import datetime
 import os
 import shutil
 import time
+import logging
 from json import JSONEncoder
 
 import WMCore.WMSpec.WMStep as WMStep
@@ -73,8 +74,11 @@ class PileupFetcher(FetcherInterface):
                 blockReplicasInfo = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
                 for block in blockReplicasInfo:
                     nodes = set(blockReplicasInfo[block]) - node_filter
-                    blockDict[block]['PhEDExNodeNames'] = list(nodes)
-                    blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                    try:
+                        blockDict[block]['PhEDExNodeNames'] = list(nodes)
+                        blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                    except KeyError:
+                        logging.warning("Block '%s' does not have any complete PhEDEx replica", block)
 
             resultDict[pileupType] = blockDict
         return resultDict

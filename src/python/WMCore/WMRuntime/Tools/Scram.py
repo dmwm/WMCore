@@ -69,6 +69,39 @@ def getSingleScramArch(scramArch):
         return scramArch
 
 
+def isCMSSWSupported(thisCMSSW, supportedCMSSW):
+    """
+    _isCMSSWSupported_
+
+    Function used to validate whether the CMSSW release to be used supports
+    a feature that is not available in all releases.
+    :param thisCMSSW: release to be used in this job
+    :param allowedCMSSW: first (lowest) release that started supporting the
+    feature you'd like to use.
+    
+    NOTE: only the 3 digits version are evaluated, pre and patch releases
+    are not taken into consideration
+    """
+    if not thisCMSSW or not supportedCMSSW:
+        logging.info("You must provide the CMSSW version being used by this job and a supported version")
+        return False
+
+    if thisCMSSW == supportedCMSSW:
+        return True
+
+    thisCMSSW = thisCMSSW.split('_', 4)[1:4]
+    supportedCMSSW = supportedCMSSW.split('_', 4)[1:4]
+    for idx in range(3):
+        if thisCMSSW[idx] > supportedCMSSW[idx]:
+            return True
+        elif thisCMSSW[idx] == supportedCMSSW[idx]:
+            for newIdx in range(idx, 2):
+                if thisCMSSW[newIdx + 1] > supportedCMSSW[newIdx + 1]:
+                    return True
+
+    return False
+
+
 def testWriter(func, *args):
     """
     _testWriter_

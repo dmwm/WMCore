@@ -20,6 +20,7 @@ from PSetTweaks.WMTweak import applyTweak, makeJobTweak, makeOutputTweak, makeTa
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
 
 
 def fixupGlobalTag(process):
@@ -161,31 +162,6 @@ def fixupFirstLumi(process):
     if not hasattr(process.source, "firstLuminosityBlock"):
         process.source.firstLuminosityBlock = cms.untracked.uint32(1)
     return
-
-
-def isCMSSWSupported(thisCMSSW, supportedCMSSW):
-    """
-    _isCMSSWSupported_
-
-    Function used to validate whether the CMSSW release to be used supports
-    a feature not available in all releases.
-    :param thisCMSSW: release to be used in this job
-    :param allowedCMSSW: first (lower) release that started supporting this
-    feature. Only the first 2 digits are supported.
-    """
-    if not thisCMSSW or not supportedCMSSW:
-        logging.warning("You must provide the CMSSW version being used by this job and a supported version")
-        return False
-
-    thisCMSSW = thisCMSSW.split('_', 3)
-    supportedCMSSW = supportedCMSSW.split('_', 3)
-    if thisCMSSW[1] > supportedCMSSW[1]:
-        return True
-    if thisCMSSW[1] == supportedCMSSW[1]:
-        if thisCMSSW[2] >= supportedCMSSW[2]:
-            return True
-
-    return False
 
 
 class SetupCMSSWPset(ScriptInterface):
@@ -570,7 +546,7 @@ class SetupCMSSWPset(ScriptInterface):
                          multiRun, runIsComplete, runLimits)
 
         self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
-        if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_X"):
+        if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_0"):
             self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.step.data.application.configuration.pickledarguments)
@@ -643,8 +619,8 @@ class SetupCMSSWPset(ScriptInterface):
 
         Enable CondorStatusService for CMSSW releases that support it.
         """
-        if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_X"):
-            self.logger.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
+        if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_0"):
+            logging.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
             self.process.add_(cms.Service("CondorStatusService",
                                           tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
 

@@ -241,13 +241,13 @@ class ResourceControl(WMConnectionBase):
 
         Set the number of running and/or pending job slots for the given site.
         """
-        if pendingJobSlots != None:
+        if pendingJobSlots is not None:
             pendingSlotsAction = self.daofactory(classname="SetPendingJobSlotsForSite")
             pendingSlotsAction.execute(siteName, pendingJobSlots,
                                        conn=self.getDBConn(),
                                        transaction=self.existingTransaction())
 
-        if runningJobSlots != None:
+        if runningJobSlots is not None:
             runningSlotsAction = self.daofactory(classname="SetRunningJobSlotsForSite")
             runningSlotsAction.execute(siteName, runningJobSlots,
                                        conn=self.getDBConn(),

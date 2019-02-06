@@ -7,6 +7,7 @@ MySQL implementation of Jobs.LoadFromID.
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class LoadFromID(DBFormatter):
     """
     _LoadFromID_
@@ -48,7 +49,7 @@ class LoadFromID(DBFormatter):
         else:
             return formattedResult
 
-    def execute(self, jobID, conn = None, transaction = False):
+    def execute(self, jobID, conn=None, transaction=False):
         """
         _execute_
 
@@ -56,11 +57,11 @@ class LoadFromID(DBFormatter):
         the result.
         """
 
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             binds = jobID
         else:
             binds = {"jobid": jobID}
 
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
+        result = self.dbi.processData(self.sql, binds, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

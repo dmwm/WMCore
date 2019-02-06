@@ -7,9 +7,8 @@ MySQL implementation of Jobs.LoadFromName.
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class LoadFromName(DBFormatter):
     """
@@ -46,7 +45,7 @@ class LoadFromName(DBFormatter):
         del formattedResult["bool_outcome"]
         return formattedResult
 
-    def execute(self, name, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {"name": name}, conn = conn,
-                                      transaction = transaction)
+    def execute(self, name, conn=None, transaction=False):
+        result = self.dbi.processData(self.sql, {"name": name}, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

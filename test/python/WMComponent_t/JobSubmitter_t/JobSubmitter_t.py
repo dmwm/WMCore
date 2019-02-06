@@ -282,6 +282,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config.JobSubmitter.componentDir = os.path.join(self.testDir, 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
+        config.JobSubmitter.drainGraceTime = 2  # in seconds
 
         # JobStateMachine
         config.component_('JobStateMachine')
@@ -607,7 +608,6 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         self.assertItemsEqual([int(j['task_id']) for j in result],
                               [4] * 5 + [2] * 5 + [6] * 5 + [3] * 5 + [5] * 5 + [1] * 5)
 
-
         jobGroupList = []
         jobGroup = self.createJobGroups(nSubs=nSubs, nJobs=nJobs, wfPrio=2,
                                         task=workload4.getTask("ReReco"),
@@ -626,7 +626,6 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         # merge id 7, merge id 4, merge id 2
         self.assertItemsEqual([int(j['task_id']) for j in result],
                               [7] * 5 + [4] * 5 + [2] * 5)
-
 
     def testC_prioritization(self):
         """
@@ -859,6 +858,66 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         self.assertEqual(len(result), nSubs * nJobs)
 
         return
+
+    def testJobSiteDrain(self):
+        """
+        _testJobSiteDrain_
+
+        Test the behavior of jobs pending to a single site that is in drain mode
+        """
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        jobSubmitter = JobSubmitterPoller(config=config)
+        myResourceControl = ResourceControl(config)
+        changeState = ChangeState(config)
+        getJobsAction = self.daoFactory(classname="Jobs.GetAllJobs")
+
+        nSubs = 1
+        nJobs = 30
+
+        site = 'T2_US_Nebraska'
+        self.setResourceThresholds(site, pendingSlots=100, runningSlots=100,
+                                   tasks=['Processing', 'Merge'],
+                                   Processing={'pendingSlots': 10, 'runningSlots': 10},
+                                   Merge={'pendingSlots': 10, 'runningSlots': 10, 'priority': 5})
+
+        jobGroupList = self.createJobGroups(nSubs=nSubs, nJobs=nJobs,
+                                            site=[site],
+                                            task=workload.getTask("ReReco"),
+                                            workloadSpec=self.workloadSpecPath)
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # submit first 10 jobs
+        jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state='Executing', jobType="Processing")
+        self.assertEqual(len(result), 10)
+
+        myResourceControl.changeSiteState(site, 'Draining')
+
+        # site is now in drain, so don't submit anything
+        jobSubmitter.algorithm()
+
+        # jobs were supposed to get killed, but I guess the MockPlugin doesnt do anything
+        result = getJobsAction.execute(state='Executing', jobType="Processing")
+        self.assertEqual(len(result), 10)
+        result = getJobsAction.execute(state='created', jobType="Processing")
+        self.assertEqual(len(result), 20)
+        result = getJobsAction.execute(state='submitfailed', jobType="Processing")
+        self.assertEqual(len(result), 0)
+
+        # make sure the drain grace period expires...
+        time.sleep(3)
+        jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state='Executing', jobType="Processing")
+        self.assertEqual(len(result), 10)
+        # the remaining jobs should have gone to submitfailed by now
+        result = getJobsAction.execute(state='submitfailed', jobType="Processing")
+        self.assertEqual(len(result), 20)
+        result = getJobsAction.execute(state='created', jobType="Processing")
+        self.assertEqual(len(result), 0)
 
     @attr('integration')
     def testF_PollerProfileTest(self):

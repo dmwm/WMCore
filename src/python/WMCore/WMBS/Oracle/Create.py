@@ -173,7 +173,8 @@ class Create(CreateWMBSBase):
                  ce_name     VARCHAR(255),
                  running_slots   INTEGER,
                  pending_slots   INTEGER,
-                 plugin      VARCHAR(255)
+                 plugin      VARCHAR(255),
+                 state_time INTEGER NOT NULL
                  ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \

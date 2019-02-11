@@ -5,6 +5,7 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
+import time
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -40,11 +41,12 @@ class ResourceControl(WMConnectionBase):
          2. then add PNNs into wmbs_pnns
          3. at last, create a mapping of PSN/PNN in wmbs_location_pnns
         """
+        timeNow = int(time.time())
         insertAction = self.wmbsDAOFactory(classname="Locations.New")
         insertAction.execute(siteName=siteName, pendingSlots=pendingSlots,
                              runningSlots=runningSlots,
                              pnn=pnn, ceName=ceName,
-                             plugin=plugin, cmsName=cmsName,
+                             plugin=plugin, cmsName=cmsName, stateTime=timeNow,
                              conn=self.getDBConn(),
                              transaction=self.existingTransaction())
         return
@@ -66,6 +68,7 @@ class ResourceControl(WMConnectionBase):
         Set a site to some of the possible states and perform
         proper actions with the jobs, according to the state
         """
+        timeNow = int(time.time())
         state2ExitCode = {"Aborted": 71301,
                           "Draining": 71302,
                           "Down": 71303}
@@ -81,7 +84,7 @@ class ResourceControl(WMConnectionBase):
 
         # only now that jobs were updated by the plugin, we flip the site state
         setStateAction = self.wmbsDAOFactory(classname="Locations.SetState")
-        setStateAction.execute(siteName=siteName, state=state,
+        setStateAction.execute(siteName=siteName, state=state, stateTime=timeNow,
                                conn=self.getDBConn(),
                                transaction=self.existingTransaction())
 
@@ -187,6 +190,7 @@ class ResourceControl(WMConnectionBase):
           cms_name            - CMS name of the site
           pnns                - List with associated PNNs
           state               - State of the site
+          state_time          - Timestamp in which the site joined the current state
           total_pending_slots - Total number of pending slots available at the site
           total_running_slots - Total number of running slots available at the site
           total_pending_jobs  - Total jobs pending at the site

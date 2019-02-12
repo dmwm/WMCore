@@ -6,7 +6,7 @@ COMPONENTS="ErrorHandler JobSubmitter"
 for comp in $COMPONENTS; do
   LASTCHANGE=`stat -c %Y /data/srv/wmagent/current/install/wmagent/$comp/ComponentLog`
   INTERVAL=`expr $DATENOW - $LASTCHANGE`
-  if (("$INTERVAL" >= 900)); then
+  if (("$INTERVAL" >= 1800)); then
     OTHERS=`ps aux | grep wmcore | grep -v grep`
     if [[ -z "$OTHERS" ]]; then
       echo "Since the agent is not running, don't do anything ..."

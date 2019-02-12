@@ -101,8 +101,9 @@ class LogCollect(Executor):
 
         # Supported by any release beyond CMSSW_8_X, however DaviX is broken until CMSSW_10_4_X
         # see: https://github.com/cms-sw/cmssw/issues/25292
+        useEdmCopyUtil = True
         if isCMSSWSupported(cmsswVersion, "CMSSW_10_4_0"):
-            useEdmCopyUtil = True
+            pass
         elif scramArch.startswith('slc6_amd64_'):
             msg = "CMSSW too old or not fully functional to support edmCopyUtil, using CMSSW_10_4_0 instead"
             logging.warning(msg)

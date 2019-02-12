@@ -66,16 +66,6 @@ class Exit50513(DiagnosticHandler):
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
 
-        jobReport = os.path.join(executor.step.builder.workingDir,
-                                 executor.step.output.jobReport)
-        errLog = os.path.join(os.path.dirname(jobReport),
-                              'scramOutput.log')
-
-        if os.path.exists(errLog):
-            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
-            msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += logTail
-
         executor.report.addError(executor.stepName,
                                  50513, "SCRAMScriptFailure", msg)
 
@@ -131,17 +121,6 @@ class CMSDefaultHandler(DiagnosticHandler):
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
-        # If it exists, grab the SCRAM log
-        errLog = os.path.join(os.path.dirname(jobRepXml),
-                              'scramOutput.log')
-
-        if os.path.exists(errLog):
-            logTail = FileTools.tail(errLog, 25)
-            msg += '\n Adding last ten lines of SCRAM error log:\n'
-            msg += logTail
-
-        # make sure the report has the error in it
-        dummy = getattr(executor.report.report, "errors", None)  # Seems to do nothing
         executor.report.addError(executor.stepName,
                                  errCode, description, msg)
 

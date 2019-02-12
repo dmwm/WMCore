@@ -281,6 +281,9 @@ class WMWorkloadHelper(PersistencyHelper):
                 continue
 
             for outInfo in taskO.listOutputDatasetsAndModules():
+                # Check whether it's a transient output module
+                if outInfo['outputModule'] not in taskMap[tName]['OutputDatasetMap']:
+                    continue
                 oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
                 taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']
                 for tt in taskMap.keys():

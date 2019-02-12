@@ -2149,11 +2149,11 @@ class TaskChainTests(EmulatedUnitTestCase):
 
     def testTaskParentageMapping2(self):
         """
-        Inject a 4-tasks workflow and test the output datasets and parentage map.
+        Inject a 4-tasks workflow, execising both the KeepOutput and
+        TransientOutputModules features, and test the output datasets and parentage map.
         """
         outDsets = {
-            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM',
-                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/LHE'],
             "Task2": [],
             "Task3": [],
             "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task4-ProcStr_Task4-v24/MINIAODSIM']
@@ -2173,6 +2173,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         testArguments['Task4']['ConfigCacheID'] = complexDocs['MiniAod']
 
         testArguments['Task1']['InputDataset'] = '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM'
+        testArguments['Task1']['TransientOutputModules'] = ['RAWSIMoutput']  # drop the GEN-SIM
         testArguments['Task2']['KeepOutput'] = False
         testArguments['Task3']['KeepOutput'] = False
 
@@ -2188,7 +2189,6 @@ class TaskChainTests(EmulatedUnitTestCase):
             self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
             self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
             self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
-            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEra_Task1-ProcStr_Task1-v21/GEN-SIM'
 
         ### Now assign this workflow
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
@@ -2204,8 +2204,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         parentageMap = testWorkload.getTaskParentageMapping()
 
         outDsets = {
-            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM',
-                      '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
+            "Task1": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/LHE'],
             "Task2": [],
             "Task3": [],
             "Task4": ['/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task4-ProcStrNew_Task4-v34/MINIAODSIM']
@@ -2217,7 +2216,6 @@ class TaskChainTests(EmulatedUnitTestCase):
             self.assertEqual(testArguments[tNum].get('InputTask'), parentageMap[taskName]['ParentTaskName'])
             self.assertItemsEqual(outDsets[tNum], parentageMap[taskName]['OutputDatasetMap'].values())
             self.assertEqual(parentDset, parentageMap[taskName]['ParentDataset'])
-            parentDset = '/MonoHtautau_Scalar_MZp-500_MChi-1_13TeV-madgraph/AcqEraNew_Task1-ProcStrNew_Task1-v31/GEN-SIM'
 
         return
 

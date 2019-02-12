@@ -194,9 +194,6 @@ class LogCollect(Executor):
                     self.report.addInputFile(sourceName="logArchives", lfn=log['lfn'])
             else:
                 logging.error("Unable to copy logArchives to local disk")
-                if useEdmCopyUtil:
-                    with open('scramOutput.log', 'r') as f:
-                        logging.error("Scram output: %s", f.read())
                 for log in logs:
                     self.report.addSkippedFile(log['lfn'], None)
 

@@ -145,7 +145,7 @@ class ExecuteMaster:
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
-            executor.diagnostic(99109, executor, ex=ex)
+            executor.diagnostic(99109, executor, ExceptionInstance=ex)
             executor.report.addError(executor.stepName, 99109, "WMAgentStepExecutionError", str(ex))
             error = True
         executor.report.setStepStopTime(stepName=executor.stepName)

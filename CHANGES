@@ -1,3 +1,68 @@
+1.1.19 to 1.1.20.patch3:
+  - Merge pull request #9019 from amaltaro/fix-9018-wmagent
+  - Merge pull request #9016 from amaltaro/fix-edmCopy-1120take2
+  - Do not parse scramOutput.log for debugging SCRAM problems
+  - Fix CMSSW release comparison. On top of 9010
+  - 1.1.20.patch2
+  - Merge pull request #9010 from amaltaro/bundle-1120patch2
+  - Change CMSSW release to >= 10.4.X for LogCollect with edmCopyUtils
+  - Record site status changes timestamp and allow grace period for draining sites
+  - Record a bunch of SetupCMSSWPSet configuration to the logs
+  - 1.1.20.patch1
+  - Merge pull request #8999 from amaltaro/fix-8997
+  - Added PreMixingModule to MC mix modules
+  - Merge pull request #8995 from amaltaro/fix-8993
+  - Merge pull request #8991 from amaltaro/fix-8716
+  - Skip PU blocks with full replicas but not present in DBS
+  - Send job retry number as condor job argument
+  - Merge pull request #8990 from amaltaro/fix-8753
+  - unit test fixes
+  - Set centralWMStatsURL under the General section
+  - 1.1.20.pre4
+  - Merge pull request #8987 from amaltaro/fix-8974
+  - Keep using payload sub-key for MonIT
+  - 1.1.20.pre3
+  - Merge pull request #8985 from amaltaro/fix-8978
+  - Merge pull request #8982 from amaltaro/fix-8981
+  - Delete request workload document if it fails to add spec attachment during creation
+  - Added unit tests and pylint fixes
+  - Make XML parser to always return a list of elements
+  - Merge pull request #8976 from amaltaro/tier0-status
+  - Merge pull request #8974 from stiegerb/stompamq_Jan21
+  - Merge pull request #8980 from dmwm/belforte-patch-1
+  - fix capitalization for CRAB/ASO message
+  - Renaming make_notification and adding new make_notification that produces a single notification
+  - Fix typo in T0 updaterequest couch function
+  - 1.1.20.pre2
+  - Merge pull request #8973 from amaltaro/fix-8245
+  - Merge pull request #8972 from amaltaro/fix-8221
+  - Merge pull request #8885 from amaltaro/reqmgr2-requirements
+  - Add list of dependencies for the other WMCore services
+  - Support ACDC for recovery workflows
+  - unit tests and pylint fixes
+  - Remove MaxVSize argument; retry softKill with hardKill; remove RSS backwards compatibility
+  - Merge pull request #8968 from amaltaro/fix-8963
+  - Merge pull request #8967 from amaltaro/fix-8916
+  - Merge pull request #8969 from dmwm/deploy-wmagent1
+  - Fix count of leftover processes in deploy-wmagent
+  - pylint and unit test fixes
+  - Retry condor job removal for timeout
+  - Set the correct DN for priority transition
+  - 1.1.20.pre1
+  - Merge pull request #8954 from dmwm/belforte-patch-1
+  - Merge pull request #8959 from amaltaro/fix-8953
+  - pylint changes
+  - Properly parse AMQ creds; only enable it when there are valid creds
+  - Merge pull request #8957 from ticoann/add_docs
+  - add document
+  - Merge pull request #8956 from ticoann/add_pile_up_search
+  - add pile up dataset search
+  - Merge pull request #8955 from ticoann/alert_remove
+  - allow other compressions beside gzip for tarball
+  - remove alert unregister code
+  - Merge pull request #8951 from goughes/fix_requirements
+  - Fix pyzmq line in requirements.txt
+
 1.1.19 to 1.1.20.patch2:
   - Merge pull request #9010 from amaltaro/bundle-1120patch2
   - Change CMSSW release to >= 10.4.X for LogCollect with edmCopyUtils

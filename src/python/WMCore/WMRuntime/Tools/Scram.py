@@ -89,15 +89,16 @@ def isCMSSWSupported(thisCMSSW, supportedCMSSW):
     if thisCMSSW == supportedCMSSW:
         return True
 
-    thisCMSSW = thisCMSSW.split('_', 4)[1:4]
-    supportedCMSSW = supportedCMSSW.split('_', 4)[1:4]
+    thisCMSSW = [int(i) for i in thisCMSSW.split('_', 4)[1:4]]
+    supportedCMSSW = [int(i) for i in supportedCMSSW.split('_', 4)[1:4]]
     for idx in range(3):
         if thisCMSSW[idx] > supportedCMSSW[idx]:
             return True
-        elif thisCMSSW[idx] == supportedCMSSW[idx]:
-            for newIdx in range(idx, 2):
-                if thisCMSSW[newIdx + 1] > supportedCMSSW[newIdx + 1]:
-                    return True
+        elif thisCMSSW[idx] == supportedCMSSW[idx] and idx < 2:
+            if thisCMSSW[idx + 1] > supportedCMSSW[idx + 1]:
+                return True
+        else:
+            return False
 
     return False
 

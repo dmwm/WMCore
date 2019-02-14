@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W1201, E1101
-# W1201: Allow string formatting in logging messages
+# pylint: disable=E1101
 # E1101: Allow imports from currentThread
 """
 _ExecuteMaster_
@@ -10,19 +9,18 @@ for each step
 
 """
 
+import logging
 import os
 import threading
 import traceback
-import logging
 
-from WMCore.WMException import WMException
-
-from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 
-class ExecuteMaster:
+class ExecuteMaster(object):
     """
     _ExecuteMaster_
 
@@ -31,6 +29,7 @@ class ExecuteMaster:
     instead of the executor
 
     """
+
     def __init__(self):
         pass
 
@@ -126,7 +125,7 @@ class ExecuteMaster:
 
         preOutcome = executionObject.pre()
         if preOutcome is not None:
-            logging.info("Pre Executor Task Change: %s" % preOutcome)
+            logging.info("Pre Executor Task Change: %s", preOutcome)
             executor.saveReport()
             self.toTaskDirectory()
             myThread.watchdogMonitor.notifyStepEnd(step=step,
@@ -142,10 +141,10 @@ class ExecuteMaster:
             error = True
         except Exception as ex:
             logging.error("Exception occured when executing step")
-            logging.error("Exception is %s" % ex)
+            logging.error("Exception is %s", ex)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
-            executor.diagnostic(99109, executor, ex=ex)
+            executor.diagnostic(99109, executor, ExceptionInstance=ex)
             executor.report.addError(executor.stepName, 99109, "WMAgentStepExecutionError", str(ex))
             error = True
         executor.report.setStepStopTime(stepName=executor.stepName)
@@ -154,7 +153,7 @@ class ExecuteMaster:
 
         postOutcome = executionObject.post()
         if postOutcome is not None:
-            logging.info("Post Executor Task Change: %s" % postOutcome)
+            logging.info("Post Executor Task Change: %s", postOutcome)
             executor.saveReport()
             self.toTaskDirectory()
             myThread.watchdogMonitor.notifyStepEnd(step=step,

@@ -21,6 +21,7 @@ from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 # strip the lines from the log for the report
 DEFAULT_TAIL_LINES_FROM_LOG = 25
 
+
 class Exit127(DiagnosticHandler):
     """
     Handle non-existant executable
@@ -65,16 +66,6 @@ class Exit50513(DiagnosticHandler):
         msg = "SCRAM scripts failed to run!\n"
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
-
-        jobReport = os.path.join(executor.step.builder.workingDir,
-                                 executor.step.output.jobReport)
-        errLog = os.path.join(os.path.dirname(jobReport),
-                              'scramOutput.log')
-
-        if os.path.exists(errLog):
-            logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
-            msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += logTail
 
         executor.report.addError(executor.stepName,
                                  50513, "SCRAMScriptFailure", msg)
@@ -121,7 +112,6 @@ class CMSDefaultHandler(DiagnosticHandler):
         outLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stdout.log' % (executor.stepName))
 
-
         if os.path.exists(errLog):
             logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
@@ -131,17 +121,6 @@ class CMSDefaultHandler(DiagnosticHandler):
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += logTail
 
-        # If it exists, grab the SCRAM log
-        errLog = os.path.join(os.path.dirname(jobRepXml),
-                              'scramOutput.log')
-
-        if os.path.exists(errLog):
-            logTail = FileTools.tail(errLog, 25)
-            msg += '\n Adding last ten lines of SCRAM error log:\n'
-            msg += logTail
-
-        # make sure the report has the error in it
-        dummy = getattr(executor.report.report, "errors", None)  # Seems to do nothing
         executor.report.addError(executor.stepName,
                                  errCode, description, msg)
 
@@ -193,7 +172,7 @@ class CMSRunHandler(DiagnosticHandler):
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
-        if errSection == None:
+        if errSection is None:
             executor.report.addError(executor.stepName,
                                      self.code, self.desc, msg)
         else:
@@ -267,7 +246,7 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
-        if errSection == None:
+        if errSection is None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
             msg += addOn
             executor.report.addError(executor.stepName,

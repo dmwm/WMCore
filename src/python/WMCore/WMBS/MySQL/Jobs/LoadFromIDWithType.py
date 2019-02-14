@@ -20,7 +20,7 @@ class LoadFromIDWithType(LoadFromID):
     """
 
     sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
-                    wmbs_job_state.name AS state, state_time, retry_count,
+                    wmbs_job_state.name AS state, wmbs_job.state_time, retry_count,
                     couch_record,  cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path,
                     wmbs_sub_types.name AS type

@@ -7,9 +7,8 @@ MySQL implementation of Jobs.LoadFromName.
 
 __all__ = []
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class LoadFromName(DBFormatter):
     """
@@ -19,7 +18,7 @@ class LoadFromName(DBFormatter):
     job group and last update time.
     """
     sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
-                    wmbs_job_state.name AS state, state_time, retry_count,
+                    wmbs_job_state.name AS state, wmbs_job.state_time, retry_count,
                     couch_record, cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path
              FROM wmbs_job
@@ -46,7 +45,7 @@ class LoadFromName(DBFormatter):
         del formattedResult["bool_outcome"]
         return formattedResult
 
-    def execute(self, name, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {"name": name}, conn = conn,
-                                      transaction = transaction)
+    def execute(self, name, conn=None, transaction=False):
+        result = self.dbi.processData(self.sql, {"name": name}, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

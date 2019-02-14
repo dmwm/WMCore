@@ -20,6 +20,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
+
 class ReRecoTest(unittest.TestCase):
     def setUp(self):
         """

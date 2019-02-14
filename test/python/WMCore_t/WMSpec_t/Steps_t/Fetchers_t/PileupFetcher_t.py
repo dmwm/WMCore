@@ -16,9 +16,9 @@ from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
-from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
+from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -147,18 +147,19 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                 self._queryAndCompareWithDBS(pileupDict, defaultArguments, helper.data.dbsUrl)
 
     def testPileupFetcherOnMC(self):
-        pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
-        pileupMcArgs["MCPileup"] = "/Cosmics/ComissioningHI-PromptReco-v1/RECO"
-        pileupMcArgs["DataPileup"] = "/HighPileUp/Run2011A-v1/RAW"
-        pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
+        pileupMcArgs = TaskChainWorkloadFactory.getTestArguments()
+        pileupMcArgs['Task1']["MCPileup"] = "/Cosmics/ComissioningHI-PromptReco-v1/RECO"
+        pileupMcArgs['Task1']["DataPileup"] = "/HighPileUp/Run2011A-v1/RAW"
+        pileupMcArgs['Task1']["ConfigCacheID"] = self.injectGenerationConfig()
         pileupMcArgs["CouchDBName"] = "pileupfetcher_t"
-        pileupMcArgs["ConfigCacheID"] = self.injectGenerationConfig()
+        pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
 
-        factory = MonteCarloWorkloadFactory()
+        factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", pileupMcArgs)
 
         # now that the workload was created and args validated, we can add this PileupConfig
-        pileupMcArgs["PileupConfig"] = parsePileupConfig(pileupMcArgs["MCPileup"], pileupMcArgs["DataPileup"])
+        pileupMcArgs["PileupConfig"] = parsePileupConfig(pileupMcArgs['Task1']["MCPileup"],
+                                                         pileupMcArgs['Task1']["DataPileup"])
 
         # Since this is test of the fetcher - The loading from WMBS isn't
         # really necessary because the fetching happens before the workflow

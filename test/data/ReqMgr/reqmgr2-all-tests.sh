@@ -8,9 +8,6 @@ if [ "x$1" == "x" ] ; then
 fi
 
 REQMGR_URL=$1
-py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/MonteCarlo.json --all_tests && \
-py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/MonteCarloFromGEN.json --json '{"createRequest": {"InputDataset": "/QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12-START50_V13-v1/GEN"}}' --all_tests && \
-py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/ReDigi.json --json '{"createRequest": {"InputDataset": "/WprimeToENu_M-3000_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v1/GEN-SIM"}}' --all_tests && \ 
 py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/ReReco.json --json '{"createRequest": {"InputDataset": "/BTag/Run2011B-v1/RAW"}}' --all_tests && \
 py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/TaskChain.json --all_tests && \
 py test/data/ReqMgr/reqmgr2.py -u $REQMGR_URL -f ./test/data/ReqMgr/requests/TaskChainMultiDQM.json --all_tests && \

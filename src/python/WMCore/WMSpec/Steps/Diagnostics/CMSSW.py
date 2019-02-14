@@ -21,6 +21,7 @@ from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 # strip the lines from the log for the report
 DEFAULT_TAIL_LINES_FROM_LOG = 25
 
+
 class Exit127(DiagnosticHandler):
     """
     Handle non-existant executable
@@ -111,7 +112,6 @@ class CMSDefaultHandler(DiagnosticHandler):
         outLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stdout.log' % (executor.stepName))
 
-
         if os.path.exists(errLog):
             logTail = FileTools.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
@@ -172,7 +172,7 @@ class CMSRunHandler(DiagnosticHandler):
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
-        if errSection == None:
+        if errSection is None:
             executor.report.addError(executor.stepName,
                                      self.code, self.desc, msg)
         else:
@@ -246,7 +246,7 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
-        if errSection == None:
+        if errSection is None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
             msg += addOn
             executor.report.addError(executor.stepName,

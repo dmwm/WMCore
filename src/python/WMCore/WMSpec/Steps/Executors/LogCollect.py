@@ -9,7 +9,6 @@ from __future__ import print_function
 import datetime
 import logging
 import os
-import re
 import signal
 import socket
 import tarfile
@@ -20,9 +19,10 @@ from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutMgr import StageOutMgr
-from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch
+from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch, isCMSSWSupported
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+
 
 
 class LogCollect(Executor):
@@ -99,21 +99,19 @@ class LogCollect(Executor):
         tarName = '%s-%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, host, self.job["counter"])
         tarLocation = os.path.join(self.stepSpace.location, tarName)
 
-        # check if the cmsswVersion supports edmCopyUtil (min CMSSW_8_X)
-        result = re.match("CMSSW_([0-9]+)_([0-9]+)_([0-9]+).*", cmsswVersion)
-        useEdmCopyUtil = False
-        if result:
-            try:
-                cmssw_major = int(result.group(1))
-                if cmssw_major >= 8:
-                    useEdmCopyUtil = True
-                elif cmssw_major < 8 and scramArch.startswith('slc6_amd64_'):
-                    useEdmCopyUtil = True
-                    logging.warning("CMSSW too old to support edmCopyUtil, using CMSSW_10_2_3 instead")
-                    cmsswVersion = "CMSSW_10_2_3"
-                    scramArch = "slc6_amd64_gcc700"
-            except ValueError:
-                pass
+        # Supported by any release beyond CMSSW_8_X, however DaviX is broken until CMSSW_10_4_X
+        # see: https://github.com/cms-sw/cmssw/issues/25292
+        useEdmCopyUtil = True
+        if isCMSSWSupported(cmsswVersion, "CMSSW_10_4_0"):
+            pass
+        elif scramArch.startswith('slc6_amd64_'):
+            msg = "CMSSW too old or not fully functional to support edmCopyUtil, using CMSSW_10_4_0 instead"
+            logging.warning(msg)
+            cmsswVersion = "CMSSW_10_4_0"
+            scramArch = "slc6_amd64_gcc700"
+        else:
+            useEdmCopyUtil = False
+        logging.info("Using edmCopyUtil: %s", useEdmCopyUtil)
 
         # setup Scram needed to run edmCopyUtil
         if useEdmCopyUtil:

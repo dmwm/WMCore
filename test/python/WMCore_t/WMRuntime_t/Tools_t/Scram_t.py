@@ -12,7 +12,7 @@ import os
 import tempfile
 from WMQuality.TestInit import TestInit
 from Utils.TemporaryEnvironment import tmpEnv
-from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch
+from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch, isCMSSWSupported
 
 
 class Scram_t(unittest.TestCase):
@@ -141,6 +141,27 @@ class Scram_t(unittest.TestCase):
             os.chdir(self.oldCwd)
         return
 
+    def testCMSSWSupported(self):
+        """
+        Test the functionality of isCMSSWSupported function
+        """
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3', ''))
+        self.assertFalse(isCMSSWSupported(None, 'a'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3', 'CMSSW_2_2_3'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3', 'CMSSW_1_3_3'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3', 'CMSSW_1_2_4'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3_pre1', 'CMSSW_1_2_3'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3', 'CMSSW_1_2_3_pre1'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3_pre1', 'CMSSW_1_2_3_pre2'))
+        self.assertFalse(isCMSSWSupported('CMSSW_1_2_3_pre2', 'CMSSW_1_2_3_pre1'))
+        self.assertFalse(isCMSSWSupported('CMSSW_7_1_25_patch2', 'CMSSW_7_6_0'))
+        self.assertFalse(isCMSSWSupported('CMSSW_7_3_2', 'CMSSW_10_4_0'))
+
+        self.assertTrue(isCMSSWSupported('CMSSW_1_2_3_pre1', 'CMSSW_1_2_3_pre1'))
+        self.assertTrue(isCMSSWSupported('CMSSW_1_2_3', 'CMSSW_1_2_3'))
+        self.assertTrue(isCMSSWSupported('CMSSW_2_2_3', 'CMSSW_1_2_3'))
+        self.assertTrue(isCMSSWSupported('CMSSW_1_3_3', 'CMSSW_1_2_3'))
+        self.assertTrue(isCMSSWSupported('CMSSW_1_2_4', 'CMSSW_1_2_3'))
 
 if __name__ == '__main__':
     unittest.main()

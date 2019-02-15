@@ -195,10 +195,10 @@ class CMSSW_t(unittest.TestCase):
                 self.fail("An exception should have been raised")
             except WMExecutionFailure as ex:
                 executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
-                self.assertEqual(134, executor.report.getExitCode())
+                self.assertEqual(50115, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
-                self.assertEqual(134, report.getExitCode())
+                self.assertEqual(50115, report.getExitCode())
         except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:

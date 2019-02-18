@@ -490,6 +490,32 @@ class StepChainTests(EmulatedUnitTestCase):
 
         return
 
+    def testPileupWithoutInputData(self):
+        """
+        Test whether we can properly setup the Pileup information even
+        when the top level step has no input dataset (so pileup over a
+        MC from scratch step)
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configId = injectStepChainConfigSingle(self.configDatabase)
+        testArguments['Step1'].update(ConfigCacheID=configId,
+                                      MCPileup=testArguments['Step2']['MCPileup'])
+        testArguments.pop("Step2", None)
+        testArguments.pop("Step3", None)
+        testArguments['StepChain'] = 1
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # workload level check
+        self.assertEqual(testWorkload.getDashboardActivity(), "production")
+        self.assertEqual(testWorkload.listInputDatasets(), [])
+        pileups = testWorkload.listPileupDatasets().values()
+        pileups = [item for puSet in pileups for item in puSet]
+        self.assertItemsEqual(pileups, [testArguments['Step1']['MCPileup']])
+
     def testStepChainIncludeParentsValidation(self):
         """
         Check that the test arguments pass basic validation,

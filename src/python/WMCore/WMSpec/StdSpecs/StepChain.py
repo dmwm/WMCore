@@ -225,6 +225,9 @@ class StepChainWorkloadFactory(StdBase):
                                            globalTag=taskConf.get("GlobalTag", None),
                                            taskConf=taskConf)
 
+        if taskConf["PileupConfig"]:
+            self.setupPileup(task, taskConf['PileupConfig'])
+
         # outputModules were added already, we just want to create merge tasks here
         if strToBool(taskConf.get('KeepOutput', True)):
             self.setupMergeTask(task, taskConf, "cmsRun1", outMods)

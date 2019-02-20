@@ -23,18 +23,19 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
+from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload import (monteCarloWorkload, getMCArgs)
+from WMQuality.Emulators.WMSpecGenerator.Samples.BasicProductionWorkload import getProdArgs, taskChainWorkload
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
-mcArgs = getMCArgs()
+mcArgs = getProdArgs()
 
 BLOCK1 = '03fe83c2-0c23-11e1-b764-003048caaace'
 BLOCK2 = '04be2fcc-0b8f-11e1-b764-003048caaace'
@@ -514,10 +515,11 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         return wmspec
 
     def createMCWMSpec(self, name='MonteCarloWorkload'):
-        mcArgs['CouchDBName'] = rerecoArgs["CouchDBName"]
-        mcArgs["ConfigCacheID"] = createConfig(mcArgs["CouchDBName"])
+        mcArgs = TaskChainWorkloadFactory.getTestArguments()
+        mcArgs["CouchDBName"] = rerecoArgs["CouchDBName"]
+        mcArgs["Task1"]["ConfigCacheID"] = createConfig(mcArgs["CouchDBName"])
 
-        wmspec = monteCarloWorkload(name, mcArgs)
+        wmspec = taskChainWorkload(name, mcArgs)
         wmspec.setSpecUrl("/path/to/workload")
         getFirstTask(wmspec).addProduction(totalevents=10000)
         return wmspec
@@ -918,7 +920,6 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.setupMCWMSpec()
         mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
                     LastEvent=999995, LastLumi=12345, LastRun=12)
-
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
@@ -975,7 +976,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         """Inject fake Monte Carlo files into WMBS"""
 
         # This test is failing because the name of the couch DB is set to None
-        # in TestMonteCarloWorkloadFactory.getMCArgs() but changing it to
+        # in BasicProductionWorkload.getProdArgs() but changing it to
         # "reqmgr_config_cache_t" from StdBase test arguments does not fix the
         # situation. testDuplicateSubscription probably has the same issue
 

@@ -11,12 +11,10 @@ import threading
 import time
 import unittest
 
-from WMCore_t.WMSpec_t.StdSpecs_t.ReDigi_t import injectReDigiConfigs
-from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
-    import workload as MultiTaskProductionWorkload
-from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+
 from retry import retry
 
+from WMCore.WMBase import getTestBase
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Configuration import Configuration
 from WMCore.DAOFactory import DAOFactory
@@ -29,8 +27,7 @@ from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.WMBS.Job import Job
 from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
-from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
-from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
+from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
@@ -42,23 +39,17 @@ from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
+    import workload as MultiTaskProductionWorkload
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+
+
 NBLOCKS_HICOMM = 47
 NFILES_HICOMM = 72
 NBLOCKS_COSMIC = 58
 NFILES_COSMIC = 108
 NFILES_COSMICRAW = 141
-
-
-def monteCarloWorkload(workloadName, arguments):
-    """
-    _monteCarloWorkload_
-
-    Instantiate the MonteCarloWorkflowFactory and have it generate a workload for
-    the given parameters.
-    """
-    factory = MonteCarloWorkloadFactory()
-    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
-    return wmspec
+TOTAL_EVENTS=10000
 
 
 def rerecoWorkload(workloadName, arguments, assignArgs=None):
@@ -71,8 +62,8 @@ def rerecoWorkload(workloadName, arguments, assignArgs=None):
     return wmspec
 
 
-def redigiWorkload(workloadName, arguments):
-    factory = ReDigiWorkloadFactory()
+def stepchainWorkload(workloadName, arguments):
+    factory = StepChainWorkloadFactory()
     wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
     return wmspec
 
@@ -116,9 +107,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.rerecoArgs["CouchDBName"] = self.configCacheDB
         self.rerecoArgs["ConfigCacheID"] = createConfig(self.rerecoArgs["CouchDBName"])
 
-        self.mcArgs = MonteCarloWorkloadFactory.getTestArguments()
+        self.mcArgs = StepChainWorkloadFactory.getTestArguments()
         self.mcArgs["CouchDBName"] = self.configCacheDB
-        self.mcArgs["ConfigCacheID"] = createConfig(self.mcArgs["CouchDBName"])
+        self.mcArgs['Step1']["ConfigCacheID"] = createConfig(self.mcArgs["CouchDBName"])
 
         self.parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
         self.parentProcArgs.update(IncludeParents="True")
@@ -131,14 +122,19 @@ class WorkQueueTest(WorkQueueTestCase):
         self.openRunningProcArgs["CouchDBName"] = self.configCacheDB
         self.openRunningProcArgs["ConfigCacheID"] = createConfig(self.openRunningProcArgs["CouchDBName"])
 
-        self.redigiArgs = ReDigiWorkloadFactory.getTestArguments()
-        self.redigiArgs.update(MCPileup=PILEUP_DATASET)
-        self.redigiArgs["CouchDBName"] = self.configCacheDB
+        self.pileupArgs = StepChainWorkloadFactory.getTestArguments()
+        self.pileupArgs['Step1'].update(MCPileup=PILEUP_DATASET)
+        self.pileupArgs['Step1'].update(InputDataset="/MinimumBias/ComissioningHI-v1/RAW",
+                                        RequestNumEvents=TOTAL_EVENTS,
+                                        SplittingAlgo="EventAwareLumiBased")
+        self.pileupArgs["CouchDBName"] = self.configCacheDB
+        self.pileupArgs['Step1']["ConfigCacheID"] = createConfig(self.pileupArgs["CouchDBName"])
 
-        self.pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
-        self.pileupMcArgs.update(MCPileup=PILEUP_DATASET)
+        self.pileupMcArgs = StepChainWorkloadFactory.getTestArguments()
+        self.pileupMcArgs['Step1'].update(MCPileup=PILEUP_DATASET)
+        self.pileupArgs['Step1'].update(RequestNumEvents=TOTAL_EVENTS)
         self.pileupMcArgs["CouchDBName"] = self.configCacheDB
-        self.pileupMcArgs["ConfigCacheID"] = createConfig(self.pileupMcArgs["CouchDBName"])
+        self.pileupMcArgs['Step1']["ConfigCacheID"] = createConfig(self.pileupMcArgs["CouchDBName"])
 
     def setUp(self):
         """
@@ -152,19 +148,27 @@ class WorkQueueTest(WorkQueueTestCase):
 
         WorkQueueTestCase.setUp(self)
         self.setupConfigCacheAndAgrs()
+
         # Basic production Spec
-        self.spec = monteCarloWorkload('testProduction', self.mcArgs)
-        getFirstTask(self.spec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(self.spec).addProduction(totalEvents=10000)
+        self.spec = stepchainWorkload('testProduction', self.mcArgs)
+        self.spec.setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        getFirstTask(self.spec).addProduction(totalEvents=TOTAL_EVENTS)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 
         # Production spec plus pileup
-        self.productionPileupSpec = monteCarloWorkload('testProduction', self.pileupMcArgs)
-        getFirstTask(self.productionPileupSpec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
-        getFirstTask(self.productionPileupSpec).addProduction(totalEvents=10000)
+        self.productionPileupSpec = stepchainWorkload('testProduction', self.pileupMcArgs)
+        self.productionPileupSpec.setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
+        getFirstTask(self.productionPileupSpec).addProduction(totalEvents=TOTAL_EVENTS)
         self.productionPileupSpec.setSpecUrl(os.path.join(self.workDir, 'testworkflowPileupMc.spec'))
         self.productionPileupSpec.save(self.productionPileupSpec.specUrl())
+
+        # Processing spec plus pileup
+        self.processingPileupSpec = stepchainWorkload('testProcessing', self.pileupArgs)
+        self.processingPileupSpec.setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
+        getFirstTask(self.processingPileupSpec).addProduction(totalEvents=TOTAL_EVENTS)
+        self.processingPileupSpec.setSpecUrl(os.path.join(self.workDir, 'testworkflowPileup.spec'))
+        self.processingPileupSpec.save(self.processingPileupSpec.specUrl())
 
         # ReReco spec with whitelist
         self.whitelistSpec = rerecoWorkload('whitelistlistSpec', self.rerecoArgs)
@@ -178,10 +182,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.openRunningSpec.setSpecUrl(os.path.join(self.workDir,
                                                      'testOpenRunningSpec.spec'))
         self.openRunningSpec.save(self.openRunningSpec.specUrl())
-
-        # Redigi spec with pile-up
-        # Needs special configCache setup
-        self.createRedigiSpec()
 
         # Create queues
         globalCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
@@ -210,7 +210,11 @@ class WorkQueueTest(WorkQueueTestCase):
         bossAirConfig = Configuration()
         bossAirConfig.section_("BossAir")
         bossAirConfig.BossAir.pluginDir = "WMCore.BossAir.Plugins"
-        bossAirConfig.BossAir.pluginNames = ["CondorPlugin"]
+        bossAirConfig.BossAir.pluginNames = ["MockPlugin"]
+        bossAirConfig.BossAir.section_("MockPlugin")
+        bossAirConfig.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
+                                                            'WMComponent_t/JobAccountant_t/fwjrs',
+                                                            "MergeSuccess.pkl")
         bossAirConfig.section_("Agent")
         bossAirConfig.Agent.agentName = "TestAgent"
         bossAirConfig.section_("JobStateMachine")
@@ -264,7 +268,7 @@ class WorkQueueTest(WorkQueueTestCase):
         rc = ResourceControl()
         site_se_mapping = {'T2_XX_SiteA': 'a.example.com', 'T2_XX_SiteB': 'b.example.com'}
         for site, se in site_se_mapping.iteritems():
-            rc.insertSite(site, 100, 200, se, cmsName=site)
+            rc.insertSite(site, 100, 200, se, cmsName=site, plugin="MockPlugin")
             daofactory = DAOFactory(package="WMCore.WMBS",
                                     logger=threading.currentThread().logger,
                                     dbinterface=threading.currentThread().dbi)
@@ -322,24 +326,6 @@ class WorkQueueTest(WorkQueueTestCase):
     def pullWorkWithReplication(self, localQ, resources):
         localQ.pullWork(resources)
         self.createWQReplication(localQ.params['ParentQueueCouchUrl'], localQ.params['QueueURL'])
-
-    def createRedigiSpec(self):
-        """
-        _createRedigiSpec_
-
-        Create a bogus redigi spec, with configs and all the shiny things
-        """
-        configs = injectReDigiConfigs(self.configCacheDBInstance)
-        self.redigiArgs["StepOneConfigCacheID"] = configs[0]
-        self.redigiArgs["StepTwoConfigCacheID"] = configs[1]
-        self.redigiArgs["StepThreeConfigCacheID"] = configs[2]
-        self.redigiArgs["StepOneOutputModuleName"] = "RAWDEBUGoutput"
-        self.redigiArgs["StepTwoOutputModuleName"] = "RECODEBUGoutput"
-        self.redigiSpec = redigiWorkload('reDigiSpec', self.redigiArgs)
-        self.redigiSpec.setSpecUrl(os.path.join(self.workDir,
-                                                'reDigiSpec.spec'))
-        getFirstTask(self.redigiSpec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
-        self.redigiSpec.save(self.redigiSpec.specUrl())
 
     def createResubmitSpec(self, serverUrl, couchDB, parentage=False):
         """
@@ -888,8 +874,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.queueWork(processingSpec.specUrl())
         elements = len(self.queue)
         self.queue.updateLocationInfo()
-        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000},
-                                  {})
+        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
@@ -987,7 +972,7 @@ class WorkQueueTest(WorkQueueTestCase):
                           request='fail_this')
 
         # invalid white list
-        mcspec = monteCarloWorkload('testProductionInvalid', self.mcArgs)
+        mcspec = stepchainWorkload('testProductionInvalid', self.mcArgs)
         getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
         mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
         mcspec.save(mcspec.specUrl())
@@ -1072,8 +1057,8 @@ class WorkQueueTest(WorkQueueTestCase):
     def testConflicts(self):
         """Resolve conflicts between global & local queue"""
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.localQueue.pullWork({'T2_XX_SiteA': 10000})
-        self.localQueue.getWork({'T2_XX_SiteA': 10000},
+        self.localQueue.pullWork({'T2_XX_SiteA': TOTAL_EVENTS})
+        self.localQueue.getWork({'T2_XX_SiteA': TOTAL_EVENTS},
                                 {})
         syncQueues(self.localQueue)
         global_ids = [x.id for x in self.globalQueue.status()]
@@ -1107,9 +1092,9 @@ class WorkQueueTest(WorkQueueTestCase):
         so actually request gets deleted when performCleanupAction is run.
         """
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 10000}), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': TOTAL_EVENTS}), 1)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 10000},
+        self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': TOTAL_EVENTS},
                                                      {})), 1)
         syncQueues(self.localQueue)
         self.localQueue.doneWork(WorkflowName=self.spec.name())
@@ -1171,7 +1156,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.setSiteWhitelist('T1_US_FNAL')
-        spec.setTrustLocationFlag()
+        spec.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team="cmsdataops")
@@ -1233,7 +1218,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processedFiles = work[0]["NumOfFilesAdded"]
 
         # claim remaining work
-        work = self.queue.getWork({'T2_XX_SiteA': 10000, 'T2_XX_SiteB': 10000}, {})
+        work = self.queue.getWork({'T2_XX_SiteA': TOTAL_EVENTS, 'T2_XX_SiteB': TOTAL_EVENTS}, {})
         self.assertEqual(len(work), NBLOCKS_COSMIC - 1)
         for element in work:
             processedFiles += element["NumOfFilesAdded"]
@@ -1279,6 +1264,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # close the global inbox elements, they won't be split anymore
         self.globalQueue.closeWork('testProcessing', 'testProduction')
+        self.localQueue.getWMBSInjectionStatus()
+        time.sleep(1)
         # There are too many jobs to pull down for testProcessing still has element not in WMBS
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': False}, {'testProduction': True}])
@@ -1358,21 +1345,21 @@ class WorkQueueTest(WorkQueueTestCase):
         # all blocks pulled as each has 0 jobs
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 1)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.status()), 2)
+        self.assertEqual(len(self.localQueue.status()), 1)
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1},
-                                                     {})), 2)
+                                                     {})), 1)
         for element in self.localQueue.status():
             # check files added and subscription made
-            self.assertEqual(element['NumOfFilesAdded'], Globals.GlobalParams.numOfFilesPerBlock())
+            self.assertEqual(element['NumOfFilesAdded'], 1)
             self.assertTrue(element['SubscriptionId'] >= 0)
-            self.assertEqual(element['Jobs'], 0)
+            self.assertEqual(element['Jobs'], 1)
 
         # complete workflow
         self.localQueue.performQueueCleanupActions(skipWMBS=True)
         self.localQueue.doneWork([str(x.id) for x in self.localQueue.status()])
-        self.assertEqual(len(self.localQueue.status(status='Done')), 2)
+        self.assertEqual(len(self.localQueue.status(status='Done')), 1)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.globalQueue.status(status='Done')), 2)
+        self.assertEqual(len(self.globalQueue.status(status='Done')), 1)
 
     def testProcessingWithContinuousSplitting(self):
         """Test the open request handling in the WorkQueue"""
@@ -1419,16 +1406,16 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testProcessingWithPileup(self):
         """Test a full WorkQueue cycle in a request with pileup datasets"""
-        specfile = self.redigiSpec.specUrl()
+        specfile = self.processingPileupSpec.specUrl()
         # Queue work with initial block count
         self.assertEqual(NBLOCKS_HICOMM, self.globalQueue.queueWork(specfile))
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # All blocks are in Site A, B, and C, but the pileup is only at C.
         # We should not be able to pull all the work.
-        self.assertGreater(self.localQueue.pullWork({'T2_XX_SiteA': 1,
-                                                     'T2_XX_SiteB': 3,
-                                                     'T2_XX_SiteC': 4}), 3)
+        self.assertGreaterEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1,
+                                                          'T2_XX_SiteB': 3,
+                                                          'T2_XX_SiteC': 4}), 3)
         # The PhEDEx emulator will move the pileup blocks to site A
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB': 1,
@@ -1437,23 +1424,25 @@ class WorkQueueTest(WorkQueueTestCase):
         # Now try with just site A (no work)
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 0)
         syncQueues(self.localQueue)
-        self.assertGreaterEqual(len(self.localQueue), 4)
-        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 4)
+        self.assertGreaterEqual(len(self.localQueue), 3)
+        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 3)
 
         # Pull it to WMBS, first try with an impossible site
         # The pileup was split again in the local queue so site A is not there
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1,
                                                       'T2_XX_SiteB': 3,
-                                                      'T2_XX_SiteC': 4}, {})), 0)
+                                                      'T2_XX_SiteC': 4}, {})), 3)
         Globals.moveBlock({'%s#1' % PILEUP_DATASET: ['T2_XX_SiteA', 'T2_XX_SiteC'],
                            '%s#2' % PILEUP_DATASET: ['T2_XX_SiteA', 'T2_XX_SiteC']})
         self.localQueue.updateLocationInfo()
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1}, {})), 0)
-        self.assertGreaterEqual(len(self.localQueue), 4)
+
+        self.assertGreaterEqual(len(self.localQueue.status()), 3)
 
     def testPileupOnProduction(self):
         """Test that we can split properly a Production workflow with pileup"""
         specfile = self.productionPileupSpec.specUrl()
+
         # Sanity check on queueWork only
         self.assertEqual(1, self.globalQueue.queueWork(specfile))
         self.assertEqual(1, len(self.globalQueue))
@@ -1470,7 +1459,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(highPrioReReco.specUrl())
 
         # Pull all into local queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 10000}), 2 * NBLOCKS_HICOMM)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': TOTAL_EVENTS}), 2 * NBLOCKS_HICOMM)
         syncQueues(self.localQueue)
 
         # Try pulling work into WMBS when "there is" a job of higher priority than the high prio workflow

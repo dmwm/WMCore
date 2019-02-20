@@ -14,9 +14,10 @@ from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload import getMCArgs, monteCarloWorkload
+from WMQuality.Emulators.WMSpecGenerator.Samples.BasicProductionWorkload import getProdArgs, taskChainWorkload
 
-mcArgs = getMCArgs()
+
+mcArgs = getProdArgs()
 
 
 class MonteCarloTestCase(EmulatedUnitTestCase):
@@ -29,8 +30,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         # change split defaults for this test
         totalevents = 1000000
         splitArgs = dict(SliceType='NumberOfEvents', SliceSize=100, MaxJobsPerElement=5)
-        mcArgs["EventsPerJob"] = 100
-        BasicProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        BasicProductionWorkload = taskChainWorkload('MonteCarloWorkload', mcArgs)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(BasicProductionWorkload).addProduction(totalEvents=totalevents)
         getFirstTask(BasicProductionWorkload).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
@@ -73,7 +73,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi',
                          SubSliceSize=13)
 
-        LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        LHEProductionWorkload = taskChainWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(
             getFirstTask(LHEProductionWorkload).getPathName(),
             'EventBased',
@@ -122,7 +122,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         totalevents = 2 ** 34
         splitArgs = dict(SliceType='NumEvents', SliceSize=2 ** 30, MaxJobsPerElement=7)
 
-        LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        LHEProductionWorkload = taskChainWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(
             getFirstTask(LHEProductionWorkload).getPathName(),
             'EventBased',
@@ -164,7 +164,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumEvents', SliceSize=47, MaxJobsPerElement=5, SubSliceType='NumEventsPerLumi',
                          SubSliceSize=13)
 
-        LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        LHEProductionWorkload = taskChainWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(getFirstTask(LHEProductionWorkload).getPathName(), 'EventBased',
                                                         {'events_per_job': splitArgs['SliceSize'],
                                                          'events_per_lumi': splitArgs['SubSliceSize']})
@@ -233,7 +233,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
 
     def testInvalidSpecs(self):
         """Specs with no work"""
-        mcspec = monteCarloWorkload('testProcessingInvalid', mcArgs)
+        mcspec = taskChainWorkload('testProcessingInvalid', mcArgs)
         mcspec.setSiteWhitelist(["T2_XX_SiteA"])
         # 0 events
         getFirstTask(mcspec).addProduction(totalEvents=0)
@@ -241,7 +241,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
             self.assertRaises(WorkQueueNoWorkError, MonteCarlo(), mcspec, task)
 
         # -ve split size
-        mcspec2 = monteCarloWorkload('testProdInvalid', mcArgs)
+        mcspec2 = taskChainWorkload('testProdInvalid', mcArgs)
         mcspec2.data.policies.start.SliceSize = -100
         for task in mcspec2.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, MonteCarlo(), mcspec2, task)
@@ -259,7 +259,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
 
         totalevents = 1010
 
-        LHEProductionWorkload = monteCarloWorkload('MonteCarloWorkload', mcArgs)
+        LHEProductionWorkload = taskChainWorkload('MonteCarloWorkload', mcArgs)
         LHEProductionWorkload.setJobSplittingParameters(
             getFirstTask(LHEProductionWorkload).getPathName(),
             'EventBased',

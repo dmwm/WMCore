@@ -9,16 +9,14 @@ import shutil
 import tempfile
 
 from WMCore.WMSpec.StdSpecs.ReReco  import ReRecoWorkloadFactory
-from .Samples.TestMonteCarloWorkload \
-    import monteCarloWorkload as TestMCWorkload, getMCArgs
 from .Samples.BasicProductionWorkload \
-    import createWorkload as BasicProductionWorkload
+    import getProdArgs, createWorkload as BasicProductionWorkload
 from .Samples.BasicProcessingWorkload \
     import createWorkload as BasicProcessingWorkload
 from WMCore.Cache.WMConfigCache import ConfigCache
 
 
-mcArgs = getMCArgs()
+mcArgs = getProdArgs()
 
 class WMSpecGenerator(object):
 
@@ -73,10 +71,6 @@ class WMSpecGenerator(object):
             args.update(assignKwargs)
             spec.updateArguments(args)
 
-        return self._selectReturnType(spec, returnType, splitter)
-
-    def createMCSpec(self, specName, returnType="spec", splitter = None):
-        spec =  TestMCWorkload(specName, mcArgs)
         return self._selectReturnType(spec, returnType, splitter)
 
     def createRandomProductionSpecs(self, size=10):

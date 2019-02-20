@@ -1311,6 +1311,27 @@ class StdBase(object):
                     schema[arg] = workloadDefinition[arg]['default']
             else:
                 schema[arg] = workloadDefinition[arg]['default']
+
+        if schema['RequestType'] == 'TaskChain':
+            schema['Task1'] = {'ConfigCacheID': 'FAKE',
+                               'PrimaryDataset': 'FAKE',
+                               'EventsPerJob': 100,
+                               'GlobalTag': 'GT_DP_V1',
+                               'RequestNumEvents': 1000000,
+                               'Seeding': 'AutomaticSeeding',
+                               'SplittingAlgo': 'EventBased',
+                               'TaskName': 'Task1Name_Test',
+                               'TimePerEvent': 123}
+        elif schema['RequestType'] == 'StepChain':
+            schema['Step1'] = {'ConfigCacheID': 'FAKE',
+                               'PrimaryDataset': 'FAKE',
+                               'EventsPerJob': 100,
+                               'GlobalTag': 'GT_DP_V1',
+                               'RequestNumEvents': 1000000,
+                               'Seeding': 'AutomaticSeeding',
+                               'SplittingAlgo': 'EventBased',
+                               'StepName': 'Step1Name_Test'}
+
         return schema
 
     @classmethod

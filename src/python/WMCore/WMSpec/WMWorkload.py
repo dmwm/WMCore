@@ -969,7 +969,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         _getRequestType_
 
-        Get the Request type (ReReco, ReDigi, etc)
+        Get the Request type (ReReco, TaskChain, etc)
         """
         if getattr(self.data, 'requestType', None):
             return getattr(self.data, "requestType")

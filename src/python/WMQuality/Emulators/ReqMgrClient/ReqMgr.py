@@ -11,7 +11,7 @@ class ReqMgr(dict):
         self.count = 0
         self.maxWmSpec = kwargs.setdefault('numOfSpecs', 1)
         self.type = kwargs.setdefault("type", 'ReReco')
-        if self.type not in ['ReReco', 'MonteCarlo']:
+        if self.type != 'ReReco':
             raise TypeError('unknown request type %s' % self.type)
         self.splitter = kwargs.setdefault('splitter', 'DatasetBlock')
         self.inputDataset = kwargs.setdefault('inputDataset', None)
@@ -33,10 +33,6 @@ class ReqMgr(dict):
                                                              InputDataset=self.inputDataset,
                                                              DbsUrl=self.dbsUrl,
                                                              OpenRunningTimeout = self.openRunningTimeout)
-            elif self.type == 'MonteCarlo':
-                specName = "MCTest_v%sEmulator" % self.count
-                specUrl =self.specGenerator.createMCSpec(specName, "file",
-                                                         self.splitter)
             self.names.append(specName)
             self.status[specName] = 'assigned'
             #specName = "FakeProductionSpec_%s" % self.count

@@ -42,6 +42,14 @@ class CMSSW(Executor):
 
     """
 
+    def _setStatus(self, returncode):
+        """
+        Set return code.
+        """
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
+        self.step.execution.exitStatus = returncode
+
     def pre(self, emulator=None):
         """
         _pre_
@@ -235,20 +243,25 @@ class CMSSW(Executor):
 
         returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
 
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
+        if returncode != 0:
+            argsDump = {'arguments': args}
+            msg = "Error running cmsRun\n%s\n" % argsDump
+            try:
+                self.report.parse(jobReportXML, stepName=self.stepName)
+                returncode = self.report.getStepExitCode(stepName=self.stepName)
+                msg += "CMSSW Return code: %s\n" % returncode
+            except Exception as ex:
+                # If report parsing fails, report linux exit code
+                msg += "Linux Return code: %s\n" % returncode
+            finally:
+                logging.critical(msg)
+                self._setStatus(returncode)
+                raise WMExecutionFailure(returncode, "CmsRunFailure", msg)
+        else:
+            self._setStatus(returncode)
 
         stdoutHandle.close()
         stderrHandle.close()
-
-        self.step.execution.exitStatus = returncode
-        argsDump = {'arguments': args}
-
-        if returncode != 0:
-            msg = "Error running cmsRun\n%s\n" % argsDump
-            msg += "Return code: %s\n" % returncode
-            logging.critical(msg)
-            raise WMExecutionFailure(returncode, "CmsRunFailure", msg)
 
         try:
             self.report.parse(jobReportXML, stepName=self.stepName)

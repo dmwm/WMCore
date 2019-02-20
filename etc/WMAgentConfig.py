@@ -186,7 +186,7 @@ config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
 # glidein restrictions used for resource estimation (per core)
 config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 3600,  # 1h
-                                        "MaxWallTimeSecs": 46 * 3600,  # pilot lifetime is usually 48h
+                                        "MaxWallTimeSecs": 45 * 3600,  # pilot lifetime is usually 48h
                                         "MinRequestDiskKB": 1 * 1000 * 1000,  # 1GB
                                         "MaxRequestDiskKB": 20 * 1000 * 1000}  # site limit is ~27GB
 config.component_("JobSubmitter")

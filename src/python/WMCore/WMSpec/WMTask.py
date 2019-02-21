@@ -1029,11 +1029,7 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, "subscriptions"):
             return {}
 
-        # FIXME making it backwards compatible.
-        # New key is 'outputSubs', remove the outputModule handle around HG1710
-        subKeyName = 'outputModules'
-        if hasattr(self.data.subscriptions, 'outputSubs'):
-            subKeyName = 'outputSubs'
+        subKeyName = 'outputSubs'
 
         subInformation = {}
         for outputSub in getattr(self.data.subscriptions, subKeyName):

@@ -88,12 +88,8 @@ class Watchdog(threading.Thread):
                     origCores = max(origCores, sh.getNumberOfCores())
                 resources = {'cores': origCores}
                 origMaxRSS = args.get('maxRSS')
-                ### TODO: keep only the else clause after ~HG1805
-                if origMaxRSS and origMaxRSS > 100 * 1000:  # in case MaxRSS is in KB
-                    origMaxRSS = int(origMaxRSS / 1024.)  # HTCondor expects MB; we get KB.
+                if origMaxRSS:
                     resources['memory'] = origMaxRSS
-                elif origMaxRSS:
-                    resources['memory'] = origMaxRSS  # then it's already in MB
                 # Actually parses the HTCondor runtime
                 resizeResources(resources)
                 # We decided to only touch Watchdog settings if the number of cores changed.

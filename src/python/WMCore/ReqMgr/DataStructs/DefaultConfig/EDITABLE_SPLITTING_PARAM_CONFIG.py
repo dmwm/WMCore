@@ -6,7 +6,6 @@ ALGO_DICT = {"FileBased": {"files_per_job": ''},
              "LumiBased": {"lumis_per_job": '',
                            "halt_job_on_file_boundaries": True},
              "EventAwareLumiBased": {"events_per_job": '',
-                                     "max_events_per_lumi": '',  # has to be removed in ~HG1804
                                      "job_time_limit": '',
                                      "halt_job_on_file_boundaries": True},
              "EventBased": {"events_per_job": '',

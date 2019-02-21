@@ -210,7 +210,7 @@ class StepChainWorkloadFactory(StdBase):
         """
         _setupGeneratorTask_
 
-        Set up an initial generator task.
+        Set up an initial generator task for the top level step (cmsRun1)
         """
         configCacheID = taskConf['ConfigCacheID']
         splitAlgorithm = taskConf["SplittingAlgo"]
@@ -226,7 +226,7 @@ class StepChainWorkloadFactory(StdBase):
                                            taskConf=taskConf)
 
         if taskConf["PileupConfig"]:
-            self.setupPileup(task, taskConf['PileupConfig'])
+            self.setupPileup(task, taskConf['PileupConfig'], stepName="cmsRun1")
 
         # outputModules were added already, we just want to create merge tasks here
         if strToBool(taskConf.get('KeepOutput', True)):
@@ -239,7 +239,8 @@ class StepChainWorkloadFactory(StdBase):
         _setupTask_
 
         Build the task using the setupProcessingTask from StdBase
-        and set the parents appropriately to handle a processing task
+        and set the parents appropriately to handle a processing task,
+        It's only called for the top level task and top level step (cmsRun1)
         """
         configCacheID = taskConf["ConfigCacheID"]
         splitAlgorithm = taskConf["SplittingAlgo"]
@@ -263,7 +264,7 @@ class StepChainWorkloadFactory(StdBase):
             task.setLumiMask(lumiMask)
 
         if taskConf["PileupConfig"]:
-            self.setupPileup(task, taskConf['PileupConfig'])
+            self.setupPileup(task, taskConf['PileupConfig'], stepName="cmsRun1")
 
         # outputModules were added already, we just want to create merge tasks here
         if strToBool(taskConf.get('KeepOutput', True)):
@@ -322,7 +323,7 @@ class StepChainWorkloadFactory(StdBase):
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
             if taskConf["PileupConfig"]:
-                self.setupPileup(task, taskConf['PileupConfig'])
+                self.setupPileup(task, taskConf['PileupConfig'], stepName=currentCmsRun)
 
             # Handling the output modules in order to decide whether we should
             # stage them out and report them in the Report.pkl file

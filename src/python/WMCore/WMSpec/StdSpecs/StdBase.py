@@ -841,16 +841,23 @@ class StdBase(object):
 
         return
 
-    def setupPileup(self, task, pileupConfig):
+    def setupPileup(self, task, pileupConfig, stepName=None):
         """
         _setupPileup_
 
-        Setup pileup for every CMSSW step in the task.
+        Setup pileup for every CMSSW step in the task, unless a stepName
+        is given - StepChain case - then only setup pileup for that specific
+        step (cmsRun1, cmsRun2, etc).
         pileupConfig has the following data structure:
             {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
         """
         for puType, puList in pileupConfig.items():
             task.setInputPileupDatasets(puList)
+
+        if stepName:
+            stepHelper = task.getStepHelper(stepName)
+            stepHelper.setupPileup(pileupConfig, self.dbsUrl)
+            return
 
         for stepName in task.listAllStepNames():
             step = task.getStep(stepName)

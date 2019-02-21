@@ -853,6 +853,8 @@ class WMTaskHelper(TreeHelper):
             self.data.input.pileup.datasets.append(dsetName)
         else:
             raise ValueError("Pileup dataset must be either a list or basestring")
+        # make the list unique
+        self.data.input.pileup.datasets = list(set(self.data.input.pileup.datasets))
 
     def getInputPileupDatasets(self):
         """

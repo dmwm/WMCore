@@ -516,6 +516,55 @@ class StepChainTests(EmulatedUnitTestCase):
         pileups = [item for puSet in pileups for item in puSet]
         self.assertItemsEqual(pileups, [testArguments['Step1']['MCPileup']])
 
+        # task level check
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+        self.assertItemsEqual([testArguments['Step1']['MCPileup']], task.getInputPileupDatasets())
+
+        # step level check
+        stepHelper = task.getStepHelper('cmsRun1')
+        puConfig = stepHelper.getPileup()
+        self.assertItemsEqual([testArguments['Step1']["MCPileup"]], puConfig.mc.dataset)
+
+    def testMultiplePileupDsets(self):
+        """
+        Test a StepChain which uses different Pileup datasets for different
+        steps in the chain.
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+        testArguments['Step3']['MCPileup'] = "/Cosmics/ComissioningHI-PromptReco-v1/RECO"
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # workload level check
+        pileups = testWorkload.listPileupDatasets().values()
+        pileups = [item for puSet in pileups for item in puSet]
+        self.assertIn(testArguments['Step2']['MCPileup'], pileups)
+        self.assertIn(testArguments['Step3']['MCPileup'], pileups)
+
+        # task level check
+        task = testWorkload.getTask(taskName=testArguments['Step1']['StepName'])
+        pileups = [testArguments['Step2']['MCPileup'], testArguments['Step3']['MCPileup']]
+        self.assertItemsEqual(pileups, task.getInputPileupDatasets())
+
+        # step level check
+        for idx in range(1, testArguments['StepChain'] + 1):
+            stepName = "cmsRun%s" % idx
+            stepNum = "Step%s" % idx
+            stepHelper = task.getStepHelper(stepName)
+            puConfig = stepHelper.getPileup()
+            if puConfig:
+                puConfig = puConfig.mc.dataset
+            else:
+                puConfig = [puConfig]  # let's call it a [None] then, for the sake of testing
+            self.assertItemsEqual([testArguments[stepNum].get("MCPileup")], puConfig)
+
     def testStepChainIncludeParentsValidation(self):
         """
         Check that the test arguments pass basic validation,

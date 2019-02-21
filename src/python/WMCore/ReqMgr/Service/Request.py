@@ -602,6 +602,6 @@ class RequestType(RESTEntity):
     def validate(self, apiobj, method, api, param, safe):
         pass
 
-    @restcall
+    @restcall(formats=[('application/json', JSONFormat())])
     def get(self):
         return rows(REQUEST_TYPES)

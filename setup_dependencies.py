@@ -74,7 +74,7 @@ dependencies = {
         'packages': ['Utils', 'WMCore.MicroService+', 'WMCore.Services+'],
         'modules': ['WMCore.Wrappers.__init__',
                     'WMCore.Wrappers.JsonWrapper.__init__',
-                    'WMCore.Wrappers.JsonWrapper.JSONThunker',
+                    'WMCore.Wrappers.JsonWrapper.JSONThunker'
                     ],
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],
@@ -170,5 +170,33 @@ dependencies = {
                     'WMCore.Services.pycurl_manager'],
         'statics': ['src/couchapps/ACDC+',
                     'src/couchapps/GroupUser+']
+    },
+    't0': {
+        'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
+                     'WMCore.JobStateMachine', 'WMComponent+',
+                     'WMCore.ThreadPool', 'WMCore.WorkerThreads',
+                     'WMCore.BossAir+', 'WMCore.Credential',
+                     'WMCore.JobSplitting+', 'WMCore.ProcessPool',
+                     'WMCore.Services+', 'WMCore.WMSpec+',
+                     'WMCore.WMBS+', 'WMCore.ResourceControl+',
+                     'WMCore.DataStructs+', 'WMCore.ReqMgr+',
+                     'Controllers+', 'WMQuality.Emulators+',
+                     'Utils'],
+        'modules': ['WMCore.Configuration',
+                    'WMCore.DAOFactory',
+                    'WMCore.WMException',
+                    'WMCore.Lexicon',
+                    'WMCore.WMBS.File'],
+        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'workqueue'],
+        'statics': ['src/javascript/external/graphael',
+                    'src/couchapps/FWJRDump+',
+                    'src/couchapps/T0Request+',
+                    'src/couchapps/WMStats+',
+                    'src/couchapps/LogDB+',
+                    'src/couchapps/UserMonitoring+',
+                    'src/couchapps/JobDump+',
+                    'src/couchapps/WMStatsAgent+',
+                    'src/couchapps/SummaryStats+'
+                    ]
     }
 }

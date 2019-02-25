@@ -15,6 +15,7 @@ bunch of data).
 workflow + fileset = subscription
 """
 
+import logging
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -104,18 +105,13 @@ class Workflow(WMBSBase, WMWorkflow):
         Write the workflow to the database.  If the workflow already exists in
         the database nothing will happen.
         """
+        if self.exists() is not False:
+            self.load()
+            return
 
         userid = self.insertUser()
 
         existingTransaction = self.beginTransaction()
-
-        self.id = self.exists()
-
-        if self.id != False:
-            self.load()
-            self.commitTransaction(existingTransaction)
-            return
-
         action = self.daofactory(classname="Workflow.New")
         action.execute(spec=self.spec, owner=userid, name=self.name,
                        task=self.task, wfType=self.wfType,
@@ -126,6 +122,7 @@ class Workflow(WMBSBase, WMWorkflow):
 
         self.id = self.exists()
         self.commitTransaction(existingTransaction)
+        logging.info("Workflow id %d created for %s", self.id, self.name)
         return
 
     def delete(self):

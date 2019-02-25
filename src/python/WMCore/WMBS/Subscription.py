@@ -53,12 +53,11 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Add the subscription to the database
         """
-        existingTransaction = self.beginTransaction()
-
-        if self.exists():
+        if self.exists() is not False:
             self.load()
             return
 
+        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname="Subscriptions.New")
         action.execute(fileset=self["fileset"].id, type=self["type"],
                        split_algo=self["split_algo"],

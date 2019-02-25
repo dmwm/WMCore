@@ -2,23 +2,21 @@
 """
 pullWork poller
 """
-__all__ = []
-
-
-
-
-import time
 import random
+import time
+
 from Utils.Timers import timeFunction
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
 
 class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
     """
     Polls for Work
     """
+
     def __init__(self, queue, config):
         """
         Initialise class members
@@ -31,14 +29,13 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
         self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
 
-
     def setup(self, parameters):
         """
         Called at startup - introduce random delay
              to avoid workers all starting at once
         """
         t = random.randrange(self.idleTime)
-        self.logger.info('Sleeping for %d seconds before 1st loop' % t)
+        self.logger.info('Sleeping for %d seconds before 1st loop', t)
         time.sleep(t)
 
     @timeFunction

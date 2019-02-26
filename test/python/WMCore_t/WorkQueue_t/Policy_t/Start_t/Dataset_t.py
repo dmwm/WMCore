@@ -220,7 +220,10 @@ class DatasetTestCase(EmulatedUnitTestCase):
         # It seems like "dbs" below is never used
         parentProcArgs2 = {}
         parentProcArgs2.update(parentProcArgs)
-        parentProcArgs2.update({'InputDataset': '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO'})
+        #parentProcArgs2.update({'InputDataset': '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO'})
+        parentProcArgs2.update({'InputDataset': '/Cosmics/ComissioningHI-PromptReco-v1/RECO'})
+        from pprint import pprint
+        pprint(parentProcArgs2)
         parentProcSpec = rerecoWorkload('ReRecoWorkload', parentProcArgs2,
                                         assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         parentProcSpec.setStartPolicy('Dataset', **splitArgs)
@@ -229,8 +232,8 @@ class DatasetTestCase(EmulatedUnitTestCase):
             units, _, _ = Dataset(**splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))
             for unit in units:
-                self.assertEqual(847, unit['Jobs'])
-                self.assertEqual(1694, unit['NumberOfLumis'])
+                self.assertEqual(3993, unit['Jobs'])
+                self.assertEqual(7985, unit['NumberOfLumis'])
                 self.assertEqual(parentProcSpec, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Inputs'].keys(), [inputDataset])

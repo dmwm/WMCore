@@ -3,7 +3,7 @@
 from __future__ import (division, print_function)
 
 import unittest
-
+import logging
 from dbs.apis.dbsClient import DbsApi
 
 from Utils.ExtendedUnitTestCase import ExtendedUnitTestCase
@@ -45,7 +45,6 @@ class MockDbsApiTest(ExtendedUnitTestCase):
                    'listFileParents': {'block_name': block_with_parent},
                    'listPrimaryDatasets': {'primary_ds_name': 'Jet*'},
                    'listRuns': {'dataset': DATASET},
-                   'listFileArray': {'dataset': DATASET},
                    'listFileArray': {'dataset': DATASET, 'detail': True, 'validFileOnly': 1},
                    'listFileSummaries': {'dataset': DATASET, 'validFileOnly': 1},
                    'listBlocks': {'dataset': DATASET, 'detail': True},
@@ -56,7 +55,7 @@ class MockDbsApiTest(ExtendedUnitTestCase):
             # Get from  mock DBS
             args = []
             kwargs = members[member]
-
+            logging.info("Querying API: %s, with parameters: %s", member, members[member])
             real = getattr(self.realDBS, member)(*args, **kwargs)
             mock = getattr(self.mockDBS, member)(*args, **kwargs)
 

@@ -44,29 +44,21 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
     @timeFunction
     def algorithm(self, parameters):
         """
-        Pull in work
+        Get work from local workqueue to be injected into WMBS/DBSBuffer
         """
+        self.queue.logger.info("Getting work and feeding WMBS files...")
         try:
-            self.getWorks()
+            # need to make sure jobs are created
+            resources, jobCounts = freeSlots(minusRunning=True, allowedStates=['Normal', 'Draining'],
+                                             knownCmsSites=cmsSiteNames())
+
+            for site in resources:
+                self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
+
+            abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+
+            previousWorkList = self.queue.getWork(resources, jobCounts,
+                                                  excludeWorkflows=abortedAndForceCompleteRequests)
+            self.queue.logger.info("Acquired %s units of work for WMBS file creation", len(previousWorkList))
         except Exception as ex:
             self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
-
-    def getWorks(self):
-        """
-        Inject work into wmbs for idle sites
-        """
-        self.queue.logger.info("Getting work and feeding WMBS files")
-
-        # need to make sure jobs are created
-        resources, jobCounts = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
-                              knownCmsSites = cmsSiteNames())
-
-        for site in resources:
-            self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
-
-        abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
-
-        previousWorkList = self.queue.getWork(resources, jobCounts, excludeWorkflows=abortedAndForceCompleteRequests)
-        self.queue.logger.info("%s of units of work acquired for file creation"
-                               % len(previousWorkList))
-        return

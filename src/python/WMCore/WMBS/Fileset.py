@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 #Turn off to many arguments
 #pylint: disable=R0913
-#Turn off over riding built in id
-#pylint: disable=W0622
 """
 _Fileset_
 
@@ -16,7 +14,7 @@ workflow + fileset = subscription
 
 
 
-
+import logging
 from WMCore.WMBS.File import File, addFilesToWMBSInBulk
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
@@ -104,20 +102,18 @@ class Fileset(WMBSBase, WMFileset):
         """
         Add the new fileset to WMBS, and commit the files
         """
-        existingTransaction = self.beginTransaction()
-
-        if self.exists() != False:
+        if self.exists() is not False:
             self.load()
-            self.commitTransaction(existingTransaction)
             return
 
+        existingTransaction = self.beginTransaction()
         createAction = self.daofactory(classname = "Fileset.New")
         createAction.execute(self.name, self.open, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
         self.loadData()
-
         self.commitTransaction(existingTransaction)
+        logging.info("Fileset created: %s", self.name)
         return
 
     def delete(self):

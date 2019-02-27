@@ -40,7 +40,7 @@ class CRIC(Service):
         configDict.setdefault('content_type', 'application/json')
         configDict['logger'] = logger if logger else logging.getLogger()
         super(CRIC, self).__init__(configDict)
-        self['logger'].info("DEBUG: Initializing CRIC with url: %s", self['endpoint'])
+        self['logger'].debug("Initializing CRIC with url: %s", self['endpoint'])
 
     def _getResult(self, uri, callname="", args=None, unflatJson=True):
         """
@@ -51,7 +51,7 @@ class CRIC(Service):
         cachedApi = "%s.json" % callname
         apiUrl = '%s?json&preset=%s' % (uri, callname)
 
-        self['logger'].info('DEBUG: Fetching data from %s, with args %s', apiUrl, args)
+        self['logger'].debug('Fetching data from %s, with args %s', apiUrl, args)
         # need to make our own encoding, otherwise Requests class screws it up
         if args:
             apiUrl = "%s&%s" % (apiUrl, urlencode(args, doseq=True))
@@ -165,7 +165,7 @@ class CRIC(Service):
             if psnSet:
                 psns.update(psnSet)
             else:
-                self["logger"].warning("No PSNs for PNN: %s" % pnn)
+                self["logger"].debug("No PSNs for PNN: %s" % pnn)
         return list(psns)
 
     def PSNstoPNNs(self, psns):
@@ -189,7 +189,7 @@ class CRIC(Service):
             if pnnSet:
                 pnns.update(pnnSet)
             else:
-                self["logger"].warning("No PNNs for PSN: %s" % psn)
+                self["logger"].debug("No PNNs for PSN: %s" % psn)
         return list(pnns)
 
     def PSNtoPNNMap(self, psnPattern=''):

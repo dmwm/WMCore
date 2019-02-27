@@ -329,6 +329,7 @@ class WorkQueue(WorkQueueBase):
         if not matches:
             return results
 
+        myThread = threading.currentThread()
         # cache wmspecs for lifetime of function call, likely we will have multiple elements for same spec.
         # TODO: Check to see if we can skip spec loading - need to persist some more details to element
         wmspecCache = {}
@@ -361,7 +362,10 @@ class WorkQueue(WorkQueueBase):
                                                                   dbsBlock)
                     self.logdb.delete(wmspec.name(), "error", this_thread=True)
                 except Exception as ex:
-                    msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
+                    if getattr(myThread, 'transaction', None) is not None:
+                        myThread.transaction.rollback()
+                    msg = "Failed to create subscription for %s with block name %s" % (wmspec.name(), blockName)
+                    msg += "\nError: %s" % str(ex)
                     self.logger.exception(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
                     continue
@@ -369,7 +373,7 @@ class WorkQueue(WorkQueueBase):
             results.append(match)
 
         del wmspecCache  # remove cache explicitly
-        self.logger.info('Injected %s units into WMBS' % len(results))
+        self.logger.info('Injected %s out of %s units into WMBS', len(results), len(matches))
         return results
 
     def _getDBSDataset(self, match):
@@ -429,15 +433,16 @@ class WorkQueue(WorkQueueBase):
         wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)
-        self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],
-                                                                                     match['RequestName'],
-                                                                                     match['NumOfFilesAdded']))
+        self.logger.info("Created top level subscription %s for %s with %s files",
+                         sub['id'], match['RequestName'], match['NumOfFilesAdded'])
+
         # update couch with wmbs subscription info
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'
         # do update rather than save to avoid conflicts from other thread writes
         self.backend.updateElements(match.id, Status='Running', SubscriptionId=sub['id'],
                                     NumOfFilesAdded=match['NumOfFilesAdded'])
+        self.logger.info("LQE %s set to 'Running' for request %s", match.id, match['RequestName'])
 
         return sub
 

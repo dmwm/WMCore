@@ -1,3 +1,104 @@
+1.1.19 to 1.2.0.pre4:
+  - Merge pull request #9052 from amaltaro/fix-9051
+  - Fix updateStepParentage method for ACDC of merge stepchain
+  - Merge pull request #9048 from amaltaro/cric-less-verbose
+  - Merge pull request #9046 from amaltaro/update-mocked-dbs
+  - Make CRIC module less verbose
+  - Update DBS global mocked data
+  - remove DELETED dataset from DBS mocked data
+  - 1.2.0.pre3
+  - Merge pull request #9038 from amaltaro/remove-backwards
+  - Merge pull request #9037 from amaltaro/fix-9032
+  - Merge pull request #9039 from amaltaro/type-json-format
+  - Make type REST api to return json-like instead of xml results
+  - Remove code left for backwards compatibility
+  - unit tests and pylint fixes
+  - Support multiple pileup datasets in StepChain
+  - 1.2.0.pre2
+  - Merge pull request #9021 from amaltaro/fix-8918
+  - Merge pull request #9030 from amaltaro/fix-9028
+  - Merge pull request #9009 from khurtado/cmssw_exitcode
+  - Merge pull request #9029 from amaltaro/fix-9027
+  - Merge pull request #9026 from amaltaro/fix-9025
+  - Upper limit for MaxWallTimeSecs set to 45h
+  - Added AgentStatusWatcher to the auto-restart components; send tail of logs in the alert
+  - remove/fix unit tests and pylint
+  - unit test created
+  - Support pileup for StepChain MC top step
+  - Remove MonteCarlo, MonteCarloFromGEN and ReDigi specs
+  - Report CMSSW exit code properly.
+  - 1.2.0.pre1
+  - Merge pull request #9020 from amaltaro/fix-scramOutput
+  - Merge pull request #8998 from amaltaro/fix-8858
+  - pylint fixes
+  - Merge pull request #9004 from amaltaro/fix-edmCopy
+  - Do not parse scramOutput.log for debugging SCRAM problems
+  - unit test and pylint fixes
+  - Change CMSSW release to >= 10.4.X for LogCollect with edmCopyUtils
+  - Merge pull request #9005 from amaltaro/deploy-1120
+  - Bump deployment example to 1.1.20.patch1
+  - Merge pull request #8989 from amaltaro/fix-8983
+  - Merge pull request #9015 from amaltaro/fix-9012-master
+  - unit test for parentage map and transient/keepoutput parameters
+  - Take transient output modules into account when updating task parentage map
+  - Fix unit tests and pylint
+  - Record a bunch of SetupCMSSWPSet configuration to the logs
+  - Record site status changes timestamp and allow grace period for draining sites
+  - 1.1.20.patch1
+  - Merge pull request #8999 from amaltaro/fix-8997
+  - Added PreMixingModule to MC mix modules
+  - Merge pull request #8995 from amaltaro/fix-8993
+  - Merge pull request #8991 from amaltaro/fix-8716
+  - Skip PU blocks with full replicas but not present in DBS
+  - Send job retry number as condor job argument
+  - Merge pull request #8990 from amaltaro/fix-8753
+  - unit test fixes
+  - Set centralWMStatsURL under the General section
+  - 1.1.20.pre4
+  - Merge pull request #8987 from amaltaro/fix-8974
+  - Keep using payload sub-key for MonIT
+  - 1.1.20.pre3
+  - Merge pull request #8985 from amaltaro/fix-8978
+  - Merge pull request #8982 from amaltaro/fix-8981
+  - Delete request workload document if it fails to add spec attachment during creation
+  - Added unit tests and pylint fixes
+  - Make XML parser to always return a list of elements
+  - Merge pull request #8976 from amaltaro/tier0-status
+  - Merge pull request #8974 from stiegerb/stompamq_Jan21
+  - Merge pull request #8980 from dmwm/belforte-patch-1
+  - fix capitalization for CRAB/ASO message
+  - Renaming make_notification and adding new make_notification that produces a single notification
+  - Fix typo in T0 updaterequest couch function
+  - 1.1.20.pre2
+  - Merge pull request #8973 from amaltaro/fix-8245
+  - Merge pull request #8972 from amaltaro/fix-8221
+  - Merge pull request #8885 from amaltaro/reqmgr2-requirements
+  - Add list of dependencies for the other WMCore services
+  - Support ACDC for recovery workflows
+  - unit tests and pylint fixes
+  - Remove MaxVSize argument; retry softKill with hardKill; remove RSS backwards compatibility
+  - Merge pull request #8968 from amaltaro/fix-8963
+  - Merge pull request #8967 from amaltaro/fix-8916
+  - Merge pull request #8969 from dmwm/deploy-wmagent1
+  - Fix count of leftover processes in deploy-wmagent
+  - pylint and unit test fixes
+  - Retry condor job removal for timeout
+  - Set the correct DN for priority transition
+  - 1.1.20.pre1
+  - Merge pull request #8954 from dmwm/belforte-patch-1
+  - Merge pull request #8959 from amaltaro/fix-8953
+  - pylint changes
+  - Properly parse AMQ creds; only enable it when there are valid creds
+  - Merge pull request #8957 from ticoann/add_docs
+  - add document
+  - Merge pull request #8956 from ticoann/add_pile_up_search
+  - add pile up dataset search
+  - Merge pull request #8955 from ticoann/alert_remove
+  - allow other compressions beside gzip for tarball
+  - remove alert unregister code
+  - Merge pull request #8951 from goughes/fix_requirements
+  - Fix pyzmq line in requirements.txt
+
 1.1.19 to 1.2.0.pre3:
   - Merge pull request #9038 from amaltaro/remove-backwards
   - Merge pull request #9037 from amaltaro/fix-9032

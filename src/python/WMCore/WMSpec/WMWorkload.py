@@ -134,15 +134,6 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.stepMapping = mapping
 
-    def setStepParentageMapping(self, mapping):
-        """
-        _setStepParentageMapping_
-
-        Used for StepChains. Set a wider dictionary structure with a mapping between
-        parent and child steps as well as dataset parentage
-        """
-        self.data.properties.stepParentageMapping = mapping
-
     def getStepMapping(self):
         """
         _getStepMapping_
@@ -151,6 +142,15 @@ class WMWorkloadHelper(PersistencyHelper):
         and cmsRun number.
         """
         return getattr(self.data.properties, "stepMapping", None)
+
+    def setStepParentageMapping(self, mapping):
+        """
+        _setStepParentageMapping_
+
+        Used for StepChains. Set a wider dictionary structure with a mapping between
+        parent and child steps as well as dataset parentage
+        """
+        self.data.properties.stepParentageMapping = mapping
 
     def getStepParentageMapping(self):
         """
@@ -235,6 +235,9 @@ class WMWorkloadHelper(PersistencyHelper):
         :return: just updates the workload property: stepParentageMapping
         """
         topLevelTask = next(self.taskIterator())
+        if topLevelTask.taskType() == "Merge":
+            # handle ACDC for merge jobs, see #9051. Nothing to do here
+            return
 
         parentMap = self.getStepParentageMapping()
         listOfStepNames = parentMap.keys()

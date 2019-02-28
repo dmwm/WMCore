@@ -42,13 +42,16 @@ class CMSSW(Executor):
 
     """
 
-    def _setStatus(self, returncode):
+    def _setStatus(self, returnCode, returnMessage):
         """
         Set return code.
         """
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
-        self.step.execution.exitStatus = returncode
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returnCode)
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returnCode)
+        if returnMessage:
+            self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_Exception_Message', returnMessage, compress=True)
+            self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_Exception_Message' % self.stepName, returnMessage, compress=True)
+        self.step.execution.exitStatus = returnCode
 
     def pre(self, emulator=None):
         """
@@ -241,24 +244,26 @@ class CMSSW(Executor):
 
         os.environ.update(envOverride)
 
-        returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
+        returnCode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
+        returnMessage = None
 
-        if returncode != 0:
+        if returnCode != 0:
             argsDump = {'arguments': args}
             msg = "Error running cmsRun\n%s\n" % argsDump
             try:
                 self.report.parse(jobReportXML, stepName=self.stepName)
-                returncode = self.report.getStepExitCode(stepName=self.stepName)
-                msg += "CMSSW Return code: %s\n" % returncode
+                (returnCode, returnMessage) = \
+                    self.report.getStepExitCodeAndMessage(stepName=self.stepName)
+                msg += "CMSSW Return code: %s\n" % returnCode
             except Exception as ex:
                 # If report parsing fails, report linux exit code
-                msg += "Linux Return code: %s\n" % returncode
+                msg += "Linux Return code: %s\n" % returnCode
             finally:
                 logging.critical(msg)
-                self._setStatus(returncode)
-                raise WMExecutionFailure(returncode, "CmsRunFailure", msg)
+                self._setStatus(returnCode, returnMessage)
+                raise WMExecutionFailure(returnCode, "CmsRunFailure", msg)
         else:
-            self._setStatus(returncode)
+            self._setStatus(returnCode, returnMessage)
 
         stdoutHandle.close()
         stderrHandle.close()

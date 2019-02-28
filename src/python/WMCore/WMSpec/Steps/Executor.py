@@ -13,6 +13,7 @@ import json
 import subprocess
 
 from Utils.FileTools import getFullPath
+from Utils.Utilities import zipEncodeStr
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
@@ -52,7 +53,7 @@ def getStepSpace(stepName):
     return stepSpace
 
 
-class Executor:
+class Executor(object):
     """
     _Executor_
 
@@ -66,6 +67,13 @@ class Executor:
         self.diagnostic = None
         self.emulator = None
         self.emulationMode = False
+        self.step = None
+        self.stepName = None
+        self.stepSpace = None
+        self.task = None
+        self.workload = None
+        self.job = None
+        self.errorDestination = None
 
     def initialise(self, step, job):
         """
@@ -94,7 +102,7 @@ class Executor:
             )
 
         # Set overall step status to 1 (failed)
-        self.report.setStepStatus(stepName = self.stepName, status = 1)
+        self.report.setStepStatus(stepName=self.stepName, status=1)
 
         #  //
         # //  Does the step contain settings for an emulator?
@@ -120,7 +128,7 @@ class Executor:
         return
 
 
-    def pre(self, emulator = None):
+    def pre(self, emulator=None):
         """
         _pre_
 
@@ -134,7 +142,7 @@ class Executor:
         return None
 
 
-    def execute(self, emulator = None):
+    def execute(self, emulator=None):
         """
         _execute_
 
@@ -148,7 +156,7 @@ class Executor:
         raise NotImplementedError(msg)
 
 
-    def post(self, emulator = None):
+    def post(self, emulator=None):
         """
         _post_
 
@@ -161,14 +169,16 @@ class Executor:
         """
         return None
 
-
-    def setCondorChirpAttrDelayed(self, key, value):
+    def setCondorChirpAttrDelayed(self, key, value, compress=False, maxLen=5120):
         """
         _setCondorChirpAttrDelayed_
 
         Util to call condor_chirp and publish the key/value pair
 
         """
+        if compress == True:
+            value = zipEncodeStr(value, maxLen=maxLen)
+
         # construct condor_chirp binary location from CONDOR_CONFIG
         condor_chirp_bin = None
         condor_config = os.getenv('CONDOR_CONFIG', None)
@@ -181,7 +191,7 @@ class Executor:
                 condor_chirp_bin = getFullPath("condor_chirp")
 
         if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
-            args = [ condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value) ]
-            returncode = subprocess.call(args)
+            args = [condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value)]
+            subprocess.call(args)
 
         return

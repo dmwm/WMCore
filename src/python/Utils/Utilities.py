@@ -5,7 +5,8 @@ from __future__ import division, print_function
 import subprocess
 import os
 import re
-
+import zlib
+import base64
 
 def makeList(stringList):
     """
@@ -103,3 +104,35 @@ def rootUrlJoin(base, extend):
             newurl = "root://%s/%s" % (host, newpath)
             return newurl
     return None
+
+
+def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndicator=" (...)"):
+    """
+    _compressStr_
+    Utility to zip a string and encode it.
+    If zipped encoded length is greater than maxLen,
+    truncate message until zip/encoded version
+    is within the limits allowed.
+    """
+    encodedStr = zlib.compress(message, compressLevel)
+    encodedStr = base64.b64encode(encodedStr)
+    if len(encodedStr) < maxLen or maxLen == -1:
+        return encodedStr
+
+    compressRate = 1. * len(encodedStr) / len(base64.b64encode(message))
+
+    # Estimate new length for message zip/encoded version
+    # to be less than maxLen.
+    # Also, append truncate indicator to message.
+    strLen = int((maxLen - len(truncateIndicator)) / compressRate)
+    message = message[:strLen] + truncateIndicator
+
+    encodedStr = zipEncodeStr(message, maxLen=-1)
+
+    # If new length is not short enough, truncate
+    # recursively by steps
+    while len(encodedStr) > maxLen:
+        message = message[:-steps - len(truncateIndicator)] + truncateIndicator
+        encodedStr = zipEncodeStr(message, maxLen=-1)
+
+    return encodedStr

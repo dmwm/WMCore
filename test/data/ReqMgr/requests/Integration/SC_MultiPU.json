@@ -19,7 +19,7 @@
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": ["Two steps, PU for Step1 without input dataset; Step2 using a different PU;",
-            "Step2 jobs will likely fail; Given 100EpL, tweak EpJ to 200 instead of 205"],
+            "Given 100EpL, tweak EpJ to 200 instead of 205"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 

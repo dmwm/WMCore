@@ -53,12 +53,11 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Add the subscription to the database
         """
-        existingTransaction = self.beginTransaction()
-
-        if self.exists():
+        if self.exists() is not False:
             self.load()
             return
 
+        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname="Subscriptions.New")
         action.execute(fileset=self["fileset"].id, type=self["type"],
                        split_algo=self["split_algo"],
@@ -541,8 +540,6 @@ class Subscription(WMBSBase, WMSubscription):
         jobGroupList = []
         nameList = []
 
-        wfid = self['workflow'].id
-
         # You have to do things in this order:
         # 1) First create Filesets, then jobGroups
         # 2) Second, create jobs pointing to jobGroups
@@ -641,12 +638,13 @@ class Subscription(WMBSBase, WMSubscription):
         fileAction.execute(jobDict=fileDict, conn=self.getDBConn(),
                            transaction=self.existingTransaction())
 
+        # wfid = self['workflow'].id
         # Add work units and associate them
-        wuAction = self.daofactory(classname='WorkUnit.Add')
-        wufAction = self.daofactory(classname='Jobs.AddWorkUnits')
+        # wuAction = self.daofactory(classname='WorkUnit.Add')
+        # wufAction = self.daofactory(classname='Jobs.AddWorkUnits')
 
         # Make a count of how many times each job appears in the list of jobFileRunLumis
-        jobUnitCounts = Counter([jid for jid, _, _, _ in jobFileRunLumis])
+        # jobUnitCounts = Counter([jid for jid, _, _, _ in jobFileRunLumis])
 
         # for jid, fid, run, lumi in jobFileRunLumis:
         #     wuAction.execute(taskid=wfid, fileid=fid, run=run, lumi=lumi, last_unit_count=jobUnitCounts[jid],

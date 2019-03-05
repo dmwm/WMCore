@@ -15,6 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
+import logging
+
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -104,18 +106,13 @@ class Workflow(WMBSBase, WMWorkflow):
         Write the workflow to the database.  If the workflow already exists in
         the database nothing will happen.
         """
+        if self.exists() is not False:
+            self.load()
+            return
 
         userid = self.insertUser()
 
         existingTransaction = self.beginTransaction()
-
-        self.id = self.exists()
-
-        if self.id != False:
-            self.load()
-            self.commitTransaction(existingTransaction)
-            return
-
         action = self.daofactory(classname="Workflow.New")
         action.execute(spec=self.spec, owner=userid, name=self.name,
                        task=self.task, wfType=self.wfType,
@@ -126,6 +123,7 @@ class Workflow(WMBSBase, WMWorkflow):
 
         self.id = self.exists()
         self.commitTransaction(existingTransaction)
+        logging.info("Workflow id %d created for %s", self.id, self.name)
         return
 
     def delete(self):
@@ -156,7 +154,7 @@ class Workflow(WMBSBase, WMWorkflow):
             result = action.execute(workflow=self.id,
                                     conn=self.getDBConn(),
                                     transaction=self.existingTransaction())
-        elif self.name != None:
+        elif self.name is not None:
             action = self.daofactory(classname="Workflow.LoadFromNameAndTask")
             result = action.execute(workflow=self.name, task=self.task,
                                     conn=self.getDBConn(),
@@ -187,7 +185,7 @@ class Workflow(WMBSBase, WMWorkflow):
         for outputID in results.keys():
             for outputMap in results[outputID]:
                 outputFileset = Fileset(id=outputMap["output_fileset"])
-                if outputMap["merged_output_fileset"] != None:
+                if outputMap["merged_output_fileset"] is not None:
                     mergedOutputFileset = Fileset(id=outputMap["merged_output_fileset"])
                 else:
                     mergedOutputFileset = None
@@ -210,7 +208,7 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         existingTransaction = self.beginTransaction()
 
-        if self.id == False:
+        if self.id is False:
             self.create()
 
         if outputIdentifier not in self.outputMap:
@@ -220,7 +218,7 @@ class Workflow(WMBSBase, WMWorkflow):
                                                  "merged_output_fileset": mergedOutputFileset})
 
         action = self.daofactory(classname="Workflow.InsertOutput")
-        if mergedOutputFileset != None:
+        if mergedOutputFileset is not None:
             mergedFilesetID = mergedOutputFileset.id
         else:
             mergedFilesetID = None

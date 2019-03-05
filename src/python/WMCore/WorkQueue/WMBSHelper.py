@@ -254,12 +254,12 @@ class WMBSHelper(WMConnectionBase):
         and phedex subscriptions, and filesets for each task below and including
         the given task.
         """
-        sub = self._createSubscriptionsInWMBS(task, fileset, alternativeFilesetClose)
+        self._createSubscriptionsInWMBS(task, fileset, alternativeFilesetClose)
 
         self._createWorkflowsInDBSBuffer()
         self._createDatasetSubscriptionsInDBSBuffer()
 
-        return sub
+        return
 
     def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False):
         """
@@ -285,12 +285,9 @@ class WMBSHelper(WMConnectionBase):
         subscription = Subscription(fileset=fileset, workflow=workflow,
                                     split_algo=task.jobSplittingAlgorithm(),
                                     type=task.getPrimarySubType())
-        if subscription.exists():
-            subscription.load()
-            msg = "Subscription %s already exists for %s (you may ignore file insertion messages below, existing files wont be duplicated)"
-            self.logger.info(msg % (subscription['id'], task.getPathName()))
-        else:
-            subscription.create()
+        subscription.create()
+
+        ### FIXME: I'm pretty sure we can improve how we handle this site white/black list
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
 
@@ -299,16 +296,17 @@ class WMBSHelper(WMConnectionBase):
 
         if self.topLevelSubscription is None:
             self.topLevelSubscription = subscription
-            logging.info("Top level subscription created: %s", subscription["id"])
+            logging.info("Top level subscription %s created for %s", subscription["id"], self.wmSpec.name())
         else:
-            logging.info("Child subscription created: %s", subscription["id"])
+            logging.info("Child subscription %s created for %s", subscription["id"], self.wmSpec.name())
 
         outputModules = task.getOutputModulesForTask()
         ignoredOutputModules = task.getIgnoredOutputModulesForTask()
         for outputModule in outputModules:
             for outputModuleName in outputModule.listSections_():
                 if outputModuleName in ignoredOutputModules:
-                    logging.info("IgnoredOutputModule set for %s, skipping fileset creation.", outputModuleName)
+                    msg = "%s has %s as IgnoredOutputModule, skipping fileset creation."
+                    logging.info(msg, task.getPathName(), outputModuleName)
                     continue
                 dataTier = getattr(getattr(outputModule, outputModuleName), "dataTier", '')
                 filesetName = self.outputFilesetName(task, outputModuleName, dataTier)
@@ -341,7 +339,7 @@ class WMBSHelper(WMConnectionBase):
                     workflow.addOutput(outputModuleName + dataTier, outputFileset,
                                        mergedOutputFileset)
 
-        return self.topLevelSubscription
+        return
 
     def addMCFakeFile(self):
         """Add a fake file for wmbs to run production over"""
@@ -405,37 +403,33 @@ class WMBSHelper(WMConnectionBase):
 
         self.createTopLevelFileset()
         try:
-            sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
+            self.createSubscription(self.topLevelTask, self.topLevelFileset)
         except Exception as ex:
             myThread = threading.currentThread()
             myThread.transaction.rollback()
             logging.exception("Failed to create subscription. Error: %s", str(ex))
             raise ex
 
-        if block != None:
-            logging.info('"%s" Injecting block %s (%d files) into wmbs', self.wmSpec.name(),
-                         self.block,
-                         len(block['Files']))
+        if block:
+            logging.info('"%s" Injecting block %s (%d files) into wmbs.',
+                         self.wmSpec.name(), self.block, len(block['Files']))
             addedFiles = self.addFiles(block)
-        # For MC case
         else:
-            logging.info(
-                '"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs', self.wmSpec.name(),
-                self.mask['FirstRun'],
-                self.mask['FirstLumi'],
-                self.mask['FirstEvent'],
-                self.mask['LastRun'],
-                self.mask['LastLumi'],
-                self.mask['LastEvent'])
+            # For MC case
+            logging.info('"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs',
+                         self.wmSpec.name(),
+                         self.mask['FirstRun'], self.mask['FirstLumi'], self.mask['FirstEvent'],
+                         self.mask['LastRun'], self.mask['LastLumi'], self.mask['LastEvent'])
             addedFiles = self.addMCFakeFile()
 
         self.commitTransaction(existingTransaction)
+        logging.info("Transaction committed: %s, for %s", not existingTransaction, self.wmSpec.name())
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = set()
         self.wmbsFilesToCreate = set()
 
-        return sub, addedFiles
+        return self.topLevelSubscription, addedFiles
 
     def addFiles(self, block):
         """
@@ -453,18 +447,20 @@ class WMBSHelper(WMConnectionBase):
                 self._addACDCFileToWMBSFile(acdcFile)
         else:
             self.isDBS = True
-            logging.info('Adding files into WMBS for %s', self.wmSpec.name())
             blockPNNs = block['PhEDExNodeNames']
+            logging.info('Adding files into WMBS for %s with PNNs: %s', self.wmSpec.name(), blockPNNs)
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, blockPNNs)
 
         # Add files to WMBS
-        logging.info('Inserting in bulk all the file info into WMBS for %s', self.wmSpec.name())
+        logging.info('Inserting %d files in bulk into WMBS for %s', len(self.wmbsFilesToCreate),
+                     self.wmSpec.name())
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
                                                                isDBS=self.isDBS)
         # Add files to DBSBuffer
-        logging.info('Inserting all the file info into DBSBuffer for %s', self.wmSpec.name())
+        logging.info('Inserting %d files in bulk into DBSBuffer for %s', len(self.dbsFilesToCreate),
+                     self.wmSpec.name())
         self._createFilesInDBSBuffer()
 
         self.topLevelFileset.markOpen(blockOpen)
@@ -713,7 +709,7 @@ class WMBSHelper(WMConnectionBase):
             # only add to DBSBuffer if is not unmerged file or it has parents.
             dbsFile = self._convertACDCFileToDBSFile(acdcFile)
             self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
-        
+
         logging.debug("WMBS ACDC File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         wmbsFile['inFileset'] = bool(inFileset)

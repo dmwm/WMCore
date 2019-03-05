@@ -83,6 +83,7 @@ config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.General.centralWMStatsURL = "Central WMStats URL"
+config.General.rucioAccount = "OVERWRITE_BY_SECRETS"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL

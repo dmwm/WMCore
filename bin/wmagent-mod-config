@@ -103,33 +103,14 @@ def modifyConfiguration(config, **args):
     config.Agent.hostName = localhost
 
     # configure MySQL specific settings
-    if args.get('mysql_socket'):
-        if hasattr(config, "CoreDatabase"):
-            config.CoreDatabase.socket = args['mysql_socket']
-        if hasattr(config, "AlertGenerator"):
-            # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
-            config.AlertGenerator.section_("mysqlCPUPoller")
-            config.AlertGenerator.mysqlCPUPoller.soft = 200  # [percent]
-            config.AlertGenerator.mysqlCPUPoller.critical = 250  # [percent]
-            config.AlertGenerator.mysqlCPUPoller.pollInterval = 60  # [second]
-            # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlCPUPoller.period = 300  # [second]
-            # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
-            config.AlertGenerator.section_("mysqlMemPoller")
-            config.AlertGenerator.mysqlMemPoller.soft = 20  # [percent]
-            config.AlertGenerator.mysqlMemPoller.critical = 25  # [percent]
-            config.AlertGenerator.mysqlMemPoller.pollInterval = 60  # [second]
-            # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlMemPoller.period = 300  # [second]
-            # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
-            config.AlertGenerator.section_("mysqlDbSizePoller")
-            config.AlertGenerator.mysqlDbSizePoller.soft = 20  # GB
-            config.AlertGenerator.mysqlDbSizePoller.critical = 25  # GB
-            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 600  # [second]
+    if args.get('mysql_socket') and hasattr(config, "CoreDatabase"):
+        config.CoreDatabase.socket = args['mysql_socket']
 
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
         config.General.centralWMStatsURL = args["wmstats_url"]
+        # Both PhEDExInjector and WorkQueueManager use it, so we better make it general
+        config.General.rucioAccount = args["rucio_account"]
         # t0 agent doesn't have reqmgr2_url
         if "reqmgr2_url" in args:
             config.General.ReqMgr2ServiceURL = args["reqmgr2_url"]
@@ -221,38 +202,6 @@ def modifyConfiguration(config, **args):
         config.UserFileCache.Webtools.port = int(args["ufc_port"])
         config.UserFileCache.views.active.userfilecache.serviceURL = args["ufc_service_url"]
         config.UserFileCache.userCacheDir = args["ufc_cachedir"]
-
-    # hating having to add this when WMAgentConfig.py has everything set up ...
-    if hasattr(config, "AlertProcessor"):
-        if hasattr(config.AlertProcessor.critical.sinks, "couch"):
-            config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
-        if hasattr(config.AlertProcessor.soft.sinks, "couch"):
-            config.AlertProcessor.soft.sinks.couch.url = args["couch_url"]
-        # the AlertCollector database has be created beforehand (and couchapp pushed), this
-        # location will change in the future , as described on the ticket 1640
-        if hasattr(config.AlertProcessor.critical.sinks, "rest"):
-            config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
-        if hasattr(config.AlertProcessor.soft.sinks, "rest"):
-            config.AlertProcessor.soft.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
-        if hasattr(config.AlertProcessor.critical.sinks, "file"):
-            config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(args['working_dir'],
-                                                                                "AlertsFileSinkCritical.json")
-        if hasattr(config.AlertProcessor.soft.sinks, "file"):
-            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'],
-                                                                            "AlertsFileSinkSoft.json")
-        if hasattr(config.AlertProcessor.critical.sinks, "email"):
-            config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
-        if hasattr(config.AlertProcessor.soft.sinks, "email"):
-            config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
-    if hasattr(config, "AlertGenerator"):
-        if hasattr(config.AlertGenerator, "couchDbSizePoller"):
-            config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]
-        if hasattr(config.AlertGenerator, "couchCPUPoller"):
-            config.AlertGenerator.couchCPUPoller.couchURL = args["couch_url"]
-        if hasattr(config.AlertGenerator, "couchMemPoller"):
-            config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
-        if hasattr(config.AlertGenerator, "couchErrorsPoller"):
-            config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
 
     # custom test global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
@@ -347,7 +296,7 @@ def main(argv=None):
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
                                          "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
                                          "dqm_url=", "dashboard_url=", "requestcouch_url=", "central_logdb_url=",
-                                         "wmarchive_url=", "amq_credentials="])
+                                         "wmarchive_url=", "amq_credentials=", "rucio_account="])
 
         except getopt.error as msg:
             raise Usage(msg)
@@ -370,7 +319,7 @@ def main(argv=None):
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
                           '--dashboard_url', '--requestcouch_url', '--central_logdb_url',
-                          '--wmarchive_url', '--amq_credentials'):
+                          '--wmarchive_url', '--amq_credentials', '--rucio_account'):
                 parameters[option[2:]] = value
 
 

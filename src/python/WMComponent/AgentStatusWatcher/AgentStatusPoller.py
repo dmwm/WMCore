@@ -49,15 +49,20 @@ class AgentStatusPoller(BaseWorkerThread):
         self.credThresholds = {'proxy': {'error': 3, 'warning': 5},
                                'certificate': {'error': 10, 'warning': 20}}
 
-        localWQUrl = config.AnalyticsDataCollector.localQueueURL
-        self.workqueueDS = WorkQueueDS(localWQUrl)
-
         # Monitoring setup
         self.userAMQ = getattr(config.AgentStatusWatcher, "userAMQ", None)
         self.passAMQ = getattr(config.AgentStatusWatcher, "passAMQ", None)
         self.postToAMQ = getattr(config.AgentStatusWatcher, "enableAMQ", False)
         self.topicAMQ = getattr(config.AgentStatusWatcher, "topicAMQ", None)
         self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('dashb-mb.cern.ch', 61113)])
+
+        # T0 doesn't have WorkQueue, so some monitoring/replication code has to be skipped here
+        if hasattr(self.config, "Tier0Feeder"):
+            self.isT0agent = True
+        else:
+            self.isT0agent = False
+            localWQUrl = config.AnalyticsDataCollector.localQueueURL
+            self.workqueueDS = WorkQueueDS(localWQUrl)
 
     def setUpCouchDBReplication(self):
 
@@ -68,13 +73,13 @@ class AgentStatusPoller(BaseWorkerThread):
 
         self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
                                     'filter': "WMStatsAgent/repfilter"})
-        # TODO: tier0 specific code - need to make it generic
-        if hasattr(self.config, "Tier0Feeder"):
+        if self.isT0agent:
             t0Source = self.config.Tier0Feeder.requestDBName
             t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
             self.replicatorDocs.append({'source': t0Source, 'target': t0Target,
                                         'filter': "T0Request/repfilter"})
-        else:  # set up workqueue replication
+        else:
+            # set up workqueue replication
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
             childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
@@ -126,8 +131,7 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo["WMBS_INFO"] = wmbsInfo
             logging.info("WMBS data collected in: %d secs", timeSpent)
 
-            if not hasattr(self.config, "Tier0Feeder"):
-                # Tier0 Agent doesn't have LQ.
+            if not self.isT0agent:
                 timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
                 localWQInfo['total_query_time'] = int(timeSpent)
                 agentInfo["LocalWQ_INFO"] = localWQInfo
@@ -379,8 +383,12 @@ class AgentStatusPoller(BaseWorkerThread):
         siteDocs = []
         thresholds = dataStats['WMBS_INFO'].pop('thresholds', {})
         thresholdsGQ2LQ = dataStats['WMBS_INFO'].pop('thresholdsGQ2LQ', {})
-        possibleJobsPerSite = dataStats['LocalWQ_INFO'].pop('possibleJobsPerSite', {})
-        uniqueJobsPerSite = dataStats['LocalWQ_INFO'].pop('uniqueJobsPerSite', {})
+        if self.isT0agent:
+            possibleJobsPerSite = {}
+            uniqueJobsPerSite = {}
+        else:
+            possibleJobsPerSite = dataStats['LocalWQ_INFO'].pop('possibleJobsPerSite', {})
+            uniqueJobsPerSite = dataStats['LocalWQ_INFO'].pop('uniqueJobsPerSite', {})
 
         for site in sorted(thresholds):
             siteDoc = {}
@@ -416,8 +424,11 @@ class AgentStatusPoller(BaseWorkerThread):
         :param dataStats: dictionary with metrics previously posted to WMStats
         :return: list of dictionaries with the wma_work_info MonIT docs
         """
-        docType = "wma_work_info"
         workDocs = []
+        if self.isT0agent:
+            return workDocs
+
+        docType = "wma_work_info"
         workByStatus = dataStats['LocalWQ_INFO'].pop('workByStatus', {})
         for status, info in workByStatus.items():
             workDoc = {}
@@ -518,7 +529,8 @@ class AgentStatusPoller(BaseWorkerThread):
         summaryDoc['agent_team'] = dataStats['agent_team']
         summaryDoc['agent_version'] = dataStats['agent_version']
         summaryDoc['agent_status'] = dataStats['status']
-        summaryDoc['wq_query_time'] = dataStats['LocalWQ_INFO']['total_query_time']
+        if not self.isT0agent:
+            summaryDoc['wq_query_time'] = dataStats['LocalWQ_INFO']['total_query_time']
         summaryDoc['wmbs_query_time'] = dataStats['WMBS_INFO']['total_query_time']
         summaryDoc['drain_mode'] = dataStats['drain_mode']
         summaryDoc['down_components'] = dataStats['down_components']

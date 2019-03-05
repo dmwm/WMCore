@@ -185,23 +185,25 @@ class TestInit(object):
         if not useDefault:
             defaultModules = []
 
-        # filter out unique modules
-        modules = {}
+        # filter for unique modules
+        modules = []
         for module in (defaultModules + customModules):
-            modules[module] = 'done'
+            if module not in modules:
+                modules.append(module)
 
         try:
-            self.init.setSchema(modules.keys(), params = params)
+            self.init.setSchema(modules, params = params)
         except Exception as ex:
             print(traceback.format_exc())
             raise ex
 
         # store the list of modules we've added to the DB
-        modules = {}
+        # again filter for unique modules
+        modules = []
         for module in (defaultModules + customModules + self.currModules):
-            modules[module] = 'done'
-
-        self.currModules = modules.keys()
+            if module not in modules:
+                modules.append(module)
+        self.currModules = modules
 
         return
 

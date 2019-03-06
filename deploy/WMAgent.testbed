@@ -23,3 +23,6 @@ REQMGR2_URL=https://cmsweb-testbed.cern.ch/reqmgr2
 CENTRAL_LOGDB_URL=https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb
 WMARCHIVE_URL=https://cmsweb-testbed.cern.ch/wmarchive
 AMQ_CREDENTIALS=
+RUCIO_ACCOUNT="wmagent_testing"
+RUCIO_HOST=http://cms-rucio-testbed.cern.ch
+RUCIO_AUTH=https://cms-rucio-tb-authz.cern.ch

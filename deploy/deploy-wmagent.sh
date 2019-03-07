@@ -26,7 +26,7 @@
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.20.patch3 -d HG1902e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.20.patch2 -d HG1902e -t testbed-vocms001 -p "9016 9009" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.20.patch5 -d HG1902e -t testbed-vocms001 -p "9080" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
 
 IAM=`whoami`
@@ -350,7 +350,6 @@ if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 2, 'Harvesting': 2}+0+" $MANAGE_DIR/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
 fi

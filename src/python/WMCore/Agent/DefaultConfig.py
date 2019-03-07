@@ -18,7 +18,7 @@ DEFAULT_AGENT_CONFIG = {
     # ExitCodes returned by jobs which doesn't need to be retried
     "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 8501, 50660, 50661, 50664, 71102],
     # Number of times a job will be retried
-    "MaxRetries" : {'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2},
+    "MaxRetries" : {'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 4},
     # Speed drain thresholds - a draining agent's config is updated when # of remaining condor jobs is below a threshold
     # CondorPriority: increase condor priority for all queued Production/Processing jobs to 999999
     # NoJobRetries: change MaxRetries to 0, all job errors are terminal

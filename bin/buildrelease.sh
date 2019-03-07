@@ -56,12 +56,40 @@ echo "Updating version string ..."
 perl -p -i -e "s{__version__ =.*}{__version__ = '$TAG'}g" src/python/WMCore/__init__.py
 
 echo "Generating CHANGES file"
-LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+$")
+LASTCOMMITLINE=$(git log -n1 --oneline -E --grep="^[0-9]+\.[0-9]+\.[0-9]+\.*(pre|patch)*[0-9]*$")
 LASTCOMMIT=$(echo ${LASTCOMMITLINE} | awk '{print $1}')
 LASTVERSION=$(echo ${LASTCOMMITLINE} | awk '{print $2}')
+
 TMP=$(mktemp -t wmcore.${LASTVERSION}.XXXXX)
+TMP_INFO=$(mktemp -t info.${LASTVERSION}.XXXXX)
+TMP_COMMIT_HASHES=$(mktemp -t hashes.${LASTVERSION}.XXXXX)
+TMP_PR=$(mktemp -t pr.${LASTVERSION}.XXXXX)
+
 echo "${LASTVERSION} to ${TAG}:" >> $TMP
-git log --pretty=format:'  - %s' ${LASTCOMMIT}.. >> $TMP
+
+# Grab all the commit hashes since the last release
+git log --no-merges  --pretty=format:'%H' ${LASTCOMMIT}.. >> $TMP_COMMIT_HASHES
+echo "" >> $TMP_COMMIT_HASHES
+
+# Grab all the commit messages and committers since the last release
+git log --no-merges  --pretty=format:'  - %s (%aN)' ${LASTCOMMIT}.. >> $TMP_INFO
+echo "" >> $TMP_INFO
+
+# Use gitub public API to fetch pull request # from commit hash
+cat $TMP_COMMIT_HASHES | while read line; do
+  PR=$(curl -s https://api.github.com/search/issues?q=sha:$line | grep -Po '\"number\": \K[0-9]+')
+  # Commits should have an associated PR, but just in case...
+  if [[ $PR ]]
+    then
+    echo "#$PR" >> $TMP_PR
+  else
+    echo "" >> $TMP_PR
+  fi
+done
+
+# Paste info and PR files together
+paste -d " " $TMP_INFO $TMP_PR >> $TMP
+
 echo "" >> $TMP
 echo "" >> $TMP
 cat CHANGES >> $TMP

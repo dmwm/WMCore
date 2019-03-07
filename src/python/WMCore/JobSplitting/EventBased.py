@@ -56,7 +56,10 @@ class EventBased(JobFactory):
                 couchDB = kwargs.get('couchDB')
                 filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
-                logging.info('Creating jobs for ACDC fileset %s', filesetName)
+                logging.info('Loading ACDC info for collectionName: %s, with filesetName: %s', collectionName, filesetName)
+                ### FIXME Wait, don't we have all this data in WMBS already? Why querying
+                # the ACDCServer again to get the same data that is already stored
+                # in the WMBS table!!!!!?!?!
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
             except Exception as ex:

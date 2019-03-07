@@ -387,7 +387,9 @@ class DataCollectionService_t(unittest.TestCase):
                           u'lfn': u'/store/unmerged/fileB.root',
                           u'locations': [u'T1_US_FNAL_MSS'],
                           u'parents': ['file2'],
-                          u'runs': [{u'lumis': [4, 5, 6], u'run_number': 1}, {u'lumis': [9], u'run_number': 1}]},
+                          u'runs': [{u'lumis': [4, 5, 6], u'run_number': 1},
+                                    {u'lumis': [9], u'run_number': 1},
+                                    {u'lumis': [7, 8], u'run_number': 7}]},
                          {u'events': 10,
                           u'lfn': u'/store/unmerged/fileC.root',
                           u'locations': [u'T1_US_FNAL_Disk', u'T2_US_MIT'],
@@ -404,18 +406,26 @@ class DataCollectionService_t(unittest.TestCase):
             if item['lfn'] == '/store/unmerged/fileA.root':
                 self.assertEqual(item['events'], 165)
                 self.assertItemsEqual(item['locations'], ['T2_CH_CERN', 'T2_CH_CERNBOX'])
-                self.assertItemsEqual(item['runs'], [{'lumis': [1810823], 'run_number': 1},
-                                                     {'lumis': [1810823], 'run_number': 2},
-                                                     {'lumis': [1810824], 'run_number': 1}])
+                for runLumi in item['runs']:
+                    if runLumi['run_number'] == 1:
+                        self.assertItemsEqual(runLumi['lumis'], [1810824, 1810823])
+                    elif runLumi['run_number'] == 2:
+                        self.assertItemsEqual(runLumi['lumis'], [1810823])
+                    else:
+                        raise AssertionError("This should never happen")
                 self.assertEqual(item['parents'], [])
             elif item['lfn'] == '/store/unmerged/fileB.root':
                 self.assertEqual(item['events'], 50)
                 self.assertItemsEqual(item['locations'], ['T1_US_FNAL_MSS'])
-                self.assertItemsEqual(item['runs'], [{'lumis': [1, 2, 3], 'run_number': 1},
-                                                     {'lumis': [4, 5, 6], 'run_number': 1},
-                                                     {'lumis': [9], 'run_number': 1}])
+                for runLumi in item['runs']:
+                    if runLumi['run_number'] == 1:
+                        self.assertItemsEqual(runLumi['lumis'], [1, 2, 3, 4, 5, 6, 9])
+                    elif runLumi['run_number'] == 7:
+                        self.assertItemsEqual(runLumi['lumis'], [7, 8])
+                    else:
+                        raise AssertionError("This should never happen")
                 self.assertItemsEqual(item['parents'], ['file1', 'file2', 'file3'])
-            elif item['lfn'] == '/store/unmerged/fileB.root':
+            elif item['lfn'] == '/store/unmerged/fileC.root':
                 self.assertEqual(item['events'], 10)
                 self.assertItemsEqual(item['locations'], ['T1_US_FNAL_Disk', 'T2_US_MIT'])
                 self.assertItemsEqual(item['runs'], [{'lumis': [111], 'run_number': 222}])

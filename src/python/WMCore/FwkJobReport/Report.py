@@ -278,6 +278,18 @@ class Report(object):
         """
         return getattr(self.data, 'siteName', {})
 
+
+    def _setSiteName(self, site):
+        """
+        _setSiteName_
+
+        Set the site name attribute (no step specific)
+        """
+        setattr(self.data, 'siteName', site)
+
+        return
+
+
     def getExitCodes(self):
         """
         _getExitCodes_
@@ -554,12 +566,13 @@ class Report(object):
         self.report.cleanup.removed.fileCount += 1
         return
 
-    def addError(self, stepName, exitCode, errorType, errorDetails):
+    def addError(self, stepName, exitCode, errorType, errorDetails, siteName=None):
         """
         _addError_
 
         Add an error report with an exitCode, type/class of error and
-        details of the error as a string
+        details of the error as a string.
+        Also, report attempted site if error happened before landing on it.
         """
         if self.retrieveStep(stepName) is None:
             # Create a step and set it to failed
@@ -583,6 +596,10 @@ class Report(object):
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
         self.setStepStatus(stepName=stepName, status=exitCode)
+
+        if siteName:
+            self._setSiteName(site=siteName)
+
         return
 
     def addSkippedFile(self, lfn, pfn):

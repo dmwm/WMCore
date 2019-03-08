@@ -10,8 +10,9 @@ import threading
 # ORA-03135: connection lost contact
 # ORA-12545: Connect failed because target host or object does not exist
 # ORA-00060: deadlock detected while waiting for resource
+# ORA-01033: ORACLE initialization or shutdown in progress
 # and those two MySQL exceptions
-DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545", "ORA-00060",
+DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545", "ORA-00060", "ORA-01033",
                            "MySQL server has gone away", "Lock wait timeout exceeded"]
 
 

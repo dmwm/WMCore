@@ -194,7 +194,11 @@ class UnifiedTransferorManager(object):
         self.config = config
         self.reqmgrAux = ReqMgrAux(self.config.reqmgr2_url)
         self.requests = {}
-        self.reqManager = RequestManager()
+        group = getattr(config, "group", "DataOps")
+        dbFileName = getattr(config, "dbFileName", None)
+        interval = getattr(config, "interval", 3600)
+        verbose = getattr(config, "verbose", False)
+        self.reqManager = RequestManager(group, dbFileName, interval, verbose)
         self.taskManager = TaskManager(nworkers=3)
 
     def status(self):

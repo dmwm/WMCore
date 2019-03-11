@@ -27,8 +27,10 @@ def mergeFilesInfo(chunkFiles):
     """
     _mergeFilesInfo_
 
-    Receive a list of dicts with acdc files info and merge them together.
-    Different process for different input type (data x fake file)
+    Receive a list of dicts with acdc files information and merge them when
+    it belongs to the same file. It also removes any possible duplicate lumi
+    section (for the same file) in case ErrorHandler happened to upload the
+    same job error document twice.
     """
     mergedFiles = {}
 
@@ -36,28 +38,71 @@ def mergeFilesInfo(chunkFiles):
     if chunkFiles[0]['lfn'].startswith('MCFakeFile'):
         logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
         for acdcFile in chunkFiles:
-            if acdcFile['lfn'] not in mergedFiles:
-                mergedFiles[acdcFile['lfn']] = acdcFile
+            fName = acdcFile['lfn']
+            if fName not in mergedFiles:
+                mergedFiles[fName] = acdcFile
             else:
-                mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
-                mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
-        logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
+                lumiSet = set(acdcFile['runs'][0]['lumis'])
+                if lumiSet.issubset(set(mergedFiles[fName]['runs'][0]['lumis'])):
+                    # every element in lumiSet is already in mergedFiles, it's a dup!
+                    continue
+                mergedFiles[fName]['events'] += acdcFile['events']
+                mergedFiles[fName]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
     else:
         logging.info("Merging %d real input files...", len(chunkFiles))
         for acdcFile in chunkFiles:
             fName = acdcFile['lfn']
-            if acdcFile['lfn'] not in mergedFiles:
+            if fName not in mergedFiles:
                 mergedFiles[fName] = acdcFile
             else:
+                # if one run/lumi pair is there, then it's a duplicate job
+                runNum = acdcFile['runs'][0]['run_number']
+                lumiSet = set(acdcFile['runs'][0]['lumis'])
+                if _isRunMaskDuplicate(runNum, lumiSet, mergedFiles[fName]['runs']):
+                    continue
                 # union of parents
                 allParents = list(set(mergedFiles[fName]['parents']).union(acdcFile['parents']))
                 mergedFiles[fName]['parents'] = allParents
                 # just add up run/lumi pairs (don't try to merge them)
                 mergedFiles[fName]['runs'].extend(acdcFile['runs'])
-        logging.info("resulted in %d final real files.", len(mergedFiles))
+        _mergeRealDataRunLumis(mergedFiles)
 
+    logging.info(" ... resulted in %d unique files.", len(mergedFiles))
     return mergedFiles.values()
 
+
+def _isRunMaskDuplicate(run, lumis, runLumis):
+    """
+    Test whether run and lumi is a subset of one of the
+    runLumi pairs in runLumis
+    :param run: integer run number
+    :param lumi: set of lumis
+    :param runLumis: list of dictionaries containing run and lumis
+    """
+    for runLumi in runLumis:
+        if run == runLumi['run_number']:
+            if lumis.issubset(runLumi['lumis']):
+                return True
+    return False
+
+def _mergeRealDataRunLumis(mergedFiles):
+    """
+    Function to scan and merge run/lumi pairs in the same file, thus
+    getting rid of duplicate lumi sections in real data.
+    :param mergedFiles: list of dictionaries with ACDC file info
+    :return: update data structure in place
+    """
+    for fname in mergedFiles:
+        runLumis = {}
+        for item in mergedFiles[fname]['runs']:
+            runLumis.setdefault(item['run_number'], [])
+            runLumis[item['run_number']].extend(item['lumis'])
+        # now write those back to the original data structure
+        mergedFiles[fname]['runs'] = []
+        for run, lumis in runLumis.items():
+            mergedFiles[fname]['runs'].append({'run_number': run,
+                                               'lumis': list(set(lumis))})
+    return
 
 class ACDCDCSException(WMException):
     """
@@ -305,12 +350,13 @@ class DataCollectionService(CouchService):
         Query ACDC for all of the files in the given collection and task.
         Return an entry for each file with lumis and event info.
         Format is:
-        [{'lfn' : 'someLfn',
-          'runs' : { run0 : [lumi0,lumi1], },
-          'events' :}]
+        [{'lfn': 'someLfn',
+          'first_event': XXX,
+          'lumis': [lumi0,lumi1],
+          'events': XXX}]
         """
-
         files = self._getFilesetInfo(collectionID, taskName)
+        files = mergeFilesInfo(files)
 
         acdcInfo = []
         for value in files:

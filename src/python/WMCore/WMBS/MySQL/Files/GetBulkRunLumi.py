@@ -7,6 +7,7 @@ MySQL implementation of GetBulkRunLumi
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetBulkRunLumi(DBFormatter):
     """
     Note that this is ID based.  I may have to change it back
@@ -18,7 +19,7 @@ class GetBulkRunLumi(DBFormatter):
                WHERE flr.fileid = :id
     """
 
-    def getBinds(self, files = None):
+    def getBinds(self, files=None):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
@@ -32,19 +33,17 @@ class GetBulkRunLumi(DBFormatter):
         res = self.formatDict(result)
 
         for entry in res:
-            id  = entry['id']
+            fileid = entry['id']
             run = entry['run']
-            if not id in finalResult.keys():
-                finalResult[id] = {}
-            if not run in finalResult[id].keys():
-                finalResult[id][run] = []
-            finalResult[id][run].append(entry['lumi'])
+            finalResult.setdefault(fileid, {})
+            finalResult[fileid].setdefault(run, [])
+            finalResult[fileid][run].append(entry['lumi'])
 
         return finalResult
 
-    def execute(self, files = None, conn = None, transaction = False):
+    def execute(self, files=None, conn=None, transaction=False):
         binds = self.getBinds(files)
 
         result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+                                      conn=conn, transaction=transaction)
         return self.format(result)

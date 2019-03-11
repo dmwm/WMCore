@@ -27,7 +27,7 @@ class DrainStatusPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
-        self.drainAPI = DrainStatusAPI()
+        self.drainAPI = DrainStatusAPI(config)
         self.condorAPI = PyCondorAPI()
         self.agentConfig = {}
         self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
@@ -51,6 +51,7 @@ class DrainStatusPoller(BaseWorkerThread):
             if thresholdsHit:
                 logging.info("Updating agent configuration for speed drain...")
                 self.updateAgentSpeedDrainConfig(thresholdsHit)
+            # now collect drain statistics
             try:
                 DrainStatusPoller.drainStats = self.drainAPI.collectDrainInfo()
                 logging.info("Finished collecting agent drain status.")

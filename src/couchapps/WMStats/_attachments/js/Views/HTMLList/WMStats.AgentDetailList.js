@@ -38,7 +38,9 @@ WMStats.namespace("AgentDetailList");
                               agentInfo.alert.agent_update  + "</li>";
             htmlstr += "<li><b>data last updated:</b> " + agentInfo.alert.data_update  + "</li>";
             htmlstr += "<li><b>status:</b> " + agentInfo.alert.message + "</li>";
-            htmlstr += "<li><b>team:</b> " + agentInfo.agent_team+ "</li>";
+            if (agentInfo.agent_team) {
+                htmlstr += "<li><b>team:</b> " + agentInfo.agent_team+ "</li>";
+            }
         };
         var componentsDown = agentInfo.down_components;
         if (componentsDown && (componentsDown.length > 0)) {
@@ -69,8 +71,21 @@ WMStats.namespace("AgentDetailList");
                 htmlstr += "<li>dbs open blocks (" + agentInfo.drain_stats.upload_status.dbs_open_blocks + ")</li>";
                 htmlstr += "<li>dbs not uploaded (" + agentInfo.drain_stats.upload_status.dbs_notuploaded + ")</li>";
                 htmlstr += "<li>phedex not uploaded (" + agentInfo.drain_stats.upload_status.phedex_notuploaded + ")</li>";
+                for (var key in agentInfo.drain_stats.global_wq_status) {
+                    htmlstr += "<li>global WQ in '" + key + "' status (" + agentInfo.drain_stats.global_wq_status[key] + ")</li>";
+                }
+                for (var key in agentInfo.drain_stats.local_wq_status) {
+                    htmlstr += "<li>local WQ in '" + key + "' status (" + agentInfo.drain_stats.local_wq_status[key] + ")</li>";
+                }
+                for (var key in agentInfo.drain_stats.local_wqinbox_status) {
+                    htmlstr += "<li>local WQInbox in '" + key + "' status (" + agentInfo.drain_stats.local_wqinbox_status[key] + ")</li>";
+                }
+                // only print job information that are != than 0
+                htmlstr += "<li>there are no wmbs jobs in the agent, except for...</li>";
                 for (var key in agentInfo.WMBS_INFO.wmbsCountByState) {
-                    htmlstr += "<li>jobs in '" + key + "' state (" + agentInfo.WMBS_INFO.wmbsCountByState[key] + ")</li>";
+                    if (agentInfo.WMBS_INFO.wmbsCountByState[key]) {
+                        htmlstr += "<li>  jobs in '" + key + "' state (" + agentInfo.WMBS_INFO.wmbsCountByState[key] + ")</li>";
+                    }
                 }
             }
             htmlstr += "</ul>"

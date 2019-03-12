@@ -482,7 +482,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             job['fwjr'] = Report()
             if exitCode in [71102, 71104]:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed",
-                                     WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleSites']))
+                                     WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleSites']),
+                                     ', '.join(job['possibleSites']))
             elif exitCode in [71101]:
                 # there is no possible site
                 if job.get("fileLocations"):

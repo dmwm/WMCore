@@ -59,8 +59,10 @@ class AgentStatusPoller(BaseWorkerThread):
         # T0 doesn't have WorkQueue, so some monitoring/replication code has to be skipped here
         if hasattr(self.config, "Tier0Feeder"):
             self.isT0agent = True
+            self.producer = "tier0wmagent"
         else:
             self.isT0agent = False
+            self.producer = "wmagent"
             localWQUrl = config.AnalyticsDataCollector.localQueueURL
             self.workqueueDS = WorkQueueDS(localWQUrl)
 
@@ -344,7 +346,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         # and finally post them all to AMQ
         logging.info("Found %d documents to post to AMQ", len(allDocs))
-        self.uploadToAMQ(allDocs, "wmagent", dataStats['agent_url'], dataStats['timestamp'])
+        self.uploadToAMQ(allDocs, dataStats['agent_url'], dataStats['timestamp'])
 
 
     def _buildMonITPrioDocs(self, dataStats):
@@ -537,13 +539,12 @@ class AgentStatusPoller(BaseWorkerThread):
         summaryDocs.append(summaryDoc)
         return summaryDocs
 
-    def uploadToAMQ(self, docs, producer, agentUrl, timeS):
+    def uploadToAMQ(self, docs, agentUrl, timeS):
         """
         _uploadToAMQ_
 
-        Sends data to AMQ, which ends up in elastic search.
+        Sends data to AMQ, which ends up in the MonIT infrastructure.
         :param docs: list of documents/dicts to be posted
-        :param producer: service name that's providing this info
         """
         if not docs:
             logging.info("There are no documents to send to AMQ")
@@ -552,12 +553,12 @@ class AgentStatusPoller(BaseWorkerThread):
         for doc in docs:
             doc['agent_url'] = agentUrl
 
-        docType = "cms_%s_info" % producer
+        docType = "cms_%s_info" % self.producer
         logging.debug("Sending the following data to AMQ %s", pformat(docs))
         try:
             stompSvc = StompAMQ(username=self.userAMQ,
                                 password=self.passAMQ,
-                                producer=producer,
+                                producer=self.producer,
                                 topic=self.topicAMQ,
                                 host_and_ports=self.hostPortAMQ,
                                 logger=logging)

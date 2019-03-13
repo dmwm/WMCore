@@ -26,9 +26,7 @@ import json
 import os
 import sys
 import time
-from collections import Counter
 from copy import copy
-from pprint import pformat
 
 from dbs.apis.dbsClient import DbsApi
 
@@ -44,16 +42,20 @@ DEFAULT_DICT = {
     "RequestString": "UPDATEME",
     "ScramArch": "UPDATEME",
     "SiteWhitelist": "UPDATEME",  # Will be picked by Unified and posted again at assignment
-    "AcquisitionEra": "StoreResults",
+    "AcquisitionEra": "UPDATEME",
+    "ProcessingVersion": 1,  # will be updated too
     "Campaign": "StoreResults",
     "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
     "GlobalTag": "crab3_tag",
     "Memory": 2000,
-    "ProcessingVersion": 1,
     "RequestPriority": 999999,
     "RequestType": "StoreResults",
     "SizePerEvent": 512,
     "TimePerEvent": 1}
+
+
+MANDATORY_FIELDS = {"CMSSWVersion", "ScramArch", "DbsUrl",
+                    "InputDataset", "SiteWhitelist", "PhysicsGroup"}
 
 
 def main():
@@ -71,7 +73,6 @@ def main():
         if newDict is None:
             # user provided incomplete data (or mistyped something)
             continue
-        # print("Creating StoreResults workflow for:\n%s" % pformat(newDict))
         workflow = submitWorkflow(newDict)
         approveRequest(workflow)
     sys.exit(0)
@@ -93,9 +94,9 @@ def buildRequest(userDict):
     Expects the following user data:
       CMSSWVersion, ScramArch, DbsUrl, InputDataset, SiteWhitelist and PhysicsGroup 
     """
-    if Counter(userDict.keys()) != Counter(["CMSSWVersion", "ScramArch", "DbsUrl",
-                                            "InputDataset", "SiteWhitelist", "PhysicsGroup"]):
+    if set(userDict.keys()) != MANDATORY_FIELDS:
         print("ERROR: user input data is incomplete: %s" % userDict)
+        print("User json *must* have these fields: %s" % MANDATORY_FIELDS)
         return None
 
     newSchema = copy(DEFAULT_DICT)
@@ -106,8 +107,12 @@ def buildRequest(userDict):
     # Set PrepID according to the date and time
     newSchema["PrepID"] = "StoreResults-%s" % time.strftime("%d%m%y-%H%M%S")
     # Truncate the ProcessingString, otherwise it can be larger than allowed
-    _, primDset, procDset, _ = newSchema['InputDataset'].split("/")
-    newSchema["ProcessingString"] = procDset.split("-")[1:-1][0][:80]  # first 80 chars
+    primDset, procDset, _tier = newSchema['InputDataset'].split("/")[1:]
+    acqEra, procStr = procDset.split("-", 1)
+    newSchema["AcquisitionEra"] = acqEra  # should we worry about lenght limits?
+    procStr, procVer = procStr.rsplit("-", 1)
+    newSchema["ProcessingString"] = "StoreResults_" + procStr[:67]  # limit to 80 chars
+    newSchema["ProcessingVersion"] = int(procVer[1:])
     # Use PrimaryDataset and ProcessedDataset in the RequestString
     newSchema["RequestString"] = primDset[:50] + "-" + procDset[:50]
     return newSchema

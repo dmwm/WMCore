@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from xml.dom.minidom import parseString
 
 from WMCore.Services.PhEDEx import XMLDrop
@@ -29,10 +28,6 @@ class PhEDEx(Service):
         if 'endpoint' not in httpDict:
             httpDict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
         httpDict.setdefault('cacheduration', 0)
-
-        for item in sys.path:
-            if 'rucio' in item:
-                print "AMR PATH: %s" % item
 
         Service.__init__(self, httpDict)
 

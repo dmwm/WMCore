@@ -60,6 +60,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.pid = None
         self.uid = os.getuid()
         self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
+        self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None
@@ -68,7 +69,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.pcpu = []
         self.pmem = []
 
-        self.maxRSS = None
+        self.maxPSS = None
         self.softTimeout = None
         self.hardTimeout = None
         self.logPath = None
@@ -95,7 +96,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         # Set the steps we want to watch
         self.watchStepTypes = args.get('WatchStepTypes', ['CMSSW', 'PerfTest'])
 
-        self.maxRSS = args.get('maxRSS', None)
+        self.maxPSS = args.get('maxPSS', args.get('maxRSS'))
         self.softTimeout = args.get('softTimeout', None)
         self.hardTimeout = args.get('hardTimeout', None)
         self.numOfCores = args.get('cores', None)
@@ -159,7 +160,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         killProc = False
         killHard = False
         reason = ''
-        errorCodeLookup = {'RSS': 50660,
+        errorCodeLookup = {'PSS': 50660,
                            'Wallclock time': 50664,
                            '': 99999}
 
@@ -182,33 +183,47 @@ class PerformanceMonitor(WMRuntimeMonitor):
             # Then we have no step PID, we can do nothing
             return
 
-        # Now we run the monitor command and collate the data
-        cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(cmd)
+        # Now we run the ps monitor command and collate the data
+        # Gathers RSS, %CPU and %MEM statistics from ps
+        ps_cmd = self.monitorBase % (stepPID, stepPID)
+        stdout, _stderr, _retcode = subprocessAlgos.runCommand(ps_cmd)
 
-        output = stdout.split()
-        if not len(output) > 6:
+        ps_output = stdout.split()
+        if not len(ps_output) > 6:
             # Then something went wrong in getting the ps data
             msg = "Error when grabbing output from process ps\n"
-            msg += "output = %s\n" % output
-            msg += "command = %s\n" % self.monitorCommand
+            msg += "output = %s\n" % ps_output
+            msg += "command = %s\n" % ps_cmd
             logging.error(msg)
             return
 
-        # ps returns data in kiloBytes, let's make it megaBytes
-        # I'm so confused with these megabytes and mebibytes...
-        rss = int(output[2]) // 1000  # convert it to MiB
-        logging.info("Retrieved following performance figures:")
-        logging.info("RSS: %s; PCPU: %s; PMEM: %s", output[2], output[3], output[4])
+        # run the command to gather PSS memory statistics from /proc/<pid>/smaps
+        smaps_cmd = self.pssMemoryCommand % (stepPID)
+        stdout, _stderr, _retcode = subprocessAlgos.runCommand(smaps_cmd)
+
+        smaps_output = stdout.split()
+        if not len(smaps_output) == 1:
+            # Then something went wrong in getting the smaps data
+            msg = "Error when grabbing output from smaps\n"
+            msg += "output = %s\n" % smaps_output
+            msg += "command = %s\n" % smaps_cmd
+            logging.error(msg)
+            return
+
+        # smaps also returns data in kiloBytes, let's make it megaBytes
+        # I'm also confused with these megabytes and mebibytes...
+        pss = int(smaps_output[0]) // 1000
+
+        logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", smaps_output[0], ps_output[2], ps_output[3], ps_output[4])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores
 
-        if self.maxRSS is not None and rss >= self.maxRSS:
-            msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
-            msg += "Job has RSS: %s\n" % rss
+        if self.maxPSS is not None and pss >= self.maxPSS:
+            msg += "Job has exceeded maxPSS: %s MB\n" % self.maxPSS
+            msg += "Job has PSS: %s MB\n" % pss
             killProc = True
-            reason = 'RSS'
+            reason = 'PSS'
         elif self.hardTimeout is not None and self.softTimeout is not None:
             currentTime = time.time()
             if (currentTime - self.startTime) > self.softTimeout:

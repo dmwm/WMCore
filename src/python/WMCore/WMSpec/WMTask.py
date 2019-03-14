@@ -580,8 +580,8 @@ class WMTaskHelper(TreeHelper):
             performanceParams.sizePerEvent = sizePerEvent or getattr(performanceParams, "sizePerEvent")
         if memoryReq or getattr(performanceParams, "memoryRequirement", None):
             performanceParams.memoryRequirement = memoryReq or getattr(performanceParams, "memoryRequirement")
-            # if we change memory requirements, then we must change MaxRSS as well
-            self.setMaxRSS(performanceParams.memoryRequirement)
+            # if we change memory requirements, then we must change MaxPSS as well
+            self.setMaxPSS(performanceParams.memoryRequirement)
 
         return
 
@@ -1196,25 +1196,25 @@ class WMTaskHelper(TreeHelper):
             self.monitoring.section_("PerformanceMonitor")
         return
 
-    def setMaxRSS(self, maxRSS):
+    def setMaxPSS(self, maxPSS):
         """
-        _setMaxRSS_
+        _setMaxPSS_
 
-        Set MaxRSS performance monitoring for this task.
-        :param maxRSS: maximum RSS memory comsumption in MiB
+        Set MaxPSS performance monitoring for this task.
+        :param maxPSS: maximum Proportional Set Size (PSS) memory consumption in MiB
         """
         if self.taskType() in ["Merge", "Cleanup", "LogCollect"]:
             # keep the default settings (from StdBase) for these task types
             return
 
-        if isinstance(maxRSS, dict):
-            maxRSS = maxRSS.get(self.name(), None)
+        if isinstance(maxPSS, dict):
+            maxPSS = maxPSS.get(self.name(), None)
 
-        if maxRSS:
+        if maxPSS:
             self._setPerformanceMonitorConfig()
-            self.monitoring.PerformanceMonitor.maxRSS = int(maxRSS)
+            self.monitoring.PerformanceMonitor.maxPSS = int(maxPSS)
             for task in self.childTaskIterator():
-                task.setMaxRSS(maxRSS)
+                task.setMaxPSS(maxPSS)
         return
 
     def setPerformanceMonitor(self, softTimeout=None, gracePeriod=None):

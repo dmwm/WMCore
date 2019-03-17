@@ -8,6 +8,20 @@ import re
 import zlib
 import base64
 
+def lowerCmsHeaders(headers):
+    """
+    Lower CMS headers in provided header's dict. The WMCore Authentication
+    code check only cms headers in lower case, e.g. cms-xxx-yyy.
+    """
+    lheaders = {}
+    for hkey, hval in headers.items(): # perform lower-case
+        # lower header keys since we check lower-case in headers
+        if hkey.startswith('Cms-') or hkey.startswith('CMS-'):
+            lheaders[hkey.lower()] = hval
+        else:
+            lheaders[hkey] = hval
+    return lheaders
+
 def makeList(stringList):
     """
     _makeList_

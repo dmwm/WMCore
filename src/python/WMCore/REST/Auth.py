@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import re
 
+from Utils.Utilities import lowerCmsHeaders
 
 def get_user_info():
     "Helper function to return user based information of the request"
@@ -15,7 +16,7 @@ def user_info_from_headers(key, verbose=False):
     returns user info object with the data from the headers."""
     # Set initial user information for this request
     log = cherrypy.log
-    headers = cherrypy.request.headers
+    headers = lowerCmsHeaders(cherrypy.request.headers)
     user = {'dn': None, 'method': None, 'login': None, 'name': None, 'roles': {}}
 
     # Reject if request was not authenticated.

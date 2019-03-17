@@ -33,6 +33,8 @@ from WMCore.WMFactory import WMFactory
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 from WMCore.WebTools.Welcome import Welcome
 
+from Utils.Utilities import lowerCmsHeaders
+
 lastTest = ""
 
 
@@ -84,7 +86,7 @@ class WTLogger(LogManager):
         request = cherrypy.request
         remote = request.remote
         response = cherrypy.response
-        inheaders = request.headers
+        inheaders = lowerCmsHeaders(request.headers)
         outheaders = response.headers
         msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
                + ' [data: - in %(b)s out %(T).0f us ]'
@@ -96,9 +98,9 @@ class WTLogger(LogManager):
                                                 's': response.status,
                                                 'b': outheaders.get('Content-Length', '') or "-",
                                                 'T': (time.time() - request.start_time) * 1e6,
-                                                'AS': inheaders.get("CMS-Auth-Status", "-"),
-                                                'AU': inheaders.get("CMS-Auth-Cert",
-                                                                    inheaders.get("CMS-Auth-Host", "")),
+                                                'AS': inheaders.get("cms-auth-status", "-"),
+                                                'AU': inheaders.get("cms-auth-cert",
+                                                                    inheaders.get("cms-auth-host", "")),
                                                 'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
                                                 'f': inheaders.get("Referer", ""),
                                                 'a': inheaders.get("User-Agent", "")}

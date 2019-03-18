@@ -181,6 +181,8 @@ class RequestHandler(object):
         hbuf = StringIO.StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
         curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        # to prevent failures if host certs does not match underlying host
+        curl.setopt(pycurl.SSL_VERIFYHOST, False)
         if capath:
             curl.setopt(pycurl.CAPATH, capath)
             curl.setopt(pycurl.SSL_VERIFYPEER, True)

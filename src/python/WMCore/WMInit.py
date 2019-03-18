@@ -14,6 +14,7 @@ from __future__ import print_function
 import logging
 import threading
 import traceback
+import os
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.DBFactory import DBFactory
@@ -140,6 +141,11 @@ class WMInit:
         # it here.
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.commit()
+
+        # FIXME: REMOVE IT - debugging which RUCIO_HOME is used in the unit tests
+        var = os.getenv("RUCIO_HOME", None)
+        print("AMR RUCIO_HOME points to: %s" % var)
+
         return
 
     def setSchema(self, modules = [], params = None):
@@ -174,7 +180,7 @@ class WMInit:
                 logging.debug("Tables " + factoryName + " could not be created.")
         myThread.transaction.commit()
 
-    def clearDatabase(self, modules = []):
+    def clearDatabase(self, modules=None):
         """
         Database deletion. Global, ignore modules.
         """

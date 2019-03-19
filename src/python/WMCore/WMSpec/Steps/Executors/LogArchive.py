@@ -15,8 +15,8 @@ import time
 
 import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from Utils.FileTools import calculateChecksums
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -111,7 +111,7 @@ class LogArchive(Executor):
             return emulator.emulate(self.step, self.job)
 
         overrides = {}
-        #TODO need to set override using addOverride method in WMStep
+        # TODO need to set override using addOverride method in WMStep
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
@@ -131,7 +131,7 @@ class LogArchive(Executor):
             "^PSet.py$",
             "^PSet.pkl$",
             "_condor_std*",  # condor wrapper logs at the pilot top level
-            ]
+        ]
 
         ignoredDirs = ['Utils', 'WMCore', 'WMSandbox']
 
@@ -294,7 +294,7 @@ class LogArchive(Executor):
         taskPath = self.task.getPathName().split("/")
         requestName = taskPath[1]
         lastTask = taskPath[-1]
-        LFN = "/%s/%s/%s-%s-%s-log.tar.gz" % (requestName, lastTask, self.job.get("agentName",'NA'),
-                                      self.job["id"], self.job.get('retry_count', 0))
+        LFN = "/%s/%s/%s-%s-%s-log.tar.gz" % (requestName, lastTask, self.job.get("agentName", 'NA'),
+                                              self.job["id"], self.job.get('retry_count', 0))
 
         return LFN

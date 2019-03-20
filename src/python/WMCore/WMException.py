@@ -153,6 +153,9 @@ class WMException(exceptions.Exception):
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
+        if hasattr(strg, "decode"):
+            # Fix for the unicode encoding issue, #8043
+            strg = strg.decode('utf-8', 'ignore')
         return strg
 
     def message(self):

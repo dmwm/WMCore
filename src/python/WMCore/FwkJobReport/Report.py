@@ -592,7 +592,9 @@ class Report(object):
             # interprets this string using utf-8 codec and ignoring any errors
             errDetails.details = errorDetails.decode('utf-8', 'ignore')
         else:
-            errDetails.details = errorDetails
+            # Then cast it to string and decode it
+            errorDetails = str(errorDetails)
+            errDetails.details = errorDetails.decode('utf-8', 'ignore')
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
         self.setStepStatus(stepName=stepName, status=exitCode)

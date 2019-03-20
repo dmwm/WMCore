@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# pylint: disable=W0212
+# Access to a protected member (_createSubscriptionsInWMBS)  of a client class
 """
 _PromptReco_t_
 
@@ -45,6 +47,7 @@ class PromptRecoTest(unittest.TestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
+        self.promptSkim = None
 
         return
 
@@ -688,6 +691,18 @@ class PromptRecoTest(unittest.TestCase):
         subscriptions = self.listSubsMapping.execute(workflow="TestWorkload", returnTuple=True)
         self.assertItemsEqual(subscriptions, subMaps)
 
+
+    def testallowCreationFailureArgExists(self):
+        """
+        Test allowCreationFailure arguments exists.
+        """
+        testArguments = PromptRecoWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["EnableHarvesting"] = True
+        factory = PromptRecoWorkloadFactory()
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        factory.procJobSplitArgs["allowCreationFailure"] = False
+        self.assertItemsEqual(factory.procJobSplitArgs, {'events_per_job': 500, 'allowCreationFailure': False, 'job_time_limit': 345600})
 
 if __name__ == '__main__':
     unittest.main()

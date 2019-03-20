@@ -37,6 +37,7 @@ class EventAwareLumiBased(JobFactory):
         self.collectionName = None  # Placeholder for ACDC Collection Name, if needed
         # TODO this might need to be configurable instead of being hardcoded
         self.defaultJobTimeLimit = 48 * 3600  # 48 hours
+        self.lumiChecker = None
 
     def algorithm(self, *args, **kwargs):
         """
@@ -59,6 +60,7 @@ class EventAwareLumiBased(JobFactory):
         lumis = kwargs.get('lumis', None)
         applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
         deterministicPileup = kwargs.get('deterministicPileup', False)
+        allowCreationFailure = kwargs.get('allowCreationFailure', True)
 
         timePerEvent, sizePerEvent, memoryRequirement = \
             self.getPerformanceParameters(kwargs.get('performance', {}))
@@ -169,9 +171,10 @@ class EventAwareLumiBased(JobFactory):
                 # and it's only one lumi then ditch that lumi
                 timePerLumi = f['avgEvtsPerLumi'] * timePerEvent
                 if timePerLumi > jobTimeLimit and f['lumiCount'] == 1:
-                    failNextJob = True
-                    stopJob = True
                     lumisPerJob = 1
+                    stopJob = True
+                    if allowCreationFailure:
+                        failNextJob = True
                 elif splitOnFile:
                     # Then we have to split on every boundary
                     stopJob = True

@@ -8,7 +8,6 @@ API for retrieving information from SiteDB
 from __future__ import print_function
 from __future__ import division
 import json
-import os
 import logging
 from WMCore.Services.Service import Service
 
@@ -33,11 +32,7 @@ class SiteDBAPI(Service):
 
     def __init__(self, config={}, logger=None):
         config = dict(config)
-        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-            # just to make sure we don't use SiteDB anywhere when CRIC flag is true
-            raise RuntimeError("Stop using SiteDB, use CRIC instead!")
-        else:
-            config.setdefault('endpoint', "https://cmsweb.cern.ch/sitedb/data/prod/")
+        config.setdefault('endpoint', "https://cmsweb.cern.ch/sitedb/data/prod/")
         config.setdefault('logger', logging.getLogger())
         Service.__init__(self, config)
 

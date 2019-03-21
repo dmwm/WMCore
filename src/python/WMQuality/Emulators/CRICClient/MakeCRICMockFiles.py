@@ -8,7 +8,6 @@ from __future__ import division, print_function
 
 import json
 import os
-from pprint import pprint
 from urllib2 import HTTPError
 
 from WMCore.Services.CRIC.CRIC import CRIC
@@ -25,6 +24,11 @@ if __name__ == '__main__':
             {"site_name": "T2_XX_SiteA", "type": "phedex", "alias": "T2_XX_SiteA"},
             {"site_name": "T2_XX_SiteB", "type": "phedex", "alias": "T2_XX_SiteB"},
             {"site_name": "T2_XX_SiteC", "type": "phedex", "alias": "T2_XX_SiteC"},
+        ],
+        'data-processing': [
+            {"phedex_name": "T2_XX_SiteA", "psn_name": "T2_XX_SiteA"},
+            {"phedex_name": "T2_XX_SiteB", "psn_name": "T2_XX_SiteB"},
+            {"phedex_name": "T2_XX_SiteC", "psn_name": "T2_XX_SiteC"},
         ]
     }
 
@@ -45,12 +49,11 @@ if __name__ == '__main__':
         except HTTPError as exc:
             result = 'Raises HTTPError'
 
-        if callname == "site-names":
+        if callname in ["site-names", "data-processing"]:
             result.extend(additionals[callname])
         else:
             result = result
         lookup.update({callname:result})
 
-    pprint(lookup)
     with open(outFilename, 'w') as mockData:
         json.dump(lookup, mockData, indent=1, separators=(',', ': '), sort_keys=True)

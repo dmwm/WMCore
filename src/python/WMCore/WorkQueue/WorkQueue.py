@@ -26,7 +26,6 @@ from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
@@ -149,16 +148,10 @@ class WorkQueue(WorkQueueBase):
         elif self.params.get('PopulateFilesets'):
             raise RuntimeError('CacheDir mandatory for local queue')
 
-        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-            if self.params.get('CRIC'):
-                self.SiteDB = self.params['CRIC']  # FIXME: rename the attr to self.cric
-            else:
-                self.SiteDB = CRIC()  # FIXME: rename the attr to self.cric
+        if self.params.get('CRIC'):
+            self.cric = self.params['CRIC']
         else:
-            if self.params.get('SiteDB'):
-                self.SiteDB = self.params['SiteDB']
-            else:
-                self.SiteDB = SiteDB()
+            self.cric = CRIC()
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -201,7 +194,7 @@ class WorkQueue(WorkQueueBase):
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
-                                                              sitedb=self.SiteDB,
+                                                              cric=self.cric,
                                                               locationFrom=self.params['TrackLocationOrSubscription'],
                                                               incompleteBlocks=self.params['ReleaseIncompleteBlocks'],
                                                               requireBlocksSubscribed=not self.params[

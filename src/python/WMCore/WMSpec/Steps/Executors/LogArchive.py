@@ -15,8 +15,8 @@ import time
 
 import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from Utils.FileTools import calculateChecksums
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -61,19 +61,22 @@ class LogArchive(Executor):
 
         if not eosStageOutParams['lfn-prefix']:
             # if overrides for eos-lfn-prefix is set to None or "", don't copy the log to eos
+            logging.info("Not writing logs to CERN EOS recent area")
             return
 
+        numRetries = 0
+        retryPauseT = 0
         if not useNewStageOutCode:
             # old style
             eosmanager = StageOutMgr.StageOutMgr(**eosStageOutParams)
-            eosmanager.numberOfRetries = self.step.retryCount
-            eosmanager.retryPauseTime = self.step.retryDelay
+            eosmanager.numberOfRetries = numRetries
+            eosmanager.retryPauseTime = retryPauseT
         else:
             # new style
             logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE For EOS Copy")
             eosmanager = WMCore.Storage.FileManager.StageOutMgr(
-                retryPauseTime=self.step.retryDelay,
-                numberOfRetries=self.step.retryCount,
+                retryPauseTime=retryPauseT,
+                numberOfRetries=numRetries,
                 **eosStageOutParams)
 
         eosFileInfo = {'LFN': self.getEOSLogLFN(),
@@ -82,6 +85,8 @@ class LogArchive(Executor):
                        'GUID': None
                        }
 
+        msg = "Writing logs to CERN EOS recent with retries: %s and retry pause: %s"
+        logging.info(msg, eosmanager.numberOfRetries, eosmanager.retryPauseTime)
         try:
             eosmanager(eosFileInfo)
             eosServerPrefix = eosStageOutParams['lfn-prefix'].replace("root://eoscms.cern.ch//eos/cms",
@@ -106,7 +111,7 @@ class LogArchive(Executor):
             return emulator.emulate(self.step, self.job)
 
         overrides = {}
-        #TODO need to set override using addOverride method in WMStep
+        # TODO need to set override using addOverride method in WMStep
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
 
@@ -115,7 +120,7 @@ class LogArchive(Executor):
 
         logging.info("Beginning Steps.Executors.LogArchive.Execute")
         logging.info("Using the following overrides: %s ", overrides)
-        logging.info("Step is: %s", self.step)
+        logging.info("Step configuration is: %s", self.step)
         # Wait timeout for stageOut
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
@@ -126,7 +131,7 @@ class LogArchive(Executor):
             "^PSet.py$",
             "^PSet.pkl$",
             "_condor_std*",  # condor wrapper logs at the pilot top level
-            ]
+        ]
 
         ignoredDirs = ['Utils', 'WMCore', 'WMSandbox']
 
@@ -289,7 +294,7 @@ class LogArchive(Executor):
         taskPath = self.task.getPathName().split("/")
         requestName = taskPath[1]
         lastTask = taskPath[-1]
-        LFN = "/%s/%s/%s-%s-%s-log.tar.gz" % (requestName, lastTask, self.job.get("agentName",'NA'),
-                                      self.job["id"], self.job.get('retry_count', 0))
+        LFN = "/%s/%s/%s-%s-%s-log.tar.gz" % (requestName, lastTask, self.job.get("agentName", 'NA'),
+                                              self.job["id"], self.job.get('retry_count', 0))
 
         return LFN

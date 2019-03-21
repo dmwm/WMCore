@@ -185,7 +185,7 @@ class StageOutImpl(object):
         #  //
         # // Create the output directory if implemented
         # //
-        for retryCount in range(1, self.numRetries + 1):
+        for retryCount in range(self.numRetries + 1):
             try:
                 logging.info("Creating output directory...")
                 self.createOutputDirectory(targetPFN)
@@ -210,7 +210,7 @@ class StageOutImpl(object):
         # // Run the command
         # //
 
-        for retryCount in range(1, self.numRetries + 1):
+        for retryCount in range(self.numRetries + 1):
             try:
                 logging.info("Running the stage out...")
                 self.executeCommand(command)

@@ -23,7 +23,7 @@ from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -991,7 +991,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         nJobs = 100
 
         sites = ['T2_US_Florida', 'T2_RU_INR', 'T3_CO_Uniandes', 'T1_US_FNAL']
-        allSites = SiteDBJSON().PSNtoPNNMap('.*')
+        allSites = CRIC().PSNtoPNNMap('*')
 
         for site in allSites:
             self.setResourceThresholds(site, pendingSlots=20000, runningSlots=999999, tasks=['Processing', 'Merge'],

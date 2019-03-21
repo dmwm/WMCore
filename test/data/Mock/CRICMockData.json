@@ -483,6 +483,18 @@
   {
    "phedex_name": "T3_US_UMiss",
    "psn_name": "T3_US_UMiss"
+  },
+  {
+   "phedex_name": "T2_XX_SiteA",
+   "psn_name": "T2_XX_SiteA"
+  },
+  {
+   "phedex_name": "T2_XX_SiteB",
+   "psn_name": "T2_XX_SiteB"
+  },
+  {
+   "phedex_name": "T2_XX_SiteC",
+   "psn_name": "T2_XX_SiteC"
   }
  ],
  "people": [
@@ -6325,6 +6337,16 @@
    "phone2": null,
    "surname": "Argiro",
    "username": "argiro"
+  },
+  {
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=arhayrap/CN=838558/CN=Aram Hayrapetyan",
+   "email": "aram_hayrapetyan_99@mail.ru",
+   "forename": "Aram",
+   "im_handle": null,
+   "phone1": null,
+   "phone2": null,
+   "surname": "Hayrapetyan",
+   "username": "arhayrap"
   },
   {
    "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ariabchi/CN=836540/CN=Anastasiia Riabchikova",
@@ -75657,6 +75679,26 @@
    "username": "yhaddad"
   },
   {
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=yhoonlee/CN=838490/CN=Younghoon Lee",
+   "email": "panthera718@daum.net",
+   "forename": "Younghoon",
+   "im_handle": null,
+   "phone1": null,
+   "phone2": null,
+   "surname": "Lee",
+   "username": "yhoonlee"
+  },
+  {
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=younghoo/CN=838490/CN=Younghoon Lee",
+   "email": "panthera718@daum.net",
+   "forename": "Younghoon",
+   "im_handle": null,
+   "phone1": null,
+   "phone2": null,
+   "surname": "Lee",
+   "username": "yhoonlee"
+  },
+  {
    "dn": "/C=CN/O=HEP/O=PKU/OU=PHYS/CN=Ying An",
    "email": "ying.an@cern.ch",
    "forename": "Ying",
@@ -75907,6 +75949,16 @@
    "username": "ylaqbayl"
   },
   {
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ylokesh/CN=838556/CN=Yashas Lokesh",
+   "email": "yashloke@terpmail.umd.edu",
+   "forename": "Yashas",
+   "im_handle": null,
+   "phone1": null,
+   "phone2": null,
+   "surname": "Lokesh",
+   "username": "ylokesh"
+  },
+  {
    "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=yma00/CN=761466/CN=Yasser Mohammed",
    "email": "yasser.mohammed@cern.ch",
    "forename": "Yasser",
@@ -76075,16 +76127,6 @@
    "phone2": null,
    "surname": "Roh",
    "username": "youn"
-  },
-  {
-   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=younghoo/CN=838490/CN=Younghoon Lee",
-   "email": "panthera718@daum.net",
-   "forename": "Younghoon",
-   "im_handle": null,
-   "phone1": null,
-   "phone2": null,
-   "surname": "Lee",
-   "username": "younghoo"
   },
   {
    "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=yousen/CN=834165/CN=Yousen Zhang",

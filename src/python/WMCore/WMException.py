@@ -9,9 +9,8 @@ General Exception class for WM modules
 import exceptions
 import inspect
 import logging
-import traceback
 import sys
-import re
+import traceback
 
 WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
 WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
@@ -25,6 +24,7 @@ class WMException(exceptions.Exception):
     it was raised.
 
     """
+
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
         if hasattr(message, "decode"):
@@ -66,7 +66,7 @@ class WMException(exceptions.Exception):
             finally:
                 frame = None
 
-        #  //
+        # //
         # // Find out where the exception came from
         # //
         try:
@@ -77,21 +77,19 @@ class WMException(exceptions.Exception):
         finally:
             stack = None
 
-        #  //
+        # //
         # // ClassName if ClassInstance is passed
         # //
         try:
             if self.data['ClassInstance'] != None:
-                self.data['ClassName'] = \
-                      self.data['ClassInstance'].__class__.__name__
-        except:
+                self.data['ClassName'] = self.data['ClassInstance'].__class__.__name__
+        except Exception:
             pass
-
 
         # Determine the traceback at time of __init__
         try:
             self.traceback = "\n".join(traceback.format_tb(sys.exc_info()[2]))
-        except:
+        except Exception:
             self.traceback = "WMException error: Couldn't get traceback\n"
 
     def __getitem__(self, key):
@@ -153,6 +151,9 @@ class WMException(exceptions.Exception):
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
+        if hasattr(strg, "decode"):
+            # Fix for the unicode encoding issue, #8043
+            strg = strg.decode('utf-8', 'ignore')
         return strg
 
     def message(self):

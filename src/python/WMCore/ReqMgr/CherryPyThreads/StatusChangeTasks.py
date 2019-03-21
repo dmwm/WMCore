@@ -6,7 +6,6 @@ from __future__ import (division, print_function)
 import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
-from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
@@ -127,7 +126,6 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         reqmgrSvc = ReqMgr(config.reqmgr2_url, logger=self.logger)
         gqService = WorkQueue(config.workqueue_url)
         wmstatsSvc = WMStatsServer(config.wmstats_url, logger=self.logger)
-        logdb = LogDB(config.central_logdb_url, config.log_reporter)
 
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
@@ -135,7 +133,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         self.logger.info("Advancing status")
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
-        moveToArchived(wmstatsSvc, reqmgrSvc, logdb, config.archiveDelayHours, self.logger)
+        moveToArchived(wmstatsSvc, reqmgrSvc, self.logDB, config.archiveDelayHours, self.logger)
 
         self.logger.info("Done advancing status")
 

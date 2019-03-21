@@ -128,6 +128,8 @@ class Logger(LogManager):
                'f': inheaders.get("Referer", ""),
                'a': inheaders.get("User-Agent", "")}
         self.access_log.log(logging.INFO, msg)
+        self.access_log.propagate = False  # to avoid duplicate records on the log
+        self.error_log.propagate = False  # to avoid duplicate records on the log
 
 
 class RESTMain(object):

@@ -1,3 +1,56 @@
+1.2.0 to 1.2.1.pre3:
+  - Merge pull request #9111 from amaltaro/recent-production
+  - Default CERN EOS logArchive copy under prod/recent/PRODUCTION
+  - Merge pull request #9109 from amaltaro/cherrypy-propagate
+  - Stop duplicating cherrypy log records
+  - Merge pull request #9103 from amaltaro/fix-9060
+  - Merge pull request #9093 from amaltaro/fix-9092
+  - pylint fixes
+  - Set retries to 0 for LogArchive to EOS prod/recent
+  - Merge pull request #9104 from amaltaro/fix-8403
+  - Merge pull request #9106 from amaltaro/fix-9105
+  - Pass cherrypy logger to LogDB
+  - pylint fixes
+  - cast and decode error details
+  - 1.2.1.pre2
+  - Merge pull request #9099 from amaltaro/rucio-unittest
+  - printout RUCIO_HOME var in WMInit class
+  - Add rucio variables to the unittest setup
+  - Merge pull request #9095 from amaltaro/rucio-require
+  - Bump rucio client version
+  - Reuse AcqEra/ProcVer from the InputDataset when creating StoreResults
+  - Merge pull request #9090 from amaltaro/amq-host-port
+  - Update AMQ broker/port
+  - Merge pull request #9087 from amaltaro/fix-9076
+  - Creating a basic README file (#9077)
+  - Merge pull request #9085 from amaltaro/tier0-producer
+  - Merge pull request #9082 from khurtado/possiblesites
+  - Collect local and global WQE statistics when draining agent
+  - 1.2.1.pre1
+  - Merge pull request #9078 from amaltaro/fix-9074
+  - Merge pull request #9086 from vkuznet/ms-transferor-fix1
+  - Add possible sites in job submission error reports.
+  - use getattr instead of hasattr
+  - Add configuration parameters
+  - Use `tier0_wmagent` producer for T0 agent uploading data to MonIT
+  - Merge pull request #9084 from amaltaro/fix-9023
+  - Added ORA-01033 to the list of passable DB temporary errors
+  - Merge pull request #9057 from khurtado/chirp_exmsgv2
+  - Merge pull request #9081 from amaltaro/fix-9055
+  - Default Harvesting job retries to 4; updated deploy script
+  - update and fix unit tests
+  - Fetch unique job info from the ACDCServer in the JobFactory
+  - Merge pull request #9075 from hufnagel/fix-unittest-schema-init
+  - fix unittest schema init, fixes #9062
+  - Merge pull request #9073 from amaltaro/fix-8966
+  - Set Rucio account in the agent config file; cleaned up Alerts config
+  - Merge pull request #9066 from amaltaro/fix-9056
+  - Merge pull request #9045 from amaltaro/fix-9041
+  - Skip WorkQueue MonIT statistics for T0 agent
+  - Add CMSSW exception message to condor chirp, when present
+  - pylint fixes
+  - Trigger transaction rollback if exception is raised in wmbsPreparation
+
 1.2.0 to 1.2.1.pre2:
   - Merge pull request #9099 from amaltaro/rucio-unittest
   - printout RUCIO_HOME var in WMInit class

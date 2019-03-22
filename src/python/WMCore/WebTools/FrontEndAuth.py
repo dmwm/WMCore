@@ -58,6 +58,15 @@ class FrontEndAuth(cherrypy.Tool):
         dict with information about the authorized user."""
         headers = cherrypy.request.headers
         user = cherrypy.request.user
+        # protect code against non-lower case Cms headers (happens with nginx ingress on k8s)
+        lheaders = {}
+        for hkey, hval in headers.items(): # perform lower-case
+            # lower header keys since we check lower-case in headers
+            if hkey.startswith('Cms') or hkey.startswith('CMS'):
+                lheaders[hkey.lower()] = hval
+            else:
+                lheaders[hkey] = hval
+        headers = lheaders
 
         if 'cms-auth-status' not in headers:
             # Non SSL request
@@ -87,7 +96,7 @@ class FrontEndAuth(cherrypy.Tool):
         vfy = hmac.new(self.key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
         if vfy != headers["cms-authn-hmac"]:
             # HMAC does not match
-            raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
+            raise cherrypy.HTTPError(403, "You are not allowed to access this resource, hmac mismatch")
 
             # User authn accepted
 
@@ -110,7 +119,7 @@ class FrontEndAuth(cherrypy.Tool):
         # Finally checks if the user is allowed
         if not authzfunc(get_user_info(), role, group, site):
             # Authorization denied
-            raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
+            raise cherrypy.HTTPError(403, "You are not allowed to access this resource, authz denied")
 
     def defaultAuth(self, user, role, group, site):
         """ Return True for authorized user, False otherwise.

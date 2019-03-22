@@ -1172,7 +1172,7 @@ class StdBase(object):
                      "Dashboard": {"default": "production", "type": str, "validate": activity},
                      # Override parameters for step (EOS log location, etc
                      # set to "" string or None for eos-lfn-prefix if you don't want to save the log in eos
-                     "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent"},
+                     "Override": {"default": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/PRODUCTION"},
                                   "type": dict},
                      }
         # Set defaults for the argument specification

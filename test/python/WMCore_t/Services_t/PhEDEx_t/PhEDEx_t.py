@@ -7,14 +7,15 @@ that has inject permissions.
 """
 
 import unittest
-
 from nose.plugins.attrib import attr
 
 import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUIDLib import makeUUID
-from WMCore.Storage.TrivialFileCatalog import readTFC
+
+DSET = "/HIHardProbes/HIRun2018-v1/RAW"
+BLOCK = "/HIHardProbes/HIRun2018-v1/RAW#1a4c93dc-07f7-43d7-8458-5508a046a588"
 
 
 class PhEDExTest(unittest.TestCase):
@@ -24,10 +25,9 @@ class PhEDExTest(unittest.TestCase):
 
         Initialize the PhEDEx API to point at the test server.
         """
-        phedexTestDS = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
-        self.dbsTestUrl = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
-        self.phedexApi = PhEDEx({"endpoint": phedexTestDS,
-                                 "method": "POST"})
+        self.dbsTestUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        self.phedexApi = PhEDEx()
+
         return
 
     @attr("integration")
@@ -68,16 +68,6 @@ class PhEDExTest(unittest.TestCase):
                          "Error: Wrong number of request IDs")
         self.assertTrue("id" in requestIDs[0],
                         "Error: Missing request ID")
-        return
-
-    @attr("integration")
-    def testBestNodeName(self):
-        """
-        _testBestNodeName_
-
-        Verify that the node name is Buffer first
-        """
-        self.assertTrue(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
         return
 
     @attr('integration')
@@ -138,6 +128,58 @@ class PhEDExTest(unittest.TestCase):
         # and one of the mappings should be the same as from the previous call
         self.assertTrue(call1[call1_key] == call2[call1_key])
         return
+
+    def testGetReplicaInfoForBlocks(self):
+        """
+        Test `getReplicaInfoForBlocks` method, the ability to retrieve replica
+        locations provided a (or a list of) datasets and blocks
+        """
+        def _checkOutcome(numFiles, replica):
+            "run the checks"
+            if rep['complete'] == 'y':
+                self.assertEqual(rep['files'], numFiles)
+            if rep['custodial'] == 'y':
+                self.assertTrue(rep['node'].endswith("_MSS"))
+                self.assertTrue(rep['subscribed'], 'y')
+
+        replicaDict = {'bytes', 'complete', 'custodial', 'files', 'group',
+                       'node', 'node_id', 'se', 'subscribed',
+                       'time_create', 'time_update'}
+
+        res = self.phedexApi.getReplicaInfoForBlocks(block=BLOCK)['phedex']
+        self.assertEqual(len(res['block']), 1)
+        self.assertEqual(res['block'][0]['name'], BLOCK)
+        self.assertTrue(len(res['block'][0]['replica']) > 1)
+        self.assertItemsEqual(res['block'][0]['replica'][0].keys(), replicaDict)
+        numFiles = res['block'][0]['files']
+        for rep in res['block'][0]['replica']:
+            _checkOutcome(numFiles, rep)
+
+        # same test, but providing a dataset as input (which has only the block above)
+        res = self.phedexApi.getReplicaInfoForBlocks(dataset=DSET)['phedex']
+        self.assertEqual(len(res['block']), 4)
+        self.assertTrue(BLOCK in [blk['name'] for blk in res['block']])
+        for block in res['block']:
+            numFiles = block['files']
+            for rep in block['replica']:
+                self.assertTrue(len(block['replica']) > 1)
+                _checkOutcome(numFiles, rep)
+
+        # same test again, but providing both block and dataset
+        # NOTE the PhEDEx service only process the block input, the
+        # dataset argument is completely ignored
+        res = self.phedexApi.getReplicaInfoForBlocks(dataset=DSET, block=BLOCK)['phedex']
+        self.assertEqual(len(res['block']), 1)
+        self.assertEqual(res['block'][0]['name'], BLOCK)
+        self.assertTrue(len(res['block'][0]['replica']) > 1)
+        self.assertItemsEqual(res['block'][0]['replica'][0].keys(), replicaDict)
+        numFiles = res['block'][0]['files']
+        for rep in res['block'][0]['replica']:
+            _checkOutcome(numFiles, rep)
+
+        # provide a block that does not exist
+        res = self.phedexApi.getReplicaInfoForBlocks(dataset=DSET, block=BLOCK + "BLAH")['phedex']
+        self.assertTrue(res['block'] == [])
 
 
 if __name__ == '__main__':

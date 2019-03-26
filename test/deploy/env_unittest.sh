@@ -42,9 +42,9 @@ export install=$INSTALL_DIR/current/install/wmagent
 export config=$INSTALL_DIR/current/config/wmagent
 export manage=$config/manage
 export WMAGENT_USE_CRIC=true
-export RUCIO_HOME=$config/../rucio/
 
 source $INSTALL_DIR/current/apps/wmagent/etc/profile.d/init.sh
 source $INSTALL_DIR/current/apps/wmcore-devtools/etc/profile.d/init.sh
 
 export PYTHONPATH=$TEST_SRC/../test/python:$PYTHONPATH
+export RUCIO_HOME=$config/../rucio/

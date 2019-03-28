@@ -18,7 +18,7 @@ from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
-
+from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 
 class EmulatedUnitTestCase(unittest.TestCase):
     """
@@ -28,7 +28,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
                  mockSiteDB=True, mockReqMgrAux=True, mockLogDB=True,
-                 mockApMon=True, mockMemoryCache=True, mockPyCondor=True):
+                 mockApMon=True, mockMemoryCache=True, mockPyCondor=True,
+                 mockCRIC=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockSiteDB = mockSiteDB
@@ -37,6 +38,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
         self.mockApMon = mockApMon
         self.mockMemoryCache = mockMemoryCache
         self.mockPyCondor = mockPyCondor
+        self.mockCRIC = mockCRIC
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -108,5 +110,18 @@ class EmulatedUnitTestCase(unittest.TestCase):
                                             new=MockPyCondorAPI)
             self.condorPatcher.start()
             self.addCleanup(self.condorPatcher.stop)
+
+        if self.mockCRIC:
+            self.cricPatchers = []
+            patchCRICAt = ['WMCore.ReqMgr.Tools.cms',
+                           'WMCore.WorkQueue.WorkQueue.CRIC',
+                           'WMCore.WorkQueue.WorkQueueUtils',
+                           'WMCore.WorkQueue.Policy.Start.Dataset.CRIC',
+                           'WMCore.WorkQueue.Policy.Start.ResubmitBlock.CRIC',
+                           'WMCore.WorkQueue.Policy.Start.Block.CRIC']
+            for module in patchCRICAt:
+                self.cricPatchers.append(mock.patch(module, new=MockCRICApi))
+                self.cricPatchers[-1].start()
+                self.addCleanup(self.cricPatchers[-1].stop)
 
         return

@@ -5,10 +5,8 @@
         "GracePeriod": 300, 
         "MergedLFNBase": "/store/backfill/1", 
         "Override": {
-            "Override": {
-                "eos-lfn-prefix": ""
-            }
-        }, 
+            "eos-lfn-prefix": ""
+        },
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 

@@ -142,10 +142,6 @@ class WMInit:
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.commit()
 
-        # FIXME: REMOVE IT - debugging which RUCIO_HOME is used in the unit tests
-        var = os.getenv("RUCIO_HOME", None)
-        print("AMR RUCIO_HOME points to: %s" % var)
-
         return
 
     def setSchema(self, modules = [], params = None):

@@ -7,25 +7,20 @@ that only use part of the libraries
 """
 from __future__ import print_function
 
-
-
-
-
 import logging
+import os
+import os.path
+import sys
 import threading
 import traceback
-import os
 
+from WMCore.Configuration import loadConfigurationFile
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
-from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMBase import getWMBASE
 from WMCore.WMException import WMException
-
-import os.path
-import sys
+from WMCore.WMFactory import WMFactory
 
 
 class WMInitException(WMException):
@@ -35,6 +30,7 @@ class WMInitException(WMException):
     You should never, ever see one of these.
     I'm not optimistic that this will be the case.
     """
+
 
 def connectToDB():
     """
@@ -61,12 +57,12 @@ def connectToDB():
     (dialect, junk) = connectUrl.split(":", 1)
 
     myWMInit = WMInit()
-    myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
-                                   socketLoc = socketLoc)
+    myWMInit.setDatabaseConnection(dbConfig=connectUrl, dialect=dialect,
+                                   socketLoc=socketLoc)
     return
 
-class WMInit:
 
+class WMInit:
     def __init__(self):
         return
 
@@ -74,18 +70,18 @@ class WMInit:
         """ for those that don't want to use the static version"""
         return getWMBASE()
 
-    def setLogging(self,logFile = None, logName = None, logLevel = logging.INFO, logExists = True):
+    def setLogging(self, logFile=None, logName=None, logLevel=logging.INFO, logExists=True):
         """
         Sets logging parameters, depending on the settings,
         this method will create a logging file.
         """
         # use logName as name for file is no log file is given
         if not logExists:
-            logging.basicConfig(level=logLevel,\
-            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',\
-            datefmt='%m-%d %H:%M',\
-            filename='%s.log' % logFile,\
-            filemode='w')
+            logging.basicConfig(level=logLevel, \
+                                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', \
+                                datefmt='%m-%d %H:%M', \
+                                filename='%s.log' % logFile, \
+                                filemode='w')
             logging.debug("Log file ready")
 
         myThread = threading.currentThread()
@@ -94,8 +90,7 @@ class WMInit:
         else:
             myThread.logger = logging.getLogger()
 
-
-    def setDatabaseConnection(self, dbConfig, dialect, socketLoc = None):
+    def setDatabaseConnection(self, dbConfig, dialect, socketLoc=None):
         """
         Sets the default connection parameters, without having to worry
         much on what attributes need to be set. This is esepcially
@@ -144,7 +139,7 @@ class WMInit:
 
         return
 
-    def setSchema(self, modules = [], params = None):
+    def setSchema(self, modules=None, params=None):
         """
         Creates the schema in the database based on the modules
         input.
@@ -152,11 +147,12 @@ class WMInit:
         This method needs to have been preceded by the
         setDatabaseConnection.
         """
+        modules = modules or []
         myThread = threading.currentThread()
 
         parameters = None
         flag = False
-        #Set up for typical DBCreator format: logger, dbi, params
+        # Set up for typical DBCreator format: logger, dbi, params
         if params != None:
             parameters = [None, None, params]
             flag = True
@@ -167,11 +163,11 @@ class WMInit:
             # notice the default structure: <dialect>/Create
             factory = WMFactory(factoryName, factoryName + "." + myThread.dialect)
 
-            create = factory.loadObject("Create", args = parameters, listFlag = flag)
-            createworked = create.execute(conn = myThread.transaction.conn,
-                                          transaction = myThread.transaction)
+            create = factory.loadObject("Create", args=parameters, listFlag=flag)
+            createworked = create.execute(conn=myThread.transaction.conn,
+                                          transaction=myThread.transaction)
             if createworked:
-                logging.debug("Tables for "+ factoryName + " created")
+                logging.debug("Tables for " + factoryName + " created")
             else:
                 logging.debug("Tables " + factoryName + " could not be created.")
         myThread.transaction.commit()
@@ -193,17 +189,16 @@ class WMInit:
                     pass
 
         # Setup the DAO
-        daoFactory = DAOFactory(package = "WMCore.Database",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        destroyDAO = daoFactory(classname = "Destroy")
-
+        daoFactory = DAOFactory(package="WMCore.Database",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
+        destroyDAO = daoFactory(classname="Destroy")
 
         # Actually run a transaction and delete the DB
         try:
             destroyDAO.execute()
         except Exception as ex:
-            msg =  "Critical error while attempting to delete entire DB!\n"
+            msg = "Critical error while attempting to delete entire DB!\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
@@ -221,11 +216,11 @@ class WMInit:
         """
 
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.Database",
-                                logger  = myThread.logger,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.Database",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
 
-        testDAO = daoFactory(classname = "ListUserContent")
+        testDAO = daoFactory(classname="ListUserContent")
 
         result = testDAO.execute()
         myThread.dbi.engine.dispose()

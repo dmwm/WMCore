@@ -1,3 +1,10 @@
+1.2.1.pre4 to 1.2.1:
+  - json with the mocked CRIC data (Alan Malta Rodrigues) #9122
+  - Mock CRIC data and calls (Alan Malta Rodrigues) #9122
+  - Remove double Override from test templates (Alan Malta Rodrigues) #9119
+  - Fix RUCIO_HOME in the tests environment (Alan Malta Rodrigues) #9117
+
+
 1.2.0 to 1.2.1.pre4:
   - Merge pull request #9116 from amaltaro/fix-8780
   - Fix midnight log rotation for cherrypy threads

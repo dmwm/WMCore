@@ -466,6 +466,47 @@ class EventAwareLumiBasedTest(unittest.TestCase):
             self.assertEqual(jobs[i - 1]['failedReason'], error)
 
         return
+    def testE_DisableHardLimitSplitting(self):
+        """
+        _testC_DisableHardLimitSplitting_
+        Test that we can bypass and event limit when allowCreationFailure is
+        set to False. The algorithm shall take single lumi files with more events
+        than the limit but not mark them for failure
+        """
+        splitter = SplitterFactory()
+
+        # Create 3 files, the one in the middle is a "bad" file
+        testFileset = Fileset(name="FilesetA")
+        testFileset.create()
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "T1_US_FNAL_Disk")
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiBased",
+                                        type="Processing")
+        testSubscription.create()
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        # Settings are to split on job boundaries, to fail sing lumis with more than 800 events
+        # and to put 550 events per job
+        jobGroups = jobFactory(halt_job_on_file_boundaries=True,
+                               splitOnRun=True,
+                               events_per_job=550,
+                               job_time_limit=9600,
+                               allowCreationFailure=False,
+                               performance=self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1, "There should be only one job group")
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
+        failedJobs = [job for job in jobs if job.get('failedOnCreation', False)]
+        self.assertEqual(len(failedJobs), 0, "There should be no failed jobs")
 
     def test_NotEnoughEvents(self):
         """

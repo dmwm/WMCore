@@ -17,6 +17,15 @@ class PromptRecoWorkloadFactory(DataProcessing):
     Stamp out PromptReco workflows.
     """
 
+    def __init__(self):
+        super(PromptRecoWorkloadFactory, self).__init__()
+        self.procJobSplitArgs = {}
+        self.skimJobSplitArgs = {}
+        self.inputProcessedDataset = None
+        self.inputPrimaryDataset = None
+        self.eventsPerJob = None
+        self.inputDataTier = None
+
     def buildWorkload(self):
         """
         _buildWorkload_
@@ -131,6 +140,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
             if self.procJobSplitAlgo == "EventAwareLumiBased":
                 self.procJobSplitArgs["job_time_limit"] = 96 * 3600  # 4 days in seconds
+                self.procJobSplitArgs["allowCreationFailure"] = False
         elif self.procJobSplitAlgo == "LumiBased":
             self.procJobSplitArgs["lumis_per_job"] = self.lumisPerJob
         elif self.procJobSplitAlgo == "FileBased":
@@ -142,6 +152,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
                 self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
             if self.skimJobSplitAlgo == "EventAwareLumiBased":
                 self.skimJobSplitArgs["job_time_limit"] = 48 * 3600  # 2 days
+                self.skimJobSplitArgs["allowCreationFailure"] = False
             self.skimJobSplitArgs["events_per_job"] = self.eventsPerJob
         elif self.skimJobSplitAlgo == "LumiBased":
             self.skimJobSplitArgs["lumis_per_job"] = self.lumisPerJob

@@ -731,6 +731,47 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
 
+    def testI_DisableHardLimitSplitting(self):
+        """
+        _testI_DisableHardLimitSplitting_
+
+        Test that we can bypass the job time limit when allowCreationFailure is
+        set to False. The algorithm shall take single lumi files with time per
+        lumi greater than the job time limit but not mark them for failure
+        """
+        splitter = SplitterFactory()
+
+        # Create 3 files, the one in the middle is a "bad" file
+        testFileset = Fileset(name="FilesetA")
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "blenheim")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "blenheim")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "blenheim")
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiBased",
+                                        type="Processing")
+        jobFactory = splitter(package="WMCore.DataStructs",
+                              subscription=testSubscription)
+        # Settings are to split on job boundaries, to fail sing lumis with more than 800 events
+        # and to put 550 events per job
+        jobGroups = jobFactory(halt_job_on_file_boundaries=True,
+                               splitOnRun=True,
+                               events_per_job=550,
+                               job_time_limit=9600,
+                               allowCreationFailure=False,
+                               performance=self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1, "There should be only one job group")
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
+        failedJobs = [job for job in jobs if job.get('failedOnCreation', False)]
+        self.assertEqual(len(failedJobs), 0, "There should be no failed jobs")
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

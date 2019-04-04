@@ -39,6 +39,14 @@ def mergeFilesInfo(chunkFiles):
         logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
         for acdcFile in chunkFiles:
             fName = acdcFile['lfn']
+            ### HACKY - FIXME: this is a bad way to fix it!!!
+            # (At least) MCFakeFiles use the InclusiveMask, which means their FirstLumi
+            # and LastLumi is part of their processing, however LastLumi actually is not!
+            # thus a job producing a lumi section 9, would have FirstLumi:9, LastLumi=10
+            # ErrorHandler expands that in the ACDC document as lumis : [9, 10] sigh...
+            firstLumi = min(acdcFile['runs'][0]['lumis'])
+            lastLumi = max(acdcFile['runs'][0]['lumis'])
+            acdcFile['runs'][0]['lumis'] = range(firstLumi, lastLumi)
             if fName not in mergedFiles:
                 mergedFiles[fName] = acdcFile
             else:

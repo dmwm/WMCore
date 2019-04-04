@@ -116,7 +116,7 @@ class CouchFileset(Fileset):
 
             maskLumis = mask.getRunAndLumis()
             if maskLumis != {}:
-                # Then we actually have to do something
+                # Then replace the original file run/lumi information by the job mask
                 for f in files:
                     newRuns = mask.filterRunLumisByMask(runs=f['runs'])
                     if newRuns != set([]):
@@ -141,10 +141,13 @@ class CouchFileset(Fileset):
 
         Create a new filelist document containing the id
         """
+        # add a versioning to each of these ACDC docs such that we can properly
+        # parse them and avoid issues between ACDC docs and agent base code
         input = {"collection_name": self.collectionName,
                  "collection_type": self.collectionType,
                  "fileset_name": self["name"],
                  "files": files,
+                 "acdc_version": 2,
                  "timestamp": time.time()}
 
         document = CMSCouch.Document(None, input)

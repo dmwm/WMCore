@@ -189,8 +189,8 @@ class Mask(dict):
         """
         _filterRunLumisByMask_
 
-        Pass a Mask a list of run objects, get back a list of
-        run objects that correspond to the actual mask allowed values
+        Given a list of run objects, get back a list of run objects that
+        correspond to the actual mask allowed values
         """
         if self['runAndLumis'] == {}:
             # Empty dictionary
@@ -212,6 +212,7 @@ class Mask(dict):
         for runNumber in filteredRuns:
             maskLumis = set()
             for pair in self["runAndLumis"][runNumber]:
+                print("AMR pair %s" % pair)
                 if pair[0] == pair[1]:
                     maskLumis.add(pair[0])
                 else:

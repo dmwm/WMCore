@@ -48,6 +48,9 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.lastUpdate = None
         self.uid = uid
 
+        self.maskGroupAction = self.daofactory(classname="Masks.New")
+        self.fileGroupAction = self.daofactory(classname = "Jobs.AddFiles")
+
         if location != None:
             self.setSite(location)
 
@@ -279,13 +282,11 @@ class JobGroup(WMBSBase, WMJobGroup):
             for file in job['input_files']:
                 fileDict[job['id']].append(file['id'])
 
-        maskAction = self.daofactory(classname = "Masks.New")
-        maskAction.execute(jobList = listOfJobs, conn = self.getDBConn(), \
-                           transaction = self.existingTransaction())
+        self.maskGroupAction.execute(jobList = listOfJobs, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
 
-        fileAction = self.daofactory(classname = "Jobs.AddFiles")
-        fileAction.execute(jobDict = fileDict, conn = self.getDBConn(), \
-                           transaction = self.existingTransaction())
+        self.fileGroupAction.execute(jobDict = fileDict, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
 
 
         WMJobGroup.commit(self)

@@ -5,51 +5,27 @@ _New_
 Oracle implementation of Masks.New
 """
 
-import logging
-
 from WMCore.WMBS.MySQL.Masks.New import New as NewMasksMySQL
-
-__all__ = []
 
 
 class New(NewMasksMySQL):
     sql = NewMasksMySQL.sql
 
-    def getDictBinds(self, jobList, inclusivemask=True):
+    def getDictBinds(self, jobList, inclusivemask):
         binds = []
+        maskV = 'T' if inclusivemask else 'F'
         for job in jobList:
-            if inclusivemask:
-                mask = 'Y'
-            else:
-                mask = 'N'
-            binds.append({'jobid': job['id'], 'inclusivemask': mask,
+            binds.append({'jobid': job['id'], 'inclusivemask': maskV,
                           'firstevent': job['mask']['FirstEvent'],
                           'lastevent': job['mask']['LastEvent'],
                           'firstrun': job['mask']['FirstRun'],
                           'lastrun': job['mask']['LastRun'],
                           'firstlumi': job['mask']['FirstLumi'],
-                          'lastlumi': job['mask']['LastLumi'], })
+                          'lastlumi': job['mask']['LastLumi']})
 
         return binds
 
-    def execute(self, jobid=None, inclusivemask=None, conn=None,
-                transaction=False, jobList=None):
-
-        if jobList:
-            binds = self.getDictBinds(jobList, inclusivemask)
-            result = self.dbi.processData(self.sql, binds, conn=conn, transaction=transaction)
-            return self.format(result)
-
-        elif jobid:
-            if inclusivemask == None:
-                binds = self.getBinds(jobid=jobid, inclusivemask='Y')
-            else:
-                binds = self.getBinds(jobid=jobid, inclusivemask='N')
-
-            result = self.dbi.processData(self.plainsql, binds, conn=conn,
-                                          transaction=transaction)
-            return self.format(result)
-
-        else:
-            logging.error('Masks.New asked to create Mask with no Job ID')
-            return
+    def execute(self, jobList, inclusivemask=True, conn=None, transaction=False):
+        binds = self.getDictBinds(jobList, inclusivemask)
+        self.dbi.processData(self.sql, binds, conn=conn, transaction=transaction)
+        return

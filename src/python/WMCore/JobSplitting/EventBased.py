@@ -9,6 +9,7 @@ a set of jobs based on event counts
 import logging
 import traceback
 from math import ceil
+from pprint import pformat
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File import File
@@ -62,6 +63,7 @@ class EventBased(JobFactory):
                 # in the WMBS table!!!!!?!?!
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
+                logging.info('AMR acdcFileList:\n%s', pformat(acdcFileList))
             except Exception as ex:
                 msg = "Exception while trying to load goodRunList\n"
                 msg += "Refusing to create any jobs.\n"
@@ -73,6 +75,7 @@ class EventBased(JobFactory):
         totalJobs = 0
 
         locationDict = self.sortByLocation()
+        logging.info('AMR locationDict:\n%s', pformat(locationDict))
         for location in locationDict:
             self.newGroup()
             fileList = locationDict[location]
@@ -94,6 +97,7 @@ class EventBased(JobFactory):
                         for run in lumiDict.keys():
                             f.addRun(run=Run(run, *lumiDict[run]))
 
+            logging.info('AMR fileList:\n%s', pformat(fileList))
             for f in fileList:
                 currentEvent = f['first_event']
                 eventsInFile = f['events']

@@ -47,7 +47,14 @@ def mergeFilesInfo(chunkFiles):
                     # every element in lumiSet is already in mergedFiles, it's a dup!
                     continue
                 mergedFiles[fName]['events'] += acdcFile['events']
-                mergedFiles[fName]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
+                ### HACKY - FIXME: this is a bad way to fix it!!!
+                # (At least) MCFakeFiles use the InclusiveMask, which means their FirstLumi
+                # is part of their processing, while their LastLumi is not!
+                # thus a job producing a lumi section 9, would have FirstLumi:9, LastLumi=10
+                # ErrorHandler expands that in the ACDC document as lumis : [9, 10] sigh...
+                firstLumi = min(acdcFile['runs'][0]['lumis'])
+                lastLumi = max(acdcFile['runs'][0]['lumis'])
+                mergedFiles[fName]['runs'][0]['lumis'].extend(range(firstLumi, lastLumi))
     else:
         logging.info("Merging %d real input files...", len(chunkFiles))
         for acdcFile in chunkFiles:
@@ -103,6 +110,18 @@ def _mergeRealDataRunLumis(mergedFiles):
             mergedFiles[fname]['runs'].append({'run_number': run,
                                                'lumis': list(set(lumis))})
     return
+
+
+def fixupMCFakeLumis(listLumis):
+    """
+    Lumis list is incorrect for - at least - MCFakeFiles, it always adds the
+    lastLumi to the lumis list in the ACDC doc, even though that is not supposed
+    to be processed by the job. This function simplies remove that.
+    
+    See issue: https://github.com/dmwm/WMCore/issues/9126
+    """
+    return listLumis[:-1]
+
 
 class ACDCDCSException(WMException):
     """
@@ -189,6 +208,7 @@ class DataCollectionService(CouchService):
     @CouchUtils.connectToCouch
     def _getFilesetInfo(self, collectionName, filesetName, chunkOffset=None, chunkSize=None):
         """
+        Query the ACDCServer for an specific collection fileset name
         """
         option = {"include_docs": True, "reduce": False}
         keys = [[collectionName, filesetName]]
@@ -199,6 +219,16 @@ class DataCollectionService(CouchService):
             files = row["doc"].get("files", False)
             if files:
                 filesInfo.extend(files.values())
+
+        # FIXME: once ALL the ACDC documents are in the version 2 (around HG2002), we
+        # can remove the block below
+        if results["rows"]:
+            doc = results["rows"][0]["doc"]
+            if doc.get("acdc_version") != 2 and filesInfo[0]['lfn'].startswith('MCFakeFile'):
+                # then we need to fix up the lumi list
+                for f in filesInfo:
+                    for runLumi in f["runs"]:
+                        runLumi["lumis"] = fixupMCFakeLumis(runLumi["lumis"])
 
         # second lfn sort
         filesInfo.sort(key=lambda x: x["lfn"])

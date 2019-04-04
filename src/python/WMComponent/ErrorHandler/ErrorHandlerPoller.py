@@ -206,7 +206,18 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.info("This operation will take some time...")
         loadList = self.loadJobsFromListFull(idList)
         for job in loadList:
+            ### FIXME remove this debugging
+            logging.info("AMR jobid: %s, with %d files, and with mask: %s", job['id'], len(job['input_files']), job['mask'])
+            for f in job['input_files']:
+                logging.info("AMR file %s has the following 'runs' data ...")
+                for r in f['runs']:
+                    logging.info("  run: %s", r.json())
             job.getMask()
+            logging.info("AMR after getting the Mask: %s", job['mask'])
+            for f in job['input_files']:
+                logging.info("AMR and file %s has the following 'runs' data ...")
+                for r in f['runs']:
+                    logging.info("  run: %s", r.json())
         self.dataCollection.failedJobs(loadList)
         return
 

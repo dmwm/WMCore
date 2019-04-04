@@ -10,7 +10,7 @@ Unittest for the WMCore.DataStructs.Mask class
 # This code written as essentially a blank for future
 # Mask development
 # -mnorman
-
+from __future__ import print_function
 
 import unittest
 from WMCore.DataStructs.Mask import Mask
@@ -171,12 +171,25 @@ class MaskTest(unittest.TestCase):
 
         runs = set()
         runs.add(Run(1, 2, 9, 148, 166, 185, 195, 203, 212))
-        newRuns = mask.filterRunLumisByMask(runs = runs)
+        newRuns = mask.filterRunLumisByMask(runs=runs)
         self.assertEqual(len(newRuns), 1)
 
         run = newRuns.pop()
         self.assertEqual(run.run, 1)
         self.assertEqual(run.lumis, [2,9])
+
+        mask = Mask()
+        mask.addRunAndLumis(run=1, lumis=[5, 6])
+        runs = set()
+        runs.add(Run(1, range(1, 11)))
+        for r in runs:
+            print("AMR initial run: %s" % r.json())
+        newRuns = mask.filterRunLumisByMask(runs=runs)
+        for r in newRuns:
+            print("AMR final run: %s" % r.json())
+        run = newRuns.pop()
+        self.assertEqual(run.run, 1)
+        self.assertEqual(run.lumis, [5])
 
 
 if __name__ == '__main__':

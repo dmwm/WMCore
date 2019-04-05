@@ -57,9 +57,9 @@ class EventBased(JobFactory):
                 filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
                 logging.info('Loading ACDC info for collectionName: %s, with filesetName: %s', collectionName, filesetName)
-                ### FIXME Wait, don't we have all this data in WMBS already? Why querying
-                # the ACDCServer again to get the same data that is already stored
-                # in the WMBS table!!!!!?!?!
+                # We need info from the ACDCServer because otherwise the agent might use
+                # file run/lumi information from the previous time when it had to populate
+                # the WMBS tables...
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
             except Exception as ex:
@@ -226,9 +226,13 @@ class EventBased(JobFactory):
             if fakeFile['lfn'] == acdcFile['lfn']:
                 eventsToRun = acdcFile["events"]
                 currentEvent = acdcFile["first_event"]
-                currentLumi = acdcFile["lumis"][0]
                 lumisPerJob = 0
                 while eventsToRun:
+                    ### WARNING: it assumes there will NOT be splitting changes between
+                    # the original and the ACDC workflow
+                    # Lumis to recovery are not necessarily sequential
+                    acdcFile["lumis"] = acdcFile["lumis"][lumisPerJob:]
+                    currentLumi = acdcFile["lumis"][0]
                     self.newJob(name=self.getJobName(length=totalJobs))
                     self.currentJob.addFile(fakeFile)
                     self.currentJob.addBaggageParameter("lheInputFiles", lheInputOption)
@@ -253,9 +257,8 @@ class EventBased(JobFactory):
                                                          disk=diskRequired)
                     if deterministicPileup:
                         self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                    logging.debug("ACDC job created with %s", self.currentJob)
+                    logging.info("ACDC job created with %s", self.currentJob)
                     eventsToRun -= eventsPerJob
                     currentEvent += eventsPerJob
-                    currentLumi += lumisPerJob
                     totalJobs += 1
         return totalJobs

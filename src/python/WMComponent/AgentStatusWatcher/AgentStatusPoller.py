@@ -57,7 +57,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.passAMQ = getattr(config.AgentStatusWatcher, "passAMQ", None)
         self.postToAMQ = getattr(config.AgentStatusWatcher, "enableAMQ", False)
         self.topicAMQ = getattr(config.AgentStatusWatcher, "topicAMQ", None)
-        self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('dashb-mb.cern.ch', 61113)])
+        self.hostPortAMQ = getattr(config.AgentStatusWatcher, "hostPortAMQ", [('cms-mb.cern.ch', 61313)])
 
     def setUpCouchDBReplication(self):
 

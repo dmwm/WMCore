@@ -81,13 +81,6 @@ class SiteCache(with_metaclass(Singleton, object)):
             'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json',
             'http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt',
             '%s/storageoverview/latest/StorageOverview.json' % monitoringUrl(),
-            '%s/stuck_1.json' % stucktransferUrl(),
-            '%s/stuck_2.json' % stucktransferUrl(),
-            '%s/stuck_m1.json' % stucktransferUrl(),
-            '%s/stuck_m3.json' % stucktransferUrl(),
-            '%s/stuck_m4.json' % stucktransferUrl(),
-            '%s/stuck_m5.json' % stucktransferUrl(),
-            '%s/stuck_m6.json' % stucktransferUrl(),
         ]
         cookie = {}
         ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']

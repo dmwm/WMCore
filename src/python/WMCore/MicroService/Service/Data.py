@@ -44,7 +44,6 @@ class Data(RESTEntity):
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         self.config = config
-        print("### config.manager", config.manager, type(config.manager))
         arr = config.manager.split('.')
         try:
             cname = arr[-1]

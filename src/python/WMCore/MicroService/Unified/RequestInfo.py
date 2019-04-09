@@ -9,18 +9,18 @@ from __future__ import print_function, division
 
 # system modules
 import json
-import pickle
 import time
+import pickle
+import logging
 
 from WMCore.MicroService.Unified.Common import uConfig, cert, ckey, \
     reqmgrCacheUrl, dbsUrl, eventsLumisInfo, workflowsInfo, \
     dbsInfo, phedexInfo, reqmgrUrl, elapsedTime, getComputingTime, \
-    getNCopies, teraBytes, workqueueView
+    getNCopies, teraBytes, getWorkflow
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 # WMCore modules
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
-
 
 def findParent(dataset):
     "Helper function to find a parent of the dataset"
@@ -150,6 +150,9 @@ def taskDescending(node, select=None):
 def getRequestWorkflows(requestNames):
     "Helper function to get all specs for given set of request names"
     urls = [str('%s/data/request/%s' % (reqmgrUrl(), r)) for r in requestNames]
+    print("### getRequestWorkflows")
+    for u in urls:
+        print(u)
     data = multi_getdata(urls, ckey(), cert())
     rdict = {}
     for row in data:
@@ -269,7 +272,7 @@ def getMulticore(request):
     return max(mcores)
 
 
-def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=False, verbose=True):
+def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, verbose=True):
     "Return site list for given request"
     lheinput, primary, parent, secondary = getIO(request)
     allowedSites = []
@@ -306,7 +309,11 @@ def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=Fal
                       minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
 
     for campaign in getCampaigns(request):
-        campaignConfig = reqmgrAuxSvc.getCampaignConfig(campaign)
+        # for testing purposes add post campaign call
+        # res = svc.reqmgrAux.postCampaignConfig(campaign, {'%s_name' % campaign: {"Key1": "Value1"}})
+        campaignConfig = svc.reqmgrAux.getCampaignConfig(campaign)
+        if isinstance(campaignConfig, list):
+           campaignConfig = campaignConfig[0]
         campSites = campaignConfig.get('SiteWhitelist', [])
         if campSites:
             if verbose:
@@ -335,41 +342,89 @@ def getSiteWhiteList(request, siteInfo, reqmgrAuxSvc, reqSpecs=None, pickone=Fal
         allowedSites = list(set(allowedSites) & set(memAllowed))
     return lheinput, list(primary), list(parent), list(secondary), list(sorted(allowedSites))
 
-
-def workqueueRequests(state=None):
-    "Helper functions to get requests from WorkQueue"
-    url = workqueueView('jobsByRequest')
-    if state:
-        pass  # we may need to use state when we'll query WorkQueue
-    params = {}
-    headers = {'Accept': 'application/json'}
-    mgr = RequestHandler()
-    data = mgr.getdata(url, params=params, headers=headers, cert=cert(), ckey=ckey())
-    data = json.loads(data)
-    rdict = {}
-    for row in data.get('rows', []):
-        rdict[row['key']] = row['value']
-    return rdict
-
-
-def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
+def requestsInfo(svc, req_status, logger=None, verbose=False):
     """
     Helper function to get information about all requests
-    in assignment-approved state in ReqMgr
     """
-    # get list of known request in workqueue
-    requestJobs = workqueueRequests(state)
-    requests = requestJobs.keys()
+    requestsToProcess = {} # we return a dict of requests to process
+    if not logger:
+        logger = logging.getLogger('reqmgr2ms:transferor')
+        logging.basicConfig()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
+    # get requests from ReqMgr2 data-service for given statue
+    requestSpecs = svc.reqmgr.getRequestByStatus([req_status], detail=True)
+    requests = [r for item in requestSpecs for r in item.keys()]
+    logger.debug('### transferor found %s requests in %s state' % (len(requests), req_status))
+
+    # nothing to do
+    if not requests:
+        return requestsToProcess
+ 
+    # get campaigns for all requests which will be used to decide
+    # how many replicas have to be made and where data has to be subscribed to
+    cdict = {}
+    for request in requests:
+        for wflow in getWorkflow(request):
+            #logger.debug("request: %s, workflow %s" % (request, wflow))
+            campaign = wflow[request]['Campaign']
+            logger.debug("request: %s, campaign: %s" % (request, campaign))
+            campaignConfig = svc.reqmgrAux.getCampaignConfig(campaign)
+            logger.debug("request: %s, campaignConfig: %s" % (request, campaignConfig))
+            if not campaignConfig:
+                # we skip and create alert
+                msg = 'No campagin configuration found for %s' \
+                    % request
+                msg += ', skip transferor step ...'
+                logger.warn(msg)
+                continue
+            cdict.setdefault(request, []).append(campaignConfig)
+
+    # get list of request to process based on found campaigns
+    # TMP: we comment this out since there is no campaign configuration yet
+    # requests = cdict.keys()
+    logger.debug("### campaign dict: %s requests" % len(cdict.keys()))
+    logger.debug("### receive %s requestSpecs" % len(requests))
+    requestsToProcess = unified(requestSpecs, cdict, logger)
+    logger.debug("### process %s requests" % len(requests))
+    return requestsToProcess
+
+def unified(requestSpecs, campaigns, logger):
+    """
+    Unified Transferror box
+
+    Input parameters:
+    :param requestSpecs: list of request specs
+    :param campaigns: campaign configurations
+    """
+    # get aux info for dataset/blocks from inputs/parents/pileups
+    # make subscriptions based on site white/black lists
+
+    # TMP: so far we make it simple, i.e. we return dicts for request names
+    if len(requestSpecs):
+        return requestSpecs
+    requestsToProcess = {}
+    for name, campaign in campaigns.items():
+        if name in requestSpecs:
+            requestsToProcess[name] = requestSpecs[name]
+    return requestsToProcess
+
+def requestsInfo_old(svc, state='acquired', requests=None, logger=None, verbose=False):
+    if not logger:
+        logger = logging.getLogger('reqmgr2ms:requestsInfo')
+        logging.basicConfig()
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+ 
+    logger.debug("### process requests  : %s" % requests)
 
     # get workflows from list of requests 
-    time0 = orig = time.time()
+    time0 = time.time()
     requestWorkflows = getRequestWorkflows(requests)
     workflows = requestWorkflows.values()
-    elapsedTime(time0, "### getWorkflows")
-
-    #     time0 = orig = time.time()
-    #     workflows = getWorkflows(state)
-    #     elapsedTime(time0, "### getWorkflows")
+    if verbose:
+        elapsedTime(time0, "### getWorkflows")
 
     # get workflows info summaries and collect datasets we need to process
     winfo = workflowsInfo(workflows)
@@ -378,7 +433,8 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
     # find dataset info
     time0 = time.time()
     datasetBlocks, datasetSizes = dbsInfo(datasets)
-    elapsedTime(time0, "### dbsInfo")
+    if verbose:
+        elapsedTime(time0, "### dbsInfo")
 
     # find block nodes information for our datasets
     time0 = time.time()
@@ -388,7 +444,8 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
     # find events-lumis info for our datasets
     time0 = time.time()
     eventsLumis = eventsLumisInfo(datasets)
-    elapsedTime(time0, "### eventsLumisInfo")
+    if verbose:
+        elapsedTime(time0, "### eventsLumisInfo")
 
     # get specs for all requests and re-use them later in getSiteWhiteList as cache
     requests = [v['RequestName'] for w in workflows for v in w.values()]
@@ -427,25 +484,27 @@ def requestsInfo(reqmgrAuxSvc, state='assignment-approved'):
             totCpuT += cput
             sites = json.dumps(sorted(list(nodes)))
             njobs = requestJobs[wname]
-            print("\n### %s" % wname)
-            print("%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s" \
-                  % (ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites))
+            logger.debug("\n### %s" % wname)
+            logger.debug("%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s" \
+                     % (ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites))
             # find out which site can serve given workflow request
             t0 = time.time()
             lheInput, primary, parent, secondary, allowedSites \
-                = getSiteWhiteList(wspec, siteInfo, reqmgrAuxSvc, reqSpecs)
+                = getSiteWhiteList(svc, wspec, siteInfo, reqSpecs)
             rdict = dict(name=wname, datasets=datasets, blocks=datasetBlocks, \
                          npileups=npileups, size=size, njobs=njobs, \
                          nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies, \
                          sites=sites, allowedSites=allowedSites, parent=parent, \
                          lheInput=lheInput, primary=primary, secondary=secondary)
             requests[wname] = rdict
-            print("sites", allowedSites)
-            elapsedTime(t0, "getSiteWhiteList")
-    print("\ntotal # of workflows %s, datasets %s, blocks %s, evts %s, size %s (%s TB), cput %s (hours)" \
-          % (len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT))
-    elapsedTime(tst0, 'workflows info')
-    elapsedTime(orig)
+            if verbose:
+                print("sites", allowedSites)
+                elapsedTime(t0, "### getSiteWhiteList")
+    if verbose:
+        logger.debug("\ntotal # of workflows %s, datasets %s, blocks %s, evts %s, size %s (%s TB), cput %s (hours)" \
+              % (len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT))
+        elapsedTime(tst0, '### workflows info')
+        elapsedTime(orig, '### total time')
     return requests
 
 

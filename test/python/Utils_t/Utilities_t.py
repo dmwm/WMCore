@@ -7,6 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr, rootUrlJoin, zipEncodeStr
+from Utils.Utilities import lowerCmsHeaders
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -34,6 +35,17 @@ class UtilitiesTests(unittest.TestCase):
         self.assertRaises(ValueError, makeList, 123)
         self.assertRaises(ValueError, makeList, 123.456)
         self.assertRaises(ValueError, makeList, {1: 123})
+
+    def testLowerCmsHeaders(self):
+        "Test lowerCmsHeaders function"
+        val = 'cms-xx-yy'
+        headers = {'CAPITAL':1, 'Camel':1, 'Cms-Xx-Yy': val, 'CMS-XX-YY': val, 'cms-xx-yy': val}
+        lheaders = lowerCmsHeaders(headers)
+        self.assertEqual(sorted(lheaders.keys()), sorted(['CAPITAL', 'Camel', val]))
+        self.assertEqual(lheaders['CAPITAL'], 1)
+        self.assertEqual(lheaders['Camel'], 1)
+        self.assertEqual(lheaders[val], val)
+        self.assertEqual(len(lheaders.keys()), 3)
 
     def testMakeNonEmptyList(self):
         """

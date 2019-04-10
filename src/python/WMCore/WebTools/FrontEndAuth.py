@@ -6,7 +6,7 @@ import hmac
 import cherrypy
 
 from WMCore.REST.Auth import get_user_info
-
+from Utils.Utilities import lowerCmsHeaders
 
 # -----------------------------------------------------------------------------
 class FrontEndAuth(cherrypy.Tool):
@@ -56,7 +56,7 @@ class FrontEndAuth(cherrypy.Tool):
     def check_authentication(self):
         """Read and verify the front-end headers, update the user
         dict with information about the authorized user."""
-        headers = cherrypy.request.headers
+        headers = lowerCmsHeaders(cherrypy.request.headers)
         user = cherrypy.request.user
 
         if 'cms-auth-status' not in headers:
@@ -87,7 +87,7 @@ class FrontEndAuth(cherrypy.Tool):
         vfy = hmac.new(self.key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
         if vfy != headers["cms-authn-hmac"]:
             # HMAC does not match
-            raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
+            raise cherrypy.HTTPError(403, "You are not allowed to access this resource, hmac mismatch")
 
             # User authn accepted
 
@@ -110,7 +110,7 @@ class FrontEndAuth(cherrypy.Tool):
         # Finally checks if the user is allowed
         if not authzfunc(get_user_info(), role, group, site):
             # Authorization denied
-            raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
+            raise cherrypy.HTTPError(403, "You are not allowed to access this resource, authz denied")
 
     def defaultAuth(self, user, role, group, site):
         """ Return True for authorized user, False otherwise.

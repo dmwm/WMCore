@@ -32,6 +32,7 @@ from cherrypy.lib import profiler
 ### Tools is needed for CRABServer startup: it sets up the tools attributes
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
+from Utils.Utilities import lowerCmsHeaders
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
@@ -98,7 +99,7 @@ class Logger(LogManager):
         request = cherrypy.request
         remote = request.remote
         response = cherrypy.response
-        inheaders = request.headers
+        inheaders = lowerCmsHeaders(request.headers)
         outheaders = response.headers
         wfile = request.wsgi_environ.get('cherrypy.wfile', None)
         nout = (wfile and wfile.bytes_written) or outheaders.get('Content-Length', 0)
@@ -122,8 +123,8 @@ class Logger(LogManager):
                      and request.rfile.rfile.bytes_read) or "-",
                'b': nout or "-",
                'T': delta_time,
-               'AS': inheaders.get("CMS-Auth-Status", "-"),
-               'AU': inheaders.get("CMS-Auth-Cert", inheaders.get("CMS-Auth-Host", "")),
+               'AS': inheaders.get("cms-auth-status", "-"),
+               'AU': inheaders.get("cms-auth-cert", inheaders.get("cms-auth-host", "")),
                'AC': getattr(request.cookie.get("cms-auth", None), "value", ""),
                'f': inheaders.get("Referer", ""),
                'a': inheaders.get("User-Agent", "")}

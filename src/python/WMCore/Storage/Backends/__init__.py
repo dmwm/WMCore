@@ -17,6 +17,7 @@ __all__ = []
 # //
 #//
 
+from WMCore.Storage.Backends import CPImpl
 from WMCore.Storage.Backends import FNALImpl
 from WMCore.Storage.Backends import SRMV2Impl
 from WMCore.Storage.Backends import LCGImpl

@@ -83,6 +83,7 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion=False):
 pluginLookup = {'test-win': 'TestWinImpl',
                 'test-fail': 'TestFailImpl',
                 'test-copy': 'TestLocalCopyImpl',
+                "cp": "CPImpl",
                 "stageout-xrdcp-fnal": 'FNALImpl',
                 "srmv2": 'SRMV2Impl',
                 "srmv2-lcg": 'LCGImpl',

@@ -113,7 +113,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         if self.mockCRIC:
             self.cricPatchers = []
-            patchCRICAt = ['WMCore.ReqMgr.Tools.cms',
+            patchCRICAt = ['WMCore.ReqMgr.Tools.cms.CRIC',
                            'WMCore.WorkQueue.WorkQueue.CRIC',
                            'WMCore.WorkQueue.WorkQueueUtils.CRIC',
                            'WMCore.WorkQueue.Policy.Start.Dataset.CRIC',

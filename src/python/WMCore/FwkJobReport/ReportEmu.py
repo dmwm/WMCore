@@ -67,9 +67,9 @@ class ReportEmu(object):
             totalSize += inputFile["size"]
             totalEvents += inputFile["events"]
 
-        if self.job["mask"]["FirstEvent"] != None and \
-               self.job["mask"]["LastEvent"] != None:
-            outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"]
+        if self.job["mask"]["FirstEvent"] is not None and \
+            self.job["mask"]["LastEvent"] is not None:
+            outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"] + 1
         else:
             outputTotalEvents = totalEvents
 

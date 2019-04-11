@@ -82,8 +82,7 @@ class Mask(dict):
         """
         if (self['LastEvent'] == None) or (self['FirstEvent'] == None):
             return None
-        return self['LastEvent'] - self['FirstEvent']
-
+        return self['LastEvent'] - self['FirstEvent'] + 1
 
     def getMax(self, type = None):
         """
@@ -97,7 +96,7 @@ class Mask(dict):
             return None
         if (self['First%s'%(type)] == None) or (self['Last%s'%(type)] == None):
             return None
-        return self['Last%s'%(type)] - self['First%s'%(type)]
+        return self['Last%s'%(type)] - self['First%s'%(type)] + 1
 
     def addRun(self, run):
         """
@@ -141,8 +140,7 @@ class Mask(dict):
               mask, no attempt is made to merge these together.  This can result in a mask
               with duplicate lumis.
         """
-
-        if not type(lumis) == list:
+        if not isinstance(lumis, list):
             lumis = list(lumis)
 
         if not run in self['runAndLumis'].keys():
@@ -215,7 +213,7 @@ class Mask(dict):
                 if pair[0] == pair[1]:
                     maskLumis.add(pair[0])
                 else:
-                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1, 1))
+                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1))
 
             filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
             if len(filteredLumis) > 0:

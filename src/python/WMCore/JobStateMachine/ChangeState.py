@@ -570,10 +570,10 @@ class ChangeState(WMObject, WMConnectionBase):
                 if getattr(job["mask"], "daofactory", None):
                     job["mask"].load(jobID = job["id"])
             #If the mask is event based, then we have info to report
-            if job["mask"]["LastEvent"] != None and \
-               job["mask"]["FirstEvent"] != None and job["mask"]['inclusivemask']:
+            if job["mask"]['inclusivemask'] and job["mask"]["LastEvent"] is not None and \
+                job["mask"]["FirstEvent"] is not None:
                 job["nEventsToProc"] = int(job["mask"]["LastEvent"] -
-                                            job["mask"]["FirstEvent"])
+                                            job["mask"]["FirstEvent"] + 1)
             #Increment retry when commanded
             if incrementRetry:
                 job["retry_count"] += 1

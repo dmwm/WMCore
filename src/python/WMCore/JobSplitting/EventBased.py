@@ -57,9 +57,6 @@ class EventBased(JobFactory):
                 filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
                 logging.info('Loading ACDC info for collectionName: %s, with filesetName: %s', collectionName, filesetName)
-                ### FIXME Wait, don't we have all this data in WMBS already? Why querying
-                # the ACDCServer again to get the same data that is already stored
-                # in the WMBS table!!!!!?!?!
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
             except Exception as ex:
@@ -108,110 +105,94 @@ class EventBased(JobFactory):
                         f['parents'].add(parent)
 
                 if acdcFileList:
-                    if f['lfn'] in [x['lfn'] for x in acdcFileList]:
-                        totalJobs = self.createACDCJobs(f, acdcFileList, timePerEvent,
-                                                        sizePerEvent, memoryRequirement,
-                                                        lheInput, eventsPerJob, eventsPerLumi,
-                                                        deterministicPileup, totalJobs)
+                    totalJobs = self.createACDCJobs(f, acdcFileList, timePerEvent,
+                                                    sizePerEvent, memoryRequirement,
+                                                    lheInput, eventsPerJob, eventsPerLumi,
+                                                    deterministicPileup, totalJobs)
                     continue
                 if not f['lfn'].startswith("MCFakeFile"):
-                    # Very very uncommon, but it has real input dataset
-                    if eventsInFile >= eventsPerJob:
-                        while currentEvent < eventsInFile:
-                            self.newJob(name=self.getJobName(length=totalJobs))
-                            self.currentJob.addFile(f)
-                            if eventsPerJob + currentEvent < eventsInFile:
-                                jobTime = eventsPerJob * timePerEvent
-                                diskRequired = eventsPerJob * sizePerEvent
-                                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
-                            else:
-                                jobTime = (eventsInFile - currentEvent) * timePerEvent
-                                diskRequired = (eventsInFile - currentEvent) * sizePerEvent
-                                self.currentJob["mask"].setMaxAndSkipEvents(None,
-                                                                            currentEvent)
-                            self.currentJob.addResourceEstimates(jobTime=jobTime,
-                                                                 memory=memoryRequirement,
-                                                                 disk=diskRequired)
-                            if deterministicPileup:
-                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-
-                            logging.debug("Job created for real input with %s", self.currentJob)
-                            currentEvent += eventsPerJob
-                            totalJobs += 1
-                    else:
+                    # there might be files with 0 event that still have to be processed
+                    if eventsInFile == 0:
                         self.newJob(name=self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
-                        jobTime = eventsInFile * timePerEvent
-                        diskRequired = eventsInFile * sizePerEvent
+                        # Do not set LastEvent
+                        self.currentJob["mask"].setMaxAndSkipEvents(None, currentEvent)
+                        self.currentJob.addResourceEstimates(jobTime=0,
+                                                             memory=memoryRequirement,
+                                                             disk=0)
+                        if deterministicPileup:
+                            self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
+                        totalJobs += 1
+                        logging.info("Job created for 0-event input file with %s", self.currentJob)
+                    # Very very uncommon in production, but it has real input dataset
+                    while eventsInFile:
+                        self.newJob(name=self.getJobName(length=totalJobs))
+                        self.currentJob.addFile(f)
+                        if eventsInFile >= eventsPerJob:
+                            jobTime = eventsPerJob * timePerEvent
+                            diskRequired = eventsPerJob * sizePerEvent
+                            self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob - 1, currentEvent)
+                        else:
+                            jobTime = eventsInFile * timePerEvent
+                            diskRequired = eventsInFile * sizePerEvent
+                            self.currentJob["mask"].setMaxAndSkipEvents(eventsInFile - 1, currentEvent)
+                            eventsInFile = eventsPerJob
                         self.currentJob.addResourceEstimates(jobTime=jobTime,
                                                              memory=memoryRequirement,
                                                              disk=diskRequired)
                         if deterministicPileup:
                             self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                        logging.debug("Last job created for real input with %s", self.currentJob)
+
+                        eventsInFile -= eventsPerJob
+                        currentEvent += eventsPerJob
                         totalJobs += 1
+                        logging.debug("Job created for real input with %s", self.currentJob)
                 else:
                     # This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
                     (firstLumi, lastLumi) = (min(lumis), max(lumis))
                     currentLumi = firstLumi
-                    totalEvents = 0
-                    if eventsInFile >= eventsPerJob:
-                        while totalEvents < eventsInFile:
-                            self.newJob(name=self.getJobName(length=totalJobs))
-                            self.currentJob.addFile(f)
-                            self.currentJob.addBaggageParameter("lheInputFiles", lheInput)
-                            lumisPerJob = int(ceil(float(eventsPerJob)
-                                                   / eventsPerLumi))
-                            # Limit the number of events to a unsigned 32bit int
-                            eventsRemaining = eventsInFile - totalEvents
-                            if (currentEvent + eventsPerJob - 1) > (2 ** 32 - 1) and (
-                                    currentEvent + eventsRemaining - 1) > (2 ** 32 - 1):
-                                currentEvent = 1
-                            if eventsRemaining > eventsPerJob:
-                                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob,
-                                                                            currentEvent)
-                                self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
-                                                                           currentLumi)
-                                jobTime = eventsPerJob * timePerEvent
-                                diskRequired = eventsPerJob * sizePerEvent
-                            else:
-                                jobTime = eventsRemaining * timePerEvent
-                                diskRequired = eventsRemaining * sizePerEvent
-                                lumisPerJob = int(ceil(float(eventsRemaining) / eventsPerLumi))
-                                self.currentJob["mask"].setMaxAndSkipEvents(eventsRemaining,
-                                                                            currentEvent)
-                                self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
-                                                                           currentLumi)
+                    lumisPerJob = int(ceil(float(eventsPerJob) / eventsPerLumi))
 
-                            if deterministicPileup:
-                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                            currentLumi += lumisPerJob
-                            currentEvent += eventsPerJob
-                            totalEvents += eventsPerJob
-                            totalJobs += 1
-                            self.currentJob.addResourceEstimates(jobTime=jobTime,
-                                                                 memory=memoryRequirement,
-                                                                 disk=diskRequired)
-                    else:
+                    while eventsInFile:
                         self.newJob(name=self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
-                        # For MC we use firstEvent instead of skipEvents so set it to 1
-                        # We must check for events going over 2**32 - 1 here too
-                        if (eventsInFile + currentEvent - 1) > (2 ** 32 - 1):
+                        self.currentJob.addBaggageParameter("lheInputFiles", lheInput)
+
+                        # Limit the number of events to a unsigned 32bit int
+                        if (currentEvent + eventsPerJob - 1) > (2 ** 32 - 1) and\
+                                        (currentEvent + eventsInFile) > (2 ** 32 - 1):
                             currentEvent = 1
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsInFile,
-                                                                    currentEvent)
-                        self.currentJob["mask"].setMaxAndSkipLumis(lastLumi -
-                                                                   currentLumi + 1, currentLumi)
-                        jobTime = eventsInFile * timePerEvent
-                        diskRequired = eventsInFile * sizePerEvent
+
+                        if eventsInFile >= eventsPerJob:
+                            jobTime = eventsPerJob * timePerEvent
+                            diskRequired = eventsPerJob * sizePerEvent
+                            # Alan on 16/Apr/2019: inclusiveMask must be a real inclusiveMask, thus
+                            # FirstEvent/FirstLumi and LastEvent/LastLumi are also processed by the job
+                            self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob - 1, currentEvent)
+                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, currentLumi)
+                        else:
+                            jobTime = eventsInFile * timePerEvent
+                            diskRequired = eventsInFile * sizePerEvent
+                            lumisPerJob = int(ceil(float(eventsInFile) / eventsPerLumi))
+                            self.currentJob["mask"].setMaxAndSkipEvents(eventsInFile - 1, currentEvent)
+                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, currentLumi)
+                            eventsInFile = eventsPerJob
+
                         self.currentJob.addResourceEstimates(jobTime=jobTime,
                                                              memory=memoryRequirement,
                                                              disk=diskRequired)
                         if deterministicPileup:
                             self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
+
+                        eventsInFile -= eventsPerJob
+                        currentEvent += eventsPerJob
+                        currentLumi += lumisPerJob
                         totalJobs += 1
+                        logging.info("Job created with mask: %s", self.currentJob['mask'])
+
+        return
+
 
     def createACDCJobs(self, fakeFile, acdcFileInfo, timePerEvent, sizePerEvent,
                        memoryRequirement, lheInputOption, eventsPerJob,
@@ -219,16 +200,21 @@ class EventBased(JobFactory):
         """
         _createACDCJobs_
 
-        Create ACDC production jobs, this are treated differentely
+        Create ACDC production jobs, these are treated differently
         since it is an exact copy of the failed jobs.
         """
+        lumisPerJob = 0  # calculated a bit beyond
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
                 eventsToRun = acdcFile["events"]
                 currentEvent = acdcFile["first_event"]
-                currentLumi = acdcFile["lumis"][0]
-                lumisPerJob = 0
-                while eventsToRun:
+                acdcFile["lumis"] = sorted(acdcFile["lumis"])
+                while eventsToRun > 0:
+                    ### WARNING: it assumes there will NOT be splitting changes between
+                    # the original and the ACDC workflow
+                    # Lumis to recover are not necessarily sequential
+                    acdcFile["lumis"] = acdcFile["lumis"][lumisPerJob:]
+                    currentLumi = acdcFile["lumis"][0]
                     self.newJob(name=self.getJobName(length=totalJobs))
                     self.currentJob.addFile(fakeFile)
                     self.currentJob.addBaggageParameter("lheInputFiles", lheInputOption)
@@ -236,16 +222,22 @@ class EventBased(JobFactory):
                     if (currentEvent + eventsPerJob) > (2 ** 32 - 1):
                         currentEvent = 1
                     if eventsToRun >= eventsPerJob:
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
-                        if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsPerJob) / eventsPerLumi))
-                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob - 1, currentEvent)
                     else:
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun, currentEvent)
-                        if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsToRun) / eventsPerLumi))
-                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
-                        eventsToRun = eventsPerJob
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun - 1, currentEvent)
+                    if fakeFile['lfn'].startswith("MCFakeFile"):
+                        # either a shorter last job or a normal sized one
+                        lumisPerJob = int(ceil(float(min(eventsToRun, eventsPerJob)) / eventsPerLumi))
+                        # I don't like it! but if we want to reduce the memory footprint, we need
+                        # to keep merging MCFakeFiles at DataCollection level. Which requires a dirty
+                        # lumi check - for sequential lumis - in here
+                        while True:
+                            setLumis = set(range(currentLumi, currentLumi + lumisPerJob))
+                            if setLumis.issubset(set(acdcFile["lumis"])):
+                                break
+                            else:
+                                lumisPerJob -= 1
+                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, currentLumi)
                     jobTime = eventsPerJob * timePerEvent
                     diskRequired = eventsPerJob * sizePerEvent
                     self.currentJob.addResourceEstimates(jobTime=jobTime,
@@ -253,7 +245,7 @@ class EventBased(JobFactory):
                                                          disk=diskRequired)
                     if deterministicPileup:
                         self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                    logging.debug("ACDC job created with %s", self.currentJob)
+                    logging.info("ACDC job created with mask: %s", self.currentJob['mask'])
                     eventsToRun -= eventsPerJob
                     currentEvent += eventsPerJob
                     currentLumi += lumisPerJob

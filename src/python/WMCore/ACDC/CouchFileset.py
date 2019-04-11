@@ -7,7 +7,6 @@ Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 import time
-
 from WMCore.ACDC.Fileset import Fileset
 from WMCore.Database.CouchUtils import connectToCouch, requireFilesetName
 
@@ -106,12 +105,12 @@ class CouchFileset(Fileset):
         filteredFiles = []
         if mask:
             for f in files:
-                # There is no LastEvent for last job of a file
+                # There might be no LastEvent for last job of a file
                 if mask['LastEvent'] and mask['FirstEvent']:
-                    f['events'] = mask['LastEvent'] - mask['FirstEvent']
+                    f['events'] = mask['LastEvent'] - mask['FirstEvent'] + 1
                     f['first_event'] = mask['FirstEvent']
                 elif mask['FirstEvent']:
-                    f['events'] -= mask['FirstEvent']
+                    f['events'] = f['events'] - mask['FirstEvent'] + 1
                     f['first_event'] = mask['FirstEvent']
 
             maskLumis = mask.getRunAndLumis()
@@ -141,10 +140,13 @@ class CouchFileset(Fileset):
 
         Create a new filelist document containing the id
         """
+        # add a versioning to each of these ACDC docs such that we can properly
+        # parse them and avoid issues between ACDC docs and agent base code
         input = {"collection_name": self.collectionName,
                  "collection_type": self.collectionType,
                  "fileset_name": self["name"],
                  "files": files,
+                 "acdc_version": 2,
                  "timestamp": time.time()}
 
         document = CMSCouch.Document(None, input)

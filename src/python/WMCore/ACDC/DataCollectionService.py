@@ -104,6 +104,30 @@ def _mergeRealDataRunLumis(mergedFiles):
                                                'lumis': list(set(lumis))})
     return
 
+
+def fixupMCFakeLumis(files, acdcVersion):
+    """
+    This is complicated!
+    The lumi list uploaded to the ACDC Server is incorrect for, at least,
+    the MCFakeFiles. Reason being that it also includes the LastLumi, which
+    is actually not processed by the job, but just set as an upper boundary
+    (inclusiveMask). However, if the job is the last one for a given MCFakeFile,
+    then it might have a single lumi section in the list, and in this case it
+    would be correct...
+
+    This function updates data in-place.
+
+    For more info, see issue: https://github.com/dmwm/WMCore/issues/9126
+    """
+    for fname, fvalues in files.items():
+        if fname.startswith('MCFakeFile') and acdcVersion < 2:
+            for run in fvalues['runs']:
+                if len(run['lumis']) > 1:
+                    run['lumis'].pop()
+        else:
+            break
+
+
 class ACDCDCSException(WMException):
     """
     Yet another dummy variable class
@@ -189,6 +213,8 @@ class DataCollectionService(CouchService):
     @CouchUtils.connectToCouch
     def _getFilesetInfo(self, collectionName, filesetName, chunkOffset=None, chunkSize=None):
         """
+        Fetches all the data from the ACDC Server that matches the collection
+        and fileset names.
         """
         option = {"include_docs": True, "reduce": False}
         keys = [[collectionName, filesetName]]
@@ -196,9 +222,9 @@ class DataCollectionService(CouchService):
 
         filesInfo = []
         for row in results["rows"]:
-            files = row["doc"].get("files", False)
-            if files:
-                filesInfo.extend(files.values())
+            files = row["doc"].get("files", [])
+            fixupMCFakeLumis(files, row['doc'].get("acdc_version", 1))
+            filesInfo.extend(files.values())
 
         # second lfn sort
         filesInfo.sort(key=lambda x: x["lfn"])

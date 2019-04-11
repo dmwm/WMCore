@@ -611,10 +611,12 @@ class Subscription(WMBSBase, WMSubscription):
             fileDict[job['id']] = []
             for f in job['input_files']:
                 fileDict[job['id']].append(f['id'])
+                logging.info("AMR jobid %s, job mask: %s", job['id'], job['mask'])
                 fileMask = job['mask'].filterRunLumisByMask(runs=f['runs'])
                 for runObj in fileMask:
                     run = runObj.run
                     lumis = runObj.lumis
+                    logging.info("  AMR runObj run %s, and lumis %s", run, lumis)
                     for lumi in lumis:
                         jobFileRunLumis.append((job['id'], f['id'], run, lumi))
 
@@ -622,6 +624,7 @@ class Subscription(WMBSBase, WMSubscription):
         maskList = []
         for job in jobList:
             mask = job['mask']
+            logging.info("AMRR jobid %s, job mask: %s", job['id'], mask)
             if len(mask['runAndLumis'].keys()) > 0:
                 # Then we have multiple binds
                 binds = mask.produceCommitBinds(jobID=job['id'])

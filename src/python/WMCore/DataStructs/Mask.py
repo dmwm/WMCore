@@ -22,7 +22,7 @@ class Mask(dict):
     def __init__(self, **kwargs):
         dict.__init__(self, **kwargs)
         self.inclusive = True
-        self.setdefault("inclusivemask", True)
+        self.setdefault("inclusivemask", True)  # TODO: it has no effect anywhere...
         self.setdefault("FirstEvent", None)
         self.setdefault("LastEvent", None)
         self.setdefault("FirstLumi", None)
@@ -42,7 +42,7 @@ class Mask(dict):
 
         self['FirstEvent'] = skipEvents
         if maxEvents is not None:
-            self['LastEvent']  = skipEvents + maxEvents
+            self['LastEvent']  = skipEvents + maxEvents - 1  # inclusiveMask=True
 
         return
 
@@ -55,7 +55,7 @@ class Mask(dict):
         """
 
         self['FirstLumi'] = skipLumi
-        self['LastLumi']  = skipLumi + maxLumis
+        self['LastLumi']  = skipLumi + maxLumis - 1  # inclusiveMask=True
 
         return
 
@@ -69,7 +69,7 @@ class Mask(dict):
         """
 
         self['FirstRun'] = skipRun
-        self['LastRun']  = skipRun + maxRuns
+        self['LastRun']  = skipRun + maxRuns - 1  # inclusiveMask=True
 
         return
 
@@ -82,7 +82,7 @@ class Mask(dict):
         """
         if (self['LastEvent'] == None) or (self['FirstEvent'] == None):
             return None
-        return self['LastEvent'] - self['FirstEvent']
+        return self['LastEvent'] - self['FirstEvent'] + 1  # inclusiveMask=True
 
 
     def getMax(self, type = None):
@@ -97,7 +97,7 @@ class Mask(dict):
             return None
         if (self['First%s'%(type)] == None) or (self['Last%s'%(type)] == None):
             return None
-        return self['Last%s'%(type)] - self['First%s'%(type)]
+        return self['Last%s'%(type)] - self['First%s'%(type)] + 1  # inclusiveMask=True
 
     def addRun(self, run):
         """
@@ -142,10 +142,10 @@ class Mask(dict):
               with duplicate lumis.
         """
 
-        if not type(lumis) == list:
+        if not isinstance(lumis, list):
             lumis = list(lumis)
 
-        if not run in self['runAndLumis'].keys():
+        if run not in self['runAndLumis'].keys():
             self['runAndLumis'][run] = []
 
         self['runAndLumis'][run].append([min(lumis), max(lumis)])

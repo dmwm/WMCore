@@ -241,7 +241,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.commitTransaction(existingTransaction)
         return jobIDList
 
-
+    # FIXME: apparently not used anywhere by anyone. Shall we remove it?
     def commitBulk(self):
         """
         Creates jobs in a group instead of singly, as is done in jobGroup.commit()

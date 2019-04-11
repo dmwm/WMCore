@@ -38,7 +38,7 @@ class MaskTest(unittest.TestCase):
         testMask.setMaxAndSkipEvents(maxEvents, skipEvents)
 
         self.assertEqual(testMask['FirstEvent'], skipEvents)
-        self.assertEqual(testMask['LastEvent'],  maxEvents + skipEvents)
+        self.assertEqual(testMask['LastEvent'],  maxEvents + skipEvents - 1)
 
         return
 
@@ -56,7 +56,7 @@ class MaskTest(unittest.TestCase):
         testMask.setMaxAndSkipLumis(maxLumis, skipLumis)
 
         self.assertEqual(testMask['FirstLumi'], skipLumis)
-        self.assertEqual(testMask['LastLumi'],  maxLumis + skipLumis)
+        self.assertEqual(testMask['LastLumi'],  maxLumis + skipLumis - 1)
 
         return
 
@@ -74,7 +74,7 @@ class MaskTest(unittest.TestCase):
         testMask.setMaxAndSkipRuns(maxRuns, skipRuns)
 
         self.assertEqual(testMask['FirstRun'], skipRuns)
-        self.assertEqual(testMask['LastRun'],  maxRuns + skipRuns)
+        self.assertEqual(testMask['LastRun'],  maxRuns + skipRuns - 1)
 
         return
 
@@ -93,7 +93,7 @@ class MaskTest(unittest.TestCase):
 
         testMask = Mask()
         maxEvents  = 100
-        skipEvents = 0
+        skipEvents = 1
 
         tempMax = testMask.getMaxEvents()
 
@@ -103,7 +103,7 @@ class MaskTest(unittest.TestCase):
 
         tempMax = testMask.getMaxEvents()
 
-        self.assertEqual(tempMax, maxEvents + skipEvents)
+        self.assertEqual(tempMax, maxEvents + skipEvents - 1)
 
 
     def testGetMax(self):
@@ -118,6 +118,7 @@ class MaskTest(unittest.TestCase):
 
         testMask.setMaxAndSkipRuns(maxRuns, skipRuns)
 
+        self.assertEqual(testMask.getMax('Event'), None)
         self.assertEqual(testMask.getMax('Lumi'), None)
         self.assertEqual(testMask.getMax('junk'), None)
         self.assertEqual(testMask.getMax('Run'),  1000)
@@ -157,7 +158,7 @@ class MaskTest(unittest.TestCase):
         """
         mask = Mask()
         mask.addRunWithLumiRanges(run=1, lumiList=[[1, 9], [12, 12], [31, 31], [38, 39], [49, 49]])
-
+        print(mask)
         runs = set()
         runs.add(Run(1, 148, 166, 185, 195, 203, 212))
         newRuns = mask.filterRunLumisByMask(runs = runs)
@@ -168,12 +169,14 @@ class MaskTest(unittest.TestCase):
         runs.add(Run(2, 148, 166, 185, 195, 203, 212))
         newRuns = mask.filterRunLumisByMask(runs = runs)
         self.assertEqual(len(newRuns), 1)
+        run = newRuns.pop()
+        self.assertEqual(run.run, 1)
+        self.assertEqual(run.lumis, [2])
 
         runs = set()
         runs.add(Run(1, 2, 9, 148, 166, 185, 195, 203, 212))
         newRuns = mask.filterRunLumisByMask(runs=runs)
         self.assertEqual(len(newRuns), 1)
-
         run = newRuns.pop()
         self.assertEqual(run.run, 1)
         self.assertEqual(run.lumis, [2,9])
@@ -182,14 +185,10 @@ class MaskTest(unittest.TestCase):
         mask.addRunAndLumis(run=1, lumis=[5, 6])
         runs = set()
         runs.add(Run(1, range(1, 11)))
-        for r in runs:
-            print("AMR initial run: %s" % r.json())
         newRuns = mask.filterRunLumisByMask(runs=runs)
-        for r in newRuns:
-            print("AMR final run: %s" % r.json())
         run = newRuns.pop()
         self.assertEqual(run.run, 1)
-        self.assertEqual(run.lumis, [5])
+        self.assertEqual(run.lumis, [5, 6])
 
 
 if __name__ == '__main__':

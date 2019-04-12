@@ -9,12 +9,9 @@ Description: CMS modules
 
 from __future__ import (division, print_function)
 
-import os
-
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.Services.TagCollector.TagCollector import TagCollector
 
 # initialize TagCollector instance to be used in this module
@@ -32,17 +29,13 @@ def next_status(status=None):
 
 
 def sites():
-    "Return known CMS site list from SiteDB"
+    "Return known CMS site list from CRIC"
     try:
-        # Download a list of all the sites from SiteDB, uses v2 API.
-        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-            cric = CRIC()
-            site_list = sorted(cric.getAllPSNs())
-        else:
-            sitedb = SiteDBJSON()
-            site_list = sorted(sitedb.getAllCMSNames())
+        # Download a list of all the sites from CRIC
+        cric = CRIC()
+        site_list = sorted(cric.getAllPSNs())
     except Exception as exc:
-        msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % str(exc)
+        msg = "ERROR: Could not retrieve sites from CRIC, reason: %s" % str(exc)
         raise Exception(msg)
     return site_list
 
@@ -55,15 +48,12 @@ def pnns():
     """
     Returns all PhEDEx node names, excluding Buffer endpoints
     """
-    if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-        sitedb = CRIC()  # FIXME: rename it to cric
-    else:
-        sitedb = SiteDBJSON()
+    cric = CRIC()
 
     try:
-        pnn_list = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
+        pnn_list = sorted(cric.getAllPhEDExNodeNames(excludeBuffer=True))
     except Exception as exc:
-        msg = "ERROR: Could not retrieve PNNs from SiteDB, reason: %s" % str(exc)
+        msg = "ERROR: Could not retrieve PNNs from CRIC, reason: %s" % str(exc)
         raise Exception(msg)
     return pnn_list
 

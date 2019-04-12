@@ -7,12 +7,10 @@ This policy is specifically used by DQMHarvest workflows, which requires
 some special handling based on run information. Nonetheless, trying to
 make it generic enough that could be used by other spec types.
 """
-__all__ = []
-import os
+
 import logging
 from math import ceil
 from WMCore import Lexicon
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
@@ -28,11 +26,7 @@ class Dataset(StartPolicyInterface):
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
         self.sites = []
-        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-            self.cric = CRIC()
-        else:
-            self.cric = None
-            self.siteDB = SiteDB()
+        self.cric = CRIC()
 
     def split(self):
         """Apply policy to spec"""
@@ -187,9 +181,6 @@ class Dataset(StartPolicyInterface):
             self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
             self.data[datasetPath] = self.sites
         elif locations:
-            if self.cric:
-                self.data[datasetPath] = list(set(self.cric.PNNstoPSNs(locations)))
-            else:
-                self.data[datasetPath] = list(set(self.siteDB.PNNstoPSNs(locations)))
+            self.data[datasetPath] = list(set(self.cric.PNNstoPSNs(locations)))
 
         return validBlocks

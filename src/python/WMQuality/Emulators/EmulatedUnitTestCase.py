@@ -115,7 +115,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.cricPatchers = []
             patchCRICAt = ['WMCore.ReqMgr.Tools.cms',
                            'WMCore.WorkQueue.WorkQueue.CRIC',
-                           'WMCore.WorkQueue.WorkQueueUtils',
+                           'WMCore.WorkQueue.WorkQueueUtils.CRIC',
                            'WMCore.WorkQueue.Policy.Start.Dataset.CRIC',
                            'WMCore.WorkQueue.Policy.Start.ResubmitBlock.CRIC',
                            'WMCore.WorkQueue.Policy.Start.Block.CRIC']

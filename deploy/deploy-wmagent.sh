@@ -49,7 +49,6 @@ REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
 CENTRAL_SERVICES="cmsweb.cern.ch"
-USE_CRIC=false
 
 ### Usage function: print the usage of the script
 usage()
@@ -210,13 +209,6 @@ if [ "x$MATCH_ORACLE_USER" != "x" ]; then
   check_oracle
 fi
 
-### Are we meant to be using CRIC or not
-MATCH_WMAGENT_USE_CRIC=`cat $ENV_FILE | grep WMAGENT_USE_CRIC | awk -F'=' '{print $2}'`
-if [[ "$MATCH_WMAGENT_USE_CRIC" == ?rue ]]; then
-  USE_CRIC=true
-  export WMAGENT_USE_CRIC=true
-fi
-
 if [[ "$HOSTNAME" == *cern.ch ]]; then
   MYPROXY_CREDNAME="amaltaroCERN"
   FORCEDOWN="'T3_US_NERSC'"
@@ -255,7 +247,6 @@ echo " - Agent number    : $AG_NUM"
 echo " - DB Flavor       : $FLAVOR"
 echo " - Central Services: $CENTRAL_SERVICES"
 echo " - Use /data1      : $DATA1"
-echo " - Using CRIC      : $USE_CRIC" && echo
 
 mkdir -p $DEPLOY_DIR || true
 cd $BASE_DIR

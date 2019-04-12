@@ -78,11 +78,10 @@ class DataLocationMapper(object):
 
         if self.params.get('phedex'):
             self.phedex = self.params['phedex']
-        if self.params.get('sitedb'):
-            self.sitedb = self.params['sitedb']
+        if self.params.get('cric'):
+            self.cric = self.params['cric']
 
     def __call__(self, dataItems, fullResync=False, dbses=None, datasetSearch=False):
-        dbses = dbses or {}
         result = {}
 
         # do a full resync every fullRefreshInterval interval
@@ -141,7 +140,7 @@ class DataLocationMapper(object):
         # convert from PhEDEx name to cms site name
         for name, nodes in result.items():
             psns = set()
-            psns.update(self.sitedb.PNNstoPSNs(nodes))
+            psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
         return result, fullResync
@@ -163,7 +162,7 @@ class DataLocationMapper(object):
         # convert the sets to lists
         for name, nodes in result.items():
             psns = set()
-            psns.update(self.sitedb.PNNstoPSNs(nodes))
+            psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
         return result, True  # partial dbs updates not supported
@@ -195,7 +194,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
-        for dbs, dataMapping in dataLocations.items():
+        for _dbs, dataMapping in dataLocations.items():
             modified = []
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForData(data)

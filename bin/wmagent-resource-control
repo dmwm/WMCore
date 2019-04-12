@@ -13,10 +13,7 @@ from argparse import ArgumentParser
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMCore.WMInit import connectToDB
-from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 
 
 def getTaskTypes(tier0=False):
@@ -78,7 +75,7 @@ def createOptionParser():
     myOptParser.add_argument("--pnn", dest="pnn",
                              help="Specify the PNN for the site")
     myOptParser.add_argument("--cms-name", dest="cmsName",
-                             help="Specify the name of the site in SiteDB")
+                             help="Specify the name of the site in CRIC")
     myOptParser.add_argument("--task-type", dest="taskType",
                              help="Specify the name of the task to add/modify")
     myOptParser.add_argument("--priority", dest="priority", default=None,
@@ -93,8 +90,6 @@ def createOptionParser():
                              const='Down', help="Stop submission to the site.")
     myOptParser.add_argument("--normal", dest="state", action="store_const",
                              const='Normal', help="Normal operation for the site.")
-    myOptParser.add_argument("--emulator", dest="emulator", default=False, action="store_true",
-                             help="Use SiteDB emulator for unittests")
     myOptParser.add_argument("--add-disk", dest="addDisk", default=True, action="store_false",
                              help="Use it to explicitly add the Disk endpoints together with the other T1s")
 
@@ -105,13 +100,10 @@ def getCMSSiteInfo(pattern):
     """
     _getCMSSiteInfo_
 
-    Query SiteDB for the site and SE names matching the pattern.  Return a
+    Query CRIC for the site and SE names matching the pattern.  Return a
     dictionary keyed by site name.
     """
-    if os.getenv("WMAGENT_USE_CRIC", False):
-        cricObj = CRIC()
-    else:
-        cricObj = SiteDBJSON()  # this will be removed anyways
+    cricObj = CRIC()
 
     mapping = cricObj.PSNtoPNNMap(pattern)
     print("Retrieved %i maps from %s" % (len(mapping), cricObj['endpoint']))
@@ -155,10 +147,7 @@ def addPNNs(resourceControl, pattern):
 
     Add the given sites to resource control and add tasks as well.
     """
-    if os.getenv("WMAGENT_USE_CRIC", False):
-        cricObj = CRIC()
-    else:
-        cricObj = SiteDBJSON()  # this will be removed anyways
+    cricObj = CRIC()
 
     pnns = cricObj.getAllPhEDExNodeNames(pattern, excludeBuffer=True)
     print("Retrieved %i PNNs from %s" % (len(pnns), cricObj['endpoint']))
@@ -314,12 +303,6 @@ def setSiteState(resourceControl, siteName, state):
 
 myOptParser = createOptionParser()
 options = myOptParser.parse_args()
-
-if options.emulator:  # emulate sitedb in unittests
-    import mock
-
-    siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)
-    siteDBPatcher.start()
 
 connectToDB()
 wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])

@@ -15,7 +15,6 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -495,14 +494,13 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = None
-        self.siteDB = SiteDBJSON()
 
         # add sites that would normally be added by operator via resource_control
         locationDAO = self.daoFactory(classname="Locations.New")
         self.pnns = []
         for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName=site, pnn=self.siteDB.cmsNametoPhEDExNode(site)[0])
-            self.pnns.append(self.siteDB.cmsNametoPhEDExNode(site)[0])
+            locationDAO.execute(siteName=site, pnn=site)
+            self.pnns.append(site)
 
     def createWMSpec(self, name='ReRecoWorkload'):
         factory = ReRecoWorkloadFactory()

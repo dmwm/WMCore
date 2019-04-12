@@ -17,12 +17,9 @@ ACDC unsupported:
 - SiblingProcessingBased
 
 """
-__all__ = []
 
-import os
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
@@ -50,11 +47,7 @@ class ResubmitBlock(StartPolicyInterface):
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
         self.sites = []
-        if os.getenv("WMAGENT_USE_CRIC", False) or os.getenv("WMCORE_USE_CRIC", False):
-            self.cric = CRIC()
-        else:
-            self.cric = None
-            self.siteDB = SiteDB()
+        self.cric = CRIC()
 
     def split(self):
         """Apply policy to spec"""
@@ -117,10 +110,7 @@ class ResubmitBlock(StartPolicyInterface):
             if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
-                if self.cric:
-                    dbsBlock["Sites"] = self.cric.PNNstoPSNs(block["locations"])
-                else:
-                    dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
+                dbsBlock["Sites"] = self.cric.PNNstoPSNs(block["locations"])
             validBlocks.append(dbsBlock)
         else:
             if self.args['SplittingAlgo'] in self.unsupportedAlgos:
@@ -150,10 +140,7 @@ class ResubmitBlock(StartPolicyInterface):
             if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
-                if self.cric:
-                    dbsBlock["Sites"] = self.cric.PNNstoPSNs(block["locations"])
-                else:
-                    dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
+                dbsBlock["Sites"] = self.cric.PNNstoPSNs(block["locations"])
             dbsBlock['ACDC'] = acdcInfo
             if dbsBlock['NumberOfFiles']:
                 fixedSizeBlocks.append(dbsBlock)
@@ -174,10 +161,7 @@ class ResubmitBlock(StartPolicyInterface):
         if task.getTrustSitelists().get('trustlists'):
             dbsBlock["Sites"] = self.sites
         else:
-            if self.cric:
-                dbsBlock["Sites"] = self.cric.PNNstoPSNs(acdcBlock["locations"])
-            else:
-                dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(acdcBlock["locations"])
+            dbsBlock["Sites"] = self.cric.PNNstoPSNs(acdcBlock["locations"])
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:
             result.append(dbsBlock)

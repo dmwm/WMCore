@@ -257,7 +257,7 @@ class EventBased(JobFactory):
                                                          disk=diskRequired)
                     if deterministicPileup:
                         self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
-                    logging.info("ACDC job created with %s", self.currentJob)
+                    logging.info("ACDC job created with mask: %s", self.currentJob['mask'])
                     eventsToRun -= eventsPerJob
                     currentEvent += eventsPerJob
                     totalJobs += 1

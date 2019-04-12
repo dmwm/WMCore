@@ -10,9 +10,9 @@ import logging
 import traceback
 from math import ceil
 
+from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File import File
-from WMCore.DataStructs.Run import Run
 
 
 class EventBased(JobFactory):
@@ -56,7 +56,8 @@ class EventBased(JobFactory):
                 couchDB = kwargs.get('couchDB')
                 filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
-                logging.info('Loading ACDC info for collectionName: %s, with filesetName: %s', collectionName, filesetName)
+                logging.info('Loading ACDC info for collectionName: %s, with filesetName: %s', collectionName,
+                             filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
                 acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
             except Exception as ex:
@@ -160,7 +161,7 @@ class EventBased(JobFactory):
                         self.currentJob.addBaggageParameter("lheInputFiles", lheInput)
 
                         # Limit the number of events to a unsigned 32bit int
-                        if (currentEvent + eventsPerJob - 1) > (2 ** 32 - 1) and\
+                        if (currentEvent + eventsPerJob - 1) > (2 ** 32 - 1) and \
                                         (currentEvent + eventsInFile) > (2 ** 32 - 1):
                             currentEvent = 1
 
@@ -192,7 +193,6 @@ class EventBased(JobFactory):
                         logging.info("Job created with mask: %s", self.currentJob['mask'])
 
         return
-
 
     def createACDCJobs(self, fakeFile, acdcFileInfo, timePerEvent, sizePerEvent,
                        memoryRequirement, lheInputOption, eventsPerJob,

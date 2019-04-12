@@ -7,16 +7,14 @@ Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 import time
-from WMCore.ACDC.Fileset import Fileset
-from WMCore.Database.CouchUtils import connectToCouch, requireFilesetName
 
 import WMCore.Database.CMSCouch as CMSCouch
-
+from WMCore.ACDC.Fileset import Fileset
 from WMCore.Algorithms.ParseXMLFile import coroutine
-
-from WMCore.DataStructs.Fileset import Fileset as DataStructsFileset
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Fileset import Fileset as DataStructsFileset
 from WMCore.DataStructs.Run import Run
+from WMCore.Database.CouchUtils import connectToCouch, requireFilesetName
 
 
 @coroutine
@@ -42,9 +40,9 @@ def filePipeline(targets):
     while True:
         inputDict = (yield)
         newFile = File(
-                lfn=str(inputDict[u'lfn']),
-                size=int(inputDict[u'size']),
-                events=int(inputDict[u'events'])
+            lfn=str(inputDict[u'lfn']),
+            size=int(inputDict[u'size']),
+            events=int(inputDict[u'events'])
         )
         targets['run'].send((newFile, inputDict[u'runs']))
         targets['fileset'].addFile(newFile)
@@ -128,19 +126,21 @@ class CouchFileset(Fileset):
             filteredFiles = files
 
         jsonFiles = {}
-        [jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in filteredFiles]
-        filelist = self.makeFilelist(jsonFiles)
-        return filelist
+        for f in filteredFiles:
+            jsonFiles.__setitem__(f['lfn'], f.__to_json__(None))
+        fileList = self.makeFilelist(jsonFiles)
+        return fileList
 
     @connectToCouch
     @requireFilesetName
-    def makeFilelist(self, files={}):
+    def makeFilelist(self, files=None):
         """
         _makeFilelist_
 
         Create a new filelist document containing the id
         """
-        # add a versioning to each of these ACDC docs such that we can properly
+        files = files or {}
+        # add a version to each of these ACDC docs such that we can properly
         # parse them and avoid issues between ACDC docs and agent base code
         input = {"collection_name": self.collectionName,
                  "collection_type": self.collectionType,

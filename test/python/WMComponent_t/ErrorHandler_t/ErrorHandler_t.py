@@ -4,43 +4,41 @@ ErrorHandler test TestErrorHandler module and the harness
 """
 from __future__ import print_function
 
+import cProfile
 import os
 import os.path
+import pstats
 import threading
 import time
 import unittest
-import cProfile, pstats
 
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
 import WMCore.WMBase
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMQuality.Emulators import EmulatorSetup
-from WMCore.DAOFactory          import DAOFactory
-from WMCore.Services.UUIDLib       import makeUUID
-
-
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow     import Workflow
-from WMCore.WMBS.File         import File
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Job          import Job
-from WMCore.WMBS.JobGroup     import JobGroup
-
-from WMCore.DataStructs.Run             import Run
-from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.WMSpec.Makers.TaskMaker     import TaskMaker
-from WMCore.ACDC.DataCollectionService  import DataCollectionService
-
-from WMCore_t.WMSpec_t.TestSpec         import testWorkload
 from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
+from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 class ErrorHandlerTest(EmulatedUnitTestCase):
     """
     TestCase for TestErrorHandler module
     """
+
     def setUp(self):
         """
         setup for test.
@@ -50,7 +48,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules=["WMCore.WMBS"],
                                 useDefault=False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
@@ -118,13 +116,11 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         config.JobStateMachine.couchurl = os.getenv('COUCHURL', None)
         config.JobStateMachine.couchDBName = "errorhandler_t_jd"
 
-
         config.section_('ACDC')
         config.ACDC.couchurl = self.testInit.couchUrl
         config.ACDC.database = "errorhandler_t"
 
         return config
-
 
     def createWorkload(self, workloadName='Test'):
         """
@@ -146,8 +142,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return workload
 
-
-
     def createTestJobGroup(self, nJobs=10, retry_count=1,
                            workloadPath='test', fwjrPath=None,
                            workloadName=makeUUID(),
@@ -155,7 +149,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         """
         Creates a group of several jobs
         """
-
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -209,9 +202,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
             testJob.addFile(testFileB)
             testJob.save()
 
-
         testJobGroup.commit()
-
 
         testSubscription.acquireFiles(files=[testFileA, testFileB])
         testSubscription.save()
@@ -219,21 +210,21 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return testJobGroup
 
-
     def testA_Create(self):
         """
         WMComponent_t.ErrorHandler_t.ErrorHandler_t:testCreate()
 
         Mimics creation of component and test jobs failed in create stage.
         """
-
+        njobs = 4
         workloadName = 'TestWorkload'
 
         self.createWorkload(workloadName=workloadName)
         workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
-        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+        #        testJobGroup = self.createTestJobGroup(nJobs=self.nJobs,
+        testJobGroup = self.createTestJobGroup(nJobs=njobs,
                                                workloadPath=workloadPath,
                                                workloadName=workloadName)
         config = self.getConfig()
@@ -242,7 +233,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         changer.propagate(testJobGroup.jobs, 'createfailed', 'created')
 
         idList = self.getJobs.execute(state='CreateFailed')
-        self.assertEqual(len(idList), self.nJobs)
+        self.assertEqual(len(idList), njobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
         # set reqAuxDB None for the test,
@@ -255,7 +246,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         # These should go directly to exhausted
         idList = self.getJobs.execute(state='Exhausted')
-        self.assertEqual(len(idList), self.nJobs)
+        self.assertEqual(len(idList), njobs)
 
         # Check that it showed up in ACDC
         collection = self.dataCS.getDataCollection(workloadName)
@@ -270,11 +261,16 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
                 self.assertEqual(f['events'], 10)
                 self.assertEqual(f['size'], 1024)
                 self.assertEqual(f['parents'], [u'/this/is/a/parent'])
-                self.assertTrue(f['runs'][0]['lumis'] in [[12312], [12314, 12315, 12316]],
-                                "Unknown lumi %s" % f['runs'][0]['lumis'])
+                self.assertTrue(f['runs'][0]['run_number'] == 10)
+                if f['lfn'] == "/this/is/a/lfnA":
+                    self.assertItemsEqual(f['runs'][0]['lumis'], [12312])
+                elif f['lfn'] == "/this/is/a/lfnB":
+                    self.assertItemsEqual(f['runs'][0]['lumis'], [12314, 12315, 12316])
+                else:
+                    self.assertFail("File name is not known: %s" % f['lfn'])
                 self.assertEqual(f['merged'], 0)
                 self.assertEqual(f['first_event'], 88)
-            self.assertEqual(counter, 20)
+            self.assertEqual(counter, njobs * 2)  # each job has 2 files (thus 4 times duplicate)
         return
 
     def testB_Submit(self):
@@ -351,7 +347,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         self.assertEqual(len(idList), self.nJobs)
         return
 
-
     def testD_Exhausted(self):
         """
         _testExhausted_
@@ -382,13 +377,11 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         # Do we have files to start with?
         self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 2)
 
-
         testErrorHandler = ErrorHandlerPoller(config)
         # set reqAuxDB None for the test,
         testErrorHandler.reqAuxDB = None
         testErrorHandler.setup(None)
         testErrorHandler.algorithm(None)
-
 
         idList = self.getJobs.execute(state='JobFailed')
         self.assertEqual(len(idList), 0)
@@ -398,8 +391,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         idList = self.getJobs.execute(state='Exhausted')
         self.assertEqual(len(idList), self.nJobs)
-
-
 
         # Did we fail the files?
         self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
@@ -497,7 +488,6 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         return
 
-
     @attr('integration')
     def testZ_Profile(self):
         """
@@ -549,6 +539,7 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
         p.print_stats(0.2)
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

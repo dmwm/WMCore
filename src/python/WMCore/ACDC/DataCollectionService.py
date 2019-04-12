@@ -10,13 +10,13 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import logging
 import threading
 from operator import itemgetter
-from WMCore.DAOFactory import DAOFactory
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 import WMCore.Database.CouchUtils as CouchUtils
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.ACDC.CouchService import CouchService
+from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
@@ -84,6 +84,7 @@ def _isRunMaskDuplicate(run, lumis, runLumis):
             if lumis.issubset(runLumi['lumis']):
                 return True
     return False
+
 
 def _mergeRealDataRunLumis(mergedFiles):
     """
@@ -457,10 +458,9 @@ class DataCollectionService(CouchService):
 
 
 def getMergedParents(childLFNs):
-
     myThread = threading.currentThread()
     daoFactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger,
-                                dbinterface=myThread.dbi)
+                            dbinterface=myThread.dbi)
 
     getParentInfoAction = daoFactory(classname="Files.GetParentInfo")
 

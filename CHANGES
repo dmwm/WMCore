@@ -1,3 +1,14 @@
+1.2.1 to 1.2.2.pre1:
+  - Perform lowering Cms headers (Valentin Kuznetsov) #9100
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9110
+  - Remove switch for CRIC x SiteDB; default to CRIC (Alan Malta Rodrigues) #9110
+  - Improve release notes (Erik Gough) #9083
+  - pylint fixes (Alan Malta Rodrigues) #9127
+  - Remove rucio_home debugging (Alan Malta Rodrigues) #9127
+  - Fixes #9053 (khurtado) #9107
+  - created PhEDEx unit test for getReplicaInfoForBlocks (Alan Malta Rodrigues) #9118
+
+
 1.2.1.pre4 to 1.2.1:
   - json with the mocked CRIC data (Alan Malta Rodrigues) #9122
   - Mock CRIC data and calls (Alan Malta Rodrigues) #9122

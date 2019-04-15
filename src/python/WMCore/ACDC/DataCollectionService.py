@@ -46,7 +46,8 @@ def mergeFilesInfo(chunkFiles):
             # ErrorHandler expands that in the ACDC document as lumis : [9, 10] sigh...
             firstLumi = min(acdcFile['runs'][0]['lumis'])
             lastLumi = max(acdcFile['runs'][0]['lumis'])
-            acdcFile['runs'][0]['lumis'] = range(firstLumi, lastLumi)
+            if firstLumi != lastLumi:
+                acdcFile['runs'][0]['lumis'] = range(firstLumi, lastLumi)
             if fName not in mergedFiles:
                 mergedFiles[fName] = acdcFile
             else:

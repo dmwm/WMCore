@@ -17,7 +17,11 @@ import os
 import socket
 import sys
 import traceback
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    # PY3
+    from urllib.parse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL

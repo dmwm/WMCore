@@ -11,7 +11,11 @@ Placeholder for ideas at present....
 from __future__ import print_function
 
 from urllib2 import urlopen, Request
-from urlparse import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    # PY3
+    from urllib.parse import urlparse
 try:
     import cPickle as pickle
 except ImportError:

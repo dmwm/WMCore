@@ -27,10 +27,14 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 import os
 import re
-import urlparse
+try:
+    from urlparse import urlsplit
+except ImportError:
+    # PY3
+    from urllib.parse import urlsplit
 from xml.dom.minidom import Element
 
-from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
+from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 
 _TFCArgSplit = re.compile("\?protocol=")
 
@@ -179,7 +183,7 @@ def tfcProtocol(contactString):
     protocol from it.
 
     """
-    args = urlparse.urlsplit(contactString)[3]
+    args = urlsplit(contactString)[3]
     value = args.replace("protocol=", '')
     return value
 

@@ -4,6 +4,11 @@
 from collections import defaultdict
 import time
 import logging
+try:
+    from urlparse import urlparse
+except ImportError:
+    # PY3
+    from urllib.parse import urlparse
 
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
@@ -21,7 +26,6 @@ def isGlobalDBS(dbs):
     try:
         # try to determine from name - save a trip to server
         # fragile but if this url changes many other things will break also...
-        from urlparse import urlparse
         url = urlparse(dbs.dbs.getServerUrl())  # DBSApi has url not DBSReader
         if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
             return True

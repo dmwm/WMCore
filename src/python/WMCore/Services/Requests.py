@@ -21,8 +21,12 @@ import sys
 import tempfile
 import traceback
 import urllib
-import urlparse
 import types
+try:
+    from urlparse import urlparse
+except ImportError:
+    # PY3
+    from urllib.parse import urlparse
 from httplib import HTTPException
 from json import JSONEncoder, JSONDecoder
 
@@ -91,7 +95,7 @@ class Requests(dict):
         # then update with the incoming dict
         self.update(idict)
 
-        self['endpoint_components'] = urlparse.urlparse(self['host'])
+        self['endpoint_components'] = urlparse(self['host'])
 
         # If cachepath = None disable caching
         if 'cachepath' in idict and idict['cachepath'] is None:

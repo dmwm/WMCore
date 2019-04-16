@@ -12,7 +12,11 @@ import io
 import logging
 import mmap
 import re
-import urlparse
+try:
+    from urlparse import urlparse, urlunparse
+except ImportError:
+    # PY3
+    from urllib.parse import urlparse, urlunparse
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
@@ -636,7 +640,7 @@ def sanitizeURL(url):
        WANNING: This doesn't check the correctness of url format.
        Don't use ':' in username or password.
     """
-    endpoint_components = urlparse.urlparse(url)
+    endpoint_components = urlparse(url)
     # Cleanly pull out the user/password from the url
     if endpoint_components.port:
         netloc = '%s:%s' % (endpoint_components.hostname,
@@ -645,7 +649,7 @@ def sanitizeURL(url):
         netloc = endpoint_components.hostname
 
     # Build a URL without the username/password information
-    url = urlparse.urlunparse(
+    url = urlunparse(
         [endpoint_components.scheme,
          netloc,
          endpoint_components.path,

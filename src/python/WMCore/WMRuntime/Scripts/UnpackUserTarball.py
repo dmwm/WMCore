@@ -14,13 +14,14 @@ import subprocess
 import sys
 import tempfile
 import urllib
-import urlparse
 from urllib import URLopener
 
 try:
     from commands import getstatusoutput
+    from urlparse import urlsplit
 except ImportError:
-    # python3
+    # PY3
+    from urllib.parse import urlsplit
     from subprocess import getstatusoutput
 
 
@@ -81,7 +82,7 @@ def UnpackUserTarball():
     jobDir = os.environ['WMAGENTJOBDIR']
 
     for tarball in tarballs:
-        splitResult = urlparse.urlsplit(tarball)
+        splitResult = urlsplit(tarball)
         tarFile = os.path.join(jobDir, os.path.basename(tarball))
 
         # Is it a URL or a file that exists in the jobDir?

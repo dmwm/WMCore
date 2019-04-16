@@ -9,9 +9,13 @@ import os
 import shutil
 import tarfile
 import tempfile
-import urlparse
 import zipfile
 import logging
+try:
+    from urlparse import urlsplit
+except ImportError:
+    # PY3
+    from urllib.parse import urlsplit
 
 import PSetTweaks
 import Utils
@@ -179,7 +183,7 @@ class SandboxCreator:
             tarContent.append((utilsPath, '/Utils'))
 
         for sb in userSandboxes:
-            splitResult = urlparse.urlsplit(sb)
+            splitResult = urlsplit(sb)
             if not splitResult[0]:
                 tarContent.append((sb, os.path.basename(sb)))
 

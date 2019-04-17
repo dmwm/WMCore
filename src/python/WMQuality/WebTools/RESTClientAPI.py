@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import urllib
 from httplib import HTTPConnection
+
 try:
     from urlparse import urlparse
 except ImportError:
@@ -11,7 +12,7 @@ from WMCore.WebTools.Page import make_rfc_timestamp
 
 
 def makeRequest(url, values=None, verb='GET', accept="text/plain",
-                contentType = None, secure = False, secureParam = {}):
+                contentType=None, secure=False, secureParam={}):
     headers = {}
     contentType = contentType or "application/x-www-form-urlencoded"
     headers = {"content-type": contentType,
@@ -22,8 +23,8 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
                         "cms-authn-dn": "/DC=ch/OU=Organic Units/OU=Users/CN=Fake User",
                         "cms-authn-name": "Fake User",
                         "cms-authz-%s" % secureParam['role']:
-                                   "group:%s site:%s" %(secureParam['group'],
-                                                        secureParam['site'])})
+                            "group:%s site:%s" % (secureParam['group'],
+                                                  secureParam['site'])})
         headers["cms-authn-hmac"] = _generateHash(secureParam["key"], headers)
 
     data = None
@@ -50,7 +51,7 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
         if data:
             headers.update({"content-length": len(data)})
         else:
-            headers.update({"content-length" : 0})
+            headers.update({"content-length": 0})
 
     conn = HTTPConnection(parser.netloc)
     conn.connect()
@@ -62,9 +63,9 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     cType = response.getheader('content-type').split(';')[0]
     return data, response.status, cType, response
 
-def methodTest(verb, url, request_input={}, accept='text/json', contentType = None,
-               output={} , expireTime=0, secure = False, secureParam = {}):
 
+def methodTest(verb, url, request_input={}, accept='text/json', contentType=None,
+               output={}, expireTime=0, secure=False, secureParam={}):
     data, code, content_type, response = makeRequest(url, request_input, verb,
                                                      accept, contentType,
                                                      secure, secureParam)
@@ -72,25 +73,25 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
     for key, value in output.items():
         msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
-                % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
+              % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
         assert keyMap[key] == value, msg
 
     expires = response.getheader('Expires')
     if expireTime != 0:
         timeStamp = make_rfc_timestamp(expireTime)
-        assert expires == timeStamp,\
-                 'Expires header incorrect (%s) != (%s)' % (expires, timeStamp)
+        assert expires == timeStamp, \
+            'Expires header incorrect (%s) != (%s)' % (expires, timeStamp)
 
     return data, expires
 
+
 def _generateHash(keyfile, headers):
     prefix = suffix = ""
-    hkeys = headers.keys()
-    hkeys.sort()
+    hkeys = sorted(headers.keys())
     for hk in hkeys:
-        hk=hk.lower()
-        if hk[0:9] in ["cms-authn","cms-authz"]:
-            prefix += "h%xv%x" % (len(hk),len(headers[hk]))
-            suffix += "%s%s" % (hk,headers[hk])
+        hk = hk.lower()
+        if hk[0:9] in ["cms-authn", "cms-authz"]:
+            prefix += "h%xv%x" % (len(hk), len(headers[hk]))
+            suffix += "%s%s" % (hk, headers[hk])
 
-    return hmac.new(keyfile, prefix+"#"+suffix, hashlib.sha1).hexdigest()
+    return hmac.new(keyfile, prefix + "#" + suffix, hashlib.sha1).hexdigest()

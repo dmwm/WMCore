@@ -292,7 +292,7 @@ class Requests(dict):
 
         if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
-        elif decoder != False:
+        elif decoder is not False:
             result = self.decode(result)
         # TODO: maybe just return result and response...
         return result, response.status, response.reason, response.fromcache

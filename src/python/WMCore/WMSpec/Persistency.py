@@ -11,6 +11,7 @@ Placeholder for ideas at present....
 from __future__ import print_function
 
 from urllib2 import urlopen, Request
+
 try:
     from urlparse import urlparse
 except ImportError:
@@ -20,6 +21,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
 
 class PersistencyHelper:
     """
@@ -44,8 +46,8 @@ class PersistencyHelper:
         Saved format is defined depending on the extension
         """
         handle = open(filename, 'w')
-        #TODO: use different encoding scheme for different extension
-        #extension = filename.split(".")[-1].lower()
+        # TODO: use different encoding scheme for different extension
+        # extension = filename.split(".")[-1].lower()
         pickle.dump(self.data, handle)
         handle.close()
         return
@@ -58,31 +60,30 @@ class PersistencyHelper:
 
         """
 
-        #TODO: currently support both loading from file path or url
-        #if there are more things to filter may be separate the load function
+        # TODO: currently support both loading from file path or url
+        # if there are more things to filter may be separate the load function
 
         # urllib2 needs a scheme - assume local file if none given
         if not urlparse(filename)[0]:
             filename = 'file:' + filename
-            handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
+            handle = urlopen(Request(filename, headers={"Accept": "*/*"}))
             self.data = pickle.load(handle)
             handle.close()
         elif filename.startswith('file:'):
-            handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
+            handle = urlopen(Request(filename, headers={"Accept": "*/*"}))
             self.data = pickle.load(handle)
             handle.close()
         else:
             # use own request class so we get authentication if needed
             from WMCore.Services.Requests import Requests
             request = Requests(filename)
-            data = request.makeRequest('', incoming_headers = {"Accept" : "*/*"})
+            data = request.makeRequest('', incoming_headers={"Accept": "*/*"})
             self.data = pickle.loads(data[0])
 
-        #TODO: use different encoding scheme for different extension
-        #extension = filename.split(".")[-1].lower()
+        # TODO: use different encoding scheme for different extension
+        # extension = filename.split(".")[-1].lower()
 
         return
-
 
     def saveCouch(self, couchUrl, couchDBName, metadata=None):
         """ Save this spec in CouchDB.  Returns URL """
@@ -96,16 +97,16 @@ class PersistencyHelper:
         if not database.documentExists(name):
             self.setSpecUrl(couchUrl + specuri)
             doc = database.put(uri, data=metadata, contentType='application/json')
-            #doc = database.commitOne(self.name(), metadata)
+            # doc = database.commitOne(self.name(), metadata)
             rev = doc['rev']
         else:
-            #doc = database.get(uri+'?revs=true')
+            # doc = database.get(uri+'?revs=true')
             doc = database.document(name)
             rev = doc['_rev']
 
-        #specuriwrev = specuri + '?rev=%s' % rev
+        # specuriwrev = specuri + '?rev=%s' % rev
         workloadString = pickle.dumps(self.data)
-        #result = database.put(specuriwrev, workloadString, contentType='application/text')
+        # result = database.put(specuriwrev, workloadString, contentType='application/text')
         retval = database.addAttachment(name, rev, workloadString, 'spec')
         if retval.get('ok', False) is not True:
             msg = "Failed to save a spec attachment in CouchDB for %s" % name

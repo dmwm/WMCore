@@ -5,12 +5,13 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+import logging
 import os
 import shutil
 import tarfile
 import tempfile
 import zipfile
-import logging
+
 try:
     from urlparse import urlsplit
 except ImportError:
@@ -35,8 +36,8 @@ def tarFilter(tarinfo):
     else:
         return tarinfo
 
-class SandboxCreator:
 
+class SandboxCreator:
     def __init__(self):
         self.packageWMCore = True
 
@@ -60,9 +61,8 @@ class SandboxCreator:
         archive.extractall(targetPath)
         archive.close()
 
-
     def _makePathonPackage(self, path):
-        os.makedirs( path )
+        os.makedirs(path)
         initHandle = open(path + "/__init__.py", 'w')
         initHandle.write("# dummy file for now")
         initHandle.close()
@@ -83,14 +83,14 @@ class SandboxCreator:
         archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
         # check if already built
         if os.path.exists(archivePath) and os.path.exists(workloadFile):
-            workload.setSpecUrl(workloadFile) # point to sandbox spec
+            workload.setSpecUrl(workloadFile)  # point to sandbox spec
             return archivePath
         if os.path.exists(path):
             shutil.rmtree(path)
-        #  //
+        # //
         # // Set up Fetcher plugins, use default list for maintaining
-        #//  compatibility
-        commonFetchers = [ "CMSSWFetcher", "URLFetcher", "PileupFetcher" ]
+        # //  compatibility
+        commonFetchers = ["CMSSWFetcher", "URLFetcher", "PileupFetcher"]
 
         # generate the real path and make it
         self._makePathonPackage(path)
@@ -110,9 +110,8 @@ class SandboxCreator:
                 taskPath = "%s/%s" % (path, task.name())
                 self._makePathonPackage(taskPath)
 
-
-                #TODO sandbox is property of workload now instead of task
-                #but someother places uses as task propery (i.e. TaskQueue)
+                # TODO sandbox is property of workload now instead of task
+                # but someother places uses as task propery (i.e. TaskQueue)
                 # so backward compatability save as task attribute as well.
                 setattr(task.data.input, 'sandbox', archivePath)
 
@@ -122,19 +121,17 @@ class SandboxCreator:
                     self._makePathonPackage(stepPath)
                     userSandboxes.extend(s.getUserSandboxes())
 
-                #  //
+                # //
                 # // Execute the fetcher plugins
-                #//
+                # //
                 for fetcher in fetcherInstances:
-                    #TODO: when cache directory is set as path, cache is maintained by workflow.
+                    # TODO: when cache directory is set as path, cache is maintained by workflow.
                     # In that case, cache will be deleted when workflow is done,
                     # but if different workflow can share the same cache.
                     # You can set the cache direcoty somewhere else, but need to have cache refresh (delete) policy
                     fetcher.setCacheDirectory(pileupCachePath)
                     fetcher.setWorkingDirectory(taskPath)
                     fetcher(task)
-
-
 
         # pickle up the workload for storage in the sandbox
         workload.setSpecUrl(workloadFile)
@@ -153,15 +150,15 @@ class SandboxCreator:
             (zipHandle, zipPath) = tempfile.mkstemp()
             os.close(zipHandle)
             zipFile = zipfile.ZipFile(zipPath,
-                                      mode = 'w',
-                                      compression = zipfile.ZIP_DEFLATED)
+                                      mode='w',
+                                      compression=zipfile.ZIP_DEFLATED)
 
             for (root, dirnames, filenames) in os.walk(wmcorePath):
                 for filename in filenames:
                     if not filename.endswith(".svn") and not filename.endswith(".git"):
-                        zipFile.write(filename = os.path.join(root, filename),
+                        zipFile.write(filename=os.path.join(root, filename),
                                       # the name in the archive is the path relative to WMCore/
-                                      arcname = os.path.join(root, filename)[len(wmcorePath) - len('WMCore/') + 1:])
+                                      arcname=os.path.join(root, filename)[len(wmcorePath) - len('WMCore/') + 1:])
 
             # Add a dummy module for zipimport testing
             (handle, dummyModulePath) = tempfile.mkstemp()

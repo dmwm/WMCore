@@ -509,10 +509,10 @@ def validateUrl(candidate):
 
 
 def check(regexp, candidate, maxLength=None):
-    if maxLength != None:
+    if maxLength is not None:
         assert len(candidate) <= maxLength, \
             "%s is longer then max length (%s) allowed" % (candidate, maxLength)
-    assert re.compile(regexp).match(candidate) != None, \
+    assert re.compile(regexp).match(candidate) is not None, \
         "'%s' does not match regular expression %s" % (candidate, regexp)
     return True
 

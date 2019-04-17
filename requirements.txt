@@ -3,7 +3,7 @@ Cheetah==2.4.0
 CherryPy==5.4.0
 Markdown==3.0.1
 MySQL-python==1.2.5
-SQLAlchemy==0.9.6
+SQLAlchemy==1.3.3
 Sphinx==1.3.5
 cx-Oracle==5.2.1
 dbs-client==3.3.160

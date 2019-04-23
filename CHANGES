@@ -1,3 +1,7 @@
+1.1.16 to 1.1.16.dbs1:
+  - Add loggin of incoming requests to RESTModel end-points (Valentin Kuznetsov) #9159
+
+
 1.1.15 to 1.1.16:
   - 1.1.16.pre3
   - Merge pull request #8775 from amaltaro/rest-import

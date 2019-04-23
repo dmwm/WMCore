@@ -219,7 +219,7 @@ class LogArchiveTest(unittest.TestCase):
 
     def setLocalOverride(self, step):
         step.section_('override')
-        step.override.command = 'test-copy'
+        step.override.command = 'cp'
         step.override.option = ''
         step.override.__setattr__('lfn-prefix', self.testDir + "/")
         step.override.__setattr__('phedex-node', 'DUMMYPNN')

@@ -411,7 +411,7 @@ class WMTaskTest(unittest.TestCase):
                                        gracePeriod=1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxRSS"))
+        self.assertFalse(hasattr(testTask.data.watchdog.PerformanceMonitor, "maxPSS"))
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
         return
@@ -630,19 +630,19 @@ class WMTaskTest(unittest.TestCase):
 
         return
 
-    def testMaxRSS(self):
+    def testMaxPSS(self):
         """
-        _testMaxRSS_
+        _testMaxPSS_
 
-        Test whether we can properly add MaxRSS performance monitor
+        Test whether we can properly add MaxPSS performance monitor
         to this task.
         """
         testTask = makeWMTask("TestTask")
 
-        testTask.setMaxRSS(123)
+        testTask.setMaxPSS(123)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 123)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxPSS, 123)
         return
 
     def testGetSwVersionAndScramArch(self):

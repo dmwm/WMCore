@@ -16,6 +16,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUIDLib import makeUUID
 
+
 class EventBasedTest(unittest.TestCase):
     """
     _EventBasedTest_
@@ -75,22 +76,29 @@ class EventBasedTest(unittest.TestCase):
         """
         pass
 
-    def generateFakeMCFile(self, numEvents = 100, firstEvent = 1,
-                           lastEvent = 100, firstLumi = 1, lastLumi = 10):
+    def generateFakeMCFile(self, numEvents=100, firstEvent=1, lastEvent=100,
+                           firstLumi=1, lastLumi=10, existingSub=None):
         #MC comes with only one MCFakeFile
-        singleMCFileset = Fileset(name = "MCTestFileset")
         newFile = File("MCFakeFileTest", size = 1000, events = numEvents)
         newFile.setLocation('se01')
         newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent
-        testWorkflow = Workflow()
-        singleMCFileset.addFile(newFile)
-        singleMCFileSubscription = Subscription(fileset = singleMCFileset,
-                                                workflow = testWorkflow,
-                                                split_algo = "EventBased",
-                                                type = "Production")
-        return singleMCFileSubscription
+
+        if existingSub is None:
+            singleMCFileset = Fileset(name="MCTestFileset")
+            singleMCFileset.addFile(newFile)
+            testWorkflow = Workflow()
+            existingSub = Subscription(fileset=singleMCFileset,
+                                       workflow=testWorkflow,
+                                       split_algo="EventBased",
+                                       type="Production")
+        else:
+            existingSub['fileset'].addFile(newFile)
+
+        return existingSub
+
+
 
     def testNoEvents(self):
         """
@@ -345,6 +353,7 @@ class EventBasedTest(unittest.TestCase):
 
             assert job["mask"]["FirstEvent"] is None, \
                    "ERROR: Job's first event is incorrect."
+
     def testMCExactEvents(self):
         """
         _testMCExactEvents_
@@ -413,6 +422,7 @@ class EventBasedTest(unittest.TestCase):
                 "Error: Job's first lumi is incorrect.")
         self.assertEqual(len(job["mask"].getRunAndLumis()), 0,
                          "Error: Job's mask has runs and lumis")
+
     def testMC99EventSplit(self):
         """
         _testMC99EventSplit_
@@ -732,6 +742,7 @@ class EventBasedTest(unittest.TestCase):
             self.assertTrue(firstJobCondition or secondJobCondition,
                             "Job mask: %s didn't pass neither of the conditions"
                             % job["mask"])
+
     def testMCEventSplitOver32bit(self):
         """
         _testMCEventSplitOver32bit_

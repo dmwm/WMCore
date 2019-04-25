@@ -219,15 +219,16 @@ class EventBased(JobFactory):
         """
         _createACDCJobs_
 
-        Create ACDC production jobs, this are treated differentely
+        Create ACDC production jobs, these are treated differently
         since it is an exact copy of the failed jobs.
         """
+        lumisPerJob = 0  # calculated a bit beyond
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
                 eventsToRun = acdcFile["events"]
                 currentEvent = acdcFile["first_event"]
-                lumisPerJob = 0
-                while eventsToRun:
+                acdcFile["lumis"] = sorted(acdcFile["lumis"])
+                while eventsToRun > 0:
                     ### WARNING: it assumes there will NOT be splitting changes between
                     # the original and the ACDC workflow
                     # Lumis to recovery are not necessarily sequential
@@ -241,15 +242,22 @@ class EventBased(JobFactory):
                         currentEvent = 1
                     if eventsToRun >= eventsPerJob:
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
-                        if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsPerJob) / eventsPerLumi))
-                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                     else:
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun, currentEvent)
-                        if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsToRun) / eventsPerLumi))
-                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
-                        eventsToRun = eventsPerJob
+
+                    if fakeFile['lfn'].startswith("MCFakeFile"):
+                        # either a shorter last job or a normal sized one
+                        lumisPerJob = int(ceil(float(min(eventsToRun, eventsPerJob)) / eventsPerLumi))
+                        # I don't like it! but if we want to reduce the memory footprint, we need
+                        # to keep merging MCFakeFiles at DataCollection level. Which requires a dirty
+                        # lumi check - for sequential lumis - in here
+                        while True:
+                            setLumis = set(range(currentLumi, currentLumi + lumisPerJob))
+                            if setLumis.issubset(set(acdcFile["lumis"])):
+                                break
+                            else:
+                                lumisPerJob -= 1
+                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                     jobTime = eventsPerJob * timePerEvent
                     diskRequired = eventsPerJob * sizePerEvent
                     self.currentJob.addResourceEstimates(jobTime=jobTime,

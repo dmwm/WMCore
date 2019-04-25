@@ -6,7 +6,7 @@ Implementation of StageOutImpl interface for plain cp
 
 Useful for sites with large shared POSIX file systems (HPC)
 """
-from __future__ import print_function
+from __future__ import division
 
 import os
 import errno

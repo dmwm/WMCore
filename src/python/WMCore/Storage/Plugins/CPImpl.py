@@ -5,6 +5,8 @@ _CPImpl_
 Implementation of StageOutImpl interface for plain cp
 
 """
+from __future__ import division
+
 import os
 import errno
 import shutil

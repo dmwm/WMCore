@@ -285,6 +285,7 @@ class WorkloadSplitting(RESTEntity):
 
         data = cherrypy.request.body.read()
         splittingInfo = json.loads(data)
+        cherrypy.log("Updating job splitting for '%s' with these args: %s" % (name, splittingInfo))
 
         helper = WMWorkloadHelper()
         try:

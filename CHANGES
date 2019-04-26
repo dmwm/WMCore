@@ -1,3 +1,17 @@
+1.2.2.pre1 to 1.2.2.pre2:
+  - Log job splitting changes in ReqMgr2 (Alan Malta Rodrigues) #9166
+  - Fix CampaignConfig document type (Alan Malta Rodrigues) #9165
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9147
+  - Fixed lumis list in the ACDC docs and added a new version field (Alan Malta Rodrigues) #9147
+  - import division on CPImpl (Alan Malta Rodrigues) #9163
+  - Allow tag creation from dbs branches (Alan Malta Rodrigues) #9160
+  - Update WMTask and WMWorkload unit tests to use PSS (Erik Gough) #9097
+  - Monitor memory usage using PSS instead of RSS (Erik Gough) #9097
+  - Add loggin of incoming requests to RESTModel end-points (Valentin Kuznetsov) #9124
+  - Bump SQLAlchemy in the requirements.txt (Alan Malta Rodrigues) #9155
+  - add back copy stageout plugin, fixes #9144 (Dirk Hufnagel) 
+
+
 1.2.1 to 1.2.2.pre1:
   - Perform lowering Cms headers (Valentin Kuznetsov) #9100
   - fix unit tests and pylint (Alan Malta Rodrigues) #9110

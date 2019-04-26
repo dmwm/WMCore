@@ -12,13 +12,12 @@ job in two ways:
 
 from WMCore.DataStructs.Run import Run
 
+
 class Mask(dict):
     """
     _Mask_
-
-
-
     """
+
     def __init__(self, **kwargs):
         dict.__init__(self, **kwargs)
         self.inclusive = True
@@ -31,7 +30,6 @@ class Mask(dict):
         self.setdefault("LastRun", None)
         self.setdefault("runAndLumis", {})
 
-
     def setMaxAndSkipEvents(self, maxEvents, skipEvents):
         """
         _setMaxAndSkipEvents_
@@ -42,7 +40,7 @@ class Mask(dict):
 
         self['FirstEvent'] = skipEvents
         if maxEvents is not None:
-            self['LastEvent']  = skipEvents + maxEvents
+            self['LastEvent'] = skipEvents + maxEvents
 
         return
 
@@ -55,10 +53,9 @@ class Mask(dict):
         """
 
         self['FirstLumi'] = skipLumi
-        self['LastLumi']  = skipLumi + maxLumis
+        self['LastLumi'] = skipLumi + maxLumis
 
         return
-
 
     def setMaxAndSkipRuns(self, maxRuns, skipRun):
         """
@@ -69,7 +66,7 @@ class Mask(dict):
         """
 
         self['FirstRun'] = skipRun
-        self['LastRun']  = skipRun + maxRuns
+        self['LastRun'] = skipRun + maxRuns
 
         return
 
@@ -80,24 +77,21 @@ class Mask(dict):
         return maxevents setting
 
         """
-        if (self['LastEvent'] == None) or (self['FirstEvent'] == None):
+        if self['LastEvent'] is None or self['FirstEvent'] is None:
             return None
-        return self['LastEvent'] - self['FirstEvent']
+        return self['LastEvent'] - self['FirstEvent'] + 1
 
-
-    def getMax(self, type = None):
+    def getMax(self, keyType=None):
         """
         _getMax_
 
         returns the maximum number of runs/events/etc of the type of the type string
-
         """
-
-        if 'First%s' %(type) not in self:
+        if 'First%s' % (keyType) not in self:
             return None
-        if (self['First%s'%(type)] == None) or (self['Last%s'%(type)] == None):
+        if self['First%s' % (keyType)] is None or self['Last%s' % (keyType)] is None:
             return None
-        return self['Last%s'%(type)] - self['First%s'%(type)]
+        return self['Last%s' % (keyType)] - self['First%s' % (keyType)] + 1
 
     def addRun(self, run):
         """
@@ -107,14 +101,14 @@ class Mask(dict):
         """
         run.lumis.sort()
         firstLumi = run.lumis[0]
-        lastLumi  = run.lumis[0]
+        lastLumi = run.lumis[0]
         for lumi in run.lumis:
             if lumi <= lastLumi + 1:
                 lastLumi = lumi
             else:
                 self.addRunAndLumis(run.run, lumis=[firstLumi, lastLumi])
                 firstLumi = lumi
-                lastLumi  = lumi
+                lastLumi = lumi
         self.addRunAndLumis(run.run, lumis=[firstLumi, lastLumi])
         return
 
@@ -128,7 +122,7 @@ class Mask(dict):
         self['runAndLumis'][run] = lumiList
         return
 
-    def addRunAndLumis(self, run, lumis = []):
+    def addRunAndLumis(self, run, lumis=None):
         """
         _addRunAndLumis_
 
@@ -141,8 +135,8 @@ class Mask(dict):
               mask, no attempt is made to merge these together.  This can result in a mask
               with duplicate lumis.
         """
-
-        if not type(lumis) == list:
+        lumis = lumis or []
+        if not isinstance(lumis, list):
             lumis = list(lumis)
 
         if not run in self['runAndLumis'].keys():
@@ -184,7 +178,6 @@ class Mask(dict):
 
         return False
 
-
     def filterRunLumisByMask(self, runs):
         """
         _filterRunLumisByMask_
@@ -215,7 +208,7 @@ class Mask(dict):
                 if pair[0] == pair[1]:
                     maskLumis.add(pair[0])
                 else:
-                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1, 1))
+                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1))
 
             filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
             if len(filteredLumis) > 0:

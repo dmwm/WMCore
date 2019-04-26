@@ -5,16 +5,12 @@ _ReportEmu_
 Class for creating bogus framework job reports.
 """
 
-
-
-
 import os.path
 
-from WMCore.Services.UUIDLib import makeUUID
 from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Run import Run
-
 from WMCore.FwkJobReport import Report
+from WMCore.Services.UUIDLib import makeUUID
+
 
 class ReportEmu(object):
     """
@@ -22,6 +18,7 @@ class ReportEmu(object):
 
     Job Report Emulator that creates a Report given a WMTask/WMStep and a Job instance.
     """
+
     def __init__(self, **options):
         """
         ___init___
@@ -41,9 +38,9 @@ class ReportEmu(object):
         report.addInputSource("PoolSource")
 
         for inputFile in self.job["input_files"]:
-            inputFileSection = report.addInputFile("PoolSource", lfn = inputFile["lfn"],
-                                                   size = inputFile["size"],
-                                                   events = inputFile["events"])
+            inputFileSection = report.addInputFile("PoolSource", lfn=inputFile["lfn"],
+                                                   size=inputFile["size"],
+                                                   events=inputFile["events"])
             Report.addRunInfoToFile(inputFileSection, inputFile["runs"])
 
         return
@@ -59,17 +56,13 @@ class ReportEmu(object):
         totalSize = 0
         totalEvents = 0
 
-        outputFirstEvent = 0
-        outputTotalEvents = 0
-        outputSize = 0
-
         for inputFile in self.job["input_files"]:
             totalSize += inputFile["size"]
             totalEvents += inputFile["events"]
 
-        if self.job["mask"]["FirstEvent"] != None and \
-               self.job["mask"]["LastEvent"] != None:
-            outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"]
+        if self.job["mask"]["FirstEvent"] is not None and \
+                        self.job["mask"]["LastEvent"] is not None:
+            outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"] + 1
         else:
             outputTotalEvents = totalEvents
 
@@ -92,13 +85,13 @@ class ReportEmu(object):
 
         for outputModuleName in self.step.listOutputModules():
             outputModuleSection = self.step.getOutputModule(outputModuleName)
-            outputModuleSection.fixedLFN    = False
+            outputModuleSection.fixedLFN = False
             outputModuleSection.disableGUID = False
 
             outputLFN = "%s/%s.root" % (outputModuleSection.lfnBase,
                                         str(makeUUID()))
-            outputFile = File(lfn = outputLFN, size = outputSize, events = outputEvents,
-                              merged = False)
+            outputFile = File(lfn=outputLFN, size=outputSize, events=outputEvents,
+                              merged=False)
             outputFile.setLocation(self.job["location"])
             outputFile['pfn'] = "ReportEmuTestFile.txt"
             outputFile['guid'] = "ThisIsGUID"

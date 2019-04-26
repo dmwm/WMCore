@@ -10,6 +10,7 @@ import unittest
 import mock
 
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
+from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
@@ -18,7 +19,7 @@ from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
-from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
+
 
 class EmulatedUnitTestCase(unittest.TestCase):
     """
@@ -113,7 +114,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
         if self.mockCRIC:
             self.cricPatchers = []
-            patchCRICAt = ['WMCore.ReqMgr.Tools.cms',
+            patchCRICAt = ['WMCore.ReqMgr.Tools.cms.CRIC',
                            'WMCore.WorkQueue.WorkQueue.CRIC',
                            'WMCore.WorkQueue.WorkQueueUtils.CRIC',
                            'WMCore.WorkQueue.Policy.Start.Dataset.CRIC',

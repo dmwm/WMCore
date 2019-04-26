@@ -4,14 +4,16 @@ _EventBased_t_
 
 Event based splitting test.
 """
+from __future__ import print_function
 
-import unittest
-import threading
 import os
+import random
+import threading
+import unittest
 
-from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
@@ -37,7 +39,7 @@ class EventBasedTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.couchUrl = os.environ["COUCHURL"]
         self.couchDBName = "acdc_event_based_t"
         self.testInit.setupCouch(self.couchDBName, "GroupUser", "ACDC")
@@ -49,6 +51,7 @@ class EventBasedTest(unittest.TestCase):
         self.performanceParams = {'timePerEvent': 12,
                                   'memoryRequirement': 2300,
                                   'sizePerEvent': 400}
+        self.eventsPerJob = 100
 
         return
 
@@ -78,6 +81,10 @@ class EventBasedTest(unittest.TestCase):
         locationAction.execute(siteName='s2', pnn="T2_CH_CERN")
         self.validLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
+        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
+                                name="wf001", task="Test")
+        testWorkflow.create()
+
         self.multipleFileFileset = Fileset(name="TestFileset1")
         self.multipleFileFileset.create()
         parentFile = File('/parent/lfn/', size=1000, events=100,
@@ -90,6 +97,11 @@ class EventBasedTest(unittest.TestCase):
             newFile.addParent(lfn=parentFile['lfn'])
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
+        self.multipleFileSubscription = Subscription(fileset=self.multipleFileFileset,
+                                                     workflow=testWorkflow,
+                                                     split_algo="EventBased",
+                                                     type="Processing")
+        self.multipleFileSubscription.create()
 
         self.singleFileFileset = Fileset(name="TestFileset2")
         self.singleFileFileset.create()
@@ -98,6 +110,11 @@ class EventBasedTest(unittest.TestCase):
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
+        self.singleFileSubscription = Subscription(fileset=self.singleFileFileset,
+                                                   workflow=testWorkflow,
+                                                   split_algo="EventBased",
+                                                   type="Processing")
+        self.singleFileSubscription.create()
 
         self.multipleSiteFileset = Fileset(name="TestFileset3")
         self.multipleSiteFileset.create()
@@ -112,20 +129,6 @@ class EventBasedTest(unittest.TestCase):
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
-
-        testWorkflow = Workflow(spec="spec.xml", owner="Steve",
-                                name="wf001", task="Test")
-        testWorkflow.create()
-        self.multipleFileSubscription = Subscription(fileset=self.multipleFileFileset,
-                                                     workflow=testWorkflow,
-                                                     split_algo="EventBased",
-                                                     type="Processing")
-        self.multipleFileSubscription.create()
-        self.singleFileSubscription = Subscription(fileset=self.singleFileFileset,
-                                                   workflow=testWorkflow,
-                                                   split_algo="EventBased",
-                                                   type="Processing")
-        self.singleFileSubscription.create()
         self.multipleSiteSubscription = Subscription(fileset=self.multipleSiteFileset,
                                                      workflow=testWorkflow,
                                                      split_algo="EventBased",
@@ -134,12 +137,16 @@ class EventBasedTest(unittest.TestCase):
 
         return
 
-    def populateACDCCouch(self, numFiles=3, lumisPerJob=4, eventsPerJob=100, numberOfJobs=250):
+    def populateACDCCouch(self, numFiles=3, lumisPerJob=4,
+                          eventsPerJob=100, numberOfJobs=250, acdcVer=None):
         """
         _populateACDCCouch_
 
         Create production files in couchDB to test the creation
         of ACDC jobs for the EventBased algorithm.
+        acdcVer parameter decides whether the ACDC documents have to be created
+        following the new behaviour/changes or not, for more details see:
+        See issue: https://github.com/dmwm/WMCore/issues/9126
         """
         # Define some constants
         workflowName = "ACDC_TestEventBased"
@@ -149,18 +156,70 @@ class EventBasedTest(unittest.TestCase):
         for i in range(numFiles):
             lfn = "MCFakeFile-some-hash-%s" % str(i).zfill(5)
             for j in range(numberOfJobs):
-                firstEvent = j * eventsPerJob + 1
+                firstEvent = (i * eventsPerJob * numberOfJobs) + (j * eventsPerJob) + 1
                 acdcFile = File(lfn=lfn, size=1024, events=eventsPerJob, locations=self.validLocations,
                                 merged=False, first_event=firstEvent)
-                run = Run(1, *range(1 + j * lumisPerJob + (i * lumisPerFile),
-                                    1 + (j + 1) * lumisPerJob + (i * lumisPerFile)))
+                if acdcVer == 2:
+                    # lumi range is really inclusive (process first and last lumi)
+                    run = Run(1, *range(1 + j * lumisPerJob + (i * lumisPerFile),
+                                        1 + (j + 1) * lumisPerJob + (i * lumisPerFile)))
+                else:
+                    # bigger lumi range, LastLumi is in most of the cases not processed
+                    run = Run(1, *range(1 + j * lumisPerJob + (i * lumisPerFile),
+                                        2 + (j + 1) * lumisPerJob + (i * lumisPerFile)))
 
                 acdcFile.addRun(run)
                 acdcDoc = {"collection_name": workflowName,
                            "collection_type": "ACDC.CollectionTypes.DataCollection",
                            "files": {lfn: acdcFile},
+                           "acdc_version": 2 if acdcVer else 1,
                            "fileset_name": filesetName}
+
                 self.couchDB.queue(acdcDoc)
+
+        self.couchDB.commit()
+        return
+
+    def populateACDCFakeFile(self, acdcVer=1):
+        """
+        _populateACDCFakeFile_
+        Create an ACDC Collection with a MCFakeFile and 5 jobs:
+        * 4 jobs with single lumi section
+        * last job with 4 lumi sections (or 5 if it's the old ACDC doc)
+        """
+        eventsPerJob = 700
+        workflowName = "ACDC_TestEventBased"
+        filesetName = "/%s/Production" % workflowName
+        acdcFiles = []
+        # create 4 MCFakeFiles with a single lumi section
+        for lumi in [337, 197, 529, 421]:
+            lfn = "MCFakeFile-some-hash-00000"
+            firstEvent = random.randint(1, 100) * eventsPerJob + 1
+            acdcFile = File(lfn=lfn, size=1024, events=eventsPerJob, locations=self.validLocations,
+                            merged=False, first_event=firstEvent)
+            if acdcVer == 2:
+                run = Run(1, *range(lumi, lumi + 1))
+            else:
+                run = Run(1, *range(lumi, lumi + 2))
+            acdcFile.addRun(run)
+            acdcFiles.append(acdcFile)
+        # create one last entry with more lumis
+        acdcFile = File(lfn=lfn, size=1024, events=eventsPerJob, locations=self.validLocations,
+                        merged=False, first_event=firstEvent)
+        if acdcVer == 2:
+            run = Run(1, *range(277, 277 + 4))
+        else:
+            run = Run(1, *range(277, 277 + 5))
+        acdcFile.addRun(run)
+        acdcFiles.append(acdcFile)
+
+        for f in acdcFiles:
+            acdcDoc = {"collection_name": workflowName,
+                       "collection_type": "ACDC.CollectionTypes.DataCollection",
+                       "files": {f['lfn']: f},
+                       "acdc_version": acdcVer,
+                       "fileset_name": filesetName}
+            self.couchDB.queue(acdcDoc)
 
         self.couchDB.commit()
         return
@@ -213,7 +272,7 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package="WMCore.WMBS",
                               subscription=self.singleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job=100,
+        jobGroups = jobFactory(events_per_job=self.eventsPerJob,
                                performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
@@ -224,9 +283,9 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(job.getFiles(type="lfn"), ["/some/file/name"])
 
-        self.assertEqual(job["mask"].getMaxEvents(), None)
-
+        self.assertEqual(job["mask"].getMaxEvents(), self.eventsPerJob)
         self.assertEqual(job["mask"]["FirstEvent"], 0)
+        self.assertEqual(job["mask"]["LastEvent"], 99)
 
         self.assertEqual(job["estimatedJobTime"], 100 * 12)
         self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
@@ -256,9 +315,9 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(job.getFiles(type="lfn"), ["/some/file/name"])
 
-        self.assertEqual(job["mask"].getMaxEvents(), None)
-
-        self.assertEqual(job["mask"]["FirstEvent"], None)
+        self.assertEqual(job["mask"].getMaxEvents(), 100)
+        self.assertEqual(job["mask"]["FirstEvent"], 0)
+        self.assertEqual(job["mask"]["LastEvent"], 99)
 
         self.assertEqual(job["estimatedJobTime"], 100 * 12)
         self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
@@ -286,9 +345,14 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(job.getFiles(type="lfn"), ["/some/file/name"])
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
 
-            self.assertTrue((job["mask"].getMaxEvents() == 50 and job["mask"]["FirstEvent"] == 0) or \
-                            (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 50))
+            if job["mask"]["FirstEvent"] == 0:
+                self.assertEqual(job["mask"]["LastEvent"], 49)
+            elif job["mask"]["FirstEvent"] == 50:
+                self.assertEqual(job["mask"]["LastEvent"], 99)
+            else:
+                self.fail("Unexpected splitting was performed")
             self.assertEqual(job["estimatedJobTime"], 50 * 12)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 50)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
@@ -318,11 +382,13 @@ class EventBasedTest(unittest.TestCase):
 
             if job["mask"].getMaxEvents() == 99:
                 self.assertEqual(job["mask"]["FirstEvent"], 0)
+                self.assertEqual(job["mask"]["LastEvent"], 98)
                 self.assertEqual(job["estimatedJobTime"], 99 * 12)
                 self.assertEqual(job["estimatedDiskUsage"], 400 * 99)
                 self.assertEqual(job["estimatedMemoryUsage"], 2300)
-            elif job["mask"].getMaxEvents() is None:
+            elif job["mask"].getMaxEvents() == 1:
                 self.assertEqual(job["mask"]["FirstEvent"], 99)
+                self.assertEqual(job["mask"]["LastEvent"], 99)
                 self.assertEqual(job["estimatedJobTime"], 1 * 12)
                 self.assertEqual(job["estimatedDiskUsage"], 400 * 1)
                 self.assertEqual(job["estimatedMemoryUsage"], 2300)
@@ -340,7 +406,7 @@ class EventBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package="WMCore.WMBS", subscription=self.multipleFileSubscription)
 
-        jobGroups = jobFactory(events_per_job=100,
+        jobGroups = jobFactory(events_per_job=self.eventsPerJob,
                                performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
@@ -349,7 +415,7 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type="lfn")), 1)
-            self.assertEqual(job["mask"].getMaxEvents(), None)
+            self.assertEqual(job["mask"].getMaxEvents(), self.eventsPerJob)
             self.assertEqual(job["mask"]["FirstEvent"], 0)
             self.assertEqual(job["estimatedJobTime"], 100 * 12)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
@@ -376,10 +442,12 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type="lfn")), 1)
-            if job["mask"].getMaxEvents() == 50:
-                self.assertEqual(job["mask"]["FirstEvent"], 0)
-            elif job["mask"].getMaxEvents() is None:
-                self.assertEqual(job["mask"]["FirstEvent"], 50)
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
+
+            if job["mask"]["FirstEvent"] == 0:
+                self.assertEqual(job["mask"]["LastEvent"], 49)
+            elif job["mask"]["FirstEvent"] == 50:
+                self.assertEqual(job["mask"]["LastEvent"], 99)
             else:
                 self.fail("Unexpected splitting was performed")
             self.assertEqual(job["estimatedJobTime"], 50 * 12)
@@ -404,12 +472,12 @@ class EventBasedTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
-        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type="lfn")), 1)
-        self.assertEqual(len(jobGroups[0].jobs[6].getFiles(type="lfn")), 1)
 
         for job in jobGroups[0].jobs:
-            self.assertEqual(job["mask"].getMaxEvents(), None)
-            self.assertEqual(job["mask"]["FirstEvent"], None)
+            self.assertEqual(len(job.getFiles(type="lfn")), 1)
+            self.assertEqual(job["mask"].getMaxEvents(), 100)
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+            self.assertEqual(job["mask"]["LastEvent"], 99)
             self.assertEqual(job["estimatedJobTime"], 100 * 12)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
@@ -427,18 +495,20 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(package="WMCore.WMBS",
                               subscription=self.multipleSiteSubscription)
 
-        jobGroups = jobFactory(events_per_job=100,
+        jobGroups = jobFactory(events_per_job=self.eventsPerJob,
                                performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 2)
 
         self.assertEqual(len(jobGroups[0].jobs), 5)
         self.assertEqual(len(jobGroups[1].jobs), 5)
+        self.assertEqual(jobGroups[0].jobs[0]['possiblePSN'], set(['s1', 's2']))
+        self.assertEqual(jobGroups[1].jobs[0]['possiblePSN'], set(['s1']))
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type="lfn")), 1)
 
-            self.assertEqual(job["mask"].getMaxEvents(), None)
+            self.assertEqual(job["mask"].getMaxEvents(), self.eventsPerJob)
 
             self.assertEqual(job["mask"]["FirstEvent"], 0)
             self.assertEqual(job["estimatedJobTime"], 100 * 12)
@@ -507,8 +577,15 @@ class EventBasedTest(unittest.TestCase):
 
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles(type="lfn")), 1)
-            self.assertTrue((job["mask"].getMaxEvents() == 50 and job["mask"]["FirstEvent"] == 0) or \
-                            (job["mask"].getMaxEvents() is None and job["mask"]["FirstEvent"] == 50))
+
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
+            if job["mask"]["FirstEvent"] == 0:
+                self.assertEqual(job["mask"]["LastEvent"], 49)
+            elif job["mask"]["FirstEvent"] == 50:
+                self.assertEqual(job["mask"]["LastEvent"], 99)
+            else:
+                self.fail("Unexpected splitting was performed")
+
             self.assertEqual(job["estimatedJobTime"], 50 * 12)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 50)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
@@ -518,38 +595,206 @@ class EventBasedTest(unittest.TestCase):
 
         return
 
-    def testACDCProduction(self):
+    def testACDCProduction_v1(self):
         """
-        _testACDCProduction_
+        _testACDCProduction_v1_
 
         Test the ability of the EventBased algorithm of creating
-        jobs from ACDC correctly
+        jobs from ACDC correctly. Uses ACDC documents not versioned.
         """
-        self.populateACDCCouch(numFiles=3, lumisPerJob=4, eventsPerJob=100, numberOfJobs=200)
-        mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 1, 800, 0)
-        mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 801, 1600, 1, mcSubscription)
-        mcSubscription = self.generateFakeMCFile(20000, 1, 20001, 1601, 2400, 2, mcSubscription)
+        numFiles = 3
+        lumisPerJob = 4
+        eventsPerJob = 100
+        numberOfJobs = 20
+        self.populateACDCCouch(numFiles=numFiles, lumisPerJob=lumisPerJob,
+                               eventsPerJob=eventsPerJob, numberOfJobs=numberOfJobs)
+
+        mcSubscription = None
+        for idx in range(3):
+            mcSubscription = self.generateFakeMCFile(numEvents=eventsPerJob * numberOfJobs,
+                                                     firstEvent=idx * eventsPerJob * numberOfJobs + 1,
+                                                     lastEvent=(idx + 1) * eventsPerJob * numberOfJobs,
+                                                     firstLumi=idx * lumisPerJob * numberOfJobs + 1,
+                                                     lastLumi=(idx + 1) * lumisPerJob * numberOfJobs,
+                                                     index=idx, existingSub=mcSubscription)
+
         splitter = SplitterFactory()
         jobFactory = splitter(package="WMCore.WMBS",
                               subscription=mcSubscription)
 
-        jobGroups = jobFactory(events_per_job=50, events_per_lumi=25, collectionName="ACDC_TestEventBased",
+        jobGroups = jobFactory(events_per_job=eventsPerJob, events_per_lumi=int(eventsPerJob / lumisPerJob),
+                               collectionName="ACDC_TestEventBased",
                                couchURL=self.couchUrl, couchDB=self.couchDBName,
                                filesetName="/ACDC_TestEventBased/Production",
                                performance=self.performanceParams)
 
         self.assertEqual(1, len(jobGroups))
         jobGroup = jobGroups[0]
-        self.assertEqual(1200, len(jobGroup.jobs))
+        self.assertEqual(numFiles * numberOfJobs, len(jobGroup.jobs))
 
         for job in jobGroup.jobs:
             self.assertEqual(1, len(job["input_files"]))
             mask = job["mask"]
-            self.assertEqual(2, mask["LastLumi"] - mask["FirstLumi"])
-            self.assertEqual(50, mask["LastEvent"] - mask["FirstEvent"])
-            self.assertFalse(mask["runAndLumis"])
-            self.assertEqual(job["estimatedJobTime"], 50 * 12)
-            self.assertEqual(job["estimatedDiskUsage"], 400 * 50)
+            self.assertEqual(mask.getMaxEvents(), eventsPerJob)
+            self.assertEqual(mask.getMax("Event"), eventsPerJob)
+            self.assertEqual(mask.getMax("Lumi"), lumisPerJob)
+            self.assertEqual(mask.getMax("Run"), 1)
+            self.assertEqual(mask["LastLumi"] - mask["FirstLumi"], lumisPerJob - 1)
+            self.assertEqual(mask["LastEvent"] - mask["FirstEvent"], eventsPerJob - 1)
+            self.assertEqual(mask["runAndLumis"], {})
+            self.assertEqual(job["estimatedJobTime"], eventsPerJob * 12)
+            self.assertEqual(job["estimatedDiskUsage"], eventsPerJob * 400)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
+
+        return
+
+    def testACDCProduction_v2(self):
+        """
+        _testACDCProduction_v2_
+
+        Test the ability of the EventBased algorithm of creating
+        jobs from ACDC correctly. Uses the new ACDC document version.
+        """
+        numFiles = 3
+        lumisPerJob = 4
+        eventsPerJob = 100
+        numberOfJobs = 12  # 200
+        self.populateACDCCouch(numFiles=numFiles, lumisPerJob=lumisPerJob, eventsPerJob=eventsPerJob,
+                               numberOfJobs=numberOfJobs, acdcVer=2)
+
+        mcSubscription = None
+        for idx in range(3):
+            mcSubscription = self.generateFakeMCFile(numEvents=eventsPerJob * numberOfJobs,
+                                                     firstEvent=idx * eventsPerJob * numberOfJobs + 1,
+                                                     lastEvent=(idx + 1) * eventsPerJob * numberOfJobs,
+                                                     firstLumi=idx * lumisPerJob * numberOfJobs + 1,
+                                                     lastLumi=(idx + 1) * lumisPerJob * numberOfJobs,
+                                                     index=idx, existingSub=mcSubscription)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=mcSubscription)
+
+        jobGroups = jobFactory(events_per_job=eventsPerJob, events_per_lumi=int(eventsPerJob / lumisPerJob),
+                               collectionName="ACDC_TestEventBased",
+                               couchURL=self.couchUrl, couchDB=self.couchDBName,
+                               filesetName="/ACDC_TestEventBased/Production",
+                               performance=self.performanceParams)
+
+        self.assertEqual(1, len(jobGroups))
+        jobGroup = jobGroups[0]
+        self.assertEqual(numFiles * numberOfJobs, len(jobGroup.jobs))
+
+        for job in jobGroup.jobs:
+            self.assertEqual(1, len(job["input_files"]))
+            mask = job["mask"]
+            self.assertEqual(mask.getMaxEvents(), eventsPerJob)
+            self.assertEqual(mask.getMax("Event"), eventsPerJob)
+            self.assertEqual(mask.getMax("Lumi"), lumisPerJob)
+            self.assertEqual(mask.getMax("Run"), 1)
+            self.assertEqual(mask["LastLumi"] - mask["FirstLumi"], lumisPerJob - 1)
+            self.assertEqual(mask["LastEvent"] - mask["FirstEvent"], eventsPerJob - 1)
+            self.assertEqual(mask["runAndLumis"], {})
+            self.assertEqual(job["estimatedJobTime"], eventsPerJob * 12)
+            self.assertEqual(job["estimatedDiskUsage"], eventsPerJob * 400)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
+
+        return
+
+    def testACDCNonSequential_v1(self):
+        """
+        _testACDCNonSequential_v1_
+        Test the ability of the EventBased algorithm to create the proper jobs
+        given job information from the ACDCServer using non-sequential and irregular
+        (diff number of lumis per job) lumi distribution (old version of ACDC docs)
+        """
+        eventsPerJob = 700
+        eventsPerLumi = 200
+        lumisPerJob = 4
+
+        self.populateACDCFakeFile()
+
+        mcSubscription = self.generateFakeMCFile(3500, 1, 0, 1, 1000, 0)
+        splitter = SplitterFactory()
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=mcSubscription)
+
+        jobGroups = jobFactory(events_per_job=eventsPerJob, events_per_lumi=eventsPerLumi,
+                               collectionName="ACDC_TestEventBased",
+                               couchURL=self.couchUrl, couchDB=self.couchDBName,
+                               filesetName="/ACDC_TestEventBased/Production",
+                               performance=self.performanceParams)
+
+        self.assertEqual(1, len(jobGroups))
+        jobGroup = jobGroups[0]
+        self.assertEqual(5, len(jobGroup.jobs))
+
+        for jobNum, lRange in enumerate([[197, 198], [277, 281], [337, 338], [421, 422], [529, 530]]):
+            job = jobGroup.jobs[jobNum]
+            self.assertEqual(1, len(job["input_files"]))
+            mask = job["mask"]
+            self.assertEqual(mask.getMaxEvents(), eventsPerJob)
+            self.assertEqual(mask.getMax("Event"), eventsPerJob)
+            if lRange[0] == 277:
+                self.assertEqual(mask.getMax("Lumi"), lumisPerJob)
+            else:
+                self.assertEqual(mask.getMax("Lumi"), 1)
+            self.assertEqual(mask.getMax("Run"), 1)
+            self.assertEqual(mask["FirstLumi"], lRange[0])
+            self.assertEqual(mask["LastLumi"], lRange[1] - 1)
+            self.assertEqual(mask["LastEvent"] - mask["FirstEvent"], eventsPerJob - 1)
+            self.assertEqual(mask["runAndLumis"], {})
+            self.assertEqual(job["estimatedJobTime"], eventsPerJob * 12)
+            self.assertEqual(job["estimatedDiskUsage"], eventsPerJob * 400)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
+
+        return
+
+    def testACDCNonSequential_v2(self):
+        """
+        _testACDCNonSequential_v2_
+        Test the ability of the EventBased algorithm to create the proper jobs
+        given job information from the ACDCServer using non-sequential and irregular
+        (diff number of lumis per job) lumi distribution (new version of ACDC docs)
+        """
+        eventsPerJob = 700
+        eventsPerLumi = 200
+        lumisPerJob = 4
+
+        self.populateACDCFakeFile(acdcVer=2)
+
+        mcSubscription = self.generateFakeMCFile(3500, 1, 0, 1, 1000, 0)
+        splitter = SplitterFactory()
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=mcSubscription)
+
+        jobGroups = jobFactory(events_per_job=eventsPerJob, events_per_lumi=eventsPerLumi,
+                               collectionName="ACDC_TestEventBased",
+                               couchURL=self.couchUrl, couchDB=self.couchDBName,
+                               filesetName="/ACDC_TestEventBased/Production",
+                               performance=self.performanceParams)
+
+        self.assertEqual(1, len(jobGroups))
+        jobGroup = jobGroups[0]
+        self.assertEqual(5, len(jobGroup.jobs))
+
+        for jobNum, lRange in enumerate([[197, 198], [277, 281], [337, 338], [421, 422], [529, 530]]):
+            job = jobGroup.jobs[jobNum]
+            self.assertEqual(1, len(job["input_files"]))
+            mask = job["mask"]
+            self.assertEqual(mask.getMaxEvents(), eventsPerJob)
+            self.assertEqual(mask.getMax("Event"), eventsPerJob)
+            if lRange[0] == 277:
+                self.assertEqual(mask.getMax("Lumi"), lumisPerJob)
+            else:
+                self.assertEqual(mask.getMax("Lumi"), 1)
+            self.assertEqual(mask.getMax("Run"), 1)
+            self.assertEqual(mask["FirstLumi"], lRange[0])
+            self.assertEqual(mask["LastLumi"], lRange[1] - 1)
+            self.assertEqual(mask["LastEvent"] - mask["FirstEvent"], eventsPerJob - 1)
+            self.assertEqual(mask["runAndLumis"], {})
+            self.assertEqual(job["estimatedJobTime"], eventsPerJob * 12)
+            self.assertEqual(job["estimatedDiskUsage"], eventsPerJob * 400)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
 
         return

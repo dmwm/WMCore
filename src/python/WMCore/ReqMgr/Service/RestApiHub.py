@@ -55,7 +55,7 @@ class RestApiHub(RESTApi):
                    "cmsswversions": CMSSWVersions(app, IndividualCouchManager(config), config, mount),
                    "wmagentconfig": WMAgentConfig(app, IndividualCouchManager(config), config, mount),
                    "permissions": PermissionsConfig(app, IndividualCouchManager(config), config, mount),
-                   "campaignconfig": WMAgentConfig(app, IndividualCouchManager(config), config, mount),
+                   "campaignconfig": CampaignConfig(app, IndividualCouchManager(config), config, mount),
                    "unifiedconfig": UnifiedConfig(app, IndividualCouchManager(config), config, mount),
                    "status": RequestStatus(app, IndividualCouchManager(config), config, mount),
                    "type": RequestType(app, IndividualCouchManager(config), config, mount),

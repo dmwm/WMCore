@@ -70,6 +70,11 @@ class StdBaseTest(unittest.TestCase):
         self.assertEqual((23528, 11764), StdBase.calcEvtsPerJobLumi(24000, 11764, 10.157120496967591))
         self.assertEqual((2835, 2835), StdBase.calcEvtsPerJobLumi(None, 11764, 10.157120496967591))
 
+        self.assertEqual((10, 10), StdBase.calcEvtsPerJobLumi(123, 345, 1, requestedEvents=10))
+        self.assertEqual((690, 345), StdBase.calcEvtsPerJobLumi(750, 345, 1, requestedEvents=700))
+        self.assertEqual((15000, 100), StdBase.calcEvtsPerJobLumi(None, 100, 1, requestedEvents=15000))
+        self.assertEqual((15000, 15000), StdBase.calcEvtsPerJobLumi(None, None, 1, requestedEvents=15000))
+
         return
 
 

@@ -574,7 +574,8 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["EventsPerJob"], taskConf["EventsPerLumi"] = StdBase.calcEvtsPerJobLumi(taskConf.get("EventsPerJob"),
                                                                                              taskConf.get("EventsPerLumi"),
                                                                                              taskConf.get("TimePerEvent",
-                                                                                                          self.timePerEvent))
+                                                                                                          self.timePerEvent),
+                                                                                             taskConf.get("RequestNumEvents"))
             if firstTask:
                 self.eventsPerJob = taskConf["EventsPerJob"]
                 self.eventsPerLumi = taskConf["EventsPerLumi"]

@@ -439,7 +439,8 @@ class StepChainWorkloadFactory(StdBase):
         if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:
             taskConf["EventsPerJob"], taskConf["EventsPerLumi"] = StdBase.calcEvtsPerJobLumi(taskConf.get("EventsPerJob"),
                                                                                              taskConf.get("EventsPerLumi"),
-                                                                                             self.timePerEvent)
+                                                                                             self.timePerEvent,
+                                                                                             taskConf.get("RequestNumEvents"))
             self.eventsPerJob = taskConf["EventsPerJob"]
             self.eventsPerLumi = taskConf["EventsPerLumi"]
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]

@@ -1,3 +1,8 @@
+1.2.2.pre2 to 1.2.2.pre3:
+  - update unit tests (Alan Malta Rodrigues) #9168
+  - Limit EventsPerJob to RequestNumEvents (Alan Malta Rodrigues) #9168
+
+
 1.2.2.pre1 to 1.2.2.pre2:
   - Log job splitting changes in ReqMgr2 (Alan Malta Rodrigues) #9166
   - Fix CampaignConfig document type (Alan Malta Rodrigues) #9165

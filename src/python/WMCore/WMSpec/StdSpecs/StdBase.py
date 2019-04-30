@@ -80,15 +80,17 @@ class StdBase(object):
     skimMap = {}
 
     @staticmethod
-    def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent):
+    def calcEvtsPerJobLumi(ePerJob, ePerLumi, tPerEvent, requestedEvents=None):
         """
         _calcEvtsPerJobLumi_
 
-        Given EventsPerJob, EventsPerLumi and TimePerEvent information,
-        calculates the final values for EventsPerJob and EventsPerLumi.
+        Given RequestNumEvents (for MC from scratch), EventsPerJob,
+        EventsPerLumi and TimePerEvent information, calculates the final
+        values for EventsPerJob and EventsPerLumi.
 
         Final result will always be an EventsPerJob multiple of EventsPerLumi,
-        no matter whether EventsPerJob was provided or not.
+        no matter whether EventsPerJob was provided or not. In addition to that,
+        makes sure EventsPerJob is not greater than RequestNumEvents.
         :param ePerJob: events per job
         :param ePerLumi: events per lumi
         :param tPerEvent: time per event
@@ -96,6 +98,8 @@ class StdBase(object):
         # if not set, let's calculate an 8h job and set it for you
         if ePerJob is None:
             ePerJob = int((8.0 * 3600.0) / tPerEvent)
+        if requestedEvents and ePerJob > requestedEvents:
+            ePerJob = requestedEvents
 
         if ePerLumi is None:
             ePerLumi = ePerJob

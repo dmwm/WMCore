@@ -180,14 +180,13 @@ class RESTModel(WebAPI):
                         key.lower() in keysToRemove:
                         del headers[key]
                 tst = time.gmtime(time.time())
-                msg = 'REQUEST {} {} {} {} {} [{}] [{}] [{}]'.format(\
+                msg = 'REQUEST {} {} {} {} {} [{}] [{}]'.format(\
                         time.strftime('[%d/%b/%Y %H:%M:%S GMT]', tst),
                         request.remote.ip,
                         request.remote.port,
                         request.method,
                         request.path_info,
                         headers,
-                        request.query_string,
                         request.params
                         )
                 cherrypy.log.access_log.info(msg)

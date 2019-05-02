@@ -10,9 +10,10 @@ __all__ = []
 import logging
 from Utils.Timers import timeFunction
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, ReqMgrAux
+from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
+
 
 class DrainStatusPoller(BaseWorkerThread):
     """
@@ -45,25 +46,25 @@ class DrainStatusPoller(BaseWorkerThread):
             logging.error("Failed to fetch agent configuration from the auxiliary DB")
             return
 
-        if isDrainMode(self.config):
-            # check to see if the agent hit any speed drain thresholds
-            thresholdsHit = self.checkSpeedDrainThresholds()
-            if thresholdsHit:
-                logging.info("Updating agent configuration for speed drain...")
-                self.updateAgentSpeedDrainConfig(thresholdsHit)
-            # now collect drain statistics
-            try:
+        try:
+            # check the agent aux db config to see if the agent is in drain mode
+            if self.agentConfig["UserDrainMode"] or self.agentConfig["AgentDrainMode"]:
+                # check to see if the agent hit any speed drain thresholds
+                thresholdsHit = self.checkSpeedDrainThresholds()
+                if thresholdsHit:
+                    logging.info("Updating agent configuration for speed drain...")
+                    self.updateAgentSpeedDrainConfig(thresholdsHit)
+                # now collect drain statistics
                 DrainStatusPoller.drainStats = self.drainAPI.collectDrainInfo()
                 logging.info("Finished collecting agent drain status.")
-                logging.info("Drain stats: " + str(DrainStatusPoller.drainStats))
-
-            except Exception as ex:
-                msg = "Error occurred, will retry later:\n"
-                msg += str(ex)
-                logging.exception(msg)
-        else:
-            logging.info("Agent not in drain mode. Resetting flags and skipping drain check...")
-            self.resetAgentSpeedDrainConfig()
+                logging.info("Drain stats: %s", str(DrainStatusPoller.drainStats))
+            else:
+                logging.info("Agent not in drain mode. Resetting flags and skipping drain check...")
+                self.resetAgentSpeedDrainConfig()
+        except Exception as ex:
+            msg = "Error occurred, will retry later:\n"
+            msg += str(ex)
+            logging.exception(msg)
 
     @classmethod
     def getDrainInfo(cls):

@@ -1,3 +1,12 @@
+1.1.16 to 1.1.16.dbs2:
+  - Merge pull request #9175 from amaltaro/dbs-9171
+  - Put changes Yuyi requested
+  - Remove query_string since it is identical to params
+  - Fix issue with missing received bytes in custom cherrypy logger (used by DBS)
+  - 1.1.16.dbs1
+  - Merge pull request #9159 from amaltaro/req-logs-dbs
+  - Add loggin of incoming requests to RESTModel end-points
+
 1.1.16 to 1.1.16.dbs1:
   - Add loggin of incoming requests to RESTModel end-points (Valentin Kuznetsov) #9159
 

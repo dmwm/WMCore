@@ -141,9 +141,9 @@ def hasParameter(pset, param, nopop=False):
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
-        if lastParam == None:
+        if lastParam is None:
             return False
-    if lastParam != None:
+    if lastParam is not None:
         return True
     return False
 
@@ -164,7 +164,7 @@ def getParameter(pset, param, nopop=False):
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
-        if lastParam == None:
+        if lastParam is None:
             return None
     return lastParam.value()
 
@@ -187,7 +187,7 @@ def setParameter(process, param, value):
     lastPSet = process
     for pset in params:
         lastPSet = getattr(lastPSet, pset, None)
-        if lastPSet == None:
+        if lastPSet is None:
             msg = "Cannot find attribute named: %s\n" % pset
             msg += "Cannot set value: %s" % param
             logging.error(msg)
@@ -488,7 +488,7 @@ def makeJobTweak(job):
 
     # install any settings from the per job baggage
     procSection = getattr(baggage, "process", None)
-    if procSection == None:
+    if procSection is None:
         return result
 
     baggageParams = decomposeConfigSection(procSection)

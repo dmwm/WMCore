@@ -10,9 +10,7 @@
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
-        "SiteWhitelist": [
-            "SiteWhitelist-OVERRIDE-ME"
-        ], 
+        "SiteWhitelist": "T1_US_FNAL",
         "SoftTimeout": 129600, 
         "Team": "Team-OVERRIDE-ME", 
         "UnmergedLFNBase": "/store/unmerged"
@@ -21,12 +19,12 @@
         "AcquisitionEra": "DEFAULT_AcqEra", 
         "CMSSWVersion": "CMSSW_9_3_7", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "From scratch reading LHE articles; Two tasks; Logs not written to EOS HTTP",
-        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "Comments": "Given the PFN of an lhe article in the PSet, remotely read it using lazy-download; assigned to FNAL only",
+        "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
         "GlobalTag": "93X_upgrade2023_realistic_v5",
-        "Memory": 3000,
+        "Memory": 1500,
         "Multicore": 1, 
         "PrepID": "TEST-CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982-DarkSUSY_14TeV", 
         "ProcessingString": "DEFAULT_ProcStr", 
@@ -38,11 +36,10 @@
             "slc6_amd64_gcc630"
         ], 
         "SizePerEvent": 8000, 
-        "SubRequestType": "RelVal", 
         "Task1": {
             "AcquisitionEra": "CMSSW_9_3_7", 
             "Campaign": "CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982", 
-            "ConfigCacheID": "a46ab47e0d46279933674d7eee454c89", 
+            "ConfigCacheID": "bd7412540cb138037be66ba857557f02", 
             "EventsPerJob": 500,
             "EventsPerLumi": 100, 
             "GlobalTag": "93X_upgrade2023_realistic_v5", 
@@ -57,22 +54,7 @@
             "SplittingAlgo": "EventBased", 
             "TaskName": "DarkSUSY_14TeV_2023D17_GenSimHLBeamSpotFull14"
         }, 
-        "Task2": {
-            "AcquisitionEra": "CMSSW_9_3_7", 
-            "Campaign": "CMSSW_9_3_7__UPSG_Std_pLHE_2023D17noPU-1551365982", 
-            "ConfigCacheID": "a46ab47e0d46279933674d7eee4808e5", 
-            "GlobalTag": "93X_upgrade2023_realistic_v5", 
-            "InputFromOutputModule": "FEVTDEBUGoutput", 
-            "InputTask": "DarkSUSY_14TeV_2023D17_GenSimHLBeamSpotFull14", 
-            "KeepOutput": true, 
-            "LumisPerJob": 10, 
-            "Memory": 7000,
-            "Multicore": 8, 
-            "ProcessingString": "Task2_WMCore_TEST", 
-            "SplittingAlgo": "LumiBased", 
-            "TaskName": "DigiFullTrigger_2023D17"
-        },
-        "TaskChain": 2,
+        "TaskChain": 1,
         "TimePerEvent": 40
     }
 }

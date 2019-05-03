@@ -6,5 +6,5 @@ Core libraries for Workload Management Packages
 
 """
 
-__version__ = '1.1.16.dbs2'
+__version__ = '1.1.16.dbs3'
 __all__ = []

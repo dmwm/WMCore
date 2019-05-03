@@ -389,3 +389,12 @@ class Scram(object):
             self.stdout,
             self.stderr)
         return result
+
+    def getStdout(self):
+        """
+        retrieve stdout of the command executed via the __call__ method\
+        note that in current implementation stderr of command execution
+        is piped to stdout
+        :return: a (possibly long) string
+        """
+        return self.stdout

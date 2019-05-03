@@ -11,6 +11,7 @@ from cherrypy import request, HTTPError
 import time
 import cherrypy
 import traceback
+from datetime import datetime
 
 def restexpose(func):
     """
@@ -179,15 +180,13 @@ class RESTModel(WebAPI):
                     if key.lower().startswith('ssl-') or \
                         key.lower() in keysToRemove:
                         del headers[key]
-                tst = time.gmtime(time.time())
-                msg = 'REQUEST {} {} {} {} {} [{}] [{}] [{}]'.format(\
-                        time.strftime('[%d/%b/%Y %H:%M:%S GMT]', tst),
+                msg = 'REQUEST {} {} {} {} {} [{}] [{}]'.format(\
+                        datetime.now().strftime('[%d/%b/%Y %H:%M:%S]'),
                         request.remote.ip,
                         request.remote.port,
                         request.method,
                         request.path_info,
-                        headers,
-                        request.query_string,
+                        headers.get('Cms-Authn-Dn', ''),
                         request.params
                         )
                 cherrypy.log.access_log.info(msg)

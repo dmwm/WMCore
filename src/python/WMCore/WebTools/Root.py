@@ -22,6 +22,7 @@ from cherrypy._cplogging import LogManager
 
 # Logging
 import WMCore.WMLogging
+from Utils.Utilities import lowerCmsHeaders
 # configuration and arguments
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
@@ -32,8 +33,6 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 from WMCore.WebTools.Welcome import Welcome
-
-from Utils.Utilities import lowerCmsHeaders
 
 lastTest = ""
 
@@ -131,7 +130,7 @@ class Root(Harness):
         self.homepage = None
         self.mode = 'component'
         self.testName = testName
-        if webApp == None:
+        if webApp is None:
             Harness.__init__(self, config, compName="Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
             self.app = self.config.Webtools.application
@@ -452,7 +451,7 @@ if __name__ == "__main__":
 
     component = cfg.Webtools.application
     workdir = getattr(cfg.Webtools, 'componentDir', '/tmp/webtools')
-    if workdir == None:
+    if workdir is None:
         workdir = '/tmp/webtools'
     root = Root(cfg)
     if opts.status:

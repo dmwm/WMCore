@@ -141,9 +141,9 @@ def hasParameter(pset, param, nopop=False):
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
-        if lastParam == None:
+        if lastParam is None:
             return False
-    if lastParam != None:
+    if lastParam is not None:
         return True
     return False
 
@@ -164,7 +164,7 @@ def getParameter(pset, param, nopop=False):
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
-        if lastParam == None:
+        if lastParam is None:
             return None
     return lastParam.value()
 
@@ -187,7 +187,7 @@ def setParameter(process, param, value):
     lastPSet = process
     for pset in params:
         lastPSet = getattr(lastPSet, pset, None)
-        if lastPSet == None:
+        if lastPSet is None:
             msg = "Cannot find attribute named: %s\n" % pset
             msg += "Cannot set value: %s" % param
             logging.error(msg)
@@ -413,6 +413,7 @@ def makeJobTweak(job):
             # If there is a preset lumi in the mask, use it as the first
             # luminosity setting
             if job['mask'].get('FirstLumi', None) != None:
+                logging.info("Setting 'firstLuminosityBlock' attr to: %s", job['mask']['FirstLumi'])
                 result.addParameter("process.source.firstLuminosityBlock",
                                     job['mask']['FirstLumi'])
             else:
@@ -425,6 +426,8 @@ def makeJobTweak(job):
         for secondaryFile in inputFile["parents"]:
             secondaryFiles.append(secondaryFile["lfn"])
 
+    logging.info("Adding %d files to 'fileNames' attr", len(primaryFiles))
+    logging.info("Adding %d files to 'secondaryFileNames' attr", len(secondaryFiles))
     if len(primaryFiles) > 0:
         result.addParameter("process.source.fileNames", primaryFiles)
         if len(secondaryFiles) > 0:
@@ -434,8 +437,8 @@ def makeJobTweak(job):
         # That should have the added protection of not going over 2^32 - 1
         # If there is nothing in the mask, then we fallback to the counter method
         if job['mask'].get('FirstEvent', None) != None:
-            result.addParameter("process.source.firstEvent",
-                                job['mask']['FirstEvent'])
+            logging.info("Setting 'firstEvent' attr to: %s", job['mask']['FirstEvent'])
+            result.addParameter("process.source.firstEvent", job['mask']['FirstEvent'])
         else:
             # No first event information in the mask, raise and error
             raise WMTweakMaskError(job['mask'],
@@ -445,7 +448,9 @@ def makeJobTweak(job):
 
     # event limits
     maxEvents = mask.getMaxEvents()
-    if maxEvents == None: maxEvents = -1
+    if maxEvents is None:
+        maxEvents = -1
+    logging.info("Setting 'maxEvents.input' attr to: %s", maxEvents)
     result.addParameter("process.maxEvents.input", maxEvents)
 
     # We don't want to set skip events for MonteCarlo jobs which have
@@ -453,8 +458,10 @@ def makeJobTweak(job):
     firstEvent = mask['FirstEvent']
     if firstEvent != None and firstEvent >= 0 and (len(primaryFiles) > 0 or lheInput):
         if lheInput:
+            logging.info("Setting 'skipEvents' attr to: %s", firstEvent - 1)
             result.addParameter("process.source.skipEvents", firstEvent - 1)
         else:
+            logging.info("Setting 'skipEvents' attr to: %s", firstEvent)
             result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']
@@ -476,11 +483,12 @@ def makeJobTweak(job):
             lumisToProcess.append("%s:%s-%s:%s" % (run, lumiPair[0], run, lumiPair[1]))
 
     if len(lumisToProcess) > 0:
+        logging.info("Adding %d run/lumis mask to 'lumisToProcess' attr", len(lumisToProcess))
         result.addParameter("process.source.lumisToProcess", lumisToProcess)
 
     # install any settings from the per job baggage
     procSection = getattr(baggage, "process", None)
-    if procSection == None:
+    if procSection is None:
         return result
 
     baggageParams = decomposeConfigSection(procSection)

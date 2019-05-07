@@ -21,6 +21,7 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+        self.forbiddenStatus = ["aborted", "aborted-completed", "force-complete", "completed"]
         self.queue = queue
         self.config = config
         self.reqmgr2Svc = ReqMgr(self.config.General.ReqMgr2ServiceURL)
@@ -52,14 +53,14 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
             # and updating wmbs status
             # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
             # added completed status in the list due to the race condition
-            requests = self.reqmgr2Svc.getRequestByStatusFromMemoryCache(["aborted", "aborted-completed", "force-complete", "completed"]).getData()
+            requests = self.reqmgr2Svc.getRequestByStatusFromMemoryCache(self.forbiddenStatus).getData()
             results = self.finishedWorflowCheck.execute(workflowNames=requests)
 
             requestsToKill = [reqInfo["workflow"] for reqInfo in results if reqInfo["open"] > 0]
 
-            for wf in requestsToKill:
-                self.queue.killWMBSWorkflow(wf)
-
+            self.queue.logger.info("Killing %d requests in WMBS ...", len(requestsToKill))
+            self.queue.killWMBSWorkflows(requestsToKill)
         except Exception as ex:
-            self.queue.logger.exception("Error cleaning queue: %s" % str(ex))
+            self.queue.logger.exception("Error cleaning queue: %s", str(ex))
+
         self.queue.logger.info("Finished updating & cleaning.")

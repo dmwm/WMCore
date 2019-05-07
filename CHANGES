@@ -1,3 +1,10 @@
+1.2.2 to 1.2.3.pre1:
+  - pylint fixes (Alan Malta Rodrigues) #9154
+  - Enable lazy-download in the PSet for jobs with LheInputFiles=True (Alan Malta Rodrigues) #9154
+  - pylint fixes (Alan Malta Rodrigues) #9152
+  - PY3: support urlparse in both py2 and py3 version (Alan Malta Rodrigues) #9152
+
+
 1.2.2.pre3 to 1.2.2:
   - pylint fixes (Alan Malta Rodrigues) #9177
   - fix missing format string in #9171 (Alan Malta Rodrigues) #9177

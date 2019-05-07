@@ -22,6 +22,7 @@ from cherrypy._cplogging import LogManager
 
 # Logging
 import WMCore.WMLogging
+from Utils.Utilities import lowerCmsHeaders
 # configuration and arguments
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
@@ -32,8 +33,6 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
 from WMCore.WebTools.Welcome import Welcome
-
-from Utils.Utilities import lowerCmsHeaders
 
 lastTest = ""
 
@@ -88,7 +87,6 @@ class WTLogger(LogManager):
         response = cherrypy.response
         inheaders = lowerCmsHeaders(request.headers)
         outheaders = response.headers
-        body = request.body
         # identify size of body from HTTP Content-Length header
         rbytes = int(cherrypy.request.headers.get('Content-Length', 0))
         if not rbytes:
@@ -98,10 +96,10 @@ class WTLogger(LogManager):
             # request.rfile.rfile.bytes_read is a custom CMS web
             #  cherrypy patch not always available, hence the test
             rbytes = (getattr(request.rfile, 'rfile', None)
-                 and getattr(request.rfile.rfile, "bytes_read", None)
-                 and request.rfile.rfile.bytes_read) or "-"
+                      and getattr(request.rfile.rfile, "bytes_read", None)
+                      and request.rfile.rfile.bytes_read) or "-"
         msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
-               + ' [data: %(i) in %(b)s out %(T).0f us ]'
+               + ' [data: %(i)s in %(b)s out %(T).0f us ]'
                + ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
                + ' [ref: "%(f)s" "%(a)s" ]') % {'t': self.time(),
                                                 'H': self.host,
@@ -132,7 +130,7 @@ class Root(Harness):
         self.homepage = None
         self.mode = 'component'
         self.testName = testName
-        if webApp == None:
+        if webApp is None:
             Harness.__init__(self, config, compName="Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
             self.app = self.config.Webtools.application
@@ -453,7 +451,7 @@ if __name__ == "__main__":
 
     component = cfg.Webtools.application
     workdir = getattr(cfg.Webtools, 'componentDir', '/tmp/webtools')
-    if workdir == None:
+    if workdir is None:
         workdir = '/tmp/webtools'
     root = Root(cfg)
     if opts.status:

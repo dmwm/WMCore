@@ -87,25 +87,21 @@ class Watchdog(threading.Thread):
                     sh = task.getStepHelper(stepName)
                     origCores = max(origCores, sh.getNumberOfCores())
                 resources = {'cores': origCores}
-                origMaxRSS = args.get('maxRSS')
-                ### TODO: keep only the else clause after ~HG1805
-                if origMaxRSS and origMaxRSS > 100 * 1000:  # in case MaxRSS is in KB
-                    origMaxRSS = int(origMaxRSS / 1024.)  # HTCondor expects MB; we get KB.
-                    resources['memory'] = origMaxRSS
-                elif origMaxRSS:
-                    resources['memory'] = origMaxRSS  # then it's already in MB
+                origMaxPSS = args.get('maxPSS', args.get('maxRSS'))
+                if origMaxPSS:
+                    resources['memory'] = origMaxPSS
                 # Actually parses the HTCondor runtime
                 resizeResources(resources)
                 # We decided to only touch Watchdog settings if the number of cores changed.
                 # (even if this means the watchdog memory is wrong for a slot this size).
                 changedCores = origCores != resources['cores']
-                # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
+                # If we did base maxPSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
                 # Add the new number of cores to the args such that DashboardInterface can see it
                 args['cores'] = resources['cores']
                 if changedCores:
-                    if origMaxRSS:
-                        args['maxRSS'] = resources['memory'] - 50
+                    if origMaxPSS:
+                        args['maxPSS'] = resources['memory'] - 50
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
                 for k, v in args.iteritems():

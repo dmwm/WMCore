@@ -1,3 +1,11 @@
+1.2.2.pre3 to 1.2.2:
+  - pylint fixes (Alan Malta Rodrigues) #9177
+  - fix missing format string in #9171 (Alan Malta Rodrigues) #9177
+  - Fix issue with missing received bytes in custom cherrypy logger (used by DBS) (Valentin Kuznetsov) #9171
+  - add scram.getStdout method. Fix #9170 (belforte) #9176
+  - Port from CRABServer code Throttled classes; add unit test for them (Valentin Kuznetsov) #9158
+
+
 1.2.2.pre2 to 1.2.2.pre3:
   - update unit tests (Alan Malta Rodrigues) #9168
   - Limit EventsPerJob to RequestNumEvents (Alan Malta Rodrigues) #9168

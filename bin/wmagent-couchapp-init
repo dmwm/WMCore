@@ -11,7 +11,12 @@ import shutil
 import sys
 import tempfile
 import urllib
-from urlparse import urlsplit
+
+try:
+    from urlparse import urlsplit
+except ImportError:
+    # PY3
+    from urllib.parse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config

@@ -27,10 +27,15 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 import os
 import re
-import urlparse
+
+try:
+    from urlparse import urlsplit
+except ImportError:
+    # PY3
+    from urllib.parse import urlsplit
 from xml.dom.minidom import Element
 
-from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
+from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 
 _TFCArgSplit = re.compile("\?protocol=")
 
@@ -47,11 +52,10 @@ class TrivialFileCatalog(dict):
         dict.__init__(self)
         self['lfn-to-pfn'] = []
         self['pfn-to-lfn'] = []
-        self.preferredProtocol = None # attribute for preferred protocol
-
+        self.preferredProtocol = None  # attribute for preferred protocol
 
     def addMapping(self, protocol, match, result,
-              chain = None, mapping_type = 'lfn-to-pfn'):
+                   chain=None, mapping_type='lfn-to-pfn'):
         """
         _addMapping_
 
@@ -65,7 +69,6 @@ class TrivialFileCatalog(dict):
         entry.setdefault("result", result)
         entry.setdefault("chain", chain)
         self[mapping_type].append(entry)
-
 
     def _doMatch(self, protocol, path, style, caller):
         """
@@ -86,7 +89,7 @@ class TrivialFileCatalog(dict):
                     if not path:
                         continue
                 splitList = []
-                if len(mapping['path-match-expr'].split(path, 1)) > 1 :
+                if len(mapping['path-match-expr'].split(path, 1)) > 1:
                     for split in range(len(mapping['path-match-expr'].split(path, 1))):
                         s = mapping['path-match-expr'].split(path, 1)[split]
                         if s:
@@ -101,7 +104,6 @@ class TrivialFileCatalog(dict):
 
         return None
 
-
     def matchLFN(self, protocol, lfn):
         """
         _matchLFN_
@@ -115,7 +117,6 @@ class TrivialFileCatalog(dict):
         result = self._doMatch(protocol, lfn, "lfn-to-pfn", self.matchLFN)
         return result
 
-
     def matchPFN(self, protocol, pfn):
         """
         _matchLFN_
@@ -128,7 +129,6 @@ class TrivialFileCatalog(dict):
         """
         result = self._doMatch(protocol, pfn, "pfn-to-lfn", self.matchPFN)
         return result
-
 
     def getXML(self):
         """
@@ -148,13 +148,12 @@ class TrivialFileCatalog(dict):
                 e.setAttribute(k, str(v))
             return e
 
-        root = Element("storage-mapping") # root element name
+        root = Element("storage-mapping")  # root element name
         for mappingStyle, mappings in self.items():
             for mapping in mappings:
                 mapElem = _getElementForMappingEntry(mapping, mappingStyle)
                 root.appendChild(mapElem)
         return root.toprettyxml()
-
 
     def __str__(self):
         result = ""
@@ -179,7 +178,7 @@ def tfcProtocol(contactString):
     protocol from it.
 
     """
-    args = urlparse.urlsplit(contactString)[3]
+    args = urlsplit(contactString)[3]
     value = args.replace("protocol=", '')
     return value
 
@@ -222,9 +221,9 @@ def readTFC(filename):
     for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
         for entry in parsedResult[mapping]:
             protocol = entry.get("protocol", None)
-            match    = entry.get("path-match", None)
-            result   = entry.get("result", None)
-            chain    = entry.get("chain", None)
+            match = entry.get("path-match", None)
+            result = entry.get("result", None)
+            chain = entry.get("chain", None)
             if True in (protocol, match == None):
                 continue
             tfcInstance.addMapping(str(protocol), str(match), str(result), chain, mapping)
@@ -253,10 +252,12 @@ def coroutine(func):
     Decorator method used to prime coroutines
 
     """
-    def start(*args,**kwargs):
-        cr = func(*args,**kwargs)
+
+    def start(*args, **kwargs):
+        cr = func(*args, **kwargs)
         next(cr)
         return cr
+
     return start
 
 
@@ -272,7 +273,7 @@ def nodeReader(node):
         'protocol': processProtocol(),
         'result': processResult(),
         'chain': processChain()
-        }
+    }
 
     report = {'lfn-to-pfn': [], 'pfn-to-lfn': []}
     processSMT = processSMType(processLfnPfn)
@@ -294,10 +295,10 @@ def expandPhEDExNode(target):
         sentPhedex = False
         for subnode in node.children:
             if subnode.name == "phedex":
-                target.send( (report, subnode) )
+                target.send((report, subnode))
                 sentPhedex = True
         if not sentPhedex:
-            target.send( (report, node) )
+            target.send((report, node))
 
 
 @coroutine
@@ -310,7 +311,7 @@ def processStorageMapping(target):
         report, node = (yield)
         for subnode in node.children:
             if subnode.name == 'storage-mapping':
-                target.send( (report, subnode))
+                target.send((report, subnode))
 
 
 @coroutine

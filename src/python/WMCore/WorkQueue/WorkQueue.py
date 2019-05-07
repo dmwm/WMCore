@@ -15,7 +15,6 @@ from __future__ import division, print_function
 import os
 import threading
 import time
-import traceback
 from collections import defaultdict
 
 from WMCore import Lexicon
@@ -485,20 +484,34 @@ class WorkQueue(WorkQueueBase):
                               SubscriptionId=SubscriptionId,
                               WorkflowName=WorkflowName)
 
-    def killWMBSWorkflow(self, workflow):
+    def killWMBSWorkflows(self, reqNames):
+        """
+        Kill/cancel workflows in WMBS and CouchDB.
+        Also update job state transition in three data sources: local couch,
+        local WMBS and dashboard.
+        :param reqNames: list of request names
+        :return: a list of workflows that failed to be cancelled
+        """
+        failedWfs = []
+        if not len(reqNames):
+            return failedWfs
+
         # import inside function since GQ doesn't need this.
         from WMCore.WorkQueue.WMBSHelper import killWorkflow
         myThread = threading.currentThread()
         myThread.dbi = self.conn.dbi
         myThread.logger = self.logger
-        success = True
-        try:
-            killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
-        except Exception as ex:
-            success = False
-            self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
-            self.logger.error('It will be retried in the next loop')
-        return success
+
+        for workflow in reqNames:
+            try:
+                self.logger.info("Killing workflow in WMBS: %s", workflow)
+                killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
+            except Exception as ex:
+                failedWfs.append(workflow)
+                msg = "Failed to kill workflow '%s' in WMBS. Error: %s" % (workflow, str(ex))
+                msg += "\nIt will be retried in the next loop"
+                self.logger.error(msg)
+        return failedWfs
 
     def cancelWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None, elements=None):
         """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox
@@ -526,9 +539,7 @@ class WorkQueue(WorkQueueBase):
             badWfsCancel = []
             if self.params['PopulateFilesets']:
                 self.logger.info("Canceling work for workflow(s): %s" % (requestNames))
-                for workflow in requestNames:
-                    if not self.killWMBSWorkflow(workflow):
-                        badWfsCancel.append(workflow)
+                badWfsCancel = self.killWMBSWorkflows(requestNames)
             # now we remove any wf that failed to be cancelled (and its inbox elements)
             requestNames -= set(badWfsCancel)
             for wf in badWfsCancel:
@@ -888,6 +899,7 @@ class WorkQueue(WorkQueueBase):
                            "announced", "aborted-completed", "rejected",
                            "normal-archived", "aborted-archived", "rejected-archived"]
 
+        # fetch workflows known to workqueue + workqueue_inbox and with spec attachments
         reqNames = self.backend.getWorkflows(includeInbox=True, includeSpecs=True)
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
@@ -971,16 +983,17 @@ class WorkQueue(WorkQueueBase):
     def performQueueCleanupActions(self, skipWMBS=False):
 
         try:
-            self.deleteCompletedWFElements()
+            self.logger.info("Deleting completed workflow WQ elements ...")
+            res = self.deleteCompletedWFElements()
+            self.logger.info("Deleted %d elements from workqueue/inbox database", res)
         except Exception as ex:
-            msg = traceback.format_exc()
-            self.logger.error('Error deleting wq elements  "%s": %s' % (str(ex), msg))
+            self.logger.exception('Error deleting WQ elements: %s', str(ex))
 
         try:
+            self.logger.info("Syncing and cancelling work ...")
             self.performSyncAndCancelAction(skipWMBS)
         except Exception as ex:
-            msg = traceback.format_exc()
-            self.logger.error('Error canceling wq elements  "%s": %s' % (str(ex), msg))
+            self.logger.error('Error syncing and canceling WQ elements: %s', str(ex))
 
     def _splitWork(self, wmspec, data=None, mask=None, inbound=None, continuous=False):
         """

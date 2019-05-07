@@ -1,3 +1,6 @@
+1.2.3.pre1 to 1.2.2.patch1:
+
+
 1.2.2 to 1.2.3.pre1:
   - pylint fixes (Alan Malta Rodrigues) #9154
   - Enable lazy-download in the PSet for jobs with LheInputFiles=True (Alan Malta Rodrigues) #9154

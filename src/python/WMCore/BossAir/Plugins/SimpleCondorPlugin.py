@@ -516,6 +516,10 @@ class SimpleCondorPlugin(BasePlugin):
         ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
                                        "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
 
+        # entries required for monitoring
+        ad['CMS_WMTool'] = "WMAgent"
+        ad['CMS_SubmissionTool'] = "WMAgent"
+
         # TODO: remove when 8.5.7 is deployed (seems to be still needed as of 8.6.11 ...)
         paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
         paramsToSkip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']

@@ -269,7 +269,7 @@ class WorkQueue(WorkQueueBase):
         """
         Update priority for a workflow, throw exception if no elements affected
         """
-        self.logger.info("Priority change request to %s for %s" % (newpriority, str(workflowNames)))
+        self.logger.info("Priority change request to %s for %s", newpriority, str(workflowNames))
         affected = []
         for wf in workflowNames:
             affected.extend(self.backend.getElements(returnIdOnly=True, RequestName=wf))
@@ -289,7 +289,7 @@ class WorkQueue(WorkQueueBase):
          Note: That the same child queue is free to pick the work up again,
           there is no permanent blacklist of queues.
         """
-        self.logger.info("Resetting elements %s" % str(ids))
+        self.logger.info("Resetting elements %s", str(ids))
         try:
             iter(ids)
         except TypeError:
@@ -455,12 +455,12 @@ class WorkQueue(WorkQueueBase):
                 wmspec = self.backend.getWMSpec(ele['RequestName'])
             blockName, dbsBlock = self._getDBSBlock(ele, wmspec)
             if ele['NumOfFilesAdded'] != len(dbsBlock['Files']):
-                self.logger.info("Adding new files to open block %s (%s)" % (blockName, ele.id))
+                self.logger.info("Adding new files to open block %s (%s)", blockName, ele.id)
                 wmbsHelper = WMBSHelper(wmspec, ele['TaskName'], blockName, ele['Mask'], self.params['CacheDir'])
                 ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)[1]
                 self.backend.updateElements(ele.id, NumOfFilesAdded=ele['NumOfFilesAdded'])
             if dbsBlock['IsOpen'] != ele['OpenForNewData']:
-                self.logger.info("Closing open block %s (%s)" % (blockName, ele.id))
+                self.logger.info("Closing open block %s (%s)", blockName, ele.id)
                 self.backend.updateInboxElements(ele['ParentQueueId'], OpenForNewData=dbsBlock['IsOpen'])
                 self.backend.updateElements(ele.id, OpenForNewData=dbsBlock['IsOpen'])
                 ele['OpenForNewData'] = dbsBlock['IsOpen']
@@ -474,7 +474,7 @@ class WorkQueue(WorkQueueBase):
             ele['WMBSUrl'] = self.params["WMBSUrl"]
         work = self.parent_queue.saveElements(*elements)
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
-        self.logger.info('Acquired work for request(s): %s' % requests)
+        self.logger.info('Acquired work for request(s): %s', requests)
         return work
 
     def doneWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None):
@@ -493,7 +493,7 @@ class WorkQueue(WorkQueueBase):
         :return: a list of workflows that failed to be cancelled
         """
         failedWfs = []
-        if not len(reqNames):
+        if not reqNames:
             return failedWfs
 
         # import inside function since GQ doesn't need this.
@@ -538,14 +538,14 @@ class WorkQueue(WorkQueueBase):
             # if we can talk to wmbs kill the jobs
             badWfsCancel = []
             if self.params['PopulateFilesets']:
-                self.logger.info("Canceling work for workflow(s): %s" % (requestNames))
+                self.logger.info("Canceling work for workflow(s): %s", requestNames)
                 badWfsCancel = self.killWMBSWorkflows(requestNames)
             # now we remove any wf that failed to be cancelled (and its inbox elements)
             requestNames -= set(badWfsCancel)
             for wf in badWfsCancel:
                 elementsToRemove = self.backend.getInboxElements(WorkflowName=wf)
                 inbox_elements = list(set(inbox_elements) - set(elementsToRemove))
-            self.logger.info("New list of cancelled requests: %s" % requestNames)
+            self.logger.info("New list of cancelled requests: %s", requestNames)
 
             # Don't update as fails sometimes due to conflicts (#3856)
             for x in inbox_elements:
@@ -563,26 +563,25 @@ class WorkQueue(WorkQueueBase):
             elements_not_requested = [x for x in elements if
                                       x['ChildQueueUrl'] and (x['Status'] != 'CancelRequested' and not x.inEndState())]
 
-            self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
+            self.logger.info("Canceling work for workflow(s): %s", requestNames)
             if elements_to_cancel:
                 self.backend.updateElements(*[x.id for x in elements_to_cancel], Status='Canceled')
-                self.logger.info("Cancel-ed element(s) %s" % str([x.id for x in elements_to_cancel]))
+                self.logger.info("Cancel-ed element(s) %s", str([x.id for x in elements_to_cancel]))
 
             if elements_not_requested:
                 # Don't update as fails sometimes due to conflicts (#3856)
                 for x in elements_not_requested:
                     x.load().__setitem__('Status', 'CancelRequested')
                 self.backend.saveElements(*elements_not_requested)
-                self.logger.info("CancelRequest-ed element(s) %s" % str([x.id for x in elements_not_requested]))
+                self.logger.info("CancelRequest-ed element(s) %s", str([x.id for x in elements_not_requested]))
 
-            self.backend.updateInboxElements(
-                *[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()],
-                Status='CancelRequested')
+            inboxElemIds = [x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()]
+            self.backend.updateInboxElements(*inboxElemIds, Status='CancelRequested')
             # if we haven't had any updates for a while assume agent is dead and move to canceled
             if self.params.get('cancelGraceTime', -1) > 0 and elements:
                 last_update = max([float(x.updatetime) for x in elements])
                 if (time.time() - last_update) > self.params['cancelGraceTime']:
-                    self.logger.info("%s cancelation has stalled, mark as finished" % elements[0]['RequestName'])
+                    self.logger.info("%s cancelation has stalled, mark as finished", elements[0]['RequestName'])
                     # Don't update as fails sometimes due to conflicts (#3856)
                     for x in elements:
                         if not x.inEndState():
@@ -600,10 +599,10 @@ class WorkQueue(WorkQueueBase):
             request = request[0]
 
             if request.inEndState():
-                self.logger.info('Deleting request "%s" as it is %s' % (request.id, request['Status']))
+                self.logger.info('Deleting request "%s" as it is %s', request.id, request['Status'])
                 self.backend.deleteElements(request)
             else:
-                self.logger.debug('Not deleting "%s" as it is %s' % (request.id, request['Status']))
+                self.logger.debug('Not deleting "%s" as it is %s', request.id, request['Status'])
 
     def queueWork(self, wmspecUrl, request=None, team=None):
         """
@@ -617,7 +616,7 @@ class WorkQueue(WorkQueueBase):
 
         Duplicate specs will be ignored.
         """
-        self.logger.info('queueWork() begin queueing "%s"' % wmspecUrl)
+        self.logger.info('queueWork() begin queueing "%s"', wmspecUrl)
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
 
@@ -629,7 +628,7 @@ class WorkQueue(WorkQueueBase):
         # Either pull the existing inbox element or create a new one.
         try:
             inbound = self.backend.getInboxElements(elementIDs=[wmspec.name()], loadSpec=True)
-            self.logger.info('Resume splitting of "%s"' % wmspec.name())
+            self.logger.info('Resume splitting of "%s"', wmspec.name())
         except CouchNotFoundError:
             inbound = [self.backend.createWork(wmspec, Status='Negotiating',
                                                TeamName=team, WMBSUrl=self.params["WMBSUrl"])]
@@ -643,13 +642,13 @@ class WorkQueue(WorkQueueBase):
         Check and add new elements to an existing running request,
         if supported by the start policy.
         """
-        self.logger.info('addWork() checking "%s"' % requestName)
+        self.logger.info('addWork() checking "%s"', requestName)
         inbound = None
         try:
             inbound = self.backend.getInboxElements(elementIDs=[requestName], loadSpec=True)
         except CouchNotFoundError:
             # This shouldn't happen, the request is in running-open therefore it must exist in the inbox
-            self.logger.error('Can not find request %s for work addition' % requestName)
+            self.logger.error('Can not find request %s for work addition', requestName)
             return 0
 
         work = []
@@ -794,7 +793,7 @@ class WorkQueue(WorkQueueBase):
         if (resources, jobCounts) == (False, False):
             return 0
 
-        self.logger.info("Pull work for sites %s: " % str(resources))
+        self.logger.info("Pull work for sites %s: ", str(resources))
         work = self.getAvailableWorkfromParent(resources, jobCounts)
         if not work:
             return 0
@@ -860,7 +859,7 @@ class WorkQueue(WorkQueueBase):
                 # Check if the delay has passed
                 newDataFoundTime = element.get('TimestampFoundNewData', 0)
                 childrenElements = self.backend.getElementsForParent(element)
-                if len(childrenElements) > 0:
+                if childrenElements:
                     lastUpdate = float(max(childrenElements, key=lambda x: x.timestamp).timestamp)
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
@@ -880,12 +879,12 @@ class WorkQueue(WorkQueueBase):
             except CouchInternalServerError as ex:
                 msg = 'Failed to close workflows. Error was CouchInternalServerError.'
                 self.logger.error(msg)
-                self.logger.error('Error message: %s' % str(ex))
+                self.logger.error('Error message: %s', str(ex))
                 raise
             except Exception as ex:
                 msg = 'Failed to close workflows. Generic exception caught.'
                 self.logger.error(msg)
-                self.logger.error('Error message: %s' % str(ex))
+                self.logger.error('Error message: %s', str(ex))
 
         self.backend.recordTaskActivity('workclosing', msg)
 
@@ -935,8 +934,7 @@ class WorkQueue(WorkQueueBase):
                 self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
-                    self.logger.debug(
-                        "Request %s, Status %s, Full info: %s" % (result['RequestName'], result['Status'], result))
+                    self.logger.debug("Request %s, Status %s, Full info: %s", result['RequestName'], result['Status'], result)
 
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
@@ -945,7 +943,7 @@ class WorkQueue(WorkQueueBase):
                             wf_to_cancel.append(wf)
                             break
                     elif result['Status'] == 'Negotiating':
-                        self.logger.debug("Waiting for %s to finish splitting" % wf)
+                        self.logger.debug("Waiting for %s to finish splitting", wf)
                         continue
 
                     parent = result['ParentQueueElement']
@@ -955,7 +953,7 @@ class WorkQueue(WorkQueueBase):
                     if result.inEndState():
                         if elements:
                             self.logger.debug(
-                                "Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
+                                "Request %s finished (%s)", result['RequestName'], parent.statusMetrics())
                             finished_elements.extend(result['Elements'])
                         else:
                             parentQueueDeleted = False
@@ -965,15 +963,15 @@ class WorkQueue(WorkQueueBase):
 
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:
-                        self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
+                        self.logger.debug("Updating progress %s (%s): %s", x['RequestName'], x.id, x.statusMetrics())
                     for x in updated_elements:
                         self.backend.updateElements(x.id, **x.statusMetrics())
 
                 if not parentQueueDeleted:
-                    self.logger.info('Waiting for parent queue to delete "%s"' % wf)
+                    self.logger.info('Waiting for parent queue to delete "%s"', wf)
 
             except Exception as ex:
-                self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
+                self.logger.error('Error processing workflow "%s": %s', wf, str(ex))
 
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
                                                                             for x in finished_elements]),
@@ -1023,8 +1021,8 @@ class WorkQueue(WorkQueueBase):
                 continue
             if continuous:
                 policy.modifyPolicyForWorkAddition(inbound)
-            self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
-                                                                          policyName, self.params['SplittingMapping']))
+            self.logger.info('Splitting %s with policy %s params = %s', topLevelTask.getPathName(),
+                             policyName, self.params['SplittingMapping'])
             units, rejectedWork, badWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
@@ -1075,7 +1073,7 @@ class WorkQueue(WorkQueueBase):
                 # Check we haven't already split the work, unless it's continuous processing
                 work = not continuous and self.backend.getElementsForParent(inbound)
                 if work:
-                    self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
+                    self.logger.info('Request "%s" already split - Resuming', inbound['RequestName'])
                 else:
                     work, rejectedWork, badWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
                                                                   mask=inbound['Mask'], inbound=inbound,
@@ -1112,7 +1110,7 @@ class WorkQueue(WorkQueueBase):
                 self.logdb.post(inbound['RequestName'], msg, 'error')
                 if not continuous:
                     # Only fail on first splitting
-                    self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.logger.error('Failing workflow "%s": %s', inbound['RequestName'], str(ex))
                     self.backend.updateInboxElements(inbound.id, Status='Failed')
                     if throw:
                         raise
@@ -1131,7 +1129,7 @@ class WorkQueue(WorkQueueBase):
 
         requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in result])))
         if requests:
-            self.logger.info('Split work for request(s): %s' % requests)
+            self.logger.info('Split work for request(s): %s', requests)
 
         return result
 
@@ -1146,8 +1144,7 @@ class WorkQueue(WorkQueueBase):
         """
         if self.parent_queue and not drainMode:
             return self.parent_queue.getWMBSInjectStatus(workflowName)
-        else:
-            return self.backend.getWMBSInjectStatus(workflowName)
+        return self.backend.getWMBSInjectStatus(workflowName)
 
     def monitorWorkQueue(self, status=None):
         """

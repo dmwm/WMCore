@@ -205,7 +205,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         1. Notify the WorkQueue about finished subscriptions
         2. mark workflow as completed in the dbsbuffer_workflow table
         """
-        if len(finishedwfs) == 0:
+        if not finishedwfs:
             return
 
         logging.info("Found %d candidate workflows for completing:", len(finishedwfs))

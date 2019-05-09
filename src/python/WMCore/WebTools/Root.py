@@ -423,6 +423,25 @@ class Root(Harness):
             server.unsubscribe()
             del cherrypy.servers[name]
 
+def application(environ, start_response):
+    "Helper function to start cherrypy Root under uwsgi"
+    inifile = os.environ.get('WMCORE_WEBTOOLS_CONFIG', '')
+    if not inifile:
+        print("### ERROR: No configuration is specified, please provide it via WMCORE_WEBTOOLS_CONFIG environment variable")
+        sys.exit('No configuration specified')
+    cfg = loadConfigurationFile(inifile)
+
+    component = cfg.Webtools.application
+    workdir = getattr(cfg.Webtools, 'componentDir', '/tmp/webtools')
+    if workdir == None:
+        workdir = '/tmp/webtools'
+    croot = Root(cfg)
+    croot._validateConfig()
+    croot._configureCherryPy()
+    croot._loadPages()
+    croot._makeIndex()
+    cherrypy.tree.mount(croot, '/', None)
+    return cherrypy.tree(environ, start_response)
 
 if __name__ == "__main__":
     parser = ArgumentParser()

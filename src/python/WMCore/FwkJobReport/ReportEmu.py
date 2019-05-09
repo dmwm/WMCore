@@ -79,9 +79,8 @@ class ReportEmu(object):
         (outputSize, outputEvents) = self.determineOutputSize()
 
         if not os.path.exists('ReportEmuTestFile.txt'):
-            f = open('ReportEmuTestFile.txt', 'w')
-            f.write('A Shubbery')
-            f.close()
+            with open('ReportEmuTestFile.txt', 'w') as f:
+                f.write('A Shubbery')
 
         for outputModuleName in self.step.listOutputModules():
             outputModuleSection = self.step.getOutputModule(outputModuleName)

@@ -315,7 +315,8 @@ class RESTDaemon(RESTMain):
           if no pid file was found, or an integer if there was a stale file."""
         pid = None
         try:
-            pid = int(open(self.pidfile).readline())
+            with open(self.pidfile) as fd:
+                pid = int(fd.readline())
             os.killpg(pid, 0)
             return (True, pid)
         except:
@@ -459,7 +460,8 @@ class RESTDaemon(RESTMain):
 
             for pidfile in glob("%s/*/pid" % self.statedir):
                 if os.path.exists(pidfile):
-                    pid = int(open(pidfile).readline())
+                    with open(pidfile) as fd:
+                        pid = int(fd.readline())
                     os.remove(pidfile)
                     cherrypy.log("WATCHDOG: killing slave server %d" % pid)
                     try:

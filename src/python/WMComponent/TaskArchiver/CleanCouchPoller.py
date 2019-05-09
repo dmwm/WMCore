@@ -10,6 +10,7 @@ import shutil
 import threading
 import time
 import urllib2
+from contextlib import closing
 from Utils.Timers import timeFunction
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
@@ -1017,10 +1018,10 @@ class CleanCouchPoller(BaseWorkerThread):
 
         try:
             request = urllib2.Request(dashBoardUrl, data, headers)
-            response = urllib2.urlopen(request)
-            if response.code != 200:
-                logging.info("Something went wrong while uploading to DashBoard, response code %d", response.code)
-                return False
+            with closing(urllib2.urlopen(request)) as response:
+                if response.code != 200:
+                    logging.info("Something went wrong while uploading to DashBoard, response code %d", response.code)
+                    return False
         except Exception as ex:
             logging.error('Performance data : DashBoard upload failed for PD %s Release %s', PD, release)
             logging.exception(ex)  # Let's print the stacktrace with generic Exception

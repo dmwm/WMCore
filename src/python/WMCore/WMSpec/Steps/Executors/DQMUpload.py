@@ -133,12 +133,9 @@ class DQMUpload(Executor):
             m.update(data)
             return m
 
-        fd = open(filename, 'rb')
-        try:
+        with open(filename, 'rb') as fd:
             contents = iter(lambda: fd.read(blockSize), '')
             m = reduce(upd, contents, md5())
-        finally:
-            fd.close()
 
         args['checksum'] = 'md5:%s' % m.hexdigest()
         # args['checksum'] = 'md5:%s' % md5.new(filename).read()).hexdigest()
@@ -203,7 +200,8 @@ class DQMUpload(Executor):
                      % (key, os.path.basename(filename))) + crlf
             body += ('Content-Type: %s' % self.filetype(filename)) + crlf
             body += ('Content-Length: %d' % os.path.getsize(filename)) + crlf
-            body += crlf + open(filename, "r").read() + crlf
+            with open(filename, "r").read() as fd:
+                body += crlf + fd.read() + crlf
             body += '--' + boundary + '--' + crlf + crlf
         return ('multipart/form-data; boundary=' + boundary, body)
 

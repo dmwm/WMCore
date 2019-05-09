@@ -35,9 +35,9 @@ def processWorker(myinput, tmp):
             if jj['cache_dir'].count("Production/LogCollect") > 0:
                 if lcreport is not None:
                     lcreport.task = "/" + taskName + "/Production/LogCollect"
-                    f = open(outfile, 'w')
-                    logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
-                    pickle.dump(lcreport, f)
+                    with open(outfile, 'w') as f:
+                        logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
+                        pickle.dump(lcreport, f)
                     continue
                 else:
                     msg = "Parameter lcFakeReport is mandatory if you are using logCollect jobs"
@@ -60,10 +60,9 @@ def processWorker(myinput, tmp):
             report.task = "/" + taskName + "/Production"
 
             #pickle the report again
-            f = open(outfile, 'w')
-            logging.debug('Process worker is dumping the report to ' + f.name)
-            pickle.dump(report, f)
-            f.close()
+            with open(outfile, 'w') as f:
+                logging.debug('Process worker is dumping the report to ' + f.name)
+                pickle.dump(report, f)
     except Exception as ex:
         logging.exception(ex)
 
@@ -163,15 +162,13 @@ class MockPlugin(BasePlugin):
             self.start( self.myinput )
 
         #for each job we will need to modify the default Report (the output of each job).
-        f = open(self.fakeReport)
-        report = pickle.load(f)
-        f.close()
+        with open(self.fakeReport) as f:
+            report = pickle.load(f)
 
         lcreport = getattr(self.config.BossAir.MockPlugin, 'lcFakeReport', None)
         if lcreport != None:
-            f = open(lcreport)
-            lcreport = pickle.load(f)
-            f.close()
+            with open(lcreport) as f:
+                lcreport = pickle.load(f)
 
         for jj in jobs:
             if jj['id'] not in self.jobsScheduledEnd:

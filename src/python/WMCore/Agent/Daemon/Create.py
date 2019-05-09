@@ -121,9 +121,8 @@ def daemonize(stdout='/dev/null', stderr=None, stdin='/dev/null',
 
         dom = Document()
         dom.appendChild(daemon)
-        props = open("Daemon.xml", "w")
-        props.write(daemon.toprettyxml())
-        props.close()
+        with open("Daemon.xml", "w") as props:
+            props.write(daemon.toprettyxml())
 
     # Redirect standard file descriptors.
     os.dup2(si.fileno(), sys.stdin.fileno())

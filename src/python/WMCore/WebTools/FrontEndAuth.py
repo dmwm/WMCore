@@ -18,9 +18,8 @@ class FrontEndAuth(cherrypy.Tool):
     def __init__(self, config):
         """Read hmac secret  and define cherrypy hook point."""
         # reads the bin key used to verify the hmac
-        f = open(config.key_file, "rb")
-        self.key = f.read()
-        f.close()
+        with open(config.key_file, "rb") as f:
+            self.key = f.read()
 
         # Defines the hook point for cherrypy
         self._name = None

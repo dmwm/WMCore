@@ -291,12 +291,11 @@ class Service(dict):
                     cachefile.write(str(data))
                     cachefile.seek(0, 0)  # return to beginning of file
                 else:
-                    f = open(cachefile, 'w')
-                    if isinstance(data, dict) or isinstance(data, list):
-                        f.write(json.dumps(data))
-                    else:
-                        f.write(str(data))
-                    f.close()
+                    with open(cachefile, 'w') as f:
+                        if isinstance(data, dict) or isinstance(data, list):
+                            f.write(json.dumps(data))
+                        else:
+                            f.write(str(data))
 
 
         except (IOError, HttpLib2Error, HTTPException) as he:

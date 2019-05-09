@@ -96,9 +96,8 @@ class CreateScript:
         if os.path.exists(self.name):
             msg = 'I will not overwrite file %s' %(self.name)
             raise Exception(msg)
-        file = open(self.name, 'w')
-        file.write(self.script)
-        file.close()
+        with open(self.name, 'w') as fd:
+            fd.write(self.script)
         return
 
 class CreateWorkArea:

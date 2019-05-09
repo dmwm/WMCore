@@ -45,11 +45,10 @@ class PersistencyHelper:
         Save data to a file
         Saved format is defined depending on the extension
         """
-        handle = open(filename, 'w')
-        # TODO: use different encoding scheme for different extension
-        # extension = filename.split(".")[-1].lower()
-        pickle.dump(self.data, handle)
-        handle.close()
+        with open(filename, 'w') as handle:
+            # TODO: use different encoding scheme for different extension
+            # extension = filename.split(".")[-1].lower()
+            pickle.dump(self.data, handle)
         return
 
     def load(self, filename):

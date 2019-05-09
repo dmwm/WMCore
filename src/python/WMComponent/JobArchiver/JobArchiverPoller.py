@@ -256,16 +256,13 @@ class JobArchiverPoller(BaseWorkerThread):
         # Otherwise we have something in there
         try:
             tarName = 'Job_%i.tar.bz2' % (job['id'])
-            tarball = tarfile.open(name=os.path.join(logDir, tarName),
-                                   mode='w:bz2')
-            for fileName in cacheDirList:
-                fullFile = os.path.join(cacheDir, fileName)
-                try:
-                    tarball.add(name=fullFile,
-                                arcname='Job_%i/%s' % (job['id'], fileName))
-                except IOError:
-                    logging.error('Cannot read %s, skipping', fullFile)
-            tarball.close()
+            with tarfile.open(name=os.path.join(logDir, tarName), mode='w:bz2') as tarball:
+                for fileName in cacheDirList:
+                    fullFile = os.path.join(cacheDir, fileName)
+                    try:
+                        tarball.add(name=fullFile, arcname='Job_%i/%s' % (job['id'], fileName))
+                    except IOError:
+                        logging.error('Cannot read %s, skipping', fullFile)
         except Exception as ex:
             msg = "Exception while opening and adding to a tarfile\n"
             msg += "Tarfile: %s\n" % os.path.join(logDir, tarName)

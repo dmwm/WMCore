@@ -7,10 +7,8 @@ Implementation of an Executor for a AlcaHarvest step
 """
 from __future__ import print_function
 import os
-import sys
 import stat
 import shutil
-import tarfile
 import logging
 import subprocess
 
@@ -100,9 +98,8 @@ class AlcaHarvest(Executor):
                     textoutput = "prepMetaData %s\n" % analysisFile.prepMetaData
                     textoutput += "prodMetaData %s\n" % analysisFile.prodMetaData
 
-                    fout = open(filenameTXT, "w")
-                    fout.write(textoutput)
-                    fout.close()
+                    with open(filenameTXT, "w") as fout:
+                        fout.write(textoutput)
 
                     os.chmod(filenameDB, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
                     os.chmod(filenameTXT, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)

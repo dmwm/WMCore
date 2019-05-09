@@ -208,9 +208,8 @@ class CMSSW(Executor):
                 raise WMExecutionFailure(50513, "PreScriptScramFailure", msg)
 
         configPath = "%s/%s-main.sh" % (self.step.builder.workingDir, self.stepName)
-        handle = open(configPath, 'w')
-        handle.write(CONFIG_BLOB)
-        handle.close()
+        with open(configPath, 'w') as handle:
+            handle.write(CONFIG_BLOB)
 
         # spawn this new process
         # the script looks for:

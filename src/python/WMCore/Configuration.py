@@ -626,14 +626,12 @@ def saveConfigurationFile(configInstance, filename, **options):
     if document:
         comment = False
 
-    handle = open(filename, 'w')
-    if document:
-        handle.write(configInstance.documentedString_())
-        return
-    elif comment:
-        handle.write(configInstance.commentedString_())
-    else:
-        handle.write(str(configInstance))
+    with open(filename, 'w') as handle:
+        if document:
+            handle.write(configInstance.documentedString_())
+        elif comment:
+            handle.write(configInstance.commentedString_())
+        else:
+            handle.write(str(configInstance))
 
-    handle.close()
     return

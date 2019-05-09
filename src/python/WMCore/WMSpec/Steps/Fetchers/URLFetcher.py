@@ -48,9 +48,8 @@ class URLFetcher(FetcherInterface):
                 try:
                     request = Requests.Requests(fileInfo.src)
                     content = request.get('')[0]
-                    f = open(fileTarget, 'w')
-                    f.write(content)
-                    f.close()
+                    with open(fileTarget, 'w') as f:
+                        f.write(content)
                 except IOError as ex:
                     msg =  "Could not write to fileTarget %s\n" % fileTarget
                     msg += str(ex)

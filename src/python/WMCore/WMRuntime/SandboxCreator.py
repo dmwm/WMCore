@@ -63,9 +63,8 @@ class SandboxCreator:
 
     def _makePathonPackage(self, path):
         os.makedirs(path)
-        initHandle = open(path + "/__init__.py", 'w')
-        initHandle.write("# dummy file for now")
-        initHandle.close()
+        with open(path + "/__init__.py", 'w') as initHandle:
+            initHandle.write("# dummy file for now")
 
     def makeSandbox(self, buildItHere, workload):
         """
@@ -186,8 +185,7 @@ class SandboxCreator:
 
         with tarfile.open(archivePath, 'w:bz2') as tar:
             for (name, arcname) in tarContent:
-                tar.add(name, arcname,
-                        filter=tarFilter)
+                tar.add(name, arcname, filter=tarFilter)
 
         for deleteFile in deleteFiles:
             os.unlink(deleteFile)

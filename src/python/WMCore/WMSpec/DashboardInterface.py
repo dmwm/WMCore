@@ -23,14 +23,13 @@ import traceback
 import urllib, urllib2
 import os
 import socket
+from contextlib import closing
 
 
-from WMCore.DataStructs.Run  import Run
 
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 
 
-from WMCore.FwkJobReport.Report     import Report
 
 
 USER_AGENT = \
@@ -69,18 +68,16 @@ def HTTPpost(params, url, onFailureFile = None):
         headers = { 'User-Agent' : USER_AGENT }
         req = urllib2.Request(url, data, headers)
 
-        response = urllib2.urlopen(req, data)
-
-        logging.debug("received http code: %s, message: %s, response: %s" \
-                      % (response.code, response.msg, str(response.read())))
+        with closing(urllib2.urlopen(req, data)) as response:
+            logging.debug("received http code: %s, message: %s, response: %s", response.code,
+                          response.msg, str(response.read()))
 
     except IOError as ex:
         #record the report that failed then rethrow
 
         if onFailureFile != None:
-            file = open(onFailureFile, "w")
-            file.write(req.get_data())
-            file.close()
+            with open(onFailureFile, "w") as fd:
+                fd.write(req.get_data())
             msg = str(ex)
             msg += "\nA copy of the failed report is in %s" % onFailureFile
 

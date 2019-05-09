@@ -11,7 +11,8 @@
             "SiteWhitelist-OVERRIDE-ME"
         ], 
         "SoftTimeout": 129600, 
-        "Team": "Team-OVERRIDE-ME", 
+        "Team": "Team-OVERRIDE-ME",
+        "TrustPUSitelists": true,
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
@@ -19,7 +20,7 @@
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": ["Two steps, PU for Step1 without input dataset; Step2 using a different PU;",
-            "Given 100EpL, tweak EpJ to 200 instead of 205"],
+            "Given 100EpL, tweak EpJ to 200 instead of 205; TrustPU enabled for the MinBias"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 

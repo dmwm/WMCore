@@ -1,3 +1,9 @@
+1.2.2.patch1 to 1.2.2.patch2:
+  - Add WMTool and SubmissionTool job classads (Alan Malta Rodrigues) #9190
+  - Minor improvements to WorkQueueManagerCleaner and more verbose (Alan Malta Rodrigues) #9190
+  - Fix exception handling in DrainStatusPoller (Erik Gough) #9190
+
+
 1.2.3.pre1 to 1.2.2.patch1:
 
 

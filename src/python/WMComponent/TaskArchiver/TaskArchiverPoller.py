@@ -193,8 +193,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             statusList = [statusList]
         reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
         logging.info("There are %d requests in %s status in central couch.", len(reqNames), statusList)
-        for wf in reqNames:
-            self.workQueue.killWMBSWorkflow(wf)
+        self.workQueue.killWMBSWorkflows(reqNames)
         return reqNames
 
     def completeTasks(self, finishedwfs):
@@ -206,7 +205,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         1. Notify the WorkQueue about finished subscriptions
         2. mark workflow as completed in the dbsbuffer_workflow table
         """
-        if len(finishedwfs) == 0:
+        if not finishedwfs:
             return
 
         logging.info("Found %d candidate workflows for completing:", len(finishedwfs))

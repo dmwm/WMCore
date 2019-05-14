@@ -48,9 +48,7 @@
         "RunWhitelist": [
             316877, 
             316879, 
-            316928, 
-            316985
-        ], 
+            316928],
         "Scenario": "pp", 
         "ScramArch": [
             "slc6_amd64_gcc700"

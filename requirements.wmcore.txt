@@ -1,0 +1,1 @@
+# WMCore requirements intentionally left blank

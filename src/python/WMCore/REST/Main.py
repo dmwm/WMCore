@@ -23,6 +23,7 @@ from argparse import ArgumentParser
 from cStringIO import StringIO
 from glob import glob
 from subprocess import Popen, PIPE
+from pprint import pformat
 
 import cherrypy
 from cherrypy import Application
@@ -238,6 +239,7 @@ class RESTMain(object):
 
         if hasattr(self.srvconfig, 'authz_policy'):
             cpconfig.update({'tools.cms_auth.policy': self.srvconfig.authz_policy})
+        cherrypy.log("INFO: final CherryPy configuration: %s" % pformat(cpconfig))
 
     def install_application(self):
         """Install application and its components from the configuration."""

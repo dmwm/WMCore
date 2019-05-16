@@ -39,6 +39,9 @@ class DefaultConfig(Configuration):
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"
         self.Webtools.expires = 300
+        self.Webtools.thread_pool = 10  # CherryPy default
+        self.Webtools.accepted_queue_size = -1  # CherryPy default
+        self.Webtools.accepted_queue_timeout = 10  # CherryPy default
 
         self.component_('UnitTests')
         self.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'

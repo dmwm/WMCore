@@ -127,6 +127,8 @@ class DBSBufferBlock:
         fileDict['last_modified_by'] = "WMAgent"
         fileDict['last_modification_date'] = int(time.time())
         fileDict['auto_cross_section'] = 0.0
+        fileDict['create_by'] = "WMAgent"
+        fileDict['creation_date'] = int(time.time())
 
         # Do the checksums
         for cktype in dbsFile['checksums'].keys():

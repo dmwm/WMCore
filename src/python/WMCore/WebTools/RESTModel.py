@@ -34,6 +34,17 @@ class RESTModel(WebAPI):
         # If not set expire data after 5 mins
         self.defaultExpires = config.default_expires
 
+        # update cherrypy configuration if it is provided in configuration
+        # please note that we assume that config should contains CherryPy component, e.g.
+        # config = Configuration()
+        # config.component_('CherryPy')
+        # config.CherryPy.accepted_queue_size = 5
+        if getattr(config, 'CherryPy', None) != None:
+            cpy = config.CherryPy.dictionary_()
+            for key, val in cpy.items():
+                if val:
+                    cherrypy.config.update({key:val}
+
     def _classifyHTTPError(self, verb, args, kwargs):
         """
         There are a few cases where input will cause an error which needs

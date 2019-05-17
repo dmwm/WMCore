@@ -137,7 +137,13 @@ class DBFormatter(WMObject):
                     cursor.close()
                     break
                 for r in rows:
-                    result.append(dict(list(zip(keys, r))))
+                    entry = {}
+                    for index in range(0, len(keys)):
+                        if isinstance(r[index], unicode):
+                            entry[str(keys[index])] = str(r[index])
+                        else:
+                            entry[str(keys[index])] = r[index]
+                    result.append(entry)
             else:
                 break
         if not cursor.closed:

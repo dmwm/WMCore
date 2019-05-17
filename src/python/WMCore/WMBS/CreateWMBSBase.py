@@ -124,7 +124,7 @@ class CreateWMBSBase(DBCreator):
                running_slots   INTEGER,
                pending_slots   INTEGER,
                plugin      VARCHAR(255),
-               state_time  INTEGER NOT NULL,
+               state_time  INTEGER DEFAULT 0,
                UNIQUE(site_name),
                FOREIGN KEY (state) REFERENCES wmbs_location_state(id))"""
 

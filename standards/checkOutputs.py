@@ -17,10 +17,9 @@ whitelist = sys.argv[2]
 from xml.dom.minidom import parse as parseXML
 
 allowedErrors = []
-fh = open(whitelist, 'r')
-for line in fh.readlines():
-    allowedErrors.append(line.strip())
-fh.close()
+with open(whitelist, 'r') as fh:
+    for line in fh.readlines():
+        allowedErrors.append(line.strip())
 
 document = parseXML(testfile)
 

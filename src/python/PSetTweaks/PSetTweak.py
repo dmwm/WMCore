@@ -342,18 +342,14 @@ class PSetTweak:
             raise RuntimeError(msg)
 
         if formatting == "python":
-            handle = open(filename, 'w')
-            handle.write(self.pythonise())
-            handle.close()
-
+            with open(filename, 'w') as handle:
+                handle.write(self.pythonise())
         if formatting == "json":
-            handle = open(filename, "w")
-            handle.write(self.jsonise())
-            handle.close()
+            with open(filename, "w") as handle:
+                handle.write(self.jsonise())
         if formatting == "pickle":
-            handle = open(filename, "w")
-            pickle.dump(self, handle)
-            handle.close()
+            with open(filename, "w") as handle:
+                pickle.dump(self, handle)
         return
 
     def unpersist(self, filename, formatting=None):
@@ -378,9 +374,8 @@ class PSetTweak:
             raise RuntimeError(msg)
 
         if formatting == "pickle":
-            handle = open(filename, 'r')
-            unpickle = pickle.load(handle)
-            handle.close()
+            with open(filename, 'r') as handle:
+                unpickle = pickle.load(handle)
             self.process.__dict__.update(unpickle.__dict__)
 
         if formatting == "python":
@@ -394,9 +389,8 @@ class PSetTweak:
 
 
         if formatting == "json":
-            handle = open(filename, 'r')
-            jsonContent = handle.read()
-            handle.close()
+            with open(filename, 'r') as handle:
+                jsonContent = handle.read()
 
 
             jsoniser = JSONiser()

@@ -170,11 +170,10 @@ class LogArchive(Executor):
         # Now that we've gone through all the steps, we have to tar it out
         tarName = 'logArchive.tar.gz'
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
-        tarBall = tarfile.open(tarBallLocation, 'w:gz')
-        for f in logFilesToArchive:
-            tarBall.add(name=f,
-                        arcname=f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
-        tarBall.close()
+        with tarfile.open(tarBallLocation, 'w:gz') as tarBall:
+            for f in logFilesToArchive:
+                tarBall.add(name=f,
+                            arcname=f.replace(self.stepSpace.taskSpace.location, '', 1).lstrip('/'))
 
         fileInfo = {'LFN': self.getLFN(tarName),
                     'PFN': tarBallLocation,

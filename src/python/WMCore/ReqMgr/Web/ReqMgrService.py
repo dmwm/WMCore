@@ -133,8 +133,9 @@ def spec_list(root):
             continue
         sname = fname.split('.')[0]
         clsName = "%sWorkloadFactory" % sname
-        if clsName in open(os.path.join(root, fname)).read():
-            specs.append(sname)
+        with open(os.path.join(root, fname)) as fd:
+            if clsName in fd.read():
+                specs.append(sname)
     return specs
 
 
@@ -786,10 +787,8 @@ class ReqMgrService(TemplatedPage):
             for script in args:
                 path = os.path.join(sys.path[0], resource[script])
                 path = os.path.normpath(path)
-                ifile = open(path)
-                data = "\n".join([data, ifile.read(). \
-                                 replace('@CHARSET "UTF-8";', '')])
-                ifile.close()
+                with open(path) as ifile:
+                    data = "\n".join([data, ifile.read().replace('@CHARSET "UTF-8";', '')])
             if datatype == 'css':
                 set_headers("text/css")
             if minimize:

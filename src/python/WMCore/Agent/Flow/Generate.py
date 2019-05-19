@@ -95,26 +95,7 @@ Inheritance is preferred.
 
 
     def componentTests(self):
-        for componentName in self.components.keys():
-            print('Creating test dir for:'+componentName)
-            self.currentDir = os.path.join(self.config.General.testDir, \
-                componentName+'_t')
-            os.makedirs(self.currentDir)
-            print('Creating test stub')
-            stfile = open(os.path.join(self.currentDir,'__init__.py'), 'w')
-            stfile.write('#!/usr/bin/env python\n')
-            stfile.close()
-            stfile = \
-                open(os.path.join(self.currentDir, componentName + '_t.py'), 'w')
-            stfile.write('#!/usr/bin/env python\n')
-            stfile.write(self.stubmsg)
-            stfile.write("# test file skeletons.\n\n\n")
-            stfile.write('import os\n')
-            stfile.write('import unittest\n\n\n')
-            stfile.write("from "+self.config.General.pythonPrefix+'.'+componentName+'.'+componentName+' import '+componentName+'\n')
-            stfile.write("from WMCore.Agent.Configuration import Configuration\n")
-            stfile.write("from WMQuality.TestInit import TestInit\n")
-            msg = """
+        msg = """
 class %sTest(unittest.TestCase):
 
     _setup_done = False
@@ -143,30 +124,45 @@ class %sTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-""" % (componentName, componentName, componentName, self.config.General.srcDir, componentName, componentName)
+"""
+        for componentName in self.components.keys():
+            print('Creating test dir for:'+componentName)
+            self.currentDir = os.path.join(self.config.General.testDir, \
+                componentName+'_t')
+            os.makedirs(self.currentDir)
+            print('Creating test stub')
+            with open(os.path.join(self.currentDir,'__init__.py'), 'w') as stfile:
+                stfile.write('#!/usr/bin/env python\n')
 
-            stfile.write(msg)
-            stfile.close()
+            with open(os.path.join(self.currentDir, componentName + '_t.py'), 'w') as stfile:
+                stfile.write('#!/usr/bin/env python\n')
+                stfile.write(self.stubmsg)
+                stfile.write("# test file skeletons.\n\n\n")
+                stfile.write('import os\n')
+                stfile.write('import unittest\n\n\n')
+                stfile.write("from "+self.config.General.pythonPrefix+'.'+componentName+'.'+componentName+' import '+componentName+'\n')
+                stfile.write("from WMCore.Agent.Configuration import Configuration\n")
+                stfile.write("from WMQuality.TestInit import TestInit\n")
+                stfile.write(msg % (componentName, componentName, componentName,
+                                    self.config.General.srcDir, componentName, componentName))
+
         self.currentDir = os.path.join(self.config.General.baseDir, 'standards')
         try:
             os.makedirs(self.currentDir)
         except:
             pass
         print('Creating test suite')
-        stfile = open(os.path.join(self.currentDir,'defaultTest.py'), 'w')
-        stfile.write("#!/usr/bin/env python\n")
-        stfile.write("from WMQuality.Test import Test\n\n\n")
-        for componentName in self.components.keys():
-            msg = "from "+self.config.General.pythonTestPrefix+"."+componentName+'_t.'+componentName+'_t import '+componentName+'Test'
-            stfile.write(msg+'\n')
+        with open(os.path.join(self.currentDir,'defaultTest.py'), 'w') as stfile:
+            stfile.write("#!/usr/bin/env python\n")
+            stfile.write("from WMQuality.Test import Test\n\n\n")
+            for componentName in self.components.keys():
+                msg = "from "+self.config.General.pythonTestPrefix+"."+componentName+'_t.'+componentName+'_t import '+componentName+'Test'
+                stfile.write(msg+'\n')
+            stfile.write('\n\n\n')
+            stfile.write('errors = {}\n')
+            stfile.write('tests = []\n')
 
-        stfile.write('\n\n\n')
-
-        stfile.write('errors = {}\n')
-        stfile.write('tests = []\n')
-
-        for componentName in self.components.keys():
-            msg = """
+        msg1 = """
 
 try:
    x=%sTest()
@@ -176,10 +172,8 @@ except Exception,ex:
        errors["nobody"] = []
    errors["nobody"].append(("%sTest",str(ex)))
 
-""" %(componentName, componentName)
-            stfile.write(msg)
-
-        msg = """
+"""
+        msg2 = """
 print('Writing level 2 failures to file: failures2.log ')
 failures = open('failures2.log','w')
 
@@ -196,8 +190,9 @@ test = Test(tests,'failures3.log')
 test.run()
 test.summaryText()
 """
-        stfile.write(msg)
-        stfile.close()
+        for componentName in self.components.keys():
+            stfile.write(msg1 % (componentName, componentName))
+            stfile.write(msg2)
 
     def componentStubs(self):
         """
@@ -210,9 +205,9 @@ test.summaryText()
                 componentName)
             os.makedirs(self.currentDir)
             print('Creating component stub')
-            stfile = open(os.path.join(self.currentDir,'__init__.py'), 'w')
-            stfile.write('#!/usr/bin/env python\n')
-            stfile.close()
+            with open(os.path.join(self.currentDir,'__init__.py'), 'w') as stfile:
+                stfile.write('#!/usr/bin/env python\n')
+
             stfile = \
                 open(os.path.join(self.currentDir, componentName + '.py'), 'w')
             stfile.write('#!/usr/bin/env python\n')
@@ -325,9 +320,8 @@ config.%s.logLevel = "INFO"
             os.makedirs(handlerDir)
         except:
             pass
-        stfile = open(os.path.join(handlerDir, '__init__.py'), 'w')
-        stfile.write('#!/usr/bin/env python\n')
-        stfile.close()
+        with open(os.path.join(handlerDir, '__init__.py'), 'w') as stfile:
+            stfile.write('#!/usr/bin/env python\n')
         for handlerName in self.components[componentName].keys():
             # check if we need to create a threaded version
             handler = self.components[componentName][handlerName]
@@ -401,35 +395,33 @@ class %s(BaseHandler):
 
         slaveDir = os.path.join(self.currentDir, 'Handler')
         className = self.convert(handlerName) + 'Slave'
-        stfile = open(os.path.join(slaveDir, className + '.py'),'w')
-        stfile.write('#!/usr/bin/env python\n')
-        stfile.write(self.stubmsg)
-        stfile.write('import threading\n')
-        stfile.write('#inherit from our default slave implementation\n')
-        stfile.write('from WMCore.ThreadPool.ThreadSlave import ThreadSlave\n')
-        stfile.write('\n')
-        stfile.write('class '+className + '(ThreadSlave):\n')
-        stfile.write('\n')
-        stfile.write('    def __call__(self, parameters):\n')
-        stfile.write('        """\n')
-        stfile.write('        Implement the handler here.\n')
-        stfile.write('        Assign values to "messageToBePublished","yourTaskId"\n')
-        stfile.write('        ,"yourPayloadString,"yourActionPayload"".\n')
-        stfile.write('        Where necessary\n')
-        stfile.write('        """\n')
-        stfile.write('\n')
-        stfile.write('        print("Implement me:')
-        stfile.write(self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName) + '")')
-        stfile.write('\n\n')
-        stfile.write('        myThread = threading.currentThread()\n\n')
-        self.triggers(stfile, componentName, handlerName)
-        self.messages(stfile, componentName, handlerName)
-        stfile.write('\n\n')
-        stfile.write('        # we need to do this in our slave otherwise the \n')
-        stfile.write('        # messages that might have been published, will not be send.\n')
-        stfile.write('        myThread.msgService.finish()\n')
-        stfile.flush()
-        stfile.close()
+        with open(os.path.join(slaveDir, className + '.py'),'w') as stfile:
+            stfile.write('#!/usr/bin/env python\n')
+            stfile.write(self.stubmsg)
+            stfile.write('import threading\n')
+            stfile.write('#inherit from our default slave implementation\n')
+            stfile.write('from WMCore.ThreadPool.ThreadSlave import ThreadSlave\n')
+            stfile.write('\n')
+            stfile.write('class '+className + '(ThreadSlave):\n')
+            stfile.write('\n')
+            stfile.write('    def __call__(self, parameters):\n')
+            stfile.write('        """\n')
+            stfile.write('        Implement the handler here.\n')
+            stfile.write('        Assign values to "messageToBePublished","yourTaskId"\n')
+            stfile.write('        ,"yourPayloadString,"yourActionPayload"".\n')
+            stfile.write('        Where necessary\n')
+            stfile.write('        """\n')
+            stfile.write('\n')
+            stfile.write('        print("Implement me:')
+            stfile.write(self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName) + '")')
+            stfile.write('\n\n')
+            stfile.write('        myThread = threading.currentThread()\n\n')
+            self.triggers(stfile, componentName, handlerName)
+            self.messages(stfile, componentName, handlerName)
+            stfile.write('\n\n')
+            stfile.write('        # we need to do this in our slave otherwise the \n')
+            stfile.write('        # messages that might have been published, will not be send.\n')
+            stfile.write('        myThread.msgService.finish()\n')
 
     def messages(self, stfile, componentName, handlerName):
         """

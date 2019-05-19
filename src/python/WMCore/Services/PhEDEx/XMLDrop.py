@@ -192,10 +192,9 @@ class XMLInjectionSpec:
         Write to file using name provided
 
         """
-        handle = open(filename, 'w')
-        improv = self.save()
-        handle.write(improv)
-        handle.close()
+        with open(filename, 'w') as handle:
+            improv = self.save()
+            handle.write(improv)
         return
 
 

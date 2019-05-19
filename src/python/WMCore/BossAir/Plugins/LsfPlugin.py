@@ -124,9 +124,8 @@ class LsfPlugin(BasePlugin):
                         return {'NoResult': [0]}
 
                     submitScriptFile = os.path.join(job['cache_dir'], "submit.sh")
-                    handle = open(submitScriptFile, 'w')
-                    handle.writelines(submitScript)
-                    handle.close()
+                    with open(submitScriptFile, 'w') as handle:
+                        handle.writelines(submitScript)
 
                     # make reasonable job name
                     jobName = "WMAgentJob"

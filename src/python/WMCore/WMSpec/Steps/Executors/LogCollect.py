@@ -197,15 +197,12 @@ class LogCollect(Executor):
 
         # create tarfile if any logArchive copied in
         if localLogs:
-            tarFile = tarfile.open(tarLocation, 'w:')
-            for log in localLogs:
-                path = log.split('/')
-                tarFile.add(name=log,
-                            arcname=os.path.join(path[-3],
-                                                 path[-2],
-                                                 path[-1]))
+            with tarfile.open(tarLocation, 'w:') as tarFile:
+                for log in localLogs:
+                    path = log.split('/')
+                    tarFile.add(name=log,
+                                arcname=os.path.join(path[-3], path[-2], path[-1]))
                 os.remove(log)
-            tarFile.close()
         else:
             msg = "Unable to copy any logArchives to local disk"
             logging.error(msg)

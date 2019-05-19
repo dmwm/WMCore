@@ -178,7 +178,8 @@ class RESTAuth(cherrypy.Tool):
         if policy == "user":
             key_file = conf.pop("key_file")
             if not self._key:
-                self._key = open(key_file, "rb").read()
+                with open(key_file, "rb") as fd:
+                    self._key = fd.read()
             conf["key"] = self._key
 
             hooks.attach(self._point, self.callable, priority=prio, **conf)

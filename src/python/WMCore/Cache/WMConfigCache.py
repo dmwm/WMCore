@@ -10,6 +10,7 @@ import hashlib
 import logging
 import traceback
 import urllib
+from contextlib import closing
 from future.utils import with_metaclass
 
 from Utils.Patterns import Singleton
@@ -341,9 +342,8 @@ class ConfigCache(WMObject):
             return
 
         # Write to a file
-        f = open(targetFile, 'w')
-        f.write(config)
-        f.close()
+        with open(targetFile, 'w') as f:
+            f.write(config)
         return
 
 
@@ -447,7 +447,8 @@ class ConfigCache(WMObject):
 
         """
         # The newConfig parameter is a URL suitable for passing to urlopen.
-        configString = urllib.urlopen(newConfig).read(-1)
+        with closing(urllib.urlopen(newConfig)) as f:
+            configString = f.read(-1)
         configMD5 = hashlib.md5(configString).hexdigest()
 
         self.document['md5_hash'] = configMD5

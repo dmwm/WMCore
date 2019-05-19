@@ -18,6 +18,7 @@ import itertools
 import json
 import re
 import urllib2
+from contextlib import closing
 
 class LumiList(object):
     """
@@ -56,12 +57,12 @@ class LumiList(object):
         self.duplicates = {}
         if filename:
             self.filename = filename
-            jsonFile = open(self.filename,'r')
-            self.compactList = json.load(jsonFile)
+            with open(self.filename,'r') as jsonFile:
+                self.compactList = json.load(jsonFile)
         elif url:
             self.url = url
-            jsonFile = urllib2.urlopen(url)
-            self.compactList = json.load(jsonFile)
+            with closing(urllib2.urlopen(url)) as jsonFile:
+                self.compactList = json.load(jsonFile)
         elif lumis:
             runsAndLumis = {}
             for (run, lumi) in lumis:
@@ -336,9 +337,8 @@ class LumiList(object):
         """
         Write out a JSON file representation of the object
         """
-        jsonFile = open(fileName,'w')
-        jsonFile.write("%s\n" % self)
-        jsonFile.close()
+        with open(fileName,'w') as jsonFile:
+            jsonFile.write("%s\n" % self)
 
 
     def removeRuns (self, runList):
@@ -692,9 +692,8 @@ class LumiListTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    jsonFile = open('lumiTest.json','w')
-    jsonFile.write('{"1": [[1, 33], [35, 35], [37, 47]], "2": [[49, 75], [77, 130], [133, 136]]}')
-    jsonFile.close()
+    with open('lumiTest.json','w') as jsonFile:
+        jsonFile.write('{"1": [[1, 33], [35, 35], [37, 47]], "2": [[49, 75], [77, 130], [133, 136]]}')
     unittest.main()
 '''
 # Test JSON file

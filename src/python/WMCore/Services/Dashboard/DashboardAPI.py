@@ -122,9 +122,8 @@ def logger(msg):
     if not msg.endswith('\n'):
         msg += '\n'
     try:
-        fh = open('report.log', 'a')
-        fh.write(msg)
-        fh.close()
+        with open('report.log', 'a') as fh:
+            fh.write(msg)
     except Exception:
         pass
 
@@ -215,22 +214,22 @@ def report(args):
 
 def parseAd():
     """ Parse classads (CRAB3) """
-    fd = open(os.environ['_CONDOR_JOB_AD'])
-    jobad = {}
-    for adline in fd.readlines():
-        info = adline.split(" = ", 1)
-        if len(info) != 2:
-            continue
-        if info[1].startswith('undefined'):
-            val = info[1].strip()
-        elif info[1].startswith('"'):
-            val = info[1].strip()[1:-1]
-        else:
-            try:
-                val = int(info[1].strip())
-            except ValueError:
+    with open(os.environ['_CONDOR_JOB_AD']) as fd:
+        jobad = {}
+        for adline in fd.readlines():
+            info = adline.split(" = ", 1)
+            if len(info) != 2:
                 continue
-        jobad[info[0]] = val
+            if info[1].startswith('undefined'):
+                val = info[1].strip()
+            elif info[1].startswith('"'):
+                val = info[1].strip()[1:-1]
+            else:
+                try:
+                    val = int(info[1].strip())
+                except ValueError:
+                    continue
+            jobad[info[0]] = val
     return jobad
 
 

@@ -50,12 +50,11 @@ def initialiseWMTaskSpace(directory, taskName):
     os.makedirs(spaceDir)
 
     initFile = "%s/__init__.py" % spaceDir
-    handle = open(initFile, "w")
-    handle.write(header)
-    handle.write("""args["TaskName"] = "%s"\n""" % taskName)
-    handle.write("""args["Locator"] = _Locator\n""")
-    handle.write("""taskSpace = establishTaskSpace(**args)\n""")
-    handle.close()
+    with open(initFile, "w") as handle:
+        handle.write(header)
+        handle.write("""args["TaskName"] = "%s"\n""" % taskName)
+        handle.write("""args["Locator"] = _Locator\n""")
+        handle.write("""taskSpace = establishTaskSpace(**args)\n""")
     return spaceDir
 
 

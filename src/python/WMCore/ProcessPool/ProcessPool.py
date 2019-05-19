@@ -108,9 +108,8 @@ class ProcessPool:
             # Then we note it and overwrite it
             msg = "Something's in the way of the ProcessPool config: %s" % self.configPath
             logging.error(msg)
-        f = open(self.configPath, 'w')
-        pickle.dump(config, f)
-        f.close()
+        with open(self.configPath, 'w') as f:
+            pickle.dump(config, f)
 
         # Set up ZMQ
         try:
@@ -391,9 +390,8 @@ if __name__ == "__main__":
         logging.error("Something in the way of the config path")
         sys.exit(1)
 
-    f = open(configPath, 'r')
-    config = pickle.load(f)
-    f.close()
+    with open(configPath, 'r') as f:
+        config = pickle.load(f)
 
 
     # Setup DB

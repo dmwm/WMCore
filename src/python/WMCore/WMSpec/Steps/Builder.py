@@ -64,13 +64,12 @@ class Builder(object):
 
         self.taskSpaceInitMod = "%s/__init__.py" % self.stepDir
 
-        handle = open(self.taskSpaceInitMod, 'w')
-        handle.write(taskSpaceInit)
-        handle.write("""args["TaskName"] = "%s"\n""" % self.taskName)
-        handle.write("""args["StepName"] = "%s"\n""" % self.stepName)
-        handle.write("""args["Locator"] = _Locator\n""")
-        handle.write("""stepSpace = establishStepSpace(**args)\n""")
-        handle.close()
+        with open(self.taskSpaceInitMod, 'w') as handle:
+            handle.write(taskSpaceInit)
+            handle.write("""args["TaskName"] = "%s"\n""" % self.taskName)
+            handle.write("""args["StepName"] = "%s"\n""" % self.stepName)
+            handle.write("""args["Locator"] = _Locator\n""")
+            handle.write("""stepSpace = establishStepSpace(**args)\n""")
 
     def build(self, step, workingDirectory, **args):
         """

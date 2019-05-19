@@ -31,8 +31,8 @@ def getStepPID(stepSpace, stepName):
         logging.error(msg)
         return None
 
-    filehandle = open(pidFile,'r')
-    output = filehandle.read()
+    with open(pidFile,'r') as filehandle:
+        output = filehandle.read()
 
     try:
         stepPID = int(output)

@@ -5,14 +5,28 @@ _DBCore_t_
 Unit tests for the DBInterface class
 """
 
+from __future__ import print_function
 
-
-
+import sys
 import unittest
-import logging
 import threading
-
+import copy
 from WMQuality.TestInit import TestInit
+
+
+def hasUnicode(listBinds):
+    """
+    If a key or value with a unicode string data type is found,
+    return True, else return False
+    """
+    if sys.version_info.major == 3:
+        print("There is no unicode object in python3. Skipping...")
+
+    for item in listBinds:
+        for k, v in item.items():
+            if isinstance(k, unicode) or isinstance(v, unicode):
+                return True
+    return False
 
 class DBCoreTest(unittest.TestCase):
     def setUp(self):
@@ -314,6 +328,35 @@ class DBCoreTest(unittest.TestCase):
                "Error: Value one is missing."
 
         return
+
+    def testConvertBinds(self):
+        """
+        _testConvertBinds_
+        Test convertBinds method and make sure no unicode string type is ever
+        passed down to the underlying DB
+        """
+        myThread = threading.currentThread()
+        dbi = myThread.dbi
+        codec = "ascii"
+
+        inputTest = []
+        self.assertEqual(dbi.convertBinds(inputTest, codec), inputTest)
+
+        inputTest = [{"key1": "val1"}, {"key1": "val1"}]
+        copyTest = copy.deepcopy(inputTest)
+        self.assertItemsEqual(dbi.convertBinds(inputTest, codec), copyTest)
+        self.assertFalse(hasUnicode(inputTest))
+
+        inputTest = [{u"key1": u"val1"}, {"key1": "val1"}, {u"key1": u"val1"}]
+        copyTest = copy.deepcopy(inputTest)
+        self.assertItemsEqual(dbi.convertBinds(inputTest, codec), copyTest)
+        self.assertFalse(hasUnicode(inputTest))
+
+        inputTest = [{u"key1": u"val1", "key2": "val2", u"key3": 3, "key4": u"val4"}]
+        copyTest = copy.deepcopy(inputTest)
+        self.assertItemsEqual(dbi.convertBinds(inputTest, codec), copyTest)
+        self.assertFalse(hasUnicode(inputTest))
+
 
 if __name__ == "__main__":
     unittest.main()

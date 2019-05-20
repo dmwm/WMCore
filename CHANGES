@@ -1,3 +1,16 @@
+1.2.3.pre1 to 1.2.3.pre2:
+  - os.open cant be used with context manager (Alan Malta Rodrigues) #9186
+  - Schematic for MS Transferor and TransferMonit (Alan Malta Rodrigues) #9194
+  - Bump deployment example to 1.2.2.patch2 (Alan Malta Rodrigues) #9191
+  - pylint fixes (Alan Malta Rodrigues) #9183
+  - Minor improvements to WorkQueueManagerCleaner and more verbose (Alan Malta Rodrigues) #9183
+  - JSON templates updates: trust PU and less runs (Alan Malta Rodrigues) #9187
+  - Add WMTool and SubmissionTool job classads (Alan Malta Rodrigues) #9184
+  - Open files/urls with context manager (Alan Malta Rodrigues) #9186
+  - Pypi packaging for wmcore and wmagent (Erik Gough) #8935
+  - Fix exception handling in DrainStatusPoller (Erik Gough) #9174
+
+
 1.2.2 to 1.2.3.pre1:
   - pylint fixes (Alan Malta Rodrigues) #9154
   - Enable lazy-download in the PSet for jobs with LheInputFiles=True (Alan Malta Rodrigues) #9154

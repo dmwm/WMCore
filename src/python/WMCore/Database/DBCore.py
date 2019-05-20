@@ -6,6 +6,7 @@ Core Database APIs
 
 
 """
+import sys
 from copy import copy
 
 from Utils.IteratorTools import grouper
@@ -90,10 +91,8 @@ class DBInterface(WMObject):
         """
 
         s = s.strip()
-        if s.lower().endswith('select', 0, 6):
-            """
-            Trying to select many
-            """
+        if s.lower().startswith('select', 0, 6):
+            ### selecting many
             if returnCursor:
                 result = []
                 for bind in b:
@@ -104,13 +103,13 @@ class DBInterface(WMObject):
                     resultproxy = connection.execute(s, bind)
                     result.add(resultproxy)
                     resultproxy.close()
+        else:
+            ### inserting / updating many
+            result = ResultSet()
+            for sliceBinds in grouper(b, self.maxBindsPerQuery):
+                res = connection.execute(s, sliceBinds)
+                result.add(res)
 
-            return self.makelist(result)
-
-        """
-        Now inserting or updating many
-        """
-        result = connection.execute(s, b)
         return self.makelist(result)
 
     def connection(self):
@@ -120,13 +119,14 @@ class DBInterface(WMObject):
         return self.engine.connect()
 
 
-    def processData(self, sqlstmt, binds={}, conn=None,
-                    transaction=False, returnCursor=False):
+    def processData(self, sqlstmt, binds=None, conn=None, transaction=False,
+                    returnCursor=False, encodeType="ascii"):
         """
         set conn if you already have an active connection to reuse
         set transaction = True if you already have an active transaction
 
         """
+        binds = binds or []
         connection = None
         try:
             if not conn:
@@ -138,7 +138,8 @@ class DBInterface(WMObject):
             # Can take either a single statement or a list of statements and binds
             sqlstmt = self.makelist(sqlstmt)
             binds = self.makelist(binds)
-            if len(sqlstmt) > 0 and (len(binds) == 0 or (binds[0] == {} or binds[0] == None)):
+            binds = self.convertBinds(binds, encodeType)
+            if sqlstmt and not binds:
                 # Should only be run by create statements
                 if not transaction:
                     #WMCore.WMLogging.sqldebug("transaction created in DBInterface")
@@ -155,13 +156,14 @@ class DBInterface(WMObject):
                 #Run single SQL statement for a list of binds - use execute_many()
                 if not transaction:
                     trans = connection.begin()
-                for subBinds in grouper(binds, self.maxBindsPerQuery):
-                    result.extend(self.executemanybinds(sqlstmt[0], subBinds,
-                                                        connection=connection, returnCursor=returnCursor))
+
+                result.extend(self.executemanybinds(sqlstmt[0], binds, connection=connection,
+                                                    returnCursor=returnCursor))
 
                 if not transaction:
                     trans.commit()
             elif len(binds) == len(sqlstmt):
+                # Alan: do we actually have this use case?!?!
                 # Run a list of SQL for a list of binds
                 if not transaction:
                     trans = connection.begin()
@@ -196,3 +198,24 @@ class DBInterface(WMObject):
             if not conn and connection != None:
                 connection.close() # Return connection to the pool
         return result
+
+    def convertBinds(self, bindsList, encodeType):
+        """
+        Convert any unicode string key/value to its correspondant byte string.
+        Let an exception be raised in case the string cannot be encoded in ascii.
+        :param bindsList: list of dictionaries corresponding to the binds
+        :return: updates are made in-place, but a reference is returned anyways
+        """
+        if sys.version_info.major == 3:
+            self.logger.debug("Then there isn't anything to be done")
+            return bindsList
+
+        for item in bindsList:
+            for k in item:
+                ### TODO: this will have to be re-thought for python3 migration
+                # there is no `unicode` object type
+                if isinstance(k, unicode):
+                    item[k.encode(encodeType)] = item.pop(k)
+                if isinstance(item[k], unicode):
+                    item[k] = item[k].encode(encodeType)
+        return bindsList

@@ -209,8 +209,7 @@ class WorkQueueReqMgrInterface(object):
         Get available requests and sort by team and priority
         returns [(team, request_name, request_spec_url)]
         """
-
-        tempResults = self.reqMgr2.getRequestByStatus("assigned")
+        tempResults = self.reqMgr2.getRequestByStatus("staged")
         filteredResults = []
         for requests in tempResults:
             for request in requests.values():

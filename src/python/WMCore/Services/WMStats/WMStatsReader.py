@@ -5,6 +5,7 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
+from WMCore.ReqMgr.DataStructs.RequestStatus import T0_ACTIVE_STATUS, ACTIVE_STATUS
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -54,30 +55,6 @@ def convertToLegacyFormat(requestDoc):
 
 
 class WMStatsReader(object):
-    # TODO need to get this from reqmgr api
-    ACTIVE_STATUS = ["new",
-                     "assignment-approved",
-                     "assigned",
-                     "acquired",
-                     "running",
-                     "running-open",
-                     "running-closed",
-                     "failed",
-                     "force-complete",
-                     "completed",
-                     "closed-out",
-                     "announced",
-                     "aborted",
-                     "aborted-completed",
-                     "rejected"]
-
-    T0_ACTIVE_STATUS = ["new",
-                        "Closed",
-                        "Merge",
-                        "Harvesting",
-                        "Processing Done",
-                        "AlcaSkim",
-                        "completed"]
 
     def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
         self._sanitizeURL(couchURL)
@@ -298,11 +275,11 @@ class WMStatsReader(object):
 
     def getActiveData(self, jobInfoFlag=False):
 
-        return self.getRequestByStatus(WMStatsReader.ACTIVE_STATUS, jobInfoFlag)
+        return self.getRequestByStatus(ACTIVE_STATUS, jobInfoFlag)
 
     def getT0ActiveData(self, jobInfoFlag=False):
 
-        return self.getRequestByStatus(WMStatsReader.T0_ACTIVE_STATUS, jobInfoFlag)
+        return self.getRequestByStatus(T0_ACTIVE_STATUS, jobInfoFlag)
 
     def getRequestByStatus(self, statusList, jobInfoFlag=False, limit=None, skip=None,
                            legacyFormat=False):

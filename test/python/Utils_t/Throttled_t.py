@@ -7,7 +7,7 @@ Unittests for Utilities functions
 from __future__ import division, print_function
 import time
 import unittest
-from Utils.Throttled import global_user_throttle, UserThrottle
+from Utils.Throttled import UserThrottle
 from cherrypy import HTTPError
 
 

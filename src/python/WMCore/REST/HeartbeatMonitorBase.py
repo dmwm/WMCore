@@ -3,7 +3,9 @@ import time
 from pprint import pformat
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter, convertToServiceCouchDoc
-from WMCore.Services.StompAMQ.StompAMQ import StompAMQ
+
+# CMSMonitoring modules
+from CMSMonitoring.StompAMQ import StompAMQ
 
 
 class HeartbeatMonitorBase(CherryPyPeriodicTask):
@@ -68,6 +70,7 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
                                 password=self.passAMQ,
                                 producer=producer,
                                 topic=self.topicAMQ,
+                                validation_schema=None,
                                 host_and_ports=self.hostPortAMQ,
                                 logger=self.logger)
 

@@ -41,6 +41,9 @@ class RESTMainTestServer(object):
         cherrypy.config.update({'server.socket_host': self.host})
         cherrypy.config.update({'request.show_tracebacks': True})
         cherrypy.config.update({'environment': 'test_suite'})
+        cherrypy.config.update({'server.thread_pool': 10})
+        cherrypy.config.update({'server.accepted_queue_size': -1})
+        cherrypy.config.update({'server.accepted_queue_timeout': 10})
         for app in cherrypy.tree.apps.values():
             if '/' in app.config:
                 app.config["/"]["request.show_tracebacks"] = True

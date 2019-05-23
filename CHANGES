@@ -1,3 +1,12 @@
+1.2.3.pre2 to 1.2.3.pre3:
+  - Added staging and staged request status (Alan Malta Rodrigues) #9209
+  - Revisit MicroService code and made it working (Valentin Kuznetsov) #9140
+  - Accept CherryPy accepted_queue_size parameter; print service config (Alan Malta Rodrigues) #9201
+  - Add CherryPy stats to WebTools/RESTModel based server (Valentin Kuznetsov) #9205
+  - Fix wmbs_location/state_time schema to default to 0 (Alan Malta Rodrigues) #9206
+  - fixed the bug that caused no logs after requests processed. (Yuyi Guo) #9197
+
+
 1.2.3.pre1 to 1.2.3.pre2:
   - os.open cant be used with context manager (Alan Malta Rodrigues) #9186
   - Schematic for MS Transferor and TransferMonit (Alan Malta Rodrigues) #9194

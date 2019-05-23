@@ -21,5 +21,6 @@ retry==0.9.1
 setuptools==39.2.0
 stomp.py==4.1.15
 rucio-clients==1.19.3
+CMSMonitoring>=0.2.4
 # All dependencies needed to run Global WorkQueue
 # All dependencies needed to run ReqMgr2

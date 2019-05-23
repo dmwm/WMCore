@@ -19,10 +19,11 @@ from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, listDiskUsageOverThreshold
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-from WMCore.Services.StompAMQ.StompAMQ import StompAMQ
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
+# CMSMonitoring modules
+from CMSMonitoring.StompAMQ import StompAMQ
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -560,6 +561,7 @@ class AgentStatusPoller(BaseWorkerThread):
                                 password=self.passAMQ,
                                 producer=self.producer,
                                 topic=self.topicAMQ,
+                                validation_schema=None,
                                 host_and_ports=self.hostPortAMQ,
                                 logger=logging)
 

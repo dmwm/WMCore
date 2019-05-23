@@ -11,9 +11,36 @@ from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 
 
+# FIXME: remove this function once MS Transferor is solid and in production
+def moveTransferorStatus(reqmgrSvc, logger):
+    """
+    Function to temporarily make the status transition supposed
+    to happen in the MS Transferor module.
+    Once that's fully functional and in production, we can completely
+    remove this function.
+    """
+    thisTransition = {"assigned": "staging",
+                      "staging": "staged"}
+    # Let's try to keep these requests in this status for a bit longer
+    # and give MS Transferor a chance to find them and run its logic.
+    # That's why starting with the inverse order
+    for status in ["staging", "assigned"]:
+        requests = reqmgrSvc.getRequestByStatus([status], detail=False)
+        newStatus = thisTransition[status]
+        for wf in requests:
+            reqmgrSvc.updateRequestStatus(wf, newStatus)
+            logger.info("%s in %s moved to %s", wf, status, newStatus)
+        logger.info("%d requests moved from: %s to: %s", len(requests), status, newStatus)
+    return
+
+
 def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
 
     for status, nextStatus in AUTO_TRANSITION.iteritems():
+        ### FIXME: remove this if statement when the function above gets removed
+        if status in ["staging", "assigned"]:
+            continue
+
         count = 0
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
         for wf in requests:
@@ -22,10 +49,15 @@ def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
                 continue
             elif stateFromGQ == status:
                 continue
-            elif stateFromGQ == "failed" and status == "assigned":
+            elif stateFromGQ == "failed" and status == "staged":
+                count += 1
+                reqmgrSvc.updateRequestStatus(wf, nextStatus[0])
+                logger.info("%s in %s moved to %s", wf, status, nextStatus[0])
+                continue
+            elif stateFromGQ == "failed" and status == "acquired":
                 count += 1
                 reqmgrSvc.updateRequestStatus(wf, stateFromGQ)
-                logger.debug("%s in %s moved to %s", wf, status, stateFromGQ)
+                logger.info("%s in %s moved to %s", wf, status, stateFromGQ)
                 continue
 
             try:
@@ -37,12 +69,12 @@ def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
             if status == "aborted" and i == 0:
                 count += 1
                 reqmgrSvc.updateRequestStatus(wf, "aborted-completed")
-                logger.debug("%s in %s moved to %s", wf, status, "aborted-completed")
+                logger.info("%s in %s moved to %s", wf, status, "aborted-completed")
             else:
                 for j in range(i + 1):
                     count += 1
                     reqmgrSvc.updateRequestStatus(wf, nextStatus[j])
-                    logger.debug("%s in %s moved to %s", wf, status, nextStatus[j])
+                    logger.info("%s in %s moved to %s", wf, status, nextStatus[j])
         logger.info("%s requests moved to new state from %s", count, status)
     return
 
@@ -131,6 +163,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
 
         self.logger.info("Advancing status")
+        moveTransferorStatus(reqmgrSvc, self.logger)
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
         moveToArchived(wmstatsSvc, reqmgrSvc, self.logDB, config.archiveDelayHours, self.logger)

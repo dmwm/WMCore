@@ -85,14 +85,18 @@ class WTLogger(LogManager):
         # identify size of body from HTTP Content-Length header
         rbytes = int(cherrypy.request.headers.get('Content-Length', 0))
         if not rbytes:
-            # this will work only when body is read from request
-            rbytes = cherrypy.request.body.fp.bytes_read
-        if not rbytes:
-            # request.rfile.rfile.bytes_read is a custom CMS web
-            #  cherrypy patch not always available, hence the test
-            rbytes = (getattr(request.rfile, 'rfile', None)
-                      and getattr(request.rfile.rfile, "bytes_read", None)
-                      and request.rfile.rfile.bytes_read) or "-"
+            try:
+                # request.rfile.rfile.bytes_read is a custom CMS web
+                #  cherrypy patch not always available, hence the test
+                rbytes = (getattr(request.rfile, 'rfile', None)
+                        and getattr(request.rfile.rfile, "bytes_read", None)
+                        and request.rfile.rfile.bytes_read) or "-"
+            except:
+                try:
+                    # this will work only when body is read from request
+                    rbytes = cherrypy.request.body.fp.bytes_read
+                except:
+                    rbytes = "-"        
         msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
                + ' [data: %(i)s in %(b)s out %(T).0f us ]'
                + ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'

@@ -76,7 +76,7 @@ dependencies = {
                     'WMCore.Wrappers.JsonWrapper.__init__',
                     'WMCore.Wrappers.JsonWrapper.JSONThunker',
                     ],
-        'systems': ['wmc-rest', 'wmc-runtime'],
+        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],
     },
     'workqueue': {

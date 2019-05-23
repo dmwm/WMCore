@@ -22,6 +22,7 @@ import urllib
 
 # WMCore modules
 from Utils.CertTools import getKeyCertFromEnv
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
@@ -42,6 +43,10 @@ class UnifiedConfiguration(object):
         if parameter in self.configs:
             return self.configs[parameter]
         return default
+
+    def set(self, parameter, value):
+        "Set parameter from unified configuration"
+        self.configs[parameter] = value
 
 # static variables used in Unified modules
 uConfig = UnifiedConfiguration()
@@ -86,16 +91,6 @@ def getWorkflow(requestName):
     headers = {'Accept': 'application/json'}
     params = {}
     url = '%s/data/request/%s' % (reqmgrUrl(), requestName)
-    mgr = RequestHandler()
-    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
-    data = json.loads(res)
-    return data.get('result', [])
-
-def getWorkflows(state):
-    "Get list of workflows from ReqMgr2 data-service"
-    url = '%s/data/request' % reqmgrUrl()
-    headers = {'Accept': 'application/json'}
-    params = {'status': state}
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
@@ -259,60 +254,71 @@ def cert():
     pair = getKeyCertFromEnv()
     return pair[1]
 
-def stucktransferUrl():
+def stucktransferUrl(url=None):
     "Return stucktransfer url"
-    default = 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
-    return uConfig.get('stucktransferUrl', default)
+    if not url:
+        url = 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
+    return uConfig.get('stucktransferUrl', url)
 
-def dashboardUrl():
+def dashboardUrl(url=None):
     "Return dashboard url"
-    default = 'http://dashb-ssb.cern.ch/dashboard/request.py'
-    return uConfig.get('dashboardUrl', default)
+    if not url:
+        url = 'http://dashb-ssb.cern.ch/dashboard/request.py'
+    return uConfig.get('dashboardUrl', url)
 
-def monitoringUrl():
+def monitoringUrl(url=None):
     "Return monitoring url"
-    default = 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
-    return uConfig.get('monitoringUrl', default)
+    if not url:
+        url = 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
+    return uConfig.get('monitoringUrl', url)
 
-def dbsUrl():
+def dbsUrl(url=None):
     "Return DBS URL"
-    default = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-    return uConfig.get('dbsUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+    return uConfig.get('dbsUrl', url)
 
-def reqmgrUrl():
+def reqmgrUrl(url=None):
     "Return ReqMgr2 url"
-    default = 'https://cmsweb.cern.ch/reqmgr2'
-    return uConfig.get('reqmgrUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/reqmgr2'
+    return uConfig.get('reqmgrUrl', url)
 
-def reqmgrCacheUrl():
+def reqmgrCacheUrl(url=None):
     "Return ReqMgr cache url"
-    default = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
-    return uConfig.get('reqmgrCacheUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
+    return uConfig.get('reqmgrCacheUrl', url)
 
-def phedexUrl():
+def phedexUrl(url=None):
     "Return PhEDEx url"
-    default = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
-    return uConfig.get('phedexUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod'
+    return uConfig.get('phedexUrl', url)
 
-def ssbUrl():
+def ssbUrl(url=None):
     "Return Dashboard SSB url"
-    default = "http://dashb-ssb.cern.ch/dashboard/request.py"
-    return uConfig.get('ssbUrl', default)
+    if not url:
+        url = 'http://dashb-ssb.cern.ch/dashboard/request.py'
+    return uConfig.get('ssbUrl', url)
 
-def agentInfoUrl():
+def agentInfoUrl(url=None):
     "Return agent info url"
-    default = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
-    return uConfig.get('agentInfoUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
+    return uConfig.get('agentInfoUrl', url)
 
-def mcoreUrl():
+def mcoreUrl(url=None):
     "Return mcore url"
-    default = "http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json"
-    return uConfig.get('mcoreUrl', default)
+    if not url:
+        url = 'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json'
+    return uConfig.get('mcoreUrl', url)
 
-def workqueueUrl():
+def workqueueUrl(url=None):
     "Return WorkQueue url "
-    default = 'https://cmsweb.cern.ch/couchdb/workqueue'
-    return uConfig.get('workqueueUrl', default)
+    if not url:
+        url = 'https://cmsweb.cern.ch/couchdb/workqueue'
+    return uConfig.get('workqueueUrl', url)
 
 def workqueueView(view, kwds=None):
     "Return WorkQueue view url"

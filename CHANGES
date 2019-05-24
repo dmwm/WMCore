@@ -1,3 +1,7 @@
+1.2.3.pre3 to 1.2.3.pre4:
+  - Dont perform write operations from MS Transferor (Alan Malta Rodrigues) #9217
+
+
 1.2.3.pre2 to 1.2.3.pre3:
   - Added staging and staged request status (Alan Malta Rodrigues) #9209
   - Revisit MicroService code and made it working (Valentin Kuznetsov) #9140

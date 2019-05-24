@@ -8,12 +8,13 @@ from __future__ import division
 __all__ = []
 
 import logging
+import copy
 from Utils.Timers import timeFunction
 from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
-
+from Utils.EmailAlert import EmailAlert
 
 class DrainStatusPoller(BaseWorkerThread):
     """
@@ -31,9 +32,10 @@ class DrainStatusPoller(BaseWorkerThread):
         self.drainAPI = DrainStatusAPI(config)
         self.condorAPI = PyCondorAPI()
         self.agentConfig = {}
+        self.previousConfig = {}
         self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
-
         self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
+        self.emailAlert = EmailAlert(config)
 
     @timeFunction
     def algorithm(self, parameters):
@@ -41,13 +43,18 @@ class DrainStatusPoller(BaseWorkerThread):
         Update drainStats if agent is in drain mode
         """
         logging.info("Running agent drain algorithm...")
+        if self.agentConfig:
+            # make a copy of the previous agent aux db configuration to compare against later
+            self.previousConfig = copy.deepcopy(self.agentConfig)
+        # grab a new copy of the agent aux db configuration
         self.agentConfig = self.reqAuxDB.getWMAgentConfig(self.config.Agent.hostName)
         if not self.agentConfig:
             logging.error("Failed to fetch agent configuration from the auxiliary DB")
             return
 
         try:
-            # check the agent aux db config to see if the agent is in drain mode
+
+            # see if the agent is in drain mode
             if self.agentConfig["UserDrainMode"] or self.agentConfig["AgentDrainMode"]:
                 # check to see if the agent hit any speed drain thresholds
                 thresholdsHit = self.checkSpeedDrainThresholds()
@@ -61,6 +68,10 @@ class DrainStatusPoller(BaseWorkerThread):
             else:
                 logging.info("Agent not in drain mode. Resetting flags and skipping drain check...")
                 self.resetAgentSpeedDrainConfig()
+
+            # finally, check for any changes in drain status
+            self.checkDrainStatusChanges()
+
         except Exception as ex:
             msg = "Error occurred, will retry later:\n"
             msg += str(ex)
@@ -72,6 +83,28 @@ class DrainStatusPoller(BaseWorkerThread):
         Return drainStats class variable
         """
         return cls.drainStats
+
+    def checkDrainStatusChanges(self):
+        """
+        Check to see if any drain statuses have changed in the auxiliary db
+        If yes, send email notification and update local drain thread variables
+
+        """
+        message = ""
+        drainStatusKeys = ['UserDrainMode', 'AgentDrainMode', 'SpeedDrainMode']
+
+        if not self.previousConfig:
+            return
+
+        for key in drainStatusKeys:
+            if self.previousConfig[key] != self.agentConfig[key]:
+                message += "Agent had a drain status transition to %s = %s\n" % (str(key), str(self.agentConfig[key]))
+
+        if message:
+            self.emailAlert.send("DrainMode status change on " + getattr(self.config.Agent, "hostName"), message)
+            logging.info("Drain mode status change: %s", message)
+
+        return
 
     def updateAgentSpeedDrainConfig(self, thresholdsHit):
         """

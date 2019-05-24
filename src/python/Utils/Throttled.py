@@ -2,6 +2,25 @@
 """
 Throttled module defines necessary classes to throttle context.
 Should be used in Web server APIs which wants to throttle clients.
+
+Here is an example how to use this module:
+
+# counter based throttline
+
+from Utils.Throttling import UserThrottle
+thr = UserThrottle(limit=5) # adjust threshold limit here
+@thr.make_throttled()
+def api():
+    # define your api logic here
+
+# Time range based throttling
+
+from Utils.Throttling import UserThrottleTime
+thr = UserThrottleTime(limit=5) # adjust threshold limit here
+@thr.make_throttled(trange=2) # adjust trange (in sec) here
+def api():
+    # define your api logic here
+
 """
 
 from __future__ import division
@@ -192,5 +211,3 @@ class UserThrottle(object):
             if self.tls.count == 0:
                 self.users[user] = retval - 1
         return retval
-
-global_user_throttle = UserThrottle()

@@ -6,8 +6,9 @@ Unittests for Utilities functions
 
 from __future__ import division, print_function
 import time
+import threading
 import unittest
-from Utils.Throttled import UserThrottle
+from Utils.Throttled import UserThrottle, UserThrottleTime
 from cherrypy import HTTPError
 
 
@@ -18,9 +19,10 @@ class UtilitiesTests(unittest.TestCase):
     """
     def setUp(self):
         self.limit = 100
-        self.thr = UserThrottle(limit=self.limit)
-        self.thr3 = UserThrottle(limit=3)
-        self.thr10 = UserThrottle(limit=10)
+        self.thr = UserThrottleTime(limit=self.limit)
+        self.thrc = UserThrottle(limit=3)
+        self.thr3 = UserThrottleTime(limit=3)
+        self.thr10 = UserThrottleTime(limit=10)
 
     def testthrottledTimes(self):
         """
@@ -38,8 +40,6 @@ class UtilitiesTests(unittest.TestCase):
             xxx_times.append(time.time())
         thr_range = max(thr_times) - min(thr_times)
         nor_range = max(xxx_times) - min(xxx_times)
-        print("throttled times: %s" % thr_range)
-        print("normal    times: %s" % nor_range)
         self.assertEqual(thr_range > nor_range, True)
         self.assertEqual((thr_range - nor_range) > nor_range, True)
 
@@ -78,6 +78,31 @@ class UtilitiesTests(unittest.TestCase):
         throttled2()
         # but we we'll call it multiple times we'll get back exception
         self.assertRaises(HTTPError, test, 5)
+
+    def testthrottledCounter(self):
+        """
+        Test that throttled counter version
+        """
+
+        @self.thrc.make_throttled()
+        def throttled():
+            "Test function for throttled"
+            return time.time()
+
+        def test(dim):
+            for _ in range(dim):
+                throttled()
+            self.assertRaises(HTTPError, testCounter, 5)
+
+        def testCounter(iterations):
+            threads = []
+            for _ in range(iterations):
+                thr = threading.Thread(target=test, args=(50,))
+                thr.start()
+                threads.append(thr)
+            for thr in threads:
+                thr.join()
+
 
 if __name__ == '__main__':
     unittest.main()

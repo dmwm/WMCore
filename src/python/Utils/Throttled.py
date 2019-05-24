@@ -8,6 +8,7 @@ from __future__ import division
 
 # standard modules
 import time
+import logging
 import threading
 
 # cherrypy modules
@@ -16,8 +17,39 @@ import cherrypy
 
 class _ThrottleCounter(object):
     """
-    _ThrottleCounter class define throttle parameter and
+    _ThrottleCounter class defines throttle parameter and
     enter/exit methods to work with `with` context.
+    """
+
+    def __init__(self, throttle, user, debug=False):
+        self.throttle = throttle
+        self.user = user
+        if debug:
+            self.throttle.logger.setLevel(logging.DEBUG)
+
+    def __enter__(self):
+        "Define enter method for `with` context"
+        ctr = self.throttle._incUser(self.user)
+	msg = "Entering throttled function with counter %d for user %s" \
+		% (ctr, self.user)
+	self.throttle.logger.debug(msg)
+        if ctr >= self.throttle.getLimit():
+            self.throttle._decUser(self.user)
+            msg = "The current number of active operations for this resource"
+            msg += " exceeds the limit of %d for user %s" \
+                   % (self.throttle.getLimit(), self.user)
+            raise cherrypy.HTTPError("429 Too Many Requests", msg)
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        "Define exit method for `with` context"
+        ctr = self.throttle._decUser(self.user)
+	msg = "Exiting throttled function with counter %d for user %s" \
+	      % (ctr, self.user)
+	self.throttle.logger.debug(msg)
+
+class _ThrottleTimeCounter(object):
+    """
+    _ThrottleTimeCounter class defines time range throttled mechanism
     """
 
     def __init__(self, throttle, user, trange):
@@ -33,16 +65,16 @@ class _ThrottleCounter(object):
             msg = "The current number of active operations for this resource"
             msg += " exceeds the limit of %d for user %s in last %s sec" \
                    % (self.throttle.getLimit(), self.user, self.trange)
-            raise cherrypy.HTTPError("500 Internal Server Error", msg)
+            raise cherrypy.HTTPError("429 Too Many Requests", msg)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         "Define exit method for `with` context"
         pass
 
 
-class UserThrottle(object):
+class UserThrottleTime(object):
     """
-    UserThrottle class defines how to handle throttle mechanism.
+    UserThrottle class defines how to handle throttle time range based mechanism.
     """
 
     def __init__(self, limit=3):
@@ -57,12 +89,12 @@ class UserThrottle(object):
 
     def throttleContext(self, user, trange=60):
         """
-        Define throttle context via _ThrottleCounter class
+        Define throttle context via _ThrottleTimeCounter class
         which will count number of requests given user made in trange
         :param user: user name
         :param trange: time range while keep user access history
         """
-        return _ThrottleCounter(self, user, trange)
+        return _ThrottleTimeCounter(self, user, trange)
 
     def make_throttled(self, trange=60):
         "decorator for throttled context"
@@ -106,5 +138,59 @@ class UserThrottle(object):
                     self.reset(user)
             else:
                 self.reset(user)
+
+class UserThrottle(object):
+    """
+    UserThrottle class defines throttle counter based mechanism.
+    """
+
+    def __init__(self, limit=3):
+        self.lock = threading.Lock()
+        self.tls = threading.local()
+        self.users = {}
+        self.limit = limit
+        self.logger = logging.getLogger("WMCore.UserThrottle")
+
+    def getLimit(self):
+        "Return throttle limit"
+        return self.limit
+
+    def throttleContext(self, user, debug=False):
+        "defint throttle context"
+        self.users.setdefault(user, 0)
+        return _ThrottleCounter(self, user, debug)
+
+    def make_throttled(self, debug=False):
+        "decorator for throttled context"
+        def throttled_decorator(fn):
+            def throttled_wrapped_function(*args, **kw):
+                username = cherrypy.request.user.get('login', 'Unknown') \
+                        if hasattr(cherrypy.request, 'user') else 'Unknown'
+                with self.throttleContext(username, debug):
+                    return fn(*args, **kw)
+            return throttled_wrapped_function
+        return throttled_decorator
+
+    def _incUser(self, user):
+        "increment user count"
+        retval = 0
+        with self.lock:
+            retval = self.users[user]
+            if getattr(self.tls, 'count', None) is None:
+                self.tls.count = 0
+            self.tls.count += 1
+            if self.tls.count == 1:
+                self.users[user] = retval + 1
+        return retval
+
+    def _decUser(self, user):
+        "decrecrement user count"
+        retval = 0
+        with self.lock:
+            retval = self.users[user]
+            self.tls.count -= 1
+            if self.tls.count == 0:
+                self.users[user] = retval - 1
+        return retval
 
 global_user_throttle = UserThrottle()

@@ -350,7 +350,8 @@ class MSManager(object):
             self.logger.debug('%s changing %s status of record %s to req_status=%s' \
                 % (prefix, request, rec, req_status))
             if rec.get('reqStatus', None) != req_status:
-                self.svc.reqmgr.updateRequestStatus(request, req_status)
+                ### FIXME: we're still not executing write operations from MS
+                #self.svc.reqmgr.updateRequestStatus(request, req_status)
                 self.store.update(request, {'reqStatus': req_status})
             if req_status == 'staged':
                 self.store.delete(request)

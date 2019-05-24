@@ -7,7 +7,7 @@ Fixes #<GH_Issue_Number>
 <Description of the changes proposed.>
 
 #### Is it backward compatible (if not, which system it affects?)
-<YES | NO>
+<YES | NO | MAYBE>
 
 #### Related PRs
 <If it's a follow up work; or porting a fix from a different branch, please mention them here.>

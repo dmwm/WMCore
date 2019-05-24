@@ -64,12 +64,16 @@ workflowArchiveTimeout = 3600
 # For setting the general log level of the components
 globalLogLevel = 'INFO'
 
+# Contact information
+# Used for email alerting
+contactName = "cms-service-production-admins@cern.ch"
+
 # Nothing beyond this point should need to be changed.
 config = Configuration()
 
 config.section_("Agent")
 config.Agent.hostName = serverHostName
-config.Agent.contact = "cms-comp-ops-workflow-team@cern.ch"
+config.Agent.contact = contactName
 config.Agent.teamName = "REPLACE_TEAM_NAME"
 config.Agent.agentName = "WMAgentCommissioning"
 config.Agent.agentNumber = 0
@@ -296,6 +300,12 @@ config.Alert.controlAddr = "tcp://127.0.0.1:6559"
 
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
+
+# Email alert configuration
+config.section_("EmailAlert")
+config.EmailAlert.toAddr = [contactName] # additional emails can be appended to the list
+config.EmailAlert.fromAddr = "noreply@cern.ch"
+config.EmailAlert.smtpServer = "localhost"
 
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"

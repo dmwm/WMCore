@@ -10,6 +10,7 @@ from functools import wraps
 from threading import Thread, Condition
 
 from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
+from cherrypy.lib import cpstats
 
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
@@ -354,6 +355,12 @@ class RESTFrontPage:
         URL arguments; they are not used here."""
         return self._serve([self._frontpage])
 
+    @expose
+    def stats(self):
+        "Return CherryPy stats dict about underlying service activities"
+        return cpstats.StatsPage().data()
+
+
 
 ######################################################################
 ######################################################################
@@ -688,6 +695,11 @@ class MiniRESTApi:
         apiobj = {"args": args, "validation": validation, "call": callable}
         apiobj.update(**kwargs)
         self.methods[method][api] = apiobj
+
+    @expose
+    def stats(self):
+        "Return CherryPy stats dict about underlying service activities"
+        return cpstats.StatsPage().data()
 
     @expose
     def default(self, *args, **kwargs):

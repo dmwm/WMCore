@@ -254,10 +254,11 @@ class Root(Harness):
                 # If the 'default' section is present, it will force the
                 # authn/z to be called even for non-decorated methods
                 cherrypy.config.update({'tools.secmodv2.on': True,
-                            'tools.secmodv2.role': self.secconfig.default.role,
-                            'tools.secmodv2.group': self.secconfig.default.group,
-                            'tools.secmodv2.site': self.secconfig.default.site})
-        cherrypy.log.error_log.debug('Application %s initialised in %s mode' % (self.app, self.mode))
+                                        'tools.secmodv2.role': self.secconfig.default.role,
+                                        'tools.secmodv2.group': self.secconfig.default.group,
+                                        'tools.secmodv2.site': self.secconfig.default.site})
+        cherrypy.config.update({'tools.cpstats.on': configDict.get('cpstats', False)})
+        cherrypy.log.error_log.debug('Application %s initialised in %s mode', self.app, self.mode)
 
     def _loadPages(self):
         """

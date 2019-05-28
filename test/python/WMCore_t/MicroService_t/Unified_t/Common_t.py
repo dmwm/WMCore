@@ -7,8 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.Unified.Common import dbsInfo, getEventsLumis, \
-        workflowsInfo, getWorkflows, workqueueView
+from WMCore.MicroService.Unified.Common import dbsInfo, getEventsLumis, workqueueView
 
 
 class CommonTest(unittest.TestCase):
@@ -26,17 +25,6 @@ class CommonTest(unittest.TestCase):
         expect = 6271126523+7840499449
         sizes = sum([datasetSizes[d] for d in self.datasets])
         self.assertEqual(expect, sizes)
-
-    def testWorkflowsInfo(self):
-        "Test function for workflowsInfo()"
-        state = 'assignment-approved'
-        workflows = getWorkflows(state)
-        winfo = workflowsInfo(workflows)
-#         datasets = [d for row in winfo.values() for d in row['datasets']]
-#         pileups = [d for row in winfo.values() for d in row['pileups']]
-        keys = sorted(['datasets', 'pileups', 'priority', 'selist', 'campaign'])
-        for wdict in winfo.values():
-            self.assertEqual(keys, sorted(wdict.keys()))
 
     def testGetEventsLumis(self):
         "Test function for getEventsLumis()"

@@ -5,7 +5,7 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # system modules
 import json
@@ -172,12 +172,12 @@ def taskDescending(node, select=None):
     return allTasks
 
 
-def getRequestWorkflows(requestNames):
+def getRequestWorkflows(requestNames, logger):
     "Helper function to get all specs for given set of request names"
     urls = [str('%s/data/request/%s' % (reqmgrUrl(), r)) for r in requestNames]
-    print("### getRequestWorkflows")
+    logger.debug("getRequestWorkflows")
     for u in urls:
-        print(u)
+        logger.debug("url %s", u)
     data = multi_getdata(urls, ckey(), cert())
     rdict = {}
     for row in data:
@@ -186,8 +186,8 @@ def getRequestWorkflows(requestNames):
             data = json.loads(row['data'])
             rdict[req] = data['result'][0]  # we get back {'result': [workflow]} dict
         except Exception as exp:
-            print("ERROR: fail to load data as json record, error=%s" % str(exp))
-            print(row)
+            logger.error("fail to process row %s", row)
+            logger.exception("fail to load data as json record, error=%s", str(exp))
     return rdict
 
 
@@ -296,7 +296,7 @@ def getMulticore(request):
     return max(mcores)
 
 
-def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, verbose=True):
+def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, logger=None):
     "Return site list for given request"
     lheinput, primary, parent, secondary = getIO(request)
     allowedSites = []
@@ -327,10 +327,12 @@ def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, verbo
                                     if siteInfo.cpu_pledges[site] > neededCores]))
         if newAllowedSites:
             allowedSites = newAllowedSites
-            print("swaping", verbose)
-            if verbose:
-                print("restricting site white list because of blow-up factor", \
-                      minChildJobPerEvent, rootJobPerEvent, maxBlowUp)
+            if logger:
+                msg = "restricting site white list because of blow-up factor: "
+                msg += 'minChildJobPerEvent=%s ' % minChildJobPerEvent
+                msg += 'rootJobPerEvent=%s' % rootJobPerEvent
+                msg += 'maxBlowUp=%s' % maxBlowUp
+                logger.debug(msg)
 
     for campaign in getCampaigns(request):
         # for testing purposes add post campaign call
@@ -340,26 +342,29 @@ def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, verbo
             campaignConfig = campaignConfig[0]
         campSites = campaignConfig.get('SiteWhitelist', [])
         if campSites:
-            if verbose:
-                print("Using site whitelist restriction by campaign,", \
-                      campaign, "configuration", sorted(campSites))
+            if logger:
+                msg = "Using site whitelist restriction by campaign=%s " % campaign
+                msg += "configuration=%s" % sorted(campSites)
+                logger.debug(msg)
             allowedSites = list(set(allowedSites) & set(campSites))
             if not allowedSites:
                 allowedSites = list(campSites)
 
         campBlackList = campaignConfig.get('SiteBlacklist', [])
         if campBlackList:
-            if verbose:
-                print("Reducing the whitelist due to black list in campaign configuration")
-                print("Removing", campBlackList)
+            if logger:
+                logger.debug("Reducing the whitelist due to black list in campaign configuration")
+                logger.debug("Removing %s", campBlackList)
             allowedSites = list(set(allowedSites) - set(campBlackList))
 
     ncores = getMulticore(request)
     memAllowed = siteInfo.sitesByMemory(float(request['Memory']), maxCore=ncores)
     if memAllowed is not None:
-        if verbose:
-            print("sites allowing", request['Memory'], "MB and", ncores, \
-                  "core are", sorted(memAllowed))
+        if logger:
+            msg = "sites allowing %s " % request['Memory']
+            msg += "MB and ncores=%s" % ncores
+            msg += "core are %s" % sorted(memAllowed)
+            logger.debug(msg)
         # mask to sites ready for mcore
         if ncores > 1:
             memAllowed = list(set(memAllowed) & set(siteInfo.sites_mcore_ready))
@@ -416,7 +421,7 @@ def unified(svc, requestRecords, logger):
     # get workflows from list of requests
     orig = time.time()
     time0 = time.time()
-    requestWorkflows = getRequestWorkflows(requests)
+    requestWorkflows = getRequestWorkflows(requests, logger)
     workflows = requestWorkflows.values()
     logger.debug(elapsedTime(time0, "### getWorkflows"))
 
@@ -452,7 +457,7 @@ def unified(svc, requestRecords, logger):
     for wflow in workflows:
         for wname, wspec in wflow.items():
             time0 = time.time()
-            cput = getComputingTime(wspec, eventsLumis=eventsLumis)
+            cput = getComputingTime(wspec, eventsLumis=eventsLumis, logger=logger)
             ncopies = getNCopies(cput)
 
             attrs = winfo[wname]

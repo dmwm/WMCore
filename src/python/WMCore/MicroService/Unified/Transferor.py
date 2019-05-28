@@ -5,7 +5,7 @@ Description: UnifiedTransferorManager class provides full functionality of the U
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # system modules
 import time

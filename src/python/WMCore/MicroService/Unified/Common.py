@@ -6,7 +6,7 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # system modules
 import os
@@ -15,6 +15,7 @@ import json
 import time
 import math
 import urllib
+import logging
 
 # py2/py3 modules
 # from future import standard_library
@@ -169,8 +170,12 @@ def getEventsLumis(dataset, blocks=None, eventsLumis=None):
     data = eLumis.get(dataset, {'num_event':0, 'num_lumi':0})
     return data['num_event'], data['num_lumi']
 
-def getComputingTime(workflow, eventsLumis=None, unit='h'):
+def getComputingTime(workflow, eventsLumis=None, unit='h', logger=None):
     "Return computing time per give workflow"
+    if not logger:
+        logger = logging.getLogger('reqmgr2ms:Common')
+        logger.setLevel(logging.DEBUG)
+        logging.basicConfig()
     cput = None
 
     if 'InputDataset' in workflow:
@@ -202,7 +207,7 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
                 elif 'RequestNumEvents' in task:
                     nevts = float(task['RequestNumEvents'])
                 else:
-                    print("this is not supported, making it zero cput")
+                    logger.debug("this is not supported, making it zero cput")
                     nevts = 0
                 tpe = task.get('TimePerEvent', 1)
                 carryOn[task['%sName' % base]] = nevts
@@ -329,8 +334,9 @@ def workqueueView(view, kwds=None):
     return url
 
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):
-    "Helper function to print elapsed time"
-    print("%s: %s sec" % (msg, round(time.time()-time0, ndigits)))
+    "Helper function to return elapsed time message"
+    msg = "%s: %s sec" % (msg, round(time.time()-time0, ndigits))
+    return msg
 
 def getNodesForId(phedexid):
     "Helper function to get nodes for given phedex id"

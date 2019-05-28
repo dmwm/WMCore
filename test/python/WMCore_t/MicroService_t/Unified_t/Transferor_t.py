@@ -7,16 +7,13 @@ from __future__ import division, print_function
 
 # system modules
 import time
-import tempfile
 import unittest
 
 # WMCore modules
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.MicroService.Unified.Transferor import \
-        RequestStore, MSManager
+# from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.MicroService.Unified.Transferor import MSManager, Services
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
 class TransferorTest(EmulatedUnitTestCase):
     "Unit test for Transferor module"
@@ -26,8 +23,9 @@ class TransferorTest(EmulatedUnitTestCase):
         self.group = 'DataOps'
         self.interval = 2
         self.phedex = MockPhEDExApi()
-        reqmgr = ReqMgrAux('http://localhost')
-        self.rmgr = MSManager(reqmgr, group=self.group, interval=self.interval, verbose=True)
+        reqmgrUrl = 'http://localhost'
+        svc = Services(reqmgrUrl)
+        self.rmgr = MSManager(svc, group=self.group, interval=self.interval)
 
         # get some subscriptions from PhEDEx to play with
         data = self.phedex.subscriptions(group=self.group)
@@ -46,9 +44,9 @@ class TransferorTest(EmulatedUnitTestCase):
             # create fake requests with dataset/nodes info
             rdict1 = dict(datasets=[dataset], sites=nodes, name='req1')
             rdict2 = dict(datasets=[dataset], sites=nodes, name='req2')
-            self.requests = {'req1': rdict1, 'req2': rdict2}
-            for req in ['req1', 'req2']:
-                print("+++ stored requests", req, self.rmgr.info(req))
+            self.requests = [rdict1, rdict2]
+            print("+++ stored req1", self.rmgr.info({'req1': rdict1}))
+            print("+++ stored req2", self.rmgr.info({'req2': rdict2}))
             break
 
     def tearDown(self):
@@ -59,14 +57,11 @@ class TransferorTest(EmulatedUnitTestCase):
         "Test function for MSManager class"
         # add requests to MSManager
         print("+++ store", self.requests)
-        self.rmgr.add(self.requests)
-        for key in self.requests.keys():
-            print("+++ store", key, self.rmgr.info(key))
-        # check their status
-        for request in self.requests.keys():
+        for req in self.requests:
+            print("+++ store", self.rmgr.info(req))
+            # check their status
             # after fetch request info here it will be gone from store
-            info = self.rmgr.info(request)
-            print("### request", request, "info", info)
+#             info = self.rmgr.info(req)
 #             completed = info.pop('completed')
 #             self.assertEqual(100, int(completed))
 #             self.assertEqual(self.requests[request], info)
@@ -80,42 +75,16 @@ class TransferorTest(EmulatedUnitTestCase):
         "Test function for MSManager class which check status of request automatically"
         # add requests to MSManager
         print("+++ store", self.requests)
-        self.rmgr.add(self.requests)
-        for key in self.requests.keys():
-            print("+++ store", key, self.rmgr.info(key))
+        for req in self.requests:
+            print("+++ store", self.rmgr.info(req))
         # we'll sleep and allow MSManager thread to check status of requests
         # and wipe out them from internal store
         time.sleep(self.interval+1)
         # check their status
-        for request in self.requests.keys():
-            # at this point request should be gone from store
-            print('### in store', request, self.rmgr.store.exists(request))
-#             self.assertEqual(False, self.rmgr.store.exists(request))
+        for req in self.requests:
             # but we can check request status as many times as we want
-            self.rmgr.checkStatus(request)
+            self.rmgr.checkStatus(req)
 
-    def testRequestStore(self):
-        "Test function for RequestStore()"
-        fobj = tempfile.NamedTemporaryFile()
-        fname = '%s.db' % fobj.name
-        print("### open store", fname)
-        store = RequestStore(fname)
-        requests = [{'bla': {'meta': 'bla'}}, {'foo': {'meta': 'foo'}}]
-        for item in requests:
-            for request, rdict in item.items():
-                store.add(request, rdict)
-                self.assertEqual(True, store.exists(request))
-                print("### request: %s" % request, "store info: ", store.info(request))
-        store.delete('bla')
-        for request, rdict in store.info().items():
-            self.assertEqual(request, 'foo')
-        value = 1
-        store.update('foo', {'update':value})
-        data = store.get('foo')
-        print("### data", data)
-        self.assertEqual('update' in data, True)
-        self.assertEqual(data.get('update', None), value)
-        store.delete('foo')
 
 if __name__ == '__main__':
     unittest.main()

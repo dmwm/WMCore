@@ -11,9 +11,7 @@ from __future__ import print_function, division
 import time
 import logging
 import hashlib
-import traceback
-
-from httplib import HTTPException
+from pprint import pformat
 
 # WMCore modules
 from WMCore.MicroService.Unified.Common import uConfig
@@ -31,7 +29,7 @@ def daemon(func, reqStatus, interval, logger):
         try:
             func(reqStatus)
         except Exception as exc:
-            logger.error("MS daemon error: %s", str(exc))
+            logger.exception("MS daemon error: %s", str(exc))
         time.sleep(interval)
 
 
@@ -99,8 +97,7 @@ class MSManager(object):
                     requestStatus[req] = transferStatuses  # TODO: implement update of transfer ids
             self.updateTransferIDs(requestStatus)
         except Exception as err:  # general error
-            msg = '+++ monit error: %s' % str(err)
-            self.logger.error(msg)
+            self.logger.exception('+++ monit error: %s', str(err))
 
     def transferor(self, reqStatus='assigned'):
         """
@@ -110,17 +107,19 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
+        requestRecords = []
         try:
             # get requests from ReqMgr2 data-service for given statue
             requestSpecs = self.svc.reqmgr.getRequestByStatus([reqStatus], detail=True)
-            requestRecords = [requestRecord(r, reqStatus) for r in requestSpecs]
+            if requestSpecs:
+                for _, wfData in requestSpecs[0].items():
+                    requestRecords.append(requestRecord(wfData, reqStatus))
             self.logger.debug('### monit found %s requests in %s state', len(requestRecords), reqStatus)
             # get complete requests information (based on Unified Transferor logic)
             requestRecords = requestsInfo(requestRecords, self.svc, self.logger)
         except Exception as err:  # general error
-            msg = '### transferor error: %s' % str(err)
-            self.logger.error(msg)
-            requestRecords = []
+            self.logger.exception('### transferor error: %s', str(err))
+
         # process all requests
         for req in requestRecords:
             reqName = req['name']
@@ -148,8 +147,8 @@ class MSManager(object):
         datasets = req.get('datasets', [])
         sites = req.get('sites', [])
         if datasets and sites:
+            self.logger.debug("### creating subscription for: %s", pformat(req))
             subscription = PhEDExSubscription(datasets, sites, self.group)
-            self.logger.debug("### add subscription %s for request %s", subscription, req)
             # TODO: implement how to get transfer id
             tid = hashlib.md5(str(subscription)).hexdigest()
             # TODO: when ready enable submit subscription step
@@ -255,16 +254,13 @@ class MSManager(object):
              -d '{"RequestStatus":"staging", "RequestName":"bla-bla"}' \
              https://xxx.yyy.zz/reqmgr2/data/request
         """
+        self.logger.debug('%s updating %s status to %s', prefix, req['name'], reqStatus)
         try:
-            self.logger.debug('%s changing %s status of record %s to reqStatus=%s', prefix, req['name'], req, reqStatus)
             if req.get('reqStatus', None) != reqStatus:
                 if not self.readOnly:
                     self.svc.reqmgr.updateRequestStatus(req['name'], reqStatus)
-        except HTTPException as err:
-            traceback.print_exc()
-            self.logger.error('%s change: url=%s headers=%s status=%s reason=%s', prefix, err.url, err.headers, err.status, err.reason)
         except Exception as err:
-            traceback.print_exc()
+            self.logger.exception("Failed to change request status. Error: %s", str(err))
 
     def info(self, req):
         "Return info about given request"
@@ -277,7 +273,7 @@ class MSManager(object):
 
 class Services(object):
     "Services class provides access to reqmgr2 services: ReqMgr, ReqMgrAux"
-    __slots__ = ('reqmgrAux', 'reqmgr', 'workqueue')
+    __slots__ = ('reqmgrAux', 'reqmgr')
     def __init__(self, reqmgrUrl, logger=None):
         self.reqmgrAux = ReqMgrAux(reqmgrUrl, logger=logger)
         self.reqmgr = ReqMgr(reqmgrUrl, logger=logger)
@@ -295,14 +291,17 @@ class UnifiedTransferorManager(object):
             self.logger = logging.getLogger(loggerName)
             self.logger.setLevel(logging.DEBUG)
             logging.basicConfig()
-        reqmgrUrl = getattr(config, 'reqmgrUrl', 'https://cmsweb.cern.ch/reqmgr2')
-        self.svc = Services(reqmgrUrl, self.logger)
+
+        self.logger.info("Using the following config: %s", config)
         group = getattr(config, 'group', 'DataOps')
         interval = getattr(config, 'interval', 3600)
         readOnly = getattr(config, 'readOnly', True)
-        # update uConfig urls according reqmgr2ms configuration
+        # update uConfig urls according to reqmgr2ms configuration
+        reqmgrUrl = getattr(config, 'reqmgr2Url', 'https://cmsweb.cern.ch/reqmgr2')
         uConfig.set('reqmgrUrl', reqmgrUrl)
         uConfig.set('reqmgrCacheUrl', getattr(config, 'reqmgrCacheUrl', 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'))
+        uConfig.set('dbsUrl', getattr(config, 'dbsUrl', 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'))
+        self.svc = Services(reqmgrUrl, self.logger)
         self.msManager = MSManager(self.svc, group, readOnly, interval, logger)
 
     def status(self):

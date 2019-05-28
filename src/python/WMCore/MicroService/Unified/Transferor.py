@@ -114,7 +114,7 @@ class MSManager(object):
             if requestSpecs:
                 for _, wfData in requestSpecs[0].items():
                     requestRecords.append(requestRecord(wfData, reqStatus))
-            self.logger.debug('### monit found %s requests in %s state', len(requestRecords), reqStatus)
+            self.logger.debug('### transferor found %s requests in %s state', len(requestRecords), reqStatus)
             # get complete requests information (based on Unified Transferor logic)
             requestRecords = requestsInfo(requestRecords, self.svc, self.logger)
         except Exception as err:  # general error
@@ -158,17 +158,12 @@ class MSManager(object):
     def getTransferIDsDoc(self):
         """
         Get transfer ids document from backend. The document has the following form:
-        https://gist.github.com/amaltaro/72599f995b37a6e33566f3c749143154
-        {"wf_A": {"timestamp": 0000
-                "primary": {"dset_1": ["list of transfer ids"]},
-                "secondary": {"PU_dset_1": ["list of transfer ids"]},
-        "wf_B": {"timestamp": 0000
-                "primary": {"dset_1": ["list of transfer ids"],
-                        "parent_dset_1": ["list of transfer ids"]},
-                "secondary": {"PU_dset_1": ["list of transfer ids"],
-                        "PU_dset_2": ["list of transfer ids"]},
-         ...
+        {
+          "wf_A": [record1, record2, ...],
+          "wf_B": [....],
         }
+        where each record has the following format:
+        {"timestamp":000, "dataset":"/a/b/c", "type": "primary", "trainsferIDs": [1,2,3]}
         """
         doc = {}
         return doc

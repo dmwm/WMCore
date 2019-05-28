@@ -39,11 +39,11 @@ def requestRecord(data, reqStatus):
     tasks = [k for k in data.keys() if k.startswith('Task') and not k.endswith('Chain')]
     datasets = []
     for task in tasks:
-        for key in ['InputDataset', 'MCPileup']:
+        for key in ['InputDataset', 'MCPileup', 'DataPileup']:
             dataset = data[task].get(key, '')
             if dataset:
                 datasets.append({'type': key, 'name': dataset})
-    name = data.get('_id', '')
+    name = data.get('RequestName', '')
     if not name:
         keys = data.keys()
         if len(keys) > 1:

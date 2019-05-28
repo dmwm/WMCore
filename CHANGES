@@ -1,3 +1,10 @@
+1.2.3.pre4 to 1.2.3.pre5:
+  - Minor improvements to MS Transferor; don.t query gwmsmon (Alan Malta Rodrigues) #9224
+  - Re-factor code according to proposal specs, work on naming convention, record structure, code flow (Valentin Kuznetsov) #9216
+  - rename PR template file (Alan Malta Rodrigues) #9219
+  - Creation of a pull request template (#9218) (Alan Malta Rodrigues) #9218
+
+
 1.2.3.pre3 to 1.2.3.pre4:
   - Dont perform write operations from MS Transferor (Alan Malta Rodrigues) #9217
 

@@ -1,3 +1,27 @@
+1.1.16 to 1.1.16.dbs5:
+  - Merge pull request #9232 from amaltaro/fix-9205-dbs
+  - Add CherryPy stats to WebTools/RESTModel based server
+  - 1.1.16.dbs4
+  - Merge pull request #9210 from amaltaro/throttling-1116dbs
+  - Add examples to docstring; remove global_user_throttle
+  - Add back counter based implementation; adjusted unit test code to test both implementations
+  - Remove unused variable
+  - Code re-factoring and add timerange for user activities under throttling
+  - Merge pull request #9213 from amaltaro/fixcp-log-116dbs
+  - fixed the bug that caused no logs after requests processed.
+  - Port from CRABServer code Throttled classes; add unit test for them
+  - 1.1.16.dbs3
+  - Merge pull request #9178 from amaltaro/fix-9171-dbs
+  - fix missing format string in #9171
+  - 1.1.16.dbs2
+  - Merge pull request #9175 from amaltaro/dbs-9171
+  - Put changes Yuyi requested
+  - Remove query_string since it is identical to params
+  - Fix issue with missing received bytes in custom cherrypy logger (used by DBS)
+  - 1.1.16.dbs1
+  - Merge pull request #9159 from amaltaro/req-logs-dbs
+  - Add loggin of incoming requests to RESTModel end-points
+
 1.1.16 to 1.1.16.dbs4:
   - Merge pull request #9210 from amaltaro/throttling-1116dbs
   - Add examples to docstring; remove global_user_throttle

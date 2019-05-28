@@ -224,9 +224,7 @@ def getAllTasks(request, select=None, reqSpecs=None):
 
 def getWorkTasks(request, reqSpecs=None):
     "Return work tasks for given request"
-    return getAllTasks(request,
-            select={'taskType': ['Production', 'Processing', 'Skim']},
-            reqSpecs=reqSpecs)
+    return getAllTasks(request, select={'taskType': ['Production', 'Processing', 'Skim']}, reqSpecs=reqSpecs)
 
 
 def getSplittings(request, reqSpecs=None):
@@ -324,8 +322,8 @@ def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, verbo
     maxBlowUp, neededCores = uConfig.get('blow_up_limits', (0, 0))
     if blowUp > maxBlowUp:
         # then restrict to only sites with >4k slots
-        newAllowedSites = list(set(allowedSites) & \
-                               set([site for site in allowedSites \
+        newAllowedSites = list(set(allowedSites) &
+                               set([site for site in allowedSites
                                     if siteInfo.cpu_pledges[site] > neededCores]))
         if newAllowedSites:
             allowedSites = newAllowedSites
@@ -415,7 +413,7 @@ def unified(svc, requestRecords, logger):
     ### TODO: the logic below shows original unified port and it should be
     ###       revisited wrt new proposal specs and unified codebase
 
-    # get workflows from list of requests 
+    # get workflows from list of requests
     orig = time.time()
     time0 = time.time()
     requestWorkflows = getRequestWorkflows(requests)
@@ -449,8 +447,8 @@ def unified(svc, requestRecords, logger):
     siteInfo = SiteInfo()
 
     requestsToProcess = []
-    totBlocks = totEvents = totSize = totCpuT = 0
     tst0 = time.time()
+    totBlocks = totEvents = totSize = totCpuT = 0
     for wflow in workflows:
         for wname, wspec in wflow.items():
             time0 = time.time()
@@ -483,10 +481,20 @@ def unified(svc, requestRecords, logger):
             t0 = time.time()
             lheInput, primary, parent, secondary, allowedSites \
                 = getSiteWhiteList(svc, wspec, siteInfo, reqSpecs)
-            rdict = dict(name=wname, datasets=datasets, blocks=datasetBlocks, \
+            if not isinstance(primary, list):
+                primary = [primary]
+            if not isinstance(secondary, list):
+                secondary = [secondary]
+            wflowDatasets = primary+secondary
+            wflowDatasetsBlocks = []
+            for dset in wflowDatasets:
+                for item in datasetBlocks.get(dset, []):
+                    wflowDatasetsBlocks.append(item)
+            rdict = dict(name=wname, datasets=wflowDatasets,
+                         blocks=wflowDatasetsBlocks,
                          npileups=npileups, size=size,
-                         nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies, \
-                         sites=sites, allowedSites=allowedSites, parent=parent, \
+                         nevents=nevts, nlumis=nlumis, cput=cput, ncopies=ncopies,
+                         sites=sites, allowedSites=allowedSites, parent=parent,
                          lheInput=lheInput, primary=primary, secondary=secondary)
             requestsToProcess.append(rdict)
             logger.debug(elapsedTime(t0, "### getSiteWhiteList"))

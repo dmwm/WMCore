@@ -35,8 +35,7 @@ from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
 from WMCore.MicroService.Unified.Common import agentInfoUrl, \
-        phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
-        dashboardUrl
+        phedexUrl, cert, ckey, uConfig, monitoringUrl, dashboardUrl
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
@@ -74,10 +73,13 @@ class SiteCache(with_metaclass(Singleton, object)):
             '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl(),
             '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl(),
             '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl(),
-            'https://cms-gwmsmon.cern.ch/totalview/json/site_summary',
-            'https://cms-gwmsmon.cern.ch/prodview/json/site_summary',
-            'https://cms-gwmsmon.cern.ch/poolview/json/totals',
-            'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
+            ### FIXME: these calls to gwmsmon are failing pretty badly with
+            ### "302 Found" and failing to decode, causing a huge error dump
+            ### to the logs
+            # 'https://cms-gwmsmon.cern.ch/totalview/json/site_summary',
+            # 'https://cms-gwmsmon.cern.ch/prodview/json/site_summary',
+            # 'https://cms-gwmsmon.cern.ch/poolview/json/totals',
+            # 'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
             'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json',
             'http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt',
             '%s/storageoverview/latest/StorageOverview.json' % monitoringUrl(),

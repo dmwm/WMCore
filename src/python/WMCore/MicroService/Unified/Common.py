@@ -22,7 +22,6 @@ import urllib
 
 # WMCore modules
 from Utils.CertTools import getKeyCertFromEnv
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
@@ -286,9 +285,9 @@ def reqmgrUrl(url=None):
 
 def reqmgrCacheUrl(url=None):
     "Return ReqMgr cache url"
-    if not url:
-        url = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
-    return uConfig.get('reqmgrCacheUrl', url)
+    url = reqmgrUrl()
+    url = url.replace("reqmgr2", "couchdb/reqmgr_workload_cache")
+    return url
 
 def phedexUrl(url=None):
     "Return PhEDEx url"

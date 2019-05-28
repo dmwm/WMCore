@@ -198,7 +198,8 @@ class MSManager(object):
 
     def requestCampaign(self, req):
         "Return request campaign"
-        return 'campaign_TODO' # TODO
+        cname = "" # TODO: we should get it somehow
+        return self.svc.reqmgraux.getCampaignConfig(cname)
 
     def requestConfiguration(self, req):
         "Return request configuration"

@@ -112,6 +112,12 @@ class NoSuchInstance(RESTError):
     app_code = 206
     message = "No such instance"
 
+class APINotSupported(RESTError):
+    "The request URL provides wrong API argument."
+    http_code = 404
+    app_code = 207
+    message = "API not supported"
+
 class DatabaseError(RESTError):
     """Parent class for database-related errors.
 

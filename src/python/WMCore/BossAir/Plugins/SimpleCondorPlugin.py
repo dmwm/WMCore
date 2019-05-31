@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 _SimpleCondorPlugin_
 
@@ -16,7 +15,7 @@ import classad
 import htcondor
 
 from Utils import FileTools
-from Utils.IteratorTools import convertFromUnicodeToStr, grouper
+from Utils.IteratorTools import grouper
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory

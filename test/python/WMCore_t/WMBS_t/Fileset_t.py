@@ -5,9 +5,6 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-import logging
-import os
-import random
 import threading
 import unittest
 
@@ -19,7 +16,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 
@@ -75,6 +71,27 @@ class FilesetTest(unittest.TestCase):
 
         assert testFileset.exists() == False, \
             "ERROR: Fileset exists after it was deleted"
+
+        return
+
+    def testCreateDeleteLongChar(self):
+        """
+        _testCreateDeleteLongChar_
+
+        Create and delete a fileset name with 750 characters, InnoDB tables
+        are limited to 767 chars
+        """
+        # fileset name with 750 chars
+        fsetName = "test_Fileset_with_30_character" * 25
+        testFileset = Fileset(name=fsetName)
+
+        self.assertFalse(testFileset.exists())
+
+        testFileset.create()
+        self.assertTrue(testFileset.exists() >= 0)
+
+        testFileset.delete()
+        self.assertFalse(testFileset.exists())
 
         return
 

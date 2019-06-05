@@ -79,7 +79,9 @@ class PyCondorAPI(object):
         """
         try:
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
-            isOverloaded = scheddAd['CurbMatchmaking'].eval()
+            q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
+                                projection=['CurbMatchmaking'])[0]
+            isOverloaded = q['CurbMatchmaking'].eval()
             return isOverloaded
         except Exception:
             # if there is an error, try to recreate the collector instance
@@ -87,7 +89,9 @@ class PyCondorAPI(object):
             self.coll = htcondor.Collector()
         try:
             scheddAd = self.coll.locate(htcondor.DaemonTypes.Schedd)
-            isOverloaded = scheddAd['CurbMatchmaking'].eval()
+            q = self.coll.query(htcondor.AdTypes.Schedd, 'Name == "%s"' % scheddAd['Name'],
+                                projection=['CurbMatchmaking'])[0]
+            isOverloaded = q['CurbMatchmaking'].eval()
         except Exception as ex:
             msg = "Condor failed to fetch schedd attributes."
             msg += "Error message: %s" % str(ex)

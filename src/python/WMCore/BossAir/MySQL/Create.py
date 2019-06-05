@@ -47,7 +47,7 @@ class Create(DBCreator):
                 PRIMARY KEY (id),
                 UNIQUE (name)
                 )
-                ENGINE = InnoDB DEFAULT CHARSET=latin1;
+                ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
             """
 
         self.create['02bl_runjob'] = \
@@ -70,7 +70,7 @@ class Create(DBCreator):
                FOREIGN KEY (location) REFERENCES wmbs_location(id) ON DELETE CASCADE,
                UNIQUE (retry_count, wmbs_id)
                )
-               ENGINE = InnoDB DEFAULT CHARSET=latin1;
+               ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 
             """
 

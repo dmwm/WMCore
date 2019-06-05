@@ -203,7 +203,7 @@ CREATE TABLE %s(
    payload                 text         NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) ENGINE=InnoDB; """ % (threadpool)
+   ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC""" % (threadpool)
 
         self.execute(sqlStr, {})
 

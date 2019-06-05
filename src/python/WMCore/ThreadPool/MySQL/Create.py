@@ -40,7 +40,7 @@ CREATE TABLE tp_threadpool(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) ENGINE=InnoDB;
+   ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 """
         self.create['threadpool_buffer_in'] = """
 CREATE TABLE tp_threadpool_buffer_in(
@@ -51,7 +51,7 @@ CREATE TABLE tp_threadpool_buffer_in(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) ENGINE=InnoDB;
+   ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 """
         self.create['threadpool_buffer_out'] = """
 CREATE TABLE tp_threadpool_buffer_out(
@@ -62,5 +62,5 @@ CREATE TABLE tp_threadpool_buffer_out(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) ENGINE=InnoDB;
+   ) ENGINE=InnoDB ROW_FORMAT=DYNAMIC;
 """

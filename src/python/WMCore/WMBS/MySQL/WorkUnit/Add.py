@@ -7,11 +7,7 @@ MySQL implementation of WorkUnit.Add
 
 from __future__ import absolute_import, division, print_function
 
-import time
-
 from WMCore.Database.DBFormatter import DBFormatter
-
-MAX_EVENT = 2**31 - 1
 
 
 class Add(DBFormatter):
@@ -27,8 +23,8 @@ class Add(DBFormatter):
     assocSQL = ('INSERT INTO wmbs_frl_workunit_assoc (workunit, firstevent, lastevent, fileid, run, lumi)'
                 ' VALUES (LAST_INSERT_ID(), :firstevent, :lastevent, :fileid, :run, :lumi)')
 
-    def execute(self, taskid=None, retry_count=0, last_unit_count=0, last_submit_time=time.time(),
-                status=0, first_event=0, last_event=MAX_EVENT,
+    def execute(self, taskid=None, retry_count=0, last_unit_count=0, last_submit_time=0,
+                status=0, first_event=0, last_event=0,
                 fileid=None, run=None, lumi=None,
                 conn=None, transaction=False):
         """

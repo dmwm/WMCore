@@ -35,8 +35,7 @@ class Create(DBCreator):
                  parent          VARCHAR(500),
                  prep_id         VARCHAR(255),
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_dat UNIQUE (path)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_dat UNIQUE (path))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_dataset_subscription (
@@ -51,8 +50,7 @@ class Create(DBCreator):
                  phedex_group           VARCHAR(100),
                  delete_blocks          INTEGER,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_dat_sub UNIQUE (dataset_id, site, custodial, auto_approve, move, priority)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_dat_sub UNIQUE (dataset_id, site, custodial, auto_approve, move, priority))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_algo (
@@ -64,8 +62,7 @@ class Create(DBCreator):
                  config_content LONGTEXT,
                  in_dbs         INTEGER,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_alg UNIQUE (app_name, app_ver, app_fam, pset_hash)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_alg UNIQUE (app_name, app_ver, app_fam, pset_hash))"""
 
         self.create[len(self.create)] = \
               """CREATE TABLE dbsbuffer_algo_dataset_assoc (
@@ -73,8 +70,7 @@ class Create(DBCreator):
                    algo_id    INTEGER NOT NULL,
                    dataset_id INTEGER NOT NULL,
                    in_dbs     INTEGER DEFAULT 0,
-                   PRIMARY KEY (id)
-                 ) ENGINE = InnoDB"""
+                   PRIMARY KEY (id))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_workflow (
@@ -87,8 +83,7 @@ class Create(DBCreator):
                  block_close_max_size         BIGINT,
                  completed                    INTEGER       DEFAULT 0,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_wor UNIQUE (name, task)
-               ) ENGINE = InnoDB"""
+                 CONSTRAINT uq_dbs_wor UNIQUE (name, task))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_file (
@@ -103,39 +98,33 @@ class Create(DBCreator):
                  workflow              INTEGER,
                  LastModificationDate  INTEGER,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_fil UNIQUE (lfn)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_fil UNIQUE (lfn))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_file_parent (
                  child  INTEGER NOT NULL,
                  parent INTEGER NOT NULL,
-                 CONSTRAINT pk_dbs_fil_par PRIMARY KEY (child, parent)
-               ) ENGINE=InnoDB
-               """
+                 CONSTRAINT pk_dbs_fil_par PRIMARY KEY (child, parent))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_file_runlumi_map (
                  filename    INTEGER NOT NULL,
                  run         INTEGER NOT NULL,
                  lumi        INTEGER NOT NULL,
-                 num_events      INTEGER
-               ) ENGINE=InnoDB"""
+                 num_events      INTEGER)"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_location (
                  id       INTEGER      AUTO_INCREMENT,
                  pnn  VARCHAR(255) NOT NULL,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_loc UNIQUE (pnn)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_loc UNIQUE (pnn))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_file_location (
                  filename INTEGER NOT NULL,
                  location INTEGER NOT NULL,
-                 CONSTRAINT pk_dbs_fil_loc PRIMARY KEY (filename, location)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT pk_dbs_fil_loc PRIMARY KEY (filename, location))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_block (
@@ -147,23 +136,20 @@ class Create(DBCreator):
                  status       VARCHAR(20),
                  deleted      INTEGER      DEFAULT 0,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_blo UNIQUE (blockname, location)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT uq_dbs_blo UNIQUE (blockname, location))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_checksum_type (
                  id   INTEGER      AUTO_INCREMENT,
                  type VARCHAR(255),
-                 PRIMARY KEY (id)
-               ) ENGINE=InnoDB"""
+                 PRIMARY KEY (id))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_file_checksums (
                  fileid  INTEGER,
                  typeid  INTEGER,
                  cksum   VARCHAR(100),
-                 CONSTRAINT pk_dbs_fil_che PRIMARY KEY (fileid, typeid)
-               ) ENGINE=InnoDB"""
+                 CONSTRAINT pk_dbs_fil_che PRIMARY KEY (fileid, typeid))"""
 
         #
         # Indexes
@@ -316,3 +302,6 @@ class Create(DBCreator):
                                    VALUES ('%s')
                                    """ % (i)
             self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
+
+        for i in self.create.keys():
+            self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"

@@ -8,9 +8,9 @@ import threading
 
 from WMCore.Database.DBCreator import DBCreator
 
-class Create(DBCreator):
 
-    def __init__(self, logger = None, dbi = None, params = None):
+class Create(DBCreator):
+    def __init__(self, logger=None, dbi=None, params=None):
         """
         _init_
 
@@ -65,12 +65,12 @@ class Create(DBCreator):
                  CONSTRAINT uq_dbs_alg UNIQUE (app_name, app_ver, app_fam, pset_hash))"""
 
         self.create[len(self.create)] = \
-              """CREATE TABLE dbsbuffer_algo_dataset_assoc (
-                   id         INTEGER AUTO_INCREMENT,
-                   algo_id    INTEGER NOT NULL,
-                   dataset_id INTEGER NOT NULL,
-                   in_dbs     INTEGER DEFAULT 0,
-                   PRIMARY KEY (id))"""
+            """CREATE TABLE dbsbuffer_algo_dataset_assoc (
+                 id         INTEGER AUTO_INCREMENT,
+                 algo_id    INTEGER NOT NULL,
+                 dataset_id INTEGER NOT NULL,
+                 in_dbs     INTEGER DEFAULT 0,
+                 PRIMARY KEY (id))"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_workflow (
@@ -293,7 +293,6 @@ class Create(DBCreator):
                  FOREIGN KEY (dataset_algo)
                  REFERENCES dbsbuffer_algo_dataset_assoc(id)
                  ON DELETE CASCADE"""
-
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

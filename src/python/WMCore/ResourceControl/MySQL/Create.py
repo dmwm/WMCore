@@ -5,11 +5,10 @@ _Create_
 Class for creating MySQL specific schema for resource control.
 """
 
-
-
-
 import threading
+
 from WMCore.Database.DBCreator import DBCreator
+
 
 class Create(DBCreator):
     """
@@ -17,7 +16,8 @@ class Create(DBCreator):
 
     Class for creating MySQL specific schema for resource control.
     """
-    def __init__(self, logger = None, dbi = None, params = None):
+
+    def __init__(self, logger=None, dbi=None, params=None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}

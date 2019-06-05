@@ -12,7 +12,7 @@ import time
 from WMCore.DataStructs.WorkUnit import WorkUnit as DSWorkUnit
 from WMCore.WMBS.WMBSBase import WMBSBase
 
-MAX_EVENT = 2**31 - 1
+MAX_EVENT = 2 ** 31 - 1
 
 
 class WorkUnit(WMBSBase, DSWorkUnit):

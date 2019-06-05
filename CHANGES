@@ -1,3 +1,6 @@
+1.2.3.pre5 to 1.2.3:
+
+
 1.2.3.pre4 to 1.2.3.pre5:
   - Minor improvements to MS Transferor; don.t query gwmsmon (Alan Malta Rodrigues) #9224
   - Re-factor code according to proposal specs, work on naming convention, record structure, code flow (Valentin Kuznetsov) #9216

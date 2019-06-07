@@ -1,3 +1,7 @@
+1.2.2.patch2 to 1.2.2.patch3:
+  - Set InnoDB tables to DYNAMIC row format; increased length of a few columns (Alan Malta Rodrigues) #9246
+
+
 1.2.2.patch1 to 1.2.2.patch2:
   - Add WMTool and SubmissionTool job classads (Alan Malta Rodrigues) #9190
   - Minor improvements to WorkQueueManagerCleaner and more verbose (Alan Malta Rodrigues) #9190

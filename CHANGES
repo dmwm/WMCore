@@ -1,3 +1,12 @@
+1.2.3 to 1.2.4.pre1:
+  - Unit test for long string (Alan Malta Rodrigues) #9243
+  - Set InnoDB tables to DYNAMIC row format; increased length of a few columns (Alan Malta Rodrigues) #9243
+  - Small clean-up based on Alan's comments (Valentin Kuznetsov) #9225
+  - Enable CherryPy stats for internal HTTP server (Valentin Kuznetsov) #9237
+  - upgrade CherryPy version in the requirements (Alan Malta Rodrigues) #9220
+  - Make PyCondorAPI compatible with HTCondor v8.8.3 (khurtado) #9236
+
+
 1.2.3.pre5 to 1.2.3:
 
 

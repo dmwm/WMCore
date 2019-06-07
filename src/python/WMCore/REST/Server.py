@@ -767,9 +767,14 @@ class MiniRESTApi:
             raise APINotSpecified()
         api = param.args.pop(0)
         if api not in self.methods[request.method]:
-            response.headers['Allow'] = \
-                " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
-            raise APIMethodMismatch()
+            methods = " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
+            response.headers['Allow'] = methods
+            if not methods:
+                msg = 'Api "%s" not found. This method supports these Apis: %s' % (api, self.methods[request.method].keys())
+                raise APINotSupported(msg)
+            else:
+                msg = 'Api "%s" only supported in method(s): "%s"' % (api, methods)
+                raise APIMethodMismatch(msg)
         apiobj = self.methods[request.method][api]
 
         # Check what format the caller requested. At least one is required; HTTP

@@ -27,14 +27,6 @@ class CreateAgentBase(DBCreator):
         if dbi is None:
             dbi = myThread.dbi
 
-        tablespaceTable = ""
-        tablespaceIndex = ""
-        if params:
-            if "tablespace_table" in params:
-                tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
-            if "tablespace_index" in params:
-                tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
-
         DBCreator.__init__(self, logger, dbi)
 
         self.create["01wm_components"] = \

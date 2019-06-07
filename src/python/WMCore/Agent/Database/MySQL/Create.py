@@ -7,16 +7,15 @@ Inherit from CreateAgentBase, and add MySQL specific substitutions (e.g. add
 INNODB).
 """
 
-
-
-
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
+
 
 class Create(CreateAgentBase):
     """
     Class to set up the Agent schema in a MySQL database
     """
-    def __init__(self, logger = None, dbi = None, params = None):
+
+    def __init__(self, logger=None, dbi=None, params=None):
         """
         _init_
 
@@ -25,10 +24,9 @@ class Create(CreateAgentBase):
         """
         CreateAgentBase.__init__(self, logger, dbi, params)
 
-    def execute(self, conn = None, transaction = None):
+    def execute(self, conn=None, transaction=None):
         for i in self.create.keys():
-            self.create[i] = self.create[i] + " ENGINE=InnoDB"
+            self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"
             self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
-
 
         return CreateAgentBase.execute(self, conn, transaction)

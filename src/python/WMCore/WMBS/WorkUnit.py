@@ -7,11 +7,12 @@ Represents a work unit in WMBS
 
 from __future__ import absolute_import, division, print_function
 
-import sys
 import time
 
 from WMCore.DataStructs.WorkUnit import WorkUnit as DSWorkUnit
 from WMCore.WMBS.WMBSBase import WMBSBase
+
+MAX_EVENT = 2 ** 31 - 1
 
 
 class WorkUnit(WMBSBase, DSWorkUnit):
@@ -20,7 +21,7 @@ class WorkUnit(WMBSBase, DSWorkUnit):
     """
 
     def __init__(self, wuid=None, taskID=None, retryCount=0, lastUnitCount=None, lastSubmitTime=int(time.time()),
-                 status=0, firstEvent=1, lastEvent=sys.maxsize, fileid=None, runLumi=None):
+                 status=0, firstEvent=1, lastEvent=MAX_EVENT, fileid=None, runLumi=None):
         WMBSBase.__init__(self)
         DSWorkUnit.__init__(self, taskID=taskID, retryCount=retryCount, lastUnitCount=lastUnitCount,
                             lastSubmitTime=lastSubmitTime, status=status, firstEvent=firstEvent, lastEvent=lastEvent,

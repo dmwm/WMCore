@@ -9,9 +9,9 @@ __all__ = []
 
 import logging
 from Utils.Timers import timeFunction
+from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
-from WMComponent.AgentStatusWatcher.DrainStatusAPI import DrainStatusAPI
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 
 
@@ -109,24 +109,24 @@ class DrainStatusPoller(BaseWorkerThread):
 
         # update the aux db speed drain config with any changes
         if updateConfig:
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainMode", True)
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", speedDrainConfig)
+            self.agentConfig['SpeedDrainMode'] = True
+            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, self.agentConfig)
 
         return
 
     def resetAgentSpeedDrainConfig(self):
         """
-        resetting SpeedDrainMode to False and SpeedDrainiConfig Enabled to False
+        resetting SpeedDrainMode to False and SpeedDrainConfig Enabled to False
         """
 
         if self.agentConfig.get("SpeedDrainMode"):
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainMode", False)
+            self.agentConfig['SpeedDrainMode'] = False
             speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
             for key, v in speedDrainConfig.items():
                 if key in self.validSpeedDrainConfigKeys and v['Enabled']:
                     speedDrainConfig[key]['Enabled'] = False
 
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, "SpeedDrainConfig", speedDrainConfig)
+            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, self.agentConfig)
         return
 
     def checkSpeedDrainThresholds(self):

@@ -200,7 +200,7 @@ class DQMUpload(Executor):
                      % (key, os.path.basename(filename))) + crlf
             body += ('Content-Type: %s' % self.filetype(filename)) + crlf
             body += ('Content-Length: %d' % os.path.getsize(filename)) + crlf
-            with open(filename, "r").read() as fd:
+            with open(filename, "r") as fd:
                 body += crlf + fd.read() + crlf
             body += '--' + boundary + '--' + crlf + crlf
         return ('multipart/form-data; boundary=' + boundary, body)

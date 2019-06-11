@@ -25,7 +25,13 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
 
     def updateCMSSW(self, config):
         """
-        gather active data statistics
+        Update the central couch document which contains a map of
+        releases and their ScramArch
         """
-        self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
-        self.logger.info("Updated CMSSW versions in the auxiliar db")
+        self.logger.info("Updating the CMSSW/ScramArch map document ...")
+
+        res = self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
+        if 'error' in res:
+            self.logger.error("Failed to update releases. Response: %s", res)
+        else:
+            self.logger.info("CMSSW releases successfully updated.")

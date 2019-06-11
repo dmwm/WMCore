@@ -57,7 +57,7 @@ class ReqMgrAux(Service):
 
     def _getDataFromMemoryCache(self, callname):
         cache = MemoryCacheStruct(expire=0, func=self._getResult, initCacheValue={},
-                                  kwargs={'callname': callname, "verb": "GET"})
+                                  logger=self['logger'], kwargs={'callname': callname, "verb": "GET"})
         return cache.getData()
 
     def getCMSSWVersion(self):
@@ -74,18 +74,29 @@ class ReqMgrAux(Service):
         """
         return self._getDataFromMemoryCache('cmsswversions')
 
-    def updateRecords(self, callname, kwparams):
-
-        return self["requests"].put(callname, kwparams)[0]['result']
-
-    def populateCMSSWVersion(self, tc_url, **kwargs):
+    def _updateRecords(self, callName, resource, kwparams):
         """
-        query TagCollector and populate cmsswversions
+        Fetches the original document, locally update it according to
+        the key/value pairs provided and update the document.
+        :param callName: resource to be requested
+        :param resource: name of the resource/document to be updated
+        :param kwparams: a dictionary with the content to be updated
+        :return: a dictionary with the CouchDB response
+        """
+        apiMap = {'wmagentconfig': self.getWMAgentConfig,
+                  'campaignconfig': self.getCampaignConfig}
+
+        thisDoc = apiMap[callName](resource)
+        thisDoc.update(kwparams)
+        return self["requests"].put("%s/%s" % (callName, resource), thisDoc)[0]['result']
+
+    def populateCMSSWVersion(self, tcUrl, **kwargs):
+        """
+        Query TagCollector and update the CMSSW versions document in Couch
         """
         from WMCore.Services.TagCollector.TagCollector import TagCollector
-        cmsswVersions = TagCollector(tc_url, **kwargs).releases_by_architecture()
-
-        return self["requests"].post('cmsswversions', cmsswVersions)[0]['result']
+        cmsswVersions = TagCollector(tcUrl, **kwargs).releases_by_architecture()
+        return self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
 
     def getWMAgentConfig(self, agentName):
         """
@@ -107,21 +118,31 @@ class ReqMgrAux(Service):
         """
         return self["requests"].post('wmagentconfig/%s' % agentName, agentConfig)[0]['result']
 
-    def deleteWMAgentConfig(self, agentName):
-        """Mind your own business. Delete the agent config from ReqMgrAux"""
-        self["requests"].delete('wmagentconfig/%s' % agentName)
-
-    def updateAgentConfig(self, agentName, key, value):
-        # update config DB
-        resp = self.updateRecords('wmagentconfig/%s' % agentName, {key: value})
-
-        if len(resp) == 1 and resp[0].get("ok", False):
-            self["logger"].info("update agent key %s to %s successful." % (key, value))
-            return True
+    def updateWMAgentConfig(self, agentName, content, inPlace=False):
+        """
+        Update the corresponding agent configuration with the content
+        provided, replacing the old document.
+        If inPlace is set to True, then a modification of the current
+        document is performed, according to the key/value pairs provided.
+        :param agentName: name of the agent/document in couch
+        :param content: a dictionary with the data to be updated
+        :param inPlace: a boolean defining whether to perform a replace
+        or a update modification
+        :return: a boolean with the result of the operation
+        """
+        api = 'wmagentconfig'
+        if inPlace:
+            resp = self._updateRecords(api, agentName, content)
         else:
-            self["logger"].warning("update agent config failed: %s should be %s, response: %s" %
-                                   (key, value, resp))
-            return False
+            resp = self["requests"].put("%s/%s" % (api, agentName), content)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("Update in-place: %s for agent: %s was successful.", inPlace, agentName)
+            return True
+
+        msg = "Failed to update agent: %s in-place: %s. Response: %s" % (agentName, inPlace, resp)
+        self["logger"].warning(msg)
+        return False
 
     def getCampaignConfig(self, campaignName):
         """
@@ -131,6 +152,7 @@ class ReqMgrAux(Service):
 
     def postCampaignConfig(self, campaignName, campaignConfig):
         """
+        Create a new campaign configuration document
 
         :param campaignName
         :type basestringg
@@ -164,15 +186,48 @@ class ReqMgrAux(Service):
            }
           }
 
-        :return: None
+        :return: CouchDB response dictionary
         """
         return self["requests"].post('campaignconfig/%s' % campaignName, campaignConfig)[0]['result']
 
-    def updateCampaignConfig(self, campaignName, propDict):
-        # update config DB
-        resp = self.updateRecords('campaignconfig/%s' % campaignName, propDict)
+    def updateCampaignConfig(self, campaignName, content, inPlace=False):
+        """
+        Update the corresponding campaign configuration with the content
+        provided, replacing the old document.
+        If inPlace is set to True, then a modification of the current
+        document is performed, according to the key/value pairs provided.
+        :param agentName: name of the agent/document in couch
+        :param content: a dictionary with the data to be updated
+        :param inPlace: a boolean defining whether to perform a replace
+        or a update modification
+        :return: a boolean with the result of the operation
+        """
+        api = 'campaignconfig'
+        if inPlace:
+            resp = self._updateRecords(api, campaignName, content)
+        else:
+            resp = self["requests"].put("%s/%s" % (api, campaignName), content)[0]['result']
 
-        return bool(len(resp) == 1 and resp[0].get("ok", False))
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("Update in-place: %s for campaign: %s was successful.", inPlace, campaignName)
+            return True
+        msg = "Failed to update campaign: %s in-place: %s. Response: %s" % (campaignName, inPlace, resp)
+        self["logger"].warning(msg)
+        return False
+
+    def deleteConfigDoc(self, docType, docName):
+        """
+        Given a document type and a document name, delete it from the
+        Couch auxiliary DB.
+        :param docType: a string with the document type to be deleted.
+          The value can be one of these: ('wmagent', 'campaign', 'unified')
+        :param docName: the name of the document to be deleted
+        :return: response dictionary from the couch operation
+        """
+        if docType not in ('wmagent', 'campaign', 'unified'):
+            self["logger"].warning("Document type: '%s' not allowed for deletion", docType)
+        else:
+            return self["requests"].delete('%sconfig/%s' % (docType, docName))[0]['result']
 
 
 AUXDB_AGENT_CONFIG_CACHE = {}
@@ -194,9 +249,8 @@ def isDrainMode(config):
     if "UserDrainMode" in agentConfig and "AgentDrainMode" in agentConfig:
         AUXDB_AGENT_CONFIG_CACHE = agentConfig
         return agentConfig["UserDrainMode"] or agentConfig["AgentDrainMode"]
-    else:
-        # if the cache is empty this will raise Key not exist exception.
-        return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
+    # if the cache is empty this will raise Key not exist exception.
+    return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
 
 def listDiskUsageOverThreshold(config, updateDB):
     """
@@ -230,6 +284,7 @@ def listDiskUsageOverThreshold(config, updateDB):
     if updateDB and not t0Flag:
         agentDrainMode = bool(len(overThresholdDisks))
         if agentConfig and (agentDrainMode != agentConfig["AgentDrainMode"]):
-            reqMgrAux.updateAgentConfig(config.Agent.hostName, "AgentDrainMode", agentDrainMode)
+            reqMgrAux.updateWMAgentConfig(config.Agent.hostName, {"AgentDrainMode": agentDrainMode},
+                                          inPlace=True)
 
     return overThresholdDisks

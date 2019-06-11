@@ -1,6 +1,5 @@
 from __future__ import print_function, division
 import time
-import traceback
 import logging
 
 
@@ -10,19 +9,20 @@ class MemoryCacheStruct(object):
     But this cache is not thread safe.
     """
 
-    def __init__(self, expire, func, initCacheValue=None, kwargs=None):
+    def __init__(self, expire, func, initCacheValue=None, logger=None, kwargs=None):
         """
         expire is the seconds which cache will be refreshed when cache is older than the expire.
         func is the fuction which cache data is retrieved
         kwargs are func arguments for cache data
         """
+        kwargs = kwargs or {}
         self.data = initCacheValue
         self.expire = expire
         self.func = func
-        if kwargs == None:
-            kwargs = {}
+
         self.kwargs = kwargs
         self.lastUpdated = -1
+        self.logger = logger if logger else logging.getLogger()
 
     def isDataExpired(self):
         if self.lastUpdated == -1:
@@ -38,7 +38,8 @@ class MemoryCacheStruct(object):
                 self.lastUpdated = int(time.time())
             except Exception:
                 if noFail:
-                    logging.error(traceback.format_exc())
+                    msg = "Passive failure while looking data up in the memory cache"
+                    self.logger.exception(msg)
                 else:
                     raise
         return self.data

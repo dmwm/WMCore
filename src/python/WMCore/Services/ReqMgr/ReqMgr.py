@@ -218,7 +218,7 @@ class ReqMgr(Service):
     def getRequestByStatusFromMemoryCache(self, statusList, expire=0):
 
         return MemoryCacheStruct(expire=expire, func=self.getRequestByStatus, initCacheValue=[],
-                                 kwargs={'statusList': statusList, "detail": False})
+                                 logger=self['logger'], kwargs={'statusList': statusList, "detail": False})
 
     def cloneRequest(self, requestName, overwrittenParams=None):
         """

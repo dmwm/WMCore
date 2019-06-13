@@ -269,6 +269,7 @@ class Root(Harness):
                                         'tools.secmodv2.group': self.secconfig.default.group,
                                         'tools.secmodv2.site': self.secconfig.default.site})
         cherrypy.config.update({'tools.cpstats.on': configDict.get('cpstats', False)})
+        cherrypy.config.update({'server.statistics': configDict.get('cpstats', False)})
         cherrypy.log.error_log.debug('Application %s initialised in %s mode', self.app, self.mode)
         cherrypy.log.access_log.info("Final CherryPy configuration: %s" % pformat(cherrypy.config))
 

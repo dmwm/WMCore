@@ -1,3 +1,7 @@
+1.2.3 to 1.2.3.dbs1:
+  - Enable CherryPy stats for internal HTTP server (Valentin Kuznetsov) #9254
+
+
 1.2.3.pre5 to 1.2.3:
 
 

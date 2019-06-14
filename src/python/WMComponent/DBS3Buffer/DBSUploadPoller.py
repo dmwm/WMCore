@@ -207,16 +207,31 @@ class DBSUploadPoller(BaseWorkerThread):
 
         self.filesToUpdate = []
 
-        self.produceCopy = getattr(self.config.DBS3Upload, 'dumpBlock', False)
+        self.saveBlockDump = getattr(self.config.DBS3Upload, 'dumpBlock', False)
 
-        self.copyPath = os.path.join(getattr(self.config.DBS3Upload, 'componentDir', '/data/srv/'),
-                                     'dbsuploader_block.json')
+        try:
+            self.dumpDir = getattr(self.config.DBS3Upload, 'blockDumpDir',
+                                   os.path.join(config.DBS3Upload.componentDir, 'blockDumpDir'))
+            self.check()
+        except WMException:
+            raise
 
         self.timeoutWaiver = 1
 
         self.datasetParentageCache = {}
 
         return
+
+    def check(self):
+        """
+        Check and/or create the blockDumpDir to hold block dump json files
+        """
+        if not os.path.isdir(self.dumpDir):
+            if not os.path.exists(self.dumpDir):
+                os.makedirs(self.dumpDir)
+            else:
+                msg = "Assigned a pre-existent dump object %s. Failing!" % self.dumpDir
+                raise DBSUploadException(msg)
 
     def setupPool(self):
         """
@@ -690,17 +705,19 @@ class DBSUploadPoller(BaseWorkerThread):
                                  datasetType=self.datasetType,
                                  physicsGroup=dbsFile.get('physicsGroup', None),
                                  prep_id=dbsFile.get('prep_id', None))
-            logging.debug("Found block %s in blocks", block.getName())
+            blockName = block.getName()
+            logging.debug("Found block %s in blocks", blockName)
             block.setPhysicsGroup(group=self.physicsGroup)
 
             encodedBlock = block.convertToDBSBlock()
-            logging.info("About to insert block %s", block.getName())
-            self.workInput.put({'name': block.getName(), 'block': encodedBlock})
+            logging.info("About to insert block %s", blockName)
+            self.workInput.put({'name': blockName, 'block': encodedBlock})
             self.blockCount += 1
-            if self.produceCopy:
-                with open(self.copyPath, 'w') as jo:
+            if self.saveBlockDump:
+                fname = os.path.join(self.dumpDir, blockName.split("#")[1])
+                with open(fname, 'w') as jo:
                     json.dump(encodedBlock, jo, indent=2)
-            self.queuedBlocks.append(block.getName())
+            self.queuedBlocks.append(blockName)
 
         # And all work is in and we're done for now
         return

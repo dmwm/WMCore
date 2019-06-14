@@ -389,7 +389,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Load them if we don't have them
         blocksToLoad = []
         for block in openBlocks:
-            if block['blockname'] not in self.blockCache.keys():
+            if block['blockname'] not in self.blockCache:
                 blocksToLoad.append(block['blockname'])
 
         # Now load the blocks

@@ -37,6 +37,7 @@ class DBSBufferBlock:
         Expects:
           name:  The blockname in full
           location: The PNN of the site the block is at
+          datasetpath: the dataset name
         """
 
 
@@ -153,7 +154,7 @@ class DBSBufferBlock:
         self.data['files'].append(fileDict)
 
         # If dataset_parent_list is defined don't add the file parentage.
-        # This means it is block from StepChain workflow and parentage of file will be resloved later
+        # This means it is block from StepChain workflow and parentage of file will be resolved later
         if not self.data['dataset_parent_list']:
             # now add file to data
             parentLFNs = dbsFile.getParentLFNs()
@@ -455,15 +456,12 @@ class DBSBufferBlock:
         self.startTime = blockInfo.get('creation_date')
         self.inBuff    = True
 
-        if 'status' in blockInfo.keys():
-            self.status = blockInfo['status']
+        if 'status' in blockInfo:
+            self.status = blockInfo.pop("status")
             if self.status == "Pending":
                 self.data['block']['open_for_writing'] = 0
 
-            del blockInfo['status']
-
-        for key in blockInfo.keys():
-            self.data['block'][key] = blockInfo.get(key)
+        self.data['block'].update(blockInfo)
 
     def convertToDBSBlock(self):
         """

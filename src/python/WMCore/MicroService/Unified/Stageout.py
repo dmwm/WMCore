@@ -5,7 +5,7 @@ Description: UnifiedStageoutManager class provides full functionality of the Uni
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 
 class UnifiedStageoutManager(object):

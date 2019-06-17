@@ -6,16 +6,16 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # syste modules
 import json
+import logging
 import tempfile
-import traceback
 from collections import defaultdict
 try:
     from future.utils import with_metaclass
-except:
+except Exception as _:
     # copy from Python 2.7.14 future/utils/__init__.py
     def with_metaclass(meta, *bases):
         "Helper function to provide metaclass for singleton definition"
@@ -54,7 +54,12 @@ def getNodeQueues():
 
 class SiteCache(with_metaclass(Singleton, object)):
     "Return site info from various CMS data-sources"
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, logger=None):
+        if not logger:
+            logger = logging.getLogger('reqmgr2ms:SiteCache')
+            logger.setLevel(logging.DEBUG)
+            logging.basicConfig()
+        self.logger = logger
         if mode == 'test':
             self.siteInfo = {}
         else:
@@ -99,9 +104,8 @@ class SiteCache(with_metaclass(Singleton, object)):
             else:
                 try:
                     data = json.loads(row['data'])
-                except Exception:
-                    traceback.print_exc()
-                    print(row)
+                except Exception as exc:
+                    self.logger.exception('error %s for row %s', str(exc), row)
                     data = {}
             if 'ssb' in row['url']:
                 for ssbid in ssbids:
@@ -169,8 +173,13 @@ def getNodes(kind):
 
 class SiteInfo(with_metaclass(Singleton, object)):
     "SiteInfo class provides info about sites"
-    def __init__(self, mode=None):
-        self.siteCache = SiteCache(mode)
+    def __init__(self, mode=None, logger=None):
+        if not logger:
+            logger = logging.getLogger('reqmgr2ms:SiteInfo')
+            logger.setLevel(logging.DEBUG)
+            logging.basicConfig()
+        self.logger = logger
+        self.siteCache = SiteCache(mode, logger)
         self.config = uConfig
 
         self.sites_ready_in_agent = self.siteCache.get('ready_in_agent', [])
@@ -295,7 +304,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
     def sitesByMemory(self, maxMem, maxCore=1):
         "Provides allowed list of sites for given memory thresholds"
         if not self.sites_memory:
-            print("no memory information from glidein mon")
+            self.logger.debug("no memory information from glidein mon")
             return None
         allowed = set()
         for site, slots in self.sites_memory.items():
@@ -365,7 +374,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
         if len(info) < 15:
             info = self.siteCache.get('detox_sites')
             if len(info) < 15:
-                print("detox info is gone")
+                self.logger.debug("detox info is gone")
                 return
         read = False
         for line in info:
@@ -415,11 +424,11 @@ class SiteInfo(with_metaclass(Singleton, object)):
                 if ssb_data:
                     all_data = ssb_data['csvdata']
 #                 all_data = self.siteCache.get('ssb_%d' % column)['csvdata']
-            except Exception:
-                traceback.print_exc()
+            except Exception as exc:
+                self.logger.exception('error %s', str(exc))
                 continue
             if not all_data:
-                print("cannot get info from ssb for", name)
+                self.logger.debug("cannot get info from ssb for %s", name)
             for item in all_data:
                 site = item['VOName']
                 if site.startswith('T3'):
@@ -430,48 +439,44 @@ class SiteInfo(with_metaclass(Singleton, object)):
                 _info_by_site[site][name] = value
 
         if talk:
-            print(json.dumps(_info_by_site, indent=2))
+            self.logger.debug('document %s', json.dumps(_info_by_site, indent=2))
 
         if talk:
-            print(self.disk.keys())
+            self.logger.debug('disk keys: %s', self.disk.keys())
         for site, info in _info_by_site.items():
             if talk:
-                print("\n\tSite:", site)
+                self.logger.debug("Site: %s", site)
             ssite = self.ce2SE(site)
             key_for_cpu = 'CPUbound'
             if key_for_cpu in info and site in self.cpu_pledges and info[key_for_cpu]:
                 if self.cpu_pledges[site] < info[key_for_cpu]:
                     if talk:
-                        print(site, "could use", info[key_for_cpu],\
-                                "instead of", self.cpu_pledges[site], "for CPU")
+                        self.logger.debug('site %s could use %s instead of %s for CPU', site, info[key_for_cpu], self.cpu_pledges[site])
                     self.cpu_pledges[site] = int(info[key_for_cpu])
                 elif self.cpu_pledges[site] > 1.5* info[key_for_cpu]:
                     if talk:
-                        print(site, "could correct", info[key_for_cpu],\
-                                "instead of", self.cpu_pledges[site], "for CPU")
+                        self.logger.debug('site %s could correct %s instead of %s for CPU', site, info[key_for_cpu], self.cpu_pledges[site])
                     self.cpu_pledges[site] = int(info[key_for_cpu])
 
             if 'FreeDisk' in info and info['FreeDisk']:
                 if site in self.disk:
                     if self.disk[site] < info['FreeDisk']:
                         if talk:
-                            print(site, "could use", info['FreeDisk'],\
-                                    "instead of", self.disk[site], "for disk")
+                            self.logger.debug('site %s could use %s instead of %s for disk', site, info['FreeDisk'], self.disk[site])
                         self.disk[site] = int(info['FreeDisk'])
                 else:
                     if not ssite in self.disk:
                         if talk:
-                            print("setting", info['FreeDisk'], " disk for", ssite)
+                            self.logger.debug("setting freeDisk=%s for site=%s", info['FreeDisk'], ssite)
                         self.disk[ssite] = int(info['FreeDisk'])
 
             if 'FreeDisk' in info and site != ssite and info['FreeDisk']:
                 if ssite in self.disk:
                     if self.disk[ssite] < info['FreeDisk']:
                         if talk:
-                            print(ssite, "could use", info['FreeDisk'],\
-                                    "instead of", self.disk[ssite], "for disk")
+                            self.logger.debug('site %s could use %s instead of %s for disk', ssite, info['FreeDisk'], self.disk[ssite])
                         self.disk[ssite] = int(info['FreeDisk'])
                 else:
                     if talk:
-                        print("setting", info['FreeDisk'], " disk for", ssite)
+                        self.logger.debug("setting %s disk for site %s", info['FreeDisk'], ssite)
                     self.disk[ssite] = int(info['FreeDisk'])

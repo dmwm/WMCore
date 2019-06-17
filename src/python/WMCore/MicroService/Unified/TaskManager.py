@@ -4,13 +4,13 @@ http://code.activestate.com/recipes/577187-python-thread-pool/
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # system modules
 import time
 import json
 import hashlib
-import traceback
+import logging
 import threading
 from Queue import Queue
 
@@ -102,7 +102,12 @@ class UidSet(object):
 
 class Worker(threading.Thread):
     """Thread executing worker from a given tasks queue"""
-    def __init__(self, name, taskq, pidq, uidq):
+    def __init__(self, name, taskq, pidq, uidq, logger=None):
+        if not logger:
+            logger = logging.getLogger('reqmgr2ms:Worker')
+            logger.setLevel(logging.DEBUG)
+            logging.basicConfig()
+        self.logger = logger
         threading.Thread.__init__(self, name=name)
         self.exit = 0
         self.tasks = taskq
@@ -129,10 +134,10 @@ class Worker(threading.Thread):
             try:
                 func(*args, **kwargs)
                 self.pids.discard(pid)
-            except Exception:
+            except Exception as exc:
                 self.pids.discard(pid)
-                traceback.print_exc()
-                print("\n### args", func, args, kwargs)
+                msg = "func=%s args=%s kwargs=%s" % (func, args, kwargs)
+                self.logger.error('error %s, call %s', str(exc), msg)
             evt.set()
 
 class TaskManager(object):
@@ -151,12 +156,17 @@ class TaskManager(object):
         mgr.joinall(jobs)
 
     """
-    def __init__(self, nworkers=10, name='TaskManager'):
+    def __init__(self, nworkers=10, name='TaskManager', logger=None):
+        if not logger:
+            logger = logging.getLogger('reqmgr2ms:TaskManager')
+            logger.setLevel(logging.DEBUG)
+            logging.basicConfig()
+        self.logger = logger
         self.name = name
         self.pids = set()
         self.uids = UidSet()
         self.tasks = Queue()
-        self.workers = [Worker(name, self.tasks, self.pids, self.uids) \
+        self.workers = [Worker(name, self.tasks, self.pids, self.uids, logger) \
                         for _ in range(0, nworkers)]
 
     def status(self):

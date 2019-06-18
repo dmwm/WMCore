@@ -1,3 +1,13 @@
+1.2.4.pre1 to 1.2.4.pre2:
+  - Replace all print statements with logger (Valentin Kuznetsov) #9231
+  - Update PUT behaviour for ReqMgrAux APIs; use PUT method for updating CMSSW releases (Alan Malta Rodrigues) #9250
+  - Initializing t0 in the dependencies list. (Vytautas Jankauskas) #9173
+  - Use workflow datasets rather full list of datasets (Valentin Kuznetsov) #9229
+  - removing the .read from the with open() (Vytautas Jankauskas) #9249
+  - Remove _TimeoutMonitor CherryPy class (Alan Malta Rodrigues) #9247
+  - Make APIMethodMismatch exception verbose to print details of what actually happened (Valentin Kuznetsov) #9235
+
+
 1.2.3 to 1.2.4.pre1:
   - Unit test for long string (Alan Malta Rodrigues) #9243
   - Set InnoDB tables to DYNAMIC row format; increased length of a few columns (Alan Malta Rodrigues) #9243

@@ -5,10 +5,16 @@ import hmac
 
 import cherrypy
 
-from WMCore.REST.Auth import get_user_info
 from Utils.Utilities import lowerCmsHeaders
 
-# -----------------------------------------------------------------------------
+
+def get_user_info():
+    """
+    Helper function to return user based information of the request
+    """
+    return cherrypy.request.user
+
+
 class FrontEndAuth(cherrypy.Tool):
     """
     Transparently allows a back-end cmsweb app to do
@@ -56,7 +62,7 @@ class FrontEndAuth(cherrypy.Tool):
         """Read and verify the front-end headers, update the user
         dict with information about the authorized user."""
         headers = lowerCmsHeaders(cherrypy.request.headers)
-        user = cherrypy.request.user
+        user = get_user_info()
 
         if 'cms-auth-status' not in headers:
             # Non SSL request

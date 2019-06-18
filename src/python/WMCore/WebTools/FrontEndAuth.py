@@ -41,7 +41,7 @@ class FrontEndAuth(cherrypy.Tool):
         group = group or []
         site = site or []
         # Sets initial user information for this request
-        assert (getattr(cherrypy.request, "user", None) == None)
+        assert getattr(cherrypy.request, "user", None) is None
         cherrypy.request.user = {'dn': None,
                                  'method': None,
                                  'login': None,
@@ -87,7 +87,7 @@ class FrontEndAuth(cherrypy.Tool):
                     user['roles'][hkname] = {'site': set(), 'group': set()}
                     for r in headers[hk].split():
                         ste_or_grp, name = r.split(':')
-                        user['roles'][hkname][ste_or_grp].add(name);
+                        user['roles'][hkname][ste_or_grp].add(name)
 
         vfy = hmac.new(self.key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
         if vfy != headers["cms-authn-hmac"]:
@@ -99,7 +99,7 @@ class FrontEndAuth(cherrypy.Tool):
     def check_authorization(self, role, group, site, authzfunc):
         """Format the authorization rules into lists and verify if the given
         user is allowed to access."""
-        if authzfunc == None:
+        if authzfunc is None:
             authzfunc = self.defaultAuth
 
         # TOFIX: put role, group and site into canonical form
@@ -138,7 +138,6 @@ class FrontEndAuth(cherrypy.Tool):
         return False
 
 
-# -------------------------------------------------------------------------------
 class NullAuth(cherrypy.Tool):
     def __init__(self, config):
         # Defines the hook point for cherrypy
@@ -156,10 +155,10 @@ class NullAuth(cherrypy.Tool):
         group = group or []
         site = site or []
         cherrypy.log.access_log.warning('NullAuth called for:')
-        cherrypy.log.access_log.warning('\trole(s): %s \n\tgroup(s): %s \n\tsite(s): %s' % (role, group, site))
+        cherrypy.log.access_log.warning('\trole(s): %s \n\tgroup(s): %s \n\tsite(s): %s', role, group, site)
 
         if authzfunc:
-            cherrypy.log.access_log.warning('\tusing authorisation function %s' % authzfunc.__name__)
+            cherrypy.log.access_log.warning('\tusing authorisation function %s', authzfunc.__name__)
         cherrypy.request.user = {'dn': 'None',
                                  'method': 'Null Auth - totally insecure!',
                                  'login': 'fbloggs',

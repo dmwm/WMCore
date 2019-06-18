@@ -392,6 +392,7 @@ class StdBase(object):
         acqEra = taskConf.get("AcquisitionEra") or self.acquisitionEra
         procStr = taskConf.get("ProcessingString") or self.processingString
         procVer = taskConf.get("ProcessingVersion") or self.processingVersion
+        prepID = taskConf.get("PrepID") or self.prepID
         procTask.setAcquisitionEra(acqEra)
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
@@ -431,6 +432,7 @@ class StdBase(object):
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(globalTag)
+        procTaskCmsswHelper.setPrepId(prepID)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName=procTaskLogArch.name())
 
@@ -479,7 +481,6 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         # only in the very end, in order to get it in for the children tasks as well
-        prepID = taskConf.get("PrepID") or self.prepID
         procTask.setPrepID(prepID)
 
         # has to be done in the very end such that child tasks are set too

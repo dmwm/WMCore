@@ -104,14 +104,13 @@ class WMWorkloadHelper(PersistencyHelper):
         Used for properly setting AcqEra/ProcStr/ProcVer for each step in a StepChain request
         during assignment. Only used if one of those parameters is a dictionary.
         """
-        mustSet = False
         if "AcquisitionEra" in assignArgs and isinstance(assignArgs["AcquisitionEra"], dict):
-            mustSet = True
+            pass
         elif "ProcessingString" in assignArgs and isinstance(assignArgs["ProcessingString"], dict):
-            mustSet = True
+            pass
         elif "ProcessingVersion" in assignArgs and isinstance(assignArgs["ProcessingVersion"], dict):
-            mustSet = True
-        if mustSet is False:
+            pass
+        else:
             return
 
         stepNameMapping = self.getStepMapping()
@@ -886,7 +885,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         stepNameMapping = self.getStepMapping()
         for task in self.taskIterator():
-            task.setAcquisitionEra(acquisitionEras, stepChain=stepNameMapping)
+            task.setAcquisitionEra(acquisitionEras, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         # set acquistionEra for workload (need to refactor)
@@ -903,7 +902,7 @@ class WMWorkloadHelper(PersistencyHelper):
         stepNameMapping = self.getStepMapping()
 
         for task in self.taskIterator():
-            task.setProcessingVersion(processingVersions, stepChain=stepNameMapping)
+            task.setProcessingVersion(processingVersions, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingVersion = processingVersions
@@ -919,7 +918,7 @@ class WMWorkloadHelper(PersistencyHelper):
         stepNameMapping = self.getStepMapping()
 
         for task in self.taskIterator():
-            task.setProcessingString(processingStrings, stepChain=stepNameMapping)
+            task.setProcessingString(processingStrings, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingString = processingStrings

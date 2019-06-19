@@ -873,5 +873,24 @@ class LexiconTest(unittest.TestCase):
         self.assertEqual(site, 'T1_US_FNAL')
         self.assertEqual(reason, 'via condor_rm (by user cmst1)')
 
+    def testTaskStepName(self):
+        """
+        Test some task and step names
+        """
+        self.assertTrue(taskStepName("T"))
+        self.assertTrue(taskStepName("TaskName-Test_Num1"))
+        self.assertTrue(taskStepName("this_is-a-step-name"))
+        self.assertTrue(taskStepName("Test123-456_789"))
+        self.assertTrue(taskStepName("t" * 50))
+
+        # now bad names
+        self.assertRaises(AssertionError, taskStepName, "")
+        self.assertRaises(AssertionError, taskStepName, "1Task")
+        self.assertRaises(AssertionError, taskStepName, "-Task_testName")
+        self.assertRaises(AssertionError, taskStepName, "_Task_testName")
+        self.assertRaises(AssertionError, taskStepName, "Task@testName")
+        self.assertRaises(AssertionError, taskStepName, "t" * 51)
+
+
 if __name__ == "__main__":
     unittest.main()

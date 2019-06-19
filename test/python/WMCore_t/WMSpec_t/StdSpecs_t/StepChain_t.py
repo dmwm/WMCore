@@ -1538,7 +1538,7 @@ class StepChainTests(EmulatedUnitTestCase):
         testArguments['Step3']['ConfigCacheID'] = configDocs['Step3']
 
         factory = StepChainWorkloadFactory()
-        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
     def testMCFilesets(self):
         """
@@ -2217,6 +2217,25 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
         self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
         self.assertEqual(['AODSIMoutput', 'RECOSIMoutput'], parentageMapping['RECO']['OutputDatasetMap'].keys())
+
+    def testTooManySteps(self):
+        """
+        Test that requests with more than 10 steps cannot be injected
+        """
+        factory = StepChainWorkloadFactory()
+
+        testArguments = factory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        # now add 8 extra steps to the request
+        for i in range(4, 12):
+            stepNumber = "Step%s" % i
+            testArguments[stepNumber] = deepcopy(testArguments['Step3'])
+            testArguments['TaskName'] = "my%s" % stepNumber
+        testArguments['StepChain'] = 11
+
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("ElevenSteps", testArguments)
 
 
 if __name__ == '__main__':

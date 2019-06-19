@@ -8,7 +8,6 @@ from __future__ import print_function, division
 
 import json
 import cherrypy
-import time
 
 import WMCore
 from WMCore.Database.CMSCouch import Document, CouchNotFoundError, CouchError
@@ -137,8 +136,7 @@ class ReqMgrConfigData(RESTEntity):
         """
         if doc_name == "DEFAULT":
             return ReqMgrConfigDataCache.putDefaultConfig()
-        else:
-            return ReqMgrConfigDataCache.replaceConfig(doc_name, config_dict)
+        return ReqMgrConfigDataCache.replaceConfig(doc_name, config_dict)
 
 
 class AuxBaseAPI(RESTEntity):
@@ -205,7 +203,12 @@ class AuxBaseAPI(RESTEntity):
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     def put(self, subName=None):
         """
-        update document for the given  self.name and subName
+        Update document for the given self.name and subName.
+        It assumes the client has provided the entire entity, i.e., the old
+        content gets completely replaced by the new one.
+
+        Given that the each couch document contains a revision number, these PUT calls
+        are not going to be idempotent.
         """
         data = cherrypy.request.body.read()
         if not data:
@@ -213,20 +216,24 @@ class AuxBaseAPI(RESTEntity):
         else:
             propertyDict = json.loads(data)
 
+        result = None
+        if subName:
+            docName = "%s_%s" % (self.name, subName)
+        else:
+            docName = self.name
+
         try:
-            result = None
-            if subName:
-                docName = "%s_%s" % (self.name, subName)
-            else:
-                docName = self.name
-
-            if propertyDict:
-                existDoc = self.reqmgr_aux_db.document(docName)
-                existDoc.update(propertyDict)
-
-                result = self.reqmgr_aux_db.commitOne(existDoc)
+            existDoc = self.reqmgr_aux_db.document(docName)
+            # replace original document
+            newDoc = Document(existDoc['_id'], inputDict={'_rev': existDoc['_rev'],
+                                                          'ConfigType': existDoc['ConfigType']})
+            newDoc.update(propertyDict)
+            result = self.reqmgr_aux_db.commitOne(newDoc)
         except CouchNotFoundError:
-            raise NoSuchInstance
+            cherrypy.log("Document %s not found. Creating one." % docName)
+            doc = Document(docName, propertyDict)
+            doc.update({'ConfigType': self.name})
+            result = self.reqmgr_aux_db.commitOne(doc)
 
         return result
 
@@ -237,10 +244,12 @@ class AuxBaseAPI(RESTEntity):
         """
         docName = "%s_%s" % (self.name, subName)
         try:
-            self.reqmgr_aux_db.delete_doc(docName)
+            res = self.reqmgr_aux_db.delete_doc(docName)
         except (CouchError, CouchNotFoundError) as ex:
             msg = "ERROR: failed to delete document: %s\nReason: %s" % (docName, str(ex))
             cherrypy.log(msg)
+            res = None
+        return res
 
 
 class CMSSWVersions(AuxBaseAPI):

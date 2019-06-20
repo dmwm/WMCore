@@ -23,6 +23,27 @@ from WMCore.FwkJobReport.Report import Report
 from WMCore.WMInit import getWMBASE
 from WMCore.Lexicon import getIterMatchObjectOnRegexp, WMEXCEPTION_REGEXP, CONDOR_LOG_FILTER_REGEXP
 
+
+def activityToType(jobActivity):
+    """
+    Function to map a workflow activity to a generic CMS job type.
+    :param jobActivity: a workflow activity string
+    :return: string which it maps to
+
+    NOTE: this map is based on the Lexicon.activity list
+    """
+    activityMap = {"reprocessing": "production",
+                   "production": "production",
+                   "relval": "production",
+                   "harvesting": "production",
+                   "storeresults": "production",
+                   "tier0": "tier0",
+                   "t0": "tier0",
+                   "integration": "test",
+                   "test": "test"}
+    return activityMap.get(jobActivity, "unknown")
+
+
 class SimpleCondorPlugin(BasePlugin):
     """
     _SimpleCondorPlugin_
@@ -569,6 +590,7 @@ class SimpleCondorPlugin(BasePlugin):
             ad['WMAgent_JobID'] = job['jobid']
             ad['WMAgent_SubTaskName'] = job['task_name']
             ad['CMS_JobType'] = job['task_type']
+            ad['CMS_Type'] = activityToType(job['activity'])
 
             # Handling for AWS, cloud and opportunistic resources
             ad['AllowOpportunistic'] = job.get('allowOpportunistic', False)

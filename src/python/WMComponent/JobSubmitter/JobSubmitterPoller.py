@@ -385,6 +385,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             # Create a job dictionary object and put it in the cache (needs to be in sync with RunJob)
             jobInfo = {'taskPriority': newJob['task_prio'],
+                       'activity': loadedJob.get("taskType"),
                        'custom': {'location': None},  # update later
                        'packageDir': batchDir,
                        'retry_count': newJob["retry_count"],

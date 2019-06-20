@@ -1,7 +1,7 @@
 from cherrypy import expose, tools
 import cherrypy
 from WMCore.WebTools.Page import TemplatedPage
-from WMCore.REST.Auth import get_user_info
+from WMCore.WebTools.FrontEndAuth import get_user_info
 from os import listdir
 
 class SecureDocumentation(TemplatedPage):

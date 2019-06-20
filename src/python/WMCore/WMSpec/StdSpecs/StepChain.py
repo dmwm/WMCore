@@ -299,6 +299,7 @@ class StepChainWorkloadFactory(StdBase):
             globalTag = self.getStepValue('GlobalTag', taskConf, self.globalTag)
             frameworkVersion = self.getStepValue('CMSSWVersion', taskConf, self.frameworkVersion)
             scramArch = self.getStepValue('ScramArch', taskConf, self.scramArch)
+            prepId = self.getStepValue('PrepID', taskConf, self.prepID)
 
             currentCmssw = parentCmsswStep.addTopStep(currentCmsRun)
             currentCmssw.setStepType("CMSSW")
@@ -306,6 +307,7 @@ class StepChainWorkloadFactory(StdBase):
             template(currentCmssw.data)
 
             currentCmsswStepHelper = currentCmssw.getTypeHelper()
+            currentCmsswStepHelper.setPrepId(prepId)
             currentCmsswStepHelper.setGlobalTag(globalTag)
             currentCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
             currentCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)

@@ -276,13 +276,13 @@ class CMSSW(Executor):
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
 
-        acquisitionEra = self.task.getAcquisitionEra()
-        processingVer = self.task.getProcessingVersion()
-        processingStr = self.task.getProcessingString()
+        acquisitionEra = typeHelper.getAcqEra() or self.task.getAcquisitionEra()
+        processingVer = typeHelper.getProcVer() or self.task.getProcessingVersion()
+        processingStr = typeHelper.getProcStr() or self.task.getProcessingString()
+        prepID = typeHelper.getPrepId() or self.task.getPrepID()
+        globalTag = typeHelper.getGlobalTag()
         validStatus = self.workload.getValidStatus()
         inputPath = self.task.getInputDatasetPath()
-        globalTag = typeHelper.getGlobalTag()
-        prepID = self.task.getPrepID()
         campaign = self.workload.getCampaign()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
 

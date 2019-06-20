@@ -9,11 +9,11 @@ import os
 import unittest
 
 import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
-
+from copy import copy
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
-
+from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
 
 class WMWorkloadTest(unittest.TestCase):
     def setUp(self):
@@ -138,6 +138,99 @@ class WMWorkloadTest(unittest.TestCase):
         return (testWorkload, procTaskCMSSWHelper,
                 mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
                 harvestTaskCMSSWHelper)
+
+    def makeStepChainTestWorkload(self):
+        """
+        _makeStepChainTestWorkload_
+
+        Make a StepChain workload with a single processing task and multiple
+        cmsRun steps within it.
+        Returns the workload and all the cmssw helpers
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestStepChainWorkload"))
+
+        procTask = testWorkload.newTask("Test_StepName1")
+        procTask.setTaskType("Processing")
+
+        procTaskCMSSW = procTask.makeStep("cmsRun1")
+        procTaskCMSSW.setStepType("CMSSW")
+        template = CMSSWTemplate()
+        template(procTaskCMSSW.data)
+        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+
+        procTaskCMSSW2 = procTaskCMSSW.addStep("cmsRun2")
+        procTaskCMSSW2.setStepType("CMSSW")
+        template = CMSSWTemplate()
+        template(procTaskCMSSW2.data)
+        procTaskCMSSW2Helper = procTaskCMSSW2.getTypeHelper()
+
+        procTaskCMSSW3 = procTaskCMSSW2.addStep("cmsRun3")
+        procTaskCMSSW3.setStepType("CMSSW")
+        template = CMSSWTemplate()
+        template(procTaskCMSSW3.data)
+        procTaskCMSSW3Helper = procTaskCMSSW3.getTypeHelper()
+
+        procTask.applyTemplates()
+        procTaskCMSSW2Helper.keepOutput(False)
+
+        primaryDataset = "bogusPrimary"
+        procTaskCMSSWHelper.addOutputModule("OutputA",
+                                            primaryDataset=primaryDataset,
+                                            processedDataset="bogusProcessedA",
+                                            dataTier="GEN-SIM",
+                                            lfnBase="bogusUnmerged",
+                                            mergedLFNBase="bogusMerged",
+                                            transient=True,  # we only save the output of merge
+                                            filterName=None)
+        procTaskCMSSW2Helper.addOutputModule("OutputC",
+                                             primaryDataset=primaryDataset,
+                                             processedDataset="bogusProcessedC",
+                                             dataTier="GEN-SIM-DIGI-RAW",
+                                             lfnBase="bogusUnmerged",
+                                             mergedLFNBase="bogusMerged",
+                                             transient=True,  # we only save the output of merge
+                                             filterName=None)
+        procTaskCMSSW3Helper.addOutputModule("OutputD",
+                                             primaryDataset=primaryDataset,
+                                             processedDataset="bogusProcessedD",
+                                             dataTier="AODSIM",
+                                             lfnBase="bogusUnmerged",
+                                             mergedLFNBase="bogusMerged",
+                                             transient=True,  # we only save the output of merge
+                                             filterName=None)
+
+        mergeTask = procTask.addTask("Test_StepName1MergeGENSIMTask")
+        mergeTask.setTaskType("Merge")
+        mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
+        mergeTaskCMSSW.setStepType("CMSSW")
+        mergeTaskCMSSWHelper = mergeTaskCMSSW.getTypeHelper()
+        mergeTask.applyTemplates()
+        mergeTaskCMSSWHelper.addOutputModule("Merged",
+                                             primaryDataset=primaryDataset,
+                                             processedDataset="bogusProcessedA",
+                                             dataTier="GEN-SIM",
+                                             lfnBase="bogusMerged",
+                                             mergedLFNBase="bogusMerged",
+                                             filterName=None)
+
+        merge3Task = procTask.addTask("Test_StepName3MergeAODSIMTask")
+        merge3Task.setTaskType("Merge")
+        merge3TaskCMSSW = merge3Task.makeStep("cmsRun1")
+        merge3TaskCMSSW.setStepType("CMSSW")
+        merge3TaskCMSSWHelper = merge3TaskCMSSW.getTypeHelper()
+        merge3Task.applyTemplates()
+        merge3TaskCMSSWHelper.addOutputModule("Merged",
+                                             primaryDataset=primaryDataset,
+                                             processedDataset="bogusProcessedD",
+                                             dataTier="AODSIM",
+                                             lfnBase="bogusMerged",
+                                             mergedLFNBase="bogusMerged",
+                                             filterName=None)
+
+
+        return (testWorkload, procTaskCMSSWHelper, procTaskCMSSW2Helper, procTaskCMSSW3Helper,
+                mergeTaskCMSSWHelper, merge3TaskCMSSWHelper)
+
 
     def testInstantiation(self):
         """
@@ -666,6 +759,164 @@ class WMWorkloadTest(unittest.TestCase):
                         "Error: A dataset is missing")
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERE" in outputDatasets,
                         "Error: A dataset is missing")
+        return
+
+    def testUpdatingLFNAndDatasetStepChain(self):
+        """
+        _testUpdatingLFNAndDatasetStepChain_
+
+        Test whether we can properly set acquisition era, processing string,
+        processing version and update the LFNs and datasets for a workload
+        with multiple cmsRun steps inside the same processing task (read StepChain).
+        """
+        stepMap = {'Test_StepName1': ('Step1', 'cmsRun1'),
+                   'Test_StepName2': ('Step2', 'cmsRun2'),
+                   'Test_StepName3': ('Step3', 'cmsRun3')}
+
+        primaryDataset = "bogusPrimary"
+        acqEra = {"Test_StepName1": "AcqEra_StepRun1",
+                  "Test_StepName2": "AcqEra_StepRun2",
+                  "Test_StepName3": "AcqEra_StepRun3"}
+        procStr = {"Test_StepName1": "ProcStr_StepRun1",
+                   "Test_StepName2": "ProcStr_StepRun2",
+                   "Test_StepName3": "ProcStr_StepRun3"}
+        procVer = 2
+
+        outDsets = ["/%s/AcqEra_StepRun1-ProcStr_StepRun1-v2/GEN-SIM" % primaryDataset,
+                    "/%s/AcqEra_StepRun3-ProcStr_StepRun3-v2/AODSIM" % primaryDataset]
+
+        (testWorkload, procTaskCMSSWHelper, procTaskCMSSW2Helper, procTaskCMSSW3Helper,
+         mergeTaskCMSSWHelper, merge3TaskCMSSWHelper) = self.makeStepChainTestWorkload()
+
+        mergedLFNBase = "/store/data"
+        unmergedLFNBase = "/store/unmerged"
+        self.assertEqual(testWorkload.getLFNBases(), (mergedLFNBase, unmergedLFNBase))
+
+        # check default task values
+        for taskName in testWorkload.listAllTaskNames():
+            task = testWorkload.getTaskByName(taskName)
+            self.assertEqual(task.getAcquisitionEra(), None)
+            self.assertEqual(task.getProcessingString(), None)
+            self.assertEqual(task.getProcessingVersion(), 0)
+
+        # check default step values
+        for stepObj in (procTaskCMSSWHelper, procTaskCMSSW2Helper, procTaskCMSSW3Helper,
+                        mergeTaskCMSSWHelper, merge3TaskCMSSWHelper):
+            self.assertEqual(stepObj.getAcqEra(), None)
+            self.assertEqual(stepObj.getProcStr(), None)
+            self.assertEqual(stepObj.getProcVer(), None)
+
+        # NOW WRITE SOME STUFF TO THE WORKLOAD
+        testWorkload.setStepMapping(stepMap)
+        testWorkload.setAcquisitionEra(acqEra)
+        testWorkload.setProcessingString(procStr)
+        testWorkload.setProcessingVersion(procVer)
+        ### FIXME there has to be a better way to update it
+        kwargs = {}
+        kwargs.update({"AcquisitionEra": copy(acqEra)})
+        kwargs.update({"ProcessingString": copy(procStr)})
+        testWorkload.setStepProperties(kwargs)
+
+        # workload level checks
+        self.assertItemsEqual(testWorkload.getAcquisitionEra(), acqEra)
+        self.assertItemsEqual(testWorkload.getProcessingString(), procStr)
+        self.assertEqual(testWorkload.getProcessingVersion(), 2)
+        outputDatasets = testWorkload.listOutputDatasets()
+        self.assertItemsEqual(outputDatasets, outDsets)
+
+        # task level checks
+        for taskName in testWorkload.listAllTaskNames():
+            lookupKey = taskName.split("Merge")[0]
+            task = testWorkload.getTaskByName(taskName)
+            self.assertEqual(task.getAcquisitionEra(), acqEra[lookupKey])
+            self.assertEqual(task.getProcessingString(), procStr[lookupKey])
+            self.assertEqual(task.getProcessingVersion(), 2)
+
+        # step level checks
+        for stepObj in (procTaskCMSSWHelper, procTaskCMSSW2Helper, procTaskCMSSW3Helper):
+            taskName = [k for k, values in stepMap.items() if values[1] == stepObj.name()][0]
+            self.assertEqual(stepObj.getAcqEra(), acqEra[taskName])
+            self.assertEqual(stepObj.getProcStr(), procStr[taskName])
+            # FIXME: maybe we don't set ProcVer at step level
+            #self.assertEqual(stepObj.getProcVer(), procVer)
+
+        # no need to set those attributes for merge tasks/steps
+        for stepObj in (mergeTaskCMSSWHelper, merge3TaskCMSSWHelper):
+            self.assertEqual(stepObj.getAcqEra(), None)
+            self.assertEqual(stepObj.getProcStr(), None)
+
+        # now check the output information
+        outputModules = [procTaskCMSSWHelper.getOutputModule("OutputA"),
+                         procTaskCMSSW2Helper.getOutputModule("OutputC"),
+                         procTaskCMSSW3Helper.getOutputModule("OutputD"),
+                         mergeTaskCMSSWHelper.getOutputModule("Merged"),
+                         merge3TaskCMSSWHelper.getOutputModule("Merged")]
+
+        listAcqEra = ["AcqEra_StepRun1", "AcqEra_StepRun2", "AcqEra_StepRun3",
+                      "AcqEra_StepRun1", "AcqEra_StepRun3"]
+        listProcStr = ["ProcStr_StepRun1", "ProcStr_StepRun2", "ProcStr_StepRun3",
+                       "ProcStr_StepRun1", "ProcStr_StepRun3"]
+        for idx, outputModule in enumerate(outputModules):
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary")
+            acqEra = listAcqEra[idx]
+            procStr = listProcStr[idx]
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            self.assertIsNone(filterName)
+            procDataset = "%s-%s-v%s" % (acqEra, procStr, procVer)
+            self.assertEqual(outputModule.processedDataset, procDataset)
+
+            mergedLFN = "%s/%s/%s/%s/%s-v%s" % (mergedLFNBase, acqEra, primaryDataset, dataTier, procStr, procVer)
+            unmergedLFN = "%s/%s/%s/%s/%s-v%s" % (unmergedLFNBase, acqEra, primaryDataset, dataTier, procStr, procVer)
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+
+        mergedLFNBase = "/store/mc"
+        unmergedLFNBase = "/store/unmerged"
+        testWorkload.setLFNBase(mergedLFNBase, unmergedLFNBase)
+        # after updating anything related to the output, we need to call the below method
+        testWorkload.setStepProperties(kwargs)
+
+        self.assertEqual(testWorkload.getLFNBases(), (mergedLFNBase, unmergedLFNBase))
+
+        for idx, outputModule in enumerate(outputModules):
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary")
+            acqEra = listAcqEra[idx]
+            procStr = listProcStr[idx]
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            self.assertIsNone(filterName)
+            procDataset = "%s-%s-v%s" % (acqEra, procStr, procVer)
+            self.assertEqual(outputModule.processedDataset, procDataset)
+
+            mergedLFN = "%s/%s/%s/%s/%s-v%s" % (mergedLFNBase, acqEra, primaryDataset, dataTier, procStr, procVer)
+            unmergedLFN = "%s/%s/%s/%s/%s-v%s" % (unmergedLFNBase, acqEra, primaryDataset, dataTier, procStr, procVer)
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        outputDatasets = testWorkload.listOutputDatasets()
+        self.assertItemsEqual(outputDatasets, outDsets)
         return
 
     def testUpdatingLFNAndDatasetMultipleVer(self):

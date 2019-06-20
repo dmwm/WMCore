@@ -1,3 +1,8 @@
+1.2.3.dbs1 to 1.2.3.dbs2:
+  - Avoid WebTools depending on the REST package
+  - add doc string to generat proper docment.
+
+
 1.2.3 to 1.2.3.dbs1:
   - Enable CherryPy stats for internal HTTP server (Valentin Kuznetsov) #9254
 

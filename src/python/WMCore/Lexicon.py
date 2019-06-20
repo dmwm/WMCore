@@ -324,6 +324,14 @@ def primdataset(candidate):
     return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
 
 
+TASK_STEP_NAME = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 50}
+def taskStepName(candidate):
+    """
+    Validate the TaskName and/or StepName field.
+    Letters, numbers, dashes and underscores are allowed.
+    """
+    return check(r"%s" % TASK_STEP_NAME['re'], candidate, TASK_STEP_NAME['maxLength'])
+
 def hnName(candidate):
     """
     Use lfn parts definitions to validate a simple HN name
@@ -511,7 +519,7 @@ def validateUrl(candidate):
 def check(regexp, candidate, maxLength=None):
     if maxLength is not None:
         assert len(candidate) <= maxLength, \
-            "%s is longer then max length (%s) allowed" % (candidate, maxLength)
+            "%s is longer than max length (%s) allowed" % (candidate, maxLength)
     assert re.compile(regexp).match(candidate) is not None, \
         "'%s' does not match regular expression %s" % (candidate, regexp)
     return True

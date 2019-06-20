@@ -398,7 +398,7 @@ def buildComplexTaskChain(couchdb):
     """
     Build a TaskChain workflow with different settings (AcqEra/ProcStr/ProcVer/
     CMSSWVersion/ScramArch/GlobalTag/PrepId/TpE/SpE for each task.
-    
+
     Return a TaskChain workload object.
     """
     testArguments = TaskChainWorkloadFactory.getTestArguments()
@@ -2268,6 +2268,26 @@ class TaskChainTests(EmulatedUnitTestCase):
             parentDset = outDsets[t][0]
 
         return
+
+    def testTooManyTasks(self):
+        """
+        Test that requests with more than 10 tasks cannot be injected
+        """
+        factory = TaskChainWorkloadFactory()
+
+        testArguments = factory.getTestArguments()
+        testArguments.update(deepcopy(REQUEST))
+
+        # now add 7 extra tasks to the request
+        for i in range(5, 12):
+            taskNumber = "Task%s" % i
+            testArguments[taskNumber] = deepcopy(testArguments['Task4'])
+            testArguments['TaskName'] = "my%s" % taskNumber
+        testArguments['TaskChain'] = 11
+
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("ElevenTasks", testArguments)
+
 
 
 if __name__ == '__main__':

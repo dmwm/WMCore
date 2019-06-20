@@ -1,3 +1,14 @@
+1.2.4.pre2 to 1.2.4.pre3:
+  - unit tests and pylint (Alan Malta Rodrigues) #9267
+  - Validate/limit number of Steps/Tasks and Step/Task Name length (Alan Malta Rodrigues) #9267
+  - unit tests and pylint (Alan Malta Rodrigues) #9265
+  - Getters/setters for CMSSW/WMStep object; fix StepChain straight to merge (Alan Malta Rodrigues) #9265
+  - pylint fixes (Alan Malta Rodrigues) #9264
+  - Avoid WebTools depending on the REST package (Alan Malta Rodrigues) #9264
+  - Handle oracle "not connected" as a soft error (Alan Malta Rodrigues) #9260
+  - add doc string to generat proper docment. (Yuyi Guo) #9258
+
+
 1.2.4.pre1 to 1.2.4.pre2:
   - Replace all print statements with logger (Valentin Kuznetsov) #9231
   - Update PUT behaviour for ReqMgrAux APIs; use PUT method for updating CMSSW releases (Alan Malta Rodrigues) #9250

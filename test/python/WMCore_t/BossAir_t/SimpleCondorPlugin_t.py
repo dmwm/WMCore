@@ -21,6 +21,7 @@ from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.BossAir.StatusPoller import StatusPoller
+from WMCore.BossAir.Plugins.SimpleCondorPlugin import activityToType
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 
@@ -448,6 +449,21 @@ class SimpleCondorPluginTest(BossAirTest):
             match = GROUP_NAME_RE.match(request)
             matchedGroup = match.groups()[0] if match else 'undefined'
             self.assertEqual(group, matchedGroup)
+
+    def testActivityToTypeMap(self):
+        """
+        _testActivityToTypeMap_
+        Test mapping from dashboard activity to cms type
+        """
+        self.assertEqual(activityToType("production"), "production")
+        self.assertEqual(activityToType("reprocessing"), "production")
+        self.assertEqual(activityToType("relval"), "production")
+        self.assertEqual(activityToType("tier0"), "tier0")
+        self.assertEqual(activityToType("integration"), "test")
+        self.assertEqual(activityToType("alan"), "unknown")
+        self.assertEqual(activityToType("none"), "unknown")
+        self.assertEqual(activityToType(None), "unknown")
+
 
 
 if __name__ == '__main__':

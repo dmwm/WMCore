@@ -37,21 +37,11 @@ class TransferorTest(EmulatedUnitTestCase):
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
                          'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'}
 
-        self.msTransferor = MSTransferor(self.msConfig, "assigned")
+        self.msTransferor = MSTransferor(self.msConfig)
 
         self.taskChainTempl = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
         self.stepChainTempl = getTestFile('data/ReqMgr/requests/Integration/SC_LumiMask_PhEDEx.json')
         super(TransferorTest, self).setUp()
-
-    def tearDown(self):
-        super(TransferorTest, self).tearDown()
-
-    def testPrep(self):
-        """
-        Test the `prep` method
-        """
-        # TODO: it should be eventually mocked
-        self.assertTrue(self.msTransferor.prep())
 
     def testRequestRecord(self):
         """

@@ -229,6 +229,29 @@ class ReqMgrAux(Service):
         else:
             return self["requests"].delete('%sconfig/%s' % (docType, docName))[0]['result']
 
+    def getTransferInfo(self):
+        """
+        Get transfer document from coudhdb backend. The document has the following form:
+        {
+          "wf_A": [record1, record2, ...],
+          "wf_B": [....],
+        }
+        where each record has the following format:
+        {"timestamp":000, "dataset":"/a/b/c", "dataType": "primary", "transferIDs": [1,2,3]}
+        transferIDs here either represent PhEDEx subscription or Rucio transfer/rules IDs.
+        """
+        return self._getDataFromMemoryCache('transferinfo')
+
+    def postTransferInfo(self, transferInfo):
+        """
+        Post new transfer document into couchdb backend.
+        :param transferInfo: represent a transferInfo document
+        {
+          "wf_A": [record1, record2, ...],
+          "wf_B": [....],
+        }
+        """
+        return self["requests"].post('transferinfo', transferInfo)[0]['result']
 
 AUXDB_AGENT_CONFIG_CACHE = {}
 

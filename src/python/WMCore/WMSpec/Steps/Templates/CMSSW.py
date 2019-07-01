@@ -20,6 +20,61 @@ class CMSSWStepHelper(CoreHelper):
     for CMSSW tasks
 
     """
+    def setAcqEra(self, acqEra):
+        """
+        _setAcqEra_
+        Set the acquisition era attribute for this step.
+        """
+        self.data.output.acqEra = acqEra
+
+    def setProcStr(self, procStr):
+        """
+        _setProcStr_
+        Set the processing string attribute for this step.
+        """
+        self.data.output.procStr = procStr
+
+    def setProcVer(self, procVer):
+        """
+        _setProcVer_
+        Set the processing version era attribute for this step.
+        """
+        self.data.output.procVer = procVer
+
+    def getAcqEra(self):
+        """
+        _getAcqEra_
+        Retrieve the acquisition era for this step, or return None if non-existent.
+        """
+        return getattr(self.data.output, 'acqEra', None)
+
+    def getProcStr(self):
+        """
+        _getProcStr_
+        Retrieve the processing string for this step, or return None if non-existent.
+        """
+        return getattr(self.data.output, 'procStr', None)
+
+    def getProcVer(self):
+        """
+        _getProcVer_
+        Retrieve the processing version for this step, or return None if non-existent.
+        """
+        return getattr(self.data.output, 'procVer', None)
+
+    def setPrepId(self, prepId):
+        """
+        _setPrepId_
+        Set the prep_id attribute for this step.
+        """
+        self.data.output.prepId = prepId
+
+    def getPrepId(self):
+        """
+        _getPrepId_
+        Retrieve the prep_id for this step, or return None if non-existent.
+        """
+        return getattr(self.data.output, 'prepId', None)
 
     def addOutputModule(self, moduleName, **details):
         """
@@ -37,23 +92,6 @@ class CMSSWStepHelper(CoreHelper):
 
         for key, value in details.items():
             setattr(module, key, value)
-
-        return
-
-    def addAnalysisFile(self, fileLabel, **details):
-        """
-        _addAnalysisFile_
-
-        Add in an additional file produced by the user to be staged out
-        """
-        analysisFiles = self.data.output.analysisFiles
-
-        if getattr(analysisFiles, fileLabel, None) == None:
-            analysisFiles.section_(fileLabel)
-        analysisFile = getattr(analysisFiles, fileLabel)
-
-        for key, value in details.items():
-            setattr(analysisFile, key, value)
 
         return
 

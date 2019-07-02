@@ -1,3 +1,8 @@
+1.2.4.pre3 to 1.2.4:
+  - unit test and pylint (Alan Malta Rodrigues) #9270
+  - Set CMS_Type job classad based on the dashboard activity (Alan Malta Rodrigues) #9270
+
+
 1.2.4.pre2 to 1.2.4.pre3:
   - unit tests and pylint (Alan Malta Rodrigues) #9267
   - Validate/limit number of Steps/Tasks and Step/Task Name length (Alan Malta Rodrigues) #9267

@@ -26,7 +26,7 @@
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.2.2.patch2 -d HG1905e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.2.2.patch1 -d HG1905e -t testbed-vocms001 -p "9174 9183 9184" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.2.4 -d HG1908a -t testbed-vocms001 -p "9174 9183 9184" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
 
 IAM=`whoami`
@@ -365,24 +365,24 @@ else
 fi
 echo "Done!" && echo
 
-### Upload WMAgentConfig to AuxDB
-echo "*** Upload WMAgentConfig to AuxDB ***"
-cd $MANAGE_DIR
-./manage execute-agent wmagent-upload-config
-echo "Done!" && echo
-
 echo "*** Tweaking central agent configuration ***"
 CENTRAL_SERVICES="https://$CENTRAL_SERVICES/reqmgr2/data/wmagentconfig"
 if [[ "$TEAMNAME" == production ]]; then
   echo "Agent connected to the production team, setting it to drain mode"
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"UserDrainMode":true}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"UserDrainMode":true}'
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   echo "Testbed agent, setting MaxRetries to 0..."
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"MaxRetries":0}'
 elif [[ "$TEAMNAME" == *devvm* ]]; then
   echo "Dev agent, setting MaxRetries to 0..."
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"MaxRetries":0}'
 fi
+echo "Done!" && echo
+
+### Upload WMAgentConfig to AuxDB
+echo "*** Upload WMAgentConfig to AuxDB ***"
+cd $MANAGE_DIR
+./manage execute-agent wmagent-upload-config $agentExtraConfig
 echo "Done!" && echo
 
 ###

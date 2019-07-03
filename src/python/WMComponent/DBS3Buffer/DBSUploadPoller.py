@@ -331,6 +331,8 @@ class DBSUploadPoller(BaseWorkerThread):
         Return True to indicate it successfully fetched the parentage
         map. If there was an exception, return False
         """
+        myThread = threading.currentThread()
+
         success = True
         if not self.wmstatsServerSvc:
             self.datasetParentageCache = {}
@@ -340,18 +342,22 @@ class DBSUploadPoller(BaseWorkerThread):
             self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
         except Exception as ex:
             reason = getattr(ex, 'reason', '')
-            msg = 'Failed to fetch parentage map from WMStats, skipping this cycle.'
+            msg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
             if 'Service Unavailable' in reason or 'Proxy Error' in reason or\
                             'Error reading from remote server' in reason:
                 msg += 'Error: %s' % reason
             elif 'Connection refused' in str(ex):
                 msg += 'Error: %s' % str(ex)
+            elif 'The read operation timed out' in str(ex):
+                msg += 'Error: %s' % str(ex)
             else:
                 msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)
                 raise DBSUploadException(msg)
-
             logging.warning(msg)
+            myThread.logdbClient.post("DBS3Upload_parentMap", msg, "warning")
             success = False
+        else:
+            myThread.logdbClient.delete("DBS3Upload_parentMap", "warning", this_thread=True)
 
         return success
 

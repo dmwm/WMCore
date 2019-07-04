@@ -294,7 +294,7 @@ class ReportTest(unittest.TestCase):
             "Error: Error0 section is missing."
         assert myReport.data.cmsRun1.errors.error0.type == "CMSException", \
             "Error: Wrong error type."
-        assert myReport.data.cmsRun1.errors.error0.exitCode == "8001", \
+        assert myReport.data.cmsRun1.errors.error0.exitCode == 8001, \
             "Error: Wrong exit code."
         assert myReport.data.cmsRun1.errors.error0.details == cmsException, \
             "Error: Error details are wrong:\n|%s|\n|%s|" % (myReport.data.cmsRun1.errors.error0.details,
@@ -541,16 +541,49 @@ class ReportTest(unittest.TestCase):
         Test and see if we can get an exit code out of a report
 
         Note: Errors without a return code return 99999
+        getStepExitCode: returns the first valid and non-zero exit code
+        getExitCode: uses the method above to get an exit code
+        getStepExitCodes: returns a set of all exit codes within the step
         """
 
         report = Report("cmsRun1")
         self.assertEqual(report.getExitCode(), 0)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 0)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {})
+        self.assertItemsEqual(report.getStepErrors(stepName="cmsRun1"), {})
+
         report.addError(stepName="cmsRun1", exitCode=None, errorType="test", errorDetails="test")
+        # None is not a valid exitCode, but it will get mapped to 99999
         self.assertEqual(report.getExitCode(), 99999)
         self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 99999)
-        report.addError(stepName="cmsRun1", exitCode='12345', errorType="test", errorDetails="test")
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 1)
+
+        report.addError(stepName="cmsRun1", exitCode=12345, errorType="test", errorDetails="test")
         self.assertEqual(report.getExitCode(), 12345)
         self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 2)
+
+        report.addError(stepName="cmsRun1", exitCode=123, errorType="test", errorDetails="test")
+        self.assertEqual(report.getExitCode(), 12345)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
+
+        # now try to record the same exit code once again
+        report.addError(stepName="cmsRun1", exitCode=12345, errorType="test", errorDetails="test")
+        self.assertEqual(report.getExitCode(), 12345)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
+
+        # and once again, but different type and details (which does not matter)
+        report.addError(stepName="cmsRun1", exitCode=12345, errorType="testAA", errorDetails="testAA")
+        self.assertEqual(report.getExitCode(), 12345)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
 
     def testProperties(self):
         """

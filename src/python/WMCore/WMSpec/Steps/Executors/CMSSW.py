@@ -18,6 +18,7 @@ from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMRuntime.Tools.Scram import getSingleScramArch
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 def analysisFileLFN(fileName, lfnBase, job):
@@ -62,7 +63,9 @@ class CMSSW(Executor):
         """
         if emulator is not None:
             return emulator.emulatePre(self.step)
-        logging.info("Pre-executing CMSSW step")
+
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
+
         if hasattr(self.step.application.configuration, 'configCacheUrl'):
             # means we have a configuration & tweak in the sandbox
             psetFile = self.step.application.command.configuration
@@ -83,11 +86,26 @@ class CMSSW(Executor):
         """
         _execute_
 
-
         """
-        stepModule = "WMTaskSpace.%s" % self.stepName
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+
+        stepModule = "WMTaskSpace.%s" % self.stepName
+
+        overrides = {}
+        if hasattr(self.step, 'override'):
+            overrides = self.step.override.dictionary_()
+        self.failedPreviousStep = overrides.get('previousCmsRunFailure', False)
+
+        if self.failedPreviousStep:
+            # the previous cmsRun step within this task failed
+            # don't bother executing anything else then
+            msg = WM_JOB_ERROR_CODES[99108]
+            logging.critical(msg)
+            self._setStatus(99108, msg)
+            raise WMExecutionFailure(99108, "CmsRunFailure", msg)
 
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't
@@ -142,21 +160,20 @@ class CMSSW(Executor):
         try:
             projectOutcome = scram.project()
         except Exception as ex:
-            msg = "Exception raised while running scram.\n"
-            msg += str(ex)
-            logging.critical("Error running SCRAM")
+            msg = WM_JOB_ERROR_CODES[50513]
+            msg += "\nDetails: %s" % str(ex)
+            logging.critical(msg)
+            raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
+        if projectOutcome > 0:
+            msg = WM_JOB_ERROR_CODES[50513]
+            msg += "\nDetails: %s" % str(scram.diagnostic())
             logging.critical(msg)
             raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
 
-        if projectOutcome > 0:
-            msg = scram.diagnostic()
-            logging.critical("Error running SCRAM")
-            logging.critical(msg)
-            raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
         runtimeOutcome = scram.runtime()
         if runtimeOutcome > 0:
-            msg = scram.diagnostic()
-            logging.critical("Error running SCRAM")
+            msg = WM_JOB_ERROR_CODES[50513]
+            msg += "\nDetails: %s" % str(scram.diagnostic())
             logging.critical(msg)
             raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
 
@@ -270,8 +287,9 @@ class CMSSW(Executor):
         try:
             self.report.parse(jobReportXML, stepName=self.stepName)
         except Exception as ex:
-            # Catch it if something goes wrong
-            raise WMExecutionFailure(50115, "BadJobReportXML", str(ex))
+            msg = WM_JOB_ERROR_CODES[50115]
+            msg += "\nDetails: %s" % str(ex)
+            raise WMExecutionFailure(50115, "BadJobReportXML", msg)
 
         stepHelper = WMStepHelper(self.step)
         typeHelper = stepHelper.getTypeHelper()
@@ -335,10 +353,10 @@ class CMSSW(Executor):
         Post execution checkpointing
 
         """
-        logging.info("Steps.Executors.CMSSW.post called")
-
         if emulator is not None:
             return emulator.emulatePost(self.step)
+
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
 
         if self.report.getStepErrors(self.stepName) != {}:
             # Then we had errors

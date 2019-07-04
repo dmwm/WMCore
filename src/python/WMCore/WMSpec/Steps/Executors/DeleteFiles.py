@@ -42,9 +42,7 @@ class DeleteFiles(Executor):
         if (emulator != None):
             return emulator.emulatePre( self.step )
 
-
-
-        print("Steps.Executors.DeleteFiles.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
 
@@ -59,7 +57,7 @@ class DeleteFiles(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         # Look!  I can steal from StageOut
         # DeleteMgr uses the same manager structure as StageOutMgr
@@ -171,5 +169,5 @@ class DeleteFiles(Executor):
         if (emulator != None):
             return emulator.emulatePost( self.step )
 
-        print("Steps.Executors.DeleteFiles.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None

@@ -198,6 +198,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       80001: "No exit code set by job wrapper.",  # CRAB3
                       80453: "Unable to determine pset hash from output file (CRAB3).",
                       90000: "Error in CRAB3 post-processing step (includes basically errors in stage out and file metadata upload).",  # CRAB3 TODO: Need to separate. new stageout errors are 60321-60324 and other needed for file metadata.
+                      99108: "Skipping this step due to a failure in a previous one.",  # WMA
                       99109: "Uncaught exception in WMAgent step executor.",  # WMA TODO: Maybe move to 7****?
                       99303: "Job failed and the original job report got lost",
                       99304: "Could not find jobCache directory. Job will be failed",

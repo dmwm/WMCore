@@ -38,7 +38,7 @@ class AlcaHarvest(Executor):
         if emulator != None:
             return emulator.emulatePre(self.step)
 
-        print("Steps.Executors.AlcaHarvest.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator = None):
@@ -49,6 +49,8 @@ class AlcaHarvest(Executor):
         #Are we using emulators again?
         if emulator != None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         # Search through steps for analysis files
         for step in self.stepSpace.taskSpace.stepSpaces():
@@ -198,5 +200,5 @@ class AlcaHarvest(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print("Steps.Executors.AlcaHarvest.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None

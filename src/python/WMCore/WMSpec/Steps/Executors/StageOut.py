@@ -42,7 +42,7 @@ class StageOut(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.StageOut.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -54,6 +54,8 @@ class StageOut(Executor):
         # Are we using emulators again?
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -224,6 +226,8 @@ class StageOut(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
+
         for step in self.stepSpace.taskSpace.stepSpaces():
 
             if step == self.stepName:
@@ -256,7 +260,6 @@ class StageOut(Executor):
 
             stepReport.persist(reportLocation)
 
-        logging.info("Steps.Executors.StageOut.post called")
         return None
 
     # Accessory methods

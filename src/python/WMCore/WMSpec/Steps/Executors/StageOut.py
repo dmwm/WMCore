@@ -60,6 +60,9 @@ class StageOut(Executor):
         overrides = {}
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
+        # propagete upstream cmsRun outcome such that we can decide whether to
+        # stage files out or not
+        self.failedPreviousStep = overrides.get('previousCmsRunFailure', False)
 
         # Set wait to two hours per retry
         # this alarm leaves a subprocess behing that may cause trouble, see #6273
@@ -119,8 +122,14 @@ class StageOut(Executor):
             stepReport = Report()
             stepReport.unpersist(reportLocation, step)
 
-            # Don't stage out files from bad steps.
-            if not stepReport.stepSuccessful(step):
+            # Don't stage out files from bad steps. Each step has its own Report.pkl file
+            # We need to check all steps executed so far, otherwise it might stage out
+            # files for chained steps when the overall job has already failed to process
+            # one of them
+            if not stepReport.stepSuccessful(step) or self.failedPreviousStep:
+                msg = "Either the step did not succeed or an upstream step failed. "
+                msg += "Skipping stage out of any root output files in this job."
+                logging.warning(msg)
                 continue
 
             # Okay, time to start using stuff

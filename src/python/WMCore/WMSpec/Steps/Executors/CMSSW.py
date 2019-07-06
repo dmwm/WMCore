@@ -8,17 +8,17 @@ Implementation of an Executor for a CMSSW step.
 
 import logging
 import os
+import socket
 import subprocess
 import sys
-import socket
 
 from WMCore.FwkJobReport.Report import addAttributesToFile
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMRuntime.Tools.Scram import getSingleScramArch
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMSpec.WMStep import WMStepHelper
-from WMCore.WMRuntime.Tools.Scram import getSingleScramArch
-from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 def analysisFileLFN(fileName, lfnBase, job):

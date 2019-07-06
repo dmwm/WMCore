@@ -8,11 +8,12 @@ Implementation of an Executor for a LogArchive step
 import logging
 import os
 import os.path
+import random
 import re
 import signal
 import tarfile
 import time
-import random
+
 import WMCore.Storage.FileManager
 import WMCore.Storage.StageOutMgr as StageOutMgr
 from Utils.FileTools import calculateChecksums
@@ -84,9 +85,9 @@ class LogArchive(Executor):
             # new style
             logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE For EOS Copy")
             eosmanager = WMCore.Storage.FileManager.StageOutMgr(
-                retryPauseTime=retryPauseT,
-                numberOfRetries=numRetries,
-                **eosStageOutParams)
+                    retryPauseTime=retryPauseT,
+                    numberOfRetries=numRetries,
+                    **eosStageOutParams)
 
         eosFileInfo = {'LFN': self.getEOSLogLFN(),
                        'PFN': tarBallLocation,
@@ -157,10 +158,9 @@ class LogArchive(Executor):
         else:
             # new style
             logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE")
-            manager = WMCore.Storage.FileManager.StageOutMgr(
-                retryPauseTime=self.step.retryDelay,
-                numberOfRetries=self.step.retryCount,
-                **overrides)
+            manager = WMCore.Storage.FileManager.StageOutMgr(retryPauseTime=self.step.retryDelay,
+                                                             numberOfRetries=self.step.retryCount,
+                                                             **overrides)
 
         # Now we need to find all the reports
         # The log search follows this structure: ~pilotArea/jobArea/WMTaskSpaceArea/StepsArea

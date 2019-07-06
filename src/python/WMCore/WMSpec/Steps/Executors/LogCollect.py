@@ -24,7 +24,6 @@ from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
-
 class LogCollect(Executor):
     """
     _LogCollect_
@@ -116,11 +115,11 @@ class LogCollect(Executor):
         # setup Scram needed to run edmCopyUtil
         if useEdmCopyUtil:
             scram = Scram(
-                command=scramCommand,
-                version=cmsswVersion,
-                initialise=self.step.application.setup.softwareEnvironment,
-                directory=self.step.builder.workingDir,
-                architecture=scramArch,
+                    command=scramCommand,
+                    version=cmsswVersion,
+                    initialise=self.step.application.setup.softwareEnvironment,
+                    directory=self.step.builder.workingDir,
+                    architecture=scramArch,
             )
             logging.info("Running scram")
             try:

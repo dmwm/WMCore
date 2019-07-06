@@ -314,6 +314,9 @@ class Report(object):
             reportError = getattr(reportStep.errors, "error%i" % i)
             if getattr(reportError, 'exitCode', None):
                 returnCodes.add(int(reportError.exitCode))
+            else:
+                # exitCode is likely set to None(?!?)
+                returnCodes.add(99999)
 
         return returnCodes
 
@@ -578,6 +581,14 @@ class Report(object):
             # Create a step and set it to failed
             # Assumption: Adding an error fails a step
             self.addStep(stepName, status=1)
+
+        if exitCode is not None:
+            exitCode = int(exitCode)
+
+        setExitCodes = self.getStepExitCodes(stepName)
+        if exitCode in setExitCodes:
+            logging.warning("Exit code: %s has been already added to the job report", exitCode)
+            return
 
         stepSection = self.retrieveStep(stepName)
         errorCount = getattr(stepSection.errors, "errorCount", 0)
@@ -1125,7 +1136,7 @@ class Report(object):
         fileInfo = FileInfo()
 
         if not stepReport:
-            return None
+            return
 
         listOfModules = getattr(stepReport, 'outputModules', None)
 
@@ -1136,7 +1147,7 @@ class Report(object):
                 if not aFile:
                     msg = "Could not find file%i in module" % n
                     logging.error(msg)
-                    return None
+                    return
                 fileInfo(fileReport=aFile, step=step, outputModule=module)
 
         return

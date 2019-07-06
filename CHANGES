@@ -1,3 +1,6 @@
+1.2.4.patch1 to 1.2.5.pre1:
+
+
 1.2.4 to 1.2.4.patch1:
   - pylint fixes (Alan Malta Rodrigues) #9284
   - Check all cmsRun steps outcome before staging out files (Alan Malta Rodrigues) #9284

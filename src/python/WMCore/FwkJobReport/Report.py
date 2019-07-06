@@ -708,7 +708,7 @@ class Report(object):
         _setStep_
 
         """
-        if stepName not in self.data.steps:
+        if stepName not in self.listSteps():
             self.data.steps.append(stepName)
         else:
             logging.info("Step %s is now being overridden by a new step report", stepName)
@@ -841,7 +841,7 @@ class Report(object):
         """
         listOfFiles = []
 
-        for step in self.data.steps:
+        for step in self.listSteps():
             listOfFiles.extend(self.getAllFilesFromStep(step=step))
 
         return listOfFiles
@@ -854,7 +854,7 @@ class Report(object):
         """
 
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getInputFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -943,7 +943,7 @@ class Report(object):
         listed as skipped on the report.
         """
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getSkippedFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -958,7 +958,7 @@ class Report(object):
         listed as fallback attempt on the report
         """
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getFallbackFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -1054,13 +1054,13 @@ class Report(object):
         """
         value = True
 
-        if len(self.data.steps) == 0:
+        if len(self.listSteps()) == 0:
             # Mark jobs as failed if they have no steps
             msg = "Could not find any steps"
             logging.error(msg)
             return False
 
-        for stepName in self.data.steps:
+        for stepName in self.listSteps():
             # Ignore specified steps
             # i.e., logArch steps can fail without causing
             # the task to fail
@@ -1279,7 +1279,7 @@ class Report(object):
         """
 
         fileRefs = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmpRefs = self.getAllFileRefsFromStep(step=step)
             if len(tmpRefs) > 0:
                 fileRefs.extend(tmpRefs)
@@ -1554,7 +1554,7 @@ class Report(object):
         trim the number of input files.
         """
 
-        for stepName in self.data.steps:
+        for stepName in self.listSteps():
             step = self.retrieveStep(stepName)
             inputSources = step.input.listSections_()
             for inputSource in inputSources:

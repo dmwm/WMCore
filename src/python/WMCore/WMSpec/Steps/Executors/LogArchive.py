@@ -8,6 +8,7 @@ Implementation of an Executor for a LogArchive step
 import logging
 import os
 import os.path
+import random
 import re
 import signal
 import tarfile
@@ -43,7 +44,7 @@ class LogArchive(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.LogArchive.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def sendLogToEOS(self, overrides, tarBallLocation, useNewStageOutCode):
@@ -61,8 +62,17 @@ class LogArchive(Executor):
 
         if not eosStageOutParams['lfn-prefix']:
             # if overrides for eos-lfn-prefix is set to None or "", don't copy the log to eos
-            logging.info("Not writing logs to CERN EOS recent area")
+            logging.info("No 'lfn-prefix' found, not writing logs to CERN EOS recent area.")
             return
+        elif not self.failedPreviousStep:
+            # then throw a dice!!! We only want 1% of the success logs
+            if random.randint(1, 100) != 1:
+                logging.info("Success job! Not saving its logs to CERN EOS recent area.")
+                return
+            else:
+                logging.info("Lucky success job! Saving its logs to CERN EOS recent area.")
+        else:
+            logging.info("Failed job! Saving its logs to CERN EOS recent area")
 
         numRetries = 0
         retryPauseT = 0
@@ -75,9 +85,9 @@ class LogArchive(Executor):
             # new style
             logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE For EOS Copy")
             eosmanager = WMCore.Storage.FileManager.StageOutMgr(
-                retryPauseTime=retryPauseT,
-                numberOfRetries=numRetries,
-                **eosStageOutParams)
+                    retryPauseTime=retryPauseT,
+                    numberOfRetries=numRetries,
+                    **eosStageOutParams)
 
         eosFileInfo = {'LFN': self.getEOSLogLFN(),
                        'PFN': tarBallLocation,
@@ -101,7 +111,7 @@ class LogArchive(Executor):
 
         return
 
-    def execute(self, emulator=None, **overrides):
+    def execute(self, emulator=None):
         """
         _execute_
 
@@ -110,16 +120,16 @@ class LogArchive(Executor):
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
 
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+
         overrides = {}
-        # TODO need to set override using addOverride method in WMStep
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
-
+        logging.info("Using the following overrides: %s ", overrides)
         # Find alternate stageout location
         self.altLFN = overrides.get('altLFN', None)
+        self.failedPreviousStep = overrides.get('previousCmsRunFailure', False)
 
-        logging.info("Beginning Steps.Executors.LogArchive.Execute")
-        logging.info("Using the following overrides: %s ", overrides)
         logging.info("Step configuration is: %s", self.step)
         # Wait timeout for stageOut
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
@@ -148,10 +158,9 @@ class LogArchive(Executor):
         else:
             # new style
             logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE")
-            manager = WMCore.Storage.FileManager.StageOutMgr(
-                retryPauseTime=self.step.retryDelay,
-                numberOfRetries=self.step.retryCount,
-                **overrides)
+            manager = WMCore.Storage.FileManager.StageOutMgr(retryPauseTime=self.step.retryDelay,
+                                                             numberOfRetries=self.step.retryCount,
+                                                             **overrides)
 
         # Now we need to find all the reports
         # The log search follows this structure: ~pilotArea/jobArea/WMTaskSpaceArea/StepsArea
@@ -227,7 +236,7 @@ class LogArchive(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        logging.info("Steps.Executors.StageOut.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None
 
     def findFilesInDirectory(self, dirName, matchFiles, ignoredDirs):

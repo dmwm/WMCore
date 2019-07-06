@@ -42,7 +42,7 @@ class DQMUpload(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.DQMUpload.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -53,6 +53,8 @@ class DQMUpload(Executor):
         # Are we using emulators again?
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         if self.step.upload.proxy:
             try:
@@ -110,7 +112,7 @@ class DQMUpload(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        logging.info("Steps.Executors.DQMUpload.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None
 
     #

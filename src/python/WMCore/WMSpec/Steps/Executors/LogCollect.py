@@ -24,7 +24,6 @@ from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
-
 class LogCollect(Executor):
     """
     _LogCollect_
@@ -44,7 +43,7 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.LogCollect.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -52,15 +51,15 @@ class LogCollect(Executor):
         _execute_
 
         """
-        scramCommand = self.step.application.setup.scramCommand
-        scramArch = self.step.application.setup.scramArch
-        cmsswVersion = self.step.application.setup.cmsswVersion
-
-        scramArch = getSingleScramArch(scramArch)
-
         # Are we using emulators again?
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+
+        scramCommand = self.step.application.setup.scramCommand
+        cmsswVersion = self.step.application.setup.cmsswVersion
+        scramArch = getSingleScramArch(self.step.application.setup.scramArch)
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -116,11 +115,11 @@ class LogCollect(Executor):
         # setup Scram needed to run edmCopyUtil
         if useEdmCopyUtil:
             scram = Scram(
-                command=scramCommand,
-                version=cmsswVersion,
-                initialise=self.step.application.setup.softwareEnvironment,
-                directory=self.step.builder.workingDir,
-                architecture=scramArch,
+                    command=scramCommand,
+                    version=cmsswVersion,
+                    initialise=self.step.application.setup.softwareEnvironment,
+                    directory=self.step.builder.workingDir,
+                    architecture=scramArch,
             )
             logging.info("Running scram")
             try:
@@ -290,5 +289,5 @@ class LogCollect(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        logging.info("Steps.Executors.LogCollect.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None

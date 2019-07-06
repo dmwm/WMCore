@@ -1,3 +1,15 @@
+1.2.4 to 1.2.4.patch1:
+  - pylint fixes (Alan Malta Rodrigues) #9284
+  - Check all cmsRun steps outcome before staging out files (Alan Malta Rodrigues) #9284
+  - Only save logs in EOS/recent area for failed and a very small fraction of success jobs (Alan Malta Rodrigues) #9284
+  - fix unit tests (Alan Malta Rodrigues) #9285
+  - Add only unique error exit codes to the job FJR (Alan Malta Rodrigues) #9285
+  - Update deployment with the new PUT request behaviour for the agent config (Alan Malta Rodrigues) #9283
+  - Skip DBS3Upload cycle if it times out contacting wmstats (Alan Malta Rodrigues) #9279
+  - Print the complete error message in LogDB (Alan Malta Rodrigues) #9281
+  - Added ORA-25408 to the soft database error list (Alan Malta Rodrigues) #9278
+
+
 1.2.4.pre3 to 1.2.4:
   - unit test and pylint (Alan Malta Rodrigues) #9270
   - Set CMS_Type job classad based on the dashboard activity (Alan Malta Rodrigues) #9270

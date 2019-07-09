@@ -57,6 +57,21 @@ class LogCollectStepHelper(CoreHelper):
             setattr(self.data.application.setup, k, v)
         return
 
+    def getScramArch(self):
+        """
+        _getScramArch_
+
+        Retrieve the scram architecture used for this step.
+        """
+        return self.data.application.setup.scramArch
+
+    def getCMSSWVersion(self):
+        """
+        _getCMSSWVersion_
+
+        Retrieve the version of the framework used for this step.
+        """
+        return self.data.application.setup.cmsswVersion
 
 class LogCollect(Template):
     """

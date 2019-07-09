@@ -62,9 +62,10 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
             return
 
         producer = producer or self.producer
-        self.logger.debug("Sending the following data to AMQ %s", pformat(docs))
         ts = int(time.time())
+        notifications = []
 
+        self.logger.debug("Sending the following data to AMQ %s", pformat(docs))
         try:
             stompSvc = StompAMQ(username=self.userAMQ,
                                 password=self.passAMQ,
@@ -74,11 +75,15 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
                                 host_and_ports=self.hostPortAMQ,
                                 logger=self.logger)
 
-            notifications = [stompSvc.make_notification(payload=doc, docType=self.docTypeAMQ, ts=ts,
-                                                        dataSubfield="payload") for doc in docs]
+            for doc in docs:
+                singleNotif, _, _ = stompSvc.make_notification(payload=doc, docType=self.docTypeAMQ,
+                                                               ts=ts, dataSubfield="payload")
+                notifications.append(singleNotif)
 
             failures = stompSvc.send(notifications)
-            self.logger.info("%i docs successfully sent to Stomp AMQ", len(notifications) - len(failures))
+            msg = "%i out of %i documents successfully sent to AMQ" % (len(notifications) - len(failures),
+                                                                       len(notifications))
+            self.logger.info(msg)
         except Exception as ex:
             self.logger.exception("Failed to send data to StompAMQ. Error %s", str(ex))
 

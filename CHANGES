@@ -1,3 +1,11 @@
+1.2.4.patch1 to 1.2.4.patch2:
+  - Accept tuple returned from make_notifications (Alan Malta Rodrigues) #9293
+  - Switch from WMCore StompAMQ to CMSMonitoring one (Valentin Kuznetsov) #9293
+  - Fix auxiliary db method name (Erik Gough) #9293
+  - Add email alerting to drain thread (Erik Gough) #9293
+  - Add email alerting capability (Erik Gough) #9293
+
+
 1.2.4 to 1.2.4.patch1:
   - pylint fixes (Alan Malta Rodrigues) #9284
   - Check all cmsRun steps outcome before staging out files (Alan Malta Rodrigues) #9284

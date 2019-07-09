@@ -1,3 +1,10 @@
+1.2.5.pre1 to 1.2.5.pre2:
+  - Use logging library in the reqmgr2 client and inject test wfs (Alan Malta Rodrigues) #9288
+  - Fix auxiliary db method name (Erik Gough) #9212
+  - Add email alerting to drain thread (Erik Gough) #9212
+  - Add email alerting capability (Erik Gough) #9212
+
+
 1.2.4.patch1 to 1.2.5.pre1:
 
 

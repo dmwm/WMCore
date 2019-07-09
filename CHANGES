@@ -1,3 +1,8 @@
+1.2.5.pre2 to 1.2.5.pre3:
+  - Accept tuple returned from make_notifications (Alan Malta Rodrigues) #9292
+  - Switch from WMCore StompAMQ to CMSMonitoring one (Valentin Kuznetsov) #9292
+
+
 1.2.5.pre1 to 1.2.5.pre2:
   - Use logging library in the reqmgr2 client and inject test wfs (Alan Malta Rodrigues) #9288
   - Fix auxiliary db method name (Erik Gough) #9212

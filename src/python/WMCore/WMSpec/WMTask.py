@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# pylint: disable=W0212
+# W0212 (protected-access): Access to protected names of a client class.
 """
 _WMTask_
 

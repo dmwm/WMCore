@@ -1,0 +1,87 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": "CMSSW_10_6_1",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "TrustPUSitelists": true,
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "AcquisitionEra": "CMSSW_10_6_1",
+    "CMSSWVersion": "CMSSW_10_6_1_patch1",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "Comments": [
+      "SLC7 wf with 3 steps; PU for DIGI/RECO; 100EpJ/1LpJ; 8CPU/14GB; relval harvesting enabled;",
+      "trust PU true; AcqEra hardcoded to CMSSW_10_6_1, but it might get overwritten..."
+    ],
+    "DQMConfigCacheID": "7186ff14d71d8ed7c336513eb2ea9908",
+    "DQMHarvestUnit": "byRun",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
+    "EnableHarvesting": true,
+    "GlobalTag": "106X_mc2017_realistic_v6",
+    "Memory": 14000,
+    "Multicore": 8,
+    "PrepID": "CMSSW_10_6_1__fullsim_PU_2017_HS_highIO-1561739485-QCD_FlatPt_15_3000HS_13",
+    "ProcessingString": "DEFAULT_ProcStr",
+    "ProcessingVersion": 1,
+    "RequestPriority": 600000,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "StepChain",
+    "ScramArch": [
+      "slc7_amd64_gcc700"
+    ],
+    "SizePerEvent": 1234,
+    "Step1": {
+      "AcquisitionEra": "CMSSW_10_6_1",
+      "Campaign": "CMSSW_10_6_1_Step1",
+      "ConfigCacheID": "7186ff14d71d8ed7c336513eb2fcc177",
+      "EventsPerJob": 100,
+      "EventsPerLumi": 100,
+      "GlobalTag": "106X_mc2017_realistic_v6",
+      "PrimaryDataset": "RelValQCD_FlatPt_15_3000HS_13",
+      "ProcessingString": "Step1_WMCore_TEST",
+      "RequestNumEvents": 2000,
+      "Seeding": "AutomaticSeeding",
+      "SplittingAlgo": "EventBased",
+      "StepName": "QCDForPF_13TeV_TuneCUETP8M1_2017PU_GenSimFull"
+    },
+    "Step2": {
+      "AcquisitionEra": "CMSSW_10_6_1",
+      "Campaign": "CMSSW_10_6_1_Step2",
+      "ConfigCacheID": "7186ff14d71d8ed7c336513eb2f46652",
+      "GlobalTag": "106X_mc2017_realistic_v6",
+      "InputFromOutputModule": "FEVTDEBUGoutput",
+      "InputStep": "QCDForPF_13TeV_TuneCUETP8M1_2017PU_GenSimFull",
+      "MCPileup": "/RelValMinBias_13/CMSSW_10_6_1-106X_mc2017_realistic_v6-v1/GEN-SIM",
+      "ProcessingString": "Step2_WMCore_TEST",
+      "StepName": "DigiFullPU_2017PU"
+    },
+    "Step3": {
+      "AcquisitionEra": "CMSSW_10_6_1",
+      "Campaign": "CMSSW_10_6_1_Step3",
+      "ConfigCacheID": "7186ff14d71d8ed7c336513eb2f259a1",
+      "GlobalTag": "106X_mc2017_realistic_v6",
+      "InputFromOutputModule": "FEVTDEBUGHLToutput",
+      "InputStep": "DigiFullPU_2017PU",
+      "MCPileup": "/RelValMinBias_13/CMSSW_10_6_1-106X_mc2017_realistic_v6-v1/GEN-SIM",
+      "ProcessingString": "Step3_WMCore_TEST",
+      "StepName": "RecoFullPU_2017PU"
+    },
+    "StepChain": 3,
+    "TimePerEvent": 10
+  }
+}

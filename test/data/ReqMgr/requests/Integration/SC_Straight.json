@@ -1,0 +1,137 @@
+{
+  "assignRequest": {
+    "AcquisitionEra": {
+      "L1T_PhaseIITDRSpring19GS_00017_0": "TESTTDRSpring19GS",
+      "L1T_PhaseIITDRSpring19DR_00007_0": "TESTTDRSpring19DR",
+      "L1T_PhaseIITDRSpring19DR_00007_1": "TESTTDRSpring19DR",
+      "L1T_PhaseIITDRSpring19MiniAOD_00007_0": "TESTTDRSpring19MiniAOD"
+    },
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "GracePeriod": 300,
+    "MergedLFNBase": "/store/backfill/1",
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "ProcessingString": {
+      "L1T_PhaseIITDRSpring19GS_00017_0": "106X_TEST_v2",
+      "L1T_PhaseIITDRSpring19DR_00007_0": "PU200_106X_TEST_v3",
+      "L1T_PhaseIITDRSpring19DR_00007_1": "PU200_106X_TEST_v3",
+      "L1T_PhaseIITDRSpring19MiniAOD_00007_0": "PU200_106X_TEST_v3"
+    },
+    "ProcessingVersion": 19,
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "SiteWhitelist-OVERRIDE-ME"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "Team-OVERRIDE-ME",
+    "UnmergedLFNBase": "/store/unmerged"
+  },
+  "createRequest": {
+    "AcquisitionEra": "DEFAULT_AcqEra",
+    "CMSSWVersion": "CMSSW_10_6_0_patch2",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": "18GB/8 cores from scratch; PU in Step2 and 3; Files DIGI-RAW and AODSIM go straight to merge; Step1 output dropped",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "CouchDBName": "reqmgr_config_cache",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "GlobalTag": "106X_upgrade2023_realistic_v3",
+    "Memory": 18000,
+    "Multicore": 8,
+    "ParentageResolved": false,
+    "PrepID": "TEST-task_L1T-PhaseIITDRSpring19GS-00017",
+    "ProcessingString": "DEFAULT_ProcStr",
+    "ProcessingVersion": 2,
+    "RequestPriority": 411000,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "StepChain",
+    "ScramArch": [
+      "slc7_amd64_gcc700"
+    ],
+    "SizePerEvent": 84270,
+    "Step1": {
+      "AcquisitionEra": "TEST_TDRSpring19GS",
+      "CMSSWVersion": "CMSSW_10_6_0",
+      "Campaign": "PhaseIITDRSpring19GS",
+      "ConfigCacheID": "2e9ba1b908b6a3f223b425fe51fb24ff",
+      "EventsPerJob": 110,
+      "EventsPerLumi": 55,
+      "FilterEfficiency": 1,
+      "GlobalTag": "106X_upgrade2023_realistic_v2",
+      "KeepOutput": false,
+      "LheInputFiles": false,
+      "PrepID": "L1T-PhaseIITDRSpring19GS-00017",
+      "PrimaryDataset": "Mu_FlatPt2to100-pythia8-gun",
+      "ProcessingString": "Step1_WMCore_TEST",
+      "RequestNumEvents": 2200,
+      "ScramArch": [
+        "slc7_amd64_gcc700"
+      ],
+      "Seeding": "AutomaticSeeding",
+      "SplittingAlgo": "EventBased",
+      "StepName": "L1T_PhaseIITDRSpring19GS_00017_0"
+    },
+    "Step2": {
+      "AcquisitionEra": "TEST_TDRSpring19DR",
+      "CMSSWVersion": "CMSSW_10_6_0_patch2",
+      "Campaign": "PhaseIITDRSpring19DR",
+      "ConfigCacheID": "85fcee5ba48dc49b3040fff53696c1f5",
+      "FilterEfficiency": 1,
+      "GlobalTag": "106X_upgrade2023_realistic_v3",
+      "InputFromOutputModule": "RAWSIMoutput",
+      "InputStep": "L1T_PhaseIITDRSpring19GS_00017_0",
+      "KeepOutput": true,
+      "MCPileup": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM",
+      "PrepID": "L1T-PhaseIITDRSpring19DR-00007",
+      "PrimaryDataset": "Mu_FlatPt2to100-pythia8-gun",
+      "ProcessingString": "Step2_WMCore_TEST",
+      "ScramArch": [
+        "slc7_amd64_gcc700"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "L1T_PhaseIITDRSpring19DR_00007_0"
+    },
+    "Step3": {
+      "AcquisitionEra": "TEST_TDRSpring19DR",
+      "CMSSWVersion": "CMSSW_10_6_0_patch2",
+      "Campaign": "PhaseIITDRSpring19DR",
+      "ConfigCacheID": "e274d6bcdc73d718fca1dbf6cc5b4552",
+      "FilterEfficiency": 1,
+      "GlobalTag": "106X_upgrade2023_realistic_v3",
+      "InputFromOutputModule": "FEVTDEBUGHLToutput",
+      "InputStep": "L1T_PhaseIITDRSpring19DR_00007_0",
+      "KeepOutput": true,
+      "MCPileup": "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM",
+      "PrepID": "L1T-PhaseIITDRSpring19DR-00007",
+      "PrimaryDataset": "Mu_FlatPt2to100-pythia8-gun",
+      "ProcessingString": "Step3_WMCore_TEST",
+      "ScramArch": [
+        "slc7_amd64_gcc700"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "L1T_PhaseIITDRSpring19DR_00007_1"
+    },
+    "Step4": {
+      "AcquisitionEra": "TEST_TDRSpring19MiniAOD",
+      "CMSSWVersion": "CMSSW_10_6_0_patch2",
+      "Campaign": "PhaseIITDRSpring19MiniAOD",
+      "ConfigCacheID": "dd58f280c9e82dff18fa597bede52c5d",
+      "FilterEfficiency": 1,
+      "GlobalTag": "106X_upgrade2023_realistic_v3",
+      "InputFromOutputModule": "AODSIMoutput",
+      "InputStep": "L1T_PhaseIITDRSpring19DR_00007_1",
+      "KeepOutput": true,
+      "PrepID": "L1T-PhaseIITDRSpring19MiniAOD-00007",
+      "PrimaryDataset": "Mu_FlatPt2to100-pythia8-gun",
+      "ProcessingString": "Step4_WMCore_TEST",
+      "ScramArch": [
+        "slc7_amd64_gcc700"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "L1T_PhaseIITDRSpring19MiniAOD_00007_0"
+    },
+    "StepChain": 4,
+    "SubRequestType": "ReDigi",
+    "TimePerEvent": 92.07568920147362
+  }
+}

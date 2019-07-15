@@ -73,7 +73,6 @@ class CoreHelper(WMStepHelper):
         split = [ x for x in split if x.strip() != "" ]
 
         dirs = getattr(self.data.build.directories, self.stepName())
-        lastDir = dirs
         for subdir in split:
             exists = getattr(dirs, subdir, None)
             if exists == None:
@@ -127,18 +126,18 @@ class Template:
     def __init__(self):
         pass
 
-    def __call__(self, wmStep):
+    def __call__(self, step):
         """
-        _operator(wmStep)_
+        _operator(step)_
 
         Install the template on the step instance provided
 
         """
-        self.coreInstall(wmStep)
-        self.install(wmStep)
+        self.coreInstall(step)
+        self.install(step)
 
 
-    def coreInstall(self, wmStep):
+    def coreInstall(self, step):
         """
         _coreInstall_
 
@@ -146,29 +145,29 @@ class Template:
 
         """
         # Environment settings to pass to the step
-        wmStep.section_("environment")
-        wmStep.environment.section_("variables")
-        wmStep.environment.section_("paths")
+        step.section_("environment")
+        step.environment.section_("variables")
+        step.environment.section_("paths")
 
         # Directory structure and files to be included in the job
         # beyond those that would be added by a Step Specific builder
         # Step Specific subclasses can simply append to these to get files
         # and dirs into the job
-        wmStep.section_("build")
-        wmStep.build.section_("directories")
-        wmStep.build.directories.section_(nodeName(wmStep))
+        step.section_("build")
+        step.build.section_("directories")
+        step.build.directories.section_(nodeName(step))
 
 
 
 
 
 
-    def install(self, wmStep):
+    def install(self, step):
         """
         _install_
 
         Override this method to install the required attributes
-        in the wmStep Instance provided
+        in the step Instance provided
 
         """
         msg = "WMSpec.Steps.Template.install method not overridden in "
@@ -176,11 +175,11 @@ class Template:
         raise NotImplementedError(msg)
 
 
-    def helper(self, wmStep):
+    def helper(self, step):
         """
         _helper_
 
-        Wrap the wmStep instance in a helper class tailored to this particular
+        Wrap the step instance in a helper class tailored to this particular
         step type
 
         """

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# pylint: disable=W0212
+# W0212 (protected-access): Access to protected names of a client class.
 """
 _WMTask_
 
@@ -1245,7 +1247,7 @@ class WMTaskHelper(TreeHelper):
         versions = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
+            if stepHelper.stepType() in ["CMSSW", "LogCollect"]:
                 if not allSteps:
                     return stepHelper.getCMSSWVersion()
                 else:
@@ -1262,7 +1264,7 @@ class WMTaskHelper(TreeHelper):
         scrams = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
+            if stepHelper.stepType() in ["CMSSW", "LogCollect"]:
                 if not allSteps:
                     return stepHelper.getScramArch()
                 else:

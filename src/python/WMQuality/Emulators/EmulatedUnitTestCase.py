@@ -63,7 +63,8 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.phedexPatchers = []
             patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.WorkQueue.WorkQueue.PhEDEx',
                              'WMCore.Services.DBS.DBS3Reader.PhEDEx',
-                             'WMCore.MicroService.Unified.Transferor.PhEDEx',
+                             'WMCore.MicroService.Unified.MSTransferor.PhEDEx',
+                             'WMCore.MicroService.Unified.RequestInfo.PhEDEx',
                              'WMComponent.PhEDExInjector.PhEDExInjectorPoller.PhEDEx']
             for module in patchPhedexAt:
                 self.phedexPatchers.append(mock.patch(module, new=MockPhEDExApi))

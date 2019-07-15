@@ -9,18 +9,19 @@ from __future__ import division
 
 # system modules
 import time
-import logging
+import json
 import hashlib
 from pprint import pformat
 
 # WMCore modules
-from WMCore.MicroService.Unified.Common import uConfig
+from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.MicroService.Unified.RequestInfo import requestsInfo, requestRecord
 from WMCore.MicroService.Unified.TaskManager import start_new_thread
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.pycurl_manager import RequestHandler
 
 
 def daemon(func, reqStatus, interval, logger):
@@ -34,39 +35,105 @@ def daemon(func, reqStatus, interval, logger):
 
 
 class MSManager(object):
-    "Class to keep track of transfer progress in PhEDEx for a given task"
-    def __init__(self, svc, group='DataOps', readOnly=True, interval=60, logger=None):
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = logging.getLogger('reqmgr2ms:MSManager')
-            self.logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-        self.phedex = PhEDEx()  # eventually will change to Rucio
-        self.group = group
-        self.readOnly = readOnly
-        self.svc = svc  # Services: ReqMgr, ReqMgrAux
+    """
+    Entry point for the MicroServices.
+    This class manages both transferor and monitor services/threads.
+    """
+    def __init__(self, config=None, logger=None):
+        """
+        Setup a bunch of things, like:
+         * logger for this service
+         * initialize all the necessary service helpers
+         * fetch the unified configuration from central couch
+         * update the unified configuration with some deployment and default settings
+         * start both transfer and monitor threads
+        :param config: reqmgr2ms service configuration
+        :param logger:
+        """
+        self.config = config
+        verbose = getattr(config, 'verbose', False)
+        self.logger = getMSLogger(verbose, logger)
+        self.logger.info("Using the following config:\n%s", config)
+
+        self.group = getattr(config, 'group', 'DataOps')
+        self.interval = getattr(config, 'interval', 5 * 60)
+        self.readOnly = getattr(config, 'readOnly', True)
+        self.uConfigUrl = getattr(config, 'uConfigUrl',
+                                  'https://raw.githubusercontent.com/CMSCompOps/WmAgentScripts/master/unifiedConfiguration.json')
+        reqmgrUrl = getattr(config, 'reqmgr2Url', 'https://cmsweb.cern.ch/reqmgr2')
+        reqmgrCacheUrl = getattr(config, 'reqmgrCacheUrl', 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache')
+        phedexUrl = getattr(config, 'phedexUrl', 'https://cmsweb.cern.ch/phedex/datasvc/json/prod')
+        dbsUrl = getattr(config, 'dbsUrl', 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader')
+        self.logger.info("MSManager set to group=%s, interval=%s and readOnly=%s", self.group,
+                         self.interval, self.readOnly)
+
+        ### Initialise basic services
+        self.reqmgrAux = ReqMgrAux(reqmgrUrl, httpDict={'cacheduration': 60}, logger=self.logger)
+        self.reqmgr2 = ReqMgr(reqmgrUrl, logger=self.logger)
+        # eventually will change it to Rucio
+        self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60}, dbsUrl=dbsUrl, logger=self.logger)
+
+        ### Fetch the unified configuration from reqmgr_aux db
+        self.uConfig = self.reqmgrAux.getUnifiedConfig()
+
+        ### Now update the Unified configuration with some default values
+        self.uConfig.setdefault('reqmgrUrl', reqmgrUrl)
+        self.uConfig.setdefault('reqmgrCacheUrl', reqmgrCacheUrl)
+        self.uConfig.setdefault('dbsUrl', dbsUrl)
+        self.uConfig.setdefault('phedexUrl', phedexUrl)
+
+        ### Last but not least, get the threads started
         thname = 'MSTransferor'
-        self.thr = start_new_thread(thname, daemon,
-                (self.transferor, 'assigned', interval, self.logger))
-        self.logger.debug("### Running %s thread %s", thname, self.thr.running())
+        self.ms_transf = start_new_thread(thname, daemon,
+                                          (self.transferor, 'assigned', self.interval, self.logger))
+        self.logger.debug("### Running %s thread %s", thname, self.ms_transf.running())
+
         thname = 'MSTransferorMonit'
         self.ms_monit = start_new_thread(thname, daemon,
-                (self.monit, 'staging', interval, self.logger))
+                (self.monitor, 'staging', self.interval, self.logger))
         self.logger.debug("+++ Running %s thread %s", thname, self.ms_monit.running())
-        self.logger.info("MSManager, group=%s, interval=%s", group, interval)
 
-    def monit(self, reqStatus='staging'):
+    def updateUnifiedConfig(self):
+        """
+        Fetch the unified configuration directly from github, check whether there
+        are any changes compared to what we have in memory, and if needed update
+        the in-memory unified configuration and also persist it to couchdb
+        """
+        headers = {'Accept': 'application/json'}
+        mgr = RequestHandler()
+        try:
+            data = mgr.getdata(self.uConfigUrl, params={}, headers=headers)
+        except Exception as ex:
+            msg = "Failed to retrieve unified configuration from github. Error: %s" % str(ex)
+            msg += "\nRetrying again in the next cycle"
+            self.logger.error(msg)
+            return
+
+        oldData = json.loads(self.uConfig)
+        # FIXME: it won't work! We add data to the unified config
+        if oldData == data:
+            self.logger.debug("Unified configuration hasn't changed compared to the last cycle")
+            return
+
+        newData = json.dumps(data)
+        # now post the new up-to-date config to Couch as well
+        if self.reqmgrAux.updateUnifiedConfig(newData):
+            self.uConfig = newData
+            self.logger.info("Unified configuration has been updated")
+        return
+
+    def monitor(self, reqStatus='staging'):
         """
         MSManager monitoring function.
         It performs transfer requests from staging to staged state of ReqMgr2.
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
+        self.logger.info("Starting the monitor thread...")
         try:
             # get requests from ReqMgr2 data-service for given statue
             # here with detail=False we get back list of records
-            requests = self.svc.reqmgr.getRequestByStatus([reqStatus], detail=False)
+            requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=False)
             self.logger.debug('+++ monit found %s requests in %s state', len(requests), reqStatus)
 
             requestStatus = {}  # keep track of request statuses
@@ -107,16 +174,19 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
+        self.logger.info("Starting the transferor thread...")
         requestRecords = []
         try:
+            # first, check if there is a newer unified configuration file and use it if needed
+            self.updateUnifiedConfig()
             # get requests from ReqMgr2 data-service for given statue
-            requestSpecs = self.svc.reqmgr.getRequestByStatus([reqStatus], detail=True)
+            requestSpecs = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
             if requestSpecs:
                 for _, wfData in requestSpecs[0].items():
                     requestRecords.append(requestRecord(wfData, reqStatus))
             self.logger.debug('### transferor found %s requests in %s state', len(requestRecords), reqStatus)
             # get complete requests information (based on Unified Transferor logic)
-            requestRecords = requestsInfo(requestRecords, self.svc, self.logger)
+            requestRecords = requestsInfo(requestRecords, self.reqmgrAux, self.uConfig, self.logger)
         except Exception as err:  # general error
             self.logger.exception('### transferor error: %s', str(err))
 
@@ -138,8 +208,8 @@ class MSManager(object):
         # stop MSTransferorMonit thread
         self.ms_monit.stop()
         # stop MSTransferor thread
-        self.thr.stop()  # stop checkStatus thread
-        status = self.thr.running()
+        self.ms_transf.stop()  # stop checkStatus thread
+        status = self.ms_transf.running()
         return status
 
     def transferRequest(self, req):
@@ -253,7 +323,7 @@ class MSManager(object):
         try:
             if req.get('reqStatus', None) != reqStatus:
                 if not self.readOnly:
-                    self.svc.reqmgr.updateRequestStatus(req['name'], reqStatus)
+                    self.reqmgr2.updateRequestStatus(req['name'], reqStatus)
         except Exception as err:
             self.logger.exception("Failed to change request status. Error: %s", str(err))
 
@@ -265,41 +335,3 @@ class MSManager(object):
     def delete(self, request):
         "Delete request in backend"
         pass
-
-class Services(object):
-    "Services class provides access to reqmgr2 services: ReqMgr, ReqMgrAux"
-    __slots__ = ('reqmgrAux', 'reqmgr')
-    def __init__(self, reqmgrUrl, logger=None):
-        self.reqmgrAux = ReqMgrAux(reqmgrUrl, logger=logger)
-        self.reqmgr = ReqMgr(reqmgrUrl, logger=logger)
-
-class UnifiedTransferorManager(object):
-    """
-    UnifiedTransferorManager class provides an REST interface to reqmgr2ms service.
-    """
-    def __init__(self, config=None, logger=None):
-        self.config = config
-        if logger:
-            self.logger = logger
-        else:
-            loggerName = 'reqmgr2ms:%s' % self.__class__.__name__
-            self.logger = logging.getLogger(loggerName)
-            self.logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-
-        self.logger.info("Using the following config: %s", config)
-        group = getattr(config, 'group', 'DataOps')
-        interval = getattr(config, 'interval', 3600)
-        readOnly = getattr(config, 'readOnly', True)
-        # update uConfig urls according to reqmgr2ms configuration
-        reqmgrUrl = getattr(config, 'reqmgr2Url', 'https://cmsweb.cern.ch/reqmgr2')
-        uConfig.set('reqmgrUrl', reqmgrUrl)
-        uConfig.set('reqmgrCacheUrl', getattr(config, 'reqmgrCacheUrl', 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'))
-        uConfig.set('dbsUrl', getattr(config, 'dbsUrl', 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'))
-        self.svc = Services(reqmgrUrl, self.logger)
-        self.msManager = MSManager(self.svc, group, readOnly, interval, logger)
-
-    def status(self):
-        "Return current status about UnifiedTransferor"
-        sdict = {}
-        return sdict

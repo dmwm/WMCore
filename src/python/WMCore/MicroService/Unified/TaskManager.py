@@ -10,9 +10,10 @@ from __future__ import division
 import time
 import json
 import hashlib
-import logging
 import threading
 from Queue import Queue
+from WMCore.MicroService.Unified.Common import getMSLogger
+
 
 def genkey(query):
     """
@@ -103,11 +104,7 @@ class UidSet(object):
 class Worker(threading.Thread):
     """Thread executing worker from a given tasks queue"""
     def __init__(self, name, taskq, pidq, uidq, logger=None):
-        if not logger:
-            logger = logging.getLogger('reqmgr2ms:Worker')
-            logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-        self.logger = logger
+        self.logger = getMSLogger(verbose=True, logger=logger)
         threading.Thread.__init__(self, name=name)
         self.exit = 0
         self.tasks = taskq
@@ -157,11 +154,7 @@ class TaskManager(object):
 
     """
     def __init__(self, nworkers=10, name='TaskManager', logger=None):
-        if not logger:
-            logger = logging.getLogger('reqmgr2ms:TaskManager')
-            logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-        self.logger = logger
+        self.logger = getMSLogger(verbose=True, logger=logger)
         self.name = name
         self.pids = set()
         self.uids = UidSet()

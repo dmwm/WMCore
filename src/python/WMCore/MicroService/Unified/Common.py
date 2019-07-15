@@ -9,7 +9,6 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 from __future__ import division
 
 # system modules
-import os
 import re
 import json
 import time
@@ -31,29 +30,29 @@ STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
 
-class UnifiedConfiguration(object):
-    "UnifiedConfiguration class provides access to Unified configuration parameters"
-    def __init__(self):
-        fname = '/'.join(__file__.split('/')[:-1] + ['config.json'])
-        fname = os.getenv('UNIFIED_CONFIG_JSON', fname)
-        self.configs = json.loads(open(fname).read())
+def getMSLogger(verbose, logger=None):
+    """
+    _getMSLogger_
 
-    def get(self, parameter, default=None):
-        "Return parameter from unified configuration"
-        if parameter in self.configs:
-            return self.configs[parameter]
-        return default
+    Return a logger object using the standard WMCore formatter
+    :param verbose: boolean setting debug or not
+    :return: a logger object
+    """
+    if logger:
+        return logger
 
-    def set(self, parameter, value):
-        "Set parameter from unified configuration"
-        self.configs[parameter] = value
+    verbose = logging.DEBUG if verbose else logging.INFO
+    logger = logging.getLogger()
+    logging.basicConfig(format="%(asctime)s:%(levelname)s:%(module)s: %(message)s",
+                        level=verbose)
+    return logger
 
-# static variables used in Unified modules
-uConfig = UnifiedConfiguration()
 
-def dbsInfo(datasets):
+
+
+def dbsInfo(datasets, dbsUrl):
     "Provides DBS info about dataset blocks"
-    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl(), d) for d in datasets]
+    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl, d) for d in datasets]
     data = multi_getdata(urls, ckey(), cert())
     datasetBlocks = {}
     datasetSizes = {}
@@ -74,9 +73,9 @@ def dbsInfo(datasets):
 #         tot_size += datasetSizes[dataset]
     return datasetBlocks, datasetSizes
 
-def phedexInfo(datasets):
+def phedexInfo(datasets, phedexUrl):
     "Fetch PhEDEx info about nodes for all datasets"
-    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl(), d) for d in datasets]
+    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl, d) for d in datasets]
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
@@ -86,11 +85,11 @@ def phedexInfo(datasets):
             blockNodes[item['name']] = nodes
     return blockNodes
 
-def getWorkflow(requestName):
+def getWorkflow(requestName, reqMgrUrl):
     "Get list of workflow info from ReqMgr2 data-service for given request name"
     headers = {'Accept': 'application/json'}
     params = {}
-    url = '%s/data/request/%s' % (reqmgrUrl(), requestName)
+    url = '%s/data/request/%s' % (reqMgrUrl, requestName)
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
@@ -129,7 +128,7 @@ def workflowsInfo(workflows):
                          priority=priority, selist=selist, campaign=campaign)
     return winfo
 
-def eventsLumisInfo(inputs, validFileOnly=0, sumOverLumi=0):
+def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     "Get information about events and lumis for given set of inputs: blocks or datasets"
     what = 'dataset'
     eventsLumis = {}
@@ -138,7 +137,7 @@ def eventsLumisInfo(inputs, validFileOnly=0, sumOverLumi=0):
     if '#' in inputs[0]: # inputs are list of blocks
         what = 'block_name'
     urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s' \
-            % (dbsUrl(), validFileOnly, sumOverLumi, what, urllib.quote(i)) \
+            % (dbsUrl, validFileOnly, sumOverLumi, what, urllib.quote(i)) \
             for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
@@ -150,13 +149,13 @@ def eventsLumisInfo(inputs, validFileOnly=0, sumOverLumi=0):
             eventsLumis[key] = item
     return eventsLumis
 
-def getEventsLumis(dataset, blocks=None, eventsLumis=None):
+def getEventsLumis(dataset, dbsUrl, blocks=None, eventsLumis=None):
     "Helper function to return number of events/lumis for given dataset or blocks"
     nevts = nlumis = 0
     if blocks:
         missingBlocks = [b for b in blocks if b not in eventsLumis]
         if missingBlocks:
-            eLumis = eventsLumisInfo(missingBlocks)
+            eLumis = eventsLumisInfo(missingBlocks, dbsUrl)
             eventsLumis.update(eLumis)
         for block in blocks:
             data = eventsLumis[block]
@@ -166,24 +165,21 @@ def getEventsLumis(dataset, blocks=None, eventsLumis=None):
     if eventsLumis and dataset in eventsLumis:
         data = eventsLumis[dataset]
         return data['num_event'], data['num_lumi']
-    eLumis = eventsLumisInfo([dataset])
+    eLumis = eventsLumisInfo([dataset], dbsUrl)
     data = eLumis.get(dataset, {'num_event':0, 'num_lumi':0})
     return data['num_event'], data['num_lumi']
 
-def getComputingTime(workflow, eventsLumis=None, unit='h', logger=None):
+def getComputingTime(workflow, eventsLumis=None, unit='h', dbsUrl=None, logger=None):
     "Return computing time per give workflow"
-    if not logger:
-        logger = logging.getLogger('reqmgr2ms:Common')
-        logger.setLevel(logging.DEBUG)
-        logging.basicConfig()
+    logger = getMSLogger(verbose=True, logger=logger)
     cput = None
 
     if 'InputDataset' in workflow:
         dataset = workflow['InputDataset']
         if 'BlockWhitelist' in workflow and workflow['BlockWhitelist']:
-            nevts, _ = getEventsLumis(dataset, workflow['BlockWhitelist'], eventsLumis)
+            nevts, _ = getEventsLumis(dataset, dbsUrl, workflow['BlockWhitelist'], eventsLumis)
         else:
-            nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
+            nevts, _ = getEventsLumis(dataset, dbsUrl, eventsLumis=eventsLumis)
         tpe = workflow['TimePerEvent']
         cput = nevts * tpe
     elif 'Chain' in workflow['RequestType']:
@@ -199,9 +195,9 @@ def getComputingTime(workflow, eventsLumis=None, unit='h', logger=None):
                 if 'InputDataset' in task:
                     dataset = task['InputDataset']
                     if 'BlockWhitelist' in task and task['BlockWhitelist']:
-                        nevts, _ = getEventsLumis(dataset, task['BlockWhitelist'], eventsLumis)
+                        nevts, _ = getEventsLumis(dataset, dbsUrl, task['BlockWhitelist'], eventsLumis)
                     else:
-                        nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
+                        nevts, _ = getEventsLumis(dataset, dbsUrl, eventsLumis=eventsLumis)
                 elif 'Input%s' % base in task:
                     nevts = carryOn[task['Input%s' % base]]
                 elif 'RequestNumEvents' in task:
@@ -258,128 +254,10 @@ def cert():
     pair = getKeyCertFromEnv()
     return pair[1]
 
-def stucktransferUrl(url=None):
-    "Return stucktransfer url"
-    if not url:
-        url = 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
-    return uConfig.get('stucktransferUrl', url)
-
-def dashboardUrl(url=None):
-    "Return dashboard url"
-    if not url:
-        url = 'http://dashb-ssb.cern.ch/dashboard/request.py'
-    return uConfig.get('dashboardUrl', url)
-
-def monitoringUrl(url=None):
-    "Return monitoring url"
-    if not url:
-        url = 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
-    return uConfig.get('monitoringUrl', url)
-
-def dbsUrl(url=None):
-    "Return DBS URL"
-    if not url:
-        url = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-    return uConfig.get('dbsUrl', url)
-
-def reqmgrUrl(url=None):
-    "Return ReqMgr2 url"
-    if not url:
-        url = 'https://cmsweb.cern.ch/reqmgr2'
-    return uConfig.get('reqmgrUrl', url)
-
-def reqmgrCacheUrl(url=None):
-    "Return ReqMgr cache url"
-    url = reqmgrUrl()
-    url = url.replace("reqmgr2", "couchdb/reqmgr_workload_cache")
-    return url
-
-def phedexUrl(url=None):
-    "Return PhEDEx url"
-    if not url:
-        url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod'
-    return uConfig.get('phedexUrl', url)
-
-def ssbUrl(url=None):
-    "Return Dashboard SSB url"
-    if not url:
-        url = 'http://dashb-ssb.cern.ch/dashboard/request.py'
-    return uConfig.get('ssbUrl', url)
-
-def agentInfoUrl(url=None):
-    "Return agent info url"
-    if not url:
-        url = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
-    return uConfig.get('agentInfoUrl', url)
-
-def mcoreUrl(url=None):
-    "Return mcore url"
-    if not url:
-        url = 'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json'
-    return uConfig.get('mcoreUrl', url)
-
-def workqueueUrl(url=None):
-    "Return WorkQueue url "
-    if not url:
-        url = 'https://cmsweb.cern.ch/couchdb/workqueue'
-    return uConfig.get('workqueueUrl', url)
-
-def workqueueView(view, kwds=None):
-    "Return WorkQueue view url"
-    if not kwds:
-        kwds = {'group': True, 'reduce': True}
-    keys = sorted(kwds.keys())
-    args = '&'.join(['%s=%s' % (k, json.dumps(kwds[k])) for k in keys])
-    url = '%s/_design/WorkQueue/_view/%s?%s' % (workqueueUrl(), view, args)
-    return url
-
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):
     "Helper function to return elapsed time message"
     msg = "%s: %s sec" % (msg, round(time.time()-time0, ndigits))
     return msg
-
-def getNodesForId(phedexid):
-    "Helper function to get nodes for given phedex id"
-    url = '%s/requestlist' % phedexUrl()
-    params = {'request': str(phedexid)}
-    headers = {'Accept': 'application/json'}
-    mgr = RequestHandler()
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert())
-    items = json.loads(data)['phedex']['request']
-    nodes = [n['name'] for i in items for n in i['node']]
-    return list(set(nodes))
-
-def alterSubscription(phedexid, decision, comments, nodes=None):
-    "Helper function to alter subscriptions for given phedex id and nodes"
-    mgr = RequestHandler()
-    headers = {'Accept': 'application/json'}
-    nodes = nodes if nodes else getNodesForId(phedexid)
-    params = {
-        'decision': decision,
-        'request': phedexid,
-        'node': ','.join(nodes),
-        'comments': comments
-        }
-    url = '%s/updaterequest'
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
-    result = json.loads(data)
-    if not result:
-        return False
-    if 'already' in result:
-        return True
-    return result
-
-def approveSubscription(phedexid, nodes=None, comments=''):
-    "Helper function to alter subscriptions for given phedex id and nodes"
-    if not comments:
-        comments = 'auto-approve subscription phedexid=%s' % phedexid
-    return alterSubscription(phedexid, 'approve', comments, nodes)
-
-def disapproveSubscription(phedexid, nodes=None, comments=''):
-    "Helper function to disapprove subscription for given phedex id and nodes"
-    if not comments:
-        comments = 'auto-disapprove subscription phedexid=%s' % phedexid
-    return alterSubscription(phedexid, 'disapprove', comments, nodes)
 
 def getRequest(url, params):
     "Helper function to GET data from given URL"

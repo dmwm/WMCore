@@ -254,8 +254,8 @@ class AuxBaseAPI(RESTEntity):
 
 class CMSSWVersions(AuxBaseAPI):
     """
-    CMSSWVersions - handle CMSSW versions and scram architectures.
-    Stored in stored in the ReqMgr reqmgr_auxiliary database,
+    Handle CMSSW versions and scram architectures.
+    Stored in the ReqMgr reqmgr_auxiliary database,
     """
 
     def setName(self):
@@ -264,7 +264,8 @@ class CMSSWVersions(AuxBaseAPI):
 
 class WMAgentConfig(AuxBaseAPI):
     """
-    Config which used for Agent
+    Handle WMAgent configuration files, which is
+    a sub-set of the common config.py agent configuration
     """
 
     def setName(self):
@@ -273,7 +274,8 @@ class WMAgentConfig(AuxBaseAPI):
 
 class PermissionsConfig(AuxBaseAPI):
     """
-    Pemissions' config for REST call, i.e. certain group and role can only update specific data.
+    Handle group/role permissions that can act on specific request types
+    and update specific data in couch.
     """
 
     def setName(self):
@@ -282,7 +284,7 @@ class PermissionsConfig(AuxBaseAPI):
 
 class CampaignConfig(AuxBaseAPI):
     """
-    Config which used for Agent
+    Handle central production campaign configuration documents.
     """
 
     def setName(self):
@@ -290,8 +292,7 @@ class CampaignConfig(AuxBaseAPI):
 
 class UnifiedConfig(AuxBaseAPI):
     """
-    CMSSWVersions - handle CMSSW versions and scram architectures.
-    Stored in stored in the ReqMgr reqmgr_auxiliary database,
+    Handle central production unified configuration
     """
 
     def setName(self):

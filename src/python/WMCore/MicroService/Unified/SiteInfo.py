@@ -10,7 +10,6 @@ from __future__ import division
 
 # syste modules
 import json
-import logging
 import tempfile
 from collections import defaultdict
 try:
@@ -34,8 +33,8 @@ except Exception as _:
 from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.MicroService.Unified.Common import agentInfoUrl, \
-        phedexUrl, cert, ckey, uConfig, monitoringUrl, dashboardUrl
+from WMCore.MicroService.Unified.Common import agentInfoUrl, phedexUrl, cert, ckey,\
+    uConfig, monitoringUrl, dashboardUrl, getMSLogger
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
@@ -55,11 +54,7 @@ def getNodeQueues():
 class SiteCache(with_metaclass(Singleton, object)):
     "Return site info from various CMS data-sources"
     def __init__(self, mode=None, logger=None):
-        if not logger:
-            logger = logging.getLogger('reqmgr2ms:SiteCache')
-            logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-        self.logger = logger
+        self.logger = getMSLogger(verbose=True, logger=logger)
         if mode == 'test':
             self.siteInfo = {}
         else:
@@ -174,11 +169,7 @@ def getNodes(kind):
 class SiteInfo(with_metaclass(Singleton, object)):
     "SiteInfo class provides info about sites"
     def __init__(self, mode=None, logger=None):
-        if not logger:
-            logger = logging.getLogger('reqmgr2ms:SiteInfo')
-            logger.setLevel(logging.DEBUG)
-            logging.basicConfig()
-        self.logger = logger
+        self.logger = getMSLogger(verbose=True, logger=logger)
         self.siteCache = SiteCache(mode, logger)
         self.config = uConfig
 

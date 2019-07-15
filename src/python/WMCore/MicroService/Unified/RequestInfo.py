@@ -172,9 +172,9 @@ def taskDescending(node, select=None):
     return allTasks
 
 
-def getRequestWorkflows(requestNames, logger):
+def getRequestWorkflows(requestNames, reqMgrUrl, logger):
     "Helper function to get all specs for given set of request names"
-    urls = [str('%s/data/request/%s' % (reqmgrUrl(), r)) for r in requestNames]
+    urls = [str('%s/data/request/%s' % (reqMgrUrl, r)) for r in requestNames]
     logger.debug("getRequestWorkflows")
     for u in urls:
         logger.debug("url %s", u)
@@ -296,7 +296,7 @@ def getMulticore(request):
     return max(mcores)
 
 
-def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, logger=None):
+def getSiteWhiteList(reqmgrAux, request, siteInfo, reqSpecs=None, pickone=False, logger=None):
     "Return site list for given request"
     lheinput, primary, parent, secondary = getIO(request)
     allowedSites = []
@@ -336,8 +336,8 @@ def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, logge
 
     for campaign in getCampaigns(request):
         # for testing purposes add post campaign call
-        # res = svc.reqmgrAux.postCampaignConfig(campaign, {'%s_name' % campaign: {"Key1": "Value1"}})
-        campaignConfig = svc.reqmgrAux.getCampaignConfig(campaign)
+        # res = reqmgrAux.postCampaignConfig(campaign, {'%s_name' % campaign: {"Key1": "Value1"}})
+        campaignConfig = reqmgrAux.getCampaignConfig(campaign)
         if isinstance(campaignConfig, list):
             campaignConfig = campaignConfig[0]
         campSites = campaignConfig.get('SiteWhitelist', [])
@@ -371,7 +371,7 @@ def getSiteWhiteList(svc, request, siteInfo, reqSpecs=None, pickone=False, logge
         allowedSites = list(set(allowedSites) & set(memAllowed))
     return lheinput, list(primary), list(parent), list(secondary), list(sorted(allowedSites))
 
-def requestsInfo(requestRecords, svc, logger=None):
+def requestsInfo(requestRecords, reqmgrAux, uniConfig, logger=None):
     """
     Helper function to get information about all requests
     """
@@ -381,11 +381,11 @@ def requestsInfo(requestRecords, svc, logger=None):
     # how many replicas have to be made and where data has to be subscribed to
     for rec in requestRecords:
         reqName = rec['name']
-        for wflow in getWorkflow(reqName):
+        for wflow in getWorkflow(reqName, uniConfig['reqmgrUrl']):
             #logger.debug("request: %s, workflow %s" % (reqName, wflow))
             campaign = wflow[reqName]['Campaign']
             logger.debug("request: %s, campaign: %s", reqName, campaign)
-            campaignConfig = svc.reqmgrAux.getCampaignConfig(campaign)
+            campaignConfig = reqmgrAux.getCampaignConfig(campaign)
             logger.debug("request: %s, campaignConfig: %s", reqName, campaignConfig)
             if not campaignConfig:
                 # we skip and create alert
@@ -397,11 +397,11 @@ def requestsInfo(requestRecords, svc, logger=None):
             rec.setdefault('campaign', []).append(campaignConfig)
 
     logger.debug("### receive %s requestSpecs", len(requestRecords))
-    requestsToProcess = unified(svc, requestRecords, logger)
+    requestsToProcess = unified(reqmgrAux, requestRecords, uniConfig, logger)
     logger.debug("### process %s requests", len(requestRecords))
     return requestsToProcess
 
-def unified(svc, requestRecords, logger):
+def unified(reqmgrAux, requestRecords, uniConfig, logger):
     """
     Unified Transferror box
 
@@ -421,7 +421,7 @@ def unified(svc, requestRecords, logger):
     # get workflows from list of requests
     orig = time.time()
     time0 = time.time()
-    requestWorkflows = getRequestWorkflows(requests, logger)
+    requestWorkflows = getRequestWorkflows(requests, reqMgrUrl=uniConfig['reqmgrUrl'],  logger=logger)
     workflows = requestWorkflows.values()
     logger.debug(elapsedTime(time0, "### getWorkflows"))
 
@@ -431,17 +431,17 @@ def unified(svc, requestRecords, logger):
 
     # find dataset info
     time0 = time.time()
-    datasetBlocks, datasetSizes = dbsInfo(datasets)
+    datasetBlocks, datasetSizes = dbsInfo(datasets, uniConfig['dbsUrl'])
     logger.debug(elapsedTime(time0, "### dbsInfo"))
 
     # find block nodes information for our datasets
     time0 = time.time()
-    blockNodes = phedexInfo(datasets)
+    blockNodes = phedexInfo(datasets, uniConfig['phedexUrl'])
     logger.debug(elapsedTime(time0, "### phedexInfo"))
 
     # find events-lumis info for our datasets
     time0 = time.time()
-    eventsLumis = eventsLumisInfo(datasets)
+    eventsLumis = eventsLumisInfo(datasets, uniConfig['dbsUrl'])
     logger.debug(elapsedTime(time0, "### eventsLumisInfo"))
 
     # get specs for all requests and re-use them later in getSiteWhiteList as cache
@@ -457,7 +457,7 @@ def unified(svc, requestRecords, logger):
     for wflow in workflows:
         for wname, wspec in wflow.items():
             time0 = time.time()
-            cput = getComputingTime(wspec, eventsLumis=eventsLumis, logger=logger)
+            cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=uniConfig['dbsUrl'], logger=logger)
             ncopies = getNCopies(cput)
 
             attrs = winfo[wname]
@@ -485,7 +485,7 @@ def unified(svc, requestRecords, logger):
             # find out which site can serve given workflow request
             t0 = time.time()
             lheInput, primary, parent, secondary, allowedSites \
-                = getSiteWhiteList(svc, wspec, siteInfo, reqSpecs)
+                = getSiteWhiteList(reqmgrAux, wspec, siteInfo, reqSpecs)
             if not isinstance(primary, list):
                 primary = [primary]
             if not isinstance(secondary, list):

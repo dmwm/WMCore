@@ -12,8 +12,8 @@ from rucio.client import Client as testClient
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-DSET = "/ttPhiS_M-100_2e_13TeV-madgraph/RunIIAutumn18NanoAOD-102X_upgrade2018_realistic_v15-v2/NANOAODSIM"
-BLOCK = "/ttPhiS_M-100_2e_13TeV-madgraph/RunIIAutumn18NanoAOD-102X_upgrade2018_realistic_v15-v2/NANOAODSIM#0f591ca9-341b-46b5-84f3-908e6f9229e6"
+DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
+BLOCK = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD#f924e248-e029-11e7-aa2a-02163e01b396"
 
 
 class RucioTest(EmulatedUnitTestCase):
@@ -24,12 +24,6 @@ class RucioTest(EmulatedUnitTestCase):
     def __init__(self, methodName='runTest'):
         # TODO figure out what's going on with CRIC mock
         super(RucioTest, self).__init__(methodName=methodName, mockCRIC=False)
-
-        ### FIXME remove this debugging
-        rucioCfg = os.getenv("RUCIO_HOME", None)
-        print("AMR RUCIO_HOME: %s" % rucioCfg)
-        with open("%s/etc/rucio.cfg" % rucioCfg) as fo:
-            pprint(fo.readlines())
 
         self.acct = "wmagent_testing"
 
@@ -157,7 +151,7 @@ class RucioTest(EmulatedUnitTestCase):
 
         # same test, but providing a dataset as input (which has 4 blocks)
         res = self.myRucio.getReplicaInfoForBlocks(dataset=DSET)
-        self.assertEqual(len(res['phedex']['block']), 1)
+        self.assertTrue(len(res['phedex']['block']) >= 1)  # at this very moment, there are 11 replicas
         blocks = [item['name'] for item in res['phedex']['block']]
         self.assertTrue(BLOCK in blocks)
         for item in res['phedex']['block']:
@@ -177,7 +171,7 @@ class RucioTest(EmulatedUnitTestCase):
 
         res = myRucio.getReplicaInfoForBlocks(dataset=DSET)
         self.assertTrue(isinstance(res, list))
-        self.assertEqual(len(res), 1)
+        self.assertTrue(len(res) >= 1)  # at this very moment, there are 11 replicas
         blocks = [item['name'] for item in res]
         self.assertTrue(BLOCK in blocks)
         for item in res:

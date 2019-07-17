@@ -33,15 +33,14 @@ except Exception as _:
 from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.MicroService.Unified.Common import agentInfoUrl, phedexUrl, cert, ckey,\
-    uConfig, monitoringUrl, dashboardUrl, getMSLogger
+from WMCore.MicroService.Unified.Common import cert, ckey, getMSLogger
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
     headers = {'Accept': 'application/json'}
     params = {}
     mgr = RequestHandler()
-    url = '%s/nodeusagehistory' % phedexUrl()
+    url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod/nodeusagehistory'
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
     ret = defaultdict(int)
@@ -63,16 +62,17 @@ class SiteCache(with_metaclass(Singleton, object)):
     def fetch(self):
         "Fetch information about sites from various CMS data-services"
         tfile = tempfile.NamedTemporaryFile()
+        dashboardUrl = "http://dashb-ssb.cern.ch/dashboard/request.py"
         urls = [
-            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl(),
+            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl,
             ### FIXME: these calls to gwmsmon are failing pretty badly with
             ### "302 Found" and failing to decode, causing a huge error dump
             ### to the logs
@@ -82,7 +82,7 @@ class SiteCache(with_metaclass(Singleton, object)):
             # 'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
             'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json',
             'http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt',
-            '%s/storageoverview/latest/StorageOverview.json' % monitoringUrl(),
+            'http://cmsmonitoring.web.cern.ch/cmsmonitoring/storageoverview/latest/StorageOverview.json',
         ]
         cookie = {}
         ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
@@ -125,7 +125,6 @@ class SiteCache(with_metaclass(Singleton, object)):
                     if sid in row['url']:
                         siteInfo['stuck_%s' % sid] = data
             siteInfo['site_queues'] = getNodeQueues()
-        siteInfo['ready_in_agent'] = agentsSites(agentInfoUrl())
         return siteInfo
 
     def get(self, resource, default=None):
@@ -159,7 +158,7 @@ def getNodes(kind):
     "Get list of PhEDEx nodes"
     params = {}
     headers = {'Accept': 'application/json'}
-    url = '%s/nodes' % phedexUrl()
+    url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod/nodes'
     mgr = RequestHandler()
     data = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     nodes = json.loads(data)['phedex']['node']
@@ -168,7 +167,7 @@ def getNodes(kind):
 
 class SiteInfo(with_metaclass(Singleton, object)):
     "SiteInfo class provides info about sites"
-    def __init__(self, mode=None, logger=None):
+    def __init__(self, uConfig, mode=None, logger=None):
         self.logger = getMSLogger(verbose=True, logger=logger)
         self.siteCache = SiteCache(mode, logger)
         self.config = uConfig

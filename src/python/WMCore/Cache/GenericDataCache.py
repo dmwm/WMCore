@@ -36,10 +36,10 @@ class MemoryCacheStruct(object):
             try:
                 self.data = self.func(**self.kwargs)
                 self.lastUpdated = int(time.time())
-            except Exception:
+            except Exception as exc:
                 if noFail:
-                    msg = "Passive failure while looking data up in the memory cache"
-                    self.logger.exception(msg)
+                    msg = "Passive failure while looking data up in the memory cache. Error: %s" % str(exc)
+                    self.logger.warning(msg)
                 else:
                     raise
         return self.data

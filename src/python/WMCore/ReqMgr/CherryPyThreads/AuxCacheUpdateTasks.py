@@ -3,7 +3,7 @@ Created on May 19, 2015
 """
 
 from __future__ import (division, print_function)
-
+import json
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.pycurl_manager import RequestHandler
@@ -34,27 +34,16 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
         """
         self.logger.info("Updating auxiliary couch documents ...")
 
-        res = self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
-        self.checkResponse(res, "CMSSW")
+        self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
 
         try:
             data = self.mgr.getdata(config.unified_url, params={},
                                     headers={'Accept': 'application/json'})
+            data = json.loads(data)
         except Exception as ex:
             msg = "Failed to retrieve unified configuration from github. Error: %s" % str(ex)
             msg += "\nRetrying again in the next cycle"
             self.logger.error(msg)
             return
 
-        res = self.reqmgrAux.updateUnifiedConfig(data, docName="config")
-        self.checkResponse(res, "Unified config")
-
-
-    def checkResponse(self, response, docName=""):
-        """
-        Check the response returned by CouchDB
-        """
-        if 'error' in response:
-            self.logger.error("Failed to update the %s doc. Response: %s", docName, response)
-        else:
-            self.logger.info("%s document successfully updated.", docName)
+        self.reqmgrAux.updateUnifiedConfig(data, docName="config")

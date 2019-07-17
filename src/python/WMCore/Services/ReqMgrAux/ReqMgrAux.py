@@ -92,10 +92,20 @@ class ReqMgrAux(Service):
     def populateCMSSWVersion(self, tcUrl, **kwargs):
         """
         Query TagCollector and update the CMSSW versions document in Couch
+        :return: a boolean with the result of the operation
         """
         from WMCore.Services.TagCollector.TagCollector import TagCollector
         cmsswVersions = TagCollector(tcUrl, **kwargs).releases_by_architecture()
-        return self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
+        resp = self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("CMSSW document successfuly updated.")
+            return True
+
+        msg = "Failed to update CMSSW document. Response: %s" % resp
+        self["logger"].warning(msg)
+        return False
+
 
     def getWMAgentConfig(self, agentName):
         """

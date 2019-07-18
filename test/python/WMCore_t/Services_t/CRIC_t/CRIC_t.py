@@ -14,7 +14,7 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 class CRICTest(EmulatedUnitTestCase):
     """
-    Unit tests for SiteScreening module
+    Unit tests for CRIC Services module
     """
 
     def __init__(self, methodName='runTest'):

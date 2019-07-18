@@ -110,7 +110,7 @@ class DrainStatusPoller(BaseWorkerThread):
         # update the aux db speed drain config with any changes
         if updateConfig:
             self.agentConfig['SpeedDrainMode'] = True
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, self.agentConfig)
+            self.reqAuxDB.updateWMAgentConfig(self.config.Agent.hostName, self.agentConfig)
 
         return
 
@@ -126,7 +126,7 @@ class DrainStatusPoller(BaseWorkerThread):
                 if key in self.validSpeedDrainConfigKeys and v['Enabled']:
                     speedDrainConfig[key]['Enabled'] = False
 
-            self.reqAuxDB.updateAgentConfig(self.config.Agent.hostName, self.agentConfig)
+            self.reqAuxDB.updateWMAgentConfig(self.config.Agent.hostName, self.agentConfig)
         return
 
     def checkSpeedDrainThresholds(self):

@@ -14,13 +14,12 @@ class ReqMgrAux(Service):
 
     """
 
-    def __init__(self, url, header=None, logger=None):
+    def __init__(self, url, httpDict=None, logger=None):
         """
         responseType will be either xml or json
         """
 
-        httpDict = {}
-        header = header or {}
+        httpDict = httpDict or {}
         # url is end point
         httpDict['endpoint'] = "%s/data" % url
         httpDict['logger'] = logger if logger else logging.getLogger()
@@ -29,8 +28,8 @@ class ReqMgrAux(Service):
         # application/x-www-form-urlencodeds
         httpDict.setdefault("content_type", 'application/json')
         httpDict.setdefault('cacheduration', 0)
+        self.cacheExpire = httpDict['cacheduration']
         httpDict.setdefault("accept_type", "application/json")
-        httpDict.update(header)
         self.encoder = json.dumps
         Service.__init__(self, httpDict)
         # This is only for the unittest: never set it true unless it is unittest
@@ -56,7 +55,7 @@ class ReqMgrAux(Service):
         return result['result']
 
     def _getDataFromMemoryCache(self, callname):
-        cache = MemoryCacheStruct(expire=0, func=self._getResult, initCacheValue={},
+        cache = MemoryCacheStruct(expire=self.cacheExpire, func=self._getResult, initCacheValue={},
                                   logger=self['logger'], kwargs={'callname': callname, "verb": "GET"})
         return cache.getData()
 
@@ -93,10 +92,20 @@ class ReqMgrAux(Service):
     def populateCMSSWVersion(self, tcUrl, **kwargs):
         """
         Query TagCollector and update the CMSSW versions document in Couch
+        :return: a boolean with the result of the operation
         """
         from WMCore.Services.TagCollector.TagCollector import TagCollector
         cmsswVersions = TagCollector(tcUrl, **kwargs).releases_by_architecture()
-        return self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
+        resp = self["requests"].put('cmsswversions', cmsswVersions)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("CMSSW document successfuly updated.")
+            return True
+
+        msg = "Failed to update CMSSW document. Response: %s" % resp
+        self["logger"].warning(msg)
+        return False
+
 
     def getWMAgentConfig(self, agentName):
         """
@@ -213,6 +222,49 @@ class ReqMgrAux(Service):
             return True
         msg = "Failed to update campaign: %s in-place: %s. Response: %s" % (campaignName, inPlace, resp)
         self["logger"].warning(msg)
+        return False
+
+    def getUnifiedConfig(self, docName=None):
+        """
+        Retrieve a Unified document type from the auxiliary db.
+        If docName is not provided, then fetch the default UNIFIED_CONFIG doc
+        """
+        if docName:
+            unifiedConfig = self._getDataFromMemoryCache('unifiedconfig/%s' % docName)
+        else:
+            unifiedConfig = self._getDataFromMemoryCache('unifiedconfig')
+
+        if not unifiedConfig:
+            self["logger"].warning("Unified configuration document not found. Result: %s", unifiedConfig)
+
+        return unifiedConfig
+
+    def postUnifiedConfig(self, unifiedConfig, docName=None):
+        """
+        Create a new unified configuration document
+        """
+        if docName:
+            return self["requests"].post('unifiedconfig/%s' % docName, unifiedConfig)[0]['result']
+        return self["requests"].post('unifiedconfig', unifiedConfig)[0]['result']
+
+    def updateUnifiedConfig(self, content, docName=None):
+        """
+        Update the unified configuration with the content provided, replacing
+        the old document.
+        :param content: a dictionary with the data to be updated
+        :return: a boolean with the result of the operation
+        """
+        api = 'unifiedconfig'
+        if docName:
+            resp = self["requests"].put("%s/%s" % (api, docName), content)[0]['result']
+        else:
+            resp = self["requests"].put("%s" % api, content)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("Unified configuration successfully updated.")
+            return True
+
+        self["logger"].warning("Failed to update the unified configuration. Response: %s", resp)
         return False
 
     def deleteConfigDoc(self, docType, docName):

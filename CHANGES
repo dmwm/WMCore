@@ -1,3 +1,15 @@
+1.2.5.pre3 to 1.2.5.pre4:
+  - adapt tests and pylint (Alan Malta Rodrigues) #9296
+  - Major refactoring of the Transferor module (Alan Malta Rodrigues) #9296
+  - Remove unified config json in favor of a document in couchDB (Alan Malta Rodrigues) #9296
+  - fix unit test; remove debugging from test (Alan Malta Rodrigues) #9094
+  - pylint changes. (khurtado) #9294
+  - Add methods in the LogCollect step type template to get scram/swVersion make JobCreatorPoller use those methods when setting the job attributes of this step type. (khurtado) #9294
+  - unit tests and pylint (Alan Malta Rodrigues) #9094
+  - Initial Rucio Service class with basic functionality (Alan Malta Rodrigues) #9094
+  - SLC7 templates; StepChain harvesting, and a few other fixes (Alan Malta Rodrigues) #9262
+
+
 1.2.5.pre2 to 1.2.5.pre3:
   - Accept tuple returned from make_notifications (Alan Malta Rodrigues) #9292
   - Switch from WMCore StompAMQ to CMSMonitoring one (Valentin Kuznetsov) #9292

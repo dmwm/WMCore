@@ -51,7 +51,7 @@ class TransferorTest(EmulatedUnitTestCase):
         Test the `prep` method
         """
         # TODO: it should be eventually mocked
-        self.assertFalse(self.msTransferor.prep())
+        self.assertTrue(self.msTransferor.prep())
 
     def testRequestRecord(self):
         """

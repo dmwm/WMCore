@@ -80,9 +80,9 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.setFakeDN()
 
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
-        rerecoFile = open(os.path.join(requestPath, "ReReco_RunBlockWhite.json"), 'r')
+        with open(os.path.join(requestPath, "ReReco_RunBlockWhite.json")) as fo:
+            rerecoArgs = json.load(fo)
 
-        rerecoArgs = json.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
         cmsswDoc = {"_id": "software"}
@@ -140,7 +140,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 1)
         clonedName = response[0]['request']
         response = self.reqSvc.getRequestByNames(clonedName)
-        self.assertEqual(response[0][clonedName]['TimePerEvent'], 15)
+        self.assertEqual(response[0][clonedName]['TimePerEvent'], 73.85)
 
         response = self.reqSvc.cloneRequest(requestName, {'TimePerEvent': 20})
         self.assertEqual(len(response), 1)

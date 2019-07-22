@@ -16,6 +16,7 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 
 
 class MissingPostData(RESTError):
@@ -148,6 +149,7 @@ class AuxBaseAPI(RESTEntity):
         RESTEntity.__init__(self, app, api, config, mount)
         # CouchDB auxiliary database name
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
+        self.reqmgr_aux_db_service = RequestDBReader(self.reqmgr_aux_db, couchapp="ReqMgrAux")
         self.setName()
 
     def setName(self):
@@ -169,7 +171,10 @@ class AuxBaseAPI(RESTEntity):
         """
         try:
             if subName:
-                docName = "%s_%s" % (self.name, subName)
+                if subName.lower() == "all_docs":
+                    return rows(self._getAllDocs())
+                else:
+                    docName = "%s_%s" % (self.name, subName)
             else:
                 docName = self.name
             sw = self.reqmgr_aux_db.document(docName)
@@ -179,6 +184,20 @@ class AuxBaseAPI(RESTEntity):
             raise NoSuchInstance
 
         return rows([sw])
+
+    def _getAllDocs(self):
+        """
+        Return all the documents under a given document type
+        """
+        try:
+            option = {"include_docs": True}
+            allDocs = self.reqmgr_aux_db_service.getRequestByCouchView("byconfig", option, [self.name])
+        except CouchError as ex:
+            msg = "ERROR: Failed to fetch ALL_DOCS for ConfigType: %s. Reason: %s" % (self.name, str(ex))
+            cherrypy.log(msg)
+            raise cherrypy.HTTPError(404, msg)
+
+        return allDocs.values()
 
     @restcall(formats=[('application/json', JSONFormat())])
     def post(self, subName=None):
@@ -297,3 +316,12 @@ class UnifiedConfig(AuxBaseAPI):
 
     def setName(self):
         self.name = "UNIFIED_CONFIG"
+
+class TransferInfo(AuxBaseAPI):
+    """
+    Handle information related to the automatic transfers made
+    by the MicroServices.
+    """
+
+    def setName(self):
+        self.name = "TRANSFER"

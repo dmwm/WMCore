@@ -34,7 +34,6 @@ class Request(RESTEntity):
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp="ReqMgr")
         # this need for the post validtiaon
-        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         self.gq_service = WorkQueue(config.couch_host, config.couch_workqueue_db)
 
     def _validateGET(self, param, safe):

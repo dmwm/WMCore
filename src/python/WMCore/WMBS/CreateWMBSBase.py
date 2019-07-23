@@ -77,8 +77,8 @@ class CreateWMBSBase(DBCreator):
                id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
                lfn          VARCHAR(700) NOT NULL,
                filesize     BIGINT,
-               events       INTEGER,
-               first_event  BIGINT       NOT NULL DEFAULT 0,
+               events       BIGINT UNSIGNED,
+               first_event  BIGINT       UNSIGNED NOT NULL DEFAULT 0,
                merged       INT(1)       NOT NULL DEFAULT 0,
                UNIQUE (lfn))"""
 
@@ -104,7 +104,7 @@ class CreateWMBSBase(DBCreator):
                fileid  INTEGER NOT NULL,
                run     INTEGER NOT NULL,
                lumi    INTEGER NOT NULL,
-               num_events  INTEGER,
+               num_events  BIGINT UNSIGNED,
                PRIMARY KEY (fileid, run, lumi),
                FOREIGN KEY (fileid) references wmbs_file_details(id)
                  ON DELETE CASCADE)"""

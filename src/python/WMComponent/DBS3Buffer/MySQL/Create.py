@@ -90,7 +90,7 @@ class Create(DBCreator):
                  id                    INTEGER      AUTO_INCREMENT,
                  lfn                   VARCHAR(500) NOT NULL,
                  filesize              BIGINT,
-                 events                INTEGER,
+                 events                BIGINT UNSIGNED,
                  dataset_algo          INTEGER      NOT NULL,
                  block_id              INTEGER,
                  status                VARCHAR(20),
@@ -111,7 +111,7 @@ class Create(DBCreator):
                  filename    INTEGER NOT NULL,
                  run         INTEGER NOT NULL,
                  lumi        INTEGER NOT NULL,
-                 num_events      INTEGER)"""
+                 num_events  BIGINT UNSIGNED)"""
 
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_location (

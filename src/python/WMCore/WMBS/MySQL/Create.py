@@ -67,6 +67,5 @@ class Create(CreateWMBSBase):
     def execute(self, conn=None, transaction=None):
         for i in self.create.keys():
             self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"
-            self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
 
         return CreateWMBSBase.execute(self, conn, transaction)

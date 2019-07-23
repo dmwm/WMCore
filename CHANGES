@@ -1,3 +1,8 @@
+1.2.4.patch2 to 1.2.4.patch3:
+  - Support large integer values for events in MariaDB (Alan Malta Rodrigues) #9305
+  - Add methods in the LogCollect step type template to get scram/swVersion make JobCreatorPoller use those methods when setting the job attributes of this step type. (khurtado) #9295
+
+
 1.2.4.patch1 to 1.2.4.patch2:
   - Accept tuple returned from make_notifications (Alan Malta Rodrigues) #9293
   - Switch from WMCore StompAMQ to CMSMonitoring one (Valentin Kuznetsov) #9293

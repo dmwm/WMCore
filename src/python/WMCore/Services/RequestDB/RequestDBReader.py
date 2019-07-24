@@ -5,7 +5,6 @@ from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 
 class RequestDBReader(object):
     def __init__(self, couchURL, couchapp="ReqMgr"):
-        couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
         self._commonInit(couchURL, couchapp)
 
@@ -20,6 +19,7 @@ class RequestDBReader(object):
             self.dbName = self.couchDB.name
             self.couchServer = CouchServer(self.couchURL)
         else:
+            couchURL = sanitizeURL(couchURL)['url']
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
             self.couchServer = CouchServer(self.couchURL)
             self.couchDB = self.couchServer.connectDatabase(self.dbName, False)

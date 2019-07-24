@@ -12,8 +12,8 @@ from WMCore.REST.Server import RESTApi
 from WMCore.REST.Services import ProcessMatrix
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
-from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig,
-                                CMSSWVersions, WMAgentConfig, CampaignConfig, UnifiedConfig)
+from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig, CMSSWVersions,
+                                             WMAgentConfig, CampaignConfig, UnifiedConfig, TransferInfo)
 from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec,
     WorkloadConfig, WorkloadSplitting)
 from WMCore.ReqMgr.Service.Request import Request, RequestStatus, RequestType
@@ -57,6 +57,7 @@ class RestApiHub(RESTApi):
                    "permissions": PermissionsConfig(app, IndividualCouchManager(config), config, mount),
                    "campaignconfig": CampaignConfig(app, IndividualCouchManager(config), config, mount),
                    "unifiedconfig": UnifiedConfig(app, IndividualCouchManager(config), config, mount),
+                   "transferinfo": TransferInfo(app, IndividualCouchManager(config), config, mount),
                    "status": RequestStatus(app, IndividualCouchManager(config), config, mount),
                    "type": RequestType(app, IndividualCouchManager(config), config, mount),
                    "spec_template": RequestSpec(app, IndividualCouchManager(config), config, mount),

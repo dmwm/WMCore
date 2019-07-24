@@ -1,8 +1,11 @@
 from __future__ import print_function
+
 import threading
 import traceback
+
 import cherrypy
 import cherrypy.process.wspbus as cherrybus
+
 
 def start(server):
     try:
@@ -17,6 +20,7 @@ def start(server):
         server.stop()
         raise e
 
+
 def stop(server):
     server.stop()
     server.setLastTest()
@@ -29,8 +33,8 @@ def stop(server):
 
     cherrybus.bus = cherrybus.Bus()
     cherrypy.engine = cherrybus.bus
-    cherrypy.engine.timeout_monitor = cherrypy._TimeoutMonitor(cherrypy.engine)
-    cherrypy.engine.timeout_monitor.subscribe()
+    # cherrypy.engine.timeout_monitor = cherrypy._TimeoutMonitor(cherrypy.engine)
+    # cherrypy.engine.timeout_monitor.subscribe()
 
     cherrypy.engine.autoreload = cherrypy.process.plugins.Autoreloader(cherrypy.engine)
     cherrypy.engine.autoreload.subscribe()

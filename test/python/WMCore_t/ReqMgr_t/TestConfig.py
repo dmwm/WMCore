@@ -3,21 +3,23 @@ ReqMgr unittest configuration file.
 
 """
 
-
 # ---------------------------------------------------------------------------
 # this entire section copied from:
 #     deployment/reqmgr2/config.py
 
 
-from WMCore.Configuration import Configuration
-from os import path
 import socket
+from os import path, getenv
+
+from WMCore.Configuration import Configuration
 
 HOST = socket.gethostname().lower()
 BASE_URL = "@@BASE_URL@@"
 DBS_INS = "@@DBS_INS@@"
 COUCH_URL = "%s/couchdb" % BASE_URL
 LOG_DB_URL = "%s/wmstats_logdb" % COUCH_URL
+LOG_REPORTER = "reqmgr2"
+
 ROOTDIR = __file__.rsplit('/', 3)[0]
 
 config = Configuration()
@@ -25,15 +27,20 @@ config = Configuration()
 main = config.section_("main")
 srv = main.section_("server")
 srv.thread_pool = 30
+srv.accepted_queue_size = -1
+srv.accepted_queue_timeout = 0
 main.application = "reqmgr2"
 main.port = 9988  # main application port it listens on
 main.index = "ui"
 # Defaults to allow any CMS authenticated user. Write APIs should require
 # additional roles in SiteDB (i.e. "Admin" role for the "ReqMgr" group)
 main.authz_defaults = {"role": None, "group": None, "site": None}
+main.log_screen = True
 
-sec = main.section_("tools").section_("cms_auth")
-sec.key_file = "%s/auth/wmcore-auth/header-auth-key" % __file__.rsplit('/', 3)[0]
+tools = main.section_("tools")
+# provide CherryPy monitoring under: <hostname>/reqmgr2/data/stats
+tools.section_("cpstats").on = False
+tools.section_("cms_auth").key_file = "%s/auth/wmcore-auth/header-auth-key" % ROOTDIR
 
 # this is where the application will be mounted, where the REST API
 # is reachable and this features in CMS web frontend rewrite rules
@@ -52,7 +59,7 @@ views = config.section_("views")
 data = views.section_("data")
 data.object = "WMCore.ReqMgr.Service.RestApiHub.RestApiHub"
 # The couch host is defined during deployment time.
-data.couch_host = "@@COUCH_HOST@@"
+data.couch_host = COUCH_URL
 # main ReqMgr CouchDB database containing all requests with spec files attached
 data.couch_reqmgr_db = "reqmgr_workload_cache"
 # ReqMgr database containing groups, teams, software, etc
@@ -65,43 +72,23 @@ data.couch_wmdatamining_db = "wmdatamining"
 data.couch_acdc_db = "acdcserver"
 data.couch_workqueue_db = "workqueue"
 data.central_logdb_url = LOG_DB_URL
-data.log_reporter = "request_manager"
+data.log_reporter = LOG_REPORTER
 
 # number of past days since when to display requests in the default view
 data.default_view_requests_since_num_days = 30  # days
 # resource to fetch CMS software versions and scramarch info from
-data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
+data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"
 # another source at TC, returns directly JSON, but strangely formatted (e.g.
 # keys are not present at easy item but defined in a dedicated item ...)
 # https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
-
-# request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_7_6_1"
-data.default_sw_scramarch = "slc6_amd64_gcc493"
-data.dqm_url = "%s/dqm/dev" % BASE_URL
 
 # use dbs testbed for private vm test
 data.dbs_url = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
 
-# number of past days since when to display requests in the default view
-data.default_view_requests_since_num_days = 30  # days
-# resource to fetch CMS software versions and scramarch info from
-data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
-# another source at TC, returns directly JSON, but strangely formatted (e.g.
-# keys are not present at easy item but defined in a dedicated item ...)
-# https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
-
-# request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_7_6_1"
-data.default_sw_scramarch = "slc6_amd64_gcc493"
-data.dqm_url = "https://cmsweb.cern.ch/dqm/dev"
-data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-
-
 # web user interface
 ui = views.section_("ui")
 ui.object = "WMCore.ReqMgr.WebGui.FrontPage.FrontPage"
-ui.static_content_dir = path.join(path.abspath(__file__.rsplit('/', 3)[0]),
+ui.static_content_dir = path.join(path.abspath(ROOTDIR),
                                   "apps",
                                   main.application,
                                   "data")
@@ -114,8 +101,6 @@ ui.static_content_dir = path.join(path.abspath(__file__.rsplit('/', 3)[0]),
 # this entire section copied from:
 #     deployment/reqmgr2/config-localhost.py
 
-import os
-
 
 # localhost running additions, no authentication
 config.main.section_("tools")
@@ -125,10 +110,10 @@ config.main.server.environment = "staging"  # must not be "production"
 # config.main.tools.cms_auth.policy = "dangerously_insecure"
 
 # go up /deployment/reqmgr2/__file__
-first_part = os.path.abspath(__file__.rsplit('/', 3)[0])
-config.views.ui.static_content_dir = os.path.join(first_part, "WMCore/src/data")
+first_part = path.abspath(ROOTDIR)
+config.views.ui.static_content_dir = path.join(first_part, "WMCore/src/data")
 
-config.views.data.couch_host = os.getenv("COUCHURL", None)
+config.views.data.couch_host = getenv("COUCHURL", None)
 
 
 

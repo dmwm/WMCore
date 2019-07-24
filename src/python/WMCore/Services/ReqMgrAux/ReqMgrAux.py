@@ -83,9 +83,10 @@ class ReqMgrAux(Service):
         :return: a dictionary with the CouchDB response
         """
         apiMap = {'wmagentconfig': self.getWMAgentConfig,
-                  'campaignconfig': self.getCampaignConfig}
+                  'campaignconfig': self.getCampaignConfig,
+                  'transferinfo': self.getTransferInfo}
 
-        thisDoc = apiMap[callName](resource)
+        thisDoc = apiMap[callName](resource)[0]
         thisDoc.update(kwparams)
         return self["requests"].put("%s/%s" % (callName, resource), thisDoc)[0]['result']
 
@@ -205,10 +206,10 @@ class ReqMgrAux(Service):
         provided, replacing the old document.
         If inPlace is set to True, then a modification of the current
         document is performed, according to the key/value pairs provided.
-        :param agentName: name of the agent/document in couch
+        :param campaignName: name of the campaign document in couch
         :param content: a dictionary with the data to be updated
         :param inPlace: a boolean defining whether to perform a replace
-        or a update modification
+            or a update modification
         :return: a boolean with the result of the operation
         """
         api = 'campaignconfig'
@@ -267,19 +268,63 @@ class ReqMgrAux(Service):
         self["logger"].warning("Failed to update the unified configuration. Response: %s", resp)
         return False
 
+    def getTransferInfo(self, docName):
+        """
+        get a workflow transfer document, to be used by unified ReqMgr2MS.
+        """
+        return self._getDataFromMemoryCache('transferinfo/%s' % docName)
+
+    def postTransferInfo(self, docName, transferInfo):
+        """
+        Create a new workflow transfer document
+
+        :param docName: the name of the document to be created
+        :param transferInfo: a dictionary with the document content
+        :return: CouchDB response dictionary
+        """
+        return self["requests"].post('transferinfo/%s' % docName, transferInfo)[0]['result']
+
+    def updateTransferInfo(self, docName, content, inPlace=False):
+        """
+        Update the corresponding workflow transfer document with the content
+        provided, replacing the old one.
+        If inPlace is set to True, then a modification of the current
+        document is performed, according to the key/value pairs provided.
+        :param docName: name of the transfer document in couch
+        :param content: a dictionary with the data to be updated
+        :param inPlace: a boolean defining whether to perform a replace
+            or a update modification
+        :return: a boolean with the result of the operation
+        """
+        api = 'transferinfo'
+        if inPlace:
+            resp = self._updateRecords(api, docName, content)
+        else:
+            resp = self["requests"].put("%s/%s" % (api, docName), content)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("Update in-place: %s for transfer doc: %s was successful.", inPlace, docName)
+            return True
+        msg = "Failed to update transfer doc: %s in-place: %s. Response: %s" % (docName, inPlace, resp)
+        self["logger"].warning(msg)
+        return False
+
     def deleteConfigDoc(self, docType, docName):
         """
         Given a document type and a document name, delete it from the
         Couch auxiliary DB.
-        :param docType: a string with the document type to be deleted.
-          The value can be one of these: ('wmagent', 'campaign', 'unified')
+        :param docType: a string with the document type to be deleted, which
+            corresponds to the same API name
         :param docName: the name of the document to be deleted
         :return: response dictionary from the couch operation
         """
-        if docType not in ('wmagent', 'campaign', 'unified'):
-            self["logger"].warning("Document type: '%s' not allowed for deletion", docType)
+        allowedValues = ('wmagentconfig', 'campaignconfig', 'unifiedconfig', 'transferinfo')
+        if docType not in allowedValues:
+            msg = "Document type: '%s' not allowed for deletion." % docType
+            msg += " Supported documents are: %s" % allowedValues
+            self["logger"].warning(msg)
         else:
-            return self["requests"].delete('%sconfig/%s' % (docType, docName))[0]['result']
+            return self["requests"].delete('%s/%s' % (docType, docName))[0]['result']
 
 
 AUXDB_AGENT_CONFIG_CACHE = {}

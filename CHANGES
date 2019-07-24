@@ -1,3 +1,13 @@
+1.2.5.pre4 to 1.2.5.pre5:
+  - Added transferinfo client APIs to ReqMgrAux (Alan Malta Rodrigues) #9307
+  - Add rucio unit tests to the list of unstable tests (Alan Malta Rodrigues) #9308
+  - script to fetch and parse campaign configs from Unified MongoDB (Alan Malta Rodrigues) #9306
+  - created unit tests; pylint fixes (Alan Malta Rodrigues) #9302
+  - Added transferinfo REST API to access ReqMgrAux transfer related docs (Alan Malta Rodrigues) #9302
+  - Support large integer values for events in MariaDB (Alan Malta Rodrigues) #9304
+  - PY3: Make Configuration module compatible with python3 (Alan Malta Rodrigues) #9301
+
+
 1.2.5.pre3 to 1.2.5.pre4:
   - adapt tests and pylint (Alan Malta Rodrigues) #9296
   - Major refactoring of the Transferor module (Alan Malta Rodrigues) #9296

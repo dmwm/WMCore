@@ -10,7 +10,7 @@ except ImportError:
     # PY3
     from urllib.parse import urlparse
 
-from WMCore.WorkQueue.WorkQueueUtils import get_dbs
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
 # TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
@@ -22,29 +22,19 @@ UPDATE_INTERVAL_COARSENESS = 5 * 60
 
 
 def isGlobalDBS(dbs):
-    """Is this the global dbs"""
+    """
+    Receives a DBSReader object and finds out whether it's
+    pointing to Global DBS (no matter whether it's production
+    or the pre-production instance).
+    """
     try:
-        # try to determine from name - save a trip to server
-        # fragile but if this url changes many other things will break also...
-        url = urlparse(dbs.dbs.getServerUrl())  # DBSApi has url not DBSReader
-        if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
-            return True
-        info = dbs.dbs.getServerInfo()
-        if info and info.get('InstanceName') == 'GLOBAL':
-            return True
-        return False
-    except Exception:
-        # determin whether this is dbs3
-        dbs.dbs.serverinfo()
-
-        # hacky way to check whether it is global or local dbs.
-        # issue is created, when it is resolved. use serverinfo() for that.
-        # https://github.com/dmwm/DBS/issues/355
-        url = dbs.dbs.url
-        if url.find("/global") != -1:
-            return True
-        else:
-            return False
+        url = urlparse(dbs.dbsURL)
+        if url.hostname.startswith('cmsweb'):
+            if url.path.startswith('/dbs/prod/global') or url.path.startswith('/dbs/int/global'):
+                return True
+    except Exception as ex:
+        logging.error("Failed to find out whether DBS is Global or not. Error: %s", str(ex))
+    return False
 
 
 def timeFloor(number, interval=UPDATE_INTERVAL_COARSENESS):
@@ -84,6 +74,10 @@ class DataLocationMapper(object):
             self.phedex = self.params['phedex']
         if self.params.get('cric'):
             self.cric = self.params['cric']
+
+        # save each DBSReader instance in the class object, such that
+        # the same object is not shared amongst multiple threads
+        self.dbses = {}
 
     def __call__(self, dataItems, fullResync=False, dbses=None, datasetSearch=False):
         result = {}
@@ -179,7 +173,10 @@ class DataLocationMapper(object):
                 # if it is acdc block don't update location. location should be
                 # inserted when block is queued and not supposed to change
                 continue
-            itemsByDbs[get_dbs(item['dbs_url'])].append(item['name'])
+
+            if item['dbs_url'] not in self.dbses:
+                self.dbses[item['dbs_url']] = DBSReader(item['dbs_url'])
+            itemsByDbs[self.dbses[item['dbs_url']]].append(item['name'])
         return itemsByDbs
 
 
@@ -189,16 +186,17 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
     def __init__(self, logger, backend, **kwargs):
         self.backend = backend
         self.logger = logger
-        DataLocationMapper.__init__(self, **kwargs)
+        super(WorkQueueDataLocationMapper, self).__init__(**kwargs)
+        DataLocationMapper.__init__(self, )
 
     def __call__(self, fullResync=False):
         dataItems = self.backend.getActiveData()
 
         # fullResync incorrect with multiple dbs's - fix!!!
-        dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
+        dataLocations, fullResync = super(WorkQueueDataLocationMapper, self).__call__(dataItems, fullResync)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
-        for _dbs, dataMapping in dataLocations.items():
+        for _, dataMapping in dataLocations.items():
             modified = []
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForData(data)

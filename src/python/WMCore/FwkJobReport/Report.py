@@ -598,14 +598,21 @@ class Report(object):
         errDetails.exitCode = exitCode
         errDetails.type = str(errorType)
 
-        if hasattr(errorDetails, "decode"):
-            # Fix for the unicode encoding issue, #8043
-            # interprets this string using utf-8 codec and ignoring any errors
-            errDetails.details = errorDetails.decode('utf-8', 'ignore')
-        else:
-            # Then cast it to string and decode it
-            errorDetails = str(errorDetails)
-            errDetails.details = errorDetails.decode('utf-8', 'ignore')
+        try:
+            if hasattr(errorDetails, "decode"):
+                # Fix for the unicode encoding issue, #8043
+                # interprets this string using utf-8 codec and ignoring any errors
+                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+            else:
+                # Then cast it to string and decode it
+                errorDetails = str(errorDetails)
+                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+        except UnicodeEncodeError as ex:
+            msg = "Failed to decode the job error details for job ID: %s." % self.getJobID()
+            msg += "\nException message: %s\nOriginal error details: %s" % (str(ex), errorDetails)
+            logging.error(msg)
+            msg = "DEFAULT ERROR MESSAGE, because it failed to UTF-8 decode the original message."
+            errDetails.details = msg
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
         self.setStepStatus(stepName=stepName, status=exitCode)

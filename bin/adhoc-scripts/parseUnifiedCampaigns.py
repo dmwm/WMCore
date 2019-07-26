@@ -27,13 +27,16 @@ where individual records have the following structure:
     "datasetA": ["list of sites for SiteWhitelist"],
     "datasetB": ["list of sites for SiteWhitelist"]
  },
- "MaxCopies": integer
+ "MaxCopies": integer,
+ "PartialCopy": integer
 }
 ```
 
 Example of execution:
 python parseUnifiedCampaigns.py --dburi=mongodb://localhost:27017
        --dbname=unified --dbcoll=campaignsConfiguration --verbose=10 --fout=output.json
+or, parsing campaigns.json file
+python parseUnifiedCampaigns.py --fin=/path/WmAgentScripts/campaigns.json
 """
 from __future__ import print_function, division
 
@@ -188,6 +191,7 @@ def parse(istream, verbose=0):
         'secondary_AAA': 'SecondaryAAA',
         'SecondaryLocation': 'SecondaryLocation',
         'secondaries': 'Secondaries',
+        'partial_copy': 'PartialCopy',
         'maxcopies': 'MaxCopies'}
     # campaign schema dict
     confRec = {
@@ -198,6 +202,7 @@ def parse(istream, verbose=0):
         'SecondaryAAA': False,
         'SecondaryLocation': [],
         'Secondaries': {},
+        'PartialCopy': 1,
         'MaxCopies': 1}
 
     if not isinstance(istream, list):
@@ -283,7 +288,11 @@ def main():
         if verbose:
             print("### read data from '%s'" % fin)
         with open(fin, 'r') as istream:
-            data = json.load(istream)
+            data = []
+            for key, val in json.load(istream).items():
+                rec = {'name': key}
+                rec.update(val)
+                data.append(rec)
     rawRecords = parse(data, verbose)
 
     output = []  # in case we want to dump all records to a json file

@@ -22,6 +22,7 @@ from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
@@ -36,7 +37,7 @@ from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WorkQueueExceptions import (TERMINAL_EXCEPTIONS, WorkQueueError, WorkQueueNoMatchingElements,
                                                   WorkQueueWMSpecError)
-from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames, get_dbs
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 
 
 # Convenience constructor functions
@@ -46,10 +47,6 @@ def globalQueue(logger=None, dbi=None, **kwargs):
     """
     defaults = {'PopulateFilesets': False,
                 'LocalQueueFlag': False,
-                'SplittingMapping': {'DatasetBlock':
-                                         {'name': 'Block',
-                                          'args': {}}
-                                     },
                 'TrackLocationOrSubscription': 'location'
                 }
     defaults.update(kwargs)
@@ -112,8 +109,10 @@ class WorkQueue(WorkQueueBase):
                 raise WorkQueueError(msg)
             self.params['ParentQueueCouchUrl'] = self.parent_queue.queueUrl
 
-        self.params.setdefault("GlobalDBS",
-                               "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+        # save each DBSReader instance in the class object, such that
+        # the same object is not shared amongst multiple threads
+        self.dbses = {}
+
         self.params.setdefault('QueueDepth', 1)  # when less than this locally
         self.params.setdefault('WorkPerCycle', 100)
         self.params.setdefault('LocationRefreshInterval', 600)
@@ -368,10 +367,22 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('Injected %s out of %s units into WMBS', len(results), len(matches))
         return results
 
+    def _getDbs(self, dbsUrl):
+        """
+        If we have already construct a DBSReader object pointing to
+        the DBS URL provided, return it. Otherwise, create and return
+        a new instance.
+        :param dbsUrl: string with the DBS url
+        :return: an instance of DBSReader
+        """
+        if dbsUrl in self.dbses:
+            return self.dbses[dbsUrl]
+        return DBSReader(dbsUrl)
+
     def _getDBSDataset(self, match):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
-        dbs = get_dbs(match['Dbs'])
+        dbs = self._getDbs(match['Dbs'])
         datasetName = match['Inputs'].keys()[0]
 
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
@@ -403,7 +414,7 @@ class WorkQueue(WorkQueueBase):
             block["Files"] = fileLists
             return blockName, block
         else:
-            dbs = get_dbs(match['Dbs'])
+            dbs = self._getDbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
             elif wmspec.getRequestType() == 'StoreResults':

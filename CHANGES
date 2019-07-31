@@ -1,3 +1,10 @@
+1.2.5.pre5 to 1.2.5.pre6:
+  - Add PartialCopy attribute and fix issue with parsing campaigns.json file (Valentin Kuznetsov) #9317
+  - Tier0 sets WorkQueue to None, so we cannot call any WorkQueue methods on Tier0 WMAgent. (Vytautas Jankauskas) #9314
+  - Catch decoding exception in FwkReport and set a default error message (Alan Malta Rodrigues) #9312
+  - Don't share the same DBS object amongst multiple threads (Alan Malta Rodrigues) #9311
+
+
 1.2.5.pre4 to 1.2.5.pre5:
   - Added transferinfo client APIs to ReqMgrAux (Alan Malta Rodrigues) #9307
   - Add rucio unit tests to the list of unstable tests (Alan Malta Rodrigues) #9308

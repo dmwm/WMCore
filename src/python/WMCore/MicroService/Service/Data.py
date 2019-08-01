@@ -24,6 +24,7 @@ import importlib
 import cherrypy
 
 # WMCore modules
+import WMCore
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 # from WMCore.REST.Validation import validate_rx, validate_str
@@ -63,13 +64,12 @@ class Data(RESTEntity):
 
         """
         if method == 'GET':
+            for prop in param.kwargs.keys():
+                safe.kwargs[prop] = param.kwargs.pop(prop)
             if len(param.args) == 1 and param.args[0] == 'status':
-                safe.args.append(param.args[0])
-                param.args.remove(param.args[0])
+                safe.args.append(param.args.pop(0))
 #                 validate_rx('request', param, safe, optional=True)
 #                 validate_str('_', param, safe, PAT_INFO, optional=True)
-                return True
-            if len(param.args) == 0:
                 return True
         elif method == 'POST':
             if not param.args or not param.kwargs:
@@ -83,14 +83,12 @@ class Data(RESTEntity):
         Implement GET request with given uid or set of parameters
         All work is done by MicroServiceManager
         """
-        res = {'request': kwds, 'microservice': self.mgr.__class__.__name__}
+        res = {'request_args': args,
+               'request_kwargs': kwds,
+               'wmcore_microservice_version': WMCore.__version__,
+               'microservice': self.mgr.__class__.__name__}
         if 'status' in args:
-            if kwds:
-                res.update({'results': dict(status=self.mgr.status(**kwds))})
-            else:
-                res.update({'results': dict(status=self.mgr.status())})
-        else:
-            res.update({'results': dict(status={})})
+            res.update(dict(status=self.mgr.status(**kwds)))
         return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])

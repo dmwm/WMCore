@@ -1,102 +1,92 @@
-#!/usr/bin/env python
 """
-_MSTransferor_
-
-Class to hold the whole logic behind the transferor module
+File       : MSTransferor.py
+Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
+             Alan Malta <alan dot malta AT cern dot ch >
+Description: MSTransferor class provide whole logic behind
+the transferor module.
 """
+# futures
 from __future__ import division, print_function
 
-import hashlib
+# system modules
+import time
 from pprint import pformat
+
+# WMCore modules
 from Utils.IteratorTools import grouper
-from WMCore.MicroService.Unified.Common import getMSLogger
+from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList \
+    import PhEDExSubscription
 
 
-class MSTransferor(object):
-    def __init__(self, microConfig, status, logger=None):
+class MSTransferor(MSCore):
+    """
+    MSTransferor class provide whole logic behind
+    the transferor module.
+    """
+    def __init__(self, msConfig, logger=None):
         """
         Runs the basic setup and initialization for the MS Transferor module
         :param microConfig: microservice configuration
         """
-        self.msConfig = microConfig
-        self.status = status
-        self.uConfig = {}
-        self.logger = getMSLogger(microConfig['verbose'], logger=logger)
-        self.reqmgr2 = ReqMgr(microConfig['reqmgrUrl'], logger=self.logger)
-        self.reqmgrAux = ReqMgrAux(microConfig['reqmgrUrl'], httpDict={'cacheduration': 60}, logger=self.logger)
-        # eventually will change it to Rucio
-        self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
-                             dbsUrl=microConfig['dbsUrl'], logger=self.logger)
+        super(MSTransferor, self).__init__(msConfig, logger)
+        self.reqInfo = RequestInfo(msConfig, logger)
 
-    def prep(self):
-        """
-        Runs any preparation tasks before executing the actual algorithm.
-        For now:
-         * fetches the unified configuration
-        :return: False if it fail to run this action, otherwise True
-        """
-        self.uConfig = self.reqmgrAux.getUnifiedConfig(docName="config")
-        return bool(self.uConfig)
-
-    def execute(self):
+    def execute(self, reqStatus):
         """
         Executes the whole transferor logic
-        :param reqStatus: request status to that matters for this module
+        :param reqStatus: request status to process
         :return:
         """
-        if not self.prep():
-            self.logger.warning("Failed to fetch the latest unified config. Skipping this cycle")
-            return
-        self.uConfig = self.uConfig[0]
-
         requestRecords = []
         try:
-            # get requests from ReqMgr2 data-service for given status
-            requests = self.reqmgr2.getRequestByStatus([self.status], detail=True)
-            if requests:
-                requests = requests[0]
-            self.logger.info("### transferor found %s requests in '%s' state", len(requests), self.status)
-            if requests:
-                for _, wfData in requests.iteritems():
+            # get requests from ReqMgr2 data-service for given statue
+            requestSpecs = self.reqmgr2.getRequestByStatus(
+                [reqStatus], detail=True)
+            if requestSpecs:
+                for _, wfData in requestSpecs[0].items():
                     requestRecords.append(self.requestRecord(wfData))
-        except Exception as err:
+            self.logger.debug(
+                '### transferor found %s requests in %s state',
+                len(requestRecords), reqStatus)
+        except Exception as err:  # general error
             self.logger.exception('### transferor error: %s', str(err))
 
-        if not requestRecords:
-            return
-
-        try:
-            reqInfo = RequestInfo(self.msConfig, self.uConfig, self.logger)
-            for reqSlice in grouper(requestRecords, 50):
-                reqResults = reqInfo(reqSlice)
-                self.logger.info("%d requests completely processed.", len(reqResults))
-                self.logger.info("Working on the data subscription and status change...")
-                # process all requests
-                for req in reqResults:
-                    reqName = req['name']
+        # process all requests
+        requestStatuses = {}
+        for reqSlice in grouper(requestRecords, 50):
+            # get complete requests information
+            # based on Unified Transferor logic
+            reqResults = self.reqInfo(reqSlice)
+            self.logger.info("%d requests completely processed.", len(reqResults))
+            self.logger.info("Working on the data subscription and status change...")
+            # process all requests
+            for req in reqResults:
+                reqName = req['name']
+                try:
                     # perform transfer
-                    tid = self.transferRequest(req)
-                    if tid:
-                        # Once all transfer requests were successfully made, update: assigned -> staging
+                    sdict = self.transferRequest(req)
+                    if sdict:
+                        # Once all transfer requests were successfully made,
+                        # update: assigned -> staging
                         self.logger.debug("### transfer request for %s successfull", reqName)
                         self.change(req, 'staging', '### transferor')
                         # if there is nothing to be transferred (no input at all),
                         # then update the request status once again staging -> staged
                         # self.change(req, 'staged', '### transferor')
-        except Exception as err:  # general error
-            self.logger.exception('### transferor error: %s', str(err))
+                except Exception as err:  # general error
+                    self.logger.exception('### transferor error: %s', str(err))
+                    # compose status record
+                    wname = reqName  # in our case workflow name is identical to request name
+                    ctype = req['dataType']
+                    for dataset, tids in sdict.items():
+                        statusRecord = {'timestamp': time.time(), 'dataset': dataset,
+                                        'dataType': ctype, 'transferIDs': tids}
+                        requestStatuses.setdefault(wname, []).append(statusRecord)
 
-    def post(self):
-        """
-        Runs any post tasks before exiting the execution cycle
-        :return:
-        """
-        pass
+        # update/insert requestStatues in couchdb
+        self.updateTransferInfo(requestStatuses)
 
     def requestRecord(self, wfData):
         """
@@ -126,28 +116,24 @@ class MSTransferor(object):
                 'campaign': []}
 
     def transferRequest(self, req):
-        "Send request to Phedex and return status of request subscription"
+        """
+        Send request to Phedex and return status of request subscription
+        :param req: request object
+        :return: subscriptoin dictionary {"dataset":transferIDs}
+        """
         datasets = req.get('datasets', [])
         sites = req.get('sites', [])
+        sdict = {}
         if datasets and sites:
-            self.logger.debug("### creating subscription for: %s", pformat(req))
-            subscription = PhEDExSubscription(datasets, sites, self.msConfig['group'])
-            # TODO: implement how to get transfer id
-            tid = hashlib.md5(str(subscription)).hexdigest()
+            self.logger.debug(
+                "### creating subscription for: %s", pformat(req))
+            subscription = PhEDExSubscription(
+                datasets, sites, self.msConfig['group'])
+            self.logger.info(
+                "### TODO: perform subscription call %s", subscription)
             # TODO: when ready enable submit subscription step
             # self.phedex.subscribe(subscription)
-            return tid
-
-    def change(self, req, reqStatus, prefix='###'):
-        """
-        Change request status, internally it is done via PUT request to ReqMgr2:
-        curl -X PUT -H "Content-Type: application/json" \
-             -d '{"RequestStatus":"staging", "RequestName":"bla-bla"}' \
-             https://xxx.yyy.zz/reqmgr2/data/request
-        """
-        self.logger.debug('%s updating %s status to %s', prefix, req['name'], reqStatus)
-        try:
-            if not self.msConfig['readOnly']:
-                self.reqmgr2.updateRequestStatus(req['name'], reqStatus)
-        except Exception as err:
-            self.logger.exception("Failed to change request status. Error: %s", str(err))
+            for dataset in datasets:
+                sdict[dataset] = self.getTransferIds(dataset)
+            return sdict
+        return sdict

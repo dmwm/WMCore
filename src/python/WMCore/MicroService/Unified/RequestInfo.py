@@ -4,63 +4,59 @@ _RequestInfo_
 
 Class to hold and parse all information related to a given request
 """
+# futures
 from __future__ import division, print_function
 
+# system modules
 import json
 import time
 import pickle
 
-from WMCore.MicroService.Unified.Common import getMSLogger, getWorkflow, elapsedTime,\
-    cert, ckey, workflowsInfo, dbsInfo, phedexInfo, eventsLumisInfo, getComputingTime,\
+# WMCore modules
+from WMCore.MicroService.Unified.Common import \
+    getWorkflow, elapsedTime,\
+    cert, ckey, workflowsInfo, dbsInfo, phedexInfo,\
+    eventsLumisInfo, getComputingTime,\
     getNCopies, teraBytes, getIO
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
-from WMCore.Services.pycurl_manager import getdata as multi_getdata, RequestHandler
+from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.Services.pycurl_manager import getdata \
+    as multi_getdata, RequestHandler
 
 
-class RequestInfo(object):
-    def __init__(self, microConfig, uniConfig, logger=None):
-        """
-        Runs the basic setup and initialization for the MS Transferor module
-        :param microConfig: microservice configuration
-        """
-        self.msConfig = microConfig
-        self.uConfig = uniConfig
-        self.reqRecords = []
-        self.logger = getMSLogger(microConfig['verbose'], logger=logger)
-
-        self.reqmgr2 = ReqMgr(microConfig['reqmgrUrl'], logger=self.logger)
-        self.reqmgrAux = ReqMgrAux(microConfig['reqmgrUrl'], httpDict={'cacheduration': 60}, logger=self.logger)
-        # eventually will change it to Rucio
-        self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
-                             dbsUrl=microConfig['dbsUrl'], logger=self.logger)
-
+class RequestInfo(MSCore):
+    """
+    RequestInfo class provides functionality to access and
+    manipulate requests.
+    """
     def __call__(self, reqRecords):
         """
         Run the unified transferor box
-        :param args:
-        :param kwargs:
-        :return:
+        :param reqRecords: input records
+        :return: output records
         """
-        self.reqRecords = reqRecords
-        self.logger.info("Going to process %d requests.", len(self.reqRecords))
+        # obtain new unified Configuration
+        uConfig = self.unifiedConfig()
+        if not uConfig:
+            self.logger.warning(
+                "Failed to fetch the latest unified config. Skipping this cycle")
+            return []
+        self.logger.info("Going to process %d requests.", len(reqRecords))
 
         # get complete requests information (based on Unified Transferor logic)
-        self.requestsInfo()
-        requestsToProcess = self.unified()
+        reqRecords = self.requestsInfo(reqRecords)
+        requestsToProcess = self.unified(uConfig, reqRecords)
 
         return requestsToProcess
 
-    def requestsInfo(self):
+    def requestsInfo(self, reqRecords):
         """
         Helper function to get information about all requests
         """
         # get campaigns for all requests which will be used to decide
         # how many replicas have to be made and where data has to be subscribed to
         # FIXME: it looks like we don't fetch all the possible campaigns in a given request
-        for req in self.reqRecords:
+        for req in reqRecords:
             reqName = req['name']
             for wflow in getWorkflow(reqName, self.msConfig['reqmgrUrl']):
                 campaign = wflow[reqName]['Campaign']
@@ -73,20 +69,23 @@ class RequestInfo(object):
                     msg += ', skip transferor step ...'
                     self.logger.warning(msg)
                     continue
-                self.reqRecords['campaign'].append(campaignConfig)
+                reqRecords['campaign'].append(campaignConfig)
+        return reqRecords
 
-    def unified(self):
+    def unified(self, uConfig, reqRecords):
         """
         Unified Transferor black box
+        :param uConfig: unified Configuration
+        :param reqRecords: input records
         """
         # get aux info for dataset/blocks from inputs/parents/pileups
         # make subscriptions based on site white/black lists
-        self.logger.info("unified processing %d requests", len(self.reqRecords))
+        self.logger.info("unified processing %d requests", len(reqRecords))
 
-        requests = [r['name'] for r in self.reqRecords]
+        requests = [r['name'] for r in reqRecords]
 
-        ### TODO: the logic below shows original unified port and it should be
-        ###       revisited wrt new proposal specs and unified codebase
+        # TODO: the logic below shows original unified port and it should be
+        #       revisited wrt new proposal specs and unified codebase
 
         # get workflows from list of requests
         orig = time.time()
@@ -119,7 +118,7 @@ class RequestInfo(object):
         reqSpecs = self._getRequestSpecs(requests)
 
         # get siteInfo instance once and re-use it later, it is time-consumed object
-        siteInfo = SiteInfo(self.uConfig)
+        siteInfo = SiteInfo(uConfig)
 
         requestsToProcess = []
         tst0 = time.time()
@@ -157,7 +156,7 @@ class RequestInfo(object):
                 # find out which site can serve given workflow request
                 t0 = time.time()
                 lheInput, primary, parent, secondary, allowedSites \
-                    = self._getSiteWhiteList(wspec, siteInfo, reqSpecs)
+                    = self._getSiteWhiteList(uConfig, wspec, siteInfo, reqSpecs)
                 if not isinstance(primary, list):
                     primary = [primary]
                 if not isinstance(secondary, list):
@@ -210,7 +209,7 @@ class RequestInfo(object):
             rdict[req] = pickle.loads(row['data'])
         return rdict
 
-    def _getSiteWhiteList(self, request, siteInfo, reqSpecs=None, pickone=False):
+    def _getSiteWhiteList(self, uConfig, request, siteInfo, reqSpecs=None, pickone=False):
         "Return site list for given request"
         lheinput, primary, parent, secondary = getIO(request, self.msConfig['dbsUrl'])
         allowedSites = []
@@ -232,12 +231,12 @@ class RequestInfo(object):
         # do further restrictions based on memory
         # do further restrictions based on blow-up factor
         minChildJobPerEvent, rootJobPerEvent, blowUp = self._getBlowupFactors(request, reqSpecs=reqSpecs)
-        maxBlowUp, neededCores = self.uConfig.get('blow_up_limits', (0, 0))
+        maxBlowUp, neededCores = uConfig.get('blow_up_limits', (0, 0))
         if blowUp > maxBlowUp:
             # then restrict to only sites with >4k slots
-            newAllowedSites = list(set(allowedSites) &
-                                   set([site for site in allowedSites
-                                        if siteInfo.cpu_pledges[site] > neededCores]))
+            siteCores = [site for site in allowedSites
+                         if siteInfo.cpu_pledges[site] > neededCores]
+            newAllowedSites = list(set(allowedSites) & set(siteCores))
             if newAllowedSites:
                 allowedSites = newAllowedSites
                 msg = "restricting site white list because of blow-up factor: "
@@ -280,7 +279,6 @@ class RequestInfo(object):
             allowedSites = list(set(allowedSites) & set(memAllowed))
         return lheinput, list(primary), list(parent), list(secondary), list(sorted(allowedSites))
 
-
     def _getBlowupFactors(self, request, reqSpecs=None):
         "Return blowup factors for given request"
         if request['RequestType'] != 'TaskChain':
@@ -296,7 +294,7 @@ class RequestInfo(object):
             for key in ['events_per_job', 'avg_events_per_job']:
                 if key in item:
                     cSize = item[key]
-            parents = [s for s in splits \
+            parents = [s for s in splits
                        if task.startswith(s['splittingTask']) and task != s['splittingTask']]
             if parents:
                 for parent in parents:

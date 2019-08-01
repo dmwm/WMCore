@@ -159,3 +159,13 @@ class MSManager(object):
     def delete(self, request):
         "Delete request in backend"
         pass
+
+    def status(self, **kwargs):
+        """
+        Return current status for the MicroService Manager
+        Args:
+            **kwargs: it will be a request name in the future
+        """
+        # TODO: eventually give it the correct purpose like, given
+        # a request name, return its transfer status
+        return "OK"

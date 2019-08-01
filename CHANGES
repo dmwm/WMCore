@@ -1,3 +1,8 @@
+1.2.5.pre6 to 1.2.5.pre7:
+  - Fix status REST API for ReqMgr2MS (Alan Malta Rodrigues) #9319
+  - Changes for transfer IDs logic (Valentin Kuznetsov) #9276
+
+
 1.2.5.pre5 to 1.2.5.pre6:
   - Add PartialCopy attribute and fix issue with parsing campaigns.json file (Valentin Kuznetsov) #9317
   - Tier0 sets WorkQueue to None, so we cannot call any WorkQueue methods on Tier0 WMAgent. (Vytautas Jankauskas) #9314

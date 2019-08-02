@@ -6,9 +6,6 @@ Description: MSCore class provides core functionality of the MS.
 # futures
 from __future__ import division, print_function
 
-# system modules
-import time
-
 # WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -67,66 +64,3 @@ class MSCore(object):
             self.reqmgr2.updateRequestStatus(reqName, reqStatus)
         except Exception as err:
             self.logger.exception("Failed to change request status. Error: %s", str(err))
-
-    def updateTransferInfo(self, requestStatuses):
-        "Update transfer ids in backend"
-        tstamp = time.time()
-        # Alan's suggestion to use bulk query
-        # get all docs from CouchDB
-        docs = self.getTransferInfo('ALL_DOCS')
-        for wname, statusRecord in requestStatuses:
-            # obtain records from CouchDB
-            # doc = self.getTransferInfo(wname)
-            # find record in our list of docs
-            # VK: I don't know if it will be faster then fetching the record
-            #     in CouchDB, we need to loop every time to find proper record
-            doc = {}
-            for doc in docs:
-                if wname in doc:
-                    break
-            records = doc.get('transfers', [])
-            records += statusRecord
-            doc['workflowName'] = wname
-            doc['timestamp'] = tstamp
-            doc['transfers'] = records
-            self.reqmgrAux.postTransferInfo(wname, doc)
-
-    def getTransferInfo(self, wname):
-        """
-        Get transfer document from backend. The document has the following form:
-
-        .. doctest::
-
-            {"workflowName": "bla",
-             "timestamp": 123,
-             "transfers": [rec1, rec2, ... ]
-            }
-            where each record has the following format:
-            {"dataset":"/a/b/c", "dataType": "primary", "transferIDs": [1,2], "completion": 0}
-
-
-        :param wname: workflow name
-        :return: a tranfer ids document
-        """
-        return self.reqmgrAux.getTransferInfo(wname)
-
-    def getTransferIds(self, dataset):
-        """
-        Get transfer ids document for given request name and datasets.
-        :param dataset: dataset name
-        :return: a list of transfer ids
-        """
-        # phedex implementation, TODO: implement Rucio logic when it is ready
-        data = self.phedex.subscriptions(
-            dataset=dataset, group=self.msConfig['group'])
-        self.logger.debug(
-            "### dataset %s group %s", dataset, self.msConfig['group'])
-        self.logger.debug("### subscription %s", data)
-        tids = []
-        vals = []
-        for row in data['phedex']['dataset']:
-            if row['name'] == dataset:
-                for rec in row['subscription']:
-                    vals.append(int(rec['percent_files']))
-                    tids.append(int(rec['request']))
-        return tids, float(sum(vals))/len(vals)

@@ -64,26 +64,22 @@ class MSTransferor(MSCore):
             # process all requests
             for req in reqResults:
                 reqName = req['name']
+                wname = reqName  # in our case workflow name is identical to request name
                 try:
                     # perform transfer
-                    sdict = self.transferRequest(req)
-                    if sdict:
-                        # Once all transfer requests were successfully made,
-                        # update: assigned -> staging
-                        self.logger.debug("### transfer request for %s successfull", reqName)
-                        self.change(req, 'staging', '### transferor')
+                    transfers = self.transferRequest(req)
+                    if not transfers:
                         # if there is nothing to be transferred (no input at all),
                         # then update the request status once again staging -> staged
                         # self.change(req, 'staged', '### transferor')
+                        pass
+                    # Once all transfer requests were successfully made,
+                    # update: assigned -> staging
+                    self.logger.debug("### transfer request for %s successfull", reqName)
+                    self.change(req, 'staging', '### transferor')
+                    requestStatuses[wname] = transfers
                 except Exception as err:  # general error
                     self.logger.exception('### transferor error: %s', str(err))
-                    # compose status record
-                    wname = reqName  # in our case workflow name is identical to request name
-                    ctype = req['dataType']
-                    for dataset, tids in sdict.items():
-                        statusRecord = {'timestamp': time.time(), 'dataset': dataset,
-                                        'dataType': ctype, 'transferIDs': tids}
-                        requestStatuses.setdefault(wname, []).append(statusRecord)
 
         # update/insert requestStatues in couchdb
         self.updateTransferInfo(requestStatuses)
@@ -117,23 +113,42 @@ class MSTransferor(MSCore):
 
     def transferRequest(self, req):
         """
-        Send request to Phedex and return status of request subscription
+        Send request to Phedex and return transfers records according to
+        https://gist.github.com/amaltaro/72599f995b37a6e33566f3c749143154
+
         :param req: request object
-        :return: subscriptoin dictionary {"dataset":transferIDs}
+        :return: transfer records
         """
         datasets = req.get('datasets', [])
         sites = req.get('sites', [])
-        sdict = {}
-        if datasets and sites:
+        tstamp = time.time()
+        reqName = req['name']
+        primary = req['primary']
+        parent = req['parent']
+        secondary = req['secondary']
+
+        transfers = []
+        for dataset in datasets:
+            if dataset in primary:
+                dtype = 'primary'
+            elif dataset in parent:
+                dtype = 'parent'
+            elif dtype in secondary:
+                dtype = 'secondary'
+            else:
+                # FIXME: what to do with unknown datasets
+                continue
             self.logger.debug(
-                "### creating subscription for: %s", pformat(req))
+                "### creating subscription for %s dataset in request %s",
+                dataset, pformat(reqName))
             subscription = PhEDExSubscription(
-                datasets, sites, self.msConfig['group'])
+                dataset, sites, self.msConfig['group'])
             self.logger.info(
                 "### TODO: perform subscription call %s", subscription)
             # TODO: when ready enable submit subscription step
             # self.phedex.subscribe(subscription)
-            for dataset in datasets:
-                sdict[dataset] = self.getTransferIds(dataset)
-            return sdict
-        return sdict
+            tids = subscription.getSubscriptionIds()
+            rec = {'timestamp': tstamp, 'dataset': dataset,
+                   'dataType': 'primary', 'transferIDs': tids}
+            transfers.append(rec)
+        return transfers

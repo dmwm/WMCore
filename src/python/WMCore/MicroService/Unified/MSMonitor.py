@@ -8,6 +8,10 @@ the transferor monitoring module.
 # futures
 from __future__ import division, print_function
 
+# system modules
+import json
+import time
+
 # WMCore modules
 from WMCore.MicroService.Unified.MSCore import MSCore
 
@@ -17,9 +21,41 @@ class MSMonitor(MSCore):
     MSMonitor class provide whole logic behind
     the transferor monitoring module.
     """
+    def __init__(self, msConfig, logger=None):
+        super(MSMonitor, self).__init__(msConfig, logger)
+        # update interval is used to check records in CouchDB and update them
+        # after this interval, default 6h
+        self.updateInterval = self.msConfig.get('updateInterval', 6*60*60)
+
+    def updateCaches(self):
+        """
+        Fetch some data required for the monitoring logic, e.g.:
+         * all campaign configuration
+         * all transfer records from backend DB
+        :return: True if all of them succeeded, else False
+        """
+        campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
+        transferRecords = [d for d in self.getTransferInfo('ALL_DOCS')]
+        cdict = {}
+        if not campaigns:
+            self.logger.warning("Failed to fetch campaign configurations")
+        if not transferRecords:
+            self.logger.warning("Failed to fetch transfer records")
+        else:
+            for camp in campaigns:
+                if 'CampaignName' not in camp:
+                    self.logger.warning(
+                        'No CampaignName attribute in campaign dict: %s',
+                        json.dumps(camp))
+                    continue
+                cdict[camp['CampaignName']] = camp
+        return cdict, transferRecords
+
     def execute(self, reqStatus):
         """
-        Executes the MS monitoring logic
+        Executes the MS monitoring logic, see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Monitor
+
         :param reqStatus: request statue to process
         :return:
         """
@@ -30,110 +66,140 @@ class MSMonitor(MSCore):
             self.logger.debug('+++ monit found %s requests in %s state',
                               len(requests), reqStatus)
 
-            # FIXME: completion threshold should come either from unified
-            # or campaign configuration, e.g.
-            # thr = self.unifiedConfig().get('completedThreshold', 100)
-            thr = 100
+            campaigns, transferRecords = self.updateCaches()
+            if not campaigns or not transferRecords:
+                # then wait until the next cycle
+                msg = "Failed to fetch data from one of the data sources. Retrying again in the next cycle"
+                self.logger.error(msg)
+                return
 
-            requestStatuses = {}  # keep track of request statuses
+            # keep track of request and their new statuses
+            requestsToStage = []
+            # main logic
             for reqName in requests:
-                req = {'name': reqName, 'reqStatus': reqStatus}
-                self.logger.debug("+++ request %s", req)
-                # obtain status records from couchdb for given request
-                transferRecords = self.getTransferRecords(reqName)
-                if not transferRecords:
+                self.logger.debug("+++ request %s", reqName)
+                # obtain transfer records for our request
+                transfers = []
+                for rec in transferRecords:
+                    if reqName == rec['workflowName']:
+                        transfers = rec['transfers']
+                        break
+                if not transfers:
                     continue
-                completion = self.completion(transferRecords)
                 # if all transfers are completed
                 # move the request status staging -> staged
-                if completion == thr:
+                if self.completion(transfers, campaigns):
                     self.logger.debug(
-                        "+++ request %s all transfers are completed", req)
-                    self.change(req, 'staged', '+++ monit')
+                        "+++ request %s all transfers are completed", reqName)
+                    requestsToStage.append(reqName)
                 # if pileup transfers are completed AND
                 # some input blocks are completed,
                 # move the request status staging -> staged
-                elif self.pileupTransfersCompleted(transferRecords):
+                elif self.completion(transfers, campaigns, pileup=True):
                     self.logger.debug(
-                        "+++ request %s pileup transfers are completed", req)
-                    self.change(req, 'staged', '+++ monit')
+                        "+++ request %s pileup transfers are completed", reqName)
+                    requestsToStage.append(reqName)
                 # transfers not completed
                 # just update the database with their completion
                 else:
                     self.logger.debug(
-                        "+++ request %s transfers are %s completed",
-                        req, completion)
-                    # for us workflow name is the same as request name
-                    wname = reqName
-                    requestStatuses[wname] = transferRecords
-            self.updateTransferInfo(requestStatuses)
+                        "+++ request %s transfers are completed", reqName)
+            self.updateTransferInfo(transferRecords)
+            # finally, update statuses for requests
+            for reqName in requestsToStage:
+                self.change(reqName, 'staged', '+++ monit')
         except Exception as err:  # general error
             self.logger.exception('+++ monit error: %s', str(err))
 
-    def getTransferRecords(self, reqName):
+    def completion(self, transfers, campaigns, pileup=None):
         """
-        Get transfer records for given request name from CouchDB.
-        Transfer records on backend has the following form
-        https://gist.github.com/amaltaro/72599f995b37a6e33566f3c749143154
-        So far logic is based on option D of the records
+        Helper function to calculate completion of given records
+        :param transfers: list of transfers records
+        :param pileup: check pileup completion (optional)
+        :return: completion status
+        """
+        # check completion of all transfers
+        statuses = []
+        transferTypes = ['primary', 'secondary']
+        for rec in transfers:
+            campaign = rec['CampaignName']
+            cdict = campaigns[campaign]
+            thr = cdict.get('PartialCopy', 0)
+            if pileup and rec['dataType'] not in transferTypes:
+                continue
+            if rec['completion'] >= thr:
+                status = 1
+            else:
+                status = 0
+            statuses.append(status)
+        return True if sum(statuses) == len(transfers) else False
+
+    def updateTransferInfo(self, transferRecords):
+        """
+        Update transfer records in backend
+        :param transferRecords: list of transfer records
+        """
+        tstamp = time.time()
+        for doc in transferRecords:
+            transfers = []
+            for rec in doc.get('transfers', []):
+                # obtain new transfer ids and completion for given dataset
+                _, completion = self.getTransferIds(rec['dataset'])
+                # Per Alan request, we'll update only completion and not tids
+                rec.update({'completion': completion})
+                transfers.append(rec)
+            wname = doc['workflowName']
+            doc['lastUpdate'] = tstamp
+            doc['transfers'] = transfers
+            self.reqmgrAux.updateTransferInfo(wname, doc, inPlace=True)
+
+    def getTransferIds(self, dataset):
+        """
+        Get transfer ids document for given request name and datasets.
+        :param dataset: dataset name
+        :return: a list of transfer ids and completion value
+        """
+        # phedex implementation, TODO: implement Rucio logic when it is ready
+        data = self.phedex.subscriptions(
+            dataset=dataset, group=self.msConfig['group'])
+        self.logger.debug(
+            "### dataset %s group %s", dataset, self.msConfig['group'])
+        self.logger.debug("### subscription %s", data)
+        tids = []
+        vals = []
+        for row in data['phedex']['dataset']:
+            if row['name'] == dataset:
+                for rec in row['subscription']:
+                    vals.append(int(rec['percent_files']))
+                    tids.append(int(rec['request']))
+        if not vals:
+            return tids, 0
+        return tids, float(sum(vals))/len(vals)
+
+    def getTransferInfo(self, wname):
+        """
+        Get transfer document from backend. The document has the following form:
 
         .. doctest::
 
             {"workflowName": "bla",
-             "timestamp": 123,
+             "lastUpdate": 123,
              "transfers": [rec1, rec2, ... ]
             }
             where each record has the following format:
-            {"dataset":"/a/b/c", "dataType": "primary", "transferIDs": [1,2], "completion":0}
+            {"dataset":"/a/b/c", "dataType": "primary", "transferIDs": [1,2], "completion": 0}
 
-        :param reqName: name of the request
-        :return: list of of status records
+
+        :param wname: workflow name
+        :return: a generator of transfer records
         """
-        transferRecords = []
-
-        # in our case workflow name is the same as request name
-        wname = reqName
-        # get existing transfer IDs record
-        doc = self.getTransferInfo(wname)
-        if not doc:
-            self.logger.error("Failed to find a transfer document for request: %s", wname)
-            return transferRecords
-
-        # loop over all records and obtain new transfer IDs
-        for rec in doc['transfers']:
-            dataset = rec['dataset']
-            dtype = rec['dataType']
-            # obtain new transfer ids for given request name and dataset
-            tids, completion = self.getTransferIds(dataset)
-            rec = {'dataset': dataset, 'dataType': dtype,
-                   'transferIDs': tids, "completion": completion}
-            transferRecords.append(rec)
-        return transferRecords
-
-    def pileupTransfersCompleted(self, transferRecords):
-        "Check if pileup transfers are completed for given transfer records"
-        # FIXME: completion threshold should come either from unified
-        # or campaign configuration, e.g.
-        # thr = self.unifiedConfig().get('completedThreshold', 100)
-        thr = 100
-
-        records = 0
-        transferTypes = ['primary', 'secondary']
-        # loop over all records and obtain new transfer IDs
-        for rec in transferRecords:
-            ctype = rec['dataType']
-            completion = rec['completion']
-            # count records above threshold
-            if ctype in transferTypes and completion > thr:
-                records += 1
-        return True if records == len(transferRecords) else False
-
-    def completion(self, records):
-        """
-        Helper function to calculate completion of given records
-        :param records: list of status records
-        :return: completion value
-        """
-        # may need to implement proper algorithm, so far we take average
-        val = [r['completion'] for r in records]/len(records)
-        return val
+        records = self.reqmgrAux.getTransferInfo(wname)
+        # according to https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Monitor
+        # we may need to select only record since last updated according
+        # to configuration UpdateInterval setting
+        for rec in records:
+            if self.updateInterval:
+                if time.time()-rec['lastUpdate'] > self.updateInterval:
+                    yield rec
+            else:
+                yield rec

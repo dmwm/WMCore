@@ -138,8 +138,6 @@ class SimpleCondorPlugin(BasePlugin):
         self.x509userproxy = proxy.getProxyFilename()
         self.x509userproxysubject = proxy.getSubject()
         self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
-        # Remove the x509 ads if the job is matching a volunteer resource
-        self.x509Expr = 'ifThenElse("$$(GLIDEIN_CMSSite)" =?= "T3_CH_Volunteer",undefined,"%s")'
 
         return
 
@@ -571,9 +569,9 @@ class SimpleCondorPlugin(BasePlugin):
             if self.reqStr and "T3_CH_Volunteer" not in job.get('possibleSites'):
                 ad['Requirements'] = classad.ExprTree(self.reqStr)
 
-            ad['x509userproxy'] = classad.ExprTree(self.x509Expr % self.x509userproxy)
-            ad['x509userproxysubject'] = classad.ExprTree(self.x509Expr % self.x509userproxysubject)
-            ad['x509userproxyfirstfqan'] = classad.ExprTree(self.x509Expr % self.x509userproxyfqan)
+            ad['x509userproxy'] = self.x509userproxy
+            ad['x509userproxysubject'] = self.x509userproxysubject
+            ad['x509userproxyfirstfqan'] = self.x509userproxyfqan
 
 
             sites = ','.join(sorted(job.get('possibleSites')))

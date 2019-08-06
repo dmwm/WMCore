@@ -13,11 +13,13 @@ import time
 import pickle
 
 # WMCore modules
+from pprint import pformat
+
+from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
-    getWorkflow, elapsedTime,\
-    cert, ckey, workflowsInfo, dbsInfo, phedexInfo,\
-    eventsLumisInfo, getComputingTime,\
-    getNCopies, teraBytes, getIO
+    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo,\
+    dbsInfo, phedexInfo, getComputingTime, getNCopies,\
+    teraBytes, getIO, findBlockParents, findParent, getDatasetSize
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.Services.pycurl_manager import getdata \
@@ -43,64 +45,84 @@ class RequestInfo(MSCore):
             return []
         self.logger.info("Going to process %d requests.", len(reqRecords))
 
+        # create a Workflow object representing the request
+        workflows = []
+        for record in reqRecords:
+            wflow = Workflow(record['RequestName'], record)
+            workflows.append(wflow)
+            msg = "Processing request: %s, with campaigns: %s, " % (wflow.getName(),
+                                                                    wflow.getCampaigns())
+            msg += "and input data as:\n%s" % pformat(wflow.getDataCampaignMap())
+            self.logger.info(msg)
+
         # get complete requests information (based on Unified Transferor logic)
-        reqRecords = self.requestsInfo(reqRecords)
-        requestsToProcess = self.unified(uConfig, reqRecords)
+        self.unified(uConfig, workflows)
 
-        return requestsToProcess
+        return workflows
 
-    def requestsInfo(self, reqRecords):
-        """
-        Helper function to get information about all requests
-        """
-        # get campaigns for all requests which will be used to decide
-        # how many replicas have to be made and where data has to be subscribed to
-        # FIXME: it looks like we don't fetch all the possible campaigns in a given request
-        for req in reqRecords:
-            reqName = req['name']
-            for wflow in getWorkflow(reqName, self.msConfig['reqmgrUrl']):
-                campaign = wflow[reqName]['Campaign']
-                self.logger.debug("request: %s, campaign: %s", reqName, campaign)
-                campaignConfig = self.reqmgrAux.getCampaignConfig(campaign)
-                self.logger.debug("request: %s, campaignConfig: %s", reqName, campaignConfig)
-                if not campaignConfig:
-                    # we skip and create alert
-                    msg = 'No campagin configuration found for %s' % reqName
-                    msg += ', skip transferor step ...'
-                    self.logger.warning(msg)
-                    continue
-                reqRecords['campaign'].append(campaignConfig)
-        return reqRecords
-
-    def unified(self, uConfig, reqRecords):
+    def unified(self, uConfig, workflows):
         """
         Unified Transferor black box
         :param uConfig: unified Configuration
-        :param reqRecords: input records
+        :param workflows: input workflow objects
         """
         # get aux info for dataset/blocks from inputs/parents/pileups
         # make subscriptions based on site white/black lists
-        self.logger.info("unified processing %d requests", len(reqRecords))
+        self.logger.info("unified processing %d requests", len(workflows))
 
-        requests = [r['name'] for r in reqRecords]
+        orig = time.time()
+        # start by finding what are the parent datasets for requests requiring it
+        time0 = time.time()
+        self.getParentDatasets(workflows)
+        self.logger.debug(elapsedTime(time0, "### getParentDatasets"))
 
+        # then fetch the total dataset size of each secondary dataset
+        time0 = time.time()
+        self.getPileupSizes(workflows)
+        self.logger.debug(elapsedTime(time0, "### getPileupSizes"))
+
+        # get final primary and secondaries list of blocks to be replicated
+        # as well as an initial list of block parents
+        time0 = time.time()
+        self.getInputDataBlocks(workflows)
+        self.logger.debug(elapsedTime(time0, "### getInputDataBlocks"))
+
+        # get a final list of parent blocks
+        time0 = time.time()
+        self.getParentChildBlocks(workflows)
+        self.logger.debug(elapsedTime(time0, "### getParentChildBlocks"))
+        self.logger.debug(elapsedTime(orig, '### total time'))
+
+        return workflows
+
+    def unifiedUnused(self):
+        """
+        FIXME FIXME TODO
+        Leave this code in a different method until we evaluate what
+        is needed and what is not, and refactor this thing...
+        """
+        # FIXME making pylint happy, remove these assignments
+        requestNames = []
+        uConfig = {}
+
+        # requestNames = [r.getName() for r in workflows]
         # TODO: the logic below shows original unified port and it should be
         #       revisited wrt new proposal specs and unified codebase
 
         # get workflows from list of requests
         orig = time.time()
         time0 = time.time()
-        requestWorkflows = self._getRequestWorkflows(requests)
-        workflows = requestWorkflows.values()
+        requestWorkflows = self._getRequestWorkflows(requestNames)
+        requestWorkflows = requestWorkflows.values()
         self.logger.debug(elapsedTime(time0, "### getWorkflows"))
 
         # get workflows info summaries and collect datasets we need to process
-        winfo = workflowsInfo(workflows)
+        winfo = workflowsInfo(requestWorkflows)
         datasets = [d for row in winfo.values() for d in row['datasets']]
 
         # find dataset info
         time0 = time.time()
-        datasetBlocks, datasetSizes = dbsInfo(datasets, self.msConfig['dbsUrl'])
+        datasetBlocks, datasetSizes, datasetTransfers = dbsInfo(datasets, self.msConfig['dbsUrl'])
         self.logger.debug(elapsedTime(time0, "### dbsInfo"))
 
         # find block nodes information for our datasets
@@ -114,8 +136,7 @@ class RequestInfo(MSCore):
         self.logger.debug(elapsedTime(time0, "### eventsLumisInfo"))
 
         # get specs for all requests and re-use them later in getSiteWhiteList as cache
-        requests = [v['RequestName'] for w in workflows for v in w.values()]
-        reqSpecs = self._getRequestSpecs(requests)
+        reqSpecs = self._getRequestSpecs(requestNames)
 
         # get siteInfo instance once and re-use it later, it is time-consumed object
         siteInfo = SiteInfo(uConfig)
@@ -123,7 +144,7 @@ class RequestInfo(MSCore):
         requestsToProcess = []
         tst0 = time.time()
         totBlocks = totEvents = totSize = totCpuT = 0
-        for wflow in workflows:
+        for wflow in requestWorkflows:
             for wname, wspec in wflow.items():
                 time0 = time.time()
                 cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'], logger=self.logger)
@@ -178,9 +199,106 @@ class RequestInfo(MSCore):
                           len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT)
         self.logger.debug(elapsedTime(tst0, '### workflows info'))
         self.logger.debug(elapsedTime(orig, '### total time'))
-
         return requestsToProcess
 
+    def getParentDatasets(self, workflows):
+        """
+        Given a list of requests, find which requests need to process the parent
+        dataset, and discover what the parent dataset name is.
+        """
+        datasetByDbs = {}
+        for wflow in workflows:
+            if wflow.hasParents():
+                datasetByDbs.setdefault(wflow.getDbsUrl(), set())
+                datasetByDbs[wflow.getDbsUrl()].add(wflow.getInputDataset())
+
+        for dbsUrl, datasets in datasetByDbs.items():
+            self.logger.info("Resolving %d dataset parentage against DBS: %s", len(datasets), dbsUrl)
+            # first find out what's the parent dataset name
+            parentageMap = findParent(datasets, dbsUrl)
+            for wflow in workflows:
+                if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
+                    wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
+
+    def getPileupSizes(self, workflows):
+        """
+        Given a list of requests, find which requests need to process a secondary
+        dataset and, retrieve its total size from DBS.
+        """
+        datasetByDbs = {}
+        for wflow in workflows:
+            if wflow.getPileupDatasets():
+                datasetByDbs.setdefault(wflow.getDbsUrl(), set())
+                datasetByDbs[wflow.getDbsUrl()] = datasetByDbs[wflow.getDbsUrl()] | wflow.getPileupDatasets()
+
+        for dbsUrl, datasets in datasetByDbs.items():
+            self.logger.info("Fetching total dataset size for %d secondaries against DBS: %s", len(datasets), dbsUrl)
+            sizeByDset = getDatasetSize(datasets, dbsUrl)
+            for wflow in workflows:
+                for second in wflow.getPileupDatasets():
+                    if second not in sizeByDset:
+                        # dataset is in another DBS instance
+                        continue
+                    wflow.setSecondarySummary(second, sizeByDset[second])
+
+    def getInputDataBlocks(self, workflows):
+        """
+        Given a list of requests and their input data -  primary and parent
+        datasets - find all their respective blocks to be transferred, including
+        the block size information.
+         * finalBlocks: attribute will contain a list of dictionaries with
+          the block name and block size
+         * parent: will contain a list of dictionaries with the block name
+          and block size as well, when needed
+        """
+        datasetByDbs = {}
+        for wflow in workflows:
+            datasetByDbs.setdefault(wflow.getDbsUrl(), set())
+            for dataIn in wflow.getDataCampaignMap():
+                if dataIn['type'] in {'primary', 'parent'}:
+                    datasetByDbs.setdefault(wflow.getDbsUrl(), set())
+                    datasetByDbs[wflow.getDbsUrl()].add(dataIn['name'])
+
+        # now fetch block names from DBS
+        for dbsUrl, datasets in datasetByDbs.items():
+            self.logger.info("Fetching block info for %d datasets against DBS: %s", len(datasets), dbsUrl)
+            _, _, blocksByDset = dbsInfo(datasets, dbsUrl)
+            for wflow in workflows:
+                for dataIn in wflow.getDataCampaignMap():
+                    if dataIn['name'] not in datasets:
+                        # dataset is in another DBS instance
+                        continue
+                    if dataIn['type'] == "primary":
+                        wflow.setPrimaryBlocks(blocksByDset[dataIn['name']])
+                    elif dataIn['type'] == "parent":
+                        wflow.setParentBlocks(blocksByDset[dataIn['name']])
+
+
+    def getParentChildBlocks(self, workflows):
+        """
+        Given a list of requests and their children blocks, find the
+        correspondent parent blocks
+         * parent: will contain a final list of dictionaries containing
+         the parent blocks to be transferred
+        """
+        blocksByDbs = {}
+        for wflow in workflows:
+            blocksByDbs.setdefault(wflow.getDbsUrl(), set())
+            if wflow.getParentDataset():
+                blocksByDbs[wflow.getDbsUrl()] = \
+                    blocksByDbs[wflow.getDbsUrl()].union(set(wflow.getPrimaryBlocks().keys()))
+
+        for dbsUrl, blocks in blocksByDbs.items():
+            if not blocks:
+                continue
+            self.logger.debug("Fetching DBS parent blocks for %d children blocks...", len(blocks))
+            # first find out what's the parent dataset name
+            parentageMap = findBlockParents(blocks, dbsUrl)
+            for wflow in workflows:
+                if wflow.getParentDataset() and wflow.getInputDataset() in parentageMap:
+                    wflow.setChildToParentBlocks(parentageMap[wflow.getInputDataset()])
+
+    # FIXME: get rid of this method and use the Workflow objects instead
     def _getRequestWorkflows(self, requestNames):
         "Helper function to get all specs for given set of request names"
         urls = [str('%s/data/request/%s' % (self.msConfig['reqmgrUrl'], r)) for r in requestNames]

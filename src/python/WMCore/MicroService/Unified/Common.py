@@ -14,7 +14,11 @@ import math
 # system modules
 import re
 import time
-import urllib
+try:
+    from urllib import quote, unquote
+except ImportError:
+    # PY3
+    from urllib.parse import quote, unquote
 
 # WMCore modules
 from Utils.CertTools import getKeyCertFromEnv
@@ -50,26 +54,49 @@ def getMSLogger(verbose, logger=None):
 
 def dbsInfo(datasets, dbsUrl):
     "Provides DBS info about dataset blocks"
-    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl, d) for d in datasets]
-    data = multi_getdata(urls, ckey(), cert())
     datasetBlocks = {}
     datasetSizes = {}
-    #     nblocks = 0
+    datasetTransfers = {}
+    if not datasets:
+        return datasetBlocks, datasetSizes, datasetTransfers
+
+    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl, d) for d in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
     for row in data:
         dataset = row['url'].split('=')[-1]
         rows = json.loads(row['data'])
         blocks = []
         size = 0
+        datasetTransfers.setdefault(dataset, {})  # flat dict in the format of blockName: blockSize
         for item in rows:
             blocks.append(item['block_name'])
             size += item['block_size']
+            datasetTransfers[dataset].update({item['block_name']: item['block_size']})
         datasetBlocks[dataset] = blocks
         datasetSizes[dataset] = size
-    #         nblocks += len(blocks)
-    #     tot_size = 0
-    #     for dataset, blocks in datasetBlocks.iteritems():
-    #         tot_size += datasetSizes[dataset]
-    return datasetBlocks, datasetSizes
+
+    return datasetBlocks, datasetSizes, datasetTransfers
+
+
+def findBlockParents(blocks, dbsUrl):
+    """
+    Helper function to find block parents given a block name.
+    Return a dictionary in the format of:
+    {"child dataset name": {"child block": ["parent blocks"],
+                            "child block": ["parent blocks"], ...}}
+    """
+    parentsByBlock = {}
+    urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    data = multi_getdata(urls, ckey(), cert())
+    for row in data:
+        rows = json.loads(row['data'])
+        for item in rows:
+            dataset = item['this_block_name'].split("#")[0]
+            parentsByBlock.setdefault(dataset, {})
+            parentsByBlock.setdefault(item['this_block_name'], [])
+            parentsByBlock[item['this_block_name']].append(item['parent_block_name'])
+    return parentsByBlock
 
 
 def phedexInfo(datasets, phedexUrl):
@@ -139,13 +166,13 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     if '#' in inputs[0]:  # inputs are list of blocks
         what = 'block_name'
     urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s' \
-            % (dbsUrl, validFileOnly, sumOverLumi, what, urllib.quote(i)) \
+            % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) \
             for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         key = row['url'].split('=')[-1]
         if what == 'block_name':
-            key = urllib.unquote(key)
+            key = unquote(key)
         rows = json.loads(row['data'])
         for item in rows:
             eventsLumis[key] = item
@@ -339,11 +366,40 @@ def ioForTask(request, dbsUrl):
     return lhe, primary, parent, secondary
 
 
-def findParent(dataset, dbsUrl):
-    "Helper function to find a parent of the dataset"
-    url = '%s/datasetparents' % dbsUrl
-    params = {'dataset': dataset}
-    headers = {'Accept': 'application/json'}
-    mgr = RequestHandler()
-    data = mgr.getdata(url, params=params, headers=headers, cert=cert(), ckey=ckey())
-    return [str(i['parent_dataset']) for i in json.loads(data)]
+def findParent(datasets, dbsUrl):
+    """
+    Helper function to find the parent dataset.
+    It returns a dictionary key'ed by the child dataset
+    """
+    parentByDset = {}
+    if not datasets:
+        return parentByDset
+
+    urls = ['%s/datasetparents?dataset=%s' % (dbsUrl, d) for d in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        rows = json.loads(row['data'])
+        for item in rows:
+            parentByDset[item['this_dataset']] = item['parent_dataset']
+    return parentByDset
+
+
+def getDatasetSize(datasets, dbsUrl):
+    """
+    Helper function to get the total dataset dataset.
+    It returns a dictionary key'ed by the child dataset
+    """
+    sizeByDset = {}
+    if not datasets:
+        return sizeByDset
+
+    urls = ['%s/blocksummaries?dataset=%s' % (dbsUrl, d) for d in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        rows = json.loads(row['data'])
+        for item in rows:
+            sizeByDset[dataset] = item['file_size']
+    return sizeByDset

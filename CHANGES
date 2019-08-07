@@ -1,3 +1,12 @@
+1.2.5.pre7 to 1.2.5:
+  - Default ProcVer to 1 on the StoreResults script (Alan Malta Rodrigues) #9329
+  - fix location for the pull request template (Alan Malta Rodrigues) #9324
+  - Minor improvements to the README file (Alan Malta Rodrigues) #9323
+  - Move the PR template under the .github directory (Alan Malta Rodrigues) #9322
+  - Created a CONTRIBUTING document with some guidelines (Alan Malta Rodrigues) #9321
+  - Created issue templates for bug and feature (Alan Malta Rodrigues) #9320
+
+
 1.2.5.pre6 to 1.2.5.pre7:
   - Fix status REST API for ReqMgr2MS (Alan Malta Rodrigues) #9319
   - Changes for transfer IDs logic (Valentin Kuznetsov) #9276

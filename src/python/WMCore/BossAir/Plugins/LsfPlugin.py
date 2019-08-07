@@ -54,21 +54,22 @@ class LsfPlugin(BasePlugin):
 
         BasePlugin.__init__(self, config)
 
-        self.packageDir  = None
-        self.unpacker    = os.path.join(getWMBASE(),
-                                        'WMCore/WMRuntime/Unpacker.py')
-        self.agent       = config.Agent.agentName
-        self.sandbox     = None
-        self.scriptFile  = None
-        self.queue       = None
+        self.packageDir = None
+        self.unpacker = os.path.join(getWMBASE(),
+                                     'WMCore/WMRuntime/Unpacker.py')
+        self.agent = config.Agent.agentName
+        self.sandbox = None
+        self.scriptFile = None
+        self.queue = None
         self.resourceReq = None
-        self.jobGroup    = None
-        self.basePrio    = getattr(config.BossAir, 'LsfBasePrio', 50)
+        self.jobGroup = None
+        self.basePrio = getattr(config.BossAir, 'LsfBasePrio', 50)
+        self.batchOutput = None
 
         return
 
 
-    def submit(self, jobs, info = None):
+    def submit(self, jobs, info=None):
         """
         _submit_
 
@@ -78,12 +79,12 @@ class LsfPlugin(BasePlugin):
         # If we're here, then we have submitter components
         self.scriptFile = self.config.JobSubmitter.submitScript
         self.queue = self.config.JobSubmitter.LsfPluginQueue
-        self.resourceReq =  getattr(self.config.JobSubmitter, 'LsfPluginResourceReq', None)
+        self.resourceReq = getattr(self.config.JobSubmitter, 'LsfPluginResourceReq', None)
         self.jobGroup = self.config.JobSubmitter.LsfPluginJobGroup
         self.batchOutput = getattr(self.config.JobSubmitter, 'LsfPluginBatchOutput', None)
 
         successfulJobs = []
-        failedJobs     = []
+        failedJobs = []
 
         if len(jobs) == 0:
             # Then we have nothing to do
@@ -107,7 +108,7 @@ class LsfPlugin(BasePlugin):
             jobList = submitDict.get(sandbox, [])
             while len(jobList) > 0:
                 jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
-                jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
+                jobList = jobList[self.config.JobSubmitter.jobsPerWorker:]
 
                 for job in jobsReady:
 
@@ -131,7 +132,7 @@ class LsfPlugin(BasePlugin):
                     jobName = "WMAgentJob"
                     regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/[^/]+/.*')
                     match = regExpParser.match(job['cache_dir'])
-                    if ( match != None ):
+                    if match != None:
                         jobName = "%s-%s" % (match.group(1), job['id'])
 
                     # //
@@ -152,11 +153,11 @@ class LsfPlugin(BasePlugin):
                         lsfLogDir += '/%s' % now.strftime("%Y%m%d%H")
                         try:
                             os.mkdir(lsfLogDir)
-                            logging.debug("Created directory %s" % lsfLogDir)
+                            logging.debug("Created directory %s", lsfLogDir)
                         except OSError as err:
                             # suppress LSF log unless it's about an already exisiting directory
                             if err.errno != errno.EEXIST or not os.path.isdir(lsfLogDir):
-                                logging.error("Can't create directory %s, turning off LSF log" % lsfLogDir)
+                                logging.error("Can't create directory %s, turning off LSF log", lsfLogDir)
                                 lsfLogDir = None
 
                     if lsfLogDir == None:
@@ -169,21 +170,21 @@ class LsfPlugin(BasePlugin):
                             prio = int(job['priority'])
                             command += ' -sp %i' % (self.basePrio + prio)
                         except (ValueError, TypeError):
-                            logging.debug("Priority for job %i not castable to an int\n" % job['id'])
+                            logging.debug("Priority for job %i not castable to an int\n", job['id'])
                             logging.debug("Not setting priority")
-                            logging.debug("Priority: %s" % job['priority'])
+                            logging.debug("Priority: %s", job['priority'])
                         except Exception as ex:
-                            logging.debug("Got unhandled exception while setting priority for job %i\n" % job['id'])
+                            logging.debug("Got unhandled exception while setting priority for job %i\n", job['id'])
                             logging.debug(str(ex))
                             logging.debug("Not setting priority")
 
                     command += ' < %s' % submitScriptFile
 
-                    logging.info("Submitting LSF job: %s" % command)
+                    logging.info("Submitting LSF job: %s", command)
 
-                    p = subprocess.Popen(command, shell = True,
-                                         stdout = subprocess.PIPE,
-                                         stderr = subprocess.STDOUT)
+                    p = subprocess.Popen(command, shell=True,
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT)
 
                     stdout = p.communicate()[0]
                     returncode = p.returncode
@@ -195,7 +196,7 @@ class LsfPlugin(BasePlugin):
                         if match != None:
                             job['gridid'] = match.group(1)
                             successfulJobs.append(job)
-                            logging.info("LSF Job ID : %s" % job['gridid'] )
+                            logging.info("LSF Job ID : %s", job['gridid'])
                             continue
                         else:
                             logging.error("bsub didn't return a valid Job ID. Job is not submitted")
@@ -211,7 +212,7 @@ class LsfPlugin(BasePlugin):
         return successfulJobs, failedJobs
 
 
-    def track(self, jobs, info = None):
+    def track(self, jobs):
         """
         _track_
 
@@ -225,17 +226,17 @@ class LsfPlugin(BasePlugin):
         # If we're here, then we have submitter components
         self.jobGroup = self.config.JobSubmitter.LsfPluginJobGroup
 
-        changeList   = []
+        changeList = []
         completeList = []
-        runningList  = []
+        runningList = []
 
         # get info about all active and recent jobs
         command = 'bjobs -a -w'
         command += ' -g %s' % self.jobGroup
 
-        p = subprocess.Popen(command, shell = True,
-                             stdout = subprocess.PIPE,
-                             stderr = subprocess.PIPE)
+        p = subprocess.Popen(command, shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         stdout = p.communicate()[0]
         returncode = p.returncode
 
@@ -270,7 +271,7 @@ class LsfPlugin(BasePlugin):
                     job['globalState'] = LsfPlugin.stateMap()[newStatus]
 
                     # stop tracking finished jobs
-                    if job['globalState'] in [ 'Complete', 'Error' ]:
+                    if job['globalState'] in ['Complete', 'Error']:
                         completeList.append(job)
                     else:
                         runningList.append(job)
@@ -278,7 +279,7 @@ class LsfPlugin(BasePlugin):
         return runningList, changeList, completeList
 
 
-    def kill(self, jobs, info = None):
+    def kill(self, jobs, raiseEx=False):
         """
         Kill a list of jobs based on their LSF jobid
 
@@ -287,9 +288,9 @@ class LsfPlugin(BasePlugin):
         for job in jobs:
 
             command = "bkill %s\n" % job['gridid']
-            p = subprocess.Popen(command, shell = True,
-                                 stdout = subprocess.PIPE,
-                                 stderr = subprocess.STDOUT)
+            p = subprocess.Popen(command, shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
             p.communicate()
 
         return
@@ -309,10 +310,10 @@ class LsfPlugin(BasePlugin):
         hostname = socket.getfqdn()
 
         # files needed to copied from head node to WN
-        jobInputFiles = [ job['sandbox'],
-                          "%s/JobPackage.pkl" % job['packageDir'],
-                          self.unpacker,
-                          self.scriptFile ]
+        jobInputFiles = [job['sandbox'],
+                         "%s/JobPackage.pkl" % job['packageDir'],
+                         self.unpacker,
+                         self.scriptFile]
         for filename in jobInputFiles:
             script.append("rfcp %s:%s .\n" % (hostname, filename))
 

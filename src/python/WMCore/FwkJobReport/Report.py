@@ -152,7 +152,6 @@ class Report(object):
             for stackFrame in stackTrace:
                 crashMessage += stackFrame
 
-            self.addError(stepName, 50115, "BadFWJRXML", msg)
             logging.debug(crashMessage)
             raise FwkJobReportException(msg)
 

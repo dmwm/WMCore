@@ -253,8 +253,6 @@ class ReportTest(unittest.TestCase):
         myReport = Report("cmsRun1")
         from WMCore.FwkJobReport.Report import FwkJobReportException
         self.assertRaises(FwkJobReportException, myReport.parse, self.badxmlPath)
-        self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, 'BadFWJRXML')
-        self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].exitCode, 50115)
         return
 
     def testErrorReporting(self):

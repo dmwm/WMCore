@@ -20,6 +20,7 @@ import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
 from WMCore.DataStructs.Job import Job
 from WMCore.FwkJobReport.Report import Report
+from WMCore.FwkJobReport.Report import FwkJobReportException
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.Steps import StepFactory
@@ -195,10 +196,11 @@ class CMSSW_t(unittest.TestCase):
                 self.fail("An exception should have been raised")
             except WMExecutionFailure as ex:
                 executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
-                self.assertEqual(50115, executor.report.getExitCode())
+                #self.assertEqual(50115, executor.report.getExitCode())
+                self.assertEqual(134, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
-                self.assertEqual(50115, report.getExitCode())
+                self.assertEqual(134, report.getExitCode())
         except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:

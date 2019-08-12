@@ -99,10 +99,11 @@ class CMSDefaultHandler(DiagnosticHandler):
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
             try:
-                executor.report.parse(jobRepXml)
-            except FwkJobReportException:
-                # Job report is bad, the parse already puts a 50115 in the file
+                self.parse(executor, jobRepXml)
+            except FwkJobReportException:    
+                # Job report is bad, the parse already puts a 50115 in the file    
                 pass
+
             reportStep = executor.report.retrieveStep(executor.stepName)
             reportStep.status = errCode
 
@@ -149,10 +150,11 @@ class CMSRunHandler(DiagnosticHandler):
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
             try:
-                executor.report.parse(jobRepXml)
-            except FwkJobReportException:
-                # Job report is bad, the parse already puts a 50115 in the file
+                self.parse(executor, jobRepXml)
+            except FwkJobReportException:    
+                # Job report is bad, the parse already puts a 50115 in the file    
                 pass
+
             reportStep = executor.report.retrieveStep(executor.stepName)
             reportStep.status = self.code
 
@@ -238,10 +240,9 @@ class EDMExceptionHandler(DiagnosticHandler):
 
         # job report XML exists, load the exception information from it
         try:
-            executor.report.parse(jobRepXml)
-        except FwkJobReportException:
-            # Job report is bad, the parse already puts a 50115 in the file
-            # just go on
+            self.parse(executor, jobRepXml)
+        except FwkJobReportException:    
+            # Job report is bad, the parse already puts a 50115 in the file    
             pass
 
         # make sure the report has the error in it

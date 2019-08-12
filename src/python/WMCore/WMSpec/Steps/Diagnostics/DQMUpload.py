@@ -44,7 +44,7 @@ class DUExceptionHandler(DiagnosticHandler):
             return
 
         # job report XML exists, load the exception information from it
-        executor.report.parse(jobRepXml)
+        self.parse(executor, jobRepXml)
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)

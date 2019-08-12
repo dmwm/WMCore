@@ -295,4 +295,6 @@ class CMSSW(Diagnostic):
         # for all the exception codes between 1 and 225, use a default that attempts to read the code
         # from the job report
         catchAll = EDMExceptionHandler()
-        [self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers]
+        for x in range(0, 255):
+            if x not in self.handlers:
+                self.handlers.__setitem__(x, catchAll)

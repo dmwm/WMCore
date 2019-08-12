@@ -63,4 +63,6 @@ class DeleteFiles(Diagnostic):
 
 
         catchAll = DFExceptionHandler()
-        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers ]
+        for x in range(0, 255):
+            if x not in self.handlers:
+                self.handlers.__setitem__(x, catchAll)

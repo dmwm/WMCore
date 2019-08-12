@@ -43,6 +43,10 @@ class CMSSW(Executor):
 
     """
 
+    def __init__(self):
+        super(CMSSW, self).__init__()
+        self.failedPreviousStep = None
+
     def _setStatus(self, returnCode, returnMessage):
         """
         Set return code.

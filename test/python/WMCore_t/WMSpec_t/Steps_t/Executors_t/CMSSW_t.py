@@ -20,7 +20,6 @@ import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
 from WMCore.DataStructs.Job import Job
 from WMCore.FwkJobReport.Report import Report
-from WMCore.FwkJobReport.Report import FwkJobReportException
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.Steps import StepFactory

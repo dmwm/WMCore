@@ -8,7 +8,6 @@ from __future__ import print_function, division
 import logging
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore import Lexicon
@@ -28,8 +27,6 @@ class Block(StartPolicyInterface):
 
         # Initialize modifiers of the policy
         self.blockBlackListModifier = []
-        self.cric = CRIC()
-
 
     def split(self):
         """Apply policy to spec"""

@@ -20,7 +20,6 @@ ACDC unsupported:
 
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
@@ -47,7 +46,6 @@ class ResubmitBlock(StartPolicyInterface):
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
         self.sites = []
-        self.cric = CRIC()
 
     def split(self):
         """Apply policy to spec"""

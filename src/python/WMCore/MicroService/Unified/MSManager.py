@@ -59,34 +59,37 @@ class MSManager(object):
         self.uConfig = {}
         self.config = config
         self.logger = getMSLogger(getattr(config, 'verbose', False), logger)
+        self.services = [] # list of services we'll run
         self._msConfig = None  # will be defined by _parseConfig API call
         self._parseConfig(config)
         self.logger.info(
             "Configuration including default values:\n%s", self.msConfig)
 
         # initialize transferor class with assigned status as default
-        self.msTransferor = MSTransferor(self.msConfig, logger=self.logger)
+        if 'transferor' in self.services:
+            self.msTransferor = MSTransferor(self.msConfig, logger=self.logger)
+            thname = 'MSTransferor'
+            interval = self.msConfig['transferorInterval']
+            self.transfThread = start_new_thread(thname, daemon,
+                                                 (self.transferor,
+                                                  'assigned',
+                                                  interval,
+                                                  self.logger))
+            self.logger.debug(
+                "### Running %s thread %s", thname, self.transfThread.running())
+
         # initialize monitoring class with staging status as default
-        self.msMonitor = MSMonitor(self.msConfig, logger=self.logger)
-
-        # Last but not least, get the threads started
-        thname = 'MSTransferor'
-        self.transfThread = start_new_thread(thname, daemon,
-                                             (self.transferor,
-                                              'assigned',
-                                              self.msConfig['interval'],
-                                              self.logger))
-        self.logger.debug(
-            "### Running %s thread %s", thname, self.transfThread.running())
-
-        thname = 'MSTransferorMonit'
-        self.monitThread = start_new_thread(thname, daemon,
-                                            (self.monitor,
-                                             'staging',
-                                             self.msConfig['interval'] * 2,
-                                             self.logger))
-        self.logger.debug(
-            "+++ Running %s thread %s", thname, self.monitThread.running())
+        if 'monitor' in self.services:
+            self.msMonitor = MSMonitor(self.msConfig, logger=self.logger)
+            thname = 'MSTransferorMonit'
+            interval = self.msConfig['monitorInterval']
+            self.monitThread = start_new_thread(thname, daemon,
+                                                (self.monitor,
+                                                 'staging',
+                                                 interval,
+                                                 self.logger))
+            self.logger.debug(
+                "+++ Running %s thread %s", thname, self.monitThread.running())
 
     def _parseConfig(self, config):
         """
@@ -99,8 +102,17 @@ class MSManager(object):
         self.msConfig = {}
         self.msConfig['verbose'] = getattr(config, 'verbose', False)
         self.msConfig['group'] = getattr(config, 'group', 'DataOps')
-        self.msConfig['interval'] = getattr(config, 'interval', 5 * 60)
+        interval = getattr(config, 'interval', 5 * 60)
+        self.msConfig['interval'] = interval
+        self.msConfig['transferorInterval'] = \
+                getattr(config, 'transferorInterval', interval)
+        self.msConfig['monitorInterval'] = \
+                getattr(config, 'monitorInterval', interval)
         self.msConfig['readOnly'] = getattr(config, 'readOnly', True)
+        self.services = getattr(config, 'services', [])
+        if not self.services:
+            # if we not provided with specific services we'll run them both
+            self.services = ['transferor', 'monitor']
 
         reqmgr2Url = 'https://cmsweb.cern.ch/reqmgr2'
         self.msConfig['reqmgrUrl'] = getattr(config, 'reqmgr2Url', reqmgr2Url)
@@ -120,11 +132,12 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
-        startT = time.time()
-        self.logger.info("Starting the transferor thread...")
-        self.msTransferor.execute(reqStatus)
-        self.logger.info(
-            "Total transferor execution time: %.2f secs", time.time() - startT)
+        if 'transferor' in self.services and hasattr(self, 'msTransferor'):
+            startT = time.time()
+            self.logger.info("Starting the transferor thread...")
+            self.msTransferor.execute(reqStatus)
+            self.logger.info(
+                "Total transferor execution time: %.2f secs", time.time() - startT)
 
     def monitor(self, reqStatus):
         """
@@ -133,20 +146,23 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
-        startT = time.time()
-        self.logger.info("Starting the monitor thread...")
-        self.msMonitor.execute(reqStatus)
-        self.logger.info(
-            "Total monitor execution time: %.2f secs", time.time() - startT)
+        if 'monitor' in self.services and hasattr(self, 'msMonitor'):
+            startT = time.time()
+            self.logger.info("Starting the monitor thread...")
+            self.msMonitor.execute(reqStatus)
+            self.logger.info(
+                "Total monitor execution time: %.2f secs", time.time() - startT)
 
     def stop(self):
         "Stop MSManager"
         # stop MSTransferorMonit thread
-        self.monitThread.stop()
+        if 'monitor' in self.services and hasattr(self, 'monitThread'):
+            self.monitThread.stop()
         # stop MSTransferor thread
-        self.transfThread.stop()  # stop checkStatus thread
-        status = self.transfThread.running()
-        return status
+        if 'transferor' in self.services and hasattr(self, 'transfThread'):
+            self.transfThread.stop()  # stop checkStatus thread
+            status = self.transfThread.running()
+            return status
 
     def info(self, reqName):
         "Return info about given request"

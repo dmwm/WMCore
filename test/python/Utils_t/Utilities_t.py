@@ -6,8 +6,9 @@ Unittests for Utilities functions
 from __future__ import division, print_function
 
 import unittest
-from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr, rootUrlJoin, zipEncodeStr
-from Utils.Utilities import lowerCmsHeaders
+
+from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
+    safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -39,7 +40,7 @@ class UtilitiesTests(unittest.TestCase):
     def testLowerCmsHeaders(self):
         "Test lowerCmsHeaders function"
         val = 'cms-xx-yy'
-        headers = {'CAPITAL':1, 'Camel':1, 'Cms-Xx-Yy': val, 'CMS-XX-YY': val, 'cms-xx-yy': val}
+        headers = {'CAPITAL': 1, 'Camel': 1, 'Cms-Xx-Yy': val, 'CMS-XX-YY': val, 'cms-xx-yy': val}
         lheaders = lowerCmsHeaders(headers)
         self.assertEqual(sorted(lheaders.keys()), sorted(['CAPITAL', 'Camel', val]))
         self.assertEqual(lheaders['CAPITAL'], 1)
@@ -124,11 +125,32 @@ cms::Exception caught in CMS.EventProcessor and rethrown
 """
         encodedMessage = \
             'eNp1j8FqwzAMhu95Cl0G2yEhaXvyrU3dkkFHqfcCnq02hkQOtlz6+HM2MrbDdBLS9/1CxdNJHcsI7UnJh8GJnScBsL0yhoMbEOpV+ZqoXNVNDc1GrBuxWUMr1TucfWRJ9pKoMGMU4scHo9OtZ3C5G+O8L3OBvCPxOXiDMfpw0G5IAWEnj91b8Xvn6KbYTxPab0+ZHm0aUD7QpDn/r/qP1dFdD85e8IoBySz0Ts+j1md9y4zjxMAebGYWTsMCGE+sHeVk0JS/+Qqc79lkuNtDryN8IBLAc1VVL5+o0W8i'
-        self.assertEqual(zipEncodeStr(message, maxLen=300, compressLevel=9, steps=10, truncateIndicator=" (...)"), encodedMessage)
+        self.assertEqual(zipEncodeStr(message, maxLen=300, compressLevel=9, steps=10, truncateIndicator=" (...)"),
+                         encodedMessage)
         # Test different maximum lengths
         # Encoded message should always be less than the maximum limit.
         for maxLen in (800, 500, 20):
-            self.assertLessEqual(len(zipEncodeStr(message, maxLen=maxLen, compressLevel=9, steps=10, truncateIndicator=" (...)")), maxLen)
+            self.assertLessEqual(
+                len(zipEncodeStr(message, maxLen=maxLen, compressLevel=9, steps=10, truncateIndicator=" (...)")),
+                maxLen)
+
+    def testGetSize(self):
+        """
+        Test the getSize function.
+        """
+        for item in (1234, 1234.1234, set([12, 34]), "test", (1, 2), {'k1': 'v1'}):
+            self.assertTrue(getSize(item) > 20)
+        with self.assertRaises(TypeError):
+            getSize(zipEncodeStr)
+
+        class TestClass():
+            def __init__(self):
+                self.data = "blah"
+
+        cls = TestClass()
+        print(getSize(cls))
+        self.assertTrue(getSize(cls) > 1000)
+
 
 if __name__ == '__main__':
     unittest.main()

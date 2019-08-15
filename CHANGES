@@ -1,3 +1,9 @@
+1.2.5 to 1.2.6.pre1:
+  - unit tests (Alan Malta Rodrigues) #9338
+  - Util function to calculate size of custom objects (Alan Malta Rodrigues) #9338
+  - Set PSN for PileupData location at GQE level (Alan Malta Rodrigues) #9335
+
+
 1.2.5.pre7 to 1.2.5:
   - Default ProcVer to 1 on the StoreResults script (Alan Malta Rodrigues) #9329
   - fix location for the pull request template (Alan Malta Rodrigues) #9324

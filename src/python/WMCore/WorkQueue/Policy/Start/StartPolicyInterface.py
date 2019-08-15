@@ -10,6 +10,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
+from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
@@ -31,6 +32,7 @@ class StartPolicyInterface(PolicyInterface):
         self.rejectedWork = []  # List of inputs that were rejected
         self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
+        self.cric = CRIC()
 
     def split(self):
         """Apply policy to spec"""
@@ -238,5 +240,5 @@ class StartPolicyInterface(PolicyInterface):
             dbs = self.dbs(dbsUrl)
             for datasetPath in datasets[dbsUrl]:
                 locations = dbs.listDatasetLocation(datasetPath)
-                result[datasetPath] = locations
+                result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result

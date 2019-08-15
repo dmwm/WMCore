@@ -93,8 +93,7 @@ class PhEDEx(Service):
         for node in subscription.nodes:
             args['node'].append(node)
 
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
-        args['data'] = xmlData
+        args['comments'] = subscription.comments
         args['level'] = subscription.level
         args['priority'] = subscription.priority
         args['move'] = subscription.move
@@ -102,6 +101,11 @@ class PhEDEx(Service):
         args['custodial'] = subscription.custodial
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
+        if args['level'] == 'dataset':
+            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
+        else:  # block
+            xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl, subscription.getDatasetsAndBlocks())
+        args['data'] = xmlData
 
         return self._getResult(callname, args=args, verb="POST")
 

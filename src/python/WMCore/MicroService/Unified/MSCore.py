@@ -39,9 +39,11 @@ class MSCore(object):
                                    httpDict={'cacheduration': 60},
                                    logger=self.logger)
 
+        # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
+        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
         # eventually will change it to Rucio
         self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
-                             dbsUrl=self.msConfig['dbsUrl'], logger=self.logger)
+                             dbsUrl=dbsUrl, logger=self.logger)
 
     def unifiedConfig(self):
         """
@@ -56,21 +58,15 @@ class MSCore(object):
         else:
             return {}
 
-    def change(self, req, reqStatus, prefix='###'):
+    def change(self, reqName, reqStatus, prefix='###'):
         """
-        Change request status, internally it is done via PUT request to ReqMgr2:
-        curl -X PUT -H "Content-Type: application/json" \
-             -d '{"RequestStatus":"staging", "RequestName":"bla-bla"}' \
-             https://xxx.yyy.zz/reqmgr2/data/request
+        Update the request status in ReqMgr2
         """
-        self.logger.debug(
-            '%s updating %s status to %s', prefix, req['name'], reqStatus)
+        self.logger.info('%s updating %s status to %s', prefix, reqName, reqStatus)
         try:
-            if not self.msConfig['readOnly']:
-                self.reqmgr2.updateRequestStatus(req['name'], reqStatus)
+            self.reqmgr2.updateRequestStatus(reqName, reqStatus)
         except Exception as err:
-            self.logger.exception(
-                "Failed to change request status. Error: %s", str(err))
+            self.logger.exception("Failed to change request status. Error: %s", str(err))
 
     def updateTransferInfo(self, requestStatuses):
         "Update transfer ids in backend"

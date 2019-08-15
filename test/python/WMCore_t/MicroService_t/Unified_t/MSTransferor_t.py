@@ -43,7 +43,7 @@ class TransferorTest(EmulatedUnitTestCase):
         self.stepChainTempl = getTestFile('data/ReqMgr/requests/Integration/SC_LumiMask_PhEDEx.json')
         super(TransferorTest, self).setUp()
 
-    def testRequestRecord(self):
+    def notestRequestRecord(self):
         """
         Test the requestRecord method
         """

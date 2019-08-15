@@ -26,9 +26,9 @@ class PhEDExSubscription(object):
     Data structure which contains PHEDEx fields for
     PhEDEx subscription data service
     """
-    def __init__(self, datasetPathList, nodeList, group,
-                 level = 'dataset', priority = 'normal', move = 'n', static = 'n',
-                 custodial = 'n', request_only = 'y', blocks = None, subscriptionId = -1):
+    def __init__(self, datasetPathList, nodeList, group, level = 'dataset',
+                 priority = 'normal', move = 'n', static = 'n', custodial = 'n',
+                 request_only = 'y', blocks = None, subscriptionId = -1, comments=""):
         """
         Initialize PhEDEx subscription with default value
         """
@@ -49,6 +49,7 @@ class PhEDExSubscription(object):
         self.request_only = request_only.lower()
         self.requesterID = None
         self.status = "New"
+        self.comments = comments
 
         # Subscription id for internal accounting
         self.subscriptionIds = set([subscriptionId])
@@ -74,6 +75,17 @@ class PhEDExSubscription(object):
             msg += "custodial: %s\n" % self.custodial
             msg += "blocks: %s\n" % str(self.blocks)
             raise PhEDExSubscriptionException(msg)
+
+    def __str__(self):
+        """
+        Write out useful information for this object
+        :return:
+        """
+        res = {'datasetPaths': self.datasetPaths, 'nodes': self.nodes,
+               'priority': self.priority, 'move': self.move,
+               'group': self.group, 'custodial': self.custodial,
+               'request_only': self.request_only, 'blocks': self.blocks}
+        return str(res)
 
     def isEqualOptions(self, subscription):
         return (self.level == subscription.level
@@ -168,7 +180,7 @@ class PhEDExSubscription(object):
             requestId = request['id']
             requestInfo = phedexDataSvc.getTransferRequests(request = requestId)['phedex']['request']
             if not requestInfo:
-                logging.error("Transfer request %s doesn't exist in PhEDEx" % requestId)
+                logging.error("Transfer request %s doesn't exist in PhEDEx", requestId)
                 continue # Strange, but let it go.
             requestInfo = requestInfo[0] # It's a singleton
             # Make sure that the node is in the destinations

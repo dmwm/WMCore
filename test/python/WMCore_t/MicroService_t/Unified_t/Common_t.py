@@ -21,13 +21,14 @@ class CommonTest(unittest.TestCase):
 
     def testDbsInfo(self):
         "Test function for dbsInfo()"
-        datasetBlocks, datasetSizes = dbsInfo(self.datasets, self.dbsUrl)
+        datasetBlocks, datasetSizes, datasetTransfers = dbsInfo(self.datasets, self.dbsUrl)
         blocks = [b for d in self.datasets for b in datasetBlocks[d]]
         self.assertEqual(2, len(datasetBlocks))
         self.assertEqual(5, len(blocks))
         expect = 6271126523 + 7840499449
         sizes = sum([datasetSizes[d] for d in self.datasets])
         self.assertEqual(expect, sizes)
+        self.assertEqual(len(self.datasets), len(datasetTransfers))
 
     def testGetEventsLumis(self):
         "Test function for getEventsLumis()"
@@ -44,7 +45,7 @@ class CommonTest(unittest.TestCase):
     def test_findParent(self):
         "Test function for findParent()"
         parents = findParent(self.child, self.dbsUrl)
-        self.assertEqual('/SingleElectron/Run2016B-v2/RAW', parents[0])
+        self.assertEqual(parents[self.child[0]], '/SingleElectron/Run2016B-v2/RAW')
 
 
 if __name__ == '__main__':

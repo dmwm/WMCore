@@ -56,6 +56,8 @@ class MSTransferor(MSCore):
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
+        # also clear the RequestInfo pileup cache
+        self.reqInfo.clearPileupCache()
         if not self.uConfig:
             self.logger.warning("Failed to fetch the unified configuration")
         elif not campaigns:
@@ -293,7 +295,7 @@ class MSTransferor(MSCore):
                           "dataType": dataIn['type'],
                           "transferIDs": set(),  # casted to list before going to couch
                           "campaignName": dataIn['campaign'],
-                          "completion": 0.0}
+                          "completion": [0.0]}
         return transferRecord
 
     def createTransferDoc(self, reqName, transferRecords):

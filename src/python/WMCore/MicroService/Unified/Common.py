@@ -383,23 +383,3 @@ def findParent(datasets, dbsUrl):
         for item in rows:
             parentByDset[item['this_dataset']] = item['parent_dataset']
     return parentByDset
-
-
-def getDatasetSize(datasets, dbsUrl):
-    """
-    Helper function to get the total dataset dataset.
-    It returns a dictionary key'ed by the child dataset
-    """
-    sizeByDset = {}
-    if not datasets:
-        return sizeByDset
-
-    urls = ['%s/blocksummaries?dataset=%s' % (dbsUrl, d) for d in datasets]
-    data = multi_getdata(urls, ckey(), cert())
-
-    for row in data:
-        dataset = row['url'].split('=')[-1]
-        rows = json.loads(row['data'])
-        for item in rows:
-            sizeByDset[dataset] = item['file_size']
-    return sizeByDset

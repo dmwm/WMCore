@@ -64,7 +64,8 @@ class MSCore(object):
         """
         self.logger.info('%s updating %s status to %s', prefix, reqName, reqStatus)
         try:
-            self.reqmgr2.updateRequestStatus(reqName, reqStatus)
+            if not self.msConfig['readOnly']:
+                self.reqmgr2.updateRequestStatus(reqName, reqStatus)
         except Exception as err:
             self.logger.exception("Failed to change request status. Error: %s", str(err))
 

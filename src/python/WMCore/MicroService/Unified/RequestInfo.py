@@ -9,19 +9,18 @@ from __future__ import division, print_function
 
 # system modules
 import json
-import time
 import pickle
-
+import time
 # WMCore modules
 from pprint import pformat
 
 from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
-    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo,\
-    dbsInfo, phedexInfo, getComputingTime, getNCopies,\
+    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, \
+    dbsInfo, phedexInfo, getComputingTime, getNCopies, \
     teraBytes, getIO, findBlockParents, findParent
-from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
     as multi_getdata, RequestHandler
 
@@ -49,7 +48,7 @@ class RequestInfo(MSCore):
         uConfig = self.unifiedConfig()
         if not uConfig:
             self.logger.warning(
-                "Failed to fetch the latest unified config. Skipping this cycle")
+                    "Failed to fetch the latest unified config. Skipping this cycle")
             return []
         self.logger.info("Going to process %d requests.", len(reqRecords))
 
@@ -158,7 +157,8 @@ class RequestInfo(MSCore):
         for wflow in requestWorkflows:
             for wname, wspec in wflow.items():
                 time0 = time.time()
-                cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'], logger=self.logger)
+                cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'],
+                                        logger=self.logger)
                 ncopies = getNCopies(cput)
 
                 attrs = winfo[wname]
@@ -183,8 +183,8 @@ class RequestInfo(MSCore):
                 sites = json.dumps(sorted(list(nodes)))
                 self.logger.debug("### %s", wname)
                 self.logger.debug(
-                    "%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s",
-                    ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites)
+                        "%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s",
+                        ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites)
                 # find out which site can serve given workflow request
                 t0 = time.time()
                 lheInput, primary, parent, secondary, allowedSites \

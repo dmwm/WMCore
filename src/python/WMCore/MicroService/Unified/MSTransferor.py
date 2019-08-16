@@ -9,7 +9,6 @@ the transferor module.
 from __future__ import division, print_function
 
 # system modules
-import time
 from httplib import HTTPException
 from operator import itemgetter
 from pprint import pformat
@@ -18,14 +17,16 @@ from pprint import pformat
 from Utils.IteratorTools import grouper
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
+
 
 class MSTransferor(MSCore):
     """
     MSTransferor class provide whole logic behind
     the transferor module.
     """
+
     def __init__(self, msConfig, logger=None):
         """
         Runs the basic setup and initialization for the MS Transferor module
@@ -112,7 +113,6 @@ class MSTransferor(MSCore):
                         self.change(wflow.getName(), 'staging', self.__class__.__name__)
         self.logger.info("%s subscribed %d datasets and %d blocks in this cycle",
                          self.__class__.__name__, self.dsetCounter, self.blockCounter)
-
 
     def getRequestRecords(self, reqStatus):
         """
@@ -312,8 +312,7 @@ class MSTransferor(MSCore):
         resp = self.reqmgrAux.postTransferInfo(reqName, doc)
         if resp and resp[0].get("ok", False):
             return True
-        else:
-            msg = "Failed to create transfer document in CouchDB. Will retry again later."
-            msg += "Error: %s" % resp
-            self.logger.error(msg)
-            return False
+        msg = "Failed to create transfer document in CouchDB. Will retry again later."
+        msg += "Error: %s" % resp
+        self.logger.error(msg)
+        return False

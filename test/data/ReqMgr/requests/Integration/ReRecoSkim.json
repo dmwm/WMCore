@@ -25,7 +25,7 @@
     "Memory": 2394,
     "SizePerEvent":500,
     "InputDataset": "/BTag/Run2012A-v1/RAW",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
     "Scenario": "pp",	  
     "SkimName1": "skim_2012A_BTag",
     "SkimInput1": "RECOoutput",

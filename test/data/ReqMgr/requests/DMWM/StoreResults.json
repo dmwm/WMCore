@@ -15,7 +15,7 @@
   "createRequest": {
     "AcquisitionEra": "StoreResults",
     "CMSSWVersion": "CMSSW_8_0_26_patch1",
-    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/",
     "GlobalTag": "crab3_tag",
     "PhysicsGroup": "TauPOG",
     "InputDataset": "/EmbeddingRun2016B/MuTauFinalState-imputSep16DoubleMu_mirror_miniAOD-v2/USER",

@@ -5,7 +5,7 @@
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_9_4_0",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
     "DeterministicPileup": true,
     "GlobalTag": "94X_dataRun2_PromptLike_v5",
     "AcquisitionEra": "CMSSW_9_4_0",

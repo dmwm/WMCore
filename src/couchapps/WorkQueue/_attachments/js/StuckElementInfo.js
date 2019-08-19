@@ -30,10 +30,10 @@ WQ.StuckElementInfo.elementTable = function(args) {
         fields: [
         	     {key: "reason"},
         		 {key: "RequestName", label: "Request Name"},
-                 {key: "TaskName", label: "Task Name"},
-                 {key: "Inputs", formatter: siteFormatter},
                  {key: "SiteWhitelist", formatter: listFormatter},
                  {key: "SiteBlacklist", formatter: listFormatter},
+                 {key: "Inputs", formatter: siteFormatter},
+                 {key: "PileupData", formatter: siteFormatter},
                  {key: "ParentData", formatter: siteFormatter},
                  {key: "Priority"},
                  {key: "TeamName", label: "Team"},
@@ -49,7 +49,7 @@ WQ.StuckElementInfo.elementTable = function(args) {
 
     var tableConfig = WQ.createDefaultTableConfig();
 
-    tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
+    tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 50});
 
     var dataTable = WQ.createDataTable(args.divID, dataSource,
                          WQ.createDefaultTableDef(dataSchema.fields),

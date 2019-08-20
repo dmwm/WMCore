@@ -3,7 +3,7 @@
 # pylint: disable=R0903
 # R0903: too-few-public-methods
 """
-File       : ParseUnifiedCampaigns.py
+File       : parseUnifiedCampaigns.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Parse Unified campaigns json record or read them
 from Unified MongoDB. The yielded campaign records are ready
@@ -32,11 +32,17 @@ where individual records have the following structure:
 }
 ```
 
-Example of execution:
+***** Example of execution *****
 python parseUnifiedCampaigns.py --dburi=mongodb://localhost:27017
        --dbname=unified --dbcoll=campaignsConfiguration --verbose=10 --fout=output.json
+
 or, parsing campaigns.json file
 python parseUnifiedCampaigns.py --fin=/path/WmAgentScripts/campaigns.json
+
+or yet parsing a json file filled of campaign configurations already compliant
+to the WMCore schema:
+python parseUnifiedCampaigns.py --fin=wmcore_campaign.json --url=https://alancc7-cloud2.cern.ch/reqmgr2
+         --verbose=10 --testcamp
 """
 from __future__ import print_function, division
 
@@ -47,18 +53,18 @@ import logging
 import os
 
 # pymongo modules
-from pymongo import MongoClient
+try:
+    from pymongo import MongoClient
+except ImportError:
+    print("pymongo library not found. Faking it")
+    MongoClient = None
 
 # WMCore modules
 try:
     from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 except ImportError:
     print("WMCore/ReqMgrAux environemnt not found. Faking it")
-
-
-    class ReqMgrAux():
-        def __init__(self, url, httpDict, logger):
-            pass
+    ReqMgrAux = None
 
 
 class OptionParser(object):
@@ -83,6 +89,9 @@ class OptionParser(object):
                                  dest="dbname", default="", help="MongoDB database")
         self.parser.add_argument("--dbcoll", action="store",
                                  dest="dbcoll", default="", help="MongoDB collection")
+        self.parser.add_argument("--testcamp", action="store_true",
+                                 dest="testcamp", default=False,
+                                 help="Insert test campaign configurations into Couch")
 
 
 def intersect(slist1, slist2):
@@ -251,9 +260,30 @@ def upload(mgr, campRec):
         return
     campaign = campRec.get('CampaignName', '')
     if campaign:
-        mgr.postCampaignConfig(campaign, campRec)
+        res = mgr.postCampaignConfig(campaign, campRec)
+        print(res)
     else:
         print("ERROR: found a campaign record without a CampaignName value: %s" % campRec)
+
+
+def insertTestCampaigns(mgr):
+    """
+    Insert a few campaigns configuration used for testing purposes
+    NOTE: the campaign name might change according to the tests you're running.
+    :param mgr: ReqMgrAux object
+    """
+    if not mgr:
+        return
+
+    defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1,
+                   'PrimaryAAA': False, 'Secondaries': {}, 'SecondaryAAA': False,
+                   'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
+                   'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
+
+    testCamp = ("CMSSW_10_6_1_Step3", "Aug2019_Val", "CMSSW_9_4_0__test2inwf-1510737328")
+    for campName in testCamp:
+        defaultCamp['CampaignName'] = campName
+        upload(mgr, defaultCamp)
 
 
 def main():
@@ -263,6 +293,7 @@ def main():
     verbose = int(opts.verbose)
     logger = None
     mgr = None
+    inputWMCore = False
     if verbose:
         logger = logging.getLogger('parse_campaign')
         logger.setLevel(logging.DEBUG)
@@ -283,23 +314,34 @@ def main():
         if verbose:
             print("### read data from '%s', %s/%s" % (opts.dburi, dbname, dbcoll))
         data = [r for r in conn[dbname][dbcoll].find()]
-    else:
+    elif opts.fin:
         fin = opts.fin
         if verbose:
             print("### read data from '%s'" % fin)
+        data = []
         with open(fin, 'r') as istream:
-            data = []
-            for key, val in json.load(istream).items():
-                rec = {'name': key}
-                rec.update(val)
-                data.append(rec)
-    rawRecords = parse(data, verbose)
+            campData = json.load(istream)
+            if isinstance(campData, dict):
+                # then it's a Unified-like campaign schema
+                for key, val in campData.items():
+                    rec = {'name': key}
+                    rec.update(val)
+                    data.append(rec)
+            elif isinstance(campData, list):
+                # then the input file has WMCore-like campaign schema
+                print("Found %d campaigns in the input file." % len(campData))
+                data = campData
+                inputWMCore = True
+    if not inputWMCore:
+        data = parse(data, verbose)
 
     output = []  # in case we want to dump all records to a json file
-    for rec in process(rawRecords):
+    for rec in process(data):
         output.append(rec)
         print(json.dumps(rec))
         upload(mgr, rec)
+    if opts.testcamp:
+        insertTestCampaigns(mgr)
     if opts.fout:
         print("Saving all %d unique campaign records to: %s\n" % (len(output), opts.fout))
         with open(opts.fout, "w") as jo:

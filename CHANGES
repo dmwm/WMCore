@@ -1,3 +1,16 @@
+1.2.6.pre1 to 1.2.6.pre2:
+  - fix tests
+  - fix subscription call and completion logic
+  - Adjust MSMonitoring logic according to the requirements
+  - new unit tests for Workflow
+  - Get dataset size by summing up block sizes; cache secondary sizes
+  - Accept also WMCore-like campaign json configuration
+  - Consider PileupData and trust flags in the stuckElements couch view
+  - Make DbsUrl homogeneous in the json template
+  - Allow clients to scan JSON object
+  - fixed unit tests
+  - Associate input blocks to campaign and make transfer request
+
 1.2.5 to 1.2.6.pre1:
   - unit tests (Alan Malta Rodrigues) #9338
   - Util function to calculate size of custom objects (Alan Malta Rodrigues) #9338

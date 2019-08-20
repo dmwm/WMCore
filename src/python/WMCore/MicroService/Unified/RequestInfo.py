@@ -9,19 +9,18 @@ from __future__ import division, print_function
 
 # system modules
 import json
-import time
 import pickle
-
+import time
 # WMCore modules
 from pprint import pformat
 
 from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
-    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo,\
-    dbsInfo, phedexInfo, getComputingTime, getNCopies,\
-    teraBytes, getIO, findBlockParents, findParent, getDatasetSize
-from WMCore.MicroService.Unified.SiteInfo import SiteInfo
+    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, \
+    dbsInfo, phedexInfo, getComputingTime, getNCopies, \
+    teraBytes, getIO, findBlockParents, findParent
 from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
     as multi_getdata, RequestHandler
 
@@ -31,6 +30,14 @@ class RequestInfo(MSCore):
     RequestInfo class provides functionality to access and
     manipulate requests.
     """
+
+    def __init__(self, msConfig, logger):
+        """
+        Basic setup for this RequestInfo module
+        """
+        super(RequestInfo, self).__init__(msConfig, logger)
+        self.cachePileupSize = {}
+
     def __call__(self, reqRecords):
         """
         Run the unified transferor box
@@ -41,7 +48,7 @@ class RequestInfo(MSCore):
         uConfig = self.unifiedConfig()
         if not uConfig:
             self.logger.warning(
-                "Failed to fetch the latest unified config. Skipping this cycle")
+                    "Failed to fetch the latest unified config. Skipping this cycle")
             return []
         self.logger.info("Going to process %d requests.", len(reqRecords))
 
@@ -60,6 +67,14 @@ class RequestInfo(MSCore):
 
         return workflows
 
+    def clearPileupCache(self):
+        """
+        Clears the in-memory pileup cache for every cycle of
+        the MSTransferor module.
+        Cache stores only the total size for secondary datasets
+        """
+        self.cachePileupSize.clear()
+
     def unified(self, uConfig, workflows):
         """
         Unified Transferor black box
@@ -75,11 +90,6 @@ class RequestInfo(MSCore):
         time0 = time.time()
         self.getParentDatasets(workflows)
         self.logger.debug(elapsedTime(time0, "### getParentDatasets"))
-
-        # then fetch the total dataset size of each secondary dataset
-        time0 = time.time()
-        self.getPileupSizes(workflows)
-        self.logger.debug(elapsedTime(time0, "### getPileupSizes"))
 
         # get final primary and secondaries list of blocks to be replicated
         # as well as an initial list of block parents
@@ -147,7 +157,8 @@ class RequestInfo(MSCore):
         for wflow in requestWorkflows:
             for wname, wspec in wflow.items():
                 time0 = time.time()
-                cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'], logger=self.logger)
+                cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'],
+                                        logger=self.logger)
                 ncopies = getNCopies(cput)
 
                 attrs = winfo[wname]
@@ -172,8 +183,8 @@ class RequestInfo(MSCore):
                 sites = json.dumps(sorted(list(nodes)))
                 self.logger.debug("### %s", wname)
                 self.logger.debug(
-                    "%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s",
-                    ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites)
+                        "%s datasets, %s blocks, %s bytes (%s TB), %s nevts, %s nlumis, cput %s, copies %s, %s",
+                        ndatasets, nblocks, size, teraBytes(size), nevts, nlumis, cput, ncopies, sites)
                 # find out which site can serve given workflow request
                 t0 = time.time()
                 lheInput, primary, parent, secondary, allowedSites \
@@ -220,44 +231,21 @@ class RequestInfo(MSCore):
                 if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
                     wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
 
-    def getPileupSizes(self, workflows):
-        """
-        Given a list of requests, find which requests need to process a secondary
-        dataset and, retrieve its total size from DBS.
-        """
-        datasetByDbs = {}
-        for wflow in workflows:
-            if wflow.getPileupDatasets():
-                datasetByDbs.setdefault(wflow.getDbsUrl(), set())
-                datasetByDbs[wflow.getDbsUrl()] = datasetByDbs[wflow.getDbsUrl()] | wflow.getPileupDatasets()
-
-        for dbsUrl, datasets in datasetByDbs.items():
-            self.logger.info("Fetching total dataset size for %d secondaries against DBS: %s", len(datasets), dbsUrl)
-            sizeByDset = getDatasetSize(datasets, dbsUrl)
-            for wflow in workflows:
-                for second in wflow.getPileupDatasets():
-                    if second not in sizeByDset:
-                        # dataset is in another DBS instance
-                        continue
-                    wflow.setSecondarySummary(second, sizeByDset[second])
-
     def getInputDataBlocks(self, workflows):
         """
-        Given a list of requests and their input data -  primary and parent
-        datasets - find all their respective blocks to be transferred, including
-        the block size information.
-         * finalBlocks: attribute will contain a list of dictionaries with
-          the block name and block size
-         * parent: will contain a list of dictionaries with the block name
-          and block size as well, when needed
+        Given a list of requests and their input data -  primary, secondary and
+        parent datasets - find all their respective blocks (and their sizes) to
+        be transferred.
+         * workflows: a list of Workflow objects
         """
         datasetByDbs = {}
         for wflow in workflows:
             datasetByDbs.setdefault(wflow.getDbsUrl(), set())
             for dataIn in wflow.getDataCampaignMap():
-                if dataIn['type'] in {'primary', 'parent'}:
-                    datasetByDbs.setdefault(wflow.getDbsUrl(), set())
-                    datasetByDbs[wflow.getDbsUrl()].add(dataIn['name'])
+                if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
+                    # fetch the total dataset size from the cache then
+                    continue
+                datasetByDbs[wflow.getDbsUrl()].add(dataIn['name'])
 
         # now fetch block names from DBS
         for dbsUrl, datasets in datasetByDbs.items():
@@ -265,14 +253,33 @@ class RequestInfo(MSCore):
             _, _, blocksByDset = dbsInfo(datasets, dbsUrl)
             for wflow in workflows:
                 for dataIn in wflow.getDataCampaignMap():
-                    if dataIn['name'] not in datasets:
+                    if dataIn['name'] in self.cachePileupSize:
+                        self.logger.debug("Using data from the cache for %s", dataIn['name'])
+                        wflow.setSecondarySummary(dataIn['name'], self.cachePileupSize[dataIn['name']])
+                    elif dataIn['name'] not in datasets:
                         # dataset is in another DBS instance
                         continue
-                    if dataIn['type'] == "primary":
+                    elif dataIn['type'] == "secondary":
+                        # simply calculate the total dataset size and cache it as well
+                        totalSize = self._getPileupSize(dataIn['name'], blocksByDset[dataIn['name']])
+                        wflow.setSecondarySummary(dataIn['name'], totalSize)
+                    elif dataIn['type'] == "primary":
                         wflow.setPrimaryBlocks(blocksByDset[dataIn['name']])
                     elif dataIn['type'] == "parent":
                         wflow.setParentBlocks(blocksByDset[dataIn['name']])
 
+    def _getPileupSize(self, dsetName, blocksDict):
+        """
+        Iterate over all blocks in the dictionary and sum up their
+        block sizes. In the end store the dataset and its total size
+        in the local cache as well.
+        :param dsetName: secondary dataset name string.
+        :param blocksDict: dictionary of block names and their size
+        :return: total size in bytes
+        """
+        totalSize = sum(blocksDict.values())
+        self.cachePileupSize[dsetName] = totalSize
+        return totalSize
 
     def getParentChildBlocks(self, workflows):
         """

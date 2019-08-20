@@ -14,6 +14,7 @@ import math
 # system modules
 import re
 import time
+
 try:
     from urllib import quote, unquote
 except ImportError:
@@ -152,7 +153,7 @@ def workflowsInfo(workflows):
                 if kkk == 'MCPileup':
                     pileups.add(vvv)
             winfo[key] = \
-                dict(datasets=list(datasets), pileups=list(pileups), \
+                dict(datasets=list(datasets), pileups=list(pileups),
                      priority=priority, selist=selist, campaign=campaign)
     return winfo
 
@@ -165,9 +166,8 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
         return eventsLumis
     if '#' in inputs[0]:  # inputs are list of blocks
         what = 'block_name'
-    urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s' \
-            % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) \
-            for i in inputs]
+    urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s'
+            % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         key = row['url'].split('=')[-1]
@@ -317,7 +317,7 @@ def postRequest(url, params):
     if 'verbose' in params:
         verbose = params['verbose']
         del params['verbose']
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), \
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(),
                        verb='POST', verbose=verbose)
     return data
 
@@ -383,23 +383,3 @@ def findParent(datasets, dbsUrl):
         for item in rows:
             parentByDset[item['this_dataset']] = item['parent_dataset']
     return parentByDset
-
-
-def getDatasetSize(datasets, dbsUrl):
-    """
-    Helper function to get the total dataset dataset.
-    It returns a dictionary key'ed by the child dataset
-    """
-    sizeByDset = {}
-    if not datasets:
-        return sizeByDset
-
-    urls = ['%s/blocksummaries?dataset=%s' % (dbsUrl, d) for d in datasets]
-    data = multi_getdata(urls, ckey(), cert())
-
-    for row in data:
-        dataset = row['url'].split('=')[-1]
-        rows = json.loads(row['data'])
-        for item in rows:
-            sizeByDset[dataset] = item['file_size']
-    return sizeByDset

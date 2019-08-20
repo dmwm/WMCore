@@ -5,9 +5,10 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 from __future__ import division, print_function
 
+import time
 # system modules
-import json
 import unittest
+from copy import deepcopy
 
 # WMCore modules
 from WMCore.MicroService.Unified.MSMonitor import MSMonitor
@@ -15,8 +16,7 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 
 
-
-class MonitorTest(EmulatedUnitTestCase):
+class MSMonitorTest(EmulatedUnitTestCase):
     "Unit test for Monitor module"
 
     def setUp(self):
@@ -33,55 +33,64 @@ class MonitorTest(EmulatedUnitTestCase):
 
         self.ms = MSMonitor(self.msConfig)
         self.ms.reqmgrAux = MockReqMgrAux()
-        super(MonitorTest, self).setUp()
+        super(MSMonitorTest, self).setUp()
+
+    def testUpdateCaches(self):
+        """
+        Test the getCampaignConfig method
+        """
+        campaigns, transfersDocs = self.ms.updateCaches()
+        self.assertNotEqual(transfersDocs, [])
+        self.assertEqual(len(transfersDocs[0]['transfers']), 1)
+        self.assertTrue(time.time() > transfersDocs[0]['lastUpdate'], 1)
+
+        self.assertNotEqual(campaigns, [])
+        for cname, cdict in campaigns.items():
+            self.assertEqual(cname, cdict['CampaignName'])
+            self.assertEqual(isinstance(cdict, dict), True)
+            self.assertNotEqual(cdict.get('CampaignName', {}), {})
 
     def testGetTransferInfo(self):
         """
         Test the getTransferInfo method
         """
-        transferRecords = [d for d in self.ms.getTransferInfo('ALL_DOCS')]
-        self.assertNotEqual(transferRecords, [])
-        for rec in transferRecords:
+        _, transfersDocs = self.ms.updateCaches()
+        transfersDocs[0]['transfers'] = []
+        originalTransfers = deepcopy(transfersDocs)
+        self.ms.getTransferInfo(transfersDocs)
+
+        self.assertNotEqual(transfersDocs, [])
+        self.assertEqual(len(transfersDocs), len(originalTransfers))
+        for rec in transfersDocs:
             self.assertEqual(isinstance(rec, dict), True)
-            keys = sorted(['workflowName', 'lastupdate', 'transfers'])
+            keys = sorted(['workflowName', 'lastUpdate', 'transfers'])
             self.assertEqual(keys, sorted(rec.keys()))
-            print('### transfer rec %s' % json.dumps(rec))
+            self.assertTrue(time.time() >= rec['lastUpdate'])
 
     def testCompletion(self):
         """
         Test the completion method
         """
-        campaigns, transferRecords = self.ms.updateCaches()
-        self.assertNotEqual(campaigns, [])
-        self.assertNotEqual(transferRecords, [])
-        transfers = []
-        for rec in transferRecords:
-            self.assertEqual('transfers' in rec, True)
-            for item in rec['transfers']:
-                transfers.append(item)
-        print("### transfers: %s" % transfers)
-        completion = self.ms.completion(transfers, campaigns)
-        self.assertEqual(completion, True)
+        campaigns, transfersDocs = self.ms.updateCaches()
+        transfersDocs.append(deepcopy(transfersDocs[0]))
+        transfersDocs.append(deepcopy(transfersDocs[0]))
+        transfersDocs[0]['transfers'] = []
+        transfersDocs[0]['workflowName'] = 'workflow_0'
+        transfersDocs[1]['transfers'][0]['completion'].append(100)
+        transfersDocs[1]['workflowName'] = 'workflow_1'
+        transfersDocs[2]['workflowName'] = 'workflow_2'
+        self.assertEqual(len(transfersDocs), 3)
 
-    def testGetCampaignConfig(self):
-        """
-        Test the getCampaignConfig method
-        """
-        campaigns, _ = self.ms.updateCaches()
-        self.assertNotEqual(campaigns, [])
-        for cname, cdict in campaigns.items():
-            self.assertEqual(isinstance(cdict, dict), True)
-            self.assertNotEqual(cdict.get('CampaignName', {}), {})
-            print('### campaign %s config %s' % (cname, json.dumps(cdict)))
+        completedWfs = self.ms.getCompletedWorkflows(transfersDocs, campaigns)
+        self.assertEqual(len(completedWfs), 2)
 
     def testUpdateTransferInfo(self):
         """
         Test the updateTransferInfo method
         """
-        campaigns, transferRecords = self.ms.updateCaches()
-        self.assertNotEqual(campaigns, [])
-        self.assertNotEqual(transferRecords, [])
-        self.ms.updateTransferInfo(transferRecords)
+        _, transferRecords = self.ms.updateCaches()
+        failed = self.ms.updateTransferDocs(transferRecords)
+        self.assertEqual(len(failed), len(transferRecords))
 
 
 if __name__ == '__main__':

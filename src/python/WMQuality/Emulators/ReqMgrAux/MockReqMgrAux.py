@@ -27,15 +27,14 @@ class MockReqMgrAux(object):
                  "SiteBlackList": [],
                  "SecondaryLocation": ["T1", "T2"],
                  "Secondaries": {"datasetA": ["T1", "T2"], "datasetB": ["T1"]},
-                 "MaxCopies": -1,
-                 "PartialCopy": 0
-	}
+                 "MaxCopies": 2,
+                 "PartialCopy": 1
+                 }
         self.campaigns = [cdict]
         self.transferRecords = []
-        rec = {"dataset":"/a/b/c", "dataType": "primary",
-               "transferIDs": [1,2], "completion": 1, "CampaignName": cname}
-        self.transferRecords = \
-                [{'workflowName': 'test', 'lastupdate':tstamp, 'transfers':[rec]}]
+        rec = {"dataset": "/a/b/c", "dataType": "primary",
+               "transferIDs": [1, 2], "completion": [1], "campaignName": cname}
+        self.transferRecords = [{'workflowName': 'test', 'lastUpdate': tstamp, 'transfers': [rec]}]
 
     def getWMAgentConfig(self, agentName):
         """
@@ -67,4 +66,4 @@ class MockReqMgrAux(object):
         "mocking updateTransferInfo method"
         # while mocking we do nothing
         print('mock method updateTransferInfo: name=%s, doc=%s inPlace=%s' \
-                % (name, doc, inPlace))
+              % (name, doc, inPlace))

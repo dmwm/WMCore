@@ -8,6 +8,9 @@ the transferor monitoring module.
 # futures
 from __future__ import division, print_function
 
+# system modules
+import time
+
 # WMCore modules
 from WMCore.MicroService.Unified.MSCore import MSCore
 
@@ -17,123 +20,198 @@ class MSMonitor(MSCore):
     MSMonitor class provide whole logic behind
     the transferor monitoring module.
     """
+    def __init__(self, msConfig, logger=None):
+        super(MSMonitor, self).__init__(msConfig, logger)
+        # update interval is used to check records in CouchDB and update them
+        # after this interval, default 6h
+        self.updateInterval = self.msConfig.get('updateInterval', 6*60*60)
+
+    def updateCaches(self):
+        """
+        Fetch some data required for the monitoring logic, e.g.:
+         * all campaign configuration
+         * all transfer records from backend DB
+        :return: True if all of them succeeded, else False
+        """
+        campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
+        transferRecords = self.reqmgrAux.getTransferInfo('ALL_DOCS')
+        cdict = {}
+        if not campaigns:
+            self.logger.warning("Failed to fetch campaign configurations")
+        if not transferRecords:
+            self.logger.warning("Failed to fetch transfer records")
+        else:
+            for camp in campaigns:
+                cdict[camp['CampaignName']] = camp
+        return cdict, transferRecords
+
+    def filterTransferDocs(self, requests, transferDocs):
+        """
+        Given a list of requests in the `staging` status and all the
+        transfer documents; select the transfer documents that:
+         * match against a workflow in requests
+         * haven't been updated over the last updateInterval seconds
+        :param requests: list of workflow names
+        :param transferDocs: list of transfer documents
+        :return: a filtered out list of transfer documents
+        """
+        now = time.time()
+        newTransferDocs = []
+        self.logger.info("Matching %d requests to %d transfer documents...",
+                         len(requests), len(transferDocs))
+        for record in transferDocs:
+            if record['workflowName'] in requests:
+                if now - record['lastUpdate'] > self.updateInterval:
+                    newTransferDocs.append(record)
+        msg = "Only %d transfer documents passed the status and timestamp filter."
+        self.logger.info(msg, len(newTransferDocs))
+        return newTransferDocs
+
     def execute(self, reqStatus):
         """
-        Executes the MS monitoring logic
-        :param reqStatus: request statue to process
+        Executes the MS monitoring logic, see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Monitor
+
+        :param reqStatus: request status to process
         :return:
         """
         try:
-            # get requests from ReqMgr2 data-service for given statue
+            # get requests from ReqMgr2 data-service for given status
             # here with detail=False we get back list of records
             requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=False)
             self.logger.debug('+++ monit found %s requests in %s state',
                               len(requests), reqStatus)
 
-            # FIXME: completion threshold should come either from unified
-            # or campaign configuration, e.g.
-            # thr = self.unifiedConfig().get('completedThreshold', 100)
-            thr = 100
+            campaigns, transferRecords = self.updateCaches()
+            if not campaigns or not transferRecords:
+                # then wait until the next cycle
+                msg = "Failed to fetch data from one of the data sources. Retrying again in the next cycle"
+                self.logger.error(msg)
+                return
+            transferRecords = self.filterTransferDocs(requests, transferRecords)
+        except Exception as err:  # general error
+            self.logger.exception('Failed to bootstrap the MSMonitor thread. Error: %s', str(err))
+            return
 
-            requestStatuses = {}  # keep track of request statuses
-            for reqName in requests:
-                req = {'name': reqName, 'reqStatus': reqStatus}
-                self.logger.debug("+++ request %s", req)
-                # obtain status records from couchdb for given request
-                transferRecords = self.getTransferRecords(reqName)
-                if not transferRecords:
+        try:
+            # keep track of request and their new statuses
+            self.getTransferInfo(transferRecords)
+            requestsToStage = self.getCompletedWorkflows(transferRecords, campaigns)
+            failedDocs = self.updateTransferDocs(transferRecords)
+            # finally, update statuses for requests
+            for reqName in requestsToStage:
+                if reqName in failedDocs:
+                    msg = "Can't proceed with status transition for %s, because" % reqName
+                    msg += "the transfer document failed to get updated"
+                    self.logger.warning(msg)
                     continue
-                completion = self.completion(transferRecords)
-                # if all transfers are completed
-                # move the request status staging -> staged
-                if completion == thr:
-                    self.logger.debug(
-                        "+++ request %s all transfers are completed", req)
-                    self.change(req, 'staged', '+++ monit')
-                # if pileup transfers are completed AND
-                # some input blocks are completed,
-                # move the request status staging -> staged
-                elif self.pileupTransfersCompleted(transferRecords):
-                    self.logger.debug(
-                        "+++ request %s pileup transfers are completed", req)
-                    self.change(req, 'staged', '+++ monit')
-                # transfers not completed
-                # just update the database with their completion
-                else:
-                    self.logger.debug(
-                        "+++ request %s transfers are %s completed",
-                        req, completion)
-                    # for us workflow name is the same as request name
-                    wname = reqName
-                    requestStatuses[wname] = transferRecords
-            self.updateTransferInfo(requestStatuses)
+                self.change(reqName, 'staged', '+++ monit')
+                msg = "%s updated %d transfer records and " % (self.__class__.__name__, len(transferRecords))
+                msg += "changed the request status for %d workflows" % (len(requestsToStage) - len(failedDocs))
+                self.logger.info(msg)
         except Exception as err:  # general error
             self.logger.exception('+++ monit error: %s', str(err))
 
-    def getTransferRecords(self, reqName):
+    def getTransferInfo(self, transferRecords):
         """
-        Get transfer records for given request name from CouchDB.
-        Transfer records on backend has the following form
-        https://gist.github.com/amaltaro/72599f995b37a6e33566f3c749143154
-        So far logic is based on option D of the records
-
-        .. doctest::
-
-            {"workflowName": "bla",
-             "timestamp": 123,
-             "transfers": [rec1, rec2, ... ]
-            }
-            where each record has the following format:
-            {"dataset":"/a/b/c", "dataType": "primary", "transferIDs": [1,2], "completion":0}
-
-        :param reqName: name of the request
-        :return: list of of status records
+        Contact the data management tool in order to get a status
+        update for the transfer request.
+        :param transferRecords: list of transfer records
         """
-        transferRecords = []
+        # FIXME: create concurrent phedex calls using multi_getdata
+        tstamp = time.time()
+        for doc in transferRecords:
+            self.logger.debug("Checking transfers for: %s", doc['workflowName'])
+            for rec in doc.get('transfers', []):
+                # obtain new transfer ids and completion for given dataset
+                completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
+                # Per Alan request, we'll update only completion and not tids
+                rec['completion'].append(round(completion, 1))
+            doc['lastUpdate'] = tstamp
 
-        # in our case workflow name is the same as request name
-        wname = reqName
-        # get existing transfer IDs record
-        doc = self.getTransferInfo(wname)
-        if not doc:
-            self.logger.error("Failed to find a transfer document for request: %s", wname)
-            return transferRecords
-
-        # loop over all records and obtain new transfer IDs
-        for rec in doc['transfers']:
-            dataset = rec['dataset']
-            dtype = rec['dataType']
-            # obtain new transfer ids for given request name and dataset
-            tids, completion = self.getTransferIds(dataset)
-            rec = {'dataset': dataset, 'dataType': dtype,
-                   'transferIDs': tids, "completion": completion}
-            transferRecords.append(rec)
-        return transferRecords
-
-    def pileupTransfersCompleted(self, transferRecords):
-        "Check if pileup transfers are completed for given transfer records"
-        # FIXME: completion threshold should come either from unified
-        # or campaign configuration, e.g.
-        # thr = self.unifiedConfig().get('completedThreshold', 100)
-        thr = 100
-
-        records = 0
-        transferTypes = ['primary', 'secondary']
-        # loop over all records and obtain new transfer IDs
-        for rec in transferRecords:
-            ctype = rec['dataType']
-            completion = rec['completion']
-            # count records above threshold
-            if ctype in transferTypes and completion > thr:
-                records += 1
-        return True if records == len(transferRecords) else False
-
-    def completion(self, records):
+    def _getTransferstatus(self, dataset, requestList):
         """
-        Helper function to calculate completion of given records
-        :param records: list of status records
-        :return: completion value
+        Fetch the transfer request status from the data management tool
+        :param dataset: dataset name string
+        :param requestList: list of request IDs
+        :return: the transfer percent completion normalized to the nodes
+
+        The subscription API response structure is something like:
+        {u'phedex': {u'call_time': 0.09359,
+                     u'dataset': [{u'block': [{u'bytes': 2827742840,
+                                               u'files': 3,
+                                               u'id': u'7702606',
+                                               u'is_open': u'n',
+                                               u'name': u'/HLTPhysicsIsolatedBunch/Run2016H-v1/RAW#92049f6e-92f9-11e6-b150-001e67abf228',
+                                               u'subscription': [{u'custodial': u'n',
+                                                                  u'group': u'DataOps',
+                                                                  u'percent_files': 100,
+                                                                  ...
         """
-        # may need to implement proper algorithm, so far we take average
-        val = [r['completion'] for r in records]/len(records)
-        return val
+        completion = []
+        for reqId in requestList:
+            # if we query by dataset and the subscription was at block level,
+            # we get an empty response. So always wildcard the block parameter
+            data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            if not data or not data['phedex']['dataset']:
+                self.logger.error("Failed to retrieve information for dataset: %s and request ID: %s",
+                                  dataset, reqId)
+            else:
+                self.logger.debug("Subscription result for dataset: %s and request ID: %s was: %s",
+                                  dataset, reqId, data)
+            # the response structure is nested as hell!
+            for dsetRow in data['phedex']['dataset']:
+                # TODO: check what happens when we subscribe both the primary and parent in the same request
+                for blockRow in dsetRow['block']:
+                    for subs in blockRow['subscription']:
+                        if subs['percent_files'] is None:
+                            completion.append(0)
+                        else:
+                            completion.append(int(subs['percent_files']))
+        if not completion:
+            return 0
+        return sum(completion)/len(completion)
+
+    def getCompletedWorkflows(self, transfers, campaigns):
+        """
+        Parse the transfer documents, compare against the campaign settings
+        and decide whether the workflow is completed or not.
+        :param transfers: list of transfers records
+        :param campaigns: dictionary of campaigns
+        :return: completion status
+        """
+        completedWfs = []
+        for record in transfers:
+            reqName = record['workflowName']
+            if not record['transfers']:
+                self.logger.info("%s OK, no input data transfers, move it on.", reqName)
+                completedWfs.append(reqName)
+                continue
+            # check completion of all transfers
+            statuses = []
+            for transfer in record['transfers']:
+                cdict = campaigns[transfer['campaignName']]
+                # compare against the last completion number, which is from the last cycle execution
+                if transfer['completion'][-1] >= cdict['PartialCopy'] * 100:
+                    status = 1
+                else:
+                    status = 0
+                statuses.append(status)
+            if all(statuses):
+                self.logger.info("%s OK, all transfers completed or above threshold, move it on.", reqName)
+                completedWfs.append(reqName)
+        return completedWfs
+
+    def updateTransferDocs(self, docs):
+        """
+        Given a list of transfer documents, update all of them in
+        ReqMgrAux database.
+        :param docs: list of transfer docs
+        :return: a list of request names that failed to be updated
+        """
+        failedWfs = []
+        for rec in docs:
+            if not self.reqmgrAux.updateTransferInfo(rec['workflowName'], rec):
+                # then it failed to update the doc, ReqMgrAux client is logging it already
+                failedWfs.append(rec['workflowName'])
+        return failedWfs

@@ -1,3 +1,9 @@
+1.2.6.pre2 to 1.2.6.pre3:
+  - fix unit tests and move it to the right place (Alan Malta Rodrigues) #9349
+  - Add services into configuration to separate MSTransferor/MSMonitor (Valentin Kuznetsov) #9349
+  - Support multiple applications under the same service/statedir (Alan Malta Rodrigues) #9351
+
+
 1.2.6.pre1 to 1.2.6.pre2:
   - fix tests
   - fix subscription call and completion logic

@@ -38,12 +38,11 @@ class MSManagerTest(unittest.TestCase):
     def test_services(self):
         "test MSManager services"
         # check self.mgrt object attributes
-        self.assertEqual('monitor' in self.mgr.services, True)
-        self.assertEqual('transferor' in self.mgr.services, True)
-        self.assertEqual(hasattr(self.mgr, 'msTransferor'), True)
-        self.assertEqual(hasattr(self.mgr, 'transfThread'), True)
-        self.assertEqual(hasattr(self.mgr, 'msMonitor'), True)
-        self.assertEqual(hasattr(self.mgr, 'monitThread'), True)
+        self.assertItemsEqual(self.mgr.services, [])
+        self.assertEqual(hasattr(self.mgr, 'msTransferor'), False)
+        self.assertEqual(hasattr(self.mgr, 'transfThread'), False)
+        self.assertEqual(hasattr(self.mgr, 'msMonitor'), False)
+        self.assertEqual(hasattr(self.mgr, 'monitThread'), False)
 
         # check self.mgr_trans object attributes
         self.assertEqual('monitor' in self.mgr_trans.services, False)

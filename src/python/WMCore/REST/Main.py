@@ -300,7 +300,7 @@ class RESTDaemon(RESTMain):
         :arg config: server configuration
         :arg str statedir: server state directory."""
         RESTMain.__init__(self, config, statedir)
-        self.pidfile = "%s/pid" % self.statedir
+        self.pidfile = "%s/%s.pid" % (self.statedir, self.appname)
         self.logfile = ["rotatelogs", "%s/%s-%%Y%%m%%d.log" % (self.statedir, self.appname), "86400"]
 
     def daemon_pid(self):
@@ -384,7 +384,7 @@ class RESTDaemon(RESTMain):
         """Start the deamon."""
 
         # Redirect all output to the logging daemon.
-        devnull = file("/dev/null", "w")
+        devnull = open(os.devnull, "w")
         if isinstance(self.logfile, list):
             subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
                             bufsize=0, close_fds=True, shell=False)
@@ -414,7 +414,8 @@ class RESTDaemon(RESTMain):
             os._exit(0)
 
         # Save process group id to pid file, then run real worker.
-        file(self.pidfile, "w").write("%d\n" % os.getpgid(0))
+        with open(self.pidfile, "w") as pidObj:
+            pidObj.write("%d\n" % os.getpgid(0))
 
         error = False
         try:
@@ -423,9 +424,7 @@ class RESTDaemon(RESTMain):
             error = True
             trace = StringIO()
             traceback.print_exc(file=trace)
-            cherrypy.log("ERROR: terminating due to error, error trace follows")
-            for line in trace.getvalue().rstrip().split("\n"):
-                cherrypy.log("ERROR:   %s" % line)
+            cherrypy.log("ERROR: terminating due to error: %s" % trace.getvalue())
 
         # Remove pid file once we are done.
         try:
@@ -460,7 +459,7 @@ class RESTDaemon(RESTMain):
             if not restart:
                 sys.exit((exitsigno and 1) or exitcode)
 
-            for pidfile in glob("%s/*/pid" % self.statedir):
+            for pidfile in glob("%s/*/*pid" % self.statedir):
                 if os.path.exists(pidfile):
                     with open(pidfile) as fd:
                         pid = int(fd.readline())

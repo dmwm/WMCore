@@ -84,3 +84,12 @@ class GenericDataCache(object):
             raise CacheWithWrongStructException(cacheName)
         else:
             GenericDataCache._dataCache[cacheName] = memoryCache
+
+    @staticmethod
+    def cacheExists(cacheName):
+        """
+        Return True if provided cache name is already cached, else False.
+        :param cacheName: cache name string
+        :return: boolean
+        """
+        return cacheName in GenericDataCache._dataCache

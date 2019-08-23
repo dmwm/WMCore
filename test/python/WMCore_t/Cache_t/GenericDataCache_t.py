@@ -62,6 +62,16 @@ class GenericDataCacheTest(unittest.TestCase):
 
         return
 
+    def testExists(self):
+        """
+        Tests whether a given cache already exists
+        """
+        mc = MemoryCacheStruct(1, lambda x: int(time.time()), kwargs={'x':1})
+        self.assertFalse(GenericDataCache.cacheExists("tCache"))
+
+        GenericDataCache.registerCache("tCache", mc)
+        self.assertTrue(GenericDataCache.cacheExists("tCache"))
+        self.assertFalse(GenericDataCache.cacheExists("tCache2"))
 
 if __name__ == "__main__":
     unittest.main()

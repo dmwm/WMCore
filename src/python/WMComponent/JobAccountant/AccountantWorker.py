@@ -258,7 +258,7 @@ class AccountantWorker(WMConnectionBase):
         self.createFilesInDBSBuffer()
 
         # Handle filesetAssoc
-        if len(self.filesetAssoc) > 0:
+        if self.filesetAssoc:
             self.bulkAddToFilesetAction.execute(binds=self.filesetAssoc,
                                                 conn=self.getDBConn(),
                                                 transaction=self.existingTransaction())
@@ -499,6 +499,13 @@ class AccountantWorker(WMConnectionBase):
                     logging.warning(
                         "Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job",
                         jobID)
+            # Make sure every file has a valid location
+            # see https://github.com/dmwm/WMCore/issues/9353
+            for fwjrFile in fileList:
+                if not fwjrFile.get("locations"):
+                    logging.warning("The following file doesn't have any location: %s", fwjrFile)
+                    jobSuccess = False
+                    break
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
 

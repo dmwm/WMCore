@@ -82,7 +82,9 @@ class File(WMObject, dict):
         pass
 
     def setLocation(self, pnn):
-        self['locations'] = self['locations'] | set(self.makelist(pnn))
+        # Make sure we don't add None, [], "" as file location
+        if pnn:
+            self['locations'] = self['locations'] | set(self.makelist(pnn))
 
     def __cmp__(self, rhs):
         """

@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReReco with IncludeParents True, 4 runs whitelisted, 8h opened",
+    "Comments": "ReReco with IncludeParents True, 3 runs whitelisted, 8h opened",
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        
@@ -11,7 +11,7 @@
     "RequestPriority": 150000,
     "ScramArch": "slc6_amd64_gcc491",
     "RequestType": "ReReco",
-    "RunWhitelist": [234297, 234304, 234321, 234332],
+    "RunWhitelist": [234297, 234321, 234332],
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "ConfigCacheID": "029a0b63329659025f308af53c7e092b",
     "IncludeParents": true,

@@ -1,6 +1,10 @@
 {
   "assignRequest": {
-    "AcquisitionEra": "CMSSW_10_6_1",
+    "AcquisitionEra": {
+        "QCDForPF_13TeV_TuneCUETP8M1_2017PU_GenSimFull": "AcquisitionEra-OVERRIDE-ME",
+        "DigiFullPU_2017PU": "AcquisitionEra-OVERRIDE-ME",
+        "RecoFullPU_2017PU": "AcquisitionEra-OVERRIDE-ME"
+    },
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "GracePeriod": 300,
     "MergedLFNBase": "/store/backfill/1",
@@ -20,7 +24,7 @@
   },
   "createRequest": {
     "AcquisitionEra": "CMSSW_10_6_1",
-    "CMSSWVersion": "CMSSW_10_6_1_patch1",
+    "CMSSWVersion": "CMSSW_10_6_1",
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "Comments": [
@@ -46,8 +50,9 @@
     ],
     "SizePerEvent": 1234,
     "Step1": {
-      "AcquisitionEra": "CMSSW_10_6_1",
+      "AcquisitionEra": "CMSSW_10_6_1_patch1",
       "Campaign": "CMSSW_10_6_1_Step1",
+      "CMSSWVersion": "CMSSW_10_6_1_patch1",
       "ConfigCacheID": "7186ff14d71d8ed7c336513eb2fcc177",
       "EventsPerJob": 100,
       "EventsPerLumi": 100,
@@ -60,8 +65,9 @@
       "StepName": "QCDForPF_13TeV_TuneCUETP8M1_2017PU_GenSimFull"
     },
     "Step2": {
-      "AcquisitionEra": "CMSSW_10_6_1",
+      "AcquisitionEra": "CMSSW_10_6_1_patch2",
       "Campaign": "CMSSW_10_6_1_Step2",
+      "CMSSWVersion": "CMSSW_10_6_1_patch2",
       "ConfigCacheID": "7186ff14d71d8ed7c336513eb2f46652",
       "GlobalTag": "106X_mc2017_realistic_v6",
       "InputFromOutputModule": "FEVTDEBUGoutput",
@@ -71,8 +77,9 @@
       "StepName": "DigiFullPU_2017PU"
     },
     "Step3": {
-      "AcquisitionEra": "CMSSW_10_6_1",
+      "AcquisitionEra": "CMSSW_10_6_1_patch3",
       "Campaign": "CMSSW_10_6_1_Step3",
+      "CMSSWVersion": "CMSSW_10_6_1_patch3",
       "ConfigCacheID": "7186ff14d71d8ed7c336513eb2f259a1",
       "GlobalTag": "106X_mc2017_realistic_v6",
       "InputFromOutputModule": "FEVTDEBUGHLToutput",

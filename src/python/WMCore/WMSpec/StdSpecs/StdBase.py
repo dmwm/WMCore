@@ -717,7 +717,8 @@ class StdBase(object):
                                    uploadProxy=self.dqmUploadProxy,
                                    periodic_harvest_interval=self.periodicHarvestInterval,
                                    doLogCollect=doLogCollect,
-                                   dqmHarvestUnit=self.dqmHarvestUnit)
+                                   dqmHarvestUnit=self.dqmHarvestUnit,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         # only in the very end, in order to get it in for the children tasks as well
         prepID = taskConf.get("PrepID") or parentTask.getPrepID()
@@ -842,7 +843,8 @@ class StdBase(object):
                                    uploadProxy=uploadProxy,
                                    periodic_harvest_interval=0, periodic_harvest_sibling=True,
                                    parentStepName=parentStepName, doLogCollect=doLogCollect,
-                                   dqmHarvestUnit=dqmHarvestUnit)
+                                   dqmHarvestUnit=dqmHarvestUnit,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         return
 

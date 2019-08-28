@@ -3,6 +3,7 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
+from retry import retry
 
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
@@ -15,7 +16,7 @@ from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.WMFactory import WMFactory
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
-
+from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
 def workqueue_stat_validation(request_args):
     stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
@@ -250,14 +251,29 @@ def validateOutputDatasets(outDsets, dbsUrl):
     _validateDatatier(datatier, dbsUrl)
 
 
-def _validateDatatier(datatier, dbsUrl):
+@retry(tries=5, delay=1)
+def _listDatatiers(dbsUrl):
+    """
+    Query DBS for list of data tiers.
+    If exception is raised, retry up to 5 times with a 1 second delay.
+    """
+    dbsTiers = DBSReader.listDatatiers(dbsUrl)
+    return dbsTiers
+
+def _validateDatatier(datatier, dbsUrl, expiration=3600):
     """
     _validateDatatier_
 
     Provided a list of datatiers extracted from the outputDatasets, checks
     whether they all exist in DBS.
     """
-    dbsTiers = DBSReader.listDatatiers(dbsUrl)
+    cacheName = "dataTierList"
+    if not GenericDataCache.cacheExists(cacheName):
+        mc = MemoryCacheStruct(expiration, _listDatatiers, kwargs={'dbsUrl': dbsUrl})
+        GenericDataCache.registerCache(cacheName, mc)
+
+    cacheData = GenericDataCache.getCacheData('dataTierList')
+    dbsTiers = cacheData.getData()
     badTiers = list(set(datatier) - set(dbsTiers))
     if badTiers:
         raise InvalidSpecParameterValue("Bad datatier(s): %s not available in DBS." % badTiers)

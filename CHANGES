@@ -1,3 +1,10 @@
+1.2.6.pre3 to 1.2.6.pre4:
+  - Fix unit tests and pylint (Alan Malta Rodrigues) #9358
+  - Create Harvest task with the same CMSSWVersion as the DQMMerge task (Alan Malta Rodrigues) #9358
+  - Cache results from DBSReader.listDatatiers for 1 hours by default. Retry query if it fails for up to 5 times. (khurtado) #9355
+  - Update json templates with IncludeParents True; fix Harvesting on StepChain (Alan Malta Rodrigues) #9356
+
+
 1.2.6.pre2 to 1.2.6.pre3:
   - fix unit tests and move it to the right place (Alan Malta Rodrigues) #9349
   - Add services into configuration to separate MSTransferor/MSMonitor (Valentin Kuznetsov) #9349

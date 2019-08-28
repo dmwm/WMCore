@@ -20,8 +20,12 @@ import stat
 import sys
 import tempfile
 import traceback
-import urllib
 import types
+try:
+    from urllib import urlencode
+except ImportError:
+    # PY3
+    from urllib.parse import urlencode
 try:
     from urlparse import urlparse
 except ImportError:
@@ -144,42 +148,40 @@ class Requests(dict):
         return self.makeRequest(uri, data, 'DELETE', incoming_headers,
                                 encode, decode, contentType)
 
-    def makeRequest(self, uri=None, data={}, verb='GET', incoming_headers={},
+    def makeRequest(self, uri=None, data=None, verb='GET', incoming_headers=None,
                     encoder=True, decoder=True, contentType=None):
         """
         Wrapper around request helper functions.
         """
-        if self.pycurl:
-            result = self.makeRequest_pycurl(uri, data, verb, incoming_headers, contentType)
-        else:
-            result = self.makeRequest_httplib(uri, data, verb, incoming_headers,
-                                              encoder, decoder, contentType)
-        return result
+        data = data or {}
+        incoming_headers = incoming_headers or {}
+        data, headers = self.encodeParams(data, verb, incoming_headers, encoder, contentType)
 
-    def makeRequest_pycurl(self, uri=None, params={}, verb='GET',
-                           incoming_headers={}, contentType=None):
+        # both httpib2/pycurl require absolute url
+        uri = self['host'] + uri
+        if self.pycurl:
+            result, response = self.makeRequest_pycurl(uri, data, verb, headers)
+        else:
+            result, response = self.makeRequest_httplib(uri, data, verb, headers)
+
+        result = self.decodeResult(result, decoder)
+        return result, response.status, response.reason, response.fromcache
+
+    def makeRequest_pycurl(self, uri, data, verb, headers):
         """
         Make HTTP(s) request via pycurl library. Stay complaint with
         makeRequest_httplib method.
         """
         ckey, cert = self.getKeyCert()
         capath = self.getCAPath()
-        if not contentType:
-            contentType = self['content_type']
-        headers = {"Content-type": contentType,
-                   "User-agent": "WMCore.Services.Requests/v001",
-                   "Accept": self['accept_type']}
-        for key in self.additionalHeaders.keys():
-            headers[key] = self.additionalHeaders[key]
-        # And now overwrite any headers that have been passed into the call:
-        headers.update(incoming_headers)
-        url = self['host'] + uri
-        response, data = self.reqmgr.request(url, params, headers, verb=verb,
-                                             ckey=ckey, cert=cert, capath=capath, decode=True)
-        return data, response.status, response.reason, response.fromcache
 
-    def makeRequest_httplib(self, uri=None, data={}, verb='GET',
-                            incoming_headers={}, encoder=True, decoder=True, contentType=None):
+        headers["Accept-Encoding"] = "gzip,deflate,identity"
+
+        response, result = self.reqmgr.request(uri, data, headers, verb=verb,
+                                               ckey=ckey, cert=cert, capath=capath)
+        return result, response
+
+    def makeRequest_httplib(self, uri, data, verb, headers):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
@@ -194,62 +196,23 @@ class Requests(dict):
         as a string.
 
         """
-        # TODO: User agent should be:
-        # $client/$client_version (CMS)
-        # $http_lib/$http_lib_version $os/$os_version ($arch)
-        if not contentType:
-            contentType = self['content_type']
-        headers = {"Content-type": contentType,
-                   "User-agent": "WMCore.Services.Requests/v001",
-                   "Accept": self['accept_type']}
-        encoded_data = ''
-
-        for key in self.additionalHeaders.keys():
-            headers[key] = self.additionalHeaders[key]
-
-        # And now overwrite any headers that have been passed into the call:
-        # WARNING: doesn't work with deplate so only accept gzip
-        incoming_headers["accept-encoding"] = "gzip,identity"
-        headers.update(incoming_headers)
-
-        # httpib2 requires absolute url
-        uri = self['host'] + uri
-
-        # If you're posting an attachment, the data might not be a dict
-        #   please test against ConfigCache_t if you're unsure.
-        # assert type(data) == type({}), \
-        #        "makeRequest input data must be a dict (key/value pairs)"
-
-        if verb != 'GET' and data:
-            if isinstance(encoder, (types.MethodType, types.FunctionType)):
-                encoded_data = encoder(data)
-            elif encoder is False:
-                # Don't encode the data more than we have to
-                #  we don't want to URL encode the data blindly,
-                #  that breaks POSTing attachments... ConfigCache_t
-                # encoded_data = urllib.urlencode(data)
-                #  -- Andrew Melo 25/7/09
-                encoded_data = data
-            else:
-                # Either the encoder is set to True or it's junk, so use
-                # self.encode
-                encoded_data = self.encode(data)
-        elif verb == 'GET' and data:
-            # encode the data as a get string
-            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
-
-        headers["Content-Length"] = str(len(encoded_data))
+        if verb == 'GET' and data:
+            uri = "%s?%s" % (uri, data)
 
         # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
         # PY3 Don't let futurize change this
-        assert isinstance(encoded_data, (str, basestring)), \
-            "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
+        assert isinstance(data, (str, basestring)), \
+            "Data in makeRequest is %s and not encoded to a string" % type(data)
+
+        # And now overwrite any headers that have been passed into the call:
+        # WARNING: doesn't work with deplate so only accept gzip
+        headers["Accept-Encoding"] = "gzip,identity"
 
         # httplib2 will allow sockets to close on remote end without retrying
         # try to send request - if this fails try again - should then succeed
         try:
             conn = self._getURLOpener()
-            response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
+            response, result = conn.request(uri, method=verb, body=data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
         except ServerNotFoundError as ex:
@@ -271,7 +234,7 @@ class Requests(dict):
             conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client
             try:
-                response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
+                response, result = conn.request(uri, method=verb, body=data, headers=headers)
             except AttributeError:
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
@@ -279,7 +242,7 @@ class Requests(dict):
                 raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
         if response.status >= 400:
             e = HTTPException()
-            setattr(e, 'req_data', encoded_data)
+            setattr(e, 'req_data', data)
             setattr(e, 'req_headers', headers)
             setattr(e, 'url', uri)
             setattr(e, 'result', result)
@@ -288,18 +251,70 @@ class Requests(dict):
             setattr(e, 'headers', response)
             raise e
 
+        return result, response
+
+    def encodeParams(self, data, verb, incomingHeaders, encoder, contentType):
+        """
+        Encode request parameters for usage with the 4 verbs.
+        Assume params is already encoded if it is a string and
+        uses a different encoding depending on the HTTP verb
+        (either json.dumps or urllib.urlencode)
+        """
+        # TODO: User agent should be:
+        # $client/$client_version (CMS)
+        # $http_lib/$http_lib_version $os/$os_version ($arch)
+        headers = {"Content-type": contentType if contentType else self['content_type'],
+                   "User-Agent": "WMCore.Services.Requests/v002",
+                   "Accept": self['accept_type']}
+
+        for key in self.additionalHeaders.keys():
+            headers[key] = self.additionalHeaders[key]
+        # And now overwrite any headers that have been passed into the call:
+        # WARNING: doesn't work with deplate so only accept gzip
+        incomingHeaders["Accept-Encoding"] = "gzip,identity"
+        headers.update(incomingHeaders)
+
+        # If you're posting an attachment, the data might not be a dict
+        #   please test against ConfigCache_t if you're unsure.
+        # assert type(data) == type({}), \
+        #        "makeRequest input data must be a dict (key/value pairs)"
+        encoded_data = ''
+        if verb != 'GET' and data:
+            if isinstance(encoder, (types.MethodType, types.FunctionType)):
+                encoded_data = encoder(data)
+            elif encoder is False:
+                # Don't encode the data more than we have to
+                #  we don't want to URL encode the data blindly,
+                #  that breaks POSTing attachments... ConfigCache_t
+                # encoded_data = urllib.urlencode(data)
+                #  -- Andrew Melo 25/7/09
+                encoded_data = data
+            else:
+                # Either the encoder is set to True or it's junk, so use
+                # self.encode
+                encoded_data = self.encode(data)
+            headers["Content-Length"] = str(len(encoded_data))
+        elif verb == 'GET' and data:
+            # encode the data as a get string
+            encoded_data = urlencode(data, doseq=True)
+
+        return encoded_data, headers
+
+    def decodeResult(self, result, decoder):
+        """
+        Decode the http/pycurl request result
+        """
         if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
         elif decoder is not False:
             result = self.decode(result)
-        # TODO: maybe just return result and response...
-        return result, response.status, response.reason, response.fromcache
+        return result
 
     def encode(self, data):
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return urllib.urlencode(data, doseq=True)
+        return urlencode(data, doseq=True)
 
     def decode(self, data):
         """
@@ -548,8 +563,7 @@ class JSONRequests(Requests):
             data = decoder.decode(data)
             unthunked = thunker.unthunk(data)
             return unthunked
-        else:
-            return {}
+        return {}
 
 
 class TempDirectory(object):

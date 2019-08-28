@@ -83,7 +83,7 @@ class CouchDBRequests(JSONRequests):
     completeness, and talks to the CouchDB port
     """
 
-    def __init__(self, url='http://localhost:5984', usePYCurl=False, ckey=None, cert=None, capath=None):
+    def __init__(self, url='http://localhost:5984', usePYCurl=True, ckey=None, cert=None, capath=None):
         """
         Initialise requests
         """
@@ -909,7 +909,7 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl='http://localhost:5984', usePYCurl=False, ckey=None, cert=None, capath=None):
+    def __init__(self, dburl='http://localhost:5984', usePYCurl=True, ckey=None, cert=None, capath=None):
         """
         Set up a connection to the CouchDB server
         """

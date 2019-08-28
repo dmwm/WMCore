@@ -46,7 +46,11 @@ import os
 import re
 import subprocess
 import sys
-import urllib
+try:
+    from urllib import urlencode
+except ImportError:
+    # PY3
+    from urllib.parse import urlencode
 
 # python3
 if sys.version.startswith('3.'):
@@ -109,12 +113,14 @@ class RequestHandler(object):
         self.maxredirs = config.get('maxredirs', defaultOpts['MAXREDIRS'])
         self.logger = logger if logger else logging.getLogger()
 
-    def encode_params(self, params, verb, doseq):
+    def encode_params(self, params, verb, doseq, encode):
         """ Encode request parameters for usage with the 4 verbs.
-            Assume params is alrady encoded if it is a string and
+            Assume params is already encoded if it is a string and
             uses a different encoding depending on the HTTP verb
             (either json.dumps or urllib.urlencode)
         """
+        if not encode:
+            return params
         # data is already encoded, just return it
         if isinstance(params, basestring):
             return params
@@ -122,7 +128,7 @@ class RequestHandler(object):
         # data is not encoded, we need to do that
         if verb in ['GET', 'HEAD']:
             if params:
-                encoded_data = urllib.urlencode(params, doseq=doseq)
+                encoded_data = urlencode(params, doseq=doseq)
             else:
                 return ''
         else:
@@ -135,7 +141,7 @@ class RequestHandler(object):
 
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None,
-                 verb='GET', doseq=True, cainfo=None, cookie=None):
+                 verb='GET', doseq=True, encode=False, cainfo=None, cookie=None):
         """Set options for given curl object, params should be a dictionary"""
         if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
@@ -144,11 +150,21 @@ class RequestHandler(object):
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
+
+        # also accepts encoding/compression algorithms
+        if headers and headers.get("Accept-Encoding"):
+            if isinstance(headers["Accept-Encoding"], basestring):
+                curl.setopt(pycurl.ENCODING, headers["Accept-Encoding"])
+            else:
+                logging.warning("Wrong data type for header 'Accept-Encoding': %s",
+                                type(headers["Accept-Encoding"]))
+
         if cookie and url in cookie:
             curl.setopt(pycurl.COOKIEFILE, cookie[url])
             curl.setopt(pycurl.COOKIEJAR, cookie[url])
 
-        encoded_data = self.encode_params(params, verb, doseq)
+        encoded_data = self.encode_params(params, verb, doseq, encode)
+
 
         if verb == 'GET':
             if encoded_data:
@@ -198,7 +214,7 @@ class RequestHandler(object):
         if cert:
             curl.setopt(pycurl.SSLCERT, cert)
         if verbose:
-            curl.setopt(pycurl.VERBOSE, 1)
+            curl.setopt(pycurl.VERBOSE, True)
             curl.setopt(pycurl.DEBUGFUNCTION, self.debug)
         return bbuf, hbuf
 
@@ -232,11 +248,11 @@ class RequestHandler(object):
 
     def request(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, capath=None,
-                doseq=True, decode=False, cainfo=None, cookie=None):
+                doseq=True, encode=False, decode=False, cainfo=None, cookie=None):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
-        bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                                   ckey, cert, capath, verbose, verb, doseq, cainfo, cookie)
+        bbuf, hbuf = self.set_opts(curl, url, params, headers, ckey, cert, capath,
+                                   verbose, verb, doseq, encode, cainfo, cookie)
         curl.perform()
         if verbose:
             print(verb, url, params, headers)
@@ -267,10 +283,12 @@ class RequestHandler(object):
         return header, data
 
     def getdata(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, doseq=True, cookie=None):
+                verbose=0, ckey=None, cert=None, doseq=True,
+                encode=False, decode=False, cookie=None):
         """Fetch data for given set of parameters"""
         _, data = self.request(url=url, params=params, headers=headers, verb=verb,
-                               verbose=verbose, ckey=ckey, cert=cert, doseq=doseq, cookie=cookie)
+                               verbose=verbose, ckey=ckey, cert=cert, doseq=doseq,
+                               encode=encode, decode=decode, cookie=cookie)
         return data
 
     def getheader(self, url, params, headers=None, verb='GET',
@@ -287,7 +305,8 @@ class RequestHandler(object):
         for params in parray:
             curl = pycurl.Curl()
             bbuf, hbuf = \
-                self.set_opts(curl, url, params, headers, ckey, cert, verbose, cookie=cookie)
+                self.set_opts(curl, url, params, headers, ckey=ckey, cert=cert,
+                              verbose=verbose, cookie=cookie)
             multi.add_handle(curl)
             while True:
                 ret, num_handles = multi.perform()

@@ -271,8 +271,10 @@ class Service(dict):
             # Get the data
             if not inputdata:
                 inputdata = self["inputdata"]
-            self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
-                                 (url, inputdata))
+            self['logger'].debug('getData: \n\turl: %s\n\tverb: %s\n\tincoming_headers: %s\n\tdata: %s',
+                                 url, verb, incoming_headers, inputdata)
+            #self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
+            #                     (url, inputdata))
             data, dummyStatus, dummyReason, from_cache = self["requests"].makeRequest(uri=url,
                                                                                       verb=verb,
                                                                                       data=inputdata,

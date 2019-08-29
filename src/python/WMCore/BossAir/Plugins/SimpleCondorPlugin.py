@@ -531,7 +531,7 @@ class SimpleCondorPlugin(BasePlugin):
         ad['Rank'] = 0.0
         ad['TransferIn'] = False
 
-        ad['JobMachineAttrs'] = "GLIDEIN_CMSSite"
+        ad['JobMachineAttrs'] = "GLIDEIN_CMSSite,GLIDEIN_Gatekeeper"
         ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
                                        "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
 

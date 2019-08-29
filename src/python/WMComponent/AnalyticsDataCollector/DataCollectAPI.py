@@ -341,6 +341,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                 doc['sites'] = tempData['sites']
                 if doc['skipped']:
                     for task in skippedInfoFromCouch[request]['tasks']:
+                        doc['tasks'].setdefault(task, {"skipped": {}})
                         doc['tasks'][task]["skipped"] = skippedInfoFromCouch[request]['tasks'][task]
 
             # TODO need to handle this correctly by task

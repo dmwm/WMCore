@@ -1,3 +1,8 @@
+1.2.6.pre4 to 1.2.6:
+  - Make sure analytics data structure contains the skipped task name key (Alan Malta Rodrigues) #9363
+  - Fixes #8355. Propagate CE name as: MachineAttrGLIDEIN_Gatekeeper0 in ElasticSearch (khurtado) #9361
+
+
 1.2.6.pre3 to 1.2.6.pre4:
   - Fix unit tests and pylint (Alan Malta Rodrigues) #9358
   - Create Harvest task with the same CMSSWVersion as the DQMMerge task (Alan Malta Rodrigues) #9358

@@ -42,8 +42,7 @@ class LAExceptionHandler(DiagnosticHandler):
             return
 
         # job report XML exists, load the exception information from it
-        executor.report.parse(jobRepXml)
-
+        self.parse(executor, jobRepXml)
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
@@ -71,5 +70,6 @@ class LogArchive(Diagnostic):
         # Setup a default handler
         catchAll            = LAExceptionHandler()
         self.defaultHandler = catchAll
-
-        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers ]
+        for x in range(0, 255):
+            if x not in self.handlers:
+                self.handlers.__setitem__(x, catchAll)

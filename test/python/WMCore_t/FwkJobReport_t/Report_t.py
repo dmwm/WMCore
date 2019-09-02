@@ -43,6 +43,7 @@ class ReportTest(unittest.TestCase):
         self.twoFileFallbackXmlPath = os.path.join(testData, "CMSSWTwoFileRemote.xml")
         self.pileupXmlPath = os.path.join(testData, "CMSSWPileup.xml")
         self.withEventsXmlPath = os.path.join(testData, "CMSSWWithEventCounts.xml")
+        self.noLocationReport = os.path.join(testData, "Report.0.pkl")
 
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -941,6 +942,21 @@ class ReportTest(unittest.TestCase):
         self.assertFalse(badReport.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(badReport.getExitCode(), 60450)
         return
+
+    def testNoLocationFile(self):
+        """
+        _testNoLocationFile_
+
+        Check how we deal with output files without a valid location
+        """
+        jobReport = Report()
+        jobReport.load(self.noLocationReport)
+        fileList = jobReport.getAllFiles()
+        self.assertEqual(len(fileList), 2)
+        self.assertItemsEqual(fileList[0]['locations'], {})
+        self.assertEqual(fileList[0]['outputModule'], "RAWSIMoutput")
+        self.assertItemsEqual(fileList[1]['locations'], {"T2_CH_CSCS"})
+        self.assertEqual(fileList[1]['outputModule'], "logArchive")
 
 
 if __name__ == "__main__":

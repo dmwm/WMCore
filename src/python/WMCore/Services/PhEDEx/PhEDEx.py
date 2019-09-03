@@ -1,7 +1,11 @@
 import json
 import logging
+try:
+    from urllib import urlencode
+except ImportError:
+    # PY3
+    from urllib.parse import urlencode
 from xml.dom.minidom import parseString
-
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.Service import Service
 
@@ -47,6 +51,8 @@ class PhEDEx(Service):
         if clearCache:
             self.clearCache(ifile, args, verb=verb)
 
+        if args:
+            args = urlencode(args, doseq=True)
         fobj = self.refreshCache(ifile, callname, args, verb=verb)
         result = fobj.read()
         fobj.close()

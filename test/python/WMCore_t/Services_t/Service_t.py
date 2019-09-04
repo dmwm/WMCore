@@ -247,7 +247,7 @@ class ServiceTest(unittest.TestCase):
 
     def testUsingStaleCache(self):
         myConfig = {'logger': self.logger,
-                'endpoint': 'http://cmssw.cvs.cern.ch',
+                'endpoint': 'https://cmssdt.cern.ch/SDT/',
                 'cacheduration': 0.0005,  # cache file lasts 1.8 secs
                 'timeout': 10,
                 'usestalecache': True,

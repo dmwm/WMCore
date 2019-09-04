@@ -10,7 +10,6 @@ from WMCore_t.ReqMgr_t.TestConfig import config
 
 from WMCore.REST.Test import fake_authz_headers
 from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
 
 req_args = {"RequestType": "ReReco", "RequestStatus": None}
@@ -77,20 +76,19 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         #print "%s" % self.test_authz_key.data
         self.default_status_header = getAuthHeader(self.test_authz_key.data, DEFAULT_STATUS_PERMISSION)
 
-        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
-        rerecoFile = open(os.path.join(requestPath, "ReReco_RunBlockWhite.json"), 'r')
-
-        rerecoArgs = json.load(rerecoFile)
+        normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+        rerecoPath = os.path.join(normPath, 'data/ReqMgr/requests/DMWM/ReReco_RunBlockWhite.json')
+        with open(rerecoPath) as jObj:
+            rerecoArgs = json.load(jObj)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoCreateArgs["PrepID"] = "test_prepid"
-        self.rerecoCreateArgs["MCPileup"] = "/MCdata/pileup/RAW"
-        self.rerecoCreateArgs["DataPileup"] = "/Data/pileup/RAW"
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
         # overwrite rereco args
         self.rerecoAssignArgs["AcquisitionEra"] = "test_aqc"
 
-        lheFile = open(os.path.join(requestPath, "TaskChain_Data.json"), 'r')
-        lheArgs = json.load(lheFile)
+        taskChainPath = os.path.join(normPath, 'data/ReqMgr/requests/DMWM/TaskChain_InclParents.json')
+        with open(taskChainPath) as jObj:
+            lheArgs = json.load(jObj)
         self.lheStep0CreateArgs = lheArgs["createRequest"]
         self.lheStep0AssignArgs = lheArgs["assignRequest"]
         self.lheStep0AssignArgs["AcquisitionEra"] = "test_aqc"

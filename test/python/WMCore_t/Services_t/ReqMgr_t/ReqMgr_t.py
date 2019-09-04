@@ -11,7 +11,6 @@ from WMCore_t.ReqMgr_t.TestConfig import config
 from WMCore.REST.Test import fake_authz_headers
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
 
 req_args = {"RequestType": "ReReco", "RequestStatus": None}
@@ -79,9 +78,10 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
 
         self.setFakeDN()
 
-        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
-        with open(os.path.join(requestPath, "ReReco_RunBlockWhite.json")) as fo:
-            rerecoArgs = json.load(fo)
+        normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+        rerecoPath = os.path.join(normPath, 'data/ReqMgr/requests/DMWM/ReReco_RunBlockWhite.json')
+        with open(rerecoPath) as jObj:
+            rerecoArgs = json.load(jObj)
 
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]

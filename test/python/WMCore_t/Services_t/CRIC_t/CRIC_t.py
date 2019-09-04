@@ -35,13 +35,13 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertEqual(self.myCRIC['cacheduration'], 1)
         self.assertEqual(self.myCRIC['accept_type'], 'application/json')
         self.assertEqual(self.myCRIC['content_type'], 'application/json')
-        self.assertEqual(self.myCRIC['requests'].pycurl, None)
+        self.assertEqual(self.myCRIC['requests'].pycurl, True)
 
-        newParams = {"cacheduration": 100, "pycurl": True}
+        newParams = {"cacheduration": 100, "pycurl": False}
         cric = CRIC(url='https://BLAH.cern.ch/', configDict=newParams)
         self.assertEqual(cric['endpoint'], 'https://BLAH.cern.ch/')
         self.assertEqual(cric['cacheduration'], newParams['cacheduration'])
-        self.assertTrue(cric['requests'].pycurl)
+        self.assertEqual(cric['requests'].pycurl, False)
 
     @attr('integration')
     def testWhoAmI(self):

@@ -1,3 +1,5 @@
+1.2.7.pre1 to 1.2.6.patch1:
+
 1.2.6 to 1.2.7.pre1:
   - fix unit tests (Alan Malta Rodrigues) #9365
   - Use pycurl library by default; urlencode PhEDEx body request (Alan Malta Rodrigues) #9365

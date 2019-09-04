@@ -1,3 +1,16 @@
+1.2.6 to 1.2.7.pre1:
+  - fix unit tests (Alan Malta Rodrigues) #9365
+  - Use pycurl library by default; urlencode PhEDEx body request (Alan Malta Rodrigues) #9365
+  - Pylint fixes (khurtado) #9133
+  - Fixes #9064 (khurtado) #9133
+  - Added pycurl to the list of extension-pkg-whitelist in pylintrc (Alan Malta Rodrigues) #9369
+  - Increase the wmbs_file_details/lfn column length to 1250 (Alan Malta Rodrigues) #9367
+  - Pylint fixes (khurtado) #9333
+  - Fix CMSSW segfaul error report in WMStats, as it was showing the BadFWJRXML eror code instead. Issue #9289 Do not report directy from Report class parse method. Handle addError in Diagnostics classes (khurtado) #9333
+  - pylint fixes; added unit tests; added a job report pkl file (Alan Malta Rodrigues) #9354
+  - Check whether all files in the job report contain a valid location (Alan Malta Rodrigues) #9354
+
+
 1.2.6.pre4 to 1.2.6:
   - Make sure analytics data structure contains the skipped task name key (Alan Malta Rodrigues) #9363
   - Fixes #8355. Propagate CE name as: MachineAttrGLIDEIN_Gatekeeper0 in ElasticSearch (khurtado) #9361

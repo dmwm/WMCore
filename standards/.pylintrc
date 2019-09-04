@@ -8,6 +8,11 @@ ignore=CVS
 # Pickle collected data for later comparisons.
 persistent=yes
 
+# A comma-separated list of package or module names from where C extensions may
+# be loaded. Extensions are loading into the active Python interpreter and may
+# run arbitrary code
+extension-pkg-whitelist=pycurl
+
 # Tells wether to display a full report or only the messages
 reports=yes
 

@@ -15,7 +15,7 @@ import classad
 import htcondor
 
 from Utils import FileTools
-from Utils.IteratorTools import convertFromUnicodeToStr, grouper
+from Utils.IteratorTools import grouper
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -136,8 +136,10 @@ class SimpleCondorPlugin(BasePlugin):
         # x509 proxy handling
         proxy = Proxy({'logger': myThread.logger})
         self.x509userproxy = proxy.getProxyFilename()
-        self.x509userproxysubject = proxy.getSubject()
-        self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
+
+        # These are added now by the condor client
+        #self.x509userproxysubject = proxy.getSubject()
+        #self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
 
         return
 
@@ -159,14 +161,13 @@ class SimpleCondorPlugin(BasePlugin):
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
 
-            clusterAd = self.getClusterAd()
-            procAds = self.getProcAds(jobsReady)
+            (sub, jobParams) = self.createSubmitRequest(jobsReady)
 
-            logging.debug("Start: Submitting %d jobs using Condor Python SubmitMany", len(procAds))
+            logging.debug("Start: Submitting %d jobs using Condor Python Submit", len(jobParams))
             try:
-                # 4th argument has to be None otherwise HTCondor leaks the result ads
-                # through it (as of 8.7.x). More info in WMCore/#8729
-                clusterId = schedd.submitMany(clusterAd, procAds, False, None)
+                with schedd.transaction() as txn:
+                    submitRes = sub.queue_with_itemdata(txn, 1, iter(jobParams))
+                    clusterId = submitRes.cluster()
             except Exception as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
                 logging.exception(str(ex))
@@ -488,151 +489,80 @@ class SimpleCondorPlugin(BasePlugin):
 
         return
 
-    def getClusterAd(self):
+
+    def getJobParameters(self, jobList):
         """
-        _getClusterAd_
+        _getJobParameters_
 
-        Return common cluster classad
-
-        scriptFile & Output/Error/Log filenames shortened to
-        avoid condorg submission errors from >256 chars paths
-
+        Return a list of dictionaries with submit parameters per job.
         """
-        ad = classad.ClassAd()
 
-        # ad['universe'] = "vanilla"
-        ad['ShouldTransferFiles'] = "YES"
-        ad['WhenToTransferOutput'] = "ON_EXIT"
-        ad['UserLogUseXML'] = True
-        ad['JobNotification'] = 0
-        ad['Cmd'] = self.scriptFile
-        # Investigate whether we should pass the absolute path for Out and Err ads,
-        # just as we did for UserLog. There may be issues, more info on WMCore #7362
-        ad['Out'] = classad.ExprTree('strcat("condor.", ClusterId, ".", ProcId, ".out")')
-        ad['Err'] = classad.ExprTree('strcat("condor.", ClusterId, ".", ProcId, ".err")')
-        ad['UserLog'] = classad.ExprTree('strcat(Iwd, "/condor.", ClusterId, ".", ProcId, ".log")')
+        undefined = 'UNDEFINED'
+        jobParameters = []
 
-        ad['WMAgent_AgentName'] = self.agent
-
-        ad['JobLeaseDuration'] = classad.ExprTree('isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0')
-
-        ad['PeriodicRemove'] = classad.ExprTree('( JobStatus =?= 5 ) && ( time() - EnteredCurrentStatus > 10 * 60 )')
-        removeReasonExpr = 'PeriodicRemove ? "Job automatically removed for being in Held status" : ""'
-        ad['PeriodicRemoveReason'] = classad.ExprTree(removeReasonExpr)
-
-        # Required for global pool accounting
-        ad['AcctGroup'] = self.acctGroup
-        ad['AcctGroupUser'] = self.acctGroupUser
-        ad['AccountingGroup'] = "%s.%s" % (self.acctGroup, self.acctGroupUser)
-
-        # Customized classAds for this plugin
-        ad['DESIRED_Archs'] = "INTEL,X86_64"
-
-        ad['Rank'] = 0.0
-        ad['TransferIn'] = False
-
-        ad['JobMachineAttrs'] = "GLIDEIN_CMSSite,GLIDEIN_Gatekeeper"
-        ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
-                                       "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
-
-        # entries required for monitoring
-        ad['CMS_WMTool'] = "WMAgent"
-        ad['CMS_SubmissionTool'] = "WMAgent"
-
-        # TODO: remove when 8.5.7 is deployed (seems to be still needed as of 8.6.11 ...)
-        paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
-        paramsToSkip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']
-        for param in paramsToAdd:
-            if (param not in ad) and (param in htcondor.param) and (param not in paramsToSkip):
-                ad[param] = classad.ExprTree(htcondor.param[param])
-
-        return ad
-
-    def getProcAds(self, jobList):
-        """
-        _getProcAds_
-
-        Return list of job specific classads for submission
-        """
-        classAds = []
         for job in jobList:
             ad = {}
 
-            ad['Iwd'] = job['cache_dir']
-            ad['TransferInput'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
+            ad['initial_Dir'] = job['cache_dir']
+            ad['transfer_input_files'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
                                                    'JobPackage.pkl', self.unpacker)
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
-
-            ad['TransferOutput'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
+            ad['transfer_output_files'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
 
             # Do not define Requirements and X509 ads for Volunteer resources
             if self.reqStr and "T3_CH_Volunteer" not in job.get('possibleSites'):
-                ad['Requirements'] = classad.ExprTree(self.reqStr)
+                ad['Requirements'] = self.reqStr
 
-            ad['x509userproxy'] = self.x509userproxy
-            ad['x509userproxysubject'] = self.x509userproxysubject
-            ad['x509userproxyfirstfqan'] = self.x509userproxyfqan
-
-
+            ad['+x509userproxy'] = classad.quote(self.x509userproxy)
             sites = ','.join(sorted(job.get('possibleSites')))
-            ad['DESIRED_Sites'] = sites
-
+            ad['+DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))
-            ad['ExtDESIRED_Sites'] = sites
-
-            ad['CMS_JobRetryCount'] = job['retry_count']
-            ad['WMAgent_RequestName'] = job['request_name']
-
+            ad['+ExtDESIRED_Sites'] = classad.quote(str(sites))
+            ad['+CMS_JobRetryCount'] = str(job['retry_count'])
+            ad['+WMAgent_RequestName'] = classad.quote(job['request_name'])
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
-                ad['CMSGroups'] = match.groups()[0]
+                ad['+CMSGroups'] = classad.quote(match.groups()[0])
             else:
-                ad['CMSGroups'] = classad.Value.Undefined
-
-            ad['WMAgent_JobID'] = job['jobid']
-            ad['WMAgent_SubTaskName'] = job['task_name']
-            ad['CMS_JobType'] = job['task_type']
-            ad['CMS_Type'] = activityToType(job['activity'])
-
+                ad['+CMSGroups'] = undefined
+            ad['+WMAgent_JobID'] = str(job['jobid'])
+            ad['+WMAgent_SubTaskName'] = classad.quote(job['task_name'])
+            ad['+CMS_JobType'] = classad.quote(job['task_type'])
+            ad['+CMS_Type'] = classad.quote(activityToType(job['activity']))
+     
             # Handling for AWS, cloud and opportunistic resources
-            ad['AllowOpportunistic'] = job.get('allowOpportunistic', False)
-
+            ad['+AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['DESIRED_CMSDataset'] = job['inputDataset']
+                ad['+DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
             else:
-                ad['DESIRED_CMSDataset'] = classad.Value.Undefined
+                ad['+DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
                 sites = ','.join(sorted(job['inputDatasetLocations']))
-                ad['DESIRED_CMSDataLocations'] = sites
+                ad['+DESIRED_CMSDataLocations'] = classad.quote(str(sites))
             else:
-                ad['DESIRED_CMSDataLocations'] = classad.Value.Undefined
-
+                ad['+DESIRED_CMSDataLocations'] = undefined
             if job.get('inputPileup'):
-                ad['DESIRED_CMSPileups'] = ','.join(sorted(job['inputPileup']))
+                cmsPileups=','.join(sorted(job['inputPileup']))
+                ad['+DESIRED_CMSPileups'] = classad.quote(str(cmsPileups))
             else:
-                ad['DESIRED_CMSPileups'] = classad.Value.Undefined
-
+                ad['+DESIRED_CMSPileups'] = undefined
             # HighIO and repack jobs
-            ad['Requestioslots'] = 1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0
-            ad['RequestRepackslots'] = 1 if job['task_type'] == 'Repack' else 0
-
+            ad['+Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
+            ad['+RequestRepackslots'] = str(1 if job['task_type'] == 'Repack' else 0)
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60
             estimatedMinsSingleCore = estimatedMins * origCores
             # For now, assume a 15 minute job startup overhead -- condor will round this up further
-            ad['EstimatedSingleCoreMins'] = estimatedMinsSingleCore
-            ad['OriginalMaxWallTimeMins'] = estimatedMins
-            ad['MaxWallTimeMins'] = classad.ExprTree('WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins')
-
+            ad['+EstimatedSingleCoreMins'] = str(estimatedMinsSingleCore)
+            ad['+OriginalMaxWallTimeMins'] = str(estimatedMins)
+            ad['+MaxWallTimeMins'] = 'WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins'
             requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
-            ad['OriginalMemory'] = requestMemory
-            ad['ExtraMemory'] = self.extraMem
-            ad['RequestMemory'] = classad.ExprTree('OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)')
-
+            ad['+OriginalMemory'] = str(requestMemory)
+            ad['+ExtraMemory'] = str(self.extraMem)
+            ad['request_memory'] = 'OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)'
             requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20 * 1000 * 1000 * origCores
-            ad['RequestDisk'] = requestDisk
-
+            ad['request_disk'] = str(requestDisk)
             # Set up JDL for multithreaded jobs.
             # By default, RequestCpus will evaluate to whatever CPU request was in the workflow.
             # If the job is labelled as resizable, then the logic is more complex:
@@ -640,45 +570,79 @@ class SimpleCondorPlugin(BasePlugin):
             # - If the job is being matched against a machine, match all available CPUs, provided
             # they are between min and max CPUs.
             # - Otherwise, just use the original CPU count.
-            ad['MinCores'] = int(job.get('minCores', max(1, origCores / 2)))
-            ad['MaxCores'] = max(int(job.get('maxCores', origCores)), origCores)
-            ad['OriginalCpus'] = origCores
+            ad['+MinCores'] = str(job.get('minCores', max(1, origCores / 2)))
+            ad['+MaxCores'] = str(max(int(job.get('maxCores', origCores)), origCores))
+            ad['+OriginalCpus'] = str(origCores)
             # Prefer slots that are closest to our MaxCores without going over.
             # If the slot size is _greater_ than our MaxCores, we prefer not to
             # use it - we might unnecessarily fragment the slot.
-            ad['Rank'] = classad.ExprTree('isUndefined(Cpus) ? 0 : ifThenElse(Cpus > MaxCores, -Cpus, Cpus)')
+            ad['Rank'] = 'isUndefined(Cpus) ? 0 : ifThenElse(Cpus > MaxCores, -Cpus, Cpus)'
             # Record the number of CPUs utilized at match time.  We'll use this later
             # for monitoring and accounting.  Defaults to 0; once matched, it'll
             # put an attribute in the job  MATCH_EXP_JOB_GLIDEIN_Cpus = 4
-            ad['JOB_GLIDEIN_Cpus'] = "$$(Cpus:0)"
+            ad['+JOB_GLIDEIN_Cpus'] = classad.quote("$$(Cpus:0)")
             # Make sure the resize request stays within MinCores and MaxCores.
-            ad['RequestResizedCpus'] = classad.ExprTree('(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)')
+            ad['+RequestResizedCpus'] = '(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)'
             # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
             # values.  Otherwise, we just report the original CPU request
-            ad['JobCpus'] = classad.ExprTree('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
-                                             '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
-
+            ad['+JobCpus'] = ('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
+                              '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
             # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
             # Otherwise, we use either the cores in the running job (if available) or the original cores.
-            ad['RequestCpus'] = classad.ExprTree('WMCore_ResizeJob ? (!isUndefined(Cpus) ? RequestResizedCpus : JobCpus) : OriginalCpus')
-            ad['WMCore_ResizeJob'] = bool(job.get('resizeJob', False))
-
-            taskPriority = int(job.get('taskPriority', self.defaultTaskPriority))
+            ad['request_cpus'] = 'WMCore_ResizeJob ? (!isUndefined(Cpus) ? RequestResizedCpus : JobCpus) : OriginalCpus'
+            ad['+WMCore_ResizeJob'] = str(job.get('resizeJob', False))
+            taskPriority = int(job.get('taskPriority', 1))
             priority = int(job.get('wf_priority', 0))
-            ad['JobPrio'] = int(priority + taskPriority * self.maxTaskPriority)
-            ad['PostJobPrio1'] = int(-1 * len(job.get('potentialSites', [])))
-            ad['PostJobPrio2'] = int(-1 * job['task_id'])
-
+            ad['+JobPrio'] = str(int(priority + taskPriority * 1))
+            ad['+PostJobPrio1'] = str(int(-1 * len(job.get('potentialSites', []))))
+            ad['+PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['REQUIRED_OS'] = requiredOSes
+            ad['+REQUIRED_OS'] = classad.quote(requiredOSes)
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['CMSSW_Versions'] = cmsswVersions
+            ad['+CMSSW_Versions'] = classad.quote(cmsswVersions)
+     
+            jobParameters.append(ad)    
+             
+        return jobParameters
 
-            ad = convertFromUnicodeToStr(ad)
-            condorAd = classad.ClassAd()
-            for k, v in ad.iteritems():
-                condorAd[k] = v
-            classAds.append((condorAd, 1))
 
-        return classAds
+    def createSubmitRequest(self, jobList):
+        """
+        _createSubmitRequest_
+
+        Return the submit object to pass to htcondor.Submit()
+
+        """
+
+        sub = htcondor.Submit("""
+            universe = vanilla
+            should_transfer_files = YES
+            when_to_transfer_output = ON_EXIT
+            notification = NEVER
+            log_xml = True
+            rank = 0.0
+            transfer_input = False
+            Output = condor.$(Cluster).$(Process).out
+            Error = condor.$(Cluster).$(Process).err
+            Log = condor.$(Cluster).$(Process).log
+            +JobLeaseDuration = (isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0)
+            +PeriodicRemove = ( JobStatus =?= 5 ) && ( time() - EnteredCurrentStatus > 10 * 60 )
+            +PeriodicRemoveReason = PeriodicRemove ? "Job automatically removed for being in Held status" : ""
+            """)
+        sub['executable'] = self.scriptFile
+
+        # Required for global pool accounting
+        sub['+WMAgent_AgentName'] = classad.quote(self.agent)
+        sub['accounting_group'] = self.acctGroup
+        sub['accounting_group_user'] = self.acctGroupUser
+        sub['+JobMachineAttrs'] = classad.quote("GLIDEIN_CMSSite,GLIDEIN_Gatekeeper")
+        sub['+JobAdInformationAttrs'] = classad.quote("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0,MyType")
+
+        # entries required for monitoring
+        sub['+CMS_WMTool'] = classad.quote("WMAgent")
+        sub['+CMS_SubmissionTool'] = classad.quote("WMAgent")
+
+        jobParameters = self.getJobParameters(jobList)
+       
+        return sub, jobParameters

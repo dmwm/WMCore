@@ -74,7 +74,7 @@ class Requests(dict):
         if not idict:
             idict = {}
         dict.__init__(self, idict)
-        self.pycurl = idict.get('pycurl', None)
+        self.pycurl = idict.get('pycurl', True)
         self.capath = idict.get('capath', None)
         if self.pycurl:
             self.reqmgr = RequestHandler()
@@ -150,15 +150,14 @@ class Requests(dict):
         Wrapper around request helper functions.
         """
         if self.pycurl:
-            result = self.makeRequest_pycurl(uri, data, verb, incoming_headers,
-                                             encoder, decoder, contentType)
+            result = self.makeRequest_pycurl(uri, data, verb, incoming_headers, contentType)
         else:
             result = self.makeRequest_httplib(uri, data, verb, incoming_headers,
                                               encoder, decoder, contentType)
         return result
 
     def makeRequest_pycurl(self, uri=None, params={}, verb='GET',
-                           incoming_headers={}, encoder=True, decoder=True, contentType=None):
+                           incoming_headers={}, contentType=None):
         """
         Make HTTP(s) request via pycurl library. Stay complaint with
         makeRequest_httplib method.
@@ -176,7 +175,7 @@ class Requests(dict):
         headers.update(incoming_headers)
         url = self['host'] + uri
         response, data = self.reqmgr.request(url, params, headers, verb=verb,
-                                             ckey=ckey, cert=cert, capath=capath, decode=decoder)
+                                             ckey=ckey, cert=cert, capath=capath, decode=True)
         return data, response.status, response.reason, response.fromcache
 
     def makeRequest_httplib(self, uri=None, data={}, verb='GET',
@@ -235,12 +234,11 @@ class Requests(dict):
                 # Either the encoder is set to True or it's junk, so use
                 # self.encode
                 encoded_data = self.encode(data)
-            headers["Content-length"] = len(encoded_data)
         elif verb == 'GET' and data:
             # encode the data as a get string
             uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
 
-        headers["Content-length"] = str(len(encoded_data))
+        headers["Content-Length"] = str(len(encoded_data))
 
         # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
         # PY3 Don't let futurize change this
@@ -301,7 +299,7 @@ class Requests(dict):
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return urllib.urlencode(data, doseq=1)
+        return urllib.urlencode(data, doseq=True)
 
     def decode(self, data):
         """

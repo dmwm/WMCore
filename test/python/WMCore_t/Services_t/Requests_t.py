@@ -133,7 +133,7 @@ class testRepeatCalls(RESTBaseUnitTest):
         """Connections succeed after server down"""
         import socket
         self.rt.stop()
-        req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path})
+        req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path, 'pycurl': False})
         headers = {'Cache-Control':'no-cache'}
         self.assertRaises(socket.error, req.get, '/', incoming_headers=headers)
 
@@ -342,7 +342,7 @@ class TestRequests(unittest.TestCase):
 
     def testNoCache(self):
         """Cache disabled"""
-        req = Requests.Requests('http://cmssw.cvs.cern.ch', {'cachepath' : None})
+        req = Requests.Requests('https://cmssdt.cern.ch/SDT/', {'cachepath' : None})
         out = req.makeRequest('/', decoder=False)
         self.assertEqual(out[3], False)
         self.assertTrue('html' in out[0])

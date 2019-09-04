@@ -101,11 +101,12 @@ class RequestHandler(object):
         super(RequestHandler, self).__init__()
         if not config:
             config = {}
-        self.nosignal = config.get('nosignal', 1)
-        self.timeout = config.get('timeout', 30)
-        self.connecttimeout = config.get('connecttimeout', 30)
-        self.followlocation = config.get('followlocation', 1)
-        self.maxredirs = config.get('maxredirs', 5)
+        defaultOpts = pycurl_options()
+        self.nosignal = config.get('nosignal', defaultOpts['NOSIGNAL'])
+        self.timeout = config.get('timeout', defaultOpts['TIMEOUT'])
+        self.connecttimeout = config.get('connecttimeout', defaultOpts['CONNECTTIMEOUT'])
+        self.followlocation = config.get('followlocation', defaultOpts['FOLLOWLOCATION'])
+        self.maxredirs = config.get('maxredirs', defaultOpts['MAXREDIRS'])
         self.logger = logger if logger else logging.getLogger()
 
     def encode_params(self, params, verb, doseq):
@@ -170,6 +171,10 @@ class RequestHandler(object):
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
+        if verb in ('POST', 'PUT'):
+            # only these methods (and PATCH) require this header
+            headers["Content-Length"] = str(len(encoded_data))
+
         # we must pass url as a string data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
@@ -209,12 +214,12 @@ class RequestHandler(object):
         if decode:
             try:
                 res = json.loads(data)
+                return res
             except ValueError as exc:
                 msg = 'Unable to load JSON data, %s, data type=%s, pass as is' \
                       % (str(exc), type(data))
-                logging.warning(msg)
+                logging.debug(msg)
                 return data
-            return res
         else:
             return data
 

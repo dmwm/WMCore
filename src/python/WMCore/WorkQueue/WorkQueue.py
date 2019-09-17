@@ -725,8 +725,9 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations info for elements.
         """
+        self.logger.info('Executing data location update...')
         if not self.backend.isAvailable():
-            self.logger.info('Backend busy or down: skipping location update')
+            self.logger.warning('Backend busy or down: skipping location update')
             return 0
         result = self.dataLocationMapper()
         self.backend.recordTaskActivity('location_refresh')

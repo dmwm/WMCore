@@ -1,5 +1,5 @@
 from __future__ import (division, print_function)
-
+from time import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
@@ -19,8 +19,11 @@ class LocationUpdateTask(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-
+        tStart = time()
         globalQ = globalQueue(**config.queueParams)
-        globalQ.updateLocationInfo()
+        res = globalQ.updateLocationInfo()
+        tEnd = time()
+        self.logger.info("LocationUpdateTask took %.3f secs and updated %d non-unique elements",
+                         tEnd - tStart, res)
 
         return

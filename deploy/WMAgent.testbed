@@ -25,4 +25,4 @@ WMARCHIVE_URL=https://cmsweb-testbed.cern.ch/wmarchive
 AMQ_CREDENTIALS=
 RUCIO_ACCOUNT="wmagent_testing"
 RUCIO_HOST=http://cms-rucio-testbed.cern.ch
-RUCIO_AUTH=https://cms-rucio-tb-authz.cern.ch
+RUCIO_AUTH=https://cms-rucio-auth-testbed.cern.ch

@@ -1,3 +1,9 @@
+1.2.7.pre1 to 1.2.7.pre2:
+  - update Rucio urls to testbed (Alan Malta Rodrigues) #9377
+  - Perform full resync for data location update; make it more verbose (Alan Malta Rodrigues) #9376
+  - Bump deployment example (Alan Malta Rodrigues) #9374
+
+
 1.2.6 to 1.2.7.pre1:
   - fix unit tests (Alan Malta Rodrigues) #9365
   - Use pycurl library by default; urlencode PhEDEx body request (Alan Malta Rodrigues) #9365

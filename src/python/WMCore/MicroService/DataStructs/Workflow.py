@@ -4,6 +4,8 @@ required by MS Transferor
 """
 from __future__ import division
 
+from WMCore.DataStructs.LumiList import LumiList
+
 
 class Workflow(object):
     """
@@ -52,11 +54,34 @@ class Workflow(object):
         """
         return self.data['DbsUrl']
 
+    def getReqType(self):
+        """
+        Return the request type for this workflow
+        """
+        return self.data['RequestType']
+
     def getSitelist(self):
         """
         Get the SiteWhitelist minus the black list for this request
         """
         return sorted(list(set(self.data['SiteWhitelist']) - set(self.data['SiteBlacklist'])))
+
+    def getRunlist(self):
+        """
+        Get the RunWhitelist minus the black list for this request
+        """
+        res = set(self._getValue('RunWhitelist', [])) - set(self._getValue('RunBlacklist', []))
+        return sorted(list(res))
+
+    def getLumilist(self):
+        """
+        Get the LumiList parameter and return a LumiList object,
+        in case the LumiList is not empty.
+        """
+        lumiDict = self._getValue('LumiList', {})
+        if not lumiDict:
+            return {}
+        return LumiList(compactList=lumiDict)
 
     def setDataCampaignMap(self):
         """
@@ -130,7 +155,7 @@ class Workflow(object):
         """
         if not self.inputDataset:
             return False
-        return self._getValue("IncludeParents") or False
+        return self._getValue("IncludeParents", False)
 
     def setParentDataset(self, parent):
         """
@@ -147,23 +172,27 @@ class Workflow(object):
         """
         return self.parentDataset
 
+    def getBlockWhitelist(self):
+        """
+        Fetch the BlockWhitelist for this workflow
+        :return: a list data type with the blocks white listed
+        """
+        return self._getValue("BlockWhitelist", [])
+
+    def getBlockBlacklist(self):
+        """
+        Fetch the BlockBlacklist for this workflow
+        :return: a list data type with the blocks white listed
+        """
+        return self._getValue("BlockBlacklist", [])
+
     def setPrimaryBlocks(self, blocksDict):
         """
         Sets a list of primary input blocks taking into consideration
         the BlockWhitelist and BlockBlacklist
         :param blocksDict: flat dict of block name and block size
         """
-        ### FIXME: we must consider run and lumi lists too, eventually
-        blockWhite = self._getValue("BlockWhitelist") or []
-        blockBlack = self._getValue("BlockBlacklist") or []
-        if not blockWhite and not blockBlack:
-            self.primaryBlocks = blocksDict
-        else:
-            for name, size in blocksDict.items():
-                if blockBlack and name in blockBlack:
-                    continue
-                if blockWhite and name in blockWhite:
-                    self.primaryBlocks[name] = size
+        self.primaryBlocks = blocksDict
 
     def getPrimaryBlocks(self):
         """
@@ -187,7 +216,7 @@ class Workflow(object):
 
     def setParentBlocks(self, blocksDict):
         """
-        Sets a list of parent input blocks taking.
+        Sets a list of parent input blocks and their size.
         NOTE: this list is solely based on the parent dataset, without
         considering what are the actual input primary blocks
         :param blocksDict: flat dict of block name and block size
@@ -203,24 +232,39 @@ class Workflow(object):
     def setChildToParentBlocks(self, blocksDict):
         """
         Sets a relationship between input primary block and its parent block(s)
+        This method guarantees that only parent blocks with valid replicas are
+        kept around (and later transferred)
         :param blocksDict: dict key'ed by the primary block, with a list of parent blocks
         """
-        if len(self.getPrimaryBlocks()) == len(blocksDict):
-            # then there is no block white/black list, assign data by reference
-            self.childToParentBlocks = blocksDict
-        else:
-            # then save parents only for actual input primary blocks
-            for block in blocksDict:
-                if block in self.getPrimaryBlocks():
-                    self.childToParentBlocks[block] = blocksDict[block]
+        # flat list with the final parent blocks
+        parentBlocks = set()
+        # remove parent blocks without any valid replica (only invalid files)
+        for child, parents in blocksDict.items():
+            if child not in self.getPrimaryBlocks():
+                # then we don't need this child+parent data
+                continue
 
-    def _getValue(self, keyName):
+            for parent in list(parents):
+                if parent not in self.getParentBlocks():
+                    # then drop this block
+                    parents.remove()
+            self.childToParentBlocks[child] = blocksDict[child]
+            parentBlocks = parentBlocks | blocksDict[child]
+
+        # Now remove any parent block that don't need to be transferred
+        for block in list(self.getParentBlocks()):
+            if block not in parentBlocks:
+                self.parentBlocks.pop(block, None)
+
+
+    def _getValue(self, keyName, defaultValue=None):
         """
         Provide a property/keyName, return its valid value if any
         :param property: dictionary key name
+        :param defaultValue: default value in case the key is not found
         :return: valid value (non-empty/false) or None
         """
-        resp = None
+        resp = defaultValue
         if keyName in self.data and self.data[keyName]:
             resp = self.data[keyName]
         elif keyName in self.data.get("Task1", {}):

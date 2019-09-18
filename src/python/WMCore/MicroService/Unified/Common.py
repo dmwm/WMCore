@@ -80,6 +80,62 @@ def dbsInfo(datasets, dbsUrl):
     return datasetBlocks, datasetSizes, datasetTransfers
 
 
+def phedexValidBlocks(datasets, phedexUrl):
+    """
+    Given a list of datasets, find all their blocks with replicas
+    available, i.e., blocks that have valid files to be processed.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :return: a dictionary of datasets, with their blocks and the
+    size of each block
+    """
+    dsetBlockSize = {}
+    if not datasets:
+        return dsetBlockSize
+
+    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        rows = json.loads(row['data'])
+        dsetBlockSize.setdefault(dataset, {})  # flat dict in the format of blockName: blockSize
+        for item in rows['phedex']['block']:
+            dsetBlockSize[dataset].update({item['name']: item['bytes']})
+    return dsetBlockSize
+
+
+def getDbsBlocksRun(datasetName, runList, dbsUrl):
+    """
+    Given a dataset name and a list of runs, find all the blocks
+    :return: flat list of blocks
+    """
+    blocks = set()
+
+    urls = ['%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runList).replace(" ", ""), datasetName)]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        rows = json.loads(row['data'])
+        for item in rows:
+            blocks.add(item['block_name'])
+
+    return list(blocks)
+
+
+def getFileLumisInBlock(blockName, dbsUrl, validFileOnly=1):
+    """
+    Given a block name, retrieve its run/lumis for each valid file
+    :return: list of dictionaries, just what gets returned by DBS
+    """
+    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(blockName))]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        # there should be a single element
+        return json.loads(row['data'])
+
+
 def findBlockParents(blocks, dbsUrl):
     """
     Helper function to find block parents given a block name.
@@ -95,8 +151,8 @@ def findBlockParents(blocks, dbsUrl):
         for item in rows:
             dataset = item['this_block_name'].split("#")[0]
             parentsByBlock.setdefault(dataset, {})
-            parentsByBlock.setdefault(item['this_block_name'], [])
-            parentsByBlock[item['this_block_name']].append(item['parent_block_name'])
+            parentsByBlock[dataset].setdefault(item['this_block_name'], set())
+            parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
     return parentsByBlock
 
 

@@ -42,7 +42,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
 
-        proxyArgs = {'logger': logging.getLogger()}
+        proxyArgs = {'logger': logging.getLogger(), 'cleanEnvironment': True}
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
         self.userCertFile = self.proxy.getUserCertFilename()  # X509_USER_CERT

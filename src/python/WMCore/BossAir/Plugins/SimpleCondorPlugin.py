@@ -513,53 +513,53 @@ class SimpleCondorPlugin(BasePlugin):
             if self.reqStr and "T3_CH_Volunteer" not in job.get('possibleSites'):
                 ad['Requirements'] = self.reqStr
 
-            ad['+x509userproxy'] = classad.quote(self.x509userproxy)
+            ad['My.x509userproxy'] = classad.quote(self.x509userproxy)
             sites = ','.join(sorted(job.get('possibleSites')))
-            ad['+DESIRED_Sites'] = classad.quote(str(sites))
+            ad['My.DESIRED_Sites'] = classad.quote(str(sites))
             sites = ','.join(sorted(job.get('potentialSites')))
-            ad['+ExtDESIRED_Sites'] = classad.quote(str(sites))
-            ad['+CMS_JobRetryCount'] = str(job['retry_count'])
-            ad['+WMAgent_RequestName'] = classad.quote(job['request_name'])
+            ad['My.ExtDESIRED_Sites'] = classad.quote(str(sites))
+            ad['My.CMS_JobRetryCount'] = str(job['retry_count'])
+            ad['My.WMAgent_RequestName'] = classad.quote(job['request_name'])
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
-                ad['+CMSGroups'] = classad.quote(match.groups()[0])
+                ad['My.CMSGroups'] = classad.quote(match.groups()[0])
             else:
-                ad['+CMSGroups'] = undefined
-            ad['+WMAgent_JobID'] = str(job['jobid'])
-            ad['+WMAgent_SubTaskName'] = classad.quote(job['task_name'])
-            ad['+CMS_JobType'] = classad.quote(job['task_type'])
-            ad['+CMS_Type'] = classad.quote(activityToType(job['activity']))
+                ad['My.CMSGroups'] = undefined
+            ad['My.WMAgent_JobID'] = str(job['jobid'])
+            ad['My.WMAgent_SubTaskName'] = classad.quote(job['task_name'])
+            ad['My.CMS_JobType'] = classad.quote(job['task_type'])
+            ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
      
             # Handling for AWS, cloud and opportunistic resources
-            ad['+AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
+            ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['+DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
+                ad['My.DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
             else:
-                ad['+DESIRED_CMSDataset'] = undefined
+                ad['My.DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
                 sites = ','.join(sorted(job['inputDatasetLocations']))
-                ad['+DESIRED_CMSDataLocations'] = classad.quote(str(sites))
+                ad['My.DESIRED_CMSDataLocations'] = classad.quote(str(sites))
             else:
-                ad['+DESIRED_CMSDataLocations'] = undefined
+                ad['My.DESIRED_CMSDataLocations'] = undefined
             if job.get('inputPileup'):
                 cmsPileups=','.join(sorted(job['inputPileup']))
-                ad['+DESIRED_CMSPileups'] = classad.quote(str(cmsPileups))
+                ad['My.DESIRED_CMSPileups'] = classad.quote(str(cmsPileups))
             else:
-                ad['+DESIRED_CMSPileups'] = undefined
+                ad['My.DESIRED_CMSPileups'] = undefined
             # HighIO and repack jobs
-            ad['+Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
-            ad['+RequestRepackslots'] = str(1 if job['task_type'] == 'Repack' else 0)
+            ad['My.Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
+            ad['My.RequestRepackslots'] = str(1 if job['task_type'] == 'Repack' else 0)
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60
             estimatedMinsSingleCore = estimatedMins * origCores
             # For now, assume a 15 minute job startup overhead -- condor will round this up further
-            ad['+EstimatedSingleCoreMins'] = str(estimatedMinsSingleCore)
-            ad['+OriginalMaxWallTimeMins'] = str(estimatedMins)
-            ad['+MaxWallTimeMins'] = 'WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins'
+            ad['My.EstimatedSingleCoreMins'] = str(estimatedMinsSingleCore)
+            ad['My.OriginalMaxWallTimeMins'] = str(estimatedMins)
+            ad['My.MaxWallTimeMins'] = 'WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins'
             requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
-            ad['+OriginalMemory'] = str(requestMemory)
-            ad['+ExtraMemory'] = str(self.extraMem)
+            ad['My.OriginalMemory'] = str(requestMemory)
+            ad['My.ExtraMemory'] = str(self.extraMem)
             ad['request_memory'] = 'OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)'
             requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20 * 1000 * 1000 * origCores
             ad['request_disk'] = str(requestDisk)
@@ -570,9 +570,9 @@ class SimpleCondorPlugin(BasePlugin):
             # - If the job is being matched against a machine, match all available CPUs, provided
             # they are between min and max CPUs.
             # - Otherwise, just use the original CPU count.
-            ad['+MinCores'] = str(job.get('minCores', max(1, origCores / 2)))
-            ad['+MaxCores'] = str(max(int(job.get('maxCores', origCores)), origCores))
-            ad['+OriginalCpus'] = str(origCores)
+            ad['My.MinCores'] = str(job.get('minCores', max(1, origCores / 2)))
+            ad['My.MaxCores'] = str(max(int(job.get('maxCores', origCores)), origCores))
+            ad['My.OriginalCpus'] = str(origCores)
             # Prefer slots that are closest to our MaxCores without going over.
             # If the slot size is _greater_ than our MaxCores, we prefer not to
             # use it - we might unnecessarily fragment the slot.
@@ -580,27 +580,27 @@ class SimpleCondorPlugin(BasePlugin):
             # Record the number of CPUs utilized at match time.  We'll use this later
             # for monitoring and accounting.  Defaults to 0; once matched, it'll
             # put an attribute in the job  MATCH_EXP_JOB_GLIDEIN_Cpus = 4
-            ad['+JOB_GLIDEIN_Cpus'] = classad.quote("$$(Cpus:0)")
+            ad['My.JOB_GLIDEIN_Cpus'] = classad.quote("$$(Cpus:0)")
             # Make sure the resize request stays within MinCores and MaxCores.
-            ad['+RequestResizedCpus'] = '(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)'
+            ad['My.RequestResizedCpus'] = '(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)'
             # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
             # values.  Otherwise, we just report the original CPU request
-            ad['+JobCpus'] = ('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
+            ad['My.JobCpus'] = ('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
                               '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
             # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
             # Otherwise, we use either the cores in the running job (if available) or the original cores.
             ad['request_cpus'] = 'WMCore_ResizeJob ? (!isUndefined(Cpus) ? RequestResizedCpus : JobCpus) : OriginalCpus'
-            ad['+WMCore_ResizeJob'] = str(job.get('resizeJob', False))
+            ad['My.WMCore_ResizeJob'] = str(job.get('resizeJob', False))
             taskPriority = int(job.get('taskPriority', 1))
             priority = int(job.get('wf_priority', 0))
-            ad['+JobPrio'] = str(int(priority + taskPriority * 1))
-            ad['+PostJobPrio1'] = str(int(-1 * len(job.get('potentialSites', []))))
-            ad['+PostJobPrio2'] = str(int(-1 * job['task_id']))
+            ad['My.JobPrio'] = str(int(priority + taskPriority * 1))
+            ad['My.PostJobPrio1'] = str(int(-1 * len(job.get('potentialSites', []))))
+            ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['+REQUIRED_OS'] = classad.quote(requiredOSes)
+            ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['+CMSSW_Versions'] = classad.quote(cmsswVersions)
+            ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
      
             jobParameters.append(ad)    
              
@@ -633,15 +633,15 @@ class SimpleCondorPlugin(BasePlugin):
         sub['executable'] = self.scriptFile
 
         # Required for global pool accounting
-        sub['+WMAgent_AgentName'] = classad.quote(self.agent)
+        sub['My.WMAgent_AgentName'] = classad.quote(self.agent)
         sub['accounting_group'] = self.acctGroup
         sub['accounting_group_user'] = self.acctGroupUser
-        sub['+JobMachineAttrs'] = classad.quote("GLIDEIN_CMSSite,GLIDEIN_Gatekeeper")
-        sub['+JobAdInformationAttrs'] = classad.quote("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0,MyType")
+        sub['My.JobMachineAttrs'] = classad.quote("GLIDEIN_CMSSite,GLIDEIN_Gatekeeper")
+        sub['My.JobAdInformationAttrs'] = classad.quote("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0,MyType")
 
         # entries required for monitoring
-        sub['+CMS_WMTool'] = classad.quote("WMAgent")
-        sub['+CMS_SubmissionTool'] = classad.quote("WMAgent")
+        sub['My.CMS_WMTool'] = classad.quote("WMAgent")
+        sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
 
         jobParameters = self.getJobParameters(jobList)
        

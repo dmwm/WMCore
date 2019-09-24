@@ -161,6 +161,9 @@ class MSTransferor(MSCore):
                 else:
                     subLevel = "block"
                     data = {dataIn['name']: blocks}
+                if not nodes and not blocks:
+                    # no valid files in any blocks, let it go and fail at the workqueue level
+                    return success, response
                 subscription = PhEDExSubscription(datasetPathList=dataIn['name'],
                                                   nodeList=nodes,
                                                   group=self.msConfig['group'],
@@ -238,7 +241,10 @@ class MSTransferor(MSCore):
             # YES, parents go together with the primary data
             if wflow.getParentDataset():
                 blockList.extend(wflow.getParentBlocks().keys())
-            # FIXME: use whatever algorithm Unified uses to distribute blocks
+            if not blockList:
+                # use empty nodes to avoid making a dataset level subscription
+                self.logger.warning("  found 0 primary blocks to be transferred, just move on...")
+                nodes = []
             self.logger.info("Placing %d blocks for dataset: %s at %s", len(blockList), dsetName, nodes)
             self.blockCounter += len(blockList)
             yield nodes, blockList

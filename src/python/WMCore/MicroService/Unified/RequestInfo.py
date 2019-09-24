@@ -13,12 +13,14 @@ import pickle
 import time
 # WMCore modules
 from pprint import pformat
+from copy import copy
 
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
-    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, \
-    dbsInfo, phedexInfo, getComputingTime, getNCopies, \
-    teraBytes, getIO, findBlockParents, findParent
+    elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, getIO, \
+    dbsInfo, phedexInfo, getComputingTime, getNCopies, teraBytes, \
+    findBlockParents, findParent, getDbsBlocksRun, getFileLumisInBlock, phedexValidBlocks
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
@@ -236,37 +238,117 @@ class RequestInfo(MSCore):
         Given a list of requests and their input data -  primary, secondary and
         parent datasets - find all their respective blocks (and their sizes) to
         be transferred.
-         * workflows: a list of Workflow objects
+        NOTE it only uses valid blocks (i.e., blocks with at least one replica!)
+        :param workflows: a list of Workflow objects
         """
-        datasetByDbs = {}
+        datasets = set()
         for wflow in workflows:
-            datasetByDbs.setdefault(wflow.getDbsUrl(), set())
-            for dataIn in wflow.getDataCampaignMap():
-                if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
-                    # fetch the total dataset size from the cache then
-                    continue
-                datasetByDbs[wflow.getDbsUrl()].add(dataIn['name'])
+            if wflow.getReqType() == 'StoreResults':
+                # don't make any transfer, such requests are assigned where
+                # the data is already available
+                continue
+            else:
+                for dataIn in wflow.getDataCampaignMap():
+                    if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
+                        # fetch the total dataset size from the cache then
+                        continue
+                    datasets.add(dataIn['name'])
 
         # now fetch block names from DBS
-        for dbsUrl, datasets in datasetByDbs.items():
-            self.logger.info("Fetching block info for %d datasets against DBS: %s", len(datasets), dbsUrl)
-            _, _, blocksByDset = dbsInfo(datasets, dbsUrl)
-            for wflow in workflows:
-                for dataIn in wflow.getDataCampaignMap():
-                    if dataIn['name'] in self.cachePileupSize:
-                        self.logger.debug("Using data from the cache for %s", dataIn['name'])
-                        wflow.setSecondarySummary(dataIn['name'], self.cachePileupSize[dataIn['name']])
-                    elif dataIn['name'] not in datasets:
-                        # dataset is in another DBS instance
-                        continue
-                    elif dataIn['type'] == "secondary":
-                        # simply calculate the total dataset size and cache it as well
-                        totalSize = self._getPileupSize(dataIn['name'], blocksByDset[dataIn['name']])
-                        wflow.setSecondarySummary(dataIn['name'], totalSize)
-                    elif dataIn['type'] == "primary":
-                        wflow.setPrimaryBlocks(blocksByDset[dataIn['name']])
-                    elif dataIn['type'] == "parent":
-                        wflow.setParentBlocks(blocksByDset[dataIn['name']])
+        self.logger.info("Fetching block info for %d datasets against PhEDEx: %s",
+                         len(datasets), self.msConfig['phedexUrl'])
+        blocksByDset = phedexValidBlocks(datasets, self.msConfig['phedexUrl'])
+        for wflow in workflows:
+            for dataIn in wflow.getDataCampaignMap():
+                if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
+                    self.logger.debug("Using PU data from the cache for %s", dataIn['name'])
+                    wflow.setSecondarySummary(dataIn['name'], self.cachePileupSize[dataIn['name']])
+                elif dataIn['type'] == "secondary":
+                    # simply calculate the total dataset size and cache it as well
+                    totalSize = self._getPileupSize(dataIn['name'], blocksByDset[dataIn['name']])
+                    wflow.setSecondarySummary(dataIn['name'], totalSize)
+                elif dataIn['type'] == "primary":
+                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                             blocksByDset[dataIn['name']])
+                    wflow.setPrimaryBlocks(newBlockDict)
+                elif dataIn['type'] == "parent":
+                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                             blocksByDset[dataIn['name']])
+                    wflow.setParentBlocks(newBlockDict)
+
+    def _handleInputDataInfo(self, wflow, dset, blocksDict):
+        """
+        Handle primary input data, such that we can also consider a
+        Run white/black lists, and also compare against
+        blocks without any valid files.
+
+        Note that the LumiList check is dealt with in a similar way
+        as done in the WorkQueue StartPolicyInterface/getMaskedBlocks:
+
+        :param wflow: the Workflow object
+        :param dset: dataset name
+        :param blocksDict: dictionary of blocks and block size
+        :return: dictionary of block names and block size
+        """
+        # FIXME: this is heavy and should be done concurrently
+        finalBlocks = {}
+        dbsUrl = wflow.getDbsUrl()
+        runList = wflow.getRunlist()
+        lumiList = wflow.getLumilist()
+        if lumiList:
+            # LumiList has precedence over RunWhitelist/RunBlacklist
+            runList = []
+            for run in lumiList.getRuns():
+                runList.append(int(run))
+            runList = list(set(runList))
+        if runList:
+            # Run number 1 is not supported by DBSServer
+            if int(runList[0]) == 1:
+                finalBlocks = copy(blocksDict)
+            else:
+                self.logger.info("Fetching blocks matching a list of runs for %s", wflow.getName())
+                # then find blocks matching that run list
+                blocks = getDbsBlocksRun(dset, runList, dbsUrl)
+                # now filter blocks without any valid files
+                for block in blocks:
+                    if block in blocksDict:
+                        finalBlocks[block] = blocksDict[block]
+                    else:
+                        self.logger.info("Dropping block with no replicas in PhEDEx: %s", block)
+            # now apply filters based on the blocks white and black list
+            whiteBlocks = wflow.getBlockWhitelist()
+            if whiteBlocks:
+                for block in list(finalBlocks):
+                    if block not in whiteBlocks:
+                        finalBlocks.pop(block)
+            blackBlocks = wflow.getBlockBlacklist()
+            for block in blackBlocks:
+                finalBlocks.pop(block, None)
+            if lumiList:
+                self.logger.info("Fetching block/lumi information for %d blocks in %s",
+                                 len(finalBlocks), wflow.getName())
+                goodBlocks = set()
+                # now with a smaller set of blocks in hand, we collect their lumi
+                # information and discard any blocks not matching the lumi list
+                for block in finalBlocks:
+                    fileLumis = getFileLumisInBlock(block, dbsUrl, validFileOnly=1)
+                    for fileLumi in fileLumis:
+                        if int(fileLumi['run_num']) not in runList:
+                            continue
+                        runNumber = str(fileLumi['run_num'])
+                        lumis = fileLumi['lumi_section_num']
+                        fileMask = LumiList(runsAndLumis={runNumber: lumis})
+                        if lumiList & fileMask:
+                            # then it has lumis that we need, keep this block and move on
+                            goodBlocks.add(block)
+                            break
+                # last but not least, drop any blocks that are not in the good list
+                for block in list(finalBlocks):
+                    if block not in goodBlocks:
+                        finalBlocks.pop(block)
+            return finalBlocks
+        # case where there is no lumi list neither run list
+        return blocksDict
 
     def _getPileupSize(self, dsetName, blocksDict):
         """
@@ -283,10 +365,10 @@ class RequestInfo(MSCore):
 
     def getParentChildBlocks(self, workflows):
         """
-        Given a list of requests and their children blocks, find the
-        correspondent parent blocks
-         * parent: will contain a final list of dictionaries containing
-         the parent blocks to be transferred
+        Given a list of requests, get their children block, discover their parent blocks
+        and finally filter out any parent blocks with only invalid files (without any replicas)
+        :param workflows: list of workflow objects
+        :return: nothing, updates the workflow attributes in place
         """
         blocksByDbs = {}
         for wflow in workflows:

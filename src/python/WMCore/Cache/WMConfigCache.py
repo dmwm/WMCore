@@ -85,7 +85,7 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False,
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = True,
                  ckey = None, cert = None, capath = None, detail = True):
         super(ConfigCache, self).__init__()
         self.dbname = couchDBName

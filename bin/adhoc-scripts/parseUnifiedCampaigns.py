@@ -280,7 +280,9 @@ def insertTestCampaigns(mgr):
                    'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
-    testCamp = ("CMSSW_10_6_1_Step3", "Aug2019_Val", "CMSSW_9_4_0__test2inwf-1510737328")
+    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
+                "Aug2019_Val", "Sept2019_Val", "Oct2019_Val", "Nov2019_Val",
+                "HG1910_Val", "HG1911_Val", "Agent126_Val", "Agent128_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)

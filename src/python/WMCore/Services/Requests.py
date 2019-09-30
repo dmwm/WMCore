@@ -21,6 +21,7 @@ import sys
 import tempfile
 import traceback
 import types
+
 try:
     from urllib import urlencode
 except ImportError:
@@ -48,14 +49,14 @@ except ImportError:
 try:
     from httplib2 import ServerNotFoundError
 except ImportError:
-    #Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
+    # Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
     class ServerNotFoundError(Exception):
         pass
-
 
 # Python3 compatibility
 if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
     basestring = str
+
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -64,6 +65,7 @@ def check_server_url(srvurl):
         msg = "You must include "
         msg += "http(s):// in your server's address, %s doesn't" % srvurl
         raise ValueError(msg)
+
 
 class Requests(dict):
     """

@@ -10,15 +10,15 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function, division
 
-import time
-import urllib
-import re
-import hashlib
 import base64
+import hashlib
 import logging
+import re
+import time
 import traceback
-from httplib import HTTPException
+import urllib
 from datetime import datetime
+from httplib import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Services.Requests import JSONRequests
@@ -42,11 +42,12 @@ class Document(dict):
     Document class is the instantiation of one document in the CouchDB
     """
 
-    def __init__(self, id=None, inputDict={}):
+    def __init__(self, id=None, inputDict=None):
         """
         Initialise our Document object - a dictionary which has an id field
         inputDict - input dictionary to initialise this instance
         """
+        inputDict = inputDict or {}
         dict.__init__(self)
         self.update(inputDict)
         if id:
@@ -104,7 +105,7 @@ class CouchDBRequests(JSONRequests):
         """
         return self.makeRequest(uri, data, 'COPY')
 
-    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers={},
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers=None,
                     encode=True, decode=True, contentType=None, cache=False):
         """
         Make the request, handle any failed status, return just the data (for
@@ -112,12 +113,13 @@ class CouchDBRequests(JSONRequests):
 
         TODO: set caching in the calling methods.
         """
+        incoming_headers = incoming_headers or {}
         try:
             if not cache:
                 incoming_headers.update({'Cache-Control': 'no-cache'})
             result, status, reason, cached = JSONRequests.makeRequest(
-                self, uri, data, type, incoming_headers,
-                encode, decode, contentType)
+                    self, uri, data, type, incoming_headers,
+                    encode, decode, contentType)
         except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
@@ -189,7 +191,7 @@ class Database(CouchDBRequests):
         """
         Time stamp each doc in a list
         """
-        if label == True:
+        if label is True:
             label = 'timestamp'
 
         if isinstance(data, type({})):
@@ -200,7 +202,7 @@ class Database(CouchDBRequests):
                     doc[label] = int(time.time())
         return data
 
-    def queue(self, doc, timestamp=False, viewlist=[], callback=None):
+    def queue(self, doc, timestamp=False, viewlist=None, callback=None):
         """
         Queue up a doc for bulk insert. If timestamp = True add a timestamp
         field if one doesn't exist. Use this over commit(timestamp=True) if you
@@ -209,6 +211,7 @@ class Database(CouchDBRequests):
         If a callback is specified then pass it to the commit function if a
         commit is triggered
         """
+        viewlist = viewlist or []
         if timestamp:
             self.timestamp(doc, timestamp)
         # TODO: Thread this off so that it's non blocking...
@@ -226,12 +229,13 @@ class Database(CouchDBRequests):
         doc = {'_id': doc['_id'], '_rev': doc['_rev'], '_deleted': True}
         self.queue(doc)
 
-    def commitOne(self, doc, timestamp=False, viewlist=[]):
+    def commitOne(self, doc, timestamp=False, viewlist=None):
         """
         Helper function for when you know you only want to insert one doc
         additionally keeps from having to rewrite ConfigCache to handle the
         new commit function's semantics
         """
+        viewlist = viewlist or []
         uri = '/%s/_bulk_docs/' % self.name
         if timestamp:
             self.timestamp(doc, timestamp)
@@ -244,7 +248,7 @@ class Database(CouchDBRequests):
         return retval
 
     def commit(self, doc=None, returndocs=False, timestamp=False,
-               viewlist=[], callback=None, **data):
+               viewlist=None, callback=None, **data):
         """
         Add doc and/or the contents of self._queue to the database.
         If timestamp is true timestamp all documents with a unix style
@@ -266,10 +270,11 @@ class Database(CouchDBRequests):
         Returns a list of good documents
             throws an exception otherwise
         """
+        viewlist = viewlist or []
         if doc:
             self.queue(doc, timestamp, viewlist)
 
-        if len(self._queue) == 0:
+        if not self._queue:
             return
 
         if timestamp:
@@ -326,13 +331,14 @@ class Database(CouchDBRequests):
 
         return self.document(doc_id, preRev)
 
-    def updateDocument(self, doc_id, design, update_func, fields={}, useBody=False):
+    def updateDocument(self, doc_id, design, update_func, fields=None, useBody=False):
         """
         Call the update function update_func defined in the design document
         design for the document doc_id with a query string built from fields.
 
         http://wiki.apache.org/couchdb/Document_Update_Handlers
         """
+        fields = fields or {}
         # Clean up /'s in the name etc.
         doc_id = urllib.quote_plus(doc_id)
 
@@ -361,7 +367,7 @@ class Database(CouchDBRequests):
                 nestedDictUpdate(doc, paramsToUpdate)
                 data['docs'].append(doc)
 
-            if len(data['docs']) > 0:
+            if data['docs']:
                 retval = self.post(uri, data)
                 for result in retval:
                     if result.get('error', None) == 'conflict':
@@ -377,12 +383,13 @@ class Database(CouchDBRequests):
         pram maxConflictLimit: number of conflicts fix tries before we give up to fix it to prevent infinite calls
         """
         conflictDocIDs = self.updateBulkDocuments(doc_ids, updateParams, updateLimits)
-        if len(conflictDocIDs) > 0:
+        if conflictDocIDs:
             # wait a second before trying again for the confict documents
             if maxConflictLimit == 0:
                 return conflictDocIDs
             time.sleep(1)
-            self.updateBulkDocumentsWithConflictHandle(conflictDocIDs, updateParams, maxConflictLimit=maxConflictLimit - 1)
+            self.updateBulkDocumentsWithConflictHandle(conflictDocIDs, updateParams,
+                                                       maxConflictLimit=maxConflictLimit - 1)
         return []
 
     def putDocument(self, doc_id, fields):
@@ -419,7 +426,7 @@ class Database(CouchDBRequests):
         doc.delete()
         return self.commitOne(doc)
 
-    def compact(self, views=[], blocking=False, blocking_poll=5, callback=False):
+    def compact(self, views=None, blocking=False, blocking_poll=5, callback=False):
         """
         Compact the database: http://wiki.apache.org/couchdb/Compaction
 
@@ -438,8 +445,9 @@ class Database(CouchDBRequests):
         as an argument. If the callback function raises an exception the block is
         removed and the compact call returns.
         """
+        views = views or []
         response = self.post('/%s/_compact' % self.name)
-        if len(views) > 0:
+        if views:
             for view in views:
                 response[view] = self.post('/%s/_compact/%s' % (self.name, view))
                 response['view_cleanup'] = self.post('/%s/_view_cleanup' % (self.name))
@@ -479,7 +487,7 @@ class Database(CouchDBRequests):
     def purge(self, data):
         return self.post('/%s/_purge' % self.name, data)
 
-    def loadView(self, design, view, options={}, keys=[]):
+    def loadView(self, design, view, options=None, keys=None):
         """
         Load a view by getting, for example:
         http://localhost:5984/tester/_view/viewtest/age_name?count=10&group=true
@@ -505,6 +513,8 @@ class Database(CouchDBRequests):
 
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
+        options = options or {}
+        keys = keys or []
         encodedOptions = {}
         for k, v in options.iteritems():
             # We can't encode the stale option, as it will be converted to '"ok"'
@@ -514,7 +524,7 @@ class Database(CouchDBRequests):
             else:
                 encodedOptions[k] = self.encode(v)
 
-        if len(keys):
+        if keys:
             if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_view/%s?%s' % \
@@ -531,18 +541,20 @@ class Database(CouchDBRequests):
         else:
             return retval
 
-    def loadList(self, design, list, view, options={}, keys=[]):
+    def loadList(self, design, list, view, options=None, keys=None):
         """
         Load data from a list function. This returns data that hasn't been
         decoded, since a list can return data in any format. It is expected that
         the caller of this function knows what data is being returned and how to
         deal with it appropriately.
         """
+        options = options or {}
+        keys = keys or []
         encodedOptions = {}
         for k, v in options.iteritems():
             encodedOptions[k] = self.encode(v)
 
-        if len(keys):
+        if keys:
             if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
@@ -571,18 +583,20 @@ class Database(CouchDBRequests):
                 return {}
             self.checkForCouchError(getattr(e, "status", None), getattr(e, "reason", None))
 
-    def allDocs(self, options={}, keys=[]):
+    def allDocs(self, options=None, keys=None):
         """
         Return all the documents in the database
         options is a dict type parameter which can be passed to _all_docs
         id {'startkey': 'a', 'limit':2, 'include_docs': true}
         keys is the list of key (ids) for doc to be returned
         """
+        options = options or {}
+        keys = keys or []
         encodedOptions = {}
         for k, v in options.iteritems():
             encodedOptions[k] = self.encode(v)
 
-        if len(keys):
+        if keys:
             if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 return self.post('/%s/_all_docs?%s' % (self.name, data),
@@ -654,7 +668,7 @@ class Database(CouchDBRequests):
         # do the safety check other wise it will delete whole db.
         if not isinstance(ids, list):
             raise
-        if len(ids) == 0:
+        if not ids:
             return None
 
         docs = self.allDocs(keys=ids)['rows']
@@ -704,7 +718,7 @@ class RotatingDatabase(Database):
 
     def __init__(self, dbname='database', url='http://localhost:5984',
                  size=1000, archivename=None, seedname=None,
-                 timing=None, views=[]):
+                 timing=None, views=None):
         """
         dbaname:     base name for databases, active databases will have
                      timestamp appended
@@ -721,6 +735,7 @@ class RotatingDatabase(Database):
                      is that these views have been loaded into the seed
                      database via couchapp or someother process.
         """
+        views = views or []
         # Store the base database name
         self.basename = dbname
 
@@ -843,7 +858,8 @@ class RotatingDatabase(Database):
             self.seed_db.queueDelete(db_state)
         self.seed_db.commit()
 
-    def _find_dbs_in_state(self, state, options={}):
+    def _find_dbs_in_state(self, state, options=None):
+        options = options or {}
         # TODO: couchapp this, how to make sure that the app is deployed?
         find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
         uri = '/%s/_temp_view' % self.seed_db.name
@@ -868,13 +884,14 @@ class RotatingDatabase(Database):
         # might need this after all....
         pass
 
-    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers={},
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers=None,
                     encode=True, decode=True, contentType=None,
                     cache=False, rotate=True):
         """
         Intercept the request, determine if I need to rotate, then carry out the
         request as normal.
         """
+        incoming_headers = incoming_headers or {}
         if self.timing and rotate:
 
             # check to see whether I should rotate the database before processing the request
@@ -883,7 +900,7 @@ class RotatingDatabase(Database):
             if datetime.now() > db_expires:
                 # save the current name for later
                 old_db = self.name
-                if len(self._queue) > 0:
+                if self._queue:
                     # data I've got queued up should go to the old database
                     # can't call self.commit() due to recursion
                     uri = '/%s/_bulk_docs/' % self.name
@@ -1103,7 +1120,7 @@ class CouchMonitor(object):
             repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
 
         filteredDocs = self._filterReplicationDocs(repDocs, source, target)
-        if len(filteredDocs) == 0:
+        if not filteredDocs:
             return
         for doc in filteredDocs:
             self.replicatorDB.queueDelete(doc)
@@ -1136,9 +1153,9 @@ class CouchMonitor(object):
         couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
 
         if couchInfo['status'] == 'error':
-            logging.info("Deleting the replicator documents from %s..." % source)
+            logging.info("Deleting the replicator documents from %s...", source)
             self.deleteReplicatorDocs(source, target)
-            logging.info("Setting the replication from %s ..." % source)
+            logging.info("Setting the replication from %s ...", source)
             self.couchServer.replicate(source, target, filter=filter,
                                        query_params=query_params,
                                        continuous=continuous)
@@ -1170,9 +1187,8 @@ class CouchMonitor(object):
 
             if replicationFlag:
                 return {'status': 'ok'}
-            else:
-                msg = "Replication stopped from %s to %s.\n" % (source, passwdStrippedTarget)
-                return {'status': 'error', 'error_message': msg}
+            msg = "Replication stopped from %s to %s.\n" % (source, passwdStrippedTarget)
+            return {'status': 'error', 'error_message': msg}
         except Exception as ex:
             msg = traceback.format_exc()
             logging.error(msg)
@@ -1192,15 +1208,11 @@ class CouchMonitor(object):
         if checkUpdateSeq:
             if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 return True
-            else:
-                logging.warning("'update_seq for replication from %s to %s is falling behind", source, target)
-                return False
+            logging.warning("'update_seq for replication from %s to %s is falling behind", source, target)
+            return False
         else:
             if int(time.time()) - lastUpdate < secsUpdateOn:
                 return True
-            else:
-                logging.warning("Replication from %s to %s has not been updated for more than %d minutes", source,
-                                target,
-                                secsUpdateOn)
-                return False
-        return False
+            logging.warning("Replication from %s to %s has not been updated for more than %d minutes",
+                            source, target, secsUpdateOn)
+            return False

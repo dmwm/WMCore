@@ -5,25 +5,22 @@ _WMConfigCache_
 Being in itself a wrapped class around a config cache
 """
 
-
 import hashlib
 import logging
 import traceback
 import urllib
 from contextlib import closing
+
 from future.utils import with_metaclass
 
-from Utils.Patterns import Singleton
-
-from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.DataStructs.WMObject import WMObject
-
-from WMCore.WMException import WMException
-from WMCore.Database.CMSCouch import CouchNotFoundError
-from WMCore.GroupUser.Group import Group
-from WMCore.GroupUser.User  import makeUser
-
 import WMCore.GroupUser.Decorators as Decorators
+from Utils.Patterns import Singleton
+from WMCore.DataStructs.WMObject import WMObject
+from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.GroupUser.Group import Group
+from WMCore.GroupUser.User import makeUser
+from WMCore.WMException import WMException
 
 
 class ConfigCacheException(WMException):
@@ -36,7 +33,8 @@ class ConfigCacheException(WMException):
 
 class DocumentCache(with_metaclass(Singleton, object)):
     """DocumentCache holds config ids. Use this class as singleton"""
-    def __init__(self, database, detail = True):
+
+    def __init__(self, database, detail=True):
         super(DocumentCache, self).__init__()
         self.cache = {}
         self.database = database
@@ -47,7 +45,7 @@ class DocumentCache(with_metaclass(Singleton, object)):
         """
         Internal get method to fetch document based on provided ID
         """
-        if  configID not in self.cache:
+        if configID not in self.cache:
             self.prefetch([configID])
         return self.cache[configID]
 
@@ -58,7 +56,7 @@ class DocumentCache(with_metaclass(Singleton, object)):
         Clean-up given ids from local cache
         """
         for rid in ids:
-            if  rid in self.cache:
+            if rid in self.cache:
                 del self.cache[rid]
 
     def prefetch(self, keys):
@@ -68,7 +66,7 @@ class DocumentCache(with_metaclass(Singleton, object)):
         Pre-fetch given list of documents from CouchDB
         """
         if self.detail:
-            options = {'include_docs':True}
+            options = {'include_docs': True}
         else:
             options = {}
         result = self.database.allDocs(options=options, keys=keys)
@@ -78,6 +76,7 @@ class DocumentCache(with_metaclass(Singleton, object)):
             else:
                 self.cache[row['id']] = True
 
+
 class ConfigCache(WMObject):
     """
     _ConfigCache_
@@ -85,11 +84,12 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = True,
-                 ckey = None, cert = None, capath = None, detail = True):
+
+    def __init__(self, dbURL, couchDBName=None, id=None, rev=None, usePYCurl=True,
+                 ckey=None, cert=None, capath=None, detail=True):
         super(ConfigCache, self).__init__()
         self.dbname = couchDBName
-        self.dburl  = dbURL
+        self.dburl = dbURL
         self.detail = detail
         try:
             self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
@@ -101,7 +101,7 @@ class ConfigCache(WMObject):
             msg = "Error connecting to couch: %s\n" % str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            raise ConfigCacheException(message = msg)
+            raise ConfigCacheException(message=msg)
 
         # local cache
         self.docs_cache = DocumentCache(self.database, self.detail)
@@ -111,7 +111,7 @@ class ConfigCache(WMObject):
         self.owner = None
 
         # Internal data structure
-        self.document  = Document()
+        self.document = Document()
         self.attachments = {}
         self.document['type'] = "config"
         self.document['description'] = {}
@@ -119,10 +119,10 @@ class ConfigCache(WMObject):
         self.document['description']['config_desc'] = None
 
         if id != None:
-            self.document['_id']                = id
+            self.document['_id'] = id
         self.document['pset_tweak_details'] = None
-        self.document['info']               = None
-        self.document['config']             = None
+        self.document['info'] = None
+        self.document['config'] = None
         return
 
     def createDatabase(self):
@@ -139,12 +139,12 @@ class ConfigCache(WMObject):
         _connectUserGroup_
 
         """
-        self.group = Group(name = groupname)
+        self.group = Group(name=groupname)
         self.group.setCouch(self.dburl, self.dbname)
         self.group.connect()
         self.owner = makeUser(groupname, username,
-                              couchUrl = self.dburl,
-                              couchDatabase = self.dbname)
+                              couchUrl=self.dburl,
+                              couchDatabase=self.dbname)
         return
 
     def createUserGroup(self, groupname, username):
@@ -153,8 +153,8 @@ class ConfigCache(WMObject):
 
         Create all the userGroup information
         """
-        self.createGroup(name = groupname)
-        self.createUser(username = username)
+        self.createGroup(name=groupname)
+        self.createUser(username=username)
         return
 
     def createGroup(self, name):
@@ -163,7 +163,7 @@ class ConfigCache(WMObject):
 
         Create Group for GroupUser
         """
-        self.group = Group(name = name)
+        self.group = Group(name=name)
         self.group.setCouch(self.dburl, self.dbname)
         self.group.connect()
         self.group.create()
@@ -188,8 +188,8 @@ class ConfigCache(WMObject):
     @Decorators.requireGroup
     def createUser(self, username):
         self.owner = makeUser(self.group['name'], username,
-                              couchUrl = self.dburl,
-                              couchDatabase = self.dbname)
+                              couchUrl=self.dburl,
+                              couchDatabase=self.dbname)
         self.owner.create()
         self.owner.ownThis(self.document)
         return
@@ -202,7 +202,7 @@ class ConfigCache(WMObject):
 
         Save yourself!  Save your internal document.
         """
-        rawResults = self.database.commit(doc = self.document)
+        rawResults = self.database.commit(doc=self.document)
 
         # We should only be committing one document at a time
         # if not, get the last one.
@@ -210,23 +210,20 @@ class ConfigCache(WMObject):
         try:
             commitResults = rawResults[-1]
             self.document["_rev"] = commitResults.get('rev')
-            self.document["_id"]  = commitResults.get('id')
+            self.document["_id"] = commitResults.get('id')
         except KeyError as ex:
-            msg  = "Document returned from couch without ID or Revision\n"
+            msg = "Document returned from couch without ID or Revision\n"
             msg += "Document probably bad\n"
             msg += str(ex)
             logging.error(msg)
-            raise ConfigCacheException(message = msg)
-
+            raise ConfigCacheException(message=msg)
 
         # Now do the attachments
         for attachName in self.attachments:
-            self.saveAttachment(name = attachName,
-                                attachment = self.attachments[attachName])
-
+            self.saveAttachment(name=attachName,
+                                attachment=self.attachments[attachName])
 
         return
-
 
     def saveAttachment(self, name, attachment):
         """
@@ -234,7 +231,6 @@ class ConfigCache(WMObject):
 
         Save an attachment to the document
         """
-
 
         retval = self.database.addAttachment(self.document["_id"],
                                              self.document["_rev"],
@@ -250,11 +246,10 @@ class ConfigCache(WMObject):
             raise ConfigCacheException(msg)
 
         self.document["_rev"] = retval['rev']
-        self.document["_id"]  = retval['id']
+        self.document["_id"] = retval['id']
         self.attachments[name] = attachment
 
         return
-
 
     def loadDocument(self, configID):
         """
@@ -271,36 +266,35 @@ class ConfigCache(WMObject):
         Load a document from the server given its couchID
         """
         try:
-            self.document = self.database.document(id = configID)
+            self.document = self.database.document(id=configID)
             if 'owner' in self.document.keys():
-                self.connectUserGroup(groupname = self.document['owner'].get('group', None),
-                                      username  = self.document['owner'].get('user', None))
+                self.connectUserGroup(groupname=self.document['owner'].get('group', None),
+                                      username=self.document['owner'].get('user', None))
             if '_attachments' in self.document.keys():
                 # Then we need to load the attachments
                 for key in self.document['_attachments'].keys():
-                    self.loadAttachment(name = key)
+                    self.loadAttachment(name=key)
         except CouchNotFoundError as ex:
-            msg =  "Document with id %s not found in couch\n" % (configID)
+            msg = "Document with id %s not found in couch\n" % (configID)
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            raise ConfigCacheException(message = msg)
+            raise ConfigCacheException(message=msg)
         except Exception as ex:
-            msg =  "Error loading document from couch\n"
+            msg = "Error loading document from couch\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            raise ConfigCacheException(message = msg)
+            raise ConfigCacheException(message=msg)
 
         return
 
-    def loadAttachment(self, name, overwrite = True):
+    def loadAttachment(self, name, overwrite=True):
         """
         _loadAttachment_
 
         Load an attachment from the database and put it somewhere useful
         """
-
 
         attach = self.database.getAttachment(self.document["_id"], name)
 
@@ -320,9 +314,9 @@ class ConfigCache(WMObject):
         Underlying code to load views
         """
 
-        viewRes = self.database.loadView( 'ConfigCache', view, {}, [value] )
+        viewRes = self.database.loadView('ConfigCache', view, {}, [value])
 
-        if len(viewRes['rows']) == 0:
+        if not viewRes['rows']:
             # Then we have a problem
             msg = "Unable to load using view %s and value %s" % (view, str(value))
             logging.error(msg)
@@ -346,7 +340,6 @@ class ConfigCache(WMObject):
             f.write(config)
         return
 
-
     def load(self):
         """
         _load_
@@ -361,19 +354,15 @@ class ConfigCache(WMObject):
 
         # Otherwise we have to load by view
 
-        if not self.document.get('md5_hash', None) == None:
+        if not self.document.get('md5_hash', None) is None:
             # Then we have an md5_hash
-            self.loadByView(view = 'config_by_md5hash', value = self.document['md5_hash'])
-        # TODO: Add more views as they become available.
+            self.loadByView(view='config_by_md5hash', value=self.document['md5_hash'])
+            # TODO: Add more views as they become available.
 
 
-        #elif not self.owner == None:
+            # elif not self.owner == None:
             # Then we have an owner
-            #self.loadByView(view = 'config_by_owner', value = self.owner['name'])
-
-
-
-
+            # self.loadByView(view = 'config_by_owner', value = self.owner['name'])
 
     def unwrapView(self, view):
         """
@@ -382,11 +371,8 @@ class ConfigCache(WMObject):
         Move view information into the main document
         """
 
-        self.document["_id"]  = view['rows'][0].get('id')
+        self.document["_id"] = view['rows'][0].get('id')
         self.document["_rev"] = view['rows'][0].get('value').get('_rev')
-
-
-
 
     def setPSetTweaks(self, PSetTweak):
         """
@@ -417,7 +403,7 @@ class ConfigCache(WMObject):
         try:
             outputModuleNames = psetTweaks["process"]["outputModules_"]
         except KeyError as ex:
-            msg =  "Could not find outputModules_ in psetTweaks['process'] while getting output modules.\n"
+            msg = "Could not find outputModules_ in psetTweaks['process'] while getting output modules.\n"
             msg += str(ex)
             logging.error(msg)
             raise ConfigCacheException(msg)
@@ -439,8 +425,7 @@ class ConfigCache(WMObject):
 
         return results
 
-
-    def addConfig(self, newConfig, psetHash = None):
+    def addConfig(self, newConfig, psetHash=None):
         """
         _addConfig_
 
@@ -473,7 +458,6 @@ class ConfigCache(WMObject):
 
         return self.document["_id"]
 
-
     def getCouchRev(self):
         """
         _getCouchRev_
@@ -481,9 +465,7 @@ class ConfigCache(WMObject):
         Return the document's couchRevision
         """
 
-
         return self.document["_rev"]
-
 
     @Decorators.requireGroup
     @Decorators.requireUser
@@ -496,18 +478,16 @@ class ConfigCache(WMObject):
         if not self.document["_id"]:
             logging.error("Attempted to delete with no couch ID")
 
-
         # TODO: Delete without loading first
         try:
             self.database.queueDelete(self.document)
             self.database.commit()
         except Exception as ex:
-            msg =  "Error in deleting document from couch"
+            msg = "Error in deleting document from couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
-            raise ConfigCacheException(message = msg)
-
+            raise ConfigCacheException(message=msg)
 
         return
 
@@ -541,7 +521,6 @@ class ConfigCache(WMObject):
 
         return configs
 
-
     def __str__(self):
         """
         Make something printable
@@ -553,9 +532,9 @@ class ConfigCache(WMObject):
     def validate(self, configID):
 
         try:
-            #TODO: need to change to DataCache
-            #self.loadDocument(configID = configID)
-            self.loadByID(configID = configID)
+            # TODO: need to change to DataCache
+            # self.loadDocument(configID = configID)
+            self.loadByID(configID=configID)
         except Exception as ex:
             raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
 
@@ -568,7 +547,7 @@ class ConfigCache(WMObject):
                 msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
                 raise ConfigCacheException("%s: %s" % (msg, str(ex)))
             for outputModule in outputModuleInfo.values():
-                dataTier   = outputModule.get('dataTier', None)
+                dataTier = outputModule.get('dataTier', None)
                 filterName = outputModule.get('filterName', None)
                 if not dataTier:
                     raise ConfigCacheException("No DataTier in output module.")
@@ -582,7 +561,4 @@ class ConfigCache(WMObject):
                 else:
                     duplicateCheck[dataTier].append(filterName)
             return outputModuleInfo
-        else:
-            return True
-
-
+        return True

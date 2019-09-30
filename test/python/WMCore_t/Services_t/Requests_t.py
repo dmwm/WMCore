@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding: ISO-8859-1 -*-
+# -*- coding: ISO-8859-1 -*-
 '''n
 Created on Aug 6, 2009
 
@@ -7,6 +7,7 @@ Created on Aug 6, 2009
 '''
 from __future__ import print_function
 
+import json
 import os
 import shutil
 import tempfile
@@ -28,13 +29,12 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 
 class testRequestExceptions(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
-        self.request_dict = {'req_cache_path' : self.tmp}
+        self.request_dict = {'req_cache_path': self.tmp}
 
     def tearDown(self):
-        shutil.rmtree(self.tmp, ignore_errors = True)
+        shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test404Error(self):
         endp = "http://cmsweb.cern.ch"
@@ -45,22 +45,23 @@ class testRequestExceptions(unittest.TestCase):
         try:
             req.makeRequest(url, verb='GET')
         except HTTPException as e:
-            #print e
+            # print e
             self.assertEqual(e.status, 404)
 
     def test404Error_with_pycurl(self):
         endp = "http://cmsweb.cern.ch"
         url = "/thispagedoesntexist/"
         idict = dict(self.request_dict)
-        idict.update({'pycurl':1})
+        idict.update({'pycurl': 1})
         req = Requests.Requests(endp, idict)
         for v in ['GET', 'POST']:
             self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
         try:
             req.makeRequest(url, verb='GET')
         except HTTPException as e:
-            #print e
+            # print e
             self.assertEqual(e.status, 404)
+
 
 # comment out so we don't ddos someone else's server
 #    def test408Error(self):
@@ -83,7 +84,7 @@ class testRepeatCalls(RESTBaseUnitTest):
         self.cache_path = tempfile.mkdtemp()
 
     def tearDown(self):
-        shutil.rmtree(self.cache_path, ignore_errors = True)
+        shutil.rmtree(self.cache_path, ignore_errors=True)
         self.rt.stop()
 
     def test10Calls(self):
@@ -94,7 +95,7 @@ class testRepeatCalls(RESTBaseUnitTest):
             time.sleep(i)
             print('test %s starting at %s' % (i, time.time()))
             try:
-                result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
+                result = req.get('/', incoming_headers={'Cache-Control': 'no-cache'})
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
             except HTTPException as he:
@@ -109,14 +110,14 @@ class testRepeatCalls(RESTBaseUnitTest):
 
     def test10Calls_with_pycurl(self):
         fail_count = 0
-        idict = {'req_cache_path': self.cache_path, 'pycurl':1}
+        idict = {'req_cache_path': self.cache_path, 'pycurl': 1}
         req = Requests.Requests(self.urlbase, idict)
 
         for i in range(0, 5):
             time.sleep(i)
             print('test %s starting at %s' % (i, time.time()))
             try:
-                result = req.get('/', incoming_headers={'Cache-Control':'no-cache'}, decode=False)
+                result = req.get('/', incoming_headers={'Cache-Control': 'no-cache'}, decode=False)
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
             except HTTPException as he:
@@ -134,7 +135,7 @@ class testRepeatCalls(RESTBaseUnitTest):
         import socket
         self.rt.stop()
         req = Requests.Requests(self.urlbase, {'req_cache_path': self.cache_path, 'pycurl': False})
-        headers = {'Cache-Control':'no-cache'}
+        headers = {'Cache-Control': 'no-cache'}
         self.assertRaises(socket.error, req.get, '/', incoming_headers=headers)
 
         # now restart server and hope we can connect
@@ -147,9 +148,9 @@ class testRepeatCalls(RESTBaseUnitTest):
         """Connections succeed after server down"""
         import pycurl
         self.rt.stop()
-        idict = {'req_cache_path': self.cache_path, 'pycurl':1}
+        idict = {'req_cache_path': self.cache_path, 'pycurl': 1}
         req = Requests.Requests(self.urlbase, idict)
-        headers = {'Cache-Control':'no-cache'}
+        headers = {'Cache-Control': 'no-cache'}
         self.assertRaises(pycurl.error, req.get, '/', incoming_headers=headers, decode=False)
 
         # now restart server and hope we can connect
@@ -158,20 +159,21 @@ class testRepeatCalls(RESTBaseUnitTest):
         self.assertEqual(result[3], False)
         self.assertEqual(result[1], 200)
 
+
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         tmp = self.testInit.generateWorkDir()
-        self.request = Requests.JSONRequests(idict={'req_cache_path' : tmp})
+        self.request = Requests.JSONRequests(idict={'req_cache_path': tmp})
 
     def roundTrip(self, data):
         encoded = self.request.encode(data)
-        #print encoded
-        #print encoded.__class__.__name__
+        # print encoded
+        # print encoded.__class__.__name__
         decoded = self.request.decode(encoded)
-        #print decoded.__class__.__name__
-        self.assertEqual( data, decoded )
+        # print decoded.__class__.__name__
+        self.assertEqual(data, decoded)
 
     def roundTripLax(self, data):
         encoded = self.request.encode(data)
@@ -181,7 +183,7 @@ class testJSONRequests(unittest.TestCase):
         for k in decoded.keys():
             assert k in datakeys
             datakeys.pop(datakeys.index(k))
-        #print 'the following keys were dropped\n\t',datakeys
+            # print 'the following keys were dropped\n\t',datakeys
 
     def testSet1(self):
         self.roundTrip(set([]))
@@ -223,7 +225,7 @@ class testJSONRequests(unittest.TestCase):
 
     def testMask4(self):
         self.roundTrip({'LastRun': None, 'FirstRun': None, 'LastEvent': None,
-        'FirstEvent': None, 'LastLumi': None, 'FirstLumi': None})
+                        'FirstEvent': None, 'LastLumi': None, 'FirstLumi': None})
 
     def testMask5(self):
         mymask = Mask()
@@ -245,8 +247,8 @@ class testJSONRequests(unittest.TestCase):
         self.assertEqual(req['host'], 'http://localhost:6666')
         self.assertEqual(req.additionalHeaders['Authorization'], 'Basic dXNlcm5hbWU6cEBzc3c6cmQ=')
 
-class TestRequests(unittest.TestCase):
 
+class TestRequests(unittest.TestCase):
     def testGetKeyCert(self):
         """test existance of key/cert"""
         proxy = os.environ.get('X509_USER_PROXY')
@@ -285,10 +287,10 @@ class TestRequests(unittest.TestCase):
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
         os.environ.pop('X509_USER_KEY', None)
-        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl':1})
-        out = req.makeRequest('/phedex/datasvc/json/prod/groups')
+        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl': 1})
+        out = req.makeRequest('/phedex/datasvc/json/prod/groups', decoder=True)
         self.assertEqual(out[1], 200)
-        if  not isinstance(out[0], dict):
+        if not isinstance(json.loads(out[0]), dict):
             msg = 'wrong data type'
             raise Exception(msg)
         out = req.makeRequest('/auth/trouble', decoder=False)
@@ -306,7 +308,7 @@ class TestRequests(unittest.TestCase):
 
     def testSecureNoAuth_with_pycurl(self):
         """https with no client authentication"""
-        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl':1})
+        req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl': 1})
         out = req.makeRequest('', decoder=False)
         self.assertEqual(out[1], 200)
         # we should get an html page in response
@@ -335,17 +337,18 @@ class TestRequests(unittest.TestCase):
         os.environ.pop('X509_HOST_KEY', None)
         os.environ.pop('X509_USER_CERT', None)
         os.environ.pop('X509_USER_KEY', None)
-        req = Requests.Requests('https://cmsweb.cern.ch:443', {'pycurl':1})
+        req = Requests.Requests('https://cmsweb.cern.ch:443', {'pycurl': 1})
         out = req.makeRequest('/auth/trouble', decoder=False)
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
 
     def testNoCache(self):
         """Cache disabled"""
-        req = Requests.Requests('https://cmssdt.cern.ch/SDT/', {'cachepath' : None})
+        req = Requests.Requests('https://cmssdt.cern.ch/SDT/', {'cachepath': None})
         out = req.makeRequest('/', decoder=False)
         self.assertEqual(out[3], False)
         self.assertTrue('html' in out[0])
+
 
 if __name__ == "__main__":
     unittest.main()

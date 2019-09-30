@@ -1,6 +1,7 @@
 import json
 import logging
 from xml.dom.minidom import parseString
+
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.Service import Service
 

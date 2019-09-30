@@ -46,6 +46,7 @@ import os
 import re
 import subprocess
 import sys
+
 try:
     from urllib import urlencode
 except ImportError:

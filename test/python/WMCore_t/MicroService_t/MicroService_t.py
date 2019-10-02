@@ -7,10 +7,11 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 from __future__ import division, print_function
 
 import json
-import cherrypy
 import unittest
 
+import cherrypy
 from WMCore_t.MicroService_t import TestConfig
+
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
 from WMCore.MicroService.Unified.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
@@ -20,10 +21,11 @@ class ServiceManager(object):
     """
     Initialize ServiceManager class
     """
+
     def __init__(self, config=None):
         self.config = config
         self.state = None
-        self.appname = 'test' # keep it since it is used by XMLFormat(self.app.appname))
+        self.appname = 'test'  # keep it since it is used by XMLFormat(self.app.appname))
 
     def status(self, **kwargs):
         "Return current status about our service"
@@ -36,8 +38,10 @@ class ServiceManager(object):
         self.state = kwargs.get('state', None)
         return {'state': self.state}
 
+
 class MicroServiceTest(unittest.TestCase):
     "Unit test for MicroService module"
+
     def setUp(self):
         "Setup MicroService for testing"
         self.app = ServiceManager()
@@ -64,16 +68,16 @@ class MicroServiceTest(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
         print("### post call %s params=%s headers=%s" % (self.url, params, headers))
         data = self.mgr.getdata(self.url, params=params, headers=headers, \
-                verb='POST', cert=cert(), ckey=ckey())
+                                verb='POST', cert=cert(), ckey=ckey(), encode=True, decode=True)
         print("### post call data %s" % data)
-        return json.loads(data)
+        return data
 
     def test_getState(self):
         "Test function for getting state of the MicroService"
         url = '%s/status' % self.url
         data = self.mgr.getdata(url, params={})
         state = "bla"
-        data = {"request":{"state": state}}
+        data = {"request": {"state": state}}
         self.postRequest(data)
         data = self.mgr.getdata(url, params={})
         data = json.loads(data)
@@ -81,6 +85,7 @@ class MicroServiceTest(unittest.TestCase):
         for row in data['result']:
             if 'state' in row:
                 self.assertEqual(state, row['state'])
+
 
 if __name__ == '__main__':
     unittest.main()

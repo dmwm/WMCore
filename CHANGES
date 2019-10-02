@@ -1,3 +1,8 @@
+1.2.7 to 1.2.8.pre1:
+  - fix unit test (Alan Malta Rodrigues) #9360
+  - Enable pycurl by default for all Service client APIs (Alan Malta Rodrigues) #9360
+
+
 1.2.7.pre3 to 1.2.7:
   - added more test campaigns to the parseUnifiedCampaigns script (Alan Malta Rodrigues) #9387
 

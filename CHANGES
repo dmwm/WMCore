@@ -1,3 +1,7 @@
+1.2.7.pre3 to 1.2.7:
+  - added more test campaigns to the parseUnifiedCampaigns script (Alan Malta Rodrigues) #9387
+
+
 1.2.7.pre2 to 1.2.7.pre3:
   - Consider RunWhitelist/RunBlacklist and runs from LumiList for MSTransferor (Alan Malta Rodrigues) #9378
   - Use a clean environment when running voms-proxy commands from AgentStatusPoller (Alan Malta Rodrigues) #9380

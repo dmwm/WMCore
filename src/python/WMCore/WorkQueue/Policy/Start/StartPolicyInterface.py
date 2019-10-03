@@ -4,13 +4,16 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-
+import os
+from Utils.Utilities import usingRucio
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
@@ -33,6 +36,10 @@ class StartPolicyInterface(PolicyInterface):
         self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
         self.cric = CRIC()
+        if usingRucio():
+            self.rucio = Rucio(self.args['rucioAcct'], configDict={'phedexCompatible': False})
+        else:
+            self.phedex = PhEDEx()  # this will go away eventually
 
     def split(self):
         """Apply policy to spec"""
@@ -237,8 +244,15 @@ class StartPolicyInterface(PolicyInterface):
         """Returns a dictionary with the location of the datasets according to DBS"""
         result = {}
         for dbsUrl in datasets:
-            dbs = self.dbs(dbsUrl)
             for datasetPath in datasets[dbsUrl]:
-                locations = dbs.listDatasetLocation(datasetPath)
+                locations = set()
+                if hasattr(self, "rucio"):
+                    resp = self.rucio.getReplicaInfoForBlocks(dataset=datasetPath)
+                    for item in resp:
+                        locations.update(item['replica'])
+                else:
+                    resp = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetPath], complete='y')
+                    for blockSites in resp.values():
+                        locations.update(blockSites)
                 result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result

@@ -99,6 +99,7 @@ class MSManager(object):
         self.msConfig['group'] = getattr(config, 'group', 'DataOps')
         self.msConfig['interval'] = getattr(config, 'interval', 5 * 60)
         self.msConfig['readOnly'] = getattr(config, 'readOnly', True)
+        self.msConfig['rucioAccount'] = getattr(config, 'rucioAccount', 'wma_prod')
         self.services = getattr(config, 'services', [])
 
         reqmgr2Url = 'https://cmsweb.cern.ch/reqmgr2'

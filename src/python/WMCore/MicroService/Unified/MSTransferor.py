@@ -184,7 +184,11 @@ class MSTransferor(MSCore):
                     transRec['transferIDs'].add(1111)  # any fake number
                 else:
                     try:
-                        res = self.phedex.subscribe(subscription)
+                        if hasattr(self, "rucio"):
+                            # FIXME: then it should create a Rucio rule instead
+                            res = self.phedex.subscribe(subscription)
+                        else:
+                            res = self.phedex.subscribe(subscription)
                         self.logger.debug("Subscription done, result: %s", res)
                     except HTTPException as ex:
                         # It might be that the block has no more replicas (all files invalidated)

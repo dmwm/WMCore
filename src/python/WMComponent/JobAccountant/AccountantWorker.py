@@ -24,7 +24,6 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.Lexicon import sanitizeURL
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Job import Job
@@ -128,9 +127,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsLocations = set()
         self.workflowIDs = collections.deque(maxlen=1000)
         self.workflowPaths = collections.deque(maxlen=1000)
-
-        self.phedex = PhEDEx()
-        self.locLists = self.phedex.getNodeMap()
 
         return
 

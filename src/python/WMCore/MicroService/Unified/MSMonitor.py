@@ -152,7 +152,11 @@ class MSMonitor(MSCore):
         for reqId in requestList:
             # if we query by dataset and the subscription was at block level,
             # we get an empty response. So always wildcard the block parameter
-            data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            if hasattr(self, "rucio"):
+                # FIXME: then it should check the rule status
+                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            else:
+                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
             if not data or not data['phedex']['dataset']:
                 self.logger.error("Failed to retrieve information for dataset: %s and request ID: %s",
                                   dataset, reqId)

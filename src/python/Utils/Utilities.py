@@ -186,3 +186,17 @@ def getSize(obj):
                 need_referents.append(obj)
         objects = get_referents(*need_referents)
     return size
+
+
+# TODO: remove this function once we have completely migrated to Rucio
+def usingRucio():
+    """
+    Evaluates the environment variables and figure out whether we
+    need to use Rucio or not (thus PhEDEx)
+    :return: a boolean value
+    """
+    if str(os.getenv("WMAGENT_USE_RUCIO", 'false')).lower() == 'true':
+        return True
+    elif str(os.getenv("WMCORE_USE_RUCIO", 'false')).lower() == 'true':
+        return True
+    return False

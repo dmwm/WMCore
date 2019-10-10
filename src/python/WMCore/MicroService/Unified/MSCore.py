@@ -6,11 +6,12 @@ Description: MSCore class provides core functionality of the MS.
 # futures
 from __future__ import division, print_function
 
-# WMCore modules
+from Utils.Utilities import usingRucio
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 
 
 class MSCore(object):
@@ -38,9 +39,14 @@ class MSCore(object):
 
         # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
         dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-        # eventually will change it to Rucio
-        self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
-                             dbsUrl=dbsUrl, logger=self.logger)
+        if usingRucio():
+            # FIXME: we cannot use Rucio in write mode yet
+            # self.rucio = Rucio(self.msConfig['rucioAccount'], configDict={"logger": self.logger})
+            self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
+                                 dbsUrl=dbsUrl, logger=self.logger)
+        else:
+            self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
+                                 dbsUrl=dbsUrl, logger=self.logger)
 
     def unifiedConfig(self):
         """

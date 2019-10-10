@@ -276,7 +276,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # pileup configuration file, need to create it in self.testDir
         fetcher = PileupFetcher()
         fetcher.setWorkingDirectory(self.testDir)
-        fetcher._createPileupConfigFile(setupScript.step, fakeSites=['T1_US_FNAL'])
+        fetcher.createPileupConfigFile(setupScript.step, fakeSites=['T1_US_FNAL'])
 
         setupScript()
 

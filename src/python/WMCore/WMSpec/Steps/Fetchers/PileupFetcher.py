@@ -11,10 +11,11 @@ import shutil
 import time
 import logging
 from json import JSONEncoder
-
+from Utils.Utilities import usingRucio
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 
 
@@ -26,6 +27,17 @@ class PileupFetcher(FetcherInterface):
     Save these maps as files in the sandbox
 
     """
+    def __init__(self):
+        """
+        Prepare module setup
+        """
+        super(PileupFetcher, self).__init__()
+        if usingRucio():
+            # Too much work to pass the rucio account name all the way to here
+            # just use the production rucio account for resolving pileup location
+            self.rucio = Rucio("wma_prod", configDict={'phedexCompatible': False})
+        else:
+            self.phedex = PhEDEx()  # this will go away eventually
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
@@ -48,10 +60,6 @@ class PileupFetcher(FetcherInterface):
         a subset of the blocks in a dataset will be at a site.
 
         """
-        # only production PhEDEx is connected (This can be moved to init method
-        phedex = PhEDEx()
-        node_filter = set(['UNKNOWN', None])
-
         resultDict = {}
         # iterate over input pileup types (e.g. "cosmics", "minbias")
         for pileupType in stepHelper.data.pileup.listSections_():
@@ -71,17 +79,39 @@ class PileupFetcher(FetcherInterface):
                         {'logical_file_name': fileInfo['logical_file_name']})
                     blockDict[fileInfo['block_name']]['NumberOfEvents'] += fileInfo['event_count']
 
-                blockReplicasInfo = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
-                for block in blockReplicasInfo:
-                    nodes = set(blockReplicasInfo[block]) - node_filter
-                    try:
-                        blockDict[block]['PhEDExNodeNames'] = list(nodes)
-                        blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
-                    except KeyError:
-                        logging.warning("Block '%s' does not have any complete PhEDEx replica", block)
+                self._getDatasetLocation(dataset, blockDict)
 
             resultDict[pileupType] = blockDict
         return resultDict
+
+    def _getDatasetLocation(self, dset, blockDict):
+        """
+        Given a dataset name, query PhEDEx or Rucio and resolve the block location
+        :param dset: string with the dataset name
+        :param blockDict: dictionary with DBS summary info
+        :return: update blockDict in place
+        """
+        node_filter = set(['UNKNOWN', None])
+
+        if hasattr(self, "rucio"):
+            # then it's Rucio!!
+            blockReplicasInfo = self.rucio.getReplicaInfoForBlocks(dataset=dset)
+            for item in blockReplicasInfo:
+                block = item['name']
+                try:
+                    blockDict[block]['PhEDExNodeNames'] = item['replica']
+                    blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                except KeyError:
+                    logging.warning("Block '%s' does not have any complete Rucio replica", block)
+        else:
+            blockReplicasInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=dset, complete='y')
+            for block in blockReplicasInfo:
+                nodes = set(blockReplicasInfo[block]) - node_filter
+                try:
+                    blockDict[block]['PhEDExNodeNames'] = list(nodes)
+                    blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                except KeyError:
+                    logging.warning("Block '%s' does not have any complete PhEDEx replica", block)
 
     def _getCacheFilePath(self, stepHelper):
 
@@ -162,7 +192,7 @@ class PileupFetcher(FetcherInterface):
         fileName = self._getStepFilePath(stepHelper)
         self._copyFile(cacheFile, fileName)
 
-    def _createPileupConfigFile(self, helper):
+    def createPileupConfigFile(self, helper):
         """
         Stores pileup JSON configuration file in the working
         directory / sandbox.
@@ -201,4 +231,4 @@ class PileupFetcher(FetcherInterface):
             # doesn't seem to be necessary ... strangely (some inheritance involved?)
             # typeHelper = helper.getTypeHelper()
             if hasattr(helper.data, "pileup"):
-                self._createPileupConfigFile(helper)
+                self.createPileupConfigFile(helper)

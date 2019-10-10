@@ -16,7 +16,7 @@ import os
 import threading
 import time
 from collections import defaultdict
-
+from Utils.Utilities import usingRucio
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
@@ -24,6 +24,7 @@ from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
@@ -120,7 +121,6 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('TrackLocationOrSubscription', 'location')
         self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)
-        self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
         self.params.setdefault('QueueRetryTime', 86400)
@@ -182,13 +182,11 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError('Only blocks can be released on location')
 
-        if self.params.get('PhEDEx'):
-            self.phedexService = self.params['PhEDEx']
+        self.params.setdefault('rucioAccount', "wma_prod")
+        if usingRucio():
+            self.phedexService = Rucio(self.params['rucioAccount'])
         else:
-            phedexArgs = {}
-            if self.params.get('PhEDExEndpoint'):
-                phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
-            self.phedexService = PhEDEx(phedexArgs)
+            self.phedexService = PhEDEx()
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
@@ -856,7 +854,8 @@ class WorkQueue(WorkQueueBase):
                     if not policyName:
                         raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
-                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'])
+                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'],
+                                                 rucioAcct=self.params['rucioAccount'], logger=self.logger)
                     if not policyInstance.supportsWorkAddition():
                         continue
                     if policyInstance.newDataAvailable(topLevelTask, element):
@@ -1027,7 +1026,8 @@ class WorkQueue(WorkQueueBase):
             if not policyName:
                 raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
-            policy = startPolicy(policyName, self.params['SplittingMapping'])
+            policy = startPolicy(policyName, self.params['SplittingMapping'],
+                                 rucioAcct= self.params['rucioAccount'], logger=self.logger)
             if not policy.supportsWorkAddition() and continuous:
                 # Can't split further with a policy that doesn't allow it
                 continue
@@ -1130,7 +1130,7 @@ class WorkQueue(WorkQueueBase):
                 if continuous:
                     continue
                 msg = 'Exception splitting wqe %s for %s: %s' % (inbound.id, inbound['RequestName'], str(ex))
-                self.logger.error(msg)
+                self.logger.exception(msg)
                 self.logdb.post(inbound['RequestName'], msg, 'error')
 
                 if throw:

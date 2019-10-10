@@ -1,3 +1,10 @@
+1.2.8.pre1 to 1.2.8.pre2:
+  - fix unit tests (Alan Malta Rodrigues) #9389
+  - Use env var to switch between PhEDEx and Rucio (Alan Malta Rodrigues) #9389
+  - Add heartbeat monitor to reqmgr2ms (khurtado) #9388
+  - Workaround for bug in: https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=7261 (khurtado) #9385
+
+
 1.2.7 to 1.2.8.pre1:
   - fix unit test (Alan Malta Rodrigues) #9360
   - Enable pycurl by default for all Service client APIs (Alan Malta Rodrigues) #9360

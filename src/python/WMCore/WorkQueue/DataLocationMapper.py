@@ -65,7 +65,7 @@ class DataLocationMapper(object):
         # the same object is not shared amongst multiple threads
         self.dbses = {}
 
-    def __call__(self, dataItems, dbses=None):
+    def __call__(self, dataItems):
         result = {}
 
         dataByDbs = self.organiseByDbs(dataItems)
@@ -101,7 +101,7 @@ class DataLocationMapper(object):
         elif self.params['locationFrom'] == 'subscription':
             self.logger.info("Fetching subscription data from PhEDEx")
             # subscription api doesn't support partial update
-            result = self.phedex.getSubscriptionMapping(*dataItems), True
+            result = self.phedex.getSubscriptionMapping(*dataItems)
         elif self.params['locationFrom'] == 'location':
             args = {}
             if not self.params['incompleteBlocks']:
@@ -154,7 +154,7 @@ class DataLocationMapper(object):
             psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
-        return result, True  # partial dbs updates not supported
+        return result
 
     def organiseByDbs(self, dataItems):
         """Sort items by dbs instances - return dict with DBSReader as key & data items as values"""

@@ -100,6 +100,19 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue({"status", "account", "account_type"}.issubset(set(res2.keys())))
         self.assertTrue({self.acct, "ACTIVE", "USER"}.issubset(set(res2.values())))
 
+    def testGetAccountUsage(self):
+        """
+        Test whether we can fetch data about a specific rucio account
+        """
+        res = list(self.client.get_account_usage(self.acct))
+        res2 = self.myRucio.getAccountUsage(self.acct)
+        self.assertEqual(res, [])
+        self.assertEqual(res, res2)
+
+        # now test against an account that either does not exist or that we cannot access
+        res = self.myRucio.getAccountUsage("admin")
+        self.assertIsNone(res)
+
     # @attr('integration')
     def testWhoAmI(self):
         """

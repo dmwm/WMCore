@@ -10,7 +10,8 @@ from __future__ import division, print_function, absolute_import
 import logging
 
 from rucio.client import Client
-from rucio.common.exception import AccountNotFound, DataIdentifierNotFound
+from rucio.common.exception import AccountNotFound, DataIdentifierNotFound,\
+    AccessDenied
 
 from WMCore.WMException import WMException
 
@@ -90,11 +91,29 @@ class Rucio(object):
         Gets information about a specific account
         :return: a dict with the account information. None in case of failure
         """
+        res = None
         try:
             res = self.cli.get_account(acct)
-        except AccountNotFound as ex:
+        except (AccountNotFound, AccessDenied) as ex:
             self.logger.error("Failed to get account information from Rucio. Error: %s", str(ex))
-            res = None
+        return res
+
+    def getAccountUsage(self, acct, rse=None):
+        """
+        _getAccountUsage_
+
+        Provided an account name, gets the storage usage for it against
+        a given RSE (or all RSEs)
+        :param acct: a string with the rucio account name
+        :param rse: an optional string with the RSE name
+        :return: a list of dictionaries with the account usage information.
+          None in case of failure
+        """
+        res = None
+        try:
+            res = list(self.cli.get_account_usage(acct, rse=rse))
+        except (AccountNotFound, AccessDenied) as ex:
+            self.logger.error("Failed to get account usage information from Rucio. Error: %s", str(ex))
         return res
 
     def getBlocksInContainer(self, container, scope='cms'):

@@ -93,7 +93,7 @@ def fileHandler(targets):
                                    pfn=fileAttrs["PFN"], catalog=fileAttrs["Catalog"],
                                    module_label=fileAttrs["ModuleLabel"],
                                    guid=fileAttrs["GUID"],
-                                   ouput_module_class=fileAttrs["OutputModuleClass"],
+                                   output_module_class=fileAttrs["OutputModuleClass"],
                                    events=int(fileAttrs["TotalEvents"]),
                                    branch_hash=fileAttrs["BranchHash"])
 

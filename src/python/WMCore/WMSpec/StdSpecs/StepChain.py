@@ -181,12 +181,12 @@ class StepChainWorkloadFactory(StdBase):
                 self.stepParentageMapping[stepName]['ParentStepCmsRun'] = parentStepCmsRun
 
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                parentDset = self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                parentDset = self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
                 self.stepParentageMapping[stepName]['ParentDataset'] = parentDset
 
-    def findParentStepWithOuputDataset(self, origArgs, stepNumber, stepName, outModName):
+    def findParentStepWithOutputDataset(self, origArgs, stepNumber, stepName, outModName):
         """
-        _findParentStepWithOuputDataset_
+        _findParentStepWithOutputDataset_
         Given the parent step name and output module name, finds the parent dataset 
         :param origArgs: request arguments
         :param stepNumber: step number of the parent step
@@ -202,7 +202,7 @@ class StepChainWorkloadFactory(StdBase):
             parentStepName = self.stepParentageMapping[stepName]['ParentStepName']
             if parentStepNumber:
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                return self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                return self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
             else:
                 # this is Step1, return the InputDataset if any
                 return origArgs[stepNumber].get("InputDataset")

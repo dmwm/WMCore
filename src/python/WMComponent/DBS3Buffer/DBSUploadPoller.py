@@ -343,12 +343,15 @@ class DBSUploadPoller(BaseWorkerThread):
         except Exception as ex:
             reason = getattr(ex, 'reason', '')
             msg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
+            msg += 'Exception: %s. Reason: %s. ' % (type(ex).__name__, reason)
             if 'Service Unavailable' in reason or 'Proxy Error' in reason or\
                             'Error reading from remote server' in reason:
-                msg += 'Error: %s' % reason
+                pass
             elif 'Connection refused' in str(ex):
                 msg += 'Error: %s' % str(ex)
             elif 'The read operation timed out' in str(ex):
+                msg += 'Error: %s' % str(ex)
+            elif 'Connection timed out' in str(ex):
                 msg += 'Error: %s' % str(ex)
             else:
                 msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)

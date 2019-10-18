@@ -542,6 +542,8 @@ class AccountantWorker(WMConnectionBase):
                 wmbsJob["outcome"] = "success"
             else:
                 wmbsJob["outcome"] = "failure"
+                self.listOfJobsToFail.append(wmbsJob)
+                return jobSuccess
 
             for fwjrFile in fileList:
 
@@ -571,15 +573,11 @@ class AccountantWorker(WMConnectionBase):
 
             # Check if the job had any skipped files, put them in ACDC containers
             # We assume full file processing (no job masks)
-            if jobSuccess:
-                skippedFiles = fwkJobReport.getAllSkippedFiles()
-                if skippedFiles and jobType not in ['LogCollect', 'Cleanup']:
-                    self.jobsWithSkippedFiles[jobID] = skippedFiles
+            skippedFiles = fwkJobReport.getAllSkippedFiles()
+            if skippedFiles and jobType not in ['LogCollect', 'Cleanup']:
+                self.jobsWithSkippedFiles[jobID] = skippedFiles
 
-            if jobSuccess:
-                self.listOfJobsToSave.append(wmbsJob)
-            else:
-                self.listOfJobsToFail.append(wmbsJob)
+            self.listOfJobsToSave.append(wmbsJob)
 
         return jobSuccess
 

@@ -349,9 +349,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 pass
             elif 'Connection refused' in str(ex):
                 msg += 'Error: %s' % str(ex)
-            elif 'The read operation timed out' in str(ex):
-                msg += 'Error: %s' % str(ex)
-            elif 'Connection timed out' in str(ex):
+            elif 'timed out' in str(ex):
                 msg += 'Error: %s' % str(ex)
             else:
                 msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)

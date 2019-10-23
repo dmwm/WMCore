@@ -281,14 +281,13 @@ class Request(RESTEntity):
         outputdataset = kwargs.get("outputdataset", [])
         date_range = kwargs.get("date_range", False)
         campaign = kwargs.get("campaign", [])
-        workqueue = kwargs.get("workqueue", [])
         team = kwargs.get("team", [])
         mc_pileup = kwargs.get("mc_pileup", [])
         data_pileup = kwargs.get("data_pileup", [])
         requestor = kwargs.get("requestor", [])
         mask = kwargs.get("mask", [])
         detail = kwargs.get("detail", True)
-        # set the return format. default format has requset name as a key
+        # set the return format. default format has request name as a key
         # if is set to one it returns list of dictionary with RequestName field.
         common_dict = int(kwargs.get("common_dict", 0))
         if detail in (False, "false", "False", "FALSE"):
@@ -321,6 +320,8 @@ class Request(RESTEntity):
 
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
+        if request_type:
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bytype", option, request_type))
         if prep_id:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("byprepid", option, prep_id))
         if inputdataset:
@@ -331,8 +332,6 @@ class Request(RESTEntity):
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydate", option, date_range))
         if campaign:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bycampaign", option, campaign))
-        if workqueue:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byworkqueue", option, workqueue))
         if mc_pileup:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bymcpileup", option, mc_pileup))
         if data_pileup:

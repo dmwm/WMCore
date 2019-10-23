@@ -229,7 +229,8 @@ class RequestDBReader(object):
         requestInfo = self._formatCouchData(data, detail=detail)
         return requestInfo
 
-    def getRequestByCouchView(self, view, options, keys=[], returnDict=True):
+    def getRequestByCouchView(self, view, options, keys=None, returnDict=True):
+        keys = keys or []
         options.setdefault("include_docs", True)
         data = self._getCouchView(view, options, keys)
         requestInfo = self._formatCouchData(data, returnDict=returnDict)

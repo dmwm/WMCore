@@ -1,3 +1,6 @@
+1.2.8.pre3 to 1.2.8:
+
+
 1.2.8.pre2 to 1.2.8.pre3:
   - pylint fixes (Alan Malta Rodrigues) #9409
   - fix ReqMgr2 request API by request type (Alan Malta Rodrigues) #9409

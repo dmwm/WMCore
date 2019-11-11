@@ -452,3 +452,18 @@ class PhEDEx(Service):
             blockNodes[blockInfo['name']] = list(nodes)
 
         return blockNodes
+
+    def getGroupUsage(self, **kwargs):
+        """
+        _getGroupUsage_
+
+        Get storage statistics node per group, like data already
+        stored and data subscribed
+        :param kwargs: accepts the optional parameters, as defined by PhEDEx:
+            node    node name, could be multiple
+            se      storage element name, could be multiple
+            group   group name, could be multiple
+        :return: a dictionary if `json` response type is defined, otherwise it's XML
+        """
+        callname = 'groupusage'
+        return self._getResult(callname, clearCache=True, args=kwargs, verb="GET")

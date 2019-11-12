@@ -29,8 +29,7 @@ class MSCore(object):
         """
         self.logger = getMSLogger(getattr(msConfig, 'verbose', False), logger)
         self.msConfig = msConfig
-        self.logger.info(
-            "Configuration including default values:\n%s", self.msConfig)
+        self.logger.info("Configuration including default values:\n%s", self.msConfig)
 
         self.reqmgr2 = ReqMgr(self.msConfig['reqmgrUrl'], logger=self.logger)
         self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgrUrl'],

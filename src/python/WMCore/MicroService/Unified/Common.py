@@ -180,6 +180,16 @@ def getWorkflow(requestName, reqMgrUrl):
     return data.get('result', [])
 
 
+def getDetoxQuota(url):
+    "Get list of workflow info from ReqMgr2 data-service for given request name"
+    headers = {}
+    params = {}
+    mgr = RequestHandler()
+    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
+    res = res.split('\n')
+    return res
+
+
 def workflowsInfo(workflows):
     "Return minimum info about workflows in flat format"
     winfo = {}

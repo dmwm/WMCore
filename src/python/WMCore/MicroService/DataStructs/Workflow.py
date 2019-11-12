@@ -2,7 +2,9 @@
 Workflow class provides all the workflow data
 required by MS Transferor
 """
-from __future__ import division
+from __future__ import division, print_function
+
+import operator
 
 from WMCore.DataStructs.LumiList import LumiList
 
@@ -255,6 +257,79 @@ class Workflow(object):
         for block in list(self.getParentBlocks()):
             if block not in parentBlocks:
                 self.parentBlocks.pop(block, None)
+
+    def getChildToParentBlocks(self):
+        """
+        Returns a dictionary of blocks and its correspondent list of parents
+        """
+        return self.childToParentBlocks
+
+    def getChunkBlocks(self, numChunks=1):
+        """
+        Break down the input and parent blocks by a given number
+        of chunks (usually the amount of sites available for data
+        placement).
+        :param numChunks: integer representing the number of chunks to be created
+        :return: a list of sets, where each set corresponds to a set of blocks to be
+        transferred to a single location
+        """
+        if numChunks <= 1:
+            blockList = self.getPrimaryBlocks().keys()
+            if self.getParentDataset():
+                blockList.extend(self.getParentBlocks().keys())
+            return blockList
+
+        # create a descendant list of blocks according to their sizes
+        sortedPrimary = sorted(self.getPrimaryBlocks().items(), key=operator.itemgetter(1), reverse=True)
+        chunkSize = sum(item[1] for item in sortedPrimary) // numChunks
+
+        # list of sets with the block names
+        blockChunks = []
+        # list of integers with the total block sizes in each chunk (same order as above)
+        chunksSize = []
+        for i in range(numChunks):
+            thisChunk = set()
+            thisChunkSize = 0
+            idx = 0
+            while True:
+                if sortedPrimary[idx][1] <= chunkSize:
+                    thisChunk.add(sortedPrimary[idx][0])
+                    thisChunkSize += sortedPrimary[idx][1]
+                    sortedPrimary.pop(idx)
+                else:
+                    idx += 1
+                    if idx >= len(sortedPrimary):
+                        break
+            blockChunks.append(thisChunk)
+            chunksSize.append(thisChunkSize)
+
+        # now take care of the leftovers... in a round-robin style....
+        while sortedPrimary:
+            for chunkNum in range(numChunks):
+                blockChunks[chunkNum].add(sortedPrimary[0][0])
+                chunksSize[chunkNum] += sortedPrimary[0][0]
+                sortedPrimary.pop(0)
+                if not sortedPrimary:
+                    break
+        print("AMR primary!!! Chunks size distribution: %s" % chunksSize)
+        print("AMR primary!!! Created %d chunks out of %d chunks" % (len(blockChunks), numChunks))
+
+        # now add the parent blocks, considering that input blocks were evenly
+        # distributed, I'd expect the same to automatically happen to the parents...
+        childParent = self.getChildToParentBlocks()
+        parentsSize = self.getParentBlocks()
+        for chunkNum in range(numChunks):
+            parentSet = set()
+            for child in blockChunks[chunkNum]:
+                parentSet.update(childParent[child])
+
+            # now with the final list of parents in hand, update the list
+            # of blocks within the chunk and update the chunk size as well
+            blockChunks[chunkNum].update(parentSet)
+            for parent in parentSet:
+                chunkSize[chunkNum] += parentsSize[parent]
+        print("AMR parents!!! Chunks size distribution: %s" % chunksSize)
+        print("AMR parents!!! Created %d chunks out of %d chunks" % (len(blockChunks), numChunks))
 
 
     def _getValue(self, keyName, defaultValue=None):

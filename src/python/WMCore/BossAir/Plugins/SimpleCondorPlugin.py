@@ -321,7 +321,7 @@ class SimpleCondorPlugin(BasePlugin):
                                         logOutput += condorReason
                                         if "SYSTEM_PERIODIC_REMOVE" in condorReason or "via condor_rm" in condorReason:
                                             exitCode = 99400
-                                            exitType = "RemovedByGLIDEIN"
+                                            exitType = "RemovedByGlideinOrPeriodicExpr"
                                         else:
                                             exitCode = 99401
 

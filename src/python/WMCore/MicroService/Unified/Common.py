@@ -341,8 +341,13 @@ def getNCopies(cpuHours, minN=2, maxN=3, weight=50000, constant=100000):
 
 
 def teraBytes(size):
-    "Return size in TB"
-    return float(size) / float(1024 ** 4)
+    "Return size in TB (Terabytes)"
+    return size / (1000 ** 4)
+
+
+def gigaBytes(size):
+    "Return size in GB (Gigabytes), rounded to 2 digits"
+    return round(size / (1000 ** 3), 2)
 
 
 def ckey():

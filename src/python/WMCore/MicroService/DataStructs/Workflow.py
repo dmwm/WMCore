@@ -5,8 +5,8 @@ required by MS Transferor
 from __future__ import division, print_function
 
 import operator
-
 from WMCore.DataStructs.LumiList import LumiList
+from WMCore.MicroService.Unified.Common import getMSLogger, gigaBytes
 
 
 class Workflow(object):
@@ -15,9 +15,11 @@ class Workflow(object):
     its information within MS
     """
 
-    def __init__(self, reqName, reqData):
+    def __init__(self, reqName, reqData, logger=None, verbose=False):
         self.reqName = reqName
         self.data = reqData
+        self.logger = getMSLogger(verbose, logger)
+
         self.inputDataset = ""
         self.parentDataset = ""
         self.pileupDatasets = set()
@@ -270,49 +272,64 @@ class Workflow(object):
         of chunks (usually the amount of sites available for data
         placement).
         :param numChunks: integer representing the number of chunks to be created
-        :return: a list of sets, where each set corresponds to a set of blocks to be
-        transferred to a single location
+        :return: it returns two lists:
+          * a list of sets, where each set corresponds to a set of blocks to be
+            transferred to a single location;
+          * and a list integers, which references the total size of each chunk in
+            the list above (same order).
         """
         if numChunks <= 1:
-            blockList = self.getPrimaryBlocks().keys()
+            thisChunk = set()
+            thisChunk.update(self.getPrimaryBlocks().keys())
+            thisChunkSize = sum(self.getPrimaryBlocks().values())
             if self.getParentDataset():
-                blockList.extend(self.getParentBlocks().keys())
-            return blockList
+                thisChunk.update(self.getParentBlocks().keys())
+                thisChunkSize += sum(self.getParentBlocks().values())
+            # keep same data structure as multiple chunks, so list of lists
+            return [thisChunk], [thisChunkSize]
 
         # create a descendant list of blocks according to their sizes
         sortedPrimary = sorted(self.getPrimaryBlocks().items(), key=operator.itemgetter(1), reverse=True)
         chunkSize = sum(item[1] for item in sortedPrimary) // numChunks
 
+        self.logger.info("Found %d blocks and the avg chunkSize is: %s GB",
+                         len(sortedPrimary), gigaBytes(chunkSize))
         # list of sets with the block names
         blockChunks = []
         # list of integers with the total block sizes in each chunk (same order as above)
-        chunksSize = []
+        sizeChunks = []
         for i in range(numChunks):
             thisChunk = set()
             thisChunkSize = 0
             idx = 0
             while True:
-                if sortedPrimary[idx][1] <= chunkSize:
+                self.logger.debug("Chunk: %d and idx: %s and length: %s", i, idx, len(sortedPrimary))
+                if not sortedPrimary or idx >= len(sortedPrimary):
+                    # then all blocks have been distributed
+                    break
+                elif thisChunkSize + sortedPrimary[idx][1] <= chunkSize:
                     thisChunk.add(sortedPrimary[idx][0])
                     thisChunkSize += sortedPrimary[idx][1]
                     sortedPrimary.pop(idx)
                 else:
                     idx += 1
-                    if idx >= len(sortedPrimary):
-                        break
             blockChunks.append(thisChunk)
-            chunksSize.append(thisChunkSize)
+            sizeChunks.append(thisChunkSize)
 
         # now take care of the leftovers... in a round-robin style....
         while sortedPrimary:
             for chunkNum in range(numChunks):
                 blockChunks[chunkNum].add(sortedPrimary[0][0])
-                chunksSize[chunkNum] += sortedPrimary[0][0]
+                sizeChunks[chunkNum] += sortedPrimary[0][1]
                 sortedPrimary.pop(0)
                 if not sortedPrimary:
                     break
-        print("AMR primary!!! Chunks size distribution: %s" % chunksSize)
-        print("AMR primary!!! Created %d chunks out of %d chunks" % (len(blockChunks), numChunks))
+        self.logger.info("Created %d primary data chunks out of %d chunks",
+                         len(blockChunks), numChunks)
+        self.logger.info("    with chunk size distribution: %s", sizeChunks)
+
+        if not self.getParentDataset():
+            return blockChunks, sizeChunks
 
         # now add the parent blocks, considering that input blocks were evenly
         # distributed, I'd expect the same to automatically happen to the parents...
@@ -327,10 +344,11 @@ class Workflow(object):
             # of blocks within the chunk and update the chunk size as well
             blockChunks[chunkNum].update(parentSet)
             for parent in parentSet:
-                chunkSize[chunkNum] += parentsSize[parent]
-        print("AMR parents!!! Chunks size distribution: %s" % chunksSize)
-        print("AMR parents!!! Created %d chunks out of %d chunks" % (len(blockChunks), numChunks))
-
+                sizeChunks[chunkNum] += parentsSize[parent]
+        self.logger.info("Created %d primary+parent data chunks out of %d chunks",
+                         len(blockChunks), numChunks)
+        self.logger.info("    with chunk size distribution: %s", sizeChunks)
+        return blockChunks, sizeChunks
 
     def _getValue(self, keyName, defaultValue=None):
         """

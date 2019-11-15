@@ -1,3 +1,16 @@
+1.2.8 to 1.2.9.pre1:
+  - Dont call the same CouchDB view twice; support status+type+requestor in the ReqMgr2 REST API (Alan Malta Rodrigues) #9421
+  - Revert "No need to insert output files into WMBS if the job failed" (Alan Malta Rodrigues) #9422
+  - CouchDB ReqMgr view for status+type+requestor (Alan Malta Rodrigues) #9421
+  - More explantory exitType for jobs removed by pilot (Todor Ivanov) #9420
+  - Bump WMAgent deployment to 1.2.8 (Alan Malta Rodrigues) #9417
+  - unit tests and pylint fixes (Alan Malta Rodrigues) #9394
+  - Added wrapper APIs for PhEDEx group and Rucio account usage (Alan Malta Rodrigues) #9394
+  - Pylint fixes (Todor Ivanov) #9400
+  - Clear all occurrences of the typo: 'ouput -> output' fix #9390 (Todor Ivanov) #9400
+  - No need to insert output files into WMBS if the job failed (Alan Malta Rodrigues) #9403
+
+
 1.2.8.pre3 to 1.2.8:
 
 

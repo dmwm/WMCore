@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import unittest
+import time
 from httplib import HTTPException
 
 from WMCore_t.ReqMgr_t.TestConfig import config
@@ -207,8 +208,17 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         res = self.jsonSender.get("data/transferinfo/ALL_DOCS")  # views still to be updated...
         self.assertEqual(len(res[0]["result"]), 1)
 
-        res = self.jsonSender.get("data/transferinfo/ALL_DOCS")
-        self.assertEqual(len(res[0]["result"]), 2)
+        # trick to make sure views have been updated
+        for i in range(3):
+            try:
+                res = self.jsonSender.get("data/transferinfo/ALL_DOCS")
+                self.assertEqual(len(res[0]["result"]), 2)
+            except AssertionError:
+                if i == 2:
+                    raise
+                else:
+                    print("waiting 1 second for views to be updated...")
+                    time.sleep(1)
 
 
 if __name__ == "__main__":

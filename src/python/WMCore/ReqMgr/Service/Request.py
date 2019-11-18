@@ -2,6 +2,7 @@
 ReqMgr request handling.
 
 """
+from __future__ import print_function
 
 import json
 import traceback
@@ -25,6 +26,7 @@ from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, valida
                                             validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WMCore.Services.NATS import NATS
 
 
 class Request(RESTEntity):
@@ -35,6 +37,9 @@ class Request(RESTEntity):
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp="ReqMgr")
         # this need for the post validtiaon
         self.gq_service = WorkQueue(config.couch_host, config.couch_workqueue_db)
+
+        # initialize NATS if requested
+        self.nats = NATS(config)
 
     def _validateGET(self, param, safe):
         # TODO: need proper validation but for now pass everything
@@ -271,13 +276,13 @@ class Request(RESTEntity):
             _rev: 4-c6ceb2737793aaeac3f1cdf591593da4
 
         """
-        ### pop arguments unrelated to the user query
+        # pop arguments unrelated to the user query
         mask = kwargs.pop("mask", [])
         detail = kwargs.pop("detail", True)
         common_dict = int(kwargs.pop("common_dict", 0))  # modifies the response format
         nostale = kwargs.pop("_nostale", False)
 
-        ### these are the query strings supported by this API
+        # these are the query strings supported by this API
         status = kwargs.get("status", [])
         name = kwargs.get("name", [])
         request_type = kwargs.get("request_type", [])
@@ -503,6 +508,7 @@ class Request(RESTEntity):
             else:
                 msg = "There are invalid arguments with this status transition: %s" % request_args
                 raise InvalidSpecParameterValue(msg)
+            self.nats.request2NATS(workload, request_args)
 
         if report == 'OK':
             return {workload.name(): "OK"}
@@ -546,6 +552,9 @@ class Request(RESTEntity):
 
         # Add initial priority only for the creation of the request
         request_args['InitialPriority'] = request_args["RequestPriority"]
+
+        # publish message to NATS server
+        self.nats.request2NATS(workload, request_args)
 
         return
 

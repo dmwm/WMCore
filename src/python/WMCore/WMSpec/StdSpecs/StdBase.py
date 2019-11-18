@@ -243,6 +243,7 @@ class StdBase(object):
         monitoring.PerformanceMonitor.maxPSS = maxpss
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
+        monitoring.section_("NATSMonitor")
         return task
 
     def reportWorkflowToDashboard(self, dashboardActivity):

@@ -20,11 +20,12 @@ class MSMonitor(MSCore):
     MSMonitor class provide whole logic behind
     the transferor monitoring module.
     """
+
     def __init__(self, msConfig, logger=None):
         super(MSMonitor, self).__init__(msConfig, logger)
         # update interval is used to check records in CouchDB and update them
         # after this interval, default 6h
-        self.updateInterval = self.msConfig.get('updateInterval', 6*60*60)
+        self.updateInterval = self.msConfig.get('updateInterval', 6 * 60 * 60)
 
     def updateCaches(self):
         """
@@ -79,8 +80,7 @@ class MSMonitor(MSCore):
             # get requests from ReqMgr2 data-service for given status
             # here with detail=False we get back list of records
             requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=False)
-            self.logger.debug('+++ monit found %s requests in %s state',
-                              len(requests), reqStatus)
+            self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
 
             campaigns, transferRecords = self.updateCaches()
             if not campaigns or not transferRecords:
@@ -89,8 +89,8 @@ class MSMonitor(MSCore):
                 self.logger.error(msg)
                 return
             transferRecords = self.filterTransferDocs(requests, transferRecords)
-        except Exception as err:  # general error
-            self.logger.exception('Failed to bootstrap the MSMonitor thread. Error: %s', str(err))
+        except Exception as ex:  # general error
+            self.logger.exception('Unknown exception bootstrapping the MSMonitor thread. Error: %s', str(ex))
             return
 
         try:
@@ -105,12 +105,14 @@ class MSMonitor(MSCore):
                     msg += "the transfer document failed to get updated"
                     self.logger.warning(msg)
                     continue
-                self.change(reqName, 'staged', '+++ monit')
-                msg = "%s updated %d transfer records and " % (self.__class__.__name__, len(transferRecords))
-                msg += "changed the request status for %d workflows" % (len(requestsToStage) - len(failedDocs))
-                self.logger.info(msg)
-        except Exception as err:  # general error
-            self.logger.exception('+++ monit error: %s', str(err))
+                self.change(reqName, 'staged', self.__class__.__name__)
+            msg = "%s processed %d transfer records, where " % (self.__class__.__name__, len(transferRecords))
+            msg += "%d completed their data transfers and " % len(requestsToStage)
+            msg += "%d failed to get their transfer documents updated in CouchDB." % len(failedDocs)
+            self.logger.info(msg)
+        except Exception as ex:
+            self.logger.exception("Unknown exception processing the transfer records. Error: %s", str(ex))
+            return
 
     def getTransferInfo(self, transferRecords):
         """
@@ -174,7 +176,7 @@ class MSMonitor(MSCore):
                             completion.append(int(subs['percent_files']))
         if not completion:
             return 0
-        return sum(completion)/len(completion)
+        return sum(completion) / len(completion)
 
     def getCompletedWorkflows(self, transfers, campaigns):
         """

@@ -1,3 +1,11 @@
+1.2.9.pre1 to 1.2.9.pre2:
+  - Fix summary message in MSMonitor; other minor improvements (Alan Malta Rodrigues) #9429
+  - Fix cacheduration settings for MicroServices (Alan Malta Rodrigues) #9427
+  - fix unstable unit test (Alan Malta Rodrigues) #9416
+  - Keep record of data volume subscribed; continuously evalute node usage (Alan Malta Rodrigues) #9416
+  - Fetch quota from Detox; fetch usage from Rucio/PhEDEx; input primary/parent block placement made by chunks (Alan Malta Rodrigues) #9416
+
+
 1.2.8 to 1.2.9.pre1:
   - Dont call the same CouchDB view twice; support status+type+requestor in the ReqMgr2 REST API (Alan Malta Rodrigues) #9421
   - Revert "No need to insert output files into WMBS if the job failed" (Alan Malta Rodrigues) #9422

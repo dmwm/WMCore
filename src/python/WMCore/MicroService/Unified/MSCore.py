@@ -29,12 +29,11 @@ class MSCore(object):
         """
         self.logger = getMSLogger(getattr(msConfig, 'verbose', False), logger)
         self.msConfig = msConfig
-        self.logger.info(
-            "Configuration including default values:\n%s", self.msConfig)
+        self.logger.info("Configuration including default values:\n%s", self.msConfig)
 
         self.reqmgr2 = ReqMgr(self.msConfig['reqmgrUrl'], logger=self.logger)
         self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgrUrl'],
-                                   httpDict={'cacheduration': 60},
+                                   httpDict={'cacheduration': 1.0},
                                    logger=self.logger)
 
         # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
@@ -42,10 +41,10 @@ class MSCore(object):
         if usingRucio():
             # FIXME: we cannot use Rucio in write mode yet
             # self.rucio = Rucio(self.msConfig['rucioAccount'], configDict={"logger": self.logger})
-            self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
+            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5},
                                  dbsUrl=dbsUrl, logger=self.logger)
         else:
-            self.phedex = PhEDEx(httpDict={'cacheduration': 10 * 60},
+            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5},
                                  dbsUrl=dbsUrl, logger=self.logger)
 
     def unifiedConfig(self):
@@ -65,7 +64,7 @@ class MSCore(object):
         """
         Update the request status in ReqMgr2
         """
-        self.logger.info('%s updating %s status to %s', prefix, reqName, reqStatus)
+        self.logger.info('%s updating %s status to: %s', prefix, reqName, reqStatus)
         try:
             if not self.msConfig['readOnly']:
                 self.reqmgr2.updateRequestStatus(reqName, reqStatus)

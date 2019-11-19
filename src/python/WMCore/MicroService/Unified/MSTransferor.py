@@ -4,6 +4,9 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
              Alan Malta <alan dot malta AT cern dot ch >
 Description: MSTransferor class provide whole logic behind
 the transferor module.
+
+This is NOT a thread-safe module, even though some internal
+tasks might be extended to multi-threading in the future.
 """
 # futures
 from __future__ import division, print_function
@@ -12,13 +15,30 @@ from __future__ import division, print_function
 from httplib import HTTPException
 from operator import itemgetter
 from pprint import pformat
+from retry import retry
 
 # WMCore modules
 from Utils.IteratorTools import grouper
+from WMCore.MicroService.Unified.Common import gigaBytes
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
+from WMCore.MicroService.Unified.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
+
+
+def newTransferRec(dataIn):
+    """
+    Create a basic transfer record to be appended to a transfer document
+    :param dataIn: dictionary with information relevant to this transfer doc
+    :return: a transfer record dictionary
+    """
+    transferRecord = {"dataset": dataIn['name'],
+                      "dataType": dataIn['type'],
+                      "transferIDs": set(),  # casted to list before going to couch
+                      "campaignName": dataIn['campaign'],
+                      "completion": [0.0]}
+    return transferRecord
 
 
 class MSTransferor(MSCore):
@@ -33,7 +53,20 @@ class MSTransferor(MSCore):
         :param microConfig: microservice configuration
         """
         super(MSTransferor, self).__init__(msConfig, logger)
+        # url for fetching the storage quota
+        detoxUrl = self.msConfig.get("detoxUrl",
+                                     "http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt")
+        quotaFraction = self.msConfig.get("quotaUsage", 0.8)  # use only 80% of the quota
+        # now a PhEDEx group name, then the Rucio account name in the near future
+        dataAcct = self.msConfig.get("quotaAccount", "DataOps")
+        # minimum available storage to consider a resource good for receiving data
+        minimumThreshold = self.msConfig.get("minimumThreshold", 1 * (1000 ** 4))  # 1TB
+
+        self.rseQuotas = RSEQuotas(detoxUrl, dataAcct, quotaFraction, useRucio=hasattr(self, "rucio"),
+                                   logger=logger, verbose=self.msConfig.get('verbose'),
+                                   minimumThreshold=minimumThreshold)
         self.reqInfo = RequestInfo(msConfig, logger)
+
         self.cric = CRIC(logger=self.logger)
         self.inputMap = {"InputDataset": "primary",
                          "MCPileup": "secondary",
@@ -44,14 +77,24 @@ class MSTransferor(MSCore):
         self.dsetCounter = 0
         self.blockCounter = 0
 
+    @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
         """
         Fetch some data required for the transferor logic, e.g.:
+         * quota from detox (or Rucio)
+         * storage usage and available from Rucio (or PhEDEx)
          * unified configuration
          * all campaign configuration
          * PSN to PNN map from CRIC
-        :return: True if all of them succeeded, else False
         """
+        self.logger.info("Updating RSE/PNN quota and usage")
+        self.rseQuotas.fetchStorageQuota()
+        self.rseQuotas.fetchStorageUsage(getattr(self, "rucio", self.phedex))
+        self.rseQuotas.evaluateQuotaExceeded()
+        if not self.rseQuotas.getNodeUsage():
+            raise RuntimeWarning("Failed to fetch storage usage stats")
+
+        self.logger.info("Updating all local caches...")
         self.dsetCounter = 0
         self.blockCounter = 0
         self.uConfig = self.unifiedConfig()
@@ -60,19 +103,16 @@ class MSTransferor(MSCore):
         # also clear the RequestInfo pileup cache
         self.reqInfo.clearPileupCache()
         if not self.uConfig:
-            self.logger.warning("Failed to fetch the unified configuration")
+            raise RuntimeWarning("Failed to fetch the unified configuration")
         elif not campaigns:
-            self.logger.warning("Failed to fetch the campaign configurations")
+            raise RuntimeWarning("Failed to fetch the campaign configurations")
         elif not self.psn2pnnMap:
-            self.logger.warning("Failed to fetch PSN x PNN map from CRIC")
+            raise RuntimeWarning("Failed to fetch PSN x PNN map from CRIC")
         else:
             # let's make campaign look-up easier and more efficient
             self.campaigns = {}
             for camp in campaigns:
                 self.campaigns[camp['CampaignName']] = camp
-            return True
-
-        return False
 
     def execute(self, reqStatus):
         """
@@ -82,15 +122,19 @@ class MSTransferor(MSCore):
         """
         try:
             requestRecords = self.getRequestRecords(reqStatus)
-            self.logger.debug('### transferor found %s requests in %s state',
-                              len(requestRecords), reqStatus)
+            self.logger.info('  retrieved %s requests.', len(requestRecords))
         except Exception as err:  # general error
-            self.logger.exception('### transferor error: %s', str(err))
+            self.logger.exception('Unknown exception while fetching requests from ReqMgr2', str(err))
 
-        if not self.updateCaches():
-            # then wait until the next cycle
-            msg = "Failed to fetch data from one of the data sources. Retrying again in the next cycle"
+        try:
+            self.updateCaches()
+        except RuntimeWarning as ex:
+            msg = "All retries exhausted! Last error was: '%s'" % str(ex)
+            msg += "\nRetrying to update caches again in the next cycle."
             self.logger.error(msg)
+            return
+        except Exception as ex:
+            self.logger.exception("Unknown exception updating caches. Error: %s", str(ex))
             return
 
         # process all requests
@@ -120,6 +164,7 @@ class MSTransferor(MSCore):
         and return a subset of each request with important information for the
         data placement algorithm.
         """
+        self.logger.info("Fetching requests in status: %s", reqStatus)
         # get requests from ReqMgr2 data-service for given statue
         reqData = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
 
@@ -133,9 +178,9 @@ class MSTransferor(MSCore):
 
     def makeTransferRequest(self, wflow):
         """
-        Send request to Phedex and return status of request subscription
-        :param req: request object
-        :return: subscriptoin dictionary {"dataset":transferIDs}
+        Send request to PhEDEx and return status of request subscription
+        :param wflow: workflow object
+        :return: subscription dictionary {"dataset":transferIDs}
         """
         success = True
         self.logger.info("Handling data subscriptions for request: %s", wflow.getName())
@@ -152,20 +197,28 @@ class MSTransferor(MSCore):
                 self.logger.warning(msg)
                 return False, response
 
-            transRec = self._makeTransferRec(dataIn)
-            for nodes, blocks in self._decideDataDestination(wflow, dataIn):
-                if not blocks:
+            nodes = self._getValidSites(wflow, dataIn)
+            if not nodes:
+                msg = "There are no RSEs with available space for %s. " % wflow.getName()
+                msg += "Skipping this workflow until RSEs get enough free space"
+                self.logger.warning(msg)
+                return False, response
+
+            transRec = newTransferRec(dataIn)
+            for blocks, dataSize, idx in self._decideDataDestination(wflow, dataIn, len(nodes)):
+                if not blocks and dataIn["type"] == "primary":
+                    # no valid files in any blocks, it will likely fail in global workqueue
+                    return success, response
+                if blocks:
+                    subLevel = "block"
+                    data = {dataIn['name']: blocks}
+                else:
                     # then it's a dataset level subscription
                     subLevel = "dataset"
                     data = None
-                else:
-                    subLevel = "block"
-                    data = {dataIn['name']: blocks}
-                if not nodes and not blocks:
-                    # no valid files in any blocks, let it go and fail at the workqueue level
-                    return success, response
+
                 subscription = PhEDExSubscription(datasetPathList=dataIn['name'],
-                                                  nodeList=nodes,
+                                                  nodeList=nodes[idx],
                                                   group=self.msConfig['group'],
                                                   level=subLevel,  # use dataset for premix
                                                   priority="low",
@@ -175,7 +228,7 @@ class MSTransferor(MSCore):
                 msg = "Creating '%s' level subscription for %s dataset: %s" % (subscription.level,
                                                                                dataIn['type'],
                                                                                dataIn['name'])
-                if dataIn['type'] == "parent":
+                if wflow.getParentDataset():
                     msg += ", where parent blocks have also been added for dataset: %s" % wflow.getParentDataset()
                 self.logger.info(msg)
 
@@ -183,55 +236,77 @@ class MSTransferor(MSCore):
                     self.logger.info("TODO readOnly mode, subscription not made. Faking id to 1111")
                     transRec['transferIDs'].add(1111)  # any fake number
                 else:
-                    try:
-                        if hasattr(self, "rucio"):
-                            # FIXME: then it should create a Rucio rule instead
-                            res = self.phedex.subscribe(subscription)
-                        else:
-                            res = self.phedex.subscribe(subscription)
-                        self.logger.debug("Subscription done, result: %s", res)
-                    except HTTPException as ex:
-                        # It might be that the block has no more replicas (all files invalidated)
-                        # let it go and fail at global workqueue level
-                        msg = "Subscription failed for workflow: %s and dataset: %s " % (wflow.getName(),
-                                                                                         dataIn['name'])
-                        if ex.status == 400 and "request matched no data in TMDB" in ex.reason:
-                            msg += "because data cannot be found in TMDB. Bypassing this/these blocks..."
-                            self.logger.warning(msg)
-                        else:
-                            msg += "with status code: %s and result: %s. " % (ex.status, ex.result)
-                            msg += "It will be retried in the next cycle"
-                            self.logger.error(msg)
-                            success = False
-                            break
-                    except Exception as ex:
-                        msg = "Unknown exception while subscribing data for workflow: %s " % wflow.getName()
-                        msg += "and dataset: %s. Will retry again later. Error details: %s" % (dataIn['name'],
-                                                                                               str(ex))
-                        self.logger.exception(msg)
-                        success = False
+                    # Then make the data subscription, for real!!!
+                    success, transferId = self._subscribeData(subscription, wflow.getName(), dataIn['name'])
+                    if not success:
                         break
-                    else:
-                        transferId = res['phedex']['request_created'][0]['id']
+                    if transferId:
                         transRec['transferIDs'].add(transferId)
+
+                    # and update some instance caches
+                    self.rseQuotas.updateNodeUsage(nodes[idx], dataSize)
+                    if subLevel == 'dataset':
+                        self.dsetCounter += 1
+                    else:
+                        self.blockCounter += len(blocks)
+
             transRec['transferIDs'] = list(transRec['transferIDs'])
             response.append(transRec)
+
+        # once the workflow has been completely processed, update the node usage
+        self.rseQuotas.evaluateQuotaExceeded()
         return success, response
 
-    def _decideDataDestination(self, wflow, dataIn):
+    def _subscribeData(self, subscriptionObj, wflowName, dsetName):
         """
-        Given a global list of blocks and the campaign configuration,
-        decide which blocks have to be transferred and to where.
-        :param sites: list of all sites that can host part of the data
-        :param campaign: campaign name
-        :param dataType: type of data we're going to transfer
-        :param blocks: list of block names and their size (and parents, if any)
-        :return: yield the node and a list of block names to be transferred
+        Make the actual PhEDEx subscription - or create a Rucio rule - for the
+        input data placement
+        :param subscriptionObj:
+        :param wflowName:
+        :param dsetName:
+        :return:
         """
-        # FIXME: implement multiple copies (MaxCopies > 1)
-        blockList = []
-        dsetName = dataIn["name"]
+        success, transferId = True, 0
+        try:
+            if hasattr(self, "rucio"):
+                # FIXME: then it should create a Rucio rule instead
+                res = self.phedex.subscribe(subscriptionObj)
+            else:
+                res = self.phedex.subscribe(subscriptionObj)
+            self.logger.debug("Subscription done, result: %s", res)
+        except HTTPException as ex:
+            # It might be that the block has no more replicas (all files invalidated)
+            # let it go and fail at global workqueue level
+            msg = "Subscription failed for workflow: %s and dataset: %s " % (wflowName, dsetName)
+            if ex.status == 400 and "request matched no data in TMDB" in ex.reason:
+                msg += "because data cannot be found in TMDB. Bypassing this/these blocks..."
+                self.logger.warning(msg)
+            else:
+                msg += "with status code: %s and result: %s. " % (ex.status, ex.result)
+                msg += "It will be retried in the next cycle"
+                self.logger.error(msg)
+                success = False
+        except Exception as ex:
+            msg = "Unknown exception while subscribing data for workflow: %s " % wflowName
+            msg += "and dataset: %s. Will retry again later. Error details: %s" % (dsetName, str(ex))
+            self.logger.exception(msg)
+            success = False
+        else:
+            transferId = res['phedex']['request_created'][0]['id']
 
+        return success, transferId
+
+    def _getValidSites(self, wflow, dataIn):
+        """
+        Given a workflow object and the data short summary, find out
+        the Campaign name, the workflow SiteWhitelist, map the PSNs to
+        PNNs and finally remove PNNs without space
+        can still receive data
+        :param wflow: the workflow object
+        :param dataIn: short summary of data to be transferred
+        :return: a unique and ordered list of PNNs to take data
+        """
+        dsetName = dataIn["name"]
         campConfig = self.campaigns[dataIn['campaign']]
         psns = wflow.getSitelist()
 
@@ -240,18 +315,6 @@ class MSTransferor(MSCore):
                 psns = set(psns) & set(campConfig['SiteWhiteList'])
             if campConfig['SiteBlackList']:
                 psns = set(psns) - set(campConfig['SiteBlackList'])
-            nodes = self._getFinalPNNs(psns)
-            blockList = wflow.getPrimaryBlocks().keys()
-            # YES, parents go together with the primary data
-            if wflow.getParentDataset():
-                blockList.extend(wflow.getParentBlocks().keys())
-            if not blockList:
-                # use empty nodes to avoid making a dataset level subscription
-                self.logger.warning("  found 0 primary blocks to be transferred, just move on...")
-                nodes = []
-            self.logger.info("Placing %d blocks for dataset: %s at %s", len(blockList), dsetName, nodes)
-            self.blockCounter += len(blockList)
-            yield nodes, blockList
         elif dataIn["type"] == "secondary":
             # if the dataset has a location list, use solely that one
             if campConfig['Secondaries'].get(dsetName, []):
@@ -265,48 +328,73 @@ class MSTransferor(MSCore):
                         psns = set(psns) & set(campConfig['SiteWhiteList'])
                     if campConfig['SiteBlackList']:
                         psns = set(psns) - set(campConfig['SiteBlackList'])
-            nodes = self._getFinalPNNs(psns)
 
+        self.logger.info("  final list of PSNs to be use: %s", psns)
+        pnns = set()
+        for psn in psns:
+            for pnn in self.psn2pnnMap.get(psn, []):
+                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                    pass
+                else:
+                    pnns.add(pnn)
+
+        self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
+                         wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())
+        return list(pnns & self.rseQuotas.getAvailableRSEs())
+
+
+    def _decideDataDestination(self, wflow, dataIn, numNodes):
+        """
+        Given a global list of blocks and the campaign configuration,
+        decide which blocks have to be transferred and to where.
+        :param wflow: workflow object
+        :param dataIn: dictionary with a summary of the data to be placed
+        :param numNodes: amount of nodes/RSEs that can receive data
+        :return: yield a block list, the total chunk size and a node index
+        """
+        # FIXME: implement multiple copies (MaxCopies > 1)
+        blockList = []
+        dsetName = dataIn["name"]
+
+        ### NOTE: data placement done in a block basis
+        if dataIn["type"] == "primary":
+            listBlockSets, listSetsSize = wflow.getChunkBlocks(numNodes)
+            if not listBlockSets:
+                self.logger.warning("  found 0 primary/parent blocks for dataset: %s, moving on...", dsetName)
+                yield blockList, 0, 0
+            for idx, blocksSet in enumerate(listBlockSets):
+                self.logger.info("Have a chunk of %d blocks (%s GB) for dataset: %s",
+                                 len(blocksSet), gigaBytes(listSetsSize[idx]), dsetName)
+                yield blocksSet, listSetsSize[idx], idx
+        ### NOTE: data placement done in a dataset basis
+        elif dataIn["type"] == "secondary":
             # secondary datasets are transferred as a whole, until better days...
-            self.dsetCounter += 1
-            for node in nodes:
-                self.logger.info("Placing pileup dataset: %s at %s", dsetName, node)
-                yield node, blockList
+            dsetSize = wflow.getSecondarySummary()
+            for idx in range(numNodes):
+                self.logger.info("Have whole PU dataset: %s (%s GB)", dsetName, gigaBytes(dsetSize[dsetName]))
+                yield blockList, dsetSize[dsetName], idx
 
     def _getFinalPNNs(self, psns):
         """
-        Given a list of sites/PSNs, get their associated PNN.
-        Also applies some basic filters on the PNN resources
+        Given a list of sites/PSNs, get their associated PNN (dropping
+        PNNs invalid for data placement).
+        Lastly, filter out PNNs with no more space left for data placement.
         :param psns: list of sites
         :return: a flat list of PNNs
         """
         self.logger.info("  final list of PSNs to be use: %s", psns)
-        # TODO: how to equally distribute data  on sites with > 1 PNNs?
+        # TODO: how to evenly distribute data on sites with > 1 PNNs?
         pnns = set()
         for psn in psns:
             for pnn in self.psn2pnnMap.get(psn, []):
-                if pnn == "T2_CH_CERNBOX":
-                    self.logger.info("%s maps to %s, skipping it.", psn, pnn)
-                elif pnn.startswith("T3_"):
-                    self.logger.info("%s maps to a T3 PNN resource: %s, skipping it.", psn, pnn)
-                elif pnn.endswith("_MSS") or pnn.endswith("_Export"):
-                    self.logger.info("%s maps to a archival storage PNN: %s, skipping it.", psn, pnn)
+                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                    pass
                 else:
                     pnns.add(pnn)
-        return list(pnns)
 
-    def _makeTransferRec(self, dataIn):
-        """
-        Create a basic transfer record to be appended to a transfer document
-        :param data:
-        :return: a dictionary
-        """
-        transferRecord = {"dataset": dataIn['name'],
-                          "dataType": dataIn['type'],
-                          "transferIDs": set(),  # casted to list before going to couch
-                          "campaignName": dataIn['campaign'],
-                          "completion": [0.0]}
-        return transferRecord
+        self.logger.info("List of out-of-space RSEs dropped for this dataset: %s",
+                         pnns & self.rseQuotas.getOutOfSpaceRSEs())
+        return list(pnns & self.rseQuotas.getAvailableRSEs())
 
     def createTransferDoc(self, reqName, transferRecords):
         """

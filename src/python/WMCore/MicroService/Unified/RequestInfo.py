@@ -57,7 +57,7 @@ class RequestInfo(MSCore):
         # create a Workflow object representing the request
         workflows = []
         for record in reqRecords:
-            wflow = Workflow(record['RequestName'], record)
+            wflow = Workflow(record['RequestName'], record, logger=self.logger)
             workflows.append(wflow)
             msg = "Processing request: %s, with campaigns: %s, " % (wflow.getName(),
                                                                     wflow.getCampaigns())

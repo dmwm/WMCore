@@ -83,6 +83,7 @@ class GenericDataCache(object):
         elif not isinstance(memoryCache, MemoryCacheStruct):
             raise CacheWithWrongStructException(cacheName)
         else:
+            logging.info("Creating generic cache named: %s", cacheName)
             GenericDataCache._dataCache[cacheName] = memoryCache
 
     @staticmethod

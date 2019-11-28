@@ -3,8 +3,7 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
-from retry import retry
-
+from hashlib import md5
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.Auth import getWritePermission
@@ -12,7 +11,7 @@ from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initializ
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
+from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
@@ -251,15 +250,6 @@ def validateOutputDatasets(outDsets, dbsUrl):
     _validateDatatier(datatier, dbsUrl)
 
 
-@retry(tries=5, delay=1)
-def _listDatatiers(dbsUrl):
-    """
-    Query DBS for list of data tiers.
-    If exception is raised, retry up to 5 times with a 1 second delay.
-    """
-    dbsTiers = DBSReader.listDatatiers(dbsUrl)
-    return dbsTiers
-
 def _validateDatatier(datatier, dbsUrl, expiration=3600):
     """
     _validateDatatier_
@@ -267,12 +257,12 @@ def _validateDatatier(datatier, dbsUrl, expiration=3600):
     Provided a list of datatiers extracted from the outputDatasets, checks
     whether they all exist in DBS.
     """
-    cacheName = "dataTierList"
+    cacheName = "dataTierList_" + md5(dbsUrl).hexdigest()
     if not GenericDataCache.cacheExists(cacheName):
-        mc = MemoryCacheStruct(expiration, _listDatatiers, kwargs={'dbsUrl': dbsUrl})
+        mc = MemoryCacheStruct(expiration, getDataTiers, kwargs={'dbsUrl': dbsUrl})
         GenericDataCache.registerCache(cacheName, mc)
 
-    cacheData = GenericDataCache.getCacheData('dataTierList')
+    cacheData = GenericDataCache.getCacheData(cacheName)
     dbsTiers = cacheData.getData()
     badTiers = list(set(datatier) - set(dbsTiers))
     if badTiers:

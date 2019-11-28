@@ -8,9 +8,9 @@ Readonly DBS Interface
 from __future__ import print_function, division
 
 import logging
-import time
 import traceback
 from collections import defaultdict
+from retry import retry
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from dbs.apis.dbsClient import DbsApi
@@ -46,6 +46,18 @@ def remapDBS3Keys(data, stringify=False, **others):
     return data
 
 
+@retry(tries=3, delay=1)
+def getDataTiers(dbsUrl):
+    """
+    Function to retrieve all the datatiers from DBS.
+    NOTE: to be used with some caching (MemoryCacheStruct)
+    :param dbsUrl: the DBS URL string
+    :return: a list of strings/datatiers
+    """
+    dbs = DbsApi(dbsUrl)
+    return [tier['data_tier_name'] for tier in dbs.listDataTiers()]
+
+
 # emulator hook is used to swap the class instance
 # when emulator values are set.
 # Look WMQuality.Emulators.EmulatorSetup module for the values
@@ -56,8 +68,6 @@ class DBS3Reader(object):
 
     General API for reading data from DBS
     """
-    # cache all the datatiers known by DBS
-    _datatiers = {}
 
     def __init__(self, url, logger=None, **contact):
 
@@ -260,40 +270,13 @@ class DBS3Reader(object):
         """
         return [x['logical_file_name'] for x in self.dbs.listFileArray(dataset=datasetPath)]
 
-    @staticmethod
-    def listDatatiers(dbsUrl=None):
+    def listDatatiers(self):
         """
         _listDatatiers_
 
         Get a list of datatiers known by DBS.
         """
-        if dbsUrl is None:
-            msg = "Error in DBSReader.listDatatiers(). DBS Url not set."
-            raise DBSReaderError(msg)
-
-        timenow = int(time.time())
-        if DBS3Reader._datatiers and timenow - 7200 < DBS3Reader._datatiers['ts']:
-            return DBS3Reader._datatiers['tiers']
-
-        try:
-            DBS3Reader._setDatatiersCache(timenow, dbsUrl)
-        except Exception as ex:
-            if not DBS3Reader._datatiers:
-                msg = "Error in DBSReader.listDatatiers\n%s" % formatEx3(ex)
-                raise DBSReaderError(msg)
-        return DBS3Reader._datatiers['tiers']
-
-    @staticmethod
-    def _setDatatiersCache(ts, dbsUrl):
-        """
-        Set a timestamp and update the list of datatiers cached in
-        the class property
-        """
-        dbs = DbsApi(dbsUrl)
-        DBS3Reader._datatiers['ts'] = ts
-        DBS3Reader._datatiers['tiers'] = [tier['data_tier_name'] for tier in dbs.listDataTiers()]
-
-        return
+        return [tier['data_tier_name'] for tier in self.dbs.listDataTiers()]
 
     def listDatasetFileDetails(self, datasetPath, getParents=False, getLumis=True, validFileOnly=1):
         """

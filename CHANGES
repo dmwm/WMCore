@@ -1,3 +1,9 @@
+1.2.9.pre2 to 1.2.9.pre3:
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9444
+  - Keep different datatier caches for different DBS URLs (Alan Malta Rodrigues) #9444
+  - Adding an error message for missing PU dataset. (Todor Ivanov) #9433
+
+
 1.2.9.pre1 to 1.2.9.pre2:
   - Fix summary message in MSMonitor; other minor improvements (Alan Malta Rodrigues) #9429
   - Fix cacheduration settings for MicroServices (Alan Malta Rodrigues) #9427

@@ -674,6 +674,9 @@ class Database(CouchDBRequests):
         docs = self.allDocs(keys=ids)['rows']
         for j in docs:
             doc = {}
+            if "id" not in j:
+                print("Document not found: %s" % j)
+                continue
             doc["_id"] = j['id']
             doc["_rev"] = j['value']['rev']
             self.queueDelete(doc)

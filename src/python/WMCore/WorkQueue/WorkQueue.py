@@ -911,12 +911,14 @@ class WorkQueue(WorkQueueBase):
 
         # fetch workflows known to workqueue + workqueue_inbox and with spec attachments
         reqNames = self.backend.getWorkflows(includeInbox=True, includeSpecs=True)
+        self.logger.info("Retrieved %d workflows known by WorkQueue", len(reqNames))
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
         for key, value in requestsInfo.items():
             if (value["RequestStatus"] is None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
-
+        self.logger.info("Found %d out of %d workflows in a deletable state",
+                         len(deleteRequests), len(reqNames))
         return self.backend.deleteWQElementsByWorkflow(deleteRequests)
 
     def performSyncAndCancelAction(self, skipWMBS):
@@ -987,6 +989,7 @@ class WorkQueue(WorkQueueBase):
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
+        self.logger.info(msg)
         self.backend.recordTaskActivity('housekeeping', msg)
 
     def performQueueCleanupActions(self, skipWMBS=False):

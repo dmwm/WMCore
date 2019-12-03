@@ -496,11 +496,13 @@ class WorkQueueBackend(object):
         if this happens rerun.
         """
         for db in [self.inbox, self.db]:
+            print("Fixing conflicts in database: **%s**" % db.name)
             for row in db.loadView('WorkQueue', 'conflicts')['rows']:
                 element_id = row['id']
                 try:
                     conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev)) \
                                             for rev in row['value']]
+                    print("    Found %d revisions for document id: %s" % (len(conflicting_elements), element_id))
                     fixed_elements = fixElementConflicts(*conflicting_elements)
                     if self.saveElements(fixed_elements[0]):
                         self.saveElements(*fixed_elements[1:])  # delete others (if merged value update accepted)

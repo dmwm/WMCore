@@ -100,7 +100,7 @@ def fixElementConflicts(*elements):
     """
     ordered_states = ['Available', 'Negotiating', 'Acquired', 'Running',
                       'Done', 'Failed', 'CancelRequested', 'Canceled']
-    allowed_keys = ['Status', 'EventsWritten', 'FilesProcessed',
+    allowed_keys = ['Status', 'EventsWritten', 'FilesProcessed', 'ChildQueueUrl',
                     'PercentComplete', 'PercentSuccess', 'Inputs', 'NumOfFilesAdded',
                     'SubscriptionId', 'Priority', 'SiteWhitelist', 'SiteBlacklist']
     merged_value = None
@@ -131,6 +131,10 @@ def fixElementConflicts(*elements):
                     # take larger locations list
                     if merged_value[key][item] < ele[key].get(item, []):
                         merged_value[key][item] = ele[key][item]
+            elif key == 'ChildQueueUrl':
+                # FIXME: dangerous!!! keep value from the latest revision
+                if int(merged_value.rev.split('-')[0]) < int(ele.rev.split('-')[0]):
+                    merged_value[key] = ele[key]
             elif ele[key] > merged_value[key]:
                 merged_value[key] = ele[key]
             updated.add(key)
@@ -139,6 +143,11 @@ def fixElementConflicts(*elements):
 
     msg = 'Resolving conflict for wf "%s", id "%s": Remove rev(s): %s: Updates: (%s)'
     logging.info(msg % (str(merged_value['RequestName']),
+                             str(merged_value.id),
+                             ", ".join([x._document['_rev'] for x in elements[1:]]),
+                             "; ".join("%s=%s" % (x, merged_value[x]) for x in updated)
+                             ))
+    print(msg % (str(merged_value['RequestName']),
                              str(merged_value.id),
                              ", ".join([x._document['_rev'] for x in elements[1:]]),
                              "; ".join("%s=%s" % (x, merged_value[x]) for x in updated)

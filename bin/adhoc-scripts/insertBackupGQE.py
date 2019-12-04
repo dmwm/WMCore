@@ -84,14 +84,20 @@ def newQueueElement(doc):
     return ele
 
 
-def insertElements(backendObj, units):
+def insertElements(backendObj, wmspec, units):
     """
     Given a WorkQueueBackend object, use it to insert workqueue
-    elements against the workqueue global database
+    elements against the workqueue global database.
+    Also inserts its spec file
     """
     if not units:
         print("  Nothing to insert!")
         return
+
+    try:
+        backendObj.insertWMSpec(wmspec)
+    except Exception as exc:
+        print("Exception inserting SPEC document for %s. Error: %s" % (units[0]['RequestName'], str(exc)))
 
     newUnitsInserted = []
     for unit in units:
@@ -141,11 +147,15 @@ def updateGlobalWQEs(config, listWflows, emulate):
                 break
             newElements.append(newQueueElement(elem))
 
+        # Fetch the wmspec document from the backup database too
+        wmspec = backupBackend.getWMSpec(newElements[0]['RequestName'])
+
         if emulate:
             print("Not writing anything because it's running in dry-run mode!!!")
             break
-        res = insertElements(backend, newElements)
-        print("Result for %s is: %s\n" % (wflow, res))
+
+        insertElements(backend, wmspec, newElements)
+        print("Successfully inserted documents for: %s\n" % wflow)
         break
 
     return

@@ -351,7 +351,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         migratedBlocks = self.getMigrated.execute()
 
-        for siteName in migratedBlocks.keys():
+        for siteName in migratedBlocks:
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -372,25 +372,25 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error(msg)
                 continue
 
-            xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            logging.debug("closeBlocks XMLData: %s", xmlData)
+            for dset, blocks in migratedBlocks[siteName].items():
+                xmlData = self.createInjectionSpec({dset: blocks})
+                logging.debug("closeBlocks XMLData: %s", xmlData)
 
-            try:
-                injectRes = self.phedex.injectBlocks(location, xmlData)
-            except HTTPException as ex:
-                logging.error("PhEDEx block close failed with HTTPException: %s %s", ex.status, ex.result)
-            except Exception as ex:
-                msg = "PhEDEx block close failed with Exception: %s" % str(ex)
-                logging.exception(msg)
-            else:
-                logging.debug("Block closing result: %s", injectRes)
-
-                if "error" in injectRes:
-                    msg = "Error closing blocks with data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
-                    logging.error(msg)
+                try:
+                    injectRes = self.phedex.injectBlocks(location, xmlData)
+                except HTTPException as ex:
+                    logging.error("PhEDEx block close failed with HTTPException: %s %s", ex.status, ex.result)
+                except Exception as ex:
+                    msg = "PhEDEx block close failed with Exception: %s" % str(ex)
+                    logging.exception(msg)
                 else:
-                    for datasetName in migratedBlocks[siteName]:
-                        for blockName in migratedBlocks[siteName][datasetName]:
+                    logging.debug("Block closing result: %s", injectRes)
+
+                    if "error" in injectRes:
+                        logging.error("Failed to close blocks due to: %s, for data: %s",
+                                      injectRes["error"], migratedBlocks[siteName][dset])
+                    else:
+                        for blockName in blocks:
                             logging.info("Block closed in PhEDEx: %s", blockName)
                             self.setBlockClosed.execute(blockName)
 

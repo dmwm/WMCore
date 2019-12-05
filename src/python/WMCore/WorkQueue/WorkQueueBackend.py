@@ -575,14 +575,20 @@ class WorkQueueBackend(object):
         options["stale"] = "update_after"
         options["reduce"] = False
 
+        idsByWflow = {}
         for couchdb in dbs:
             result = couchdb.loadView("WorkQueue", "elementsByWorkflow", options, workflowNames)
-            ids = []
             for entry in result["rows"]:
-                ids.append(entry["id"])
-            if ids:
-                couchdb.bulkDeleteByIDs(ids)
-                deleted += len(ids)
+                idsByWflow.setdefault(entry['key'], [])
+                idsByWflow[entry['key']].append(entry['id'])
+            for wflow, docIds in idsByWflow.items():
+                self.logger.info("Going to delete %d documents in *%s* db for workflow: %s. Doc IDs: %s",
+                                 len(docIds), couchdb.name, wflow, docIds)
+                try:
+                    couchdb.bulkDeleteByIDs(docIds)
+                except CouchNotFoundError as exc:
+                    self.logger.error("Failed to find one of the documents. Error: %s", str(exc))
+                deleted += len(docIds)
         # delete the workflow with spec from workqueue db
         for wf in workflowNames:
             self.db.delete_doc(wf)

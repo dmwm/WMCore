@@ -1,3 +1,8 @@
+1.2.9.pre3 to 1.2.9.pre4:
+  - log workflows and doc ids going through a deletion process (Alan Malta Rodrigues) #9446
+  - Close PhEDEx blocks in smaller bulks of location and dataset (Alan Malta Rodrigues) #9438
+
+
 1.2.9.pre2 to 1.2.9.pre3:
   - fix unit tests and pylint (Alan Malta Rodrigues) #9444
   - Keep different datatier caches for different DBS URLs (Alan Malta Rodrigues) #9444

@@ -100,10 +100,16 @@ class SimpleCondorPlugin(BasePlugin):
 
         self.packageDir = None
 
-        if os.path.exists(os.path.join(getWMBASE(),
-                                       'src/python/WMCore/WMRuntime/Unpacker.py')):
-            self.unpacker = os.path.join(getWMBASE(),
-                                         'src/python/WMCore/WMRuntime/Unpacker.py')
+        # if agent is running in a container, Unpacker.py must come from a directory
+        # on the host so the condor schedd can see it
+        # config.General.workDir should always be bind mounted to the container
+        if getattr(config.Agent, "isDocker", False):
+            unpackerPath = os.path.join(config.General.workDir + "/Docker/WMRuntime/Unpacker.py")
+        else:
+            unpackerPath = os.path.join(getWMBASE(), 'src/python/WMCore/WMRuntime/Unpacker.py')
+
+        if os.path.exists(unpackerPath):
+            self.unpacker = unpackerPath
         else:
             self.unpacker = os.path.join(getWMBASE(),
                                          'WMCore/WMRuntime/Unpacker.py')

@@ -80,6 +80,7 @@ config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True
+config.Agent.isDocker = False
 
 config.section_("General")
 config.General.workDir = workDirectory

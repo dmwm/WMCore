@@ -1,3 +1,6 @@
+1.2.9.pre4 to 1.2.9:
+
+
 1.2.9.pre3 to 1.2.9.pre4:
   - log workflows and doc ids going through a deletion process (Alan Malta Rodrigues) #9446
   - Close PhEDEx blocks in smaller bulks of location and dataset (Alan Malta Rodrigues) #9438

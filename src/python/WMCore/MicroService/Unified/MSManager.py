@@ -92,25 +92,15 @@ class MSManager(object):
         Parse the MicroService configuration and set any default values.
         :param config: config as defined in the deployment
         """
-        self.logger.info("Using the following config:\n%s", config)
-
-        self.msConfig = {}
-        self.msConfig['verbose'] = getattr(config, 'verbose', False)
-        self.msConfig['group'] = getattr(config, 'group', 'DataOps')
-        self.msConfig['interval'] = getattr(config, 'interval', 5 * 60)
-        self.msConfig['readOnly'] = getattr(config, 'readOnly', True)
-        self.msConfig['rucioAccount'] = getattr(config, 'rucioAccount', 'wma_prod')
+        self.logger.info("Using the following MicroServices config: %s", config.dictionary_())
         self.services = getattr(config, 'services', [])
 
-        reqmgr2Url = 'https://cmsweb.cern.ch/reqmgr2'
-        self.msConfig['reqmgrUrl'] = getattr(config, 'reqmgr2Url', reqmgr2Url)
-        self.msConfig['reqmgrCacheUrl'] = \
-            self.msConfig['reqmgrUrl'].replace(
-                'reqmgr2', 'couchdb/reqmgr_workload_cache')
-        phedexUrl = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod'
-        self.msConfig['phedexUrl'] = getattr(config, 'phedexUrl', phedexUrl)
-        dbsUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-        self.msConfig['dbsUrl'] = getattr(config, 'dbsUrl', dbsUrl)
+        self.msConfig = {}
+        self.msConfig.update(config.dictionary_())
+        self.msConfig.setdefault("useRucio", False)
+
+        self.msConfig['reqmgrCacheUrl'] = self.msConfig['reqmgr2Url'].replace('reqmgr2',
+                                                                              'couchdb/reqmgr_workload_cache')
 
     def transferor(self, reqStatus):
         """

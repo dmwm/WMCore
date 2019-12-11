@@ -16,6 +16,7 @@ from httplib import HTTPException
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
+from random import randint
 
 # WMCore modules
 from Utils.IteratorTools import grouper
@@ -53,18 +54,19 @@ class MSTransferor(MSCore):
         :param microConfig: microservice configuration
         """
         super(MSTransferor, self).__init__(msConfig, logger)
-        # url for fetching the storage quota
-        detoxUrl = self.msConfig.get("detoxUrl",
-                                     "http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt")
-        quotaFraction = self.msConfig.get("quotaUsage", 0.8)  # use only 80% of the quota
-        # now a PhEDEx group name, then the Rucio account name in the near future
-        dataAcct = self.msConfig.get("quotaAccount", "DataOps")
-        # minimum available storage to consider a resource good for receiving data
-        minimumThreshold = self.msConfig.get("minimumThreshold", 1 * (1000 ** 4))  # 1TB
 
-        self.rseQuotas = RSEQuotas(detoxUrl, dataAcct, quotaFraction, useRucio=hasattr(self, "rucio"),
-                                   logger=logger, verbose=self.msConfig.get('verbose'),
-                                   minimumThreshold=minimumThreshold)
+        # url for fetching the storage quota
+        self.msConfig.setdefault("detoxUrl",
+                                 "http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt")
+        # minimum percentage completion for dataset/blocks subscribed
+        self.msConfig.setdefault("minPercentCompletion", 99)
+        # minimum available storage to consider a resource good for receiving data
+        self.msConfig.setdefault("minimumThreshold", 1 * (1000 ** 4))  # 1TB
+
+        self.rseQuotas = RSEQuotas(self.msConfig['detoxUrl'], self.msConfig["quotaAccount"],
+                                   self.msConfig["quotaUsage"], useRucio=self.msConfig["useRucio"],
+                                   minimumThreshold=self.msConfig["minimumThreshold"],
+                                   verbose=self.msConfig['verbose'], logger=logger)
         self.reqInfo = RequestInfo(msConfig, logger)
 
         self.cric = CRIC(logger=self.logger)
@@ -100,8 +102,6 @@ class MSTransferor(MSCore):
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
-        # also clear the RequestInfo pileup cache
-        self.reqInfo.clearPileupCache()
         if not self.uConfig:
             raise RuntimeWarning("Failed to fetch the unified configuration")
         elif not campaigns:
@@ -113,6 +113,7 @@ class MSTransferor(MSCore):
             self.campaigns = {}
             for camp in campaigns:
                 self.campaigns[camp['CampaignName']] = camp
+        self.rseQuotas.printQuotaSummary()
 
     def execute(self, reqStatus):
         """
@@ -124,7 +125,7 @@ class MSTransferor(MSCore):
             requestRecords = self.getRequestRecords(reqStatus)
             self.logger.info('  retrieved %s requests.', len(requestRecords))
         except Exception as err:  # general error
-            self.logger.exception('Unknown exception while fetching requests from ReqMgr2', str(err))
+            self.logger.exception('Unknown exception while fetching requests from ReqMgr2. Error: %s', str(err))
 
         try:
             self.updateCaches()
@@ -142,11 +143,12 @@ class MSTransferor(MSCore):
             # get complete requests information
             # based on Unified Transferor logic
             reqResults = self.reqInfo(reqSlice)
-            self.logger.info("%d requests completely processed.", len(reqResults))
-            # process all requests
+            self.logger.info("%d requests information completely processed.", len(reqResults))
+
             for wflow in reqResults:
-                self.logger.info("Working on the data subscription and status change for: %s", wflow)
-                # perform transfer
+                # first check which data is already in place and filter them out
+                self.checkDataLocation(wflow)
+
                 success, transfers = self.makeTransferRequest(wflow)
                 if success:
                     self.logger.info("Transfers successfull for %s. Summary: %s", wflow.getName(), pformat(transfers))
@@ -165,7 +167,7 @@ class MSTransferor(MSCore):
         data placement algorithm.
         """
         self.logger.info("Fetching requests in status: %s", reqStatus)
-        # get requests from ReqMgr2 data-service for given statue
+        # get requests from ReqMgr2 data-service for given status
         reqData = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
 
         # we need to first put these requests in order of priority, as done for GQ...
@@ -176,16 +178,63 @@ class MSTransferor(MSCore):
 
         return orderedRequests
 
+    def checkDataLocation(self, wflow):
+        """
+        Check which data is already in place (according to the site lists)
+        and remove those datasets/blocks from the data placement (next step).
+        :param wflow: workflow object
+        """
+        pnns = self._getPNNs(wflow.getSitelist())
+        for methodName in ("getPrimaryBlocks", "getParentBlocks"):
+            inputBlocks = getattr(wflow, methodName)()
+            self.logger.info("Request %s has %d initial blocks from %s",
+                             wflow.getName(), len(inputBlocks), methodName)
+            for block, blockDict in inputBlocks.items():
+                commonLocation = pnns & set(blockDict['locations'])
+                if commonLocation:
+                    self.logger.debug("Primary/parent block %s already in place: %s", block, commonLocation)
+                    inputBlocks.pop(block)
+            self.logger.info("Request %s has %d final blocks from %s",
+                             wflow.getName(), len(getattr(wflow, methodName)()), methodName)
+
+        pileupInput = wflow.getSecondarySummary()
+        self.logger.info("Request %s with %d initial secondary dataset to be transferred",
+                         wflow.getName(), len(pileupInput))
+        for dset, dsetDict in pileupInput.items():
+            commonLocation = pnns & set(dsetDict['locations'])
+            if commonLocation:
+                self.logger.debug("Secondary dataset %s already in place: %s", dset, commonLocation)
+                pileupInput.pop(dset)
+        self.logger.info("Request %s with %d final secondary dataset to be transferred",
+                         wflow.getName(), len(wflow.getSecondarySummary()))
+
     def makeTransferRequest(self, wflow):
         """
         Send request to PhEDEx and return status of request subscription
+        This method does the following:
+          1. return if there is no workflow data to be transferred
+          2. check if the data input campaign is in the database, skip if not
+          3. _getValidSites: using the workflow site lists and the campaign configuration,
+             find a common list of sites (converted to PNNs). If the PNN is out of quota,
+             it's also removed from this list
+          4. create the transfer record dictionary
+          5. for every final node
+             5.1. if it's a pileup dataset, pick a random node and subscribe the whole dataset
+             5.2. else, retrieve chunks of blocks to be subscribed (evenly distributed)
+             5.3. update node usage with the amount of data subscribed
+          6. re-evaluate nodes with quota exceeded
+          7. return the transfer record, with a list of transfer IDs
         :param wflow: workflow object
         :return: subscription dictionary {"dataset":transferIDs}
         """
+        response = []
         success = True
+        if not (wflow.getParentBlocks() or wflow.getPrimaryBlocks() or wflow.getSecondarySummary()):
+            self.logger.info("Request %s does not have any further data to transfer", wflow.getName())
+            return success, response
+
         self.logger.info("Handling data subscriptions for request: %s", wflow.getName())
 
-        response = []
         for dataIn in wflow.getDataCampaignMap():
             if dataIn["type"] == "parent":
                 msg = "Skipping 'parent' data subscription (done with the 'primary' data), for: %s" % dataIn
@@ -219,7 +268,7 @@ class MSTransferor(MSCore):
 
                 subscription = PhEDExSubscription(datasetPathList=dataIn['name'],
                                                   nodeList=nodes[idx],
-                                                  group=self.msConfig['group'],
+                                                  group=self.msConfig['quotaAccount'],
                                                   level=subLevel,  # use dataset for premix
                                                   priority="low",
                                                   request_only="y",
@@ -330,13 +379,7 @@ class MSTransferor(MSCore):
                         psns = set(psns) - set(campConfig['SiteBlackList'])
 
         self.logger.info("  final list of PSNs to be use: %s", psns)
-        pnns = set()
-        for psn in psns:
-            for pnn in self.psn2pnnMap.get(psn, []):
-                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
-                    pass
-                else:
-                    pnns.add(pnn)
+        pnns = self._getPNNs(psns)
 
         self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
                          wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())
@@ -370,9 +413,11 @@ class MSTransferor(MSCore):
         elif dataIn["type"] == "secondary":
             # secondary datasets are transferred as a whole, until better days...
             dsetSize = wflow.getSecondarySummary()
-            for idx in range(numNodes):
-                self.logger.info("Have whole PU dataset: %s (%s GB)", dsetName, gigaBytes(dsetSize[dsetName]))
-                yield blockList, dsetSize[dsetName], idx
+            dsetSize = dsetSize[dsetName]['dsetSize']
+            # randomly pick one of the PNNs to put the whole pileup dataset in
+            idx = randint(0, numNodes - 1)
+            self.logger.info("Have whole PU dataset: %s (%s GB)", dsetName, gigaBytes(dsetSize))
+            yield blockList, dsetSize, idx
 
     def _getFinalPNNs(self, psns):
         """
@@ -414,3 +459,16 @@ class MSTransferor(MSCore):
         msg += "Error: %s" % resp
         self.logger.error(msg)
         return False
+
+    def _getPNNs(self, psnList):
+        """
+        Given a list/set of PSNs, return a list of valid PNNs
+        """
+        pnns = set()
+        for psn in psnList:
+            for pnn in self.psn2pnnMap.get(psn, []):
+                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                    pass
+                else:
+                    pnns.add(pnn)
+        return pnns

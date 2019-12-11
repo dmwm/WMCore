@@ -6,8 +6,7 @@ Detox, Rucio and PhEDEx.
 """
 from __future__ import division, print_function
 
-from WMCore.MicroService.Unified.Common import getDetoxQuota
-from WMCore.MicroService.Unified.Common import getMSLogger
+from WMCore.MicroService.Unified.Common import getDetoxQuota, getMSLogger, gigaBytes
 
 
 class RSEQuotas(object):
@@ -35,6 +34,9 @@ class RSEQuotas(object):
         self.minimumSpace = kwargs["minimumThreshold"]
         self.useRucio = kwargs.get("useRucio", False)
         self.logger = getMSLogger(kwargs.get("verbose"), kwargs.get("logger"))
+        msg = "RSEQuotas started with parameters: dataAcct=%s, quotaFraction=%s, "
+        msg += "minimumThreshold=%s GB, useRucio=%s"
+        self.logger.info(msg, dataAcct, quotaFraction, gigaBytes(self.minimumSpace), self.useRucio)
 
         self.nodeUsage = {}
         self.availableRSEs = set()
@@ -162,10 +164,6 @@ class RSEQuotas(object):
                                                      'bytes': item['group'][0]['dest_bytes'],
                                                      'bytes_remaining': quota - item['group'][0]['dest_bytes']})
 
-        self.logger.info("Summary of the initial quotas:")
-        for site, info in self.nodeUsage.items():
-            self.logger.info("  %s : %s", site, info)
-
     def evaluateQuotaExceeded(self):
         """
         Goes through every single site, their quota and their remaining
@@ -183,7 +181,15 @@ class RSEQuotas(object):
                 self.outOfSpaceNodes.add(rse)
             else:
                 self.availableRSEs.add(rse)
+        self.logger.info("Currently %d nodes are out of space.", len(self.outOfSpaceNodes))
 
+    def printQuotaSummary(self):
+        """
+        Print a summary of the current quotas, space usage and space available
+        """
+        self.logger.info("Summary of the current quotas:")
+        for node in sorted(self.nodeUsage.keys()):
+            self.logger.debug("  %s : %s", node, self.nodeUsage[node])
         self.logger.info("List of RSE's out of quota: %s", self.outOfSpaceNodes)
 
     def updateNodeUsage(self, node, dataSize):

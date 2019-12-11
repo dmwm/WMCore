@@ -31,8 +31,8 @@ class MSCore(object):
         self.msConfig = msConfig
         self.logger.info("Configuration including default values:\n%s", self.msConfig)
 
-        self.reqmgr2 = ReqMgr(self.msConfig['reqmgrUrl'], logger=self.logger)
-        self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgrUrl'],
+        self.reqmgr2 = ReqMgr(self.msConfig['reqmgr2Url'], logger=self.logger)
+        self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgr2Url'],
                                    httpDict={'cacheduration': 1.0},
                                    logger=self.logger)
 

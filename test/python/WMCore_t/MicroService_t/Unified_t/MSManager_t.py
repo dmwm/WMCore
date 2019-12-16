@@ -17,17 +17,23 @@ class MSManagerTest(unittest.TestCase):
     def setUp(self):
         "Setup MSManager for testing"
         config = Configuration()
-        self.mgr = MSManager(config)
+        data = config.section_('data')
+        data.reqmgr2Url = "http://localhost/reqmgr2"
+        data.readOnly = True
+        data.verbose = True
+        data.interval = 600
+        data.quotaUsage = 0.8
+        data.quotaAccount = "DataOps"
+        data.rucioAccount = "test"
+        data.phedexUrl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
+        data.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
+        self.mgr = MSManager(data)
 
-        config = Configuration()
-        config.section_("MS")
-        config.MS.services = ['transferor']
-        self.mgr_trans = MSManager(config.MS)
+        data.services = ['transferor']
+        self.mgr_trans = MSManager(data)
 
-        config = Configuration()
-        config.section_("MS")
-        config.MS.services = ['monitor']
-        self.mgr_monit = MSManager(config.MS)
+        data.services = ['monitor']
+        self.mgr_monit = MSManager(data)
 
     def tearDown(self):
         "Tear down MSManager"

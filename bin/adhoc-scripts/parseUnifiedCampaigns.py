@@ -281,8 +281,8 @@ def insertTestCampaigns(mgr):
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
     testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
-                "Aug2019_Val", "Sept2019_Val", "Oct2019_Val", "Nov2019_Val",
-                "HG1910_Val", "HG1911_Val", "Agent126_Val", "Agent128_Val")
+                "Dec2019_Val", "Jan2020_Val", "Feb2020_Val", "Agent128_Val",
+                "Agent130_Val", "HG1912_Val", "HG2001_Val", "HG2002_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)

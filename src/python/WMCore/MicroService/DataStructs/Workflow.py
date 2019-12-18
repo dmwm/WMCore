@@ -23,6 +23,7 @@ class Workflow(object):
         self.inputDataset = ""
         self.parentDataset = ""
         self.pileupDatasets = set()
+
         self.campaigns = set()
         self.dataCampaignMap = []
         # these blocks structure will be key'ed by the block name and value'd by the block size
@@ -30,7 +31,7 @@ class Workflow(object):
         self.parentBlocks = {}
         # sort of duplicate info, but we need to have a way to link input to parent block(s)
         self.childToParentBlocks = {}
-        # pileup don't need to get resolved into blocks, store only their total size
+        # pileup don't need to get resolved into blocks, store only their total size and location
         self.secondarySummaries = {}
 
         self.setDataCampaignMap()
@@ -94,6 +95,11 @@ class Workflow(object):
         {"type": "type of input data", "name": "dataset name", "campaign": "campaign name"}
         Also set a flat set of campaign names
         """
+        if self.data['RequestType'] in ("StoreResults", "Resubmission"):
+            self.logger.info("Request type %s does not support input data placement", self.data['RequestType'])
+            self.dataCampaignMap = []
+            return
+
         inputMap = {"InputDataset": "primary", "MCPileup": "secondary", "DataPileup": "secondary"}
 
         if "TaskChain" in self.data or "StepChain" in self.data:
@@ -194,7 +200,9 @@ class Workflow(object):
         """
         Sets a list of primary input blocks taking into consideration
         the BlockWhitelist and BlockBlacklist
-        :param blocksDict: flat dict of block name and block size
+        Data is in the form of:
+        {"block_name": {"blockSize": 1234,
+                        "locations": [list of locations]}}
         """
         self.primaryBlocks = blocksDict
 
@@ -204,13 +212,20 @@ class Workflow(object):
         """
         return self.primaryBlocks
 
-    def setSecondarySummary(self, dsetName, dsetSize):
+    def setSecondarySummary(self, dsetName, dsetSize, locations=None):
         """
-        Sets the secondary dataset name and its total size, in bytes
+        Create a summary of the pileup dataset, with its total data size
+        and locations where the whole dataset is subscribed and available
         :param dsetName: string with the secondary dataset name
         :param dsetSize: integer with the secondary dataset size
+        :param locations: locations hosting this dataset in full (and subscribed)
+        Data is in the form of:
+        {"dataset_name": {"dsetSize": 1234,
+                          "locations": [list of locations]}}
         """
-        self.secondarySummaries[dsetName] = dsetSize
+        self.secondarySummaries.setdefault(dsetName, {})
+        self.secondarySummaries[dsetName]['dsetSize'] = dsetSize
+        self.secondarySummaries[dsetName]['locations'] = locations or []
 
     def getSecondarySummary(self):
         """
@@ -223,7 +238,8 @@ class Workflow(object):
         Sets a list of parent input blocks and their size.
         NOTE: this list is solely based on the parent dataset, without
         considering what are the actual input primary blocks
-        :param blocksDict: flat dict of block name and block size
+        {"block_name": {"blockSize": 1234,
+                        "locations": [list of locations]}}
         """
         self.parentBlocks = blocksDict
 
@@ -278,13 +294,13 @@ class Workflow(object):
           * and a list integers, which references the total size of each chunk in
             the list above (same order).
         """
-        if numChunks <= 1:
+        if numChunks == 1:
             thisChunk = set()
             thisChunk.update(self.getPrimaryBlocks().keys())
-            thisChunkSize = sum(self.getPrimaryBlocks().values())
+            thisChunkSize = sum([blockInfo['blockSize'] for blockInfo in self.getPrimaryBlocks().values()])
             if self.getParentDataset():
                 thisChunk.update(self.getParentBlocks().keys())
-                thisChunkSize += sum(self.getParentBlocks().values())
+                thisChunkSize += sum([blockInfo['blockSize'] for blockInfo in self.getParentBlocks().values()])
             # keep same data structure as multiple chunks, so list of lists
             return [thisChunk], [thisChunkSize]
 

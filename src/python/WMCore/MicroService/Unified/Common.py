@@ -6,7 +6,7 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import division
+from __future__ import division, print_function
 
 import json
 import logging
@@ -66,6 +66,9 @@ def dbsInfo(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
+            continue
         rows = json.loads(row['data'])
         blocks = []
         size = 0
@@ -80,14 +83,49 @@ def dbsInfo(datasets, dbsUrl):
     return datasetBlocks, datasetSizes, datasetTransfers
 
 
-def phedexValidBlocks(datasets, phedexUrl):
+def getPileupDatasetSizes(datasets, phedexUrl):
     """
     Given a list of datasets, find all their blocks with replicas
-    available, i.e., blocks that have valid files to be processed.
+    available, i.e., blocks that have valid files to be processed,
+    and calculate the total dataset size
     :param datasets: list of dataset names
     :param phedexUrl: a string with the PhEDEx URL
-    :return: a dictionary of datasets, with their blocks and the
-    size of each block
+    :return: a dictionary of datasets and their respective sizes
+    """
+    sizeByDset = {}
+    if not datasets:
+        return sizeByDset
+
+    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: getPileupDatasetSizes for %s. Error: %s %s" % (dataset, row.get('code'),
+                                                                          row.get('error')))
+            continue
+        rows = json.loads(row['data'])
+        sizeByDset.setdefault(dataset, 0)  # flat dict in the format of blockName: blockSize
+        for item in rows['phedex']['block']:
+            sizeByDset[dataset] += item['bytes']
+    return sizeByDset
+
+
+def getBlockReplicasAndSize(datasets, phedexUrl, group):
+    """
+    Given a list of datasets, find all their blocks with replicas
+    available, i.e., blocks that have valid files to be processed,
+    keeping the block size and blocks completed and subscribed
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: PhEDEx group name
+    :return: a dictionary in the form of:
+    {"dataset":
+        {"block":
+            {"blockSize": 111, "locations": ["x", "y"]}
+        }
+    }
     """
     dsetBlockSize = {}
     if not datasets:
@@ -98,11 +136,54 @@ def phedexValidBlocks(datasets, phedexUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: getBlockReplicasAndSize for %s. Error: %s %s" % (dataset,
+                                                                            row.get('code'),
+                                                                            row.get('error')))
+            continue
         rows = json.loads(row['data'])
-        dsetBlockSize.setdefault(dataset, {})  # flat dict in the format of blockName: blockSize
+        dsetBlockSize.setdefault(dataset, {})
         for item in rows['phedex']['block']:
-            dsetBlockSize[dataset].update({item['name']: item['bytes']})
+            block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
+            for repli in item['replica']:
+                if repli['complete'] == 'y' and repli['subscribed'] == 'y' and repli['group'] == group:
+                    block[item['name']]['locations'].append(repli['node'])
+            dsetBlockSize[dataset].update(block)
     return dsetBlockSize
+
+
+def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
+    """
+    Provided a list of datasets, find dataset level subscriptions where it's
+    as complete as `percent_min`.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: PhEDEx group
+    :param percent_min: only return subscriptions that are this complete
+    :return: a dictionary of datasets and a list of their location
+    """
+    #FIXME: implement the same logic for Rucio
+    locationByDset = {}
+    if not datasets:
+        return locationByDset
+
+    url = "%s/subscriptions?group=%s&percent_min=%s&dataset=%s"
+    urls = [url % (phedexUrl, group, percentMin, dset) for dset in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: getPileupSubscriptions for %s. Error: %s %s" % (dataset,
+                                                                           row.get('code'),
+                                                                           row.get('error')))
+            continue
+        rows = json.loads(row['data'])
+        locationByDset.setdefault(dataset, [])
+        for item in rows['phedex']['dataset']:
+            for subs in item['subscription']:
+                locationByDset[dataset].append(subs['node'])
+    return locationByDset
 
 
 def getDbsBlocksRun(datasetName, runList, dbsUrl):
@@ -116,6 +197,12 @@ def getDbsBlocksRun(datasetName, runList, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: getDbsBlocksRun for %s. Error: %s %s" % (dataset,
+                                                                    row.get('code'),
+                                                                    row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
             blocks.add(item['block_name'])
@@ -132,6 +219,12 @@ def getFileLumisInBlock(blockName, dbsUrl, validFileOnly=1):
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            print("FAILURE: getFileLumisInBlock for %s. Error: %s %s" % (blockName,
+                                                                        row.get('code'),
+                                                                        row.get('error')))
+            continue
         # there should be a single element
         return json.loads(row['data'])
 
@@ -147,6 +240,12 @@ def findBlockParents(blocks, dbsUrl):
     urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            print("FAILURE: findBlockParents for %s. Error: %s %s" % (blockName,
+                                                                     row.get('code'),
+                                                                     row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
             dataset = item['this_block_name'].split("#")[0]
@@ -162,6 +261,12 @@ def phedexInfo(datasets, phedexUrl):
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
+                                                               row.get('code'),
+                                                               row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows['phedex']['block']:
             nodes = [r['node'] for r in item['replica'] if r['complete'] == 'y']
@@ -236,12 +341,15 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
             % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
-        key = row['url'].split('=')[-1]
-        if what == 'block_name':
-            key = unquote(key)
+        data = unquote(row['url'].split('=')[-1])
+        if row['data'] is None:
+            print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
+                                                                    row.get('code'),
+                                                                    row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
-            eventsLumis[key] = item
+            eventsLumis[data] = item
     return eventsLumis
 
 
@@ -450,6 +558,12 @@ def findParent(datasets, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: findParent for %s. Error: %s %s" % (dataset,
+                                                               row.get('code'),
+                                                               row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
             parentByDset[item['this_dataset']] = item['parent_dataset']

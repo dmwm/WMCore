@@ -18,7 +18,8 @@ class WorkflowTest(unittest.TestCase):
         Test setting the data campaign map for a TaskChain-like request
         """
         parentDset = "/any/parent-dataset/tier"
-        tChainSpec = {"TaskChain": 4,
+        tChainSpec = {"RequestType": "TaskChain",
+                      "TaskChain": 4,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "Task1": {"InputDataset": "/task1/input-dataset/tier",
@@ -56,7 +57,8 @@ class WorkflowTest(unittest.TestCase):
         Test loading a ReReco like request into Workflow
         """
         parentDset = "/rereco/parent-dataset/tier"
-        rerecoSpec = {"InputDataset": "/rereco/input-dataset/tier",
+        rerecoSpec = {"RequestType": "ReReco",
+                      "InputDataset": "/rereco/input-dataset/tier",
                       "Campaign": "any-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -85,7 +87,8 @@ class WorkflowTest(unittest.TestCase):
         """
         Test loading a TaskChain like request into Workflow
         """
-        tChainSpec = {"TaskChain": 3,
+        tChainSpec = {"RequestType": "TaskChain",
+                      "TaskChain": 3,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -120,7 +123,8 @@ class WorkflowTest(unittest.TestCase):
         """
         Test loading a StepChain like request into Workflow
         """
-        tChainSpec = {"StepChain": 3,
+        tChainSpec = {"RequestType": "StepChain",
+                      "StepChain": 3,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -150,6 +154,21 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(wflow.getParentBlocks(), {})
         self.assertEqual(wflow._getValue("NoKey"), None)
         self.assertEqual(len(wflow.getDataCampaignMap()), 3)
+
+    def testResubmission(self):
+        """
+        Test loading a Resubmission like request into Workflow
+        """
+        rerecoSpec = {"RequestType": "Resubmission",
+                      "InputDataset": "/rereco/input-dataset/tier",
+                      "Campaign": "any-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": ["FNAL"]}
+        wflow = Workflow(rerecoSpec['RequestName'], rerecoSpec)
+        # we do not set any map for Resubmission workflows
+        self.assertEqual(wflow.getDataCampaignMap(), [])
 
 
 if __name__ == '__main__':

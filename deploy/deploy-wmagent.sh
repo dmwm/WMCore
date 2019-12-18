@@ -281,11 +281,6 @@ cd $CURRENT_DIR
 cd -
 echo "Done!" && echo
 
-echo -e "\n*** Activating the agent ***"
-cd $MANAGE_DIR
-./manage activate-agent
-echo "Done!" && echo
-
 # By default, it will only work for official WMCore patches in the general path
 echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
@@ -295,6 +290,11 @@ if [ "x$PATCHES" != "x" ]; then
   done
 cd -
 fi
+echo "Done!" && echo
+
+echo -e "\n*** Activating the agent ***"
+cd $MANAGE_DIR
+./manage activate-agent
 echo "Done!" && echo
 
 ### Enabling couch watchdog; couchdb fix for file descriptors

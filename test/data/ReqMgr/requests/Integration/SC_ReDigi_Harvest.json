@@ -27,10 +27,9 @@
     "CMSSWVersion": "CMSSW_10_6_1",
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-    "Comments": [
-      "SLC7 wf with 3 steps; PU for DIGI/RECO; 100EpJ/1LpJ; 8CPU/14GB; relval harvesting enabled;",
-      "trust PU true; AcqEra hardcoded to CMSSW_10_6_1, but it might get overwritten..."
-    ],
+    "Comments": {"WorkFlowDesc": ["SLC7 wf with 3 steps; PU for DIGI/RECO; 100EpJ/1LpJ; 8CPU/14GB; relval harvesting enabled;",
+				  "trust PU true; AcqEra hardcoded to CMSSW_10_6_1, but it might get overwritten..."],
+		 "CheckList": []},
     "DQMConfigCacheID": "7186ff14d71d8ed7c336513eb2ea9908",
     "DQMHarvestUnit": "byRun",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",

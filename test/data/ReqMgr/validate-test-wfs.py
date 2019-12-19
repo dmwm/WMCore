@@ -10,6 +10,7 @@ import sys
 import urllib
 import urllib2
 from pprint import pprint
+from pprint import pformat
 from urllib2 import HTTPError, URLError
 
 # table parameters
@@ -302,7 +303,7 @@ def handleReqMgr(reqName, reqmgrUrl):
             print("WARNING: StepChain/TaskChain workflow without a 'ChainParentageMap' argument!")
 
     ### Handle harvesting case
-    print(" - Comments: %s" % reqmgrOut.get('Comments', ''))
+    print(" - Comments: %s" % pformat(reqmgrOut.get('Comments', '')))
     harvesting(reqmgrOut, reqmgrOutDsets)
     if reqmgrOut['RequestType'] == 'DQMHarvest':
         print("There is nothing else that we can validate here...\n")

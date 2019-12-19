@@ -1,3 +1,12 @@
+1.2.9 to 1.3.0.pre1:
+  - Script to check workflow completion (Alan Malta Rodrigues) #9465
+  - Set of scripts useful to daily debugging/actions (Alan Malta Rodrigues) #9464
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9457
+  - Do not transfer block/dataset if already available within the SiteWhitelist (Alan Malta Rodrigues) #9457
+  - added more test campaigns to the parseUnifiedCampaigns script (Alan Malta Rodrigues) #9459
+  - Activate agent after applying patches (Erik Gough) #9454
+
+
 1.2.9.pre4 to 1.2.9:
 
 

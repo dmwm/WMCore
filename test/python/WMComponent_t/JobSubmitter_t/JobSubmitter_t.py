@@ -247,6 +247,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config.Agent.hostName = 'testAgent'
         config.Agent.componentName = self.componentName
         config.Agent.useHeartbeat = False
+        config.Agent.isDocker = False
 
         # First the general stuff
         config.section_("General")

@@ -86,7 +86,11 @@ class ReqMgrAux(Service):
                   'campaignconfig': self.getCampaignConfig,
                   'transferinfo': self.getTransferInfo}
 
-        thisDoc = apiMap[callName](resource)[0]
+        thisDoc = apiMap[callName](resource)
+        # getWMAgentConfig method returns directly the document, while the others
+        # return a list of document(s)
+        if isinstance(thisDoc, (list, set)):
+            thisDoc = thisDoc[0]
         thisDoc.update(kwparams)
         return self["requests"].put("%s/%s" % (callName, resource), thisDoc)[0]['result']
 

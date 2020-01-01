@@ -1,3 +1,8 @@
+1.2.8 to 1.2.8.patch1:
+  - Fix ReqMgrAux update wmagent config method (Alan Malta Rodrigues) #9471
+  - Close PhEDEx blocks in smaller bulks of location and dataset (Alan Malta Rodrigues) #9439
+
+
 1.2.8.pre3 to 1.2.8:
 
 

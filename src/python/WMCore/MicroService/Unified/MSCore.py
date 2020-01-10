@@ -70,3 +70,18 @@ class MSCore(object):
                 self.reqmgr2.updateRequestStatus(reqName, reqStatus)
         except Exception as err:
             self.logger.exception("Failed to change request status. Error: %s", str(err))
+
+    def updateReportDict(self, reportDict, keyName, value):
+        """
+        Provided a key name and value, validate the key name
+        and update the report dictionary if it passes the validation
+        :param reportDict: dictionary with a summary of the service
+        :param keyName: string with the key name in the report
+        :param value: string/integer value with the content of a metric
+        :return: the updated dictionary
+        """
+        if keyName not in reportDict:
+            self.logger.error("Report metric '%s' is not supported", keyName)
+        else:
+            reportDict[keyName] = value
+        return reportDict

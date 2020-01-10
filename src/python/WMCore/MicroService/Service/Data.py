@@ -1,3 +1,5 @@
+# pylint: disable=E0239
+# E0239: inherit-non-class
 """
 File       : Data.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -18,6 +20,7 @@ from __future__ import print_function, division
 import json
 import traceback
 import importlib
+from future.utils import with_metaclass
 # from types import GeneratorType
 
 # 3d party modules
@@ -25,14 +28,12 @@ import cherrypy
 
 # WMCore modules
 import WMCore
+from Utils.Patterns import Singleton
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 # from WMCore.REST.Validation import validate_rx, validate_str
 from WMCore.REST.Format import JSONFormat
 
-# MicroService modules
-from WMCore.MicroService.Manager import MicroServiceManager
-# from WMCore.MicroService.Regexp import PAT_INFO, PAT_UID
 
 def results(res):
     "Return results in a list format suitable by REST server"
@@ -40,8 +41,13 @@ def results(res):
         return [res]
     return res
 
-class Data(RESTEntity):
-    "REST interface for MicroService"
+class Data(with_metaclass(Singleton, RESTEntity, object)):
+    """
+    This class is responsbiel for both the REST interface
+    and the application/service itself, thus make it a
+    Singleton to guarantee that only one instance will be
+    executing
+    """
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         self.config = config
@@ -51,9 +57,8 @@ class Data(RESTEntity):
             module = importlib.import_module('.'.join(arr[:-1]))
             self.mgr = getattr(module, cname)(config)
         except ImportError:
+            print("ERROR initializing MicroService REST module.")
             traceback.print_exc()
-            self.mgr = MicroServiceManager(config)
-        print("### mgr", self.mgr)
 
     def validate(self, apiobj, method, api, param, safe):
         """
@@ -66,11 +71,9 @@ class Data(RESTEntity):
         if method == 'GET':
             for prop in param.kwargs.keys():
                 safe.kwargs[prop] = param.kwargs.pop(prop)
-            if len(param.args) == 1 and param.args[0] == 'status':
-                safe.args.append(param.args.pop(0))
-#                 validate_rx('request', param, safe, optional=True)
-#                 validate_str('_', param, safe, PAT_INFO, optional=True)
-                return True
+            safe.kwargs['API'] = api
+            if param.args:
+                return False
         elif method == 'POST':
             if not param.args or not param.kwargs:
                 return False
@@ -78,34 +81,37 @@ class Data(RESTEntity):
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)
-    def get(self, *args, **kwds):
+    def get(self, **kwds):
         """
         Implement GET request with given uid or set of parameters
-        All work is done by MicroServiceManager
         """
-        res = {'request_args': args,
-               'request_kwargs': kwds,
-               'wmcore_microservice_version': WMCore.__version__,
+        res = {'wmcore_version': WMCore.__version__,
+               'microservice_version': WMCore.__version__,  # FIXME: extract it from another place
                'microservice': self.mgr.__class__.__name__}
-        if 'status' in args:
-            res.update(dict(status=self.mgr.status(**kwds)))
+
+        if kwds.get('API') == "status":
+            res.update(self.mgr.status(kwds.get("service")))
+        elif kwds.get('API') == "info":
+            res.update(self.mgr.info(kwds.get("request")))
         return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def post(self):
         """
-        Implement POST request API, all work is done by MicroServiceManager.
+        Implement POST request API.
         The input HTTP request should be in the following form
         {"request":some_data} for posting the data into the service.
+
+        NOTE: the usage of this method requires further thought
         """
         msg = 'expect "request" attribute in your request'
         result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
             data = json.load(cherrypy.request.body)
             if 'request' in data.keys():
-                kwargs = data['request']
-                result = self.mgr.request(**kwargs)
+                reqName = data['request']
+                result = self.mgr.info(reqName)
             return results(result)
         except cherrypy.HTTPError:
             raise

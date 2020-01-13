@@ -1,6 +1,6 @@
 # system modules
 import cherrypy
-from cherrypy.test import webtest
+from cheroot.test import webtest
 from cherrypy import expose
 from multiprocessing import Process
 

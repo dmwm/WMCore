@@ -130,9 +130,7 @@ ALLOWED_ACTIONS_FOR_STATUS = {
 # since workqueue mapping doesn't have aborted-completed status.
 # but it need to be converted to aborted-completed whenever update db
 ### NOTE: the order of the list matters and it's used for status transition
-AUTO_TRANSITION = {"assigned": ["staging", "staged", "acquired", "running-open", "running-closed", "completed"],
-                   "staging": ["staged", "acquired", "running-open", "running-closed", "completed"],
-                   "staged": ["acquired", "running-open", "running-closed", "completed"],
+AUTO_TRANSITION = {"staged": ["acquired", "running-open", "running-closed", "completed"],
                    "acquired": ["running-open", "running-closed", "completed"],
                    "running-open": ["running-closed", "completed"],
                    "aborted": ["completed"],
@@ -140,7 +138,7 @@ AUTO_TRANSITION = {"assigned": ["staging", "staged", "acquired", "running-open",
                    "force-complete": ["completed"]}
 
 
-# list of destination states which doesn't allow any additional arguement update
+# list of destination states which doesn't allow any additional argument update
 STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.iteritems() if len(val) == 0]
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status

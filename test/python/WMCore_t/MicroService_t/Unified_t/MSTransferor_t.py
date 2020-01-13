@@ -31,7 +31,7 @@ class TransferorTest(EmulatedUnitTestCase):
         self.msConfig = {'verbose': False,
                          'group': 'DataOps',
                          'interval': 1 * 60,
-                         'readOnly': True,
+                         'enableStatusTransition': True,
                          'reqmgrUrl': 'https://cmsweb-testbed.cern.ch/reqmgr2',
                          'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',

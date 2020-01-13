@@ -17,9 +17,12 @@ from operator import itemgetter
 from pprint import pformat
 from retry import retry
 from random import randint
+from copy import deepcopy
 
 # WMCore modules
 from Utils.IteratorTools import grouper
+from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
+    TRANSFER_RECORD, TRANSFER_COUCH_DOC
 from WMCore.MicroService.Unified.Common import gigaBytes
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
@@ -34,13 +37,25 @@ def newTransferRec(dataIn):
     :param dataIn: dictionary with information relevant to this transfer doc
     :return: a transfer record dictionary
     """
-    transferRecord = {"dataset": dataIn['name'],
-                      "dataType": dataIn['type'],
-                      "transferIDs": set(),  # casted to list before going to couch
-                      "campaignName": dataIn['campaign'],
-                      "completion": [0.0]}
-    return transferRecord
+    record = deepcopy(TRANSFER_RECORD)
+    record["dataset"] = dataIn['name']
+    record["dataType"] = dataIn['type']
+    record["campaignName"] = dataIn['campaign']
+    return record
 
+
+def newTransferDoc(reqName, transferRecords):
+    """
+    Create a transfer document which is meant to be created in
+    central CouchDB
+    :param reqName: string with the workflow name
+    :param transferRecords: list of dictionaries with transfer records
+    :return: a transfer document dictionary
+    """
+    doc = dict(TRANSFER_COUCH_DOC)
+    doc["workflowName"] = reqName
+    doc["transfers"] = transferRecords
+    return doc
 
 class MSTransferor(MSCore):
     """
@@ -121,22 +136,33 @@ class MSTransferor(MSCore):
         :param reqStatus: request status to process
         :return:
         """
+        counterFailedRequests = 0
+        counterSuccessRequests = 0
+        summary = dict(TRANSFEROR_REPORT)
         try:
             requestRecords = self.getRequestRecords(reqStatus)
+            self.updateReportDict(summary, "total_num_requests", len(requestRecords))
             self.logger.info('  retrieved %s requests.', len(requestRecords))
         except Exception as err:  # general error
-            self.logger.exception('Unknown exception while fetching requests from ReqMgr2. Error: %s', str(err))
+            msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
 
         try:
             self.updateCaches()
+            self.updateReportDict(summary, "total_num_campaigns", len(self.campaigns))
+            self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
         except RuntimeWarning as ex:
             msg = "All retries exhausted! Last error was: '%s'" % str(ex)
             msg += "\nRetrying to update caches again in the next cycle."
             self.logger.error(msg)
-            return
+            self.updateReportDict(summary, "error", msg)
+            return summary
         except Exception as ex:
-            self.logger.exception("Unknown exception updating caches. Error: %s", str(ex))
-            return
+            msg = "Unknown exception updating caches. Error: %s", str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+            return summary
 
         # process all requests
         for reqSlice in grouper(requestRecords, 100):
@@ -151,14 +177,25 @@ class MSTransferor(MSCore):
 
                 success, transfers = self.makeTransferRequest(wflow)
                 if success:
-                    self.logger.info("Transfers successfull for %s. Summary: %s", wflow.getName(), pformat(transfers))
+                    self.logger.info("Transfers successful for %s. Summary: %s", wflow.getName(), pformat(transfers))
                     # then create a document in ReqMgr Aux DB
                     if self.createTransferDoc(wflow.getName(), transfers):
                         self.logger.info("Transfer document successfully created in CouchDB for: %s", wflow.getName())
                         # then move this request to staging status
                         self.change(wflow.getName(), 'staging', self.__class__.__name__)
+                        counterSuccessRequests += 1
+                    else:
+                        counterFailedRequests += 1
+                else:
+                    counterFailedRequests += 1
         self.logger.info("%s subscribed %d datasets and %d blocks in this cycle",
                          self.__class__.__name__, self.dsetCounter, self.blockCounter)
+        self.updateReportDict(summary, "success_request_transition", counterSuccessRequests)
+        self.updateReportDict(summary, "failed_request_transition", counterFailedRequests)
+        self.updateReportDict(summary, "num_datasets_subscribed", self.dsetCounter)
+        self.updateReportDict(summary, "num_blocks_subscribed", self.blockCounter)
+        self.updateReportDict(summary, "nodes_out_of_space", list(self.rseQuotas.getOutOfSpaceRSEs()))
+        return summary
 
     def getRequestRecords(self, reqStatus):
         """
@@ -225,7 +262,7 @@ class MSTransferor(MSCore):
           6. re-evaluate nodes with quota exceeded
           7. return the transfer record, with a list of transfer IDs
         :param wflow: workflow object
-        :return: subscription dictionary {"dataset":transferIDs}
+        :return: boolean whether it succeeded or not, and a subscription dictionary {"dataset":transferIDs}
         """
         response = []
         success = True
@@ -449,15 +486,11 @@ class MSTransferor(MSCore):
         :param transferRecords: list of dictionaries records, or empty if no input at all
         :return: True if operation is successful, else False
         """
-        doc = {"workflowName": reqName,
-               "lastUpdate": 0,
-               "transfers": transferRecords}
-        resp = self.reqmgrAux.postTransferInfo(reqName, doc)
-        if resp and resp[0].get("ok", False):
+        doc = newTransferDoc(reqName, transferRecords)
+        # Use the update/put method, otherwise it will fail if the document already exists
+        if self.reqmgrAux.updateTransferInfo(reqName, doc):
             return True
-        msg = "Failed to create transfer document in CouchDB. Will retry again later."
-        msg += "Error: %s" % resp
-        self.logger.error(msg)
+        self.logger.error("Failed to create transfer document in CouchDB. Will retry again later.")
         return False
 
     def _getPNNs(self, psnList):

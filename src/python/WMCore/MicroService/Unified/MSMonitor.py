@@ -12,6 +12,7 @@ from __future__ import division, print_function
 import time
 
 # WMCore modules
+from WMCore.MicroService.DataStructs.DefaultStructs import MONITOR_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
 
 
@@ -74,8 +75,9 @@ class MSMonitor(MSCore):
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Monitor
 
         :param reqStatus: request status to process
-        :return:
+        :return: a summary of the activity of the last cycle
         """
+        summary = dict(MONITOR_REPORT)
         try:
             # get requests from ReqMgr2 data-service for given status
             # here with detail=False we get back list of records
@@ -83,21 +85,30 @@ class MSMonitor(MSCore):
             self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
 
             campaigns, transferRecords = self.updateCaches()
+            self.updateReportDict(summary, "total_num_campaigns", len(campaigns))
+            self.updateReportDict(summary, "total_num_transfers", len(transferRecords))
             if not campaigns or not transferRecords:
                 # then wait until the next cycle
                 msg = "Failed to fetch data from one of the data sources. Retrying again in the next cycle"
                 self.logger.error(msg)
-                return
+                self.updateReportDict(summary, "error", msg)
+                return summary
             transferRecords = self.filterTransferDocs(requests, transferRecords)
+            self.updateReportDict(summary, "filtered_transfer_docs", len(transferRecords))
         except Exception as ex:  # general error
-            self.logger.exception('Unknown exception bootstrapping the MSMonitor thread. Error: %s', str(ex))
-            return
+            msg = 'Unknown exception bootstrapping the MSMonitor thread. Error: %s', str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+            return summary
 
         try:
             # keep track of request and their new statuses
             self.getTransferInfo(transferRecords)
             requestsToStage = self.getCompletedWorkflows(transferRecords, campaigns)
             failedDocs = self.updateTransferDocs(transferRecords)
+            self.updateReportDict(summary, "success_transfer_doc_update",
+                                  len(transferRecords) - len(failedDocs))
+            self.updateReportDict(summary, "failed_transfer_doc_update", len(failedDocs))
             # finally, update statuses for requests
             for reqName in requestsToStage:
                 if reqName in failedDocs:
@@ -106,13 +117,17 @@ class MSMonitor(MSCore):
                     self.logger.warning(msg)
                     continue
                 self.change(reqName, 'staged', self.__class__.__name__)
+            self.updateReportDict(summary, "request_status_updated",
+                                  summary['success_transfer_doc_update'] - summary['failed_transfer_doc_update'])
             msg = "%s processed %d transfer records, where " % (self.__class__.__name__, len(transferRecords))
             msg += "%d completed their data transfers and " % len(requestsToStage)
             msg += "%d failed to get their transfer documents updated in CouchDB." % len(failedDocs)
             self.logger.info(msg)
         except Exception as ex:
-            self.logger.exception("Unknown exception processing the transfer records. Error: %s", str(ex))
-            return
+            msg = "Unknown exception processing the transfer records. Error: %s", str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+        return summary
 
     def getTransferInfo(self, transferRecords):
         """

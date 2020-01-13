@@ -23,7 +23,8 @@ used in service config.py as following
 from __future__ import division, print_function
 
 # system modules
-import time
+from time import sleep
+from datetime import datetime
 
 # WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
@@ -39,7 +40,7 @@ def daemon(func, reqStatus, interval, logger):
             func(reqStatus)
         except Exception as exc:
             logger.exception("MS daemon error: %s", str(exc))
-        time.sleep(interval)
+        sleep(interval)
 
 
 class MSManager(object):
@@ -50,7 +51,7 @@ class MSManager(object):
 
     def __init__(self, config=None, logger=None):
         """
-        Initialize MSManager class with given configuation,
+        Initialize MSManager class with given configuration,
         logger, ReqMgr2/ReqMgrAux/PhEDEx/Rucio objects,
         and start transferor and monitoring threads.
         :param config: reqmgr2ms service configuration
@@ -59,8 +60,9 @@ class MSManager(object):
         self.config = config
         self.logger = getMSLogger(getattr(config, 'verbose', False), logger)
         self._parseConfig(config)
-        self.logger.info(
-            "Configuration including default values:\n%s", self.msConfig)
+        self.logger.info("Configuration including default values:\n%s", self.msConfig)
+        self.statusTrans = {}
+        self.statusMon = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -110,11 +112,13 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
-        startT = time.time()
+        startTime = datetime.utcnow()
         self.logger.info("Starting the transferor thread...")
-        self.msTransferor.execute(reqStatus)
-        self.logger.info("Total transferor execution time: %.2f secs",
-                         time.time() - startT)
+        res = self.msTransferor.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total transferor execution time: %.2f secs", res['execution_time'])
+        self.statusTrans = res
 
     def monitor(self, reqStatus):
         """
@@ -123,41 +127,72 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
-        startT = time.time()
+        startTime = datetime.utcnow()
         self.logger.info("Starting the monitor thread...")
-        self.msMonitor.execute(reqStatus)
-        self.logger.info("Total monitor execution time: %.2f secs",
-                         time.time() - startT)
+        res = self.msMonitor.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total monitor execution time: %d secs", res['execution_time'])
+        self.statusMon = res
 
     def stop(self):
         "Stop MSManager"
+        status = None
         # stop MSMonitor thread
         if 'monitor' in self.services and hasattr(self, 'monitThread'):
             self.monitThread.stop()
+            status = self.monitThread.running()
         # stop MSTransferor thread
         if 'transferor' in self.services and hasattr(self, 'transfThread'):
             self.transfThread.stop()  # stop checkStatus thread
             status = self.transfThread.running()
-            return status
+        return status
 
-    def info(self, reqName):
-        "Return info about given request"
-        # obtain status records from couchdb for given request
-        statusRecords = self.getStatusRecords(reqName)
-        # check status records and obtain completion status
-        _, completed = self.checkStatusRecords(statusRecords)
-        return {'request': reqName, 'status': completed}
+    def info(self, reqName=None):
+        """
+        Return transfer information for a given request
+        :param reqName: request name
+        :return: data transfer information for this request
+        """
+        if reqName:
+            # obtain the transfer information for a given request records from couchdb for given request
+            if 'monitor' in self.services:
+                data = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
+            elif 'transferor' in self.services:
+                data = self.msTransferor.reqmgrAux.getTransferInfo(reqName)
+            if not data:
+                data = {"request": reqName}
+        else:
+            data = {"request": ""}
+        return data
 
     def delete(self, request):
         "Delete request in backend"
         pass
 
-    def status(self, **kwargs):
+    def status(self, service=None):
         """
-        Return current status for the MicroService Manager
-        Args:
-            **kwargs: it will be a request name in the future
+        Return the current status of a MicroService and a summary
+        of its last execution activity.
+        :param service: string with the service name.
+            Supported names are: transferor or monitor
+        :return: a dictionary
         """
-        # TODO: eventually give it the correct purpose like, given
-        # a request name, return its transfer status
-        return "OK"
+        data = {"status": "OK"}
+        if service and service == "transferor":
+            data.update(self.statusTrans)
+        elif service and service == "monitor":
+            data.update(self.statusMon)
+        return data
+
+    def updateTimeUTC(self, reportDict, startT, endT):
+        """
+        Given a report summary dictionary and start/end time, update
+        the report with human readable timing information
+        :param reportDict: summary dictionary
+        :param startT: epoch start time for a given service
+        :param endT: epoch end time for a given service
+        """
+        reportDict['start_time'] = startT.strftime("%a, %d %b %Y %H:%M:%S UTC")
+        reportDict['end_time'] = endT.strftime("%a, %d %b %Y %H:%M:%S UTC")
+        reportDict['execution_time'] = (endT - startT).total_seconds()

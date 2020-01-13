@@ -6,12 +6,10 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 
 from __future__ import division, print_function
 
-import json
 import unittest
 
 import cherrypy
 from WMCore_t.MicroService_t import TestConfig
-
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
 from WMCore.MicroService.Unified.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
@@ -24,19 +22,17 @@ class ServiceManager(object):
 
     def __init__(self, config=None):
         self.config = config
-        self.state = None
         self.appname = 'test'  # keep it since it is used by XMLFormat(self.app.appname))
 
-    def status(self, **kwargs):
+    def status(self, serviceName=None):
         "Return current status about our service"
-        print("### CALL status %s" % kwargs)
-        return {'state': self.state}
+        print("### CALL status API with service name %s" % serviceName)
+        return {'status': "OK", "api": "status"}
 
-    def request(self, **kwargs):
-        "Process request given to us"
-        print("### CALL request %s" % kwargs)
-        self.state = kwargs.get('state', None)
-        return {'state': self.state}
+    def info(self, reqName):
+        "Return current status about our service"
+        print("### CALL info API with request name %s" % reqName)
+        return {'status': "OK", "api": "info"}
 
 
 class MicroServiceTest(unittest.TestCase):
@@ -44,47 +40,69 @@ class MicroServiceTest(unittest.TestCase):
 
     def setUp(self):
         "Setup MicroService for testing"
-        self.app = ServiceManager()
+        self.managerName = "ServiceManager"
         config = TestConfig
-        manager = 'WMCore_t.Services_t.MicroService_t.MicroService_t.ServiceManager'
+        manager = 'WMCore_t.MicroService_t.MicroService_t.%s' % self.managerName
         config.views.data.manager = manager
         config.manager = manager
-        mount = '/microservice'
+        mount = '/microservice/data'
         self.mgr = RequestHandler()
         self.port = config.main.port
-        self.url = 'http://localhost:%s%s/data' % (self.port, mount)
+        self.url = 'http://localhost:%s%s' % (self.port, mount)
         cherrypy.config["server.socket_port"] = self.port
+        self.app = ServiceManager(config)
         self.server = RestApiHub(self.app, config, mount)
         cherrypy.tree.mount(self.server, mount)
         cherrypy.engine.start()
 
     def tearDown(self):
         "Tear down MicroService"
-        cherrypy.engine.exit()
         cherrypy.engine.stop()
+        cherrypy.engine.exit()
 
-    def postRequest(self, params):
+    def postRequest(self, apiName, params):
         "Perform POST request to our MicroService"
         headers = {'Content-type': 'application/json'}
-        print("### post call %s params=%s headers=%s" % (self.url, params, headers))
-        data = self.mgr.getdata(self.url, params=params, headers=headers, \
+        url = self.url + "/%s" % apiName
+        data = self.mgr.getdata(url, params=params, headers=headers, \
                                 verb='POST', cert=cert(), ckey=ckey(), encode=True, decode=True)
         print("### post call data %s" % data)
         return data
 
-    def test_getState(self):
+    def testGetStatus(self):
         "Test function for getting state of the MicroService"
-        url = '%s/status' % self.url
-        data = self.mgr.getdata(url, params={})
-        state = "bla"
-        data = {"request": {"state": state}}
-        self.postRequest(data)
-        data = self.mgr.getdata(url, params={})
-        data = json.loads(data)
-        print("### url=%s, data=%s" % (url, data))
-        for row in data['result']:
-            if 'state' in row:
-                self.assertEqual(state, row['state'])
+        api = "status"
+        url = '%s/%s' % (self.url, api)
+        params = {}
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
+
+        params = {"service": "transferor"}
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
+
+    def testGetInfo(self):
+        "Test function for getting state of the MicroService"
+        api = "status"
+        url = '%s/%s' % (self.url, api)
+        params = {}
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
+
+        params = {"request": "fake_request_name"}
+        data = self.mgr.getdata(url, params=params, encode=True, decode=True)
+        self.assertEqual(data['result'][0]['microservice'], self.managerName)
+        self.assertEqual(data['result'][0]['api'], api)
+
+    def testPostCall(self):
+        "Test function for getting state of the MicroService"
+        api = "status"
+        data = {"request": "fake_request_name"}
+        data = self.postRequest(api, data)
+        self.assertDictEqual(data['result'][0], {'status': 'OK', 'api': 'info'})
 
 
 if __name__ == '__main__':

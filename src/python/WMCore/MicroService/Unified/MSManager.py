@@ -13,7 +13,9 @@ used in service config.py as following
     data.object = 'WMCore.MicroService.Service.RestApiHub.RestApiHub'
     data.manager = 'WMCore.MicroService.Unified.MSManager.MSManager'
     data.reqmgr2Url = "%s/reqmgr2" % BASE_URL
-    data.readOnly = False
+    data.limitRequestsPerCycle = 500
+    data.enableStatusTransition = False
+    data.enableDataTransfer = False
     data.verbose = True
     data.interval = 60
     data.rucioAccount = RUCIO_ACCT

@@ -77,6 +77,8 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("minPercentCompletion", 99)
         # minimum available storage to consider a resource good for receiving data
         self.msConfig.setdefault("minimumThreshold", 1 * (1000 ** 4))  # 1TB
+        # limit MSTransferor to this amount of requests per cycle
+        self.msConfig.setdefault("limitRequestsPerCycle", 500)
 
         self.rseQuotas = RSEQuotas(self.msConfig['detoxUrl'], self.msConfig["quotaAccount"],
                                    self.msConfig["quotaUsage"], useRucio=self.msConfig["useRucio"],
@@ -142,7 +144,10 @@ class MSTransferor(MSCore):
         try:
             requestRecords = self.getRequestRecords(reqStatus)
             self.updateReportDict(summary, "total_num_requests", len(requestRecords))
-            self.logger.info('  retrieved %s requests.', len(requestRecords))
+            msg = "  retrieved %s requests. " % len(requestRecords)
+            msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
+            self.logger.info(msg)
+            requestRecords = requestRecords[:self.msConfig["limitRequestsPerCycle"]]
         except Exception as err:  # general error
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
             self.logger.exception(msg)
@@ -177,8 +182,8 @@ class MSTransferor(MSCore):
 
                 success, transfers = self.makeTransferRequest(wflow)
                 if success:
-                    self.logger.info("Transfers successful for %s. Summary: %s", wflow.getName(), pformat(transfers))
-                    # then create a document in ReqMgr Aux DB
+                    self.logger.info("Transfer requests successful for %s. Summary: %s",
+                                     wflow.getName(), pformat(transfers))                    # then create a document in ReqMgr Aux DB
                     if self.createTransferDoc(wflow.getName(), transfers):
                         self.logger.info("Transfer document successfully created in CouchDB for: %s", wflow.getName())
                         # then move this request to staging status
@@ -318,10 +323,7 @@ class MSTransferor(MSCore):
                     msg += ", where parent blocks have also been added for dataset: %s" % wflow.getParentDataset()
                 self.logger.info(msg)
 
-                if self.msConfig.get('readOnly', True):
-                    self.logger.info("TODO readOnly mode, subscription not made. Faking id to 1111")
-                    transRec['transferIDs'].add(1111)  # any fake number
-                else:
+                if self.msConfig.get('enableDataTransfer', True):
                     # Then make the data subscription, for real!!!
                     success, transferId = self._subscribeData(subscription, wflow.getName(), dataIn['name'])
                     if not success:
@@ -335,6 +337,9 @@ class MSTransferor(MSCore):
                         self.dsetCounter += 1
                     else:
                         self.blockCounter += len(blocks)
+                else:
+                    self.logger.info("FAKE data subscription. Default transfer id set to: '1111'")
+                    transRec['transferIDs'].add("1111")  # any fake number
 
             transRec['transferIDs'] = list(transRec['transferIDs'])
             response.append(transRec)

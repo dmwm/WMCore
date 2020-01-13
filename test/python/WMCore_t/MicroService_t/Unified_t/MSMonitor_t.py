@@ -25,7 +25,7 @@ class MSMonitorTest(EmulatedUnitTestCase):
                          'group': 'DataOps',
                          'interval': 1 * 60,
                          'updateInterval': 0,
-                         'readOnly': True,
+                         'enableStatusTransition': True,
                          'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
                          'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',

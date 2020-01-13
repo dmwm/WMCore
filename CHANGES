@@ -1,3 +1,12 @@
+1.3.0.pre1 to 1.3.0.pre2:
+  - fix unit tests (Alan Malta Rodrigues) #9480
+  - ReqMgr2MS more configurable: # of workflows; status transition; data transfer (Alan Malta Rodrigues) #9480
+  - Delegate assigned->staging->staged status transition to ReqMgr2MS (Alan Malta Rodrigues) #9481
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9473
+  - Properly use the status/info MS REST APIs (Alan Malta Rodrigues) #9473
+  - Fix ReqMgrAux update wmagent config method (Alan Malta Rodrigues) #9470
+
+
 1.2.9 to 1.3.0.pre1:
   - Script to check workflow completion (Alan Malta Rodrigues) #9465
   - Set of scripts useful to daily debugging/actions (Alan Malta Rodrigues) #9464

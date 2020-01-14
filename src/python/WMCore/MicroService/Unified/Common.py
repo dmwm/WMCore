@@ -112,14 +112,16 @@ def getPileupDatasetSizes(datasets, phedexUrl):
     return sizeByDset
 
 
-def getBlockReplicasAndSize(datasets, phedexUrl, group):
+def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
     """
     Given a list of datasets, find all their blocks with replicas
-    available, i.e., blocks that have valid files to be processed,
-    keeping the block size and blocks completed and subscribed
+    available (thus blocks with at least 1 valid file), completed
+    and subscribed.
+    If PhEDEx group is provided, make sure it's subscribed under that
+    same group.
     :param datasets: list of dataset names
     :param phedexUrl: a string with the PhEDEx URL
-    :param group: PhEDEx group name
+    :param group: optional PhEDEx group name
     :return: a dictionary in the form of:
     {"dataset":
         {"block":
@@ -146,8 +148,11 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group):
         for item in rows['phedex']['block']:
             block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
             for repli in item['replica']:
-                if repli['complete'] == 'y' and repli['subscribed'] == 'y' and repli['group'] == group:
-                    block[item['name']]['locations'].append(repli['node'])
+                if repli['complete'] == 'y' and repli['subscribed'] == 'y':
+                    if not group:
+                        block[item['name']]['locations'].append(repli['node'])
+                    elif repli['group'] == group:
+                        block[item['name']]['locations'].append(repli['node'])
             dsetBlockSize[dataset].update(block)
     return dsetBlockSize
 

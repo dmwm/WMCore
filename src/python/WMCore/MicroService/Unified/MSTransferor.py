@@ -224,29 +224,44 @@ class MSTransferor(MSCore):
         """
         Check which data is already in place (according to the site lists)
         and remove those datasets/blocks from the data placement (next step).
+        If workflow has XRootD/AAA enabled, data location can be outside of the
+        SiteWhitelist.
         :param wflow: workflow object
         """
         pnns = self._getPNNs(wflow.getSitelist())
         for methodName in ("getPrimaryBlocks", "getParentBlocks"):
+            primaryAAA = wflow.getReqParam("TrustSitelists")
             inputBlocks = getattr(wflow, methodName)()
             self.logger.info("Request %s has %d initial blocks from %s",
                              wflow.getName(), len(inputBlocks), methodName)
+
             for block, blockDict in inputBlocks.items():
-                commonLocation = pnns & set(blockDict['locations'])
-                if commonLocation:
-                    self.logger.debug("Primary/parent block %s already in place: %s", block, commonLocation)
+                if primaryAAA and blockDict['locations']:
+                    msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockDict['locations'])
+                    self.logger.info(msg)
                     inputBlocks.pop(block)
+                elif blockDict['locations']:
+                    commonLocation = pnns & set(blockDict['locations'])
+                    if commonLocation:
+                        self.logger.info("Primary/parent block %s already in place: %s", block, commonLocation)
+                        inputBlocks.pop(block)
             self.logger.info("Request %s has %d final blocks from %s",
                              wflow.getName(), len(getattr(wflow, methodName)()), methodName)
 
         pileupInput = wflow.getSecondarySummary()
+        secondaryAAA = wflow.getReqParam("TrustPUSitelists")
         self.logger.info("Request %s with %d initial secondary dataset to be transferred",
                          wflow.getName(), len(pileupInput))
         for dset, dsetDict in pileupInput.items():
-            commonLocation = pnns & set(dsetDict['locations'])
-            if commonLocation:
-                self.logger.debug("Secondary dataset %s already in place: %s", dset, commonLocation)
+            if secondaryAAA and dsetDict['locations']:
+                self.logger.info("Secondary dataset %s already in place (via AAA): %s",
+                                  dset, dsetDict['locations'])
                 pileupInput.pop(dset)
+            elif dsetDict['locations']:
+                commonLocation = pnns & set(dsetDict['locations'])
+                if commonLocation:
+                    self.logger.info("Secondary dataset %s already in place: %s", dset, commonLocation)
+                    pileupInput.pop(dset)
         self.logger.info("Request %s with %d final secondary dataset to be transferred",
                          wflow.getName(), len(wflow.getSecondarySummary()))
 

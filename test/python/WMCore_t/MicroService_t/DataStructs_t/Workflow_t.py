@@ -170,6 +170,28 @@ class WorkflowTest(unittest.TestCase):
         # we do not set any map for Resubmission workflows
         self.assertEqual(wflow.getDataCampaignMap(), [])
 
+    def testGetParam(self):
+        """
+        Test the `getReqParam` method
+        """
+        tChainSpec = {"RequestType": "StepChain",
+                      "StepChain": 1,
+                      "Campaign": "top-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "TrustSitelists": True,
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": [],
+                      "Step1": {"InputDataset": "/step1/input-dataset/tier",
+                                "MCPileup": "/step1/mc-pileup/tier",
+                                "Campaign": "step1-campaign"},
+                      }
+        wflow = Workflow(tChainSpec['RequestName'], tChainSpec)
+        self.assertTrue(wflow.getReqParam("TrustSitelists"))
+        self.assertIsNone(wflow.getReqParam("MCPileup"))
+        self.assertEqual(wflow.getReqParam("RequestType"), wflow.getReqType())
+        self.assertEqual(wflow.getReqParam("RequestName"), wflow.getName())
+
 
 if __name__ == '__main__':
     unittest.main()

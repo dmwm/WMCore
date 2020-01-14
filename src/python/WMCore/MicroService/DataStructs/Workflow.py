@@ -65,6 +65,15 @@ class Workflow(object):
         """
         return self.data['RequestType']
 
+    def getReqParam(self, param):
+        """
+        Return a top level parameter for this request.
+        Read: parameters internal to Task/Steps are not looked up.
+        """
+        if param not in self.data:
+            self.logger.warning("Request parameter '%s' not found in the workflow %s", param, self.getName())
+        return self.data.get(param)
+
     def getSitelist(self):
         """
         Get the SiteWhitelist minus the black list for this request

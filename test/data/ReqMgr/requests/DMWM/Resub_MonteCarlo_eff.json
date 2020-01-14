@@ -18,7 +18,8 @@
   "createRequest": {
     "ACDCDatabase": "acdcserver",
     "ACDCServer": "https://cmsweb-testbed.cern.ch/couchdb",
-    "Comments": "Providing the following overrides during creation: Memory=975, Prio=500000, TpE=180",
+    "Comments": {"WorkFlowDesc": ["Providing the following overrides during creation: Memory=975, Prio=500000, TpE=180"],
+		 "CheckList": []},
     "InitialTaskPath": "/amaltaro_MonteCarlo_eff_Agent114_Validation_170624_104211_8969/Production",
     "Memory": 975,
     "OriginalRequestName": "amaltaro_MonteCarlo_eff_Agent114_Validation_170624_104211_8969",

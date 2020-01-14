@@ -26,7 +26,8 @@
   "createRequest": {
     "ACDCDatabase": "acdcserver",
     "ACDCServer": "https://cmsweb-testbed.cern.ch/couchdb",
-    "Comments": "Overrides: HLTD Memory=1950, TpE=0.5; RECOD Memory=5950, TpE=2.0; MINIAOD Memory=1550, TpE=1.1; TrustSitelists true",
+    "Comments": {"WorkFlowDesc": ["Overrides: HLTD Memory=1950, TpE=0.5; RECOD Memory=5950, TpE=2.0; MINIAOD Memory=1550, TpE=1.1; TrustSitelists true"],
+		 "CheckList": []},
     "InitialTaskPath": "/amaltaro_TaskChain_RelVal_Multicore_HG1707c_Validation_170705_085031_9346/HLTD/HLTDMergeRAWoutput/RECODreHLT",
     "Memory": {
       "HLTD": 1950,

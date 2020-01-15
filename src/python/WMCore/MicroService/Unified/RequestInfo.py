@@ -291,10 +291,10 @@ class RequestInfo(MSCore):
                 if dataIn['type'] in ["primary", "parent"]:
                     datasets.add(dataIn['name'])
 
-        # now fetch block names from DBS
+        # now fetch block names from PhEDEx
         self.logger.info("Fetching block info for %d datasets against PhEDEx: %s",
                          len(datasets), self.msConfig['phedexUrl'])
-        blocksByDset = getBlockReplicasAndSize(datasets, self.msConfig['phedexUrl'], self.msConfig['quotaAccount'])
+        blocksByDset = getBlockReplicasAndSize(datasets, self.msConfig['phedexUrl'])
         return blocksByDset
 
     def setInputDataBlocks(self, workflows, blocksByDset):

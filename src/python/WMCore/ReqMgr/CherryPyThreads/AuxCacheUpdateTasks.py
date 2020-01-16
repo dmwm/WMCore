@@ -32,7 +32,7 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
         that need to be constanly updated whenever an update is
         made at the data source
         """
-        self.logger.info("Updating auxiliary couch documents ...")
+        self.logger.info("Updating auxiliary couch documents...")
 
         self.reqmgrAux.populateCMSSWVersion(config.tagcollect_url, **config.tagcollect_args)
 
@@ -47,3 +47,4 @@ class AuxCacheUpdateTasks(CherryPyPeriodicTask):
             return
 
         self.reqmgrAux.updateUnifiedConfig(data, docName="config")
+        self.logger.info("Done updating auxiliary couch documents...")

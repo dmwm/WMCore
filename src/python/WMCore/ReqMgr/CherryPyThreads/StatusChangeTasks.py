@@ -128,6 +128,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         """
         Advance the request status based on the global workqueue elements status
         """
+        self.logger.info("Executing status change tasks...")
         reqmgrSvc = ReqMgr(config.reqmgr2_url, logger=self.logger)
         gqService = WorkQueue(config.workqueue_url)
         wmstatsSvc = WMStatsServer(config.wmstats_url, logger=self.logger)

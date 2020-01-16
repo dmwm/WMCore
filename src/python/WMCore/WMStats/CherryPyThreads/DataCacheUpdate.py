@@ -23,6 +23,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
+        self.logger.info("Executing data cache update task...")
         try:
             if DataCache.islatestJobDataExpired():
                 wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
@@ -31,5 +32,5 @@ class DataCacheUpdate(CherryPyPeriodicTask):
                 DataCache.setlatestJobData(jobData)
                 self.logger.info("DataCache is updated: %s", len(jobData))
         except Exception as ex:
-            self.logger.error(str(ex))
+            self.logger.exception("Failed to fetch data from WMStats. Error: %s", str(ex))
         return

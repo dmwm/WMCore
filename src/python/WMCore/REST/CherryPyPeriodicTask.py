@@ -1,11 +1,14 @@
-'''
+"""
+
 Created on Jul 31, 2014
 
 @author: sryu
-'''
+"""
 from __future__ import print_function, division
 import cherrypy
 import traceback
+from random import randint
+from time import sleep
 from WMCore.WMLogging import getTimeRotatingLogger
 
 from threading import Thread, Condition
@@ -13,7 +16,6 @@ from threading import Thread, Condition
 class CherryPyPeriodicTask(object):
 
     def __init__(self, config):
-
         """
         BaseClass which can set up the concurrent task using cherrypy thread.
         WARNING: This assumes each task doesn't share the object.
@@ -84,6 +86,10 @@ class PeriodicWorker(Thread):
         self.wakeUp.release()
 
     def run(self):
+        firstSleep = randint(30,90)
+        self.logger.info("Sleeping thread '%s' for %d seconds before its first run",
+                         self.config._internal_name, firstSleep)
+        sleep(firstSleep)
 
         while not self.stopFlag:
             self.wakeUp.acquire()

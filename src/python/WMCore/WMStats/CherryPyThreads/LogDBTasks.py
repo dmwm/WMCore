@@ -22,7 +22,7 @@ class LogDBTasks(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-        self.logger.info("Cleaning documents from LogDB WMStats")
+        self.logger.info("Executing logDB cleanup task...")
         docs = self.logDB.cleanup(config.keepDocsAge)
         self.logger.info("Deleted %d old documents", len(docs))
 

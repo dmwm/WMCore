@@ -1,5 +1,5 @@
 from __future__ import (division, print_function)
-
+from time import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
@@ -24,9 +24,12 @@ class ReqMgrInteractionTask(CherryPyPeriodicTask):
         3. report element status to reqmgr (need to be removed and set as reqmgr task)
         4. record this activity
         """
+        self.logger.info("Executing interaction with ReqMgr2 task...")
 
+        tStart = time()
         globalQ = globalQueue(**config.queueParams)
         reqMgrInt = WorkQueueReqMgrInterface(**config.reqMgrConfig)
         reqMgrInt(globalQ)
-
+        tEnd = time()
+        self.logger.info("ReqMgrInteractionTask took %.3f secs to execute", tEnd - tStart)
         return

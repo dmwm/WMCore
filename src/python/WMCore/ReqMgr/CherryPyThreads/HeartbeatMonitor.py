@@ -100,7 +100,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         if self.postToAMQ:
             allDocs = self.buildMonITDocs(results)
             self.uploadToAMQ(allDocs)
-
+        self.logger.info("ReqMgr2 statistics uploaded")
         return results
 
     def buildMonITDocs(self, stats):

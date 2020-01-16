@@ -18,11 +18,11 @@ class CleanUpTask(CherryPyPeriodicTask):
 
     def cleanUpAndSyncCanceledElements(self, config):
         """
-
         1. deleted the wqe in end states
         2. synchronize cancelled elements.
         We can also make this in the separate thread
         """
+        self.logger.info("Executing workqueue cleanup and sync task...")
         start = int(time())
         globalQ = globalQueue(**config.queueParams)
         globalQ.performQueueCleanupActions(skipWMBS=True)

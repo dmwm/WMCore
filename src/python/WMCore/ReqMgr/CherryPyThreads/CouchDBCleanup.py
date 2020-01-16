@@ -25,7 +25,7 @@ class CouchDBCleanup(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-
+        self.logger.info("Executing ACDC couch cleanup ...")
         reqDB = RequestDBReader(config.reqmgrdb_url)
 
         from WMCore.ACDC.CouchService import CouchService
@@ -37,7 +37,7 @@ class CouchDBCleanup(CherryPyPeriodicTask):
             return
         # filter requests
         results = reqDB._getCouchView("byrequest", {}, originalRequests)
-        # checkt he status of the requests [announced, rejected-archived, aborted-archived, normal-archived]
+        # check the status of the requests [announced, rejected-archived, aborted-archived, normal-archived]
         deleteStates = ["announced", "rejected-archived", "aborted-archived", "normal-archived"]
         filteredRequests = []
         for row in results["rows"]:
@@ -49,11 +49,11 @@ class CouchDBCleanup(CherryPyPeriodicTask):
             try:
                 deleted = acdcService.removeFilesetsByCollectionName(req)
                 if deleted == None:
-                    self.logger.warning("request alread deleted %s", req)
+                    self.logger.warning("request already deleted %s", req)
                 else:
                     total += len(deleted)
                     self.logger.info("request %s deleted", req)
             except Exception as ex:
-                self.logger.error("request deleted failed: will try again %s: %s", req, str(ex))
-        self.logger.info("total %s requests deleted", total)
+                self.logger.exception("Failed to delete ACDC documents for %s. Error: %s", req, str(ex))
+        self.logger.info("Removed %d documents for a total of %d requests", total, len(filteredRequests))
         return

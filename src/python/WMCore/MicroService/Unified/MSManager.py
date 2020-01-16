@@ -27,6 +27,7 @@ from __future__ import division, print_function
 # system modules
 from time import sleep
 from datetime import datetime
+from random import randint
 
 # WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
@@ -75,8 +76,7 @@ class MSManager(object):
                                                   'assigned',
                                                   self.msConfig['interval'],
                                                   self.logger))
-            self.logger.debug(
-                "### Running %s thread %s", thname, self.transfThread.running())
+            self.logger.info("Running %s thread: %s", thname, self.transfThread.running())
 
         # initialize monitoring module
         if 'monitor' in self.services:
@@ -87,8 +87,7 @@ class MSManager(object):
                                                  'staging',
                                                  self.msConfig['interval'],
                                                  self.logger))
-            self.logger.debug(
-                "+++ Running %s thread %s", thname, self.monitThread.running())
+            self.logger.info("Running %s thread: %s", thname, self.monitThread.running())
 
     def _parseConfig(self, config):
         """
@@ -114,6 +113,11 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
+        if not self.statusTrans:
+            firstSleep = randint(30, 90)
+            self.logger.info("MSTransferor thread initialized. Sleeping %d secs before its 1st cycle",
+                             firstSleep)
+            sleep(firstSleep)
         startTime = datetime.utcnow()
         self.logger.info("Starting the transferor thread...")
         res = self.msTransferor.execute(reqStatus)
@@ -129,6 +133,11 @@ class MSManager(object):
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
         """
+        if not self.statusMon:
+            firstSleep = randint(30, 90)
+            self.logger.info("MSMonitor thread initialized. Sleeping %d secs before its 1st cycle",
+                             firstSleep)
+            sleep(firstSleep)
         startTime = datetime.utcnow()
         self.logger.info("Starting the monitor thread...")
         res = self.msMonitor.execute(reqStatus)

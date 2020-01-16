@@ -48,6 +48,7 @@ def _wmAgentConfig(configFile):
     config.Agent.agentName = "WMAgentCommissioning"
     config.Agent.useMsgService = False
     config.Agent.useTrigger = False
+    config.Agent.isDocker = False
 
     # BossAir setup
     config.section_("BossAir")

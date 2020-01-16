@@ -77,6 +77,9 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
 
+        config.component_("Agent")
+        config.Agent.isDocker = False
+
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl = os.getenv("COUCHURL")
         config.JobStateMachine.couchDBName = "jobsubmittercaching_t"

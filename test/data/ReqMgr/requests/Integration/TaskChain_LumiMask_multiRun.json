@@ -2,7 +2,7 @@
 "createRequest":
 {
     "Comments": {"WorkFlowDesc": ["TaskChain data with 126 lumis in a LumiList (from 2 blocks and 2 runs); Transient output RAW at task1. Harvesting enabled in multiRun mode"],
-		 "CheckList": []},
+		         "CheckList": ["TaskChain with lumiMask input", "TaskChain with transient output modules", "TaskChain: data automatic harvesting"]},
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",

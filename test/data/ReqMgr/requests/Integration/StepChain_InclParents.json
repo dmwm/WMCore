@@ -4,7 +4,7 @@
     "Campaign": "Campaign-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_3_2",
     "Comments": {"WorkFlowDesc": ["Single step; IncludeParents True and 3 runs whitelisted; auto-splitting"],
-		 "CheckList": []},
+                 "CheckList": ["StepChain with IncludeParents"]},
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
     "DeterministicPileup": true,

@@ -649,6 +649,11 @@ class SimpleCondorPlugin(BasePlugin):
         sub['My.CMS_WMTool'] = classad.quote("WMAgent")
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
 
+        # Enable late materialization factory feature
+        # Use a high number to materialize all jobs for now
+        # until job splitting is properly adapted.
+        sub['max_materialize'] = 1000000
+
         jobParameters = self.getJobParameters(jobList)
        
         return sub, jobParameters

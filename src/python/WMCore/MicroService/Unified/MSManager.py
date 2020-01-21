@@ -156,34 +156,34 @@ class MSManager(object):
         :param reqName: request name
         :return: data transfer information for this request
         """
+        data = {"request": reqName, "transferDoc": None}
         if reqName:
             # obtain the transfer information for a given request records from couchdb for given request
             if 'monitor' in self.services:
-                data = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
+                transferDoc = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
             elif 'transferor' in self.services:
-                data = self.msTransferor.reqmgrAux.getTransferInfo(reqName)
-            if not data:
-                data = {"request": reqName}
-        else:
-            data = {"request": ""}
+                transferDoc = self.msTransferor.reqmgrAux.getTransferInfo(reqName)
+            if transferDoc:
+                # it's always a single document in Couch
+                data['transferDoc'] = transferDoc[0]
         return data
 
     def delete(self, request):
         "Delete request in backend"
         pass
 
-    def status(self, service=None):
+    def status(self, detail):
         """
         Return the current status of a MicroService and a summary
         of its last execution activity.
-        :param service: string with the service name.
-            Supported names are: transferor or monitor
+        :param detail: boolean used to retrieve some extra information
+          regarding the service
         :return: a dictionary
         """
         data = {"status": "OK"}
-        if service and service == "transferor":
+        if detail and 'transferor' in self.services:
             data.update(self.statusTrans)
-        elif service and service == "monitor":
+        elif detail and 'monitor' in self.services:
             data.update(self.statusMon)
         return data
 

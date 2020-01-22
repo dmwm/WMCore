@@ -136,7 +136,7 @@ class MSMonitor(MSCore):
         :param transferRecords: list of transfer records
         """
         # FIXME: create concurrent phedex calls using multi_getdata
-        tstamp = time.time()
+        tstamp = int(time.time())
         for doc in transferRecords:
             self.logger.debug("Checking transfers for: %s", doc['workflowName'])
             for rec in doc.get('transfers', []):

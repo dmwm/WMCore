@@ -5,6 +5,7 @@ required by MS Transferor
 from __future__ import division, print_function
 
 import operator
+from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.Unified.Common import getMSLogger, gigaBytes
 
@@ -213,7 +214,16 @@ class Workflow(object):
         {"block_name": {"blockSize": 1234,
                         "locations": [list of locations]}}
         """
-        self.primaryBlocks = blocksDict
+        blockWhite = self.getBlockWhitelist()
+        if blockWhite:
+            for block in blockWhite:
+                if block in blocksDict:
+                    self.primaryBlocks[block] = copy(blocksDict[block])
+        else:
+            self.primaryBlocks = deepcopy(blocksDict)
+
+        for block in self.getBlockBlacklist():
+            self.primaryBlocks.pop(block, None)
 
     def getPrimaryBlocks(self):
         """
@@ -263,16 +273,14 @@ class Workflow(object):
         Sets a relationship between input primary block and its parent block(s)
         This method guarantees that only parent blocks with valid replicas are
         kept around (and later transferred)
+        The child block list is also final, meaning all the run/block/lumi lists
+        have already been applied.
         :param blocksDict: dict key'ed by the primary block, with a list of parent blocks
         """
         # flat list with the final parent blocks
         parentBlocks = set()
         # remove parent blocks without any valid replica (only invalid files)
         for child, parents in blocksDict.items():
-            if child not in self.getPrimaryBlocks():
-                # then we don't need this child+parent data
-                continue
-
             for parent in list(parents):
                 if parent not in self.getParentBlocks():
                     # then drop this block

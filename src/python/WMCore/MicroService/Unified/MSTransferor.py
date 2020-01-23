@@ -236,12 +236,13 @@ class MSTransferor(MSCore):
                              wflow.getName(), len(inputBlocks), methodName)
 
             for block, blockDict in inputBlocks.items():
-                if primaryAAA and blockDict['locations']:
-                    msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockDict['locations'])
+                blockLocation = self._diskPNNs(blockDict['locations'])
+                if primaryAAA and blockLocation:
+                    msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockLocation)
                     self.logger.info(msg)
                     inputBlocks.pop(block)
-                elif blockDict['locations']:
-                    commonLocation = pnns & set(blockDict['locations'])
+                elif blockLocation:
+                    commonLocation = pnns & set(blockLocation)
                     if commonLocation:
                         self.logger.info("Primary/parent block %s already in place: %s", block, commonLocation)
                         inputBlocks.pop(block)
@@ -253,12 +254,13 @@ class MSTransferor(MSCore):
         self.logger.info("Request %s with %d initial secondary dataset to be transferred",
                          wflow.getName(), len(pileupInput))
         for dset, dsetDict in pileupInput.items():
-            if secondaryAAA and dsetDict['locations']:
+            datasetLocation = self._diskPNNs(dsetDict['locations'])
+            if secondaryAAA and datasetLocation:
                 self.logger.info("Secondary dataset %s already in place (via AAA): %s",
-                                  dset, dsetDict['locations'])
+                                  dset, datasetLocation)
                 pileupInput.pop(dset)
-            elif dsetDict['locations']:
-                commonLocation = pnns & set(dsetDict['locations'])
+            elif datasetLocation:
+                commonLocation = pnns & set(datasetLocation)
                 if commonLocation:
                     self.logger.info("Secondary dataset %s already in place: %s", dset, commonLocation)
                     pileupInput.pop(dset)
@@ -525,3 +527,18 @@ class MSTransferor(MSCore):
                 else:
                     pnns.add(pnn)
         return pnns
+
+    def _diskPNNs(self, pnnList):
+        """
+        Provided a list of PNN locations, return another list of
+        PNNs without mass storage and T3 sites
+        :param pnnList: list of PNN strings
+        :return: list of strings with filtered out PNNs
+        """
+        diskPNNs = set()
+        for pnn in pnnList:
+            if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                pass
+            else:
+                diskPNNs.add(pnn)
+        return list(diskPNNs)

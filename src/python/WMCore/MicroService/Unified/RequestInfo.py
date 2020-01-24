@@ -306,14 +306,14 @@ class RequestInfo(MSCore):
             for dataIn in wflow.getDataCampaignMap():
                 if dataIn['type'] == "primary":
                     newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']])
+                                                             blocksByDset[dataIn['name']], True)
                     wflow.setPrimaryBlocks(newBlockDict)
                 elif dataIn['type'] == "parent":
                     newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']])
+                                                             blocksByDset[dataIn['name']], False)
                     wflow.setParentBlocks(newBlockDict)
 
-    def _handleInputDataInfo(self, wflow, dset, blocksDict):
+    def _handleInputDataInfo(self, wflow, dset, blocksDict, primary):
         """
         Handle primary input data, such that we can also consider a
         Run white/black lists, and also compare against
@@ -328,7 +328,6 @@ class RequestInfo(MSCore):
         :return: dictionary of block names and block size
         """
         # FIXME: this is heavy and should be done concurrently
-        finalBlocks = {}
         dbsUrl = wflow.getDbsUrl()
         runList = wflow.getRunlist()
         lumiList = wflow.getLumilist()
@@ -339,9 +338,10 @@ class RequestInfo(MSCore):
                 runList.append(int(run))
             runList = list(set(runList))
         if runList:
+            finalBlocks = copy(blocksDict)
             # Run number 1 is not supported by DBSServer
             if int(runList[0]) == 1:
-                finalBlocks = copy(blocksDict)
+                pass
             else:
                 self.logger.info("Fetching blocks matching a list of runs for %s", wflow.getName())
                 # then find blocks matching that run list
@@ -352,15 +352,18 @@ class RequestInfo(MSCore):
                         finalBlocks[block] = blocksDict[block]
                     else:
                         self.logger.info("Dropping block with no replicas in PhEDEx: %s", block)
-            # now apply filters based on the blocks white and black list
-            whiteBlocks = wflow.getBlockWhitelist()
-            if whiteBlocks:
-                for block in list(finalBlocks):
-                    if block not in whiteBlocks:
-                        finalBlocks.pop(block)
-            blackBlocks = wflow.getBlockBlacklist()
-            for block in blackBlocks:
-                finalBlocks.pop(block, None)
+
+            if primary:
+                # then apply block white/black list filters to avoid unnecessary calls
+                whiteBlocks = wflow.getBlockWhitelist()
+                if whiteBlocks:
+                    for block in list(finalBlocks):
+                        if block not in whiteBlocks:
+                            finalBlocks.pop(block)
+                blackBlocks = wflow.getBlockBlacklist()
+                for block in blackBlocks:
+                    finalBlocks.pop(block, None)
+
             if lumiList:
                 self.logger.info("Fetching block/lumi information for %d blocks in %s",
                                  len(finalBlocks), wflow.getName())

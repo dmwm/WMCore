@@ -191,12 +191,14 @@ def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
     return locationByDset
 
 
-def getDbsBlocksRun(datasetName, runList, dbsUrl):
+def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
     """
     Given a dataset name and a list of runs, find all the blocks
     :return: flat list of blocks
     """
     blocks = set()
+    if isinstance(runList, set):
+        runList = list(runList)
 
     urls = ['%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runList).replace(" ", ""), datasetName)]
     data = multi_getdata(urls, ckey(), cert())
@@ -204,10 +206,10 @@ def getDbsBlocksRun(datasetName, runList, dbsUrl):
     for row in data:
         dataset = row['url'].rsplit('=')[-1]
         if row['data'] is None:
-            print("FAILURE: getDbsBlocksRun for %s. Error: %s %s" % (dataset,
-                                                                    row.get('code'),
-                                                                    row.get('error')))
-            continue
+            msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
+                                                                             row.get('code'),
+                                                                             row.get('error'))
+            raise RuntimeError(msg)
         rows = json.loads(row['data'])
         for item in rows:
             blocks.add(item['block_name'])
@@ -215,23 +217,32 @@ def getDbsBlocksRun(datasetName, runList, dbsUrl):
     return list(blocks)
 
 
-def getFileLumisInBlock(blockName, dbsUrl, validFileOnly=1):
+def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
     """
-    Given a block name, retrieve its run/lumis for each valid file
-    :return: list of dictionaries, just what gets returned by DBS
+    Given a list of blocks, find their file run lumi information
+    in DBS for up to 10 blocks concurrently
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :param validFileOnly: integer flag for valid files only or not
+    :return: a dict of blocks with list of file/run/lumi info
     """
-    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(blockName))]
-    data = multi_getdata(urls, ckey(), cert())
+    runLumisByBlock = {}
+    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(b)) for b in blocks]
+    # limit it to 10 concurrent calls not to overload DBS
+    data = multi_getdata(urls, ckey(), cert(), num_conn=10)
 
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
         if row['data'] is None:
-            print("FAILURE: getFileLumisInBlock for %s. Error: %s %s" % (blockName,
-                                                                        row.get('code'),
-                                                                        row.get('error')))
-            continue
-        # there should be a single element
-        return json.loads(row['data'])
+            msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
+                                                                                 row.get('code'),
+                                                                                 row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runLumisByBlock.setdefault(blockName, [])
+        for item in rows:
+            runLumisByBlock[blockName].append(item)
+    return runLumisByBlock
 
 
 def findBlockParents(blocks, dbsUrl):
@@ -258,6 +269,28 @@ def findBlockParents(blocks, dbsUrl):
             parentsByBlock[dataset].setdefault(item['this_block_name'], set())
             parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
     return parentsByBlock
+
+
+def getRunsInBlock(blocks, dbsUrl):
+    """
+    Provided a list of block names, find their run numbers
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :return: a dictionary of block names and a list of run numbers
+    """
+    runsByBlock = {}
+    urls = ['%s/runs?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    data = multi_getdata(urls, ckey(), cert())
+    for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
+                                                                            row.get('code'),
+                                                                            row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runsByBlock[blockName] = rows[0]['run_num']
+    return runsByBlock
 
 
 def phedexInfo(datasets, phedexUrl):

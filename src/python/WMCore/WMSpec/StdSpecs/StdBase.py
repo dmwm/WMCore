@@ -235,16 +235,14 @@ class StdBase(object):
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 300
-        monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
-        monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.destinationHost = self.dashboardHost
-        monitoring.DashboardMonitor.destinationPort = self.dashboardPort
+        monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
         monitoring.PerformanceMonitor.maxPSS = maxpss
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
+    # FIXME: this function is getting deprecated. Will be removed in March 2020
     def reportWorkflowToDashboard(self, dashboardActivity):
         """
         _reportWorkflowToDashboard_

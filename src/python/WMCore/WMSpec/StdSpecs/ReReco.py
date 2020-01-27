@@ -71,7 +71,6 @@ class ReRecoWorkloadFactory(DataProcessing):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 

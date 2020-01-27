@@ -13,15 +13,15 @@ import pickle
 import time
 # WMCore modules
 from pprint import pformat
-from copy import copy
-
+from copy import copy, deepcopy
+from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
     elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, getIO, \
     dbsInfo, phedexInfo, getComputingTime, getNCopies, teraBytes, \
-    findBlockParents, findParent, getDbsBlocksRun, getFileLumisInBlock, \
-    getBlockReplicasAndSize, getPileupDatasetSizes, getPileupSubscriptions
+    findBlockParents, findParent, getBlocksByDsetAndRun, getFileLumisInBlock, \
+    getBlockReplicasAndSize, getPileupDatasetSizes, getPileupSubscriptions, getRunsInBlock
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
@@ -302,78 +302,111 @@ class RequestInfo(MSCore):
         Provided a dictionary structure of dictionary, block name, and a couple of
         block information, set the workflow attributes accordingly.
         """
+        retryWorkflows = []
         for wflow in workflows:
-            for dataIn in wflow.getDataCampaignMap():
-                if dataIn['type'] == "primary":
-                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']], True)
-                    wflow.setPrimaryBlocks(newBlockDict)
-                elif dataIn['type'] == "parent":
-                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']], False)
-                    wflow.setParentBlocks(newBlockDict)
+            try:
+                for dataIn in wflow.getDataCampaignMap():
+                    if dataIn['type'] == "primary":
+                        newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                                 blocksByDset[dataIn['name']])
+                        wflow.setPrimaryBlocks(newBlockDict)
+                    elif dataIn['type'] == "parent":
+                        newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                                 blocksByDset[dataIn['name']])
+                        wflow.setParentBlocks(newBlockDict)
+            except Exception:
+                self.logger.error("Workflow: %s will be retried in the next cycle", wflow.getName())
+                retryWorkflows.append(wflow)
 
-    def _handleInputDataInfo(self, wflow, dset, blocksDict, primary):
+        # remove workflows that failed one or more of the bulk queries to the data-service
+        for wf in retryWorkflows:
+            # FIXME: test whether this removal works with complex objects
+            workflows.remove(wf)
+
+    def _handleInputDataInfo(self, wflow, dset, blocksDict):
         """
-        Handle primary input data, such that we can also consider a
-        Run white/black lists, and also compare against
-        blocks without any valid files.
+        Applies any run/block/lumi list on the primary and parent
+        blocks provided.
+        It's a convoluted logic, such as:
+         1) if there is no run/block/lumi list, just return the initial blocksDict
+         2) if it has lumi list, filter runs from it and run block discovery
+            given a dataset name and a list of runs
+         3) if it has RunWhitelist, run block discovery for a given dataset name
+            and a list of runs
+         4) if it has only RunBlacklist, discover the run list of all initial blocks
+            provided in blocksDict and remove blocks matching only the black list
+         5) for the steps above, always check whether the block has replicas
+         6) NOW that the block data discovery is completed (considering runs):
+           * if LumiList is not enabled, just return the current list of blocks
+           * else, fetch file/run/lumi information in bulk of blocks and compare it
+           to the LumiList, skipping blocks without a single file that matches it.
 
         Note that the LumiList check is dealt with in a similar way
         as done in the WorkQueue StartPolicyInterface/getMaskedBlocks:
 
         :param wflow: the Workflow object
         :param dset: dataset name
-        :param blocksDict: dictionary of blocks and block size
+        :param blocksDict: dictionary of blocks, their size and location
         :return: dictionary of block names and block size
         """
-        # FIXME: this is heavy and should be done concurrently
+        finalBlocks = {}
         dbsUrl = wflow.getDbsUrl()
-        runList = wflow.getRunlist()
+        runWhite = wflow.getRunWhitelist()
+        runBlack = set(wflow.getRunBlacklist())
         lumiList = wflow.getLumilist()
         if lumiList:
-            # LumiList has precedence over RunWhitelist/RunBlacklist
-            runList = []
+            # LumiList has precedence over RunWhitelist
+            runWhite = []
             for run in lumiList.getRuns():
-                runList.append(int(run))
-            runList = list(set(runList))
-        if runList:
-            finalBlocks = copy(blocksDict)
+                runWhite.append(int(run))
+            runWhite = list(set(runWhite))
+        if runWhite:
             # Run number 1 is not supported by DBSServer
-            if int(runList[0]) == 1:
-                pass
+            if int(runWhite[0]) == 1:
+                finalBlocks = deepcopy(blocksDict)
             else:
+                runWhite = list(set(runWhite) - runBlack)
                 self.logger.info("Fetching blocks matching a list of runs for %s", wflow.getName())
-                # then find blocks matching that run list
-                blocks = getDbsBlocksRun(dset, runList, dbsUrl)
-                # now filter blocks without any valid files
+                try:
+                    blocks = getBlocksByDsetAndRun(dset, runWhite, dbsUrl)
+                except Exception as exc:
+                    self.logger.error("Failed to retrieve blocks by dataset and run. Details: %s", str(exc))
+                    raise
                 for block in blocks:
                     if block in blocksDict:
-                        finalBlocks[block] = blocksDict[block]
+                        finalBlocks[block] = deepcopy(blocksDict[block])
                     else:
                         self.logger.info("Dropping block with no replicas in PhEDEx: %s", block)
+        elif runBlack:
+            # only run blacklist set
+            self.logger.info("Fetching runs in blocks for RunBlacklist for %s", wflow.getName())
+            try:
+                blockRuns = getRunsInBlock(list(blocksDict), dbsUrl)
+            except Exception as exc:
+                self.logger.error("Failed to bulk retrieve runs per block. Details: %s", str(exc))
+                raise
+            for block, runs in blockRuns.items():
+                if not set(runs).difference(runBlack):
+                    self.logger.info("Dropping block with only blacklisted runs: %s", block)
+                elif block in blocksDict:
+                    finalBlocks[block] = deepcopy(blocksDict[block])
 
-            if primary:
-                # then apply block white/black list filters to avoid unnecessary calls
-                whiteBlocks = wflow.getBlockWhitelist()
-                if whiteBlocks:
-                    for block in list(finalBlocks):
-                        if block not in whiteBlocks:
-                            finalBlocks.pop(block)
-                blackBlocks = wflow.getBlockBlacklist()
-                for block in blackBlocks:
-                    finalBlocks.pop(block, None)
-
-            if lumiList:
-                self.logger.info("Fetching block/lumi information for %d blocks in %s",
-                                 len(finalBlocks), wflow.getName())
-                goodBlocks = set()
-                # now with a smaller set of blocks in hand, we collect their lumi
-                # information and discard any blocks not matching the lumi list
-                for block in finalBlocks:
-                    fileLumis = getFileLumisInBlock(block, dbsUrl, validFileOnly=1)
+        if lumiList:
+            self.logger.info("Fetching block/lumi information for %d blocks in %s",
+                             len(finalBlocks), wflow.getName())
+            self.logger.debug("with the following run whitelist: %s", runWhite)
+            goodBlocks = set()
+            # now with a smaller set of blocks in hand, we collect their lumi
+            # information and discard any blocks not matching the lumi list
+            for blockSlice in grouper(finalBlocks, 10):
+                try:
+                    blockFileLumis = getFileLumisInBlock(blockSlice, dbsUrl, validFileOnly=1)
+                except Exception as exc:
+                    self.logger.error("Failed to bulk retrieve run/lumi per block. Details: %s", str(exc))
+                    raise
+                for block, fileLumis in blockFileLumis.items():
                     for fileLumi in fileLumis:
-                        if int(fileLumi['run_num']) not in runList:
+                        if int(fileLumi['run_num']) not in runWhite:
                             continue
                         runNumber = str(fileLumi['run_num'])
                         lumis = fileLumi['lumi_section_num']
@@ -382,13 +415,15 @@ class RequestInfo(MSCore):
                             # then it has lumis that we need, keep this block and move on
                             goodBlocks.add(block)
                             break
-                # last but not least, drop any blocks that are not in the good list
-                for block in list(finalBlocks):
-                    if block not in goodBlocks:
-                        finalBlocks.pop(block)
-            return finalBlocks
-        # case where there is no lumi list neither run list
-        return blocksDict
+            # last but not least, drop any blocks that are not in the good list
+            for block in list(finalBlocks):
+                if block not in goodBlocks:
+                    self.logger.info("Dropping block not matching LumiList: %s", block)
+                    finalBlocks.pop(block)
+
+        if not finalBlocks:
+            finalBlocks = blocksDict
+        return finalBlocks
 
     def getParentChildBlocks(self, workflows):
         """

@@ -81,11 +81,18 @@ class Workflow(object):
         """
         return sorted(list(set(self.data['SiteWhitelist']) - set(self.data['SiteBlacklist'])))
 
-    def getRunlist(self):
+    def getRunWhitelist(self):
         """
-        Get the RunWhitelist minus the black list for this request
+        Get the RunWhitelist for this request
         """
-        res = set(self._getValue('RunWhitelist', [])) - set(self._getValue('RunBlacklist', []))
+        res = set(self._getValue('RunWhitelist', []))
+        return sorted(list(res))
+
+    def getRunBlacklist(self):
+        """
+        Get the RunBlacklist for this request
+        """
+        res = set(self._getValue('RunBlacklist', []))
         return sorted(list(res))
 
     def getLumilist(self):

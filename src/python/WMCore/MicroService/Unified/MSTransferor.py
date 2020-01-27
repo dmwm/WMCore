@@ -299,6 +299,9 @@ class MSTransferor(MSCore):
                 msg = "Skipping 'parent' data subscription (done with the 'primary' data), for: %s" % dataIn
                 self.logger.info(msg)
                 continue
+            elif dataIn["type"] == "secondary" and dataIn['name'] not in wflow.getSecondarySummary():
+                # secondary already in place
+                continue
             if dataIn['campaign'] not in self.campaigns:
                 msg = "Data placement can't proceed because campaign '%s' was not found." % dataIn["campaign"]
                 msg += " Skipping this workflow until the campaign gets created."

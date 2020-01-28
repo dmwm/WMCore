@@ -39,7 +39,6 @@ class DQMHarvestWorkloadFactory(DataProcessing):
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         self.workload.setTaskPropertiesFromWorkload()
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         return self.workload
 

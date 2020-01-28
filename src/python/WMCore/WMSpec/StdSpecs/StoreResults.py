@@ -87,7 +87,6 @@ class StoreResultsWorkloadFactory(StdBase):
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 

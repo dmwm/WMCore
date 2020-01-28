@@ -271,7 +271,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         # make a counter for jobs pending to sites in drain mode within the grace period
         countDrainingJobs = 0
         timeNow = int(time.time())
-        badJobs = dict([(x, []) for x in range(71101, 71105)])
+        badJobs = dict([(x, []) for x in range(71101, 71106)])
         newJobIds = set()
 
         logging.info("Refreshing priority cache with currently %i jobs", len(self.jobDataCache))
@@ -309,17 +309,16 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.isfile(pickledJobPath):
                 # Then we have a problem - there's no file
-                logging.error("Could not find pickled jobObject %s", pickledJobPath)
-                badJobs[71103].append(newJob)
+                logging.warning("Could not find pickled jobObject %s", pickledJobPath)
+                badJobs[71104].append(newJob)
                 continue
             try:
                 with open(pickledJobPath, 'r') as jobHandle:
                     loadedJob = pickle.load(jobHandle)
             except Exception as ex:
-                msg = "Error while loading pickled job object %s\n" % pickledJobPath
-                msg += str(ex)
-                logging.error(msg)
-                raise JobSubmitterPollerException(msg)
+                logging.warning("Failed to load job pickle object %s", pickledJobPath)
+                badJobs[71105].append(newJob)
+                continue
 
             # figure out possible locations for job
             possibleLocations = loadedJob["possiblePSN"]
@@ -360,7 +359,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     elif self.failJobDrain(timeNow, possibleLocations):
                         newJob['possibleSites'] = possibleLocations
                         logging.warning("Job id %s can only run at a sites in Draining state", jobID)
-                        badJobs[71104].append(newJob)
+                        badJobs[71103].append(newJob)
                         continue
                     else:
                         countDrainingJobs += 1
@@ -413,8 +412,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Register failures in submission
         for errorCode in badJobs:
-            if badJobs[errorCode]:
-                logging.debug("The following jobs could not be submitted: %s, error code : %d", badJobs, errorCode)
+            if badJobs[errorCode] and errorCode in [71101, 71102, 71103]:
+                msg = "%d jobs failed to be submitted due to location constraints (error code: %s)"
+                logging.warning(msg, len(badJobs[errorCode]), errorCode)
+                self._handleSubmitFailedJobs(badJobs[errorCode], errorCode)
+            elif badJobs[errorCode] and errorCode in [71104, 71105]:
+                msg = "%d jobs failed to be submitted with unrecoverable job pickle problems (error code: %s)"
+                logging.warning(msg, len(badJobs[errorCode]), errorCode)
                 self._handleSubmitFailedJobs(badJobs[errorCode], errorCode)
 
         # Persist remaining job packages to disk
@@ -481,7 +485,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         for job in badJobs:
             job['couch_record'] = None
             job['fwjr'] = Report()
-            if exitCode in [71102, 71104]:
+            if exitCode in [71102, 71103]:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed",
                                      WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleSites']),
                                      ', '.join(job['possibleSites']))

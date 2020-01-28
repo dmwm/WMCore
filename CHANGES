@@ -1,3 +1,13 @@
+1.3.0.pre4 to 1.3.0.pre5:
+  - added a unit test for basic operations with Workflows (Alan Malta Rodrigues) #9511
+  - Catch data-service queries that failed and retry workflow in the next cycle (Alan Malta Rodrigues) #9511
+  - pylint changes (Alan Malta Rodrigues) #9510
+  - Remove DashboardMonitor from the request spec files (Alan Malta Rodrigues) #9510
+  - Make assigned->staging->staged transition configurable in ReqMgr2 (Alan Malta Rodrigues) #9508
+  - Properly deal with RunWhitelist/RunBlacklist within MS (Alan Malta Rodrigues) #9506
+  - Fix tagcollector cache filename. (khurtado) #9458
+
+
 1.3.0.pre3 to 1.3.0.pre4:
   - When evaluating existent data location, drop MSS/T3/CERNBOX/Export (Alan Malta Rodrigues) #9505
   - Fix to block white/black list in MSTransferor (Alan Malta Rodrigues) #9503

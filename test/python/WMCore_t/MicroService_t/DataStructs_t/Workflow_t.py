@@ -192,6 +192,26 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(wflow.getReqParam("RequestType"), wflow.getReqType())
         self.assertEqual(wflow.getReqParam("RequestName"), wflow.getName())
 
+    def testComparison(self):
+        """
+        Perform basic operations over Workflow objects
+        """
+        wflow1 = Workflow("workflow_1", {"RequestType": "StepChain"})
+        wflow2 = Workflow("workflow_2", {"RequestType": "TaskChain"})
+        wflow3 = Workflow("workflow_3", {"RequestType": "ReReco"})
+        wflow4 = Workflow("workflow_4", {"RequestType": "StepChain"})
+        listWflows = [wflow1, wflow2, wflow3, wflow4]
+
+        self.assertNotEqual(wflow1, wflow4)
+
+        badWflows = [wflow3, wflow3]
+        self.assertEqual(len(listWflows), 4)
+        self.assertEqual(len(badWflows), 2)
+        for wflow in set(badWflows):
+            listWflows.remove(wflow)
+        self.assertEqual(len(listWflows), 3)
+        self.assertEqual(len(badWflows), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

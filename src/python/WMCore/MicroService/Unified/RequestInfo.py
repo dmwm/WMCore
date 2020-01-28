@@ -13,7 +13,7 @@ import pickle
 import time
 # WMCore modules
 from pprint import pformat
-from copy import copy, deepcopy
+from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.DataStructs.Workflow import Workflow
@@ -65,19 +65,18 @@ class RequestInfo(MSCore):
             self.logger.info(msg)
 
         # get complete requests information (based on Unified Transferor logic)
-        self.unified(uConfig, workflows)
+        self.unified(workflows)
 
         return workflows
 
-    def unified(self, uConfig, workflows):
+    def unified(self, workflows):
         """
         Unified Transferor black box
-        :param uConfig: unified Configuration
         :param workflows: input workflow objects
         """
         # get aux info for dataset/blocks from inputs/parents/pileups
         # make subscriptions based on site white/black lists
-        self.logger.info("### unified processing %d requests", len(workflows))
+        self.logger.info("Unified method processing %d requests", len(workflows))
 
         orig = time.time()
         # start by finding what are the parent datasets for requests requiring it
@@ -104,7 +103,8 @@ class RequestInfo(MSCore):
         parentageMap = self.getParentChildBlocks(workflows)
         self.setParentChildBlocks(workflows, parentageMap)
         self.logger.debug(elapsedTime(time0, "### getParentChildBlocks"))
-        self.logger.debug(elapsedTime(orig, '### total time for unified method'))
+        self.logger.info(elapsedTime(orig, '### total time for unified method'))
+        self.logger.info("Unified method successfully processed %d requests", len(workflows))
 
         return workflows
 
@@ -215,24 +215,53 @@ class RequestInfo(MSCore):
         self.logger.debug(elapsedTime(orig, '### total time'))
         return requestsToProcess
 
+    def _workflowRemoval(self, listOfWorkflows, workflowsToRetry):
+        """
+        Receives the initial list of workflows and another list of workflows
+        that failed somewhere in the MS processing (like fetching information
+        from the data-services); and remove those workflows from this cycle of
+        the MSTransferor, such that they can be retried in the next cycle.
+        :param listOfWorkflows: reference to the list of the initial workflows
+        :param workflowsToRetry: list of workflows with missing information
+        :return: nothing, the workflow removal is done in place
+        """
+        for wflow in set(workflowsToRetry):
+            self.logger.warning("Removing workflow that failed processing in MSTransferor: %s", wflow.getName())
+            listOfWorkflows.remove(wflow)
+
     def getParentDatasets(self, workflows):
         """
         Given a list of requests, find which requests need to process a parent
         dataset, and discover what the parent dataset name is.
         :return: dictionary with the child and the parent dataset
         """
+        retryWorkflows = []
+        retryDatasets = []
         datasetByDbs = {}
+        parentByDset = {}
         for wflow in workflows:
             if wflow.hasParents():
                 datasetByDbs.setdefault(wflow.getDbsUrl(), set())
                 datasetByDbs[wflow.getDbsUrl()].add(wflow.getInputDataset())
 
-        parentageMap = {}
         for dbsUrl, datasets in datasetByDbs.items():
             self.logger.info("Resolving %d dataset parentage against DBS: %s", len(datasets), dbsUrl)
             # first find out what's the parent dataset name
-            parentageMap.update(findParent(datasets, dbsUrl))
-        return parentageMap
+            parentByDset.update(findParent(datasets, dbsUrl))
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in parentByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                if wflow.hasParents() and wflow.getInputDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
+
+        return parentByDset
 
     def setParentDatasets(self, workflows, parentageMap):
         """
@@ -252,6 +281,8 @@ class RequestInfo(MSCore):
            First contains dataset size as value.
            Second contains a list of locations as value.
         """
+        retryWorkflows = []
+        retryDatasets = []
         datasets = set()
         for wflow in workflows:
             datasets = datasets | wflow.getPileupDatasets()
@@ -265,7 +296,23 @@ class RequestInfo(MSCore):
         self.logger.info("Fetching pileup dataset location for %d datasets against PhEDEx: %s",
                          len(datasets), self.msConfig['phedexUrl'])
         locationsByDset = getPileupSubscriptions(datasets, self.msConfig['phedexUrl'],
-                                              self.msConfig['quotaAccount'], self.msConfig['minPercentCompletion'])
+                                                 self.msConfig['quotaAccount'], self.msConfig['minPercentCompletion'])
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in sizesByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        for dset, value in locationsByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                for pileup in wflow.getPileupDatasets():
+                    if pileup in  retryDatasets:
+                        retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
         return sizesByDset, locationsByDset
 
     def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset):
@@ -285,6 +332,8 @@ class RequestInfo(MSCore):
         :param workflows: a list of Workflow objects
         :return: dictionary with dataset and a few block information
         """
+        retryWorkflows = []
+        retryDatasets = []
         datasets = set()
         for wflow in workflows:
             for dataIn in wflow.getDataCampaignMap():
@@ -295,6 +344,18 @@ class RequestInfo(MSCore):
         self.logger.info("Fetching block info for %d datasets against PhEDEx: %s",
                          len(datasets), self.msConfig['phedexUrl'])
         blocksByDset = getBlockReplicasAndSize(datasets, self.msConfig['phedexUrl'])
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in blocksByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                if wflow.getInputDataset() in retryDatasets or wflow.getParentDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
         return blocksByDset
 
     def setInputDataBlocks(self, workflows, blocksByDset):
@@ -319,9 +380,7 @@ class RequestInfo(MSCore):
                 retryWorkflows.append(wflow)
 
         # remove workflows that failed one or more of the bulk queries to the data-service
-        for wf in retryWorkflows:
-            # FIXME: test whether this removal works with complex objects
-            workflows.remove(wf)
+        self._workflowRemoval(workflows, retryWorkflows)
 
     def _handleInputDataInfo(self, wflow, dset, blocksDict):
         """
@@ -432,19 +491,33 @@ class RequestInfo(MSCore):
         :param workflows: list of workflow objects
         :return: nothing, updates the workflow attributes in place
         """
+        retryWorkflows = []
+        retryDatasets = []
         blocksByDbs = {}
+        parentageMap = {}
         for wflow in workflows:
             blocksByDbs.setdefault(wflow.getDbsUrl(), set())
             if wflow.getParentDataset():
                 blocksByDbs[wflow.getDbsUrl()] = blocksByDbs[wflow.getDbsUrl()] | set(wflow.getPrimaryBlocks().keys())
 
-        parentageMap = {}
         for dbsUrl, blocks in blocksByDbs.items():
             if not blocks:
                 continue
             self.logger.debug("Fetching DBS parent blocks for %d children blocks...", len(blocks))
             # first find out what's the parent dataset name
             parentageMap.update(findBlockParents(blocks, dbsUrl))
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in parentageMap.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                if wflow.getParentDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
         return parentageMap
 
     def setParentChildBlocks(self, workflows, parentageMap):

@@ -91,6 +91,7 @@ def getPileupDatasetSizes(datasets, phedexUrl):
     :param datasets: list of dataset names
     :param phedexUrl: a string with the PhEDEx URL
     :return: a dictionary of datasets and their respective sizes
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     sizeByDset = {}
     if not datasets:
@@ -102,13 +103,19 @@ def getPileupDatasetSizes(datasets, phedexUrl):
     for row in data:
         dataset = row['url'].split('=')[-1]
         if row['data'] is None:
-            print("FAILURE: getPileupDatasetSizes for %s. Error: %s %s" % (dataset, row.get('code'),
-                                                                          row.get('error')))
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s %s" % (dataset,
+                                                                                     row.get('code'),
+                                                                                     row.get('error')))
+            sizeByDset.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
         sizeByDset.setdefault(dataset, 0)  # flat dict in the format of blockName: blockSize
-        for item in rows['phedex']['block']:
-            sizeByDset[dataset] += item['bytes']
+        try:
+            for item in rows['phedex']['block']:
+                sizeByDset[dataset] += item['bytes']
+        except Exception as exc:
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s" % (dataset, str(exc)))
+            sizeByDset[dataset] = None
     return sizeByDset
 
 
@@ -128,6 +135,7 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
             {"blockSize": 111, "locations": ["x", "y"]}
         }
     }
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     dsetBlockSize = {}
     if not datasets:
@@ -139,21 +147,26 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
     for row in data:
         dataset = row['url'].split('=')[-1]
         if row['data'] is None:
-            print("FAILURE: getBlockReplicasAndSize for %s. Error: %s %s" % (dataset,
-                                                                            row.get('code'),
-                                                                            row.get('error')))
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s %s" % (dataset,
+                                                                                       row.get('code'),
+                                                                                       row.get('error')))
+            dsetBlockSize.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
         dsetBlockSize.setdefault(dataset, {})
-        for item in rows['phedex']['block']:
-            block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
-            for repli in item['replica']:
-                if repli['complete'] == 'y' and repli['subscribed'] == 'y':
-                    if not group:
-                        block[item['name']]['locations'].append(repli['node'])
-                    elif repli['group'] == group:
-                        block[item['name']]['locations'].append(repli['node'])
-            dsetBlockSize[dataset].update(block)
+        try:
+            for item in rows['phedex']['block']:
+                block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
+                for repli in item['replica']:
+                    if repli['complete'] == 'y' and repli['subscribed'] == 'y':
+                        if not group:
+                            block[item['name']]['locations'].append(repli['node'])
+                        elif repli['group'] == group:
+                            block[item['name']]['locations'].append(repli['node'])
+                dsetBlockSize[dataset].update(block)
+        except Exception as exc:
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s" % (dataset, str(exc)))
+            dsetBlockSize[dataset] = None
     return dsetBlockSize
 
 
@@ -165,7 +178,8 @@ def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
     :param phedexUrl: a string with the PhEDEx URL
     :param group: PhEDEx group
     :param percent_min: only return subscriptions that are this complete
-    :return: a dictionary of datasets and a list of their location
+    :return: a dictionary of datasets and a list of their location.
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     #FIXME: implement the same logic for Rucio
     locationByDset = {}
@@ -179,15 +193,20 @@ def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
     for row in data:
         dataset = row['url'].rsplit('=')[-1]
         if row['data'] is None:
-            print("FAILURE: getPileupSubscriptions for %s. Error: %s %s" % (dataset,
-                                                                           row.get('code'),
-                                                                           row.get('error')))
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s %s" % (dataset,
+                                                                                      row.get('code'),
+                                                                                      row.get('error')))
+            locationByDset.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
         locationByDset.setdefault(dataset, [])
-        for item in rows['phedex']['dataset']:
-            for subs in item['subscription']:
-                locationByDset[dataset].append(subs['node'])
+        try:
+            for item in rows['phedex']['dataset']:
+                for subs in item['subscription']:
+                    locationByDset[dataset].append(subs['node'])
+        except Exception as exc:
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s" % (dataset, str(exc)))
+            locationByDset[dataset] = None
     return locationByDset
 
 
@@ -247,27 +266,36 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
 
 def findBlockParents(blocks, dbsUrl):
     """
-    Helper function to find block parents given a block name.
+    Helper function to find block parents given a list of block names.
     Return a dictionary in the format of:
     {"child dataset name": {"child block": ["parent blocks"],
                             "child block": ["parent blocks"], ...}}
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     parentsByBlock = {}
     urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
+        dataset = blockName.split("#")[0]
         if row['data'] is None:
-            print("FAILURE: findBlockParents for %s. Error: %s %s" % (blockName,
-                                                                     row.get('code'),
-                                                                     row.get('error')))
+            print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
+                                                                              row.get('code'),
+                                                                              row.get('error')))
+            parentsByBlock.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
-        for item in rows:
-            dataset = item['this_block_name'].split("#")[0]
+        try:
+            if dataset in parentsByBlock and parentsByBlock[dataset] is None:
+                # then one of the block calls has failed, keep it failed!
+                continue
             parentsByBlock.setdefault(dataset, {})
-            parentsByBlock[dataset].setdefault(item['this_block_name'], set())
-            parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
+            for item in rows:
+                parentsByBlock[dataset].setdefault(item['this_block_name'], set())
+                parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
+        except Exception as exc:
+            print("Failure in findBlockParents for block %s. Error: %s" % (blockName, str(exc)))
+            parentsByBlock[dataset] = None
     return parentsByBlock
 
 
@@ -302,8 +330,8 @@ def phedexInfo(datasets, phedexUrl):
         dataset = row['url'].rsplit('=')[-1]
         if row['data'] is None:
             print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
-                                                               row.get('code'),
-                                                               row.get('error')))
+                                                                row.get('code'),
+                                                                row.get('error')))
             continue
         rows = json.loads(row['data'])
         for item in rows['phedex']['block']:
@@ -587,6 +615,7 @@ def findParent(datasets, dbsUrl):
     """
     Helper function to find the parent dataset.
     It returns a dictionary key'ed by the child dataset
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     parentByDset = {}
     if not datasets:
@@ -598,11 +627,16 @@ def findParent(datasets, dbsUrl):
     for row in data:
         dataset = row['url'].split('=')[-1]
         if row['data'] is None:
-            print("FAILURE: findParent for %s. Error: %s %s" % (dataset,
-                                                               row.get('code'),
-                                                               row.get('error')))
+            print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
+                                                                          row.get('code'),
+                                                                          row.get('error')))
+            parentByDset.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
-        for item in rows:
-            parentByDset[item['this_dataset']] = item['parent_dataset']
+        try:
+            for item in rows:
+                parentByDset[item['this_dataset']] = item['parent_dataset']
+        except Exception as exc:
+            print("Failure in findParent for dataset %s. Error: %s" % (dataset, str(exc)))
+            parentByDset[dataset] = None
     return parentByDset

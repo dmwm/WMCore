@@ -358,8 +358,7 @@ class MSTransferor(MSCore):
                     else:
                         self.blockCounter += len(blocks)
                 else:
-                    self.logger.info("FAKE data subscription. Default transfer id set to: '1111'")
-                    transRec['transferIDs'].add("1111")  # any fake number
+                    self.logger.info("NOT making any data subscriptions, as it's disabled in the configuration")
 
             transRec['transferIDs'] = list(transRec['transferIDs'])
             response.append(transRec)

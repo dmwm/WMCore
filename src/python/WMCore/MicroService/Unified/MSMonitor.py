@@ -143,7 +143,7 @@ class MSMonitor(MSCore):
                 # obtain new transfer ids and completion for given dataset
                 completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
                 # Per Alan request, we'll update only completion and not tids
-                rec['completion'].append(round(completion, 1))
+                rec['completion'].append(round(completion, 2))
             doc['lastUpdate'] = tstamp
 
     def _getTransferstatus(self, dataset, requestList):

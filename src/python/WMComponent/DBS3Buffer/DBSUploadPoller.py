@@ -347,9 +347,7 @@ class DBSUploadPoller(BaseWorkerThread):
             if 'Service Unavailable' in reason or 'Proxy Error' in reason or \
                             'Error reading from remote server' in reason:
                 pass
-            elif 'Connection refused' in str(ex):
-                msg += 'Error: %s' % str(ex)
-            elif 'timed out' in str(ex):
+            elif 'Connection refused' in str(ex) or 'timed out' in str(ex) or 'Could not resolve' in str(ex):
                 msg += 'Error: %s' % str(ex)
             else:
                 msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)

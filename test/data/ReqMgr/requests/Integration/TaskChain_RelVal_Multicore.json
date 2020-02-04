@@ -2,8 +2,8 @@
 "createRequest":
 {
     "Comments": {"WorkFlowDesc": ["TaskChain with real input data with 3 tasks; Main dict and Task1 with 4 cores/streams;",
-				  "Task2 with 8 cores and 6 streams; Task3 with 1 core/stream; Memory per task. Harvesting enabled"],
-		 "CheckList": []},
+                                  "Task2 with 8 cores and 6 streams; Task3 with 1 core/stream; Memory per task. Harvesting enabled"],
+		         "CheckList": ["TaskChain: Multicore, Memory and EventStreams", "TaskChain ACDC workflow for a merge task"]},
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",

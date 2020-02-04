@@ -1,3 +1,10 @@
+1.3.0.pre6 to 1.3.0:
+  - Handle non-EDM files without file location in JobAccountant (Alan Malta Rodrigues) 
+  - A simple function with python-like indentation. #9521 (Todor Ivanov) 
+  - Catch expection loading job pickle object in JobSubmitter; new exit code (Alan Malta Rodrigues) 
+  - Add check list to the request json templates (Alan Malta Rodrigues) 
+
+
 1.3.0.pre5 to 1.3.0.pre6:
   - Round workflow completion to 2 decimal digits; remove fake transfer ID (Alan Malta Rodrigues) #9517
   - Prevent crash on failed DNS lookups (Erik Gough) #9514

@@ -496,7 +496,9 @@ class AccountantWorker(WMConnectionBase):
             # Make sure every file has a valid location
             # see https://github.com/dmwm/WMCore/issues/9353
             for fwjrFile in fileList:
-                if not fwjrFile.get("locations"):
+                # T0 has analysis file without any location, see:
+                # https://github.com/dmwm/WMCore/issues/9497
+                if not fwjrFile.get("locations") and fwjrFile.get("lfn", "").endswith(".root"):
                     logging.warning("The following file doesn't have any location: %s", fwjrFile)
                     jobSuccess = False
                     break
@@ -871,9 +873,9 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile = File()
         wmbsFile.update(fname)
 
-        if isinstance(fname["locations"], set):
+        if fname["locations"] and isinstance(fname["locations"], set):
             pnn = list(fname["locations"])[0]
-        elif isinstance(fname["locations"], list):
+        elif fname["locations"] and isinstance(fname["locations"], list):
             if len(fname['locations']) > 1:
                 logging.error("Have more then one location for a file in job %i", jobID)
                 logging.error("Choosing location %s", fname['locations'][0])

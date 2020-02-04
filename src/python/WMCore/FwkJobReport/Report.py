@@ -431,7 +431,7 @@ class Report(object):
 
         Add an output file to the outputModule provided.
         """
-
+        logging.info("addOutputFile method called with outputModule: %s, aFile: %s", outputModule, aFile)
         aFile = aFile or {}
 
         # Now load the output module and create the file object
@@ -442,6 +442,7 @@ class Report(object):
         fileSection = "file%s" % count
         outMod.files.section_(fileSection)
         fileRef = getattr(outMod.files, fileSection)
+        logging.info("addOutputFile method fileRef: %s, whole tree: %s", fileRef, fileRef.dictionary_whole_tree_())
         outMod.files.fileCount += 1
 
         # Now we need to eliminate the optional and non-primitives:

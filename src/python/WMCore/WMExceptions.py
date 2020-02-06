@@ -204,6 +204,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       99109: "Uncaught exception in WMAgent step executor.",  # WMA TODO: Maybe move to 7****?
                       99303: "Job failed and the original job report got lost",
                       99304: "Could not find jobCache directory. Job will be failed",
+                      99305: "Found single input file with too many events to be processed in a pilot lifetime",
                       99400: "Job is killed by condor_rm or SYSTEM_PERIODIC_REMOVE",
                       99401: "Job is killed by unknown reason ",
                       99996: "Failed to find a step report in the worker node",

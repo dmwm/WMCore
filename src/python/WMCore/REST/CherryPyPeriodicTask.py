@@ -25,6 +25,7 @@ class CherryPyPeriodicTask(object):
         TODO: add validation for config.duration
         """
         self.logger = getTimeRotatingLogger(config._internal_name, config.log_file)
+        self.logger.info("Setting CherryPy periodic task with the following config:\n%s", config)
         self.setConcurrentTasks(config)
         self.setUpLogDB(config)
 

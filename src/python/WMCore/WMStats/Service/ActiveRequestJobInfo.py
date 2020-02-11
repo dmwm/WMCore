@@ -113,3 +113,19 @@ class GlobalLockList(RESTEntity):
         # If data is not updated, need to check, dataCacheUpdate log
         return rows(DataCache.filterData(ACTIVE_NO_CLOSEOUT_FILTER,
                                          ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))
+
+class ParentLockList(RESTEntity):
+    def __init__(self, app, api, config, mount):
+        # main CouchDB database where requests/workloads are stored
+        RESTEntity.__init__(self, app, api, config, mount)
+
+    def validate(self, apiobj, method, api, param, safe):
+        return
+
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @tools.expires(secs=-1)
+    def get(self):
+        # This assumes both the DataCache and the parentage cache list
+        # get periodically updated.
+        # In case of problems, the WMStats cherrypy threads logs need to be checked
+        return rows(DataCache.getParentDatasetList())

@@ -5,7 +5,6 @@ Test case for Rucio WMCore Service class
 from __future__ import print_function, division, absolute_import
 
 import os
-from pprint import pprint
 
 from rucio.client import Client as testClient
 
@@ -106,7 +105,7 @@ class RucioTest(EmulatedUnitTestCase):
         """
         res = list(self.client.get_account_usage(self.acct))
         res2 = self.myRucio.getAccountUsage(self.acct)
-        self.assertEqual(res, [])
+        # I have manually created a rule for this account, so it will be there...
         self.assertEqual(res, res2)
 
         # now test against an account that either does not exist or that we cannot access
@@ -195,3 +194,43 @@ class RucioTest(EmulatedUnitTestCase):
         Test `getPFN` method
         """
         self.assertRaises(NotImplementedError, self.myRucio.getPFN)
+
+    def testListContent(self):
+        """
+        Test `listContent` method, to list content of a given DID
+        """
+        # listing blocks for a dataset
+        res = self.myRucio.listContent(DSET)
+        self.assertTrue(len(res) > 10)
+        self.assertEqual(res[0]["type"], "DATASET")
+
+        # listing files for a block
+        res = self.myRucio.listContent(BLOCK)
+        self.assertTrue(len(res) > 10)
+        self.assertEqual(res[0]["type"], "FILE")
+
+        res = self.myRucio.listContent("/Primary/ProcStr-v1/tier")
+        self.assertItemsEqual(res, [])
+
+    def testListDataRules(self):
+        """
+        Test `listContent` method
+        """
+        res = self.myRucio.listDataRules(DSET)
+        self.assertItemsEqual(res, [])
+
+    def testGetRule(self):
+        """
+        Test `getRule` method
+        """
+        # Badly formatted rule id, raises/catches a general exception
+        res = self.myRucio.getRule("blah")
+        self.assertItemsEqual(res, {})
+
+        # Properly formatted rule, but inexistent id
+        res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc0")
+        self.assertItemsEqual(res, {})
+
+        # Properly formatted rule, rule manually created
+        res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc1")
+        self.assertTrue(res)

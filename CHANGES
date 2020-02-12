@@ -1,3 +1,11 @@
+1.3.0 to 1.3.1.pre1:
+  - added a few unittest for the GET methods (Alan Malta Rodrigues) 
+  - Wrap around Rucio write APIs for data registration (Alan Malta Rodrigues) 
+  - Update the request state transition diagram (Alan Malta Rodrigues) 
+  - Update request spec dependency chart (Alan Malta Rodrigues) 
+  - Bump deployment example (Alan Malta Rodrigues) 
+
+
 1.3.0.pre6 to 1.3.0:
   - Handle non-EDM files without file location in JobAccountant (Alan Malta Rodrigues) 
   - A simple function with python-like indentation. #9521 (Todor Ivanov) 

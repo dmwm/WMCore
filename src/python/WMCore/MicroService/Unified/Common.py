@@ -186,7 +186,7 @@ def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
     if not datasets:
         return locationByDset
 
-    url = "%s/subscriptions?group=%s&percent_min=%s&dataset=%s"
+    url = "%s/subscriptions?group=%s&group=RelVal&percent_min=%s&dataset=%s"
     urls = [url % (phedexUrl, group, percentMin, dset) for dset in datasets]
     data = multi_getdata(urls, ckey(), cert())
 

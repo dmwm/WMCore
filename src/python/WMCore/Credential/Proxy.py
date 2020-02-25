@@ -372,9 +372,13 @@ class Proxy(Credential):
                 'rfc' if self.rfcCompliant else 'old', self.myproxyServer)
 
             if nokey is True:
-                self.logger.debug(
-                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-                credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+                if self.userName:
+                    self.logger.debug("using %s as credential login name", self.userName)
+                    credname = self.userName
+                else:
+                    self.logger.debug(
+                        "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
+                    credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
                 myproxyDelegCmd = 'export GT_PROXY_MODE=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
                                   % ('rfc' if self.rfcCompliant else 'old', self.myproxyServer, self.serverDN, \
                                      self.serverDN, credname, self.myproxyValidity)
@@ -399,9 +403,13 @@ class Proxy(Credential):
         proxyTimeleft = -1
         if self.myproxyServer:
             if nokey is True and serverRenewer is True:
-                self.logger.debug(
-                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-                credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+                if self.userName:
+                    self.logger.debug("using %s as credential login name", self.userName)
+                    credname = self.userName
+                else:
+                    self.logger.debug(
+                        "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
+                    credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
                 checkMyProxyCmd = 'myproxy-info -l %s -s %s' % (credname, self.myproxyServer)
                 output, _, retcode = execute_command(self.setEnv(checkMyProxyCmd), self.logger, self.commandTimeout)
                 if retcode > 0 or not output:

@@ -7,6 +7,7 @@ A page that knows how to format DB queries
 
 
 import os
+import logging
 import threading
 
 from WMCore.WebTools.Page import TemplatedPage
@@ -45,7 +46,9 @@ class DatabasePage(TemplatedPage, DBFormatter):
         TemplatedPage.__init__(self, config)
         dbConfig = ConfigDBMap(config)
         conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
-        DBFormatter.__init__(self, self, conn)
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        DBFormatter.__init__(self, logger, conn)
         myThread = threading.currentThread()
         myThread.transaction = Transaction(conn)
         myThread.transaction.commit()

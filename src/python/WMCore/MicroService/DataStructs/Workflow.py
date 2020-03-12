@@ -330,7 +330,7 @@ class Workflow(object):
 
         # create a descendant list of blocks according to their sizes
         sortedPrimary = sorted(self.getPrimaryBlocks().items(), key=operator.itemgetter(1), reverse=True)
-        chunkSize = sum(item[1] for item in sortedPrimary) // numChunks
+        chunkSize = sum(item[1]['blockSize'] for item in sortedPrimary) // numChunks
 
         self.logger.info("Found %d blocks and the avg chunkSize is: %s GB",
                          len(sortedPrimary), gigaBytes(chunkSize))
@@ -347,9 +347,9 @@ class Workflow(object):
                 if not sortedPrimary or idx >= len(sortedPrimary):
                     # then all blocks have been distributed
                     break
-                elif thisChunkSize + sortedPrimary[idx][1] <= chunkSize:
+                elif thisChunkSize + sortedPrimary[idx][1]['blockSize'] <= chunkSize:
                     thisChunk.add(sortedPrimary[idx][0])
-                    thisChunkSize += sortedPrimary[idx][1]
+                    thisChunkSize += sortedPrimary[idx][1]['blockSize']
                     sortedPrimary.pop(idx)
                 else:
                     idx += 1
@@ -360,7 +360,7 @@ class Workflow(object):
         while sortedPrimary:
             for chunkNum in range(numChunks):
                 blockChunks[chunkNum].add(sortedPrimary[0][0])
-                sizeChunks[chunkNum] += sortedPrimary[0][1]
+                sizeChunks[chunkNum] += sortedPrimary[0][1]['blockSize']
                 sortedPrimary.pop(0)
                 if not sortedPrimary:
                     break

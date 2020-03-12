@@ -164,7 +164,7 @@ class MSTransferor(MSCore):
             self.updateReportDict(summary, "error", msg)
             return summary
         except Exception as ex:
-            msg = "Unknown exception updating caches. Error: %s", str(ex)
+            msg = "Unknown exception updating caches. Error: %s" % str(ex)
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
             return summary
@@ -180,7 +180,13 @@ class MSTransferor(MSCore):
                 # first check which data is already in place and filter them out
                 self.checkDataLocation(wflow)
 
-                success, transfers = self.makeTransferRequest(wflow)
+                try:
+                    success, transfers = self.makeTransferRequest(wflow)
+                except Exception as ex:
+                    success = False
+                    msg = "Unknown exception while making Transfer Request for %s " % wflow.getName()
+                    msg += "\tError: %s" % str(ex)
+                    self.logger.exception(msg)
                 if success:
                     self.logger.info("Transfer requests successful for %s. Summary: %s",
                                      wflow.getName(), pformat(transfers))                    # then create a document in ReqMgr Aux DB

@@ -261,7 +261,7 @@ def modifyConfiguration(config, **args):
 
     # custom AgentStatusWatcher
     if hasattr(config, "AgentStatusWatcher"):
-        config.AgentStatusWatcher.dashboard = args["dashboard_url"]
+        config.AgentStatusWatcher.grafanaToken = "Bearer %s" % args["grafana_token"]
         if args.get("amq_credentials"):
             # e.g.: user@@@pass@@@topic
             amquser, amqpass, amqtopic = args["amq_credentials"].split('@@@')
@@ -299,7 +299,7 @@ def main(argv=None):
                                          "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
                                          "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
-                                         "dqm_url=", "dashboard_url=", "requestcouch_url=", "central_logdb_url=",
+                                         "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
                                          "wmarchive_url=", "amq_credentials=", "rucio_account="])
 
         except getopt.error as msg:
@@ -322,7 +322,7 @@ def main(argv=None):
                           '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
-                          '--dashboard_url', '--requestcouch_url', '--central_logdb_url',
+                          '--grafana_token', '--requestcouch_url', '--central_logdb_url',
                           '--wmarchive_url', '--amq_credentials', '--rucio_account'):
                 parameters[option[2:]] = value
 

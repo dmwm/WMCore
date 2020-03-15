@@ -59,7 +59,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid = None
         self.uid = os.getuid()
-        self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
+        self.monitorBase = "ps --forest -o pid=,ppid=,rss=,pcpu=,pmem=,cmd= -g $(ps -o sid= -p %i)"
         self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
@@ -183,38 +183,52 @@ class PerformanceMonitor(WMRuntimeMonitor):
             # Then we have no step PID, we can do nothing
             return
 
+        pss, rss = 0, 0
+        pcpu, pmem = [], []
         # Now we run the ps monitor command and collate the data
         # Gathers RSS, %CPU and %MEM statistics from ps
-        ps_cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(ps_cmd)
+        ps_cmd = self.monitorBase % (stepPID)
+        stdout, stderr, retcode = subprocessAlgos.runCommand(ps_cmd)
 
-        ps_output = stdout.split()
-        if not len(ps_output) > 6:
-            # Then something went wrong in getting the ps data
-            msg = "Error when grabbing output from process ps\n"
-            msg += "output = %s\n" % ps_output
-            msg += "command = %s\n" % ps_cmd
-            logging.error(msg)
-            return
+        ps_output_list = stdout.splitlines()
+        for ps_line in ps_output_list:
+            ps_output = ps_line.split()
+            if not len(ps_output) > 6:
+                # Then something went wrong in getting the ps data
+                msg = "Error when grabbing output from process ps\n"
+                msg += "errorline = %s\n" % ps_output
+                msg += "output = %s\n" % stdout
+                msg += "error = %s\n" % stderr
+                msg += "retcode = %s\n" % retcode
+                msg += "command = %s\n" % ps_cmd
+                logging.error(msg)
+                return
 
-        # run the command to gather PSS memory statistics from /proc/<pid>/smaps
-        smaps_cmd = self.pssMemoryCommand % (stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(smaps_cmd)
+            # run the command to gather PSS memory statistics from /proc/<pid>/smaps
+            smaps_cmd = self.pssMemoryCommand % (stepPID)
+            stdout1, stderr1, retcode1 = subprocessAlgos.runCommand(smaps_cmd)
 
-        smaps_output = stdout.split()
-        if not len(smaps_output) == 1:
-            # Then something went wrong in getting the smaps data
-            msg = "Error when grabbing output from smaps\n"
-            msg += "output = %s\n" % smaps_output
-            msg += "command = %s\n" % smaps_cmd
-            logging.error(msg)
-            return
+            smaps_output = stdout1.split()
+            if not len(smaps_output) == 1:
+                # Then something went wrong in getting the smaps data
+                msg = "Error when grabbing output from smaps\n"
+                msg += "errorline = %s\n" % smaps_output
+                msg += "output = %s\n" % stdout1
+                msg += "error = %s\n" % stderr1
+                msg += "retcode = %s\n" % retcode1
+                msg += "command = %s\n" % smaps_cmd
+                logging.error(msg)
+                return
 
-        # smaps also returns data in kiloBytes, let's make it megaBytes
-        # I'm also confused with these megabytes and mebibytes...
-        pss = int(smaps_output[0]) // 1000
+            # smaps also returns data in kiloBytes, let's make it megaBytes
+            # I'm also confused with these megabytes and mebibytes...
+            print smaps_output
+            pss += int(smaps_output[0]) // 1000
+            rss += int(ps_output[2])
+            pcpu.append(ps_output[3])
+            pmem.append(ps_output[4])
 
-        logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", smaps_output[0], ps_output[2], ps_output[3], ps_output[4])
+        logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", pss, rss, pcpu, pmem)
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores

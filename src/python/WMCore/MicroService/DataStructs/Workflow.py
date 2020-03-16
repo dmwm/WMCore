@@ -291,9 +291,9 @@ class Workflow(object):
             for parent in list(parents):
                 if parent not in self.getParentBlocks():
                     # then drop this block
-                    parents.remove()
+                    parents.remove(parent)
             self.childToParentBlocks[child] = blocksDict[child]
-            parentBlocks = parentBlocks | blocksDict[child]
+            parentBlocks = parentBlocks | set(blocksDict[child])
 
         # Now remove any parent block that don't need to be transferred
         for block in list(self.getParentBlocks()):
@@ -330,7 +330,12 @@ class Workflow(object):
 
         # create a descendant list of blocks according to their sizes
         sortedPrimary = sorted(self.getPrimaryBlocks().items(), key=operator.itemgetter(1), reverse=True)
-        chunkSize = sum(item[1] for item in sortedPrimary) // numChunks
+        if len(sortedPrimary) < numChunks:
+            msg = "There are less blocks than chunks to create. "
+            msg += "Reducing numChunks from %d to %d" % (numChunks, len(sortedPrimary))
+            self.logger.info(msg)
+            numChunks = len(sortedPrimary)
+        chunkSize = sum(item[1]['blockSize'] for item in sortedPrimary) // numChunks
 
         self.logger.info("Found %d blocks and the avg chunkSize is: %s GB",
                          len(sortedPrimary), gigaBytes(chunkSize))
@@ -347,20 +352,26 @@ class Workflow(object):
                 if not sortedPrimary or idx >= len(sortedPrimary):
                     # then all blocks have been distributed
                     break
-                elif thisChunkSize + sortedPrimary[idx][1] <= chunkSize:
+                elif not thisChunkSize:
+                    # then this site/chunk is empty, assign a block to it
                     thisChunk.add(sortedPrimary[idx][0])
-                    thisChunkSize += sortedPrimary[idx][1]
+                    thisChunkSize += sortedPrimary[idx][1]['blockSize']
+                    sortedPrimary.pop(idx)
+                elif thisChunkSize + sortedPrimary[idx][1]['blockSize'] <= chunkSize:
+                    thisChunk.add(sortedPrimary[idx][0])
+                    thisChunkSize += sortedPrimary[idx][1]['blockSize']
                     sortedPrimary.pop(idx)
                 else:
                     idx += 1
-            blockChunks.append(thisChunk)
-            sizeChunks.append(thisChunkSize)
+            if thisChunk:
+                blockChunks.append(thisChunk)
+                sizeChunks.append(thisChunkSize)
 
         # now take care of the leftovers... in a round-robin style....
         while sortedPrimary:
             for chunkNum in range(numChunks):
                 blockChunks[chunkNum].add(sortedPrimary[0][0])
-                sizeChunks[chunkNum] += sortedPrimary[0][1]
+                sizeChunks[chunkNum] += sortedPrimary[0][1]['blockSize']
                 sortedPrimary.pop(0)
                 if not sortedPrimary:
                     break
@@ -384,7 +395,7 @@ class Workflow(object):
             # of blocks within the chunk and update the chunk size as well
             blockChunks[chunkNum].update(parentSet)
             for parent in parentSet:
-                sizeChunks[chunkNum] += parentsSize[parent]
+                sizeChunks[chunkNum] += parentsSize[parent]['blockSize']
         self.logger.info("Created %d primary+parent data chunks out of %d chunks",
                          len(blockChunks), numChunks)
         self.logger.info("    with chunk size distribution: %s", sizeChunks)

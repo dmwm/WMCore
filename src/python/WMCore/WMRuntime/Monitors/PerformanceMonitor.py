@@ -23,7 +23,10 @@ from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor import getStepSpace
 from WMCore.WMSpec.WMStep import WMStepHelper
 
-getStepName = lambda step: WMStepHelper(step).name()
+
+def getStepName(step):
+    """ Get Step Name """
+    return WMStepHelper(step).name()
 
 
 def average(numbers):
@@ -57,17 +60,10 @@ class PerformanceMonitor(WMRuntimeMonitor):
         in initMonitor
         """
 
-        self.pid = None
-        self.uid = os.getuid()
         self.monitorBase = "ps --forest -o pid=,ppid=,rss=,pcpu=,pmem=,cmd= -g $(ps -o sid= -p %i)"
         self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
-        self.monitorCommand = None
         self.currentStepSpace = None
         self.currentStepName = None
-
-        self.rss = []
-        self.pcpu = []
-        self.pmem = []
 
         self.maxPSS = None
         self.softTimeout = None
@@ -79,6 +75,8 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.watchStepTypes = []
 
         self.disableStep = False
+        self.numOfCores = -1
+        self.stepHelper = None
 
         WMRuntimeMonitor.__init__(self)
 
@@ -91,6 +89,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
         Puts together the information needed for the monitoring
         to actually find everything.
         """
+        del task, job
         args = args or {}
 
         # Set the steps we want to watch
@@ -111,6 +110,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         Acknowledge that the job has started and initialize the time
         """
+        del task
         self.startTime = time.time()
 
         return
@@ -142,6 +142,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         Package the information and send it off
         """
+        del step, stepReport
 
         if not self.disableStep:
             # No information to correlate
@@ -151,6 +152,30 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.currentStepSpace = None
 
         return
+
+    def getStepPID(self):
+        """
+        Get Step PID and make checks
+        """
+        if self.disableStep:
+            # Then we aren't doing CPU monitoring
+            # on this step
+            return None
+
+        if self.currentStepName is None:
+            # We're between steps
+            return None
+
+        if self.currentStepSpace is None:
+            # Then build the step space
+            self.currentStepSpace = getStepSpace(self.stepHelper.name())
+
+        stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
+
+        if stepPID is None:
+            # Then we have no step PID, we can do nothing
+            return None
+        return stepPID
 
     def periodicUpdate(self):
         """
@@ -164,69 +189,52 @@ class PerformanceMonitor(WMRuntimeMonitor):
                            'Wallclock time': 50664,
                            '': 99999}
 
-        if self.disableStep:
-            # Then we aren't doing CPU monitoring
-            # on this step
+        stepPID = self.getStepPID()
+        if not stepPID:
             return
-
-        if self.currentStepName is None:
-            # We're between steps
-            return
-
-        if self.currentStepSpace is None:
-            # Then build the step space
-            self.currentStepSpace = getStepSpace(self.stepHelper.name())
-
-        stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
-
-        if stepPID is None:
-            # Then we have no step PID, we can do nothing
-            return
-
         pss, rss = 0, 0
         pcpu, pmem = [], []
         # Now we run the ps monitor command and collate the data
         # Gathers RSS, %CPU and %MEM statistics from ps
-        ps_cmd = self.monitorBase % (stepPID)
-        stdout, stderr, retcode = subprocessAlgos.runCommand(ps_cmd)
+        psCmd = self.monitorBase % (stepPID)
+        stdout, stderr, retcode = subprocessAlgos.runCommand(psCmd)
 
-        ps_output_list = stdout.splitlines()
-        for ps_line in ps_output_list:
-            ps_output = ps_line.split()
-            if not len(ps_output) > 6:
+        psOutputList = stdout.splitlines()
+        for psLine in psOutputList:
+            psOutput = psLine.split()
+            if not len(psOutput) > 6:
                 # Then something went wrong in getting the ps data
                 msg = "Error when grabbing output from process ps\n"
-                msg += "errorline = %s\n" % ps_output
+                msg += "errorline = %s\n" % psOutput
                 msg += "output = %s\n" % stdout
                 msg += "error = %s\n" % stderr
                 msg += "retcode = %s\n" % retcode
-                msg += "command = %s\n" % ps_cmd
+                msg += "command = %s\n" % psCmd
                 logging.error(msg)
                 return
 
             # run the command to gather PSS memory statistics from /proc/<pid>/smaps
-            smaps_cmd = self.pssMemoryCommand % (stepPID)
-            stdout1, stderr1, retcode1 = subprocessAlgos.runCommand(smaps_cmd)
+            smapsCmd = self.pssMemoryCommand % (stepPID)
+            stdout1, stderr1, retcode1 = subprocessAlgos.runCommand(smapsCmd)
 
-            smaps_output = stdout1.split()
-            if not len(smaps_output) == 1:
+            smapsOutput = stdout1.split()
+            if not len(smapsOutput) == 1:
                 # Then something went wrong in getting the smaps data
                 msg = "Error when grabbing output from smaps\n"
-                msg += "errorline = %s\n" % smaps_output
+                msg += "errorline = %s\n" % smapsOutput
                 msg += "output = %s\n" % stdout1
                 msg += "error = %s\n" % stderr1
                 msg += "retcode = %s\n" % retcode1
-                msg += "command = %s\n" % smaps_cmd
+                msg += "command = %s\n" % smapsCmd
                 logging.error(msg)
                 return
 
             # smaps also returns data in kiloBytes, let's make it megaBytes
             # I'm also confused with these megabytes and mebibytes...
-            print smaps_output
-            pss += int(smaps_output[0]) // 1000
-            rss += int(ps_output[2])
-            pcpu.append(ps_output[3])
-            pmem.append(ps_output[4])
+            pss += int(smapsOutput[0]) // 1000
+            rss += int(psOutput[2])
+            pcpu.append(psOutput[3])
+            pmem.append(psOutput[4])
 
         logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", pss, rss, pcpu, pmem)
 

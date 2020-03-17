@@ -212,6 +212,139 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(len(listWflows), 3)
         self.assertEqual(len(badWflows), 2)
 
+    def testParentageRelationship(self):
+        """
+        Test methods related to the primary and parent datasets and blocks
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A"]},
+                      "parent_B": {"blockSize": 12, "locations": ["Site_B"]},
+                      "parent_C": {"blockSize": 13, "locations": ["Site_A", "Site_B"]}}
+        parentage = {"block_A": ["parent_B", "parent_D"],  # parent_D has no replicas!
+                     "block_B": ["parent_A", "parent_C"]}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX",
+                                        "IncludeParents": True})
+
+        self.assertEqual(wflow.getParentDataset(), "")
+        wflow.setParentDataset("Parent_dataset_XXX")
+        self.assertEqual(wflow.getParentDataset(), "Parent_dataset_XXX")
+
+        self.assertEqual(wflow.getPrimaryBlocks(), {})
+        wflow.setPrimaryBlocks(primDict)
+        self.assertItemsEqual(wflow.getPrimaryBlocks().keys(), ["block_A", "block_B"])
+
+        self.assertEqual(wflow.getParentBlocks(), {})
+        wflow.setParentBlocks(parentDict)
+        self.assertItemsEqual(wflow.getParentBlocks().keys(), ["parent_A", "parent_B", "parent_C"])
+
+        self.assertEqual(wflow.getChildToParentBlocks(), {})
+        wflow.setChildToParentBlocks(parentage)
+        self.assertItemsEqual(wflow.getChildToParentBlocks(), parentage)
+
+    def testGetChunkBlocks1(self):
+        """
+        Perform single chunk tests on the `getChunkBlocks` method.
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A", "Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A", "Site_B"]},
+                      "parent_B": {"blockSize": 8, "locations": []}}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+        wflow.setPrimaryBlocks(primDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 1)
+
+        # now set a parent
+        wflow.setParentDataset("Parent_dataset_XXX")
+        wflow.setParentBlocks(parentDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A", "parent_A", "parent_B"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 20)
+
+    def testGetChunkBlocks2(self):
+        """
+        Perform block distribution among many chunks, testing the `getChunkBlocks` method.
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+        wflow.setPrimaryBlocks(primDict)
+
+        # same number of chunks and primary blocks
+        blockChunks, sizeChunks = wflow.getChunkBlocks(2)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B"})
+        self.assertItemsEqual(blockChunks[1], {"block_A"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 2)
+        self.assertEqual(sizeChunks[1], 1)
+
+        # more chunks than blocks
+        blockChunks, sizeChunks = wflow.getChunkBlocks(5)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B"})
+        self.assertItemsEqual(blockChunks[1], {"block_A"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 2)
+        self.assertEqual(sizeChunks[1], 1)
+
+        # more blocks than chunks
+        primDict.update({"block_C": {"blockSize": 3, "locations": ["Site_C"]},
+                         "block_D": {"blockSize": 4, "locations": ["Site_D"]},
+                         "block_E": {"blockSize": 5, "locations": ["Site_E"]}})
+        wflow.setPrimaryBlocks(primDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(3)
+        self.assertEqual(len(blockChunks), 3)
+        self.assertItemsEqual(blockChunks[0], {"block_E"})
+        self.assertItemsEqual(blockChunks[1], {"block_D", "block_A"})
+        self.assertItemsEqual(blockChunks[2], {"block_C", "block_B"})
+        self.assertEqual(len(sizeChunks), 3)
+        self.assertEqual(sizeChunks[0], 5)
+        self.assertEqual(sizeChunks[1], 5)
+        self.assertEqual(sizeChunks[2], 5)
+
+    def testGetChunkBlocks3(self):
+        """
+        Test the `getChunkBlocks` method and especially the parent/child
+        relationship
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A"]},
+                      "parent_B": {"blockSize": 12, "locations": ["Site_B"]},
+                      "parent_C": {"blockSize": 13, "locations": ["Site_A", "Site_B"]}}
+        parentage = {"block_A": ["parent_B", "parent_D"],  # parent_D has no replicas!
+                     "block_B": ["parent_A", "parent_C"]}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+
+        # now set a parent
+        wflow.setParentDataset("Parent_dataset_XXX")
+        wflow.setPrimaryBlocks(primDict)
+        wflow.setParentBlocks(parentDict)
+        wflow.setChildToParentBlocks(parentage)
+
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A", "block_B", "parent_A", "parent_B", "parent_C"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 39)
+
+        blockChunks, sizeChunks = wflow.getChunkBlocks(2)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B", "parent_A", "parent_C"})
+        self.assertItemsEqual(blockChunks[1], {"block_A", "parent_B"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 26)
+        self.assertEqual(sizeChunks[1], 13)
 
 if __name__ == '__main__':
     unittest.main()

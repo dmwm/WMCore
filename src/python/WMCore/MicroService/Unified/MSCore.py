@@ -69,7 +69,7 @@ class MSCore(object):
                 self.logger.info('%s updating %s status to: %s', prefix, reqName, reqStatus)
                 self.reqmgr2.updateRequestStatus(reqName, reqStatus)
             else:
-                self.logger.info('%s FAKE updating %s status to: %s', prefix, reqName, reqStatus)
+                self.logger.info('DRY-RUN:: %s updating %s status to: %s', prefix, reqName, reqStatus)
         except Exception as err:
             self.logger.exception("Failed to change request status. Error: %s", str(err))
 

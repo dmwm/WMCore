@@ -7,7 +7,6 @@ class DataCache(object):
     # from each server.
     _duration = 300  # 5 minitues
     _lastedActiveDataFromAgent = {}
-    _parentDatasets = []
 
     @staticmethod
     def getDuration():
@@ -28,14 +27,6 @@ class DataCache(object):
     def isEmpty():
         # simple check to see if the data cache is populated
         return not DataCache._lastedActiveDataFromAgent.get("data")
-
-    @staticmethod
-    def getParentDatasetList():
-        return DataCache._parentDatasets
-
-    @staticmethod
-    def setParentDatasetList(parentData):
-        DataCache._parentDatasets = parentData
 
     @staticmethod
     def setlatestJobData(jobData):

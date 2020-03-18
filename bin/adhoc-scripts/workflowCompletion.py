@@ -157,7 +157,7 @@ def main():
         dbsInfo = handleDBS(reqmgrOutDsets, cmswebUrl)
         print("OutputDatasets:")
         for dset in reqmgrOutDsets:
-            print("    %s (lumi completion: %.3f)" % (dset, dbsInfo[dset] / inputLumis))
+            print("    %s (lumis: %s, lumi completion: %s)" % (dset, dbsInfo[dset], dbsInfo[dset] / inputLumis))
         print("")
 
     sys.exit(0)

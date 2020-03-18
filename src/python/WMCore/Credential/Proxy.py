@@ -586,10 +586,17 @@ class Proxy(Credential):
         # Note that this is saved in a temporary file with the pid appended to the filename. This way we will avoid adding many
         # signatures later on with vomsExtensionRenewal in case of multiple processing running at the same time
         tmpProxyFilename = proxyFilename + '.' + str(os.getpid())
+
+        if self.userName:
+            self.logger.debug("using %s as credential login name", self.userName)
+            credname = self.userName
+        else:
+            self.logger.debug(
+                "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
+            credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
-                       % (
-                           self.myproxyServer, tmpProxyFilename,
-                           sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()))
+                       % (self.myproxyServer, tmpProxyFilename, credname)
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setEnv(logonCmd), self.logger, self.commandTimeout)
 

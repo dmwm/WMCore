@@ -596,7 +596,7 @@ class Proxy(Credential):
             credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
 
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
-                       % (self.myproxyServer, tmpProxyFilename, credname)
+                       % (self.myproxyServer, tmpProxyFilename, credname) )
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setEnv(logonCmd), self.logger, self.commandTimeout)
 

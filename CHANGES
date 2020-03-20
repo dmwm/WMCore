@@ -1,3 +1,11 @@
+1.3.2.pre1 to 1.3.2.pre2:
+  - Replace SSB by Grafana in AgentStatusWatcher (Alan Malta Rodrigues) #9555
+  - Wrapper to MonIT Grafana APIs (Alan Malta Rodrigues) #9555
+  - ReqMgr couch view to yield requests with IncludeParents=True (Alan Malta Rodrigues) #9571
+  - bump deployment example to use changes in wmagent manage script (Alan Malta Rodrigues) #9569
+  - Use absolute numbers for lumis and completion in the workflow completion (Alan Malta Rodrigues) #9566
+
+
 1.3.1.pre3 to 1.3.2.pre1:
   - added unittests for primary/parent block distribution (Alan Malta Rodrigues) #9560
   - Fix MSTransferor logic for block distribution (Alan Malta Rodrigues) #9560

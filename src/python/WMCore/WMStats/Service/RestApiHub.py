@@ -16,8 +16,7 @@ from WMCore.WMStats.Service.RequestInfo import (RequestInfo, FinishedStatusInfo,
                                                 TeamInfo, JobDetailInfo)
 from WMCore.WMStats.Service.ActiveRequestJobInfo import (ActiveRequestJobInfo, GlobalLockList,
                                                          ProtectedLFNList, ProtectedLFNListOnlyFinalOutput,
-                                                         FilteredActiveRequestJobInfo, ParentLockList)
-
+                                                         FilteredActiveRequestJobInfo)
 
 
 class RestApiHub(RESTApi):
@@ -48,6 +47,5 @@ class RestApiHub(RESTApi):
                    "protectedlfns": ProtectedLFNList(app, self, config, mount),
                    "protectedlfns_final": ProtectedLFNListOnlyFinalOutput(app, self, config, mount),
                    "globallocks": GlobalLockList(app, self, config, mount),
-                   "parentlocks": ParentLockList(app, self, config, mount),
                    "proc_status": ProcessMatrix(app, self, config, mount)
-                  })
+                   })

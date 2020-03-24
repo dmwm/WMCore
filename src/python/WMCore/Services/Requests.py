@@ -295,7 +295,10 @@ class Requests(dict):
                 # Either the encoder is set to True or it's junk, so use
                 # self.encode
                 encoded_data = self.encode(data)
-            headers["Content-Length"] = str(len(encoded_data))
+            headers["Content-Length"] = len(encoded_data)
+        elif verb != 'GET':
+            # delete requests might not have any body
+            headers["Content-Length"] = 0
         elif verb == 'GET' and data:
             # encode the data as a get string
             encoded_data = urlencode(data, doseq=True)

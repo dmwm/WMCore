@@ -635,11 +635,18 @@ class Proxy(Credential):
             self.logger.error("Error while checking retrieved proxy timeleft for %s" % proxy)
             return
 
+        # timeLeft indicates how maby seconds the proxy is still valid for
+        # we will add  a voms extension via voms-proxy-init -noregen but we
+        # ask for an exactly matchinng validity time, we often end with
+        #  Warning: your certificate and proxy will expire Tue Mar 31 23:46:06 2020
+        #  which is within the requested lifetime of the proxy
+        # which causes a non zero exit status and hence a face error logging
+        # Therefore let's take 10 minutes off
         vomsValid = '00:00'
-        timeLeft = int(timeLeft.strip())
+        vomsTime = int(timeLeft.strip()) - 600
 
-        if timeLeft > 0:
-            vomsValid = "%d:%02d" % (timeLeft / 3600, (timeLeft - (timeLeft / 3600) * 3600) / 60)
+        if vomsTime > 0:
+            vomsValid = "%d:%02d" % (vomsTime / 3600, (vomsTime - (vomsTime / 3600) * 3600) / 60)
 
         self.logger.debug('Requested voms validity: %s' % vomsValid)
 

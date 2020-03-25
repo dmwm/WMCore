@@ -627,7 +627,15 @@ class Proxy(Credential):
         """
         Renew voms extension of the proxy
         """
-        ## get validity time for retrieved flat proxy
+        # get RFC/noRFC type for retrieved flat proxy
+        msg, _, retcode = execute_command(self.setEnv('voms-proxy-info -type -file %s' % proxy), self.logger,
+                                          self.commandTimeout)
+        if retcode > 0:
+            self.logger.error('Cannot get proxy type %s' % msg)
+            return
+        isRFC = msg.startswith('RFC')  # can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
+
+        # get validity time for retrieved flat proxy
         cmd = 'grid-proxy-info -file ' + proxy + ' -timeleft'
         timeLeft, _, retcode = execute_command(self.setEnv(cmd), self.logger, self.commandTimeout)
 
@@ -635,27 +643,20 @@ class Proxy(Credential):
             self.logger.error("Error while checking retrieved proxy timeleft for %s" % proxy)
             return
 
-        # timeLeft indicates how maby seconds the proxy is still valid for
-        # we will add  a voms extension via voms-proxy-init -noregen but we
-        # ask for an exactly matchinng validity time, we often end with
+        # timeLeft indicates how many seconds the proxy is still valid for.
+        # We will add a VOMS extension via voms-proxy-init -noregen but if we
+        # ask for an exactly matching validity time, we often end with
         #  Warning: your certificate and proxy will expire Tue Mar 31 23:46:06 2020
         #  which is within the requested lifetime of the proxy
-        # which causes a non zero exit status and hence a face error logging
+        # which causes a non zero exit status and hence a false error logging.
         # Therefore let's take 10 minutes off
-        vomsValid = '00:00'
         vomsTime = int(timeLeft.strip()) - 600
 
+        vomsValid = '00:00'
         if vomsTime > 0:
             vomsValid = "%d:%02d" % (vomsTime / 3600, (vomsTime - (vomsTime / 3600) * 3600) / 60)
-
         self.logger.debug('Requested voms validity: %s' % vomsValid)
 
-        msg, _, retcode = execute_command(self.setEnv('voms-proxy-info -type -file %s' % proxy), self.logger,
-                                          self.commandTimeout)
-        if retcode > 0:
-            self.logger.error('Cannot get proxy type %s' % msg)
-            return
-        isRFC = msg.startswith('RFC')  # can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')

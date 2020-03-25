@@ -27,6 +27,10 @@ class MSManagerTest(unittest.TestCase):
         data.rucioAccount = "test"
         data.phedexUrl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
         data.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
+        data.smtpServer = "localhost"
+        data.fromAddr = "noreply@cern.ch"
+        data.toAddr = ["cms-comp-ops-workflow-team@cern.ch"]
+        data.warningTransferThreshold = 100. * (1000 ** 4) # 100 TB (terabyte)
         self.mgr = MSManager(data)
 
         data.services = ['monitor']

@@ -14,11 +14,12 @@ class EmailAlert:
 
     EMAIL_HEADER = "From: %s\r\nSubject: %s\r\nTo: %s\r\n\r\n"
 
-    def __init__(self, config):
-        self.config = config
-        self.serverName = getattr(config.EmailAlert, "smtpServer")
-        self.fromAddr = getattr(config.EmailAlert, "fromAddr")
-        self.toAddr = getattr(config.EmailAlert, "toAddr")
+    def __init__(self, configDict):
+        self.serverName = configDict.get("smtpServer", "localhost")
+        self.fromAddr = configDict.get("fromAddr", "noreply@cern.ch")
+        self.toAddr = configDict.get("toAddr", "cms-service-production-admins@cern.ch")
+        if not isinstance(self.toAddr, (list, set)):
+            self.toAddr = [self.toAddr]
 
     def send(self, subject, message):
         """

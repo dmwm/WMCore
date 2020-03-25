@@ -23,13 +23,13 @@ from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
-from WMCore.MicroService.Unified.Common import gigaBytes
+from WMCore.MicroService.Unified.Common import gigaBytes, teraBytes
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
 from WMCore.MicroService.Unified.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
-
+from Utils.EmailAlert import EmailAlert
 
 def newTransferRec(dataIn):
     """
@@ -79,6 +79,13 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("minimumThreshold", 1 * (1000 ** 4))  # 1TB
         # limit MSTransferor to this amount of requests per cycle
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
+        # Send warning messages for any data transfer above this threshold.
+        # Set to negative to ignore.
+        self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
+        # Set default email settings
+        self.msConfig.setdefault("toAddr", "cms-comp-ops-workflow-team@cern.ch")
+        self.msConfig.setdefault("fromAddr", "noreply@cern.ch")
+        self.msConfig.setdefault("smtpServer", "localhost")
 
         self.rseQuotas = RSEQuotas(self.msConfig['detoxUrl'], self.msConfig["quotaAccount"],
                                    self.msConfig["quotaUsage"], useRucio=self.msConfig["useRucio"],
@@ -95,6 +102,7 @@ class MSTransferor(MSCore):
         self.psn2pnnMap = {}
         self.dsetCounter = 0
         self.blockCounter = 0
+        self.emailAlert = EmailAlert(self.msConfig)
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -339,7 +347,7 @@ class MSTransferor(MSCore):
                                                   group=self.msConfig['quotaAccount'],
                                                   level=subLevel,  # use dataset for premix
                                                   priority="low",
-                                                  request_only="y",
+                                                  request_only="y", # set "n" to auto-approve
                                                   blocks=data,
                                                   comments="WMCore MicroService automated subscription")
                 msg = "Creating '%s' level subscription for %s dataset: %s" % (subscription.level,
@@ -350,12 +358,30 @@ class MSTransferor(MSCore):
                 self.logger.info(msg)
 
                 if self.msConfig.get('enableDataTransfer', True):
+                    # Force request-only subscription
+                    # to any data transfer going above some threshold (do not auto-approve)
+                    aboveWarningThreshold = self.msConfig.get('warningTransferThreshold') > 0. and \
+                        dataSize > self.msConfig.get('warningTransferThreshold')
+                    if aboveWarningThreshold and subscription.request_only != "y":
+                        subscription.request_only = "y"
+
                     # Then make the data subscription, for real!!!
                     success, transferId = self._subscribeData(subscription, wflow.getName(), dataIn['name'])
                     if not success:
                         break
                     if transferId:
                         transRec['transferIDs'].add(transferId)
+
+                    # Warn about data transfer subscriptions going above some treshold
+                    if aboveWarningThreshold:
+                        emailSubject = "[MS] Large pending data transfer under request id: {transferid}".format(
+                            transferid=transferId)
+                        emailMsg = """Data transfer of size: {dsize} TBs has been suscribed
+                                      for {dtype} dataset: {dset}.""".format(dsize=teraBytes(dataSize),
+                                                                             dtype=dataIn['type'],
+                                                                             dset=dataIn['name'])
+                        self.emailAlert.send(emailSubject, emailMsg)
+                        self.logger.info(emailMsg)
 
                     # and update some instance caches
                     self.rseQuotas.updateNodeUsage(nodes[idx], dataSize)

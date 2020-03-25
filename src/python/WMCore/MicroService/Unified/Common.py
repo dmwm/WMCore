@@ -190,7 +190,8 @@ def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
         url = "%s/subscriptions?group=%s" % (phedexUrl, group)
         url += "&percent_min=%s&dataset=%s"
     else:
-        url = "%s/subscriptions?percent_min=%s&dataset=%s" % phedexUrl
+        url = "%s/subscriptions?" % phedexUrl
+        url += "percent_min=%s&dataset=%s"
     urls = [url % (percentMin, dset) for dset in datasets]
 
     data = multi_getdata(urls, ckey(), cert())

@@ -170,24 +170,29 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
     return dsetBlockSize
 
 
-def getPileupSubscriptions(datasets, phedexUrl, group="DataOps", percentMin=99):
+# FIXME: implement the same logic for Rucio
+def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
     """
     Provided a list of datasets, find dataset level subscriptions where it's
     as complete as `percent_min`.
     :param datasets: list of dataset names
     :param phedexUrl: a string with the PhEDEx URL
-    :param group: PhEDEx group
+    :param group: optional string with the PhEDEx group
     :param percent_min: only return subscriptions that are this complete
     :return: a dictionary of datasets and a list of their location.
     NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
-    #FIXME: implement the same logic for Rucio
     locationByDset = {}
     if not datasets:
         return locationByDset
 
-    url = "%s/subscriptions?group=%s&group=RelVal&percent_min=%s&dataset=%s"
-    urls = [url % (phedexUrl, group, percentMin, dset) for dset in datasets]
+    if group:
+        url = "%s/subscriptions?group=%s" % (phedexUrl, group)
+        url += "&percent_min=%s&dataset=%s"
+    else:
+        url = "%s/subscriptions?percent_min=%s&dataset=%s" % phedexUrl
+    urls = [url % (percentMin, dset) for dset in datasets]
+
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:

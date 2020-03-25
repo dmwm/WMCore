@@ -20,7 +20,7 @@ class CouchDBCleanup(CherryPyPeriodicTask):
         self.reqmgrAux = ReqMgrAux(config.reqmgr2_url, logger=self.logger)
         # statuses that we want to keep the transfer documents
         self.transferStatuses = ["assigned", "staging", "staged", "acquired",
-                                 "running-open", "running-closed"]
+                                 "failed", "running-open", "running-closed"]
 
         baseURL, acdcDB = splitCouchServiceURL(config.acdc_url)
         self.acdcService = CouchService(url=baseURL, database=acdcDB)

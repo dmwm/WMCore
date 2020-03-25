@@ -296,7 +296,7 @@ class RequestInfo(MSCore):
         self.logger.info("Fetching pileup dataset location for %d datasets against PhEDEx: %s",
                          len(datasets), self.msConfig['phedexUrl'])
         locationsByDset = getPileupSubscriptions(datasets, self.msConfig['phedexUrl'],
-                                                 self.msConfig['minPercentCompletion'])
+                                                 percentMin=self.msConfig['minPercentCompletion'])
 
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?

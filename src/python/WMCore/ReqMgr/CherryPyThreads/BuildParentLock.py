@@ -23,8 +23,9 @@ class BuildParentLock(CherryPyPeriodicTask):
         # set of of currently active datasets requiring parent dataset
         self.inputDatasetCache = set()
         self.reqDB = RequestDBReader(config.reqmgrdb_url)
-        self.filterKeys = ['assignment-approved', 'assigned', 'staging', 'staged', 'acquired',
-                      'running-open', 'running-closed', 'force-complete', 'completed']
+        self.filterKeys = ['assignment-approved', 'assigned', 'staging', 'staged',
+                           'failed', 'acquired', 'running-open', 'running-closed',
+                           'force-complete', 'completed', 'closed-out']
 
 
     def setConcurrentTasks(self, config):

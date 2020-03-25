@@ -144,16 +144,10 @@ STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_ST
 # is name of the status
 REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
 
-ACTIVE_STATUS_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged', 'acquired',
-                                          'running-open', 'running-closed', 'force-complete',
-                                          'completed', 'closed-out']}
-ACTIVE_NO_CLOSEOUT_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged', 'acquired',
-                                               'running-open', 'running-closed', 'force-complete',
-                                               'completed']}
-# used to determine active workflows requiring parent datasets
-ACTIVE_NO_CLOSEOUT_PARENT_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged', 'acquired',
-                                               'running-open', 'running-closed', 'force-complete',
-                                               'completed'], "IncludeParents": True}
+ACTIVE_STATUS_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged',
+                                          'failed', 'acquired', 'running-open', 'running-closed',
+                                          'force-complete', 'completed', 'closed-out']}
+
 
 def check_allowed_transition(preState, postState):
     stateList = REQUEST_STATE_TRANSITION.get(preState, [])

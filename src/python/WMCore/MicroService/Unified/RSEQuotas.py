@@ -6,7 +6,7 @@ Detox, Rucio and PhEDEx.
 """
 from __future__ import division, print_function
 
-from WMCore.MicroService.Unified.Common import getDetoxQuota, getMSLogger, gigaBytes
+from WMCore.MicroService.Unified.Common import getDetoxQuota, getMSLogger, gigaBytes, teraBytes
 
 
 class RSEQuotas(object):
@@ -187,9 +187,15 @@ class RSEQuotas(object):
         """
         Print a summary of the current quotas, space usage and space available
         """
-        self.logger.info("Summary of the current quotas:")
+        self.logger.info("Summary of the current quotas Terabytes:")
         for node in sorted(self.nodeUsage.keys()):
-            self.logger.debug("  %s : %s", node, self.nodeUsage[node])
+            msg = "  %s:\t\tbytes_limit: %.2f, bytes_used: %.2f, bytes_remaining: %.2f, "
+            msg += "quota: %.2f, quota_avail: %.2f"
+            self.logger.debug(msg, node, teraBytes(self.nodeUsage[node]['bytes_limit']),
+                              teraBytes(self.nodeUsage[node]['bytes']),
+                              teraBytes(self.nodeUsage[node]['bytes_remaining']),
+                              teraBytes(self.nodeUsage[node]['quota']),
+                              teraBytes(self.nodeUsage[node]['quota_avail']))
         self.logger.info("List of RSE's out of quota: %s", self.outOfSpaceNodes)
 
     def updateNodeUsage(self, node, dataSize):

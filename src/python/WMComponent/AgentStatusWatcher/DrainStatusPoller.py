@@ -35,7 +35,7 @@ class DrainStatusPoller(BaseWorkerThread):
         self.previousConfig = {}
         self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
         self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
-        self.emailAlert = EmailAlert(config)
+        self.emailAlert = EmailAlert(config.EmailAlert.dictionary_())
 
     @timeFunction
     def algorithm(self, parameters):

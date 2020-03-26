@@ -26,6 +26,11 @@ class ResourceControlUpdater(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
 
+        self.ssb2AgentStatus = {'enabled': 'Normal',
+                                'drain': 'Draining',
+                                'disabled': 'Down',
+                                'test': 'Draining',
+                                'unknown': None}
         self.tasksCPU = ['Processing', 'Production']
         self.tasksIO = ['Merge', 'Cleanup', 'Harvesting', 'LogCollect', 'Skim']
         self.minCPUSlots = 50
@@ -260,7 +265,8 @@ class ResourceControlUpdater(BaseWorkerThread):
             ssbStatus = ssbState[site]['prod_status']
             wmcoreStatus = self.getState(str(ssbStatus))
             if not wmcoreStatus:
-                logging.error("Unknown status '%s' for site %s, please check SSB", ssbStatus, site)
+                logging.warning("Site %s has an unknown SSB status '%s'. Skipping it!", site, ssbStatus)
+                ssbStatus.pop(site, None)
             else:
                 ssbState[site] = {'state': wmcoreStatus}
 
@@ -272,14 +278,10 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Translates SSB states into resource control state
         """
-        ssb2agent = {'enabled': 'Normal',
-                     'drain': 'Draining',
-                     'disabled': 'Down',
-                     'test': 'Draining'}
-        # 'test' state behaviour varies between production and tier0 agents
-        ssb2agent['test'] = 'Normal' if self.tier0Mode else "Draining"
-
-        return ssb2agent.get(stateSSB)
+        if self.tier0Mode and stateSSB == "test":
+            # a test site for T0 has a different meaning than for production
+            return "Normal"
+        return self.ssb2AgentStatus.get(stateSSB)
 
     def updateSiteState(self, siteName, state):
         """

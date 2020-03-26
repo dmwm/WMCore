@@ -8,7 +8,7 @@ from WMCore.REST.Tools import tools
 from WMCore.REST.Error import DataCacheEmpty
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_NO_CLOSEOUT_FILTER, ACTIVE_STATUS_FILTER
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
 
 
 class ActiveRequestJobInfo(RESTEntity):
@@ -119,5 +119,5 @@ class GlobalLockList(RESTEntity):
         if DataCache.isEmpty():
             raise DataCacheEmpty()
         else:
-            return rows(DataCache.filterData(ACTIVE_NO_CLOSEOUT_FILTER,
+            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER,
                                              ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))

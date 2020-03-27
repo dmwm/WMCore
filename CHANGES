@@ -1,3 +1,15 @@
+1.3.2.pre3 to 1.3.2.pre4:
+  - Report RSE storage summary in terabytes instead of bytes (Alan Malta Rodrigues) #9588
+  - Support SSB site status to be unknown (Alan Malta Rodrigues) #9585
+  - Send notification/email on large data transfers Fixes #9564 (khurtado) #9582
+  - Add additional workflow statuses for data locking (Erik Gough) #9583
+  - fix keyword argument (Alan Malta Rodrigues) #9578
+  - fix url (Alan Malta Rodrigues) #9578
+  - added `failed` status to the list of transfer docs to be kept around (Alan Malta Rodrigues) #9581
+  - Use available secondary dataset regardless of which group its subscribed to (Alan Malta Rodrigues) #9578
+  - Minor updates to the MicroServices schematic (Alan Malta Rodrigues) #9575
+
+
 1.3.2.pre2 to 1.3.2.pre3:
   - Cleanup unneeded transfer info couch documents (Alan Malta Rodrigues) #9574
   - Move parentlocks API from reqmon to reqmgr2 (Erik Gough) #9567

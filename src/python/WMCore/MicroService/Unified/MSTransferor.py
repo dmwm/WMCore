@@ -381,10 +381,9 @@ class MSTransferor(MSCore):
                     if aboveWarningThreshold:
                         emailSubject = "[MS] Large pending data transfer under request id: {transferid}".format(
                             transferid=transferId)
-                        emailMsg = """Data transfer of size: {dsize} TBs has been suscribed
-                                      for {dtype} dataset: {dset}.""".format(dsize=teraBytes(dataSize),
-                                                                             dtype=dataIn['type'],
-                                                                             dset=dataIn['name'])
+                        emailMsg = "Workflow: {}\nhas a large amount of ".format(wflow.getName())
+                        emailMsg += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
+                        emailMsg += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
                         self.emailAlert.send(emailSubject, emailMsg)
                         self.logger.info(emailMsg)
 

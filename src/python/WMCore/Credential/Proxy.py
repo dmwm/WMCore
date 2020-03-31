@@ -618,8 +618,8 @@ class Proxy(Credential):
         msg, _, retcode = execute_command(self.setEnv(logonCmd), self.logger, self.commandTimeout)
 
         if retcode > 0:
-            self.logger.error("Unable to retrieve delegated proxy for user DN %s! Exit code:%s output:%s" \
-                              % (self.userDN, retcode, msg))
+            self.logger.error("Unable to retrieve delegated proxy using login %s for user DN %s! Exit code:%s output:%s" \
+                              % (myproxyUsername, self.userDN, retcode, msg))
             return proxyFilename
 
         self.vomsExtensionRenewal(tmpProxyFilename, voAttribute)

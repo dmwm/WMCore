@@ -86,6 +86,11 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("toAddr", "cms-comp-ops-workflow-team@cern.ch")
         self.msConfig.setdefault("fromAddr", "noreply@cern.ch")
         self.msConfig.setdefault("smtpServer", "localhost")
+        # enable or not the PhEDEx requests auto-approval (!request_only)
+        if self.msConfig.setdefault("phedexRequestOnly", True):
+            self.msConfig["phedexRequestOnly"] = "y"
+        else:
+            self.msConfig["phedexRequestOnly"] = "n"
 
         self.rseQuotas = RSEQuotas(self.msConfig['detoxUrl'], self.msConfig["quotaAccount"],
                                    self.msConfig["quotaUsage"], useRucio=self.msConfig["useRucio"],
@@ -345,9 +350,9 @@ class MSTransferor(MSCore):
                 subscription = PhEDExSubscription(datasetPathList=dataIn['name'],
                                                   nodeList=nodes[idx],
                                                   group=self.msConfig['quotaAccount'],
-                                                  level=subLevel,  # use dataset for premix
+                                                  level=subLevel,
                                                   priority="low",
-                                                  request_only="y", # set "n" to auto-approve
+                                                  request_only=self.msConfig["phedexRequestOnly"],
                                                   blocks=data,
                                                   comments="WMCore MicroService automated subscription")
                 msg = "Creating '%s' level subscription for %s dataset: %s" % (subscription.level,
@@ -376,10 +381,9 @@ class MSTransferor(MSCore):
                     if aboveWarningThreshold:
                         emailSubject = "[MS] Large pending data transfer under request id: {transferid}".format(
                             transferid=transferId)
-                        emailMsg = """Data transfer of size: {dsize} TBs has been suscribed
-                                      for {dtype} dataset: {dset}.""".format(dsize=teraBytes(dataSize),
-                                                                             dtype=dataIn['type'],
-                                                                             dset=dataIn['name'])
+                        emailMsg = "Workflow: {}\nhas a large amount of ".format(wflow.getName())
+                        emailMsg += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
+                        emailMsg += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
                         self.emailAlert.send(emailSubject, emailMsg)
                         self.logger.info(emailMsg)
 

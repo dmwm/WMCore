@@ -1,3 +1,10 @@
+1.3.2.pre4 to 1.3.2.pre5:
+  - Limit MSTransferor in terms of successful workflows (Alan Malta Rodrigues) #9593
+  - change automatic email content for large data placements (Alan Malta Rodrigues) #9590
+  - Bump CMSMonitoring version (Valentin Kuznetsov) #9591
+  - Take PhEDEx auto-approval setting from reqmgr2ms configuration file (Alan Malta Rodrigues) #9590
+
+
 1.3.2.pre3 to 1.3.2.pre4:
   - Report RSE storage summary in terabytes instead of bytes (Alan Malta Rodrigues) #9588
   - Support SSB site status to be unknown (Alan Malta Rodrigues) #9585

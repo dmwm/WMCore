@@ -151,6 +151,7 @@ class MSTransferor(MSCore):
         :param reqStatus: request status to process
         :return:
         """
+        counterWorkflows = 0
         counterFailedRequests = 0
         counterSuccessRequests = 0
         summary = dict(TRANSFEROR_REPORT)
@@ -160,7 +161,6 @@ class MSTransferor(MSCore):
             msg = "  retrieved %s requests. " % len(requestRecords)
             msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
             self.logger.info(msg)
-            requestRecords = requestRecords[:self.msConfig["limitRequestsPerCycle"]]
         except Exception as err:  # general error
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
             self.logger.exception(msg)
@@ -184,6 +184,8 @@ class MSTransferor(MSCore):
 
         # process all requests
         for reqSlice in grouper(requestRecords, 100):
+            self.logger.info("Processing workflows from %d to %d.",
+                             counterWorkflows + 1, counterWorkflows + len(reqSlice))
             # get complete requests information
             # based on Unified Transferor logic
             reqResults = self.reqInfo(reqSlice)
@@ -212,6 +214,16 @@ class MSTransferor(MSCore):
                         counterFailedRequests += 1
                 else:
                     counterFailedRequests += 1
+            # it can go slightly beyond the limit. It's evaluated for every slice
+            if counterSuccessRequests >= self.msConfig["limitRequestsPerCycle"]:
+                msg = "Transferor succeeded acting on %d workflows in this cycle. " % counterSuccessRequests
+                msg += "Which exceeds the configuration limit set to: %s" % self.msConfig["limitRequestsPerCycle"]
+                self.logger.info(msg)
+                break
+            counterWorkflows += len(reqSlice)
+
+        self.logger.info("There were %d failed and %d success requests in this cycle",
+                         counterFailedRequests, counterSuccessRequests)
         self.logger.info("%s subscribed %d datasets and %d blocks in this cycle",
                          self.__class__.__name__, self.dsetCounter, self.blockCounter)
         self.updateReportDict(summary, "success_request_transition", counterSuccessRequests)

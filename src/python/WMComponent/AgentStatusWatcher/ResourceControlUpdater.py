@@ -266,7 +266,7 @@ class ResourceControlUpdater(BaseWorkerThread):
             wmcoreStatus = self.getState(str(ssbStatus))
             if not wmcoreStatus:
                 logging.warning("Site %s has an unknown SSB status '%s'. Skipping it!", site, ssbStatus)
-                ssbStatus.pop(site, None)
+                ssbState.pop(site, None)
             else:
                 ssbState[site] = {'state': wmcoreStatus}
 

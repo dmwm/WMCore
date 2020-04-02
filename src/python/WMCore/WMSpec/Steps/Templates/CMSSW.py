@@ -433,7 +433,7 @@ class CMSSW(Template):
         step.application.setup.softwareEnvironment = None
 
         step.application.section_("command")
-        step.application.command.executable = "cmsRun"
+        step.application.command.executable = "cmsRunPython3"
         step.application.command.configuration = "PSet.py"
         step.application.command.configurationPickle = "PSet.pkl"
         step.application.command.configurationHash = None

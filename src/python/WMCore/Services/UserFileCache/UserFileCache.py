@@ -120,7 +120,7 @@ class UserFileCache(Service):
 
     def removeFile(self, haskey):
         result=self['requests'].makeRequest(uri = 'info', data = {'subresource':'fileremove', 'hashkey': haskey})
-        return result[0]['result'][0]
+        return json.loads(result[0])['result'][0]
 
     def download(self, hashkey, output, username=None):
         """

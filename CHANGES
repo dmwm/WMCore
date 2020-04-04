@@ -1,3 +1,9 @@
+1.3.2.pre5 to 1.3.2.pre6:
+  - allow to renew credential based on userName (belforte) #9615
+  - Fix pop error when ssbStatus is unknown (Erik Gough) #9602
+  - Fixed UserFileCache.removeFile throwing on success (Christopher Brainerd) #9595
+
+
 1.3.2.pre4 to 1.3.2.pre5:
   - Limit MSTransferor in terms of successful workflows (Alan Malta Rodrigues) #9593
   - change automatic email content for large data placements (Alan Malta Rodrigues) #9590

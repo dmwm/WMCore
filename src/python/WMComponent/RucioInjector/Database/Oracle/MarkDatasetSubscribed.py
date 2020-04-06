@@ -8,7 +8,7 @@ Oracle implementation of MarkDatasetSubscribed.
 
 
 
-from WMComponent.PhEDExInjector.Database.MySQL.MarkDatasetSubscribed import MarkDatasetSubscribed as MySQLBase
+from WMComponent.RucioInjector.Database.MySQL.MarkDatasetSubscribed import MarkDatasetSubscribed as MySQLBase
 
 class MarkDatasetSubscribed(MySQLBase):
     pass

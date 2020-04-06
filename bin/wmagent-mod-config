@@ -259,6 +259,12 @@ def modifyConfiguration(config, **args):
         config.AnalyticsDataCollector.centralRequestDBURL = args["requestcouch_url"]
         config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
 
+    # custom RucioInjector
+    if hasattr(config, "RucioInjector"):
+        config.RucioInjector.rucioAccount = args["rucio_account"]
+        config.RucioInjector.rucioUrl = args["rucio_host"]
+        config.RucioInjector.rucioAuthUrl = args["rucio_auth"]
+
     # custom AgentStatusWatcher
     if hasattr(config, "AgentStatusWatcher"):
         config.AgentStatusWatcher.grafanaToken = "Bearer %s" % args["grafana_token"]
@@ -300,7 +306,8 @@ def main(argv=None):
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
                                          "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
                                          "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
-                                         "wmarchive_url=", "amq_credentials=", "rucio_account="])
+                                         "wmarchive_url=", "amq_credentials=",
+                                         "rucio_account=", "rucio_host=", "rucio_auth="])
 
         except getopt.error as msg:
             raise Usage(msg)
@@ -323,7 +330,8 @@ def main(argv=None):
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
                           '--grafana_token', '--requestcouch_url', '--central_logdb_url',
-                          '--wmarchive_url', '--amq_credentials', '--rucio_account'):
+                          '--wmarchive_url', '--amq_credentials',
+                          '--rucio_account', '--rucio_host', '--rucio_auth'):
                 parameters[option[2:]] = value
 
 

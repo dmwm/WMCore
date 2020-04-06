@@ -8,7 +8,7 @@ Oracle implementation on PhEDExInjector.GetMigratedBlocks.
 
 
 
-from WMComponent.PhEDExInjector.Database.MySQL.GetMigratedBlocks import GetMigratedBlocks as MySQLBase
+from WMComponent.RucioInjector.Database.MySQL.GetMigratedBlocks import GetMigratedBlocks as MySQLBase
 
 class GetMigratedBlocks(MySQLBase):
     """

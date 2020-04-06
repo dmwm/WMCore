@@ -8,7 +8,7 @@ Oracle implementation on PhEDExInjector.GetUninjectedFiles.
 
 
 
-from WMComponent.PhEDExInjector.Database.MySQL.GetUninjectedFiles import GetUninjectedFiles as MySQLBase
+from WMComponent.RucioInjector.Database.MySQL.GetUninjectedFiles import GetUninjectedFiles as MySQLBase
 
 class GetUninjectedFiles(MySQLBase):
     """

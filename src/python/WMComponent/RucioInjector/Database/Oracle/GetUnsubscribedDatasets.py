@@ -8,7 +8,7 @@ Oracle implementation on GetUnsubscribedDatasets.
 
 
 
-from WMComponent.PhEDExInjector.Database.MySQL.GetUnsubscribedDatasets import GetUnsubscribedDatasets as MySQLBase
+from WMComponent.RucioInjector.Database.MySQL.GetUnsubscribedDatasets import GetUnsubscribedDatasets as MySQLBase
 
 class GetUnsubscribedDatasets(MySQLBase):
     pass

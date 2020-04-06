@@ -4,8 +4,10 @@ _GetUnsubscribedDatasets_
 
 MySQL implementation of PhEDExInjector.Database.GetUnsubscribedDatasets
 """
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetUnsubscribedDatasets(DBFormatter):
     """
@@ -55,8 +57,8 @@ class GetUnsubscribedDatasets(DBFormatter):
             entry['priority'] = entry['priority'].lower()
         return result
 
-    def execute(self, conn = None, transaction = False):
+    def execute(self, conn=None, transaction=False):
 
-        result = self.dbi.processData(self.sql, conn = conn,
-                                      transaction = transaction)
+        result = self.dbi.processData(self.sql, conn=conn,
+                                      transaction=transaction)
         return self.formatToPhEDEx(self.formatDict(result))

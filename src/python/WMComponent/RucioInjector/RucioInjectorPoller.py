@@ -8,12 +8,12 @@ General reminder about PhEDEx and Rucio definitions:
 * CMS file is equivalent to a Rucio file
 * A Rucio replica is a file, under a given scope, at a given RSE
 """
+from __future__ import division
 
 import json
 import logging
 import threading
 import time
-from pprint import pformat
 
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
@@ -128,7 +128,6 @@ class RucioInjectorPoller(BaseWorkerThread):
 
             # get dbsbuffer_file.in_phedex = 0
             uninjectedFiles = self.getUninjected.execute()
-            logging.info("AMR retrieved uninjectedFiles %s", pformat(uninjectedFiles))
 
             # create containers in rucio  (and update local cache)
             containersAdded = self.insertContainers(uninjectedFiles)

@@ -4,8 +4,10 @@ _MarkDatasetSubscribed_
 
 MySQL implementation of PhEDExInjector.Database.MarkDatasetSubscribed
 """
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class MarkDatasetSubscribed(DBFormatter):
     """
@@ -16,10 +18,10 @@ class MarkDatasetSubscribed(DBFormatter):
 
     sql = "UPDATE dbsbuffer_dataset_subscription SET subscribed = 1 WHERE id = :id"
 
-    def execute(self, subIds, conn = None, transaction = False):
+    def execute(self, subIds, conn=None, transaction=False):
         binds = []
         for subId in subIds:
-            binds.append({"id" : subId})
+            binds.append({"id": subId})
         self.dbi.processData(self.sql, binds,
-                             conn = conn, transaction = transaction)
+                             conn=conn, transaction=transaction)
         return

@@ -6,8 +6,10 @@ Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 
 """
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetUninjectedFiles(DBFormatter):
     sql = """SELECT dbsbuffer_file.lfn AS lfn,
@@ -68,9 +70,9 @@ class GetUninjectedFiles(DBFormatter):
                                                  "files": []}
 
             blockDict = datasetDict[row["blockname"]]
-            for file in blockDict["files"]:
-                if file["lfn"] == row["lfn"]:
-                    file["checksum"][row["cktype"]] = row["cksum"]
+            for fileInfo in blockDict["files"]:
+                if fileInfo["lfn"] == row["lfn"]:
+                    fileInfo["checksum"][row["cktype"]] = row["cksum"]
                     break
             else:
                 cksumDict = {row["cktype"]: row["cksum"]}
@@ -80,7 +82,7 @@ class GetUninjectedFiles(DBFormatter):
 
         return formattedResult
 
-    def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn,
-                                      transaction = transaction)
+    def execute(self, conn=None, transaction=False):
+        result = self.dbi.processData(self.sql, conn=conn,
+                                      transaction=transaction)
         return self.format(result)

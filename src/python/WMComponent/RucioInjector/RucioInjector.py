@@ -4,13 +4,14 @@ _RucioInjector_
 
 Poll the DBSBuffer tables and insert files, blocks and datasets into Rucio
 """
+from __future__ import division
 
-import threading
 import logging
-
-from WMCore.Agent.Harness import Harness
+import threading
 
 from WMComponent.RucioInjector.RucioInjectorPoller import RucioInjectorPoller
+from WMCore.Agent.Harness import Harness
+
 
 class RucioInjector(Harness):
     def __init__(self, config):

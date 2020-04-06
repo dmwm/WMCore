@@ -322,7 +322,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.stuffDatabase()
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+        daofactory = DAOFactory(package = "WMComponent.RucioInjector.Database",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
         getUninjected = daofactory(classname = "GetUninjectedFiles")

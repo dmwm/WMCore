@@ -484,6 +484,22 @@ class Rucio(object):
             self.logger.error("Exception listing rules for data: %s. Error: %s", name, str(ex))
         return list(res)
 
+    def listDataRulesHistory(self, name, scope='cms'):
+        """
+        _listDataRulesHistory_
+
+        List the whole rule history of a given DID.
+        :param name: data identifier (either a block or a container name)
+        :param scope: string with the scope name
+        :return: a list with dictionary items
+        """
+        res = []
+        try:
+            res = self.cli.list_replication_rule_full_history(scope, name)
+        except Exception as ex:
+            self.logger.error("Exception listing rules history for data: %s. Error: %s", name, str(ex))
+        return list(res)
+
     def getRule(self, ruleId, estimatedTtc=False):
         """
         _getRule_
@@ -500,4 +516,23 @@ class Rucio(object):
             self.logger.error("Cannot find any information for rule id: %s", ruleId)
         except Exception as ex:
             self.logger.error("Exception getting rule id: %s. Error: %s", ruleId, str(ex))
+        return res
+
+    def deleteRule(self, ruleId, purgeReplicas=False):
+        """
+        _deleteRule_
+
+        Deletes a replication rule and all its associated locks
+        :param ruleId: string with the rule id
+        :param purgeReplicas: bool,ean to immediately delete the replicas
+        :return: a boolean to represent whether it succeeded or not
+        """
+        res = True
+        try:
+            res = self.cli.delete_replication_rule(ruleId, purge_replicas=purgeReplicas)
+        except RuleNotFound:
+            self.logger.error("Could not find rule id: %s. Assuming it has already been deleted", ruleId)
+        except Exception as ex:
+            self.logger.error("Exception deleting rule id: %s. Error: %s", ruleId, str(ex))
+            res = False
         return res

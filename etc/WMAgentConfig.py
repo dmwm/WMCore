@@ -367,6 +367,7 @@ config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
+config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]
 config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"

@@ -23,6 +23,26 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
+### TODO: remove this function once PhEDExInjector is out of the game
+def filterDataByTier(rawData, allowedTiers):
+    """
+    This function will receive data - in the same format as returned from
+    the DAO - and it will pop out anything that the component is not meant
+    to inject into Rucio.
+    :param rawData: the large dict of location/container/block/files
+    :param allowedTiers: a list of datatiers that we want to inject
+    :return: the same dictionary as in the input, but without dataset structs
+             for datatiers that we do not want to be processed by this component.
+    """
+    for location in rawData:
+        for container in list(rawData[location]):
+            endTier = container.rsplit('/', 1)[1]
+            if endTier not in allowedTiers:
+                logging.info("Container %s not meant to be injected by RucioInjector", container)
+                rawData[location].pop(container)
+    return rawData
+
+
 class RucioInjectorException(WMException):
     """
     _RucioInjectorException_
@@ -62,6 +82,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules
         self.skipRulesForTiers = config.RucioInjector.skipRulesForTiers
+        self.listTiersToInject = config.RucioInjector.listTiersToInject
 
         # setup cache for container and blocks (containers can be much longer, make 6 days now)
         self.containersCache = MemoryCache(config.RucioInjector.cacheExpiration * 3, set())
@@ -128,6 +149,11 @@ class RucioInjectorPoller(BaseWorkerThread):
 
             # get dbsbuffer_file.in_phedex = 0
             uninjectedFiles = self.getUninjected.execute()
+
+            # while we commission Rucio within WM, not all datatiers are supposed
+            # to be injected by this component. Remove any data that we are not
+            # meant to process!
+            uninjectedFiles = filterDataByTier(uninjectedFiles, self.listTiersToInject)
 
             # create containers in rucio  (and update local cache)
             containersAdded = self.insertContainers(uninjectedFiles)
@@ -338,13 +364,13 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
 
     # TODO: this will likely go away once the phedex to rucio migration is over
-    def _isContainerTierAllowed(self, dsetName):
+    def _isContainerTierAllowed(self, containerName):
         """
         Check the container datatier against the list of data tiers that we want
         to get pinned in Rucio through a container rule
         :return: boolean whether we can or not insert a rule
         """
-        endTier = dsetName.rsplit('/', 1)[1]
+        endTier = containerName.rsplit('/', 1)[1]
         if endTier in self.skipRulesForTiers:
             return False
         return True

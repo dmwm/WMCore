@@ -75,7 +75,7 @@ config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = contactName
 config.Agent.teamName = "REPLACE_TEAM_NAME"
-config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentName = "WMAgent"
 config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False

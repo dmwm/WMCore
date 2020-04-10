@@ -11,8 +11,8 @@ import threading
 import time
 import unittest
 import logging
-
-from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
+from pprint import pprint
+from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller, filterDataByTier
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
@@ -328,7 +328,39 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         getUninjected = daofactory(classname = "GetUninjectedFiles")
 
         uninjectedFiles = getUninjected.execute()
+
         self.assertEqual(uninjectedFiles.keys(), ['srm-cms.cern.ch'])
+        self.assertEqual(len(uninjectedFiles['srm-cms.cern.ch']), 2)
+
+        return
+
+    def testFilterDataByTier(self):
+        """
+        _testFilterDataByTier_
+
+        Test the `filterDataByTier` function, which is supposed to remove
+        the banned data tiers from the input dictionary
+        """
+        bannedTiers = ["NANOAOD", "NANOAODSIM"]
+        uninjectedFiles = {"SiteA": {"/dset1/procStr-v1/GEN": ["blah"],
+                                     "/dset2/procStr-v1/GEN-SIM": ["blah"],
+                                     "/dset3/procStr-v1/AOD": ["blah"],
+                                     "/dset4/procStr-v1/NANOAODSIM": ["blah"],
+                                     "/dset5/procStr-v1/NANOAOD": ["blah"],
+                                     "/dset6/procStr-v1/RECO": ["blah"]},
+                           "SiteB": {"/dset7/procStr-v1/NANOAOD": ["blah"]},
+                           "SiteC": {"/dset8/procStr-v1/GEN": ["blah"]}}
+
+        finalData = filterDataByTier(uninjectedFiles, bannedTiers)
+        self.assertEqual(len(finalData), 3)
+        self.assertItemsEqual(finalData.keys(), ["SiteA", "SiteB", "SiteC"])
+
+        self.assertItemsEqual(finalData["SiteA"].keys(), ["/dset1/procStr-v1/GEN",
+                                                          "/dset2/procStr-v1/GEN-SIM",
+                                                          "/dset3/procStr-v1/AOD",
+                                                          "/dset6/procStr-v1/RECO"])
+        self.assertItemsEqual(finalData["SiteB"].keys(), [])
+        self.assertItemsEqual(finalData["SiteC"].keys(), ["/dset8/procStr-v1/GEN"])
 
         return
 

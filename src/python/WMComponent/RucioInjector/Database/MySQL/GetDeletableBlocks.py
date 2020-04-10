@@ -9,13 +9,13 @@ are subscribed too
 
 """
 
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetDeletableBlocks(DBFormatter):
 
+class GetDeletableBlocks(DBFormatter):
     # Retrieve a list of blocks that can be deleted:
     #   - workflow for all files in block completed
     #   - subscription made for dataset is copy+delete
@@ -53,10 +53,10 @@ class GetDeletableBlocks(DBFormatter):
              AND COUNT(wmbs_workflow.name) = 0
              """
 
-    def execute(self, conn = None, transaction = False):
+    def execute(self, conn=None, transaction=False):
 
-        results = self.dbi.processData(self.sql, conn = conn,
-                                      transaction = transaction)[0].fetchall()
+        results = self.dbi.processData(self.sql, conn=conn,
+                                       transaction=transaction)[0].fetchall()
 
         blockDict = {}
         for result in results:
@@ -67,9 +67,9 @@ class GetDeletableBlocks(DBFormatter):
             site = result[3]
 
             if blockName not in blockDict:
-                blockDict[blockName] = { 'location' : location,
-                                         'dataset' : dataset,
-                                         'sites' : set() }
+                blockDict[blockName] = {'location': location,
+                                        'dataset': dataset,
+                                        'sites': set()}
 
             blockDict[blockName]['sites'].add(site)
 

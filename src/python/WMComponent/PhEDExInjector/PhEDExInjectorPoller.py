@@ -133,7 +133,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Create DAO Factory and setup some DAO.
         """
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package="WMComponent.PhEDExInjector.Database",
+        daofactory = DAOFactory(package="WMComponent.RucioInjector.Database",
                                 logger=self.logger, dbinterface=myThread.dbi)
 
         self.getUninjected = daofactory(classname="GetUninjectedFiles")

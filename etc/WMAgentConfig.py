@@ -356,3 +356,18 @@ config.AgentStatusWatcher.enableAMQ = False
 config.AgentStatusWatcher.userAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.passAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.topicAMQ = "OVERWRITE_BY_SECRETS"
+
+config.component_("RucioInjector")
+config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
+config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
+config.RucioInjector.logLevel = globalLogLevel
+config.RucioInjector.enabled = False
+config.RucioInjector.pollInterval = 300
+config.RucioInjector.pollIntervalRules = 43200
+config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
+config.RucioInjector.createBlockRules = True
+config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
+config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

@@ -4,11 +4,10 @@ _GetMigratedBlocks_
 
 Oracle implementation on PhEDExInjector.GetMigratedBlocks.
 """
+from __future__ import division
 
+from WMComponent.RucioInjector.Database.MySQL.GetMigratedBlocks import GetMigratedBlocks as MySQLBase
 
-
-
-from WMComponent.PhEDExInjector.Database.MySQL.GetMigratedBlocks import GetMigratedBlocks as MySQLBase
 
 class GetMigratedBlocks(MySQLBase):
     """

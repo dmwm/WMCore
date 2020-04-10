@@ -4,10 +4,10 @@ _GetMigratedBlocks_
 
 """
 
-
-
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class GetMigratedBlocks(DBFormatter):
     sql = """SELECT dbsbuffer_block.blockname AS blockname,
@@ -62,7 +62,7 @@ class GetMigratedBlocks(DBFormatter):
 
         return formattedResult
 
-    def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn,
-                                      transaction = transaction)
+    def execute(self, conn=None, transaction=False):
+        result = self.dbi.processData(self.sql, conn=conn,
+                                      transaction=transaction)
         return self.formatDict(result)

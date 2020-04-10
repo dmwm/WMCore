@@ -127,7 +127,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                }
            }
        },
-       "agent": "WMAgentCommissioning",
+       "agent": "WMAgent",
        "team": "team1,team2,cmsdataops",
        "agent_url": "cms-xen39.fnal.gov",
        "type": "agent_request"
@@ -167,7 +167,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "success": 1
                              }
                           },
-                "agent": "WMAgentCommissioning",
+                "agent": "WMAgent",
                 "agent_teams": "team1,team2,cmsdataops",
                 "agent_url": "cms-xen39.fnal.gov",
                 "type": "agent_request"

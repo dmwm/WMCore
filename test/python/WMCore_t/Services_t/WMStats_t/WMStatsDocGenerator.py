@@ -126,7 +126,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                }
            }
        },
-       "agent": "WMAgentCommissioning",
+       "agent": "WMAgent",
        "team": "team1,team2,cmsdataops",
        "agent_url": "cms-xen39.fnal.gov",
        "type": "agent_request"
@@ -166,7 +166,7 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
                               "success": 1
                              }
                           },
-                "agent": "WMAgentCommissioning",
+                "agent": "WMAgent",
                 "agent_teams": "cmsdataops",
                 "agent_url": "cms-xen39.fnal.gov",
                 "type": "agent_request"
@@ -248,7 +248,7 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
 sample_request_info = {'AcquisitionEra': 'Integ_Test',
  'AgentJobInfo': {'vocms008.cern.ch:9999': {'_id': '1444db7834fdedaf68fbf7498330adab',
                                             '_rev': '1-82d7cef10f3df98b481609152b048dd5',
-                                            'agent': 'WMAgentCommissioning',
+                                            'agent': 'WMAgent',
                                             'agent_team': 'testbed-dev',
                                             'agent_url': 'vocms008.cern.ch:9999',
                                             'sites': {'T1_US_FNAL': {'submitted': {'first': 35,
@@ -389,7 +389,7 @@ sample_request_info = {'AcquisitionEra': 'Integ_Test',
 sample_complete = {'AcquisitionEra': 'Integ_Test',
  'AgentJobInfo': {'vocms008.cern.ch:9999': {'_id': '1444db7834fdedaf68fbf7498394376c',
                                             '_rev': '1-0250fbe480c56e57b2c939ff491aab8b',
-                                            'agent': 'WMAgentCommissioning',
+                                            'agent': 'WMAgent',
                                             'agent_team': 'testbed-dev',
                                             'agent_url': 'vocms008.cern.ch:9999',
                                             'sites': {'T2_CH_CERN_HLT': {'failure': {'exception': 1},

@@ -1,3 +1,13 @@
+1.3.2 to 1.3.3.pre1:
+  - added unit tests for those 2 functions (Alan Malta Rodrigues) #9627
+  - Make list of allowed tiers for Rucio; disallowed tiers for PhEDEx (Alan Malta Rodrigues) #9627
+  - fix unit tests and emulators (Alan Malta Rodrigues) #9626
+  - Replace agentName WMAgentCommissioning by WMAgent (Alan Malta Rodrigues) #9626
+  - unit tests (Alan Malta Rodrigues) #9617
+  - Basics of RucioInjector; moved DAOs from PhEDExInjector over; MemoryCache util (Alan Malta Rodrigues) #9617
+  - Additional Rucio wrapper methods to delete rules and fetch rules history (Alan Malta Rodrigues) #9617
+
+
 1.3.2.pre6 to 1.3.2:
 
 

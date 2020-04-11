@@ -129,7 +129,7 @@ class WMStatsReader(object):
         "timestamp":1394738860,"sites":{"T2_CH_CERN_AI":{"submitted":{"retry":1,"pending":1}},
         "T2_CH_CERN":{"success":6,"submitted":{"retry":1,"pending":1}},
         "T2_DE_DESY":{"failure":{"exception":3},"success":375}},
-        "agent":"WMAgentCommissioning",
+        "agent":"WMAgent",
         "tasks":
            {"/amaltaro_OracleUpgrade_TEST_HG1401_140220_090116_6731/Production":
             {"status":{"failure":{"exception":3},"success":331},

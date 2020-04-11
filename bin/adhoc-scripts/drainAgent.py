@@ -200,7 +200,7 @@ def getCondorJobs():
     """
     jobDict = {}
     schedd = condor.Schedd()
-    jobs = schedd.xquery('WMAgent_AgentName == "WMAgentCommissioning"', ['WMAgent_RequestName', 'JobStatus'])
+    jobs = schedd.xquery('WMAgent_AgentName == "WMAgent"', ['WMAgent_RequestName', 'JobStatus'])
     for job in jobs:
         jobStatus = job['JobStatus']
         jobDict.setdefault(jobStatus, {})

@@ -57,6 +57,25 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
+def filterDataByTier(rawData, forbiddenTiers):
+    """
+    This function will receive data - in the same format as returned from
+    the DAO - and it will pop out anything that the component is not meant
+    to inject into PhEDEx.
+    :param rawData: the large dict of location/dataset/block/files
+    :param forbiddenTiers: a list of datatiers that we DO NOT want to inject
+    :return: the same dictionary as in the input, but without dataset structs
+             for datatiers that we do not want to be processed by this component.
+    """
+    for location in rawData:
+        for dataset in list(rawData[location]):
+            endTier = dataset.rsplit('/', 1)[1]
+            if endTier in forbiddenTiers:
+                logging.debug("Dataset %s not meant to be injected by PhEDExInjector", dataset)
+                rawData[location].pop(dataset)
+    return rawData
+
+
 class PhEDExInjectorException(WMException):
     """
     _PhEDExInjectorException_
@@ -123,6 +142,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.phedexNodes[node["kind"]].append(node["name"])
 
         self.blocksToRecover = []
+
+        # X-component configuration is BAD! But it will only be here during the
+        # Rucio commissioning within WM
+        self.listTiersToSkip = config.RucioInjector.listTiersToInject
+
 
         return
 
@@ -265,6 +289,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         uninjectedFiles = self.getUninjected.execute()
 
+        # filter out datatiers to be processed by RucioInjector
+        uninjectedFiles = filterDataByTier(uninjectedFiles, self.listTiersToSkip)
+
         for siteName in uninjectedFiles.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
@@ -350,6 +377,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         logging.info("Starting closeBlocks method")
 
         migratedBlocks = self.getMigrated.execute()
+
+        # filter out datatiers to be processed by RucioInjector
+        migratedBlocks = filterDataByTier(migratedBlocks, self.listTiersToSkip)
 
         for siteName in migratedBlocks:
             # SE names can be stored in DBSBuffer as that is what is returned in
@@ -437,6 +467,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         if not blockDict:
             return
+
+        ### logic to stop doing things to be done by RucioInjector or by DM team
+        for block in list(blockDict):
+            endBlock = block.rsplit('/', 1)[1]
+            endTier = endBlock.split('#')[0]
+            if endTier in self.listTiersToSkip:
+                logging.debug("Skipping block deletion for %s. It's a forbidden datatier", block)
+                blockDict.pop(block)
+        ### end of logic
 
         try:
             subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
@@ -560,6 +599,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # Create the subscription objects and add them to the list
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
+            ### logic to stop doing things to be done by RucioInjector or by DM team
+            endTier = subInfo['path'].rsplit('/', 1)[1]
+            endTier = endTier.split('#')[0] if '#' in endTier else endTier
+            if endTier in self.listTiersToSkip:
+                logging.debug("Skipping data subscription for %s. It's a forbidden datatier",
+                              subInfo['path'])
+                continue
+            ### end of logic
+
             site = subInfo['site']
 
             if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:

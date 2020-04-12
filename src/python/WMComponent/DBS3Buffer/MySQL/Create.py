@@ -135,6 +135,7 @@ class Create(DBCreator):
                  create_time  INTEGER,
                  status       VARCHAR(20),
                  deleted      INTEGER      DEFAULT 0,
+                 rule_id      VARCHAR(40)  NOT NULL DEFAULT '0',
                  PRIMARY KEY (id),
                  CONSTRAINT uq_dbs_blo UNIQUE (blockname, location))"""
 

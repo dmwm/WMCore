@@ -99,6 +99,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.dbsUrl = config.DBSInterface.globalDBSUrl
+        self.phedexGroup = config.PhEDExInjector.phedexGroup
 
         self.pollCounter = 0
         self.subFrequency = None
@@ -146,7 +147,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # X-component configuration is BAD! But it will only be here during the
         # Rucio commissioning within WM
         self.listTiersToSkip = config.RucioInjector.listTiersToInject
-
+        logging.info("Component configured to skip data injection for data tiers: %s",
+                     self.listTiersToSkip)
 
         return
 
@@ -162,6 +164,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.getUninjected = daofactory(classname="GetUninjectedFiles")
         self.getMigrated = daofactory(classname="GetMigratedBlocks")
+
+        self.getUnsubscribedBlocks = daofactory(classname="GetUnsubscribedBlocks")
+        self.setBlockRules = daofactory(classname="SetBlocksRule")
 
         self.findDeletableBlocks = daofactory(classname="GetDeletableBlocks")
         self.markBlocksDeleted = daofactory(classname="MarkBlocksDeleted")
@@ -200,6 +205,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.pollCounter = 0
                 self.deleteBlocks()
                 self.subscribeDatasets()
+                self.subscribeBlocks()
         except HTTPException as ex:
             if hasattr(ex, "status") and ex.status in [502, 503]:
                 # then either proxy error or service is unavailable
@@ -470,12 +476,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         ### logic to stop doing things to be done by RucioInjector or by DM team
         for block in list(blockDict):
-            endBlock = block.rsplit('/', 1)[1]
-            endTier = endBlock.split('#')[0]
-            if endTier in self.listTiersToSkip:
-                logging.debug("Skipping block deletion for %s. It's a forbidden datatier", block)
+            if not self._isDataTierAllowed(block):
                 blockDict.pop(block)
-        ### end of logic
 
         try:
             subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
@@ -580,6 +582,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
+    def _isDataTierAllowed(self, dataName):
+        """
+        Check whether data belongs to an allowed datatier to
+        be handled by this component (either to inject or to
+        subscribe into PhEDEx)
+        :param dataName: string with the block or the dataset name
+        :return: boolean, True if the tier is allowed, False otherwise
+        """
+        endTier = dataName.rsplit('/', 1)[1]
+        endTier = endTier.split('#')[0] if '#' in endTier else endTier
+        if endTier in self.listTiersToSkip:
+            logging.debug("Skipping data: %s because it's listed in the tiers to skip", dataName)
+            return False
+        return True
+
     def subscribeDatasets(self):
         """
         _subscribeDatasets_
@@ -600,13 +617,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
             ### logic to stop doing things to be done by RucioInjector or by DM team
-            endTier = subInfo['path'].rsplit('/', 1)[1]
-            endTier = endTier.split('#')[0] if '#' in endTier else endTier
-            if endTier in self.listTiersToSkip:
-                logging.debug("Skipping data subscription for %s. It's a forbidden datatier",
-                              subInfo['path'])
+            if not self._isDataTierAllowed(subInfo['path']):
                 continue
-            ### end of logic
 
             site = subInfo['site']
 
@@ -666,3 +678,80 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.markSubscribed.execute(subscriptionsMade)
 
         return
+
+    def subscribeBlocks(self):
+        """
+        _subscribeBlocks_
+        Poll the database and subscribe blocks not yet subscribed.
+        """
+        logging.info("Starting subscribeBlocks method")
+
+        unsubBlocks = self.getUnsubscribedBlocks.execute()
+        # now organize those by location in order to minimize phedex requests
+        # also remove blocks that this component is meant to skip
+        unsubBlocks = self.organizeBlocksByLocation(unsubBlocks)
+
+        for location, blockDict in unsubBlocks.items():
+            phedexSub = PhEDExSubscription(blockDict.keys(), location, self.phedexGroup,
+                                           blocks=blockDict,
+                                           level="block",
+                                           priority="normal",
+                                           move="n",
+                                           custodial="n",
+                                           request_only="n",
+                                           comments="WMAgent production site")
+            try:
+                res = self.phedex.subscribe(phedexSub)
+                transferId = res['phedex']['request_created'][0]['id']
+                logging.info("Subscribed %d blocks for %d datasets, to location: %s, under request ID: %s",
+                             len(phedexSub.getBlocks()),
+                             len(phedexSub.getDatasetPaths()),
+                             phedexSub.getNodes(),
+                             transferId)
+            except HTTPException as ex:
+                logging.error("PhEDEx block subscription failed with HTTPException: %s %s", ex.status, ex.result)
+                logging.error("The subscription object was: %s", str(phedexSub))
+            except Exception as ex:
+                logging.exception("PhEDEx block subscription failed with Exception: %s", str(ex))
+            else:
+                binds = []
+                for blockname in phedexSub.getBlocks():
+                    binds.append({'RULE_ID': str(transferId), 'BLOCKNAME': blockname})
+                self.setBlockRules.execute(binds)
+
+        return
+
+    def organizeBlocksByLocation(self, blocksLocation):
+        """
+        Given a list of dictionaries (with block name and location). Organize
+        those blocks per location to make phedex subscription calls more
+        efficient.
+        Also drops blocks that we cannot subscribe, and check for valid
+        phedex node names.
+        :param blocksLocation: list of dictionaries
+        :return: a dict of dictionaries, such as:
+          {"locationA": {"datasetA": ["blockA", "blockB", ...],
+                         "datasetB": ["blockA", "blockB", ...]
+                        },
+           "locationB": {"datasetA": ["blockA"],
+                         ...
+        """
+        dictByLocation = {}
+        for item in blocksLocation:
+            ### logic to stop doing things to be done by RucioInjector or by DM team
+            if not self._isDataTierAllowed(item['blockname']):
+                continue
+
+            site = item['pnn']
+            if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:
+                msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
+                msg += "skipping block subscription for: %s" % item['blockname']
+                logging.error(msg)
+                continue
+
+            dictByLocation.setdefault(site, {})
+
+            dsetName = item['blockname'].split("#")[0]
+            dictByLocation[site].setdefault(dsetName, [])
+            dictByLocation[site][dsetName].append(item['blockname'])
+        return dictByLocation

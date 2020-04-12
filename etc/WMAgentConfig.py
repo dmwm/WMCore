@@ -165,9 +165,10 @@ config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 # phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
-config.PhEDExInjector.pollInterval = 100
-config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.pollInterval = 300
+config.PhEDExInjector.subscribeInterval = 6 * 60 * 60  # 6h
 config.PhEDExInjector.diskSites = diskSites
+config.PhEDExInjector.phedexGroup = "DataOps"
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"

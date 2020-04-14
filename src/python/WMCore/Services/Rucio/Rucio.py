@@ -449,7 +449,7 @@ class Rucio(object):
         try:
             response = self.cli.add_replication_rule(dids, copies, rseExpression, **kwargs)
         except Exception as ex:
-            self.logger.error("Exception creating replica for data: %s. Error: %s", names, str(ex))
+            self.logger.error("Exception creating rule replica for data: %s. Error: %s", names, str(ex))
         return response
 
     def listContent(self, name, scope='cms'):

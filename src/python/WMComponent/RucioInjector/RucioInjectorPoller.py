@@ -38,7 +38,7 @@ def filterDataByTier(rawData, allowedTiers):
         for container in list(rawData[location]):
             endTier = container.rsplit('/', 1)[1]
             if endTier not in allowedTiers:
-                logging.info("Container %s not meant to be injected by RucioInjector", container)
+                logging.debug("Container %s not meant to be injected by RucioInjector", container)
                 rawData[location].pop(container)
     return rawData
 
@@ -103,6 +103,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.testRSEs = config.RucioInjector.RSEPostfix
         self.filesToRecover = []
 
+        logging.info("Component configured to only inject data for data tiers: %s",
+                     self.listTiersToInject)
         logging.info("Component configured to skip container rule creation for data tiers: %s",
                      self.skipRulesForTiers)
         logging.info("Component configured to create block rules: %s", self.createBlockRules)
@@ -120,9 +122,12 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.getUninjected = daofactory(classname="GetUninjectedFiles")
         self.getMigrated = daofactory(classname="GetMigratedBlocks")
 
+        self.getUnsubscribedBlocks = daofactory(classname="GetUnsubscribedBlocks")
+        self.setBlockRules = daofactory(classname="SetBlocksRule")
+
         self.findDeletableBlocks = daofactory(classname="GetDeletableBlocks")
         self.markBlocksDeleted = daofactory(classname="MarkBlocksDeleted")
-        self.getUnsubscribed = daofactory(classname="GetUnsubscribedDatasets")
+        self.getUnsubscribedDsets = daofactory(classname="GetUnsubscribedDatasets")
         self.markSubscribed = daofactory(classname="MarkDatasetSubscribed")
 
         daofactory = DAOFactory(package="WMComponent.DBS3Buffer",
@@ -164,23 +169,21 @@ class RucioInjectorPoller(BaseWorkerThread):
 
             # create blocks. Only update the cache once a rule gets created...
             blocksAdded = self.insertBlocks(uninjectedFiles)
-
-            # create file replicas
-            self.insertReplicas(uninjectedFiles)
-
-            # now create a Rucio rule for every single block (and update local cache)
-            blocksAdded = self.insertBlockRules(blocksAdded)
             if self.blocksCache.isCacheExpired():
                 self.blocksCache.setCache(blocksAdded)
             else:
                 self.blocksCache.addItemToCache(blocksAdded)
 
+            # create file replicas
+            self.insertReplicas(uninjectedFiles)
+
             # now close blocks already uploaded to DBS
             self.closeBlocks()
 
             if self.lastRulesExecTime + self.pollRules <= int(time.time()):
-                self.deleteBlocks()
                 self.insertContainerRules()
+                self.insertBlockRules()
+                self.deleteBlocks()
         except Exception as ex:
             msg = "Caught unexpected exception in RucioInjector. Details:\n%s" % str(ex)
             logging.exception(msg)
@@ -199,7 +202,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         newContainers = set()
         for location in uninjectedData:
             for container in uninjectedData[location]:
-                if container not in self.containersCache:
+                # same container can be at multiple locations
+                if container not in self.containersCache and container not in newContainers:
                     if self.rucio.createContainer(container):
                         logging.info("Container %s inserted into Rucio", container)
                         newContainers.add(container)
@@ -217,16 +221,15 @@ class RucioInjectorPoller(BaseWorkerThread):
         :return: a dictionary of successfully inserted blocks and their correspondent location
         """
         logging.info("Preparing to insert blocks into Rucio...")
-        newBlocks = {}
+        newBlocks = set()
         for location in uninjectedData:
-            if self.testRSEs:
-                rseName = "%s_Test" % location
+            rseName = "%s_Test" % location if self.testRSEs else location
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:
                     if block not in self.blocksCache:
                         if self.rucio.createBlock(block, rse=rseName):
                             logging.info("Block %s inserted into Rucio", block)
-                            newBlocks[block] = location
+                            newBlocks.add(block)
                         else:
                             logging.error("Failed to create block: %s", block)
         logging.info("Successfully inserted %d blocks into Rucio", newBlocks)
@@ -235,48 +238,50 @@ class RucioInjectorPoller(BaseWorkerThread):
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isBlockTierAllowed(self, blockName):
         """
-        Check the block datatier against the list of data tiers that we want
-        to get pinned in Rucio through a block rule
-        :return: boolean whether we can or not insert a rule
+        Performs a couple of checks on the block datatier, such as:
+          * is the datatier supposed to be injected by this component
+          * is the datatier supposed to get rules created by this component
+        :return: True if the component can proceed with this block, False otherwise
         """
         endBlock = blockName.rsplit('/', 1)[1]
         endTier = endBlock.split('#')[0]
+        if endTier not in self.listTiersToInject:
+            return False
         if endTier in self.skipRulesForTiers:
             return False
         return True
 
-    def insertBlockRules(self, blocksAndRSEs):
+    def insertBlockRules(self):
         """
         Creates a simple replication rule for every single block that
-        has been previously inserted into Rucio.
-        Right now, we make standard rules against a given site.
-        :param blocksAndRSEs: dictionary with blocks as key, and RSEs as value
-        :return: a set of blocks with successfully created rules
+        is under production in a given site/RSE.
+        Also persist the rule ID in the database.
         """
-        newBlocks = set()
         if not self.createBlockRules:
-            return newBlocks
+            return
 
-        # FIXME: this could have been done in bulk, by RSE
         logging.info("Preparing to create block rules into Rucio...")
-        for block, rse in blocksAndRSEs.items():
-            if not self._isBlockTierAllowed(block):
-                logging.info("Component configured to skip block rule for: %s", block)
+
+        unsubBlocks = self.getUnsubscribedBlocks.execute()
+
+        for item in unsubBlocks:
+            if not self._isBlockTierAllowed(item['blockname']):
+                logging.debug("Component configured to skip block rule for: %s", item['blockname'])
                 continue
-            if self.testRSEs:
-                rseName = "%s_Test" % rse
+            rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
             # DATASET = replicates all files in the same block to the same RSE
-            resp = self.rucio.createReplicationRule(block, rseExpression="rse=%s" % rseName,
+            resp = self.rucio.createReplicationRule(item['blockname'], rseExpression="rse=%s" % rseName,
                                                     account=self.rucioAcct, grouping="DATASET",
                                                     comment="WMAgent production site",
                                                     meta=self.metaData)
             if resp:
-                logging.info("Block rule created for %s under rule id: %s", block, resp)
-                newBlocks.add(block)
+                msg = "Block rule created for block: %s, at: %s, with rule id: %s"
+                logging.info(msg, item['blockname'], item['pnn'], resp[0])
+                binds = {'RULE_ID': resp[0], 'BLOCKNAME': item['blockname']}
+                self.setBlockRules.execute(binds)
             else:
-                logging.error("Failed to create rule for block: %s", block)
-        logging.info("Successfully inserted %d rules for blocks into Rucio", newBlocks)
-        return newBlocks
+                logging.error("Failed to create rule for block: %s at %s", item['blockname'], rseName)
+        return
 
     def insertReplicas(self, uninjectedData):
         """
@@ -290,8 +295,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.info("Preparing to insert replicas into Rucio...")
 
         for location in uninjectedData.keys():
-            if self.testRSEs:
-                rseName = "%s_Test" % location
+            rseName = "%s_Test" % location if self.testRSEs else location
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:
                     injectData = []
@@ -366,11 +370,14 @@ class RucioInjectorPoller(BaseWorkerThread):
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isContainerTierAllowed(self, containerName):
         """
-        Check the container datatier against the list of data tiers that we want
-        to get pinned in Rucio through a container rule
-        :return: boolean whether we can or not insert a rule
+        Performs a couple of checks on the container datatier, such as:
+          * is the datatier supposed to be injected by this component
+          * is the datatier supposed to get rules created by this component
+        :return: True if the component can proceed with this container, False otherwise
         """
         endTier = containerName.rsplit('/', 1)[1]
+        if endTier not in self.listTiersToInject:
+            return False
         if endTier in self.skipRulesForTiers:
             return False
         return True
@@ -386,7 +393,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         # FIXME also adapt the format returned by this DAO
         # Check for completely unsubscribed datasets
         # in short, files in phedex, file status in "GLOBAL" or "InDBS", and subscribed=0
-        unsubscribedDatasets = self.getUnsubscribed.execute()
+        unsubscribedDatasets = self.getUnsubscribedDsets.execute()
 
         # Keep a list of subscriptions to tick as subscribed in the database
         subscriptionsMade = []
@@ -397,16 +404,15 @@ class RucioInjectorPoller(BaseWorkerThread):
             rse = subInfo['site']
             container = subInfo['path']
             if not self._isContainerTierAllowed(container):
-                logging.info("Component configured to skip container rule for: %s", container)
+                logging.debug("Component configured to skip container rule for: %s", container)
                 continue
             logging.info("Creating container rule for %s against RSE %s", container, rse)
 
-            if self.testRSEs:
-                rseName = "%s_Test" % rse
+            rseName = "%s_Test" % rse if self.testRSEs else rse
             # ALL = replicates all files to the same RSE
             resp = self.rucio.createReplicationRule(container, rseExpression="rse=%s" % rseName,
                                                     account=self.rucioAcct, grouping="ALL",
-                                                    comment="WMCore automatic container rule",
+                                                    comment="WMAgent automatic container rule",
                                                     meta=self.metaData)
             if resp:
                 logging.info("Container rule created for %s under rule id: %s", container, resp)

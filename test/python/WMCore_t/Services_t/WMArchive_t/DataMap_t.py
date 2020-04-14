@@ -183,9 +183,9 @@ class DataMap_t(unittest.TestCase):
         for step in newData['steps']:
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
-        self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
-        # Make sure the first file events per lumis is carried through
-        self.assertEqual(runInfo['eventsPerLumi'], [100, 150])
+        # we no longer ship the lumis and eventsPerLumi lists to WMArchive. Hard-wired to []
+        self.assertEqual(runInfo['lumis'], [])
+        self.assertEqual(runInfo['eventsPerLumi'], [])
         fwjrSamples = ["ErrorCodeFail.json",
                        "FailedByAgent.json",
                        "HarvestSuccessFwjr.json",

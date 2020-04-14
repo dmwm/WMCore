@@ -1,7 +1,7 @@
 from __future__ import (division, print_function)
 
-import socket
 import copy
+import socket
 from collections import defaultdict
 
 # From top level
@@ -14,7 +14,6 @@ WMARCHIVE_CONVERT_TO_LIST = ["OutputPFN", "lfn"]
 
 WMARCHIVE_DATA_MAP = {"OutputPFN": "outputPFNs", "inputPath": "inputDataset",
                       "lfn": "outputLFNs", "input": "inputLFNs", "inputpfns": "inputPFNs"}
-
 
 WMARCHIVE_REMOVE_FIELD = ["InputPFN", "pfn", "user_dn", "user_vogroup", "user_vorole"]
 WMARCHIVE_COMBINE_FIELD = {"outputDataset": ["primaryDataset", "processedDataset", "dataTier"]}
@@ -30,7 +29,7 @@ PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                             'AvgEventTime': float,
                             'MaxEventCPU': float,
                             'MaxEventTime': float,
-                            'MinEventCPU':  float,
+                            'MinEventCPU': float,
                             'MinEventTime': float,
                             'TotalEventCPU': float,
                             'TotalJobCPU': float,
@@ -64,93 +63,89 @@ TOP_LEVEL_STEP_DEFAULT = {'analysis': {},
                           }
 
 # only composed value need to bs set default value
-STEP_DEFAULT = { #'name': '',
-             'analysis': {},
-             'cleanup': {},
-             'logs': {},
-             'errors': [],
-             'input': [{#'catalog': '',
-                        #'events': -1,
-                        #'guid': '',
-                        #'input_source_class': '',
-                        #'input_type': '',
-                        #'lfn': -1,
-                        #'module_label': '',
-                        #'pfn': -1,
-                        'runs': []}],
-             'output': [{#'acquisitionEra': '',
-                         #'adler32': '',
-                         #'applicationName': '',
-                         #'applicationVersion': '',
-                         #'async_dest': '',
-                         #'branch_hash': '',
-                         #'catalog': '',
-                         #'cksum': '',
-                         #'configURL': '',
-                         #'events': -1,
-                         #'globalTag': '',
-                         #'guid': '',
-                         #'inputDataset': '',
-                         'inputLFNs': [],
-                         'inputPFNs': [],
-                         #TODO change to empty string from None
-                         #'location': '',
-                         #'merged': False,
-                         #'module_label': '',
-                         #'output_module_class': '',
-                         #'outputDataset': '',
-                         'outputLFNs': [],
-                         'outputPFNs': [],
-                         #'prep_id': '',
-                         #'processingStr': '',
-                         #'processingVer': -1,
-                         'runs': [],
-                         #'size': -1,
-                         #'validStatus': '',
-                         #"SEName": '',
-                         #"PNN": '',
-                         #"GUID": '',
-                         #'StageOutCommand': ''
-                         }],
-              'performance': {'cpu': {},
-                              'memory': {},
-                              'multicore': {},
-                              'storage': {}},
-              #'site': 'T2_CH_CERN',
-              #'start': 1454569735,
-              #'status': 0,
-              #'stop': 1454569736
-              }
+STEP_DEFAULT = {  # 'name': '',
+    'analysis': {},
+    'cleanup': {},
+    'logs': {},
+    'errors': [],
+    'input': [{  # 'catalog': '',
+        # 'events': -1,
+        # 'guid': '',
+        # 'input_source_class': '',
+        # 'input_type': '',
+        # 'lfn': -1,
+        # 'module_label': '',
+        # 'pfn': -1,
+        'runs': []}],
+    'output': [{  # 'acquisitionEra': '',
+        # 'adler32': '',
+        # 'applicationName': '',
+        # 'applicationVersion': '',
+        # 'async_dest': '',
+        # 'branch_hash': '',
+        # 'catalog': '',
+        # 'cksum': '',
+        # 'configURL': '',
+        # 'events': -1,
+        # 'globalTag': '',
+        # 'guid': '',
+        # 'inputDataset': '',
+        'inputLFNs': [],
+        'inputPFNs': [],
+        # TODO change to empty string from None
+        # 'location': '',
+        # 'merged': False,
+        # 'module_label': '',
+        # 'output_module_class': '',
+        # 'outputDataset': '',
+        'outputLFNs': [],
+        'outputPFNs': [],
+        # 'prep_id': '',
+        # 'processingStr': '',
+        # 'processingVer': -1,
+        'runs': [],
+        # 'size': -1,
+        # 'validStatus': '',
+        # "SEName": '',
+        # "PNN": '',
+        # "GUID": '',
+        # 'StageOutCommand': ''
+    }],
+    'performance': {'cpu': {},
+                    'memory': {},
+                    'multicore': {},
+                    'storage': {}},
+    # 'site': 'T2_CH_CERN',
+    # 'start': 1454569735,
+    # 'status': 0,
+    # 'stop': 1454569736
+}
+
 
 def combineDataset(dataset):
-    dataset["outputDataset"] = "/%s/%s/%s" % (dataset["primaryDataset"], dataset["processedDataset"], dataset["dataTier"])
-    del dataset["primaryDataset"]
-    del dataset["processedDataset"]
-    del dataset["dataTier"]
+    dataset["outputDataset"] = "/%s/%s/%s" % (dataset.pop("primaryDataset"),
+                                              dataset.pop("processedDataset"),
+                                              dataset.pop("dataTier"))
     return dataset
+
 
 def changeRunStruct(runDict):
     runList = []
-    for run, lumis in runDict.iteritems():
+    for run in runDict:
         singleRun = {"runNumber": int(run)}
-        if isinstance(lumis, dict):
-            # In this case, lumis is a dictionary with lumi numbers as the key, event counts as the value
-            singleRun.update({'lumis': [int(lumi) for lumi in lumis.keys()],
-                              'eventsPerLumi': lumis.values()})
-        elif isinstance(lumis, list):
-            singleRun.update({'lumis': lumis})
+        singleRun.update({'lumis': [], 'eventsPerLumi': []})
         runList.append(singleRun)
 
     return runList
 
+
 def _changeToFloat(value):
     if value in ["-nan", "nan", "inf", ""]:
         return -1.0
-    else:
-        return float(value)
+    return float(value)
+
 
 def _validateTypeAndSetDefault(sourceDict, stepDefault):
-
     # check primitive time and remvoe if the values is composite type.
     for key, value in sourceDict.items():
         if key not in stepDefault and value in [[], {}, None, "None"]:
@@ -161,11 +156,14 @@ def _validateTypeAndSetDefault(sourceDict, stepDefault):
         if (category not in sourceDict) or (category in sourceDict and not sourceDict[category]):
             sourceDict[category] = stepDefault[category]
 
+
 def changePerformanceStruct(perfDict):
-    return [{"pName": prop, "value": _changeToFloat(value)}  for prop, value in perfDict.items()]
+    return [{"pName": prop, "value": _changeToFloat(value)} for prop, value in perfDict.items()]
+
 
 def changeToList(aDict):
-    return [{"prop": prop, "value": value}  for prop, value in aDict.items()]
+    return [{"prop": prop, "value": value} for prop, value in aDict.items()]
+
 
 def convertInput(inputList):
     for inputDict in inputList:
@@ -176,6 +174,7 @@ def convertInput(inputList):
 
     return inputList
 
+
 def typeCastError(errorList):
     for errorDict in errorList:
         for key in errorDict:
@@ -183,6 +182,7 @@ def typeCastError(errorList):
                 value = errorDict[key]
                 errorDict[key] = ERROR_TYPE[key](value)
     return errorList
+
 
 def typeCastPerformance(performDict):
     newPerfDict = defaultdict(dict)
@@ -195,16 +195,16 @@ def typeCastPerformance(performDict):
                         if value in ["-nan", "nan", "inf", ""]:
                             value = -1
                         if PERFORMANCE_TYPE[key][param] == int:
-                        # the received value comes from CMSSW FWJR and its type is string
-                        # Although type is int, CMSSW FWJR string is constructed as float i.e. "3.0"
-                        # In that case we convert to float first before type cast to int.
-                        # since int("3.0") will raise an exception but int(float("3.0") won't
+                            # the received value comes from CMSSW FWJR and its type is string
+                            # Although type is int, CMSSW FWJR string is constructed as float i.e. "3.0"
+                            # In that case we convert to float first before type cast to int.
+                            # since int("3.0") will raise an exception but int(float("3.0") won't
                             value = float(value)
                         newPerfDict[key][param] = PERFORMANCE_TYPE[key][param](value)
                     except ValueError as ex:
                         newPerfDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
                         print("key: %s, param: %s, value: %s \n%s" % (key, param,
-                                                    performDict[key][param], str(ex)))
+                                                                      performDict[key][param], str(ex)))
     return dict(newPerfDict)
 
 
@@ -239,7 +239,7 @@ def convertOutput(outputList):
             del outDict["dataset"]
 
         if "location" in outDict and isinstance(outDict["location"], list):
-            if len(outDict["location"]) > 0:
+            if outDict["location"]:
                 outDict["location"] = outDict["location"][0]
             else:
                 outDict["location"] = ""
@@ -247,6 +247,7 @@ def convertOutput(outputList):
         _validateTypeAndSetDefault(outDict, STEP_DEFAULT['output'][0])
 
     return newOutputList
+
 
 def convertStepValue(stepValue):
     if "status" in stepValue:
@@ -256,15 +257,15 @@ def convertStepValue(stepValue):
             stepValue["status"] = int(stepValue["status"])
 
     if "errors" in stepValue:
-        if len(stepValue['errors']) == 0:
+        if not stepValue['errors']:
             stepValue['errors'] = []
         else:
             typeCastError(stepValue['errors'])
 
     input_keys = ['source', 'logArchives']
     if "input" in stepValue:
-        if len(stepValue['input']) == 0:
-            #if empty convert to list from {}
+        if not stepValue['input']:
+            # if empty convert to list from {}
             stepValue['input'] = []
 
         elif len(stepValue['input']) > 1:
@@ -284,17 +285,18 @@ def convertStepValue(stepValue):
     if "performance" in stepValue:
         stepValue["performance"] = typeCastPerformance(stepValue["performance"])
         # If it needs to chnage to list format replace to this
-        #for category in stepValue["performance"]:
+        # for category in stepValue["performance"]:
         #    stepValue["performance"][category] = changePerformanceStruct(stepValue["performance"][category])
 
         _validateTypeAndSetDefault(stepValue["performance"], STEP_DEFAULT["performance"])
 
     # If structure need to be changed with this uncomments
-    #listConvKeys = ['analysis', 'cleanup', 'logs', 'parameters']
-    #for key in listConvKeys:
+    # listConvKeys = ['analysis', 'cleanup', 'logs', 'parameters']
+    # for key in listConvKeys:
     #    stepValue[key] = changeToList(stepValue[key])
 
     return stepValue
+
 
 def convertSteps(steps):
     stepList = []
@@ -306,6 +308,7 @@ def convertSteps(steps):
         stepList.append(stepItem)
     return stepList
 
+
 def convertToArchiverFormat(fwjr):
     """
     """
@@ -315,8 +318,8 @@ def convertToArchiverFormat(fwjr):
 
     return newFWJR
 
-def createFileArrayRef(fwjr, fArrayRef):
 
+def createFileArrayRef(fwjr, fArrayRef):
     if isinstance(fwjr, list):
         for item in fwjr:
             createFileArrayRef(item, fArrayRef)
@@ -337,15 +340,14 @@ def createFileArrayRef(fwjr, fArrayRef):
 
 
 def createFileArray(fwjr, fArray, fArrayRef):
-
     if isinstance(fwjr, dict):
         for key, value in fwjr.items():
-            for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+            for fileType in WMARCHIVE_FILE_REF_KEY:
                 if key in fArrayRef[fileType]:
                     if isinstance(value, list):
                         for fileName in value:
                             fArray[fileType].add(fileName)
-                    else: # this should be string
+                    else:  # this should be string
                         fArray[fileType].add(value)
             createFileArray(value, fArray, fArrayRef)
     elif isinstance(fwjr, list):
@@ -354,18 +356,18 @@ def createFileArray(fwjr, fArray, fArrayRef):
     else:
         return
 
-def changeToFileRef(fwjr, fArray, fArrayRef):
 
+def changeToFileRef(fwjr, fArray, fArrayRef):
     if isinstance(fwjr, dict):
         for key, value in fwjr.items():
-            for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+            for fileType in WMARCHIVE_FILE_REF_KEY:
                 if key in fArrayRef[fileType]:
                     if isinstance(value, list):
                         newRef = []
                         for fileName in value:
                             index = fArray[fileType].index(fileName)
                             newRef.append(index)
-                    else: # this should be string
+                    else:  # this should be string
                         newRef = fArray[fileType].index(value)
                     fwjr[key] = newRef
             changeToFileRef(value, fArray, fArrayRef)
@@ -374,6 +376,7 @@ def changeToFileRef(fwjr, fArray, fArrayRef):
             changeToFileRef(item, fArray, fArrayRef)
     else:
         return
+
 
 def createArchiverDoc(job, version=None):
     """
@@ -389,30 +392,29 @@ def createArchiverDoc(job, version=None):
 
     fArrayRef = {}
     fArray = {}
-    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+    for fileType in WMARCHIVE_FILE_REF_KEY:
         fArrayRef[fileType] = set()
         fArray[fileType] = set()
 
     createFileArrayRef(newfwjr, fArrayRef)
 
-    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+    for fileType in WMARCHIVE_FILE_REF_KEY:
         fArrayRef[fileType] = list(fArrayRef[fileType])
 
     createFileArray(newfwjr, fArray, fArrayRef)
 
-    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+    for fileType in WMARCHIVE_FILE_REF_KEY:
         fArray[fileType] = list(fArray[fileType])
-
 
     changeToFileRef(newfwjr, fArray, fArrayRef)
 
-    #convert to fwjr format
+    # convert to fwjr format
 
-    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+    for fileType in WMARCHIVE_FILE_REF_KEY:
         newfwjr["%sArrayRef" % fileType] = fArrayRef[fileType]
         newfwjr["%sArray" % fileType] = fArray[fileType]
 
-    if version == None:
+    if version is None:
         # add this trry to remove the dependency on WMCore code.
         import WMCore
         version = WMCore.__version__
@@ -422,11 +424,11 @@ def createArchiverDoc(job, version=None):
         wnName = fwjr["WorkerNodeInfo"].get("HostName", "")
 
     newfwjr['meta_data'] = {'agent_ver': version,
-                         'host': socket.gethostname().lower(),
-                         'wn_name': wnName,
-                         'fwjr_id': job_id,
-                         'jobtype': jobtype,
-                         'jobstate': jobstate,
-                         'ts': create_ts
-                         }
+                            'host': socket.gethostname().lower(),
+                            'wn_name': wnName,
+                            'fwjr_id': job_id,
+                            'jobtype': jobtype,
+                            'jobstate': jobstate,
+                            'ts': create_ts
+                            }
     return newfwjr

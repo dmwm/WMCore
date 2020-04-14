@@ -131,14 +131,9 @@ def combineDataset(dataset):
 
 def changeRunStruct(runDict):
     runList = []
-    for run, lumis in runDict.iteritems():
+    for run in runDict:
         singleRun = {"runNumber": int(run)}
-        if isinstance(lumis, dict):
-            # In this case, lumis is a dictionary with lumi numbers as the key, event counts as the value
-            singleRun.update({'lumis': [int(lumi) for lumi in lumis.keys()],
-                              'eventsPerLumi': lumis.values()})
-        elif isinstance(lumis, list):
-            singleRun.update({'lumis': lumis})
+        singleRun.update({'lumis': [], 'eventsPerLumi': []})
         runList.append(singleRun)
 
     return runList

@@ -2288,6 +2288,21 @@ class TaskChainTests(EmulatedUnitTestCase):
         with self.assertRaises(WMSpecFactoryException):
             factory.factoryWorkloadConstruction("ElevenTasks", testArguments)
 
+    def testBadKeepOutput(self):
+        """
+        Test usage of KeepOutput=false in the last task
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(REQUEST_INPUT)
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        arguments['Task2']['KeepOutput'] = False
+
+        factory = TaskChainWorkloadFactory()
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("PullingTheChain", arguments)
 
 
 if __name__ == '__main__':

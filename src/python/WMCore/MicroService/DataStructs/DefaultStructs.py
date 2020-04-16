@@ -45,3 +45,15 @@ TRANSFER_RECORD = dict(dataset="",
                        transferIDs=set(),
                        campaignName="",
                        completion=[0.0])
+
+# summary metrics for the MSOutput thread
+# (also available through the `info` REST API)
+OUTPUT_REPORT = dict(start_time=0,
+                     end_time=0,
+                     execution_time=0,
+                     error="",
+                     num_datasets_subscribed=0,
+                     ddm_request_id=0)
+
+
+OUTPUT_MONGO_DOC = dict()

@@ -32,6 +32,7 @@ from datetime import datetime
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.MicroService.Unified.MSTransferor import MSTransferor
 from WMCore.MicroService.Unified.MSMonitor import MSMonitor
+from WMCore.MicroService.Unified.MSOutput import MSOutput
 from WMCore.MicroService.Unified.TaskManager import start_new_thread
 
 
@@ -65,6 +66,7 @@ class MSManager(object):
         self.logger.info("Configuration including default values:\n%s", self.msConfig)
         self.statusTrans = {}
         self.statusMon = {}
+        self.statusOutput = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -89,6 +91,20 @@ class MSManager(object):
                                                  self.logger))
             self.logger.debug(
                 "+++ Running %s thread %s", thname, self.monitThread.running())
+
+        # initialize output module
+        if 'output' in self.services:
+            self.msOutput = MSOutput(self.msConfig, logger=self.logger)
+            thname = 'MSOutput'
+            self.outputThread = start_new_thread(thname, daemon,
+                                                 (self.output,
+                                                  ['completed',
+                                                   'closed-out',
+                                                   'announced'],
+                                                  self.msConfig['interval'],
+                                                  self.logger))
+            self.logger.debug(
+                "+++ Running %s thread %s", thname, self.outputThread.running())
 
     def _parseConfig(self, config):
         """
@@ -137,6 +153,21 @@ class MSManager(object):
         self.logger.info("Total monitor execution time: %d secs", res['execution_time'])
         self.statusMon = res
 
+    def output(self, reqStatus):
+        """
+        MSManager Output Dataplacement function.
+        It subscribes the output datasets to the Data Management System.
+        For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the output thread...")
+        res = self.msOutput.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total output execution time: %d secs", res['execution_time'])
+        self.statusOutput = res
+
     def stop(self):
         "Stop MSManager"
         status = None
@@ -148,6 +179,10 @@ class MSManager(object):
         if 'transferor' in self.services and hasattr(self, 'transfThread'):
             self.transfThread.stop()  # stop checkStatus thread
             status = self.transfThread.running()
+        # stop MSOutput thread
+        if 'output' in self.services and hasattr(self, 'outputThread'):
+            self.outputThread.stop()
+            status = self.outputThread.running()
         return status
 
     def info(self, reqName=None):
@@ -185,6 +220,8 @@ class MSManager(object):
             data.update(self.statusTrans)
         elif detail and 'monitor' in self.services:
             data.update(self.statusMon)
+        elif detail and 'output' in self.services:
+            data.update(self.statusOutput)
         return data
 
     def updateTimeUTC(self, reportDict, startT, endT):

@@ -73,8 +73,7 @@ def fetchPSS(command):
         msg += "\tand command executed: %s\n" % command
         logging.error(msg)
         return None
-    # smaps returns data in kiloBytes, let's make it megaBytes
-    return int(smapsOutput[0]) // 1000
+    return int(smapsOutput[0])
 
 
 def fetchForestMetrics(psCommand, smapsCommand):
@@ -87,8 +86,10 @@ def fetchForestMetrics(psCommand, smapsCommand):
 
     result = dict(rss=0, pss=0, pcpu=0, pmem=0)
     psOutputList = stdout.splitlines()
+    logging.info("AMR psOutputList: {}".format(psOutputList))
     for psLine in psOutputList:
         psOutput = psLine.split()
+        logging.info("AMR psOutput: {}".format(psOutput))
         if retcode != 0 or len(psOutput) <= 6:
             msg = "Error when grabbing output from forest process ps\n"
             msg += "\tcommand exit code: %s\n" % retcode
@@ -266,15 +267,18 @@ class PerformanceMonitor(WMRuntimeMonitor):
         mainPss = fetchPSS(self.pssMemoryCommand % stepPID)
         if not mainMetrics or not mainPss:
             return
-        logging.info("Process ID: %s; PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", stepPID,
+        logging.info("Process ID: %s *** PSS: %s kB; RSS: %s kB; PCPU: %s; PMEM: %s", stepPID,
                      mainPss, mainMetrics['rss'], mainMetrics['pcpu'], mainMetrics['pmem'])
 
         forestMetrics = fetchForestMetrics(psCommand=self.monitorForest % stepPID,
                                            smapsCommand=self.pssMemoryCommand)
         if not forestMetrics:
             return
-        logging.info("  Whole tree: PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", forestMetrics['pss'],
+        logging.info("  Whole tree *** PSS: %s kB; RSS: %s kB; PCPU: %s; PMEM: %s", forestMetrics['pss'],
                      forestMetrics['rss'], forestMetrics['pcpu'], forestMetrics['pmem'])
+
+        # smaps returns data in kiloBytes, let's make it megaBytes
+        forestMetrics['pss'] = forestMetrics['pss'] // 1000
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores

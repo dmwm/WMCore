@@ -390,22 +390,25 @@ echo "Done!" && echo
 ###
 echo "*** Downloading utilitarian scripts ***"
 cd /data/admin/wmagent
-wget -nv https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py -O checkProxy.py
+wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/checkProxy.py -O checkProxy.py
 wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/restartComponent.sh -O restartComponent.sh
+wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/renew_proxy.sh -O renew_proxy.sh
+chmod +x renew_proxy.sh restartComponent.sh
+sed -i "s+CREDNAME+$MYPROXY_CREDNAME+" /data/admin/wmagent/renew_proxy.sh
 echo "Done!" && echo
 
 ### Populating cronjob with utilitarian scripts
 echo "*** Creating cronjobs for them ***"
 if [[ "$TEAMNAME" == *testbed* || "$TEAMNAME" == *dev* ]]; then
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
+  echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
   ) | crontab -
 else
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
-  echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 120 --send-mail True --mail alan.malta@cern.ch"
+  echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
+  echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 150 --send-mail True --mail alan.malta@cern.ch"
   echo "#workaround for the ErrorHandler silence issue"
-  echo "*/15 * * * *  source /data/admin/wmagent/restartComponent.sh > /dev/null"
+  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
   ) | crontab -
 fi
 echo "Done!" && echo

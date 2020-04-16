@@ -34,6 +34,82 @@ def average(numbers):
     return float(sum(numbers)) / len(numbers)
 
 
+def getMainRSS(command):
+    """
+    Executes the input command and return a dictionary with the 3 metrics
+    we want: RSS, PCPU and PMEM
+    :param command: command to be executed as a subprocess
+    :return: dictionary with the metrics, or empty if it fails
+    """
+    stdout, stderr, retcode = subprocessAlgos.runCommand(command)
+
+    psOutput = stdout.split()
+    if retcode != 0 or len(psOutput) <= 6:
+        msg = "Error when grabbing output from main process ps\n"
+        msg += "\tcommand exit code: %s\n" % retcode
+        msg += "\terror message: %s\n" % stderr
+        msg += "\toutput message: %s\n" % psOutput
+        msg += "\tand command executed: %s\n" % command
+        logging.error(msg)
+        return {}
+    return dict(rss=psOutput[2], pcpu=psOutput[3], pmem=psOutput[4])
+
+
+def fetchPSS(command):
+    """
+    Executes the input command and return a dictionary with the 3 metrics
+    we want: RSS, PCPU and PMEM
+    :param command: command to be executed as a subprocess
+    :return: dictionary with the metrics, or empty if it fails
+    """
+    stdout, stderr, retcode = subprocessAlgos.runCommand(command)
+
+    smapsOutput = stdout.split()
+    if retcode != 0 or len(smapsOutput) != 1:
+        msg = "Error when grabbing output from main process with smaps\n"
+        msg += "\tcommand exit code: %s\n" % retcode
+        msg += "\terror message: %s\n" % stderr
+        msg += "\toutput message: %s\n" % smapsOutput
+        msg += "\tand command executed: %s\n" % command
+        logging.error(msg)
+        return None
+    # smaps returns data in kiloBytes, let's make it megaBytes
+    return int(smapsOutput[0]) // 1000
+
+
+def fetchForestMetrics(psCommand, smapsCommand):
+    """
+    Fetches resources metrics for the whole tree of processes
+    :param command: command to be executed as a subprocess
+    :return: dictionary with the metrics, or empty if it fails
+    """
+    stdout, stderr, retcode = subprocessAlgos.runCommand(psCommand)
+
+    result = dict(rss=0, pss=0, pcpu=0, pmem=0)
+    psOutputList = stdout.splitlines()
+    for psLine in psOutputList:
+        psOutput = psLine.split()
+        if retcode != 0 or len(psOutput) <= 6:
+            msg = "Error when grabbing output from forest process ps\n"
+            msg += "\tcommand exit code: %s\n" % retcode
+            msg += "\terror message: %s\n" % stderr
+            msg += "\toutput message: %s\n" % psOutput
+            msg += "\tand command executed: %s\n" % psCommand
+            logging.error(msg)
+            return {}
+        result['rss'] += int(psOutput[2])
+        result['pcpu'] += int(psOutput[3])
+        result['pmem'] += int(psOutput[4])
+        thisPID = int(psOutput[0])
+
+        # run the command to gather PSS memory statistics from /proc/<pid>/smaps
+        smapsOutput = fetchPSS(smapsCommand % thisPID)
+        if smapsOutput is None:
+            return {}
+        result['pss'] += smapsOutput
+    return result
+
+
 class PerformanceMonitorException(WMException):
     """
     _PerformanceMonitorException_
@@ -59,7 +135,8 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid = None
         self.uid = os.getuid()
-        self.monitorBase = "ps -p %i -o pid,ppid,rss,pcpu,pmem,cmd -ww | grep %i"
+        self.monitorBase = "ps -p %i -o pid=,ppid=,rss=,pcpu=,pmem=,cmd= -ww | grep %i"
+        self.monitorForest = "ps --forest -o pid=,ppid=,rss=,pcpu=,pmem=,cmd= -g $(ps -o sid= -p %i)"
         self.pssMemoryCommand = "awk '/^Pss/ {pss += $2} END {print pss}' /proc/%i/smaps"
         self.monitorCommand = None
         self.currentStepSpace = None
@@ -183,45 +260,28 @@ class PerformanceMonitor(WMRuntimeMonitor):
             # Then we have no step PID, we can do nothing
             return
 
-        # Now we run the ps monitor command and collate the data
-        # Gathers RSS, %CPU and %MEM statistics from ps
-        ps_cmd = self.monitorBase % (stepPID, stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(ps_cmd)
-
-        ps_output = stdout.split()
-        if not len(ps_output) > 6:
-            # Then something went wrong in getting the ps data
-            msg = "Error when grabbing output from process ps\n"
-            msg += "output = %s\n" % ps_output
-            msg += "command = %s\n" % ps_cmd
-            logging.error(msg)
+        # Fetch metrics for the main process with the ps command
+        mainMetrics = getMainRSS(self.monitorBase % (stepPID, stepPID))
+        # Fetch metrics for the main process from smaps
+        mainPss = fetchPSS(self.pssMemoryCommand % stepPID)
+        if not mainMetrics or not mainPss:
             return
+        logging.info("Process ID: %s; PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", stepPID,
+                     mainPss, mainMetrics['rss'], mainMetrics['pcpu'], mainMetrics['pmem'])
 
-        # run the command to gather PSS memory statistics from /proc/<pid>/smaps
-        smaps_cmd = self.pssMemoryCommand % (stepPID)
-        stdout, _stderr, _retcode = subprocessAlgos.runCommand(smaps_cmd)
-
-        smaps_output = stdout.split()
-        if not len(smaps_output) == 1:
-            # Then something went wrong in getting the smaps data
-            msg = "Error when grabbing output from smaps\n"
-            msg += "output = %s\n" % smaps_output
-            msg += "command = %s\n" % smaps_cmd
-            logging.error(msg)
+        forestMetrics = fetchForestMetrics(psCommand=self.monitorForest % stepPID,
+                                           smapsCommand=self.pssMemoryCommand)
+        if not forestMetrics:
             return
-
-        # smaps also returns data in kiloBytes, let's make it megaBytes
-        # I'm also confused with these megabytes and mebibytes...
-        pss = int(smaps_output[0]) // 1000
-
-        logging.info("PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", smaps_output[0], ps_output[2], ps_output[3], ps_output[4])
+        logging.info("  Whole tree: PSS: %s; RSS: %s; PCPU: %s; PMEM: %s", forestMetrics['pss'],
+                     forestMetrics['rss'], forestMetrics['pcpu'], forestMetrics['pmem'])
 
         msg = 'Error in CMSSW step %s\n' % self.currentStepName
         msg += 'Number of Cores: %s\n' % self.numOfCores
 
-        if self.maxPSS is not None and pss >= self.maxPSS:
+        if self.maxPSS is not None and forestMetrics['pss'] >= self.maxPSS:
             msg += "Job has exceeded maxPSS: %s MB\n" % self.maxPSS
-            msg += "Job has PSS: %s MB\n" % pss
+            msg += "Job has PSS: %s MB\n" % forestMetrics['pss']
             killProc = True
             reason = 'PSS'
         elif self.hardTimeout is not None and self.softTimeout is not None:

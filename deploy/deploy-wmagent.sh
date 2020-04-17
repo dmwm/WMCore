@@ -25,8 +25,8 @@
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.3.0.patch1 -d HG2004c -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.3.0.patch1 -d HG2004c -t testbed-vocms001 -p "9403" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.3.3 -d HG2005b -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.3.3 -d HG2005b -t testbed-vocms001 -p "9643" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
 
 IAM=`whoami`
@@ -339,6 +339,7 @@ sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE_DIR/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE_DIR/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE_DIR/config.py
+  sed -i "s+config.PhEDExInjector.phedexGroup = 'DataOps'+config.PhEDExInjector.phedexGroup = 'RelVal'+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py

@@ -347,6 +347,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         ### FIXME the data format returned by this DAO
         for location in migratedBlocks:
             for container in migratedBlocks[location]:
+                if not self._isContainerTierAllowed(container, checkRulesList=False):
+                    continue
                 for block in migratedBlocks[location][container]:
                     if self.rucio.closeBlockContainer(block):
                         self.setBlockClosed.execute(block)
@@ -368,17 +370,21 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
 
     # TODO: this will likely go away once the phedex to rucio migration is over
-    def _isContainerTierAllowed(self, containerName):
+    def _isContainerTierAllowed(self, containerName, checkRulesList=True):
         """
-        Performs a couple of checks on the container datatier, such as:
-          * is the datatier supposed to be injected by this component
-          * is the datatier supposed to get rules created by this component
+        It compares the container datatier name to check whether the component
+        should inject data for it or not.
+        In addition to that, it can also evaluate whether it's allowed to create
+        rules for such datatier or not.
+        :param containerName: string with the name of the container
+        :param checkRulesList: boolean to check or not against the list of tiers
+          to be skipped in the rule creation
         :return: True if the component can proceed with this container, False otherwise
         """
         endTier = containerName.rsplit('/', 1)[1]
         if endTier not in self.listTiersToInject:
             return False
-        if endTier in self.skipRulesForTiers:
+        if checkRulesList and endTier in self.skipRulesForTiers:
             return False
         return True
 

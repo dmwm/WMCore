@@ -539,8 +539,8 @@ class StepChainWorkloadFactory(StdBase):
 
         lastStep = "Step%s" % schema['StepChain']
         if not strToBool(schema[lastStep].get('KeepOutput', True)):
-            msg = "Dropping the output of the last step is prohibited.\n"
-            msg += "Set the 'KeepOutput' value to True and try again."
+            msg = "Dropping the output (KeepOutput=False) of the last step is prohibited.\n"
+            msg += "You probably want to remove that step completely and try again."
             self.raiseValidationException(msg=msg)
 
         outputModTier = []

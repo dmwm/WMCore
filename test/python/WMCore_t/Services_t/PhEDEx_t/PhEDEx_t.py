@@ -13,12 +13,14 @@ import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUIDLib import makeUUID
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+
 
 DSET = "/HIHardProbes/HIRun2018-v1/RAW"
 BLOCK = "/HIHardProbes/HIRun2018-v1/RAW#1a4c93dc-07f7-43d7-8458-5508a046a588"
 
 
-class PhEDExTest(unittest.TestCase):
+class PhEDExTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
@@ -81,6 +83,9 @@ class PhEDExTest(unittest.TestCase):
         blockA = "%s#%s" % (testDataset, makeUUID())
         blockB = "%s#%s" % (testDataset, makeUUID())
 
+        # NOTE: leaving it broken on purpose, we do NOT want to subscribe
+        # data via unit tests :-)
+        #injectionSpec = XMLDrop.XMLInjectionSpec(self.dbsTestUrl)
         datasetSpec = injectionSpec.getDataset(testDataset)
         datasetSpec.getFileblock(blockA, 'y')
         datasetSpec.getFileblock(blockB, 'y')
@@ -89,12 +94,12 @@ class PhEDExTest(unittest.TestCase):
 
         # Create a dataset level subscription to a node
         testDatasetSub = PhEDExSubscription([testDataset], "T1_UK_RAL_MSS",
-                                            "Saturn", request_only="n")
+                                            "Saturn", request_only="y")
         self.phedexApi.subscribe(testDatasetSub)
 
         # Create a block level subscrtion to a different node
         testBlockSub = PhEDExSubscription([testDataset], "T1_DE_KIT_MSS", "Saturn",
-                                          level="block", request_only="n")
+                                          level="block", request_only="y")
         self.phedexApi.subscribe(testBlockSub)
 
         subs = self.phedexApi.getSubscriptionMapping(testDataset)
@@ -180,6 +185,28 @@ class PhEDExTest(unittest.TestCase):
         # provide a block that does not exist
         res = self.phedexApi.getReplicaInfoForBlocks(dataset=DSET, block=BLOCK + "BLAH")['phedex']
         self.assertTrue(res['block'] == [])
+
+    def testGroupUsage(self):
+        """
+        _testGroupUsage_
+
+        Verify that the `getGroupUsage` API works correctly.
+        """
+        node = "T2_DE_DESY"
+        group = "DataOps"
+        res = self.phedexApi.getGroupUsage(group=group, node=node)['phedex']
+        self.assertEqual(len(res['node']), 1)
+        self.assertEqual(len(res['node'][0]['group']), 1)
+        self.assertEqual(res['node'][0]['group'][0]['name'], group)
+        self.assertEqual(res['node'][0]['name'], node)
+        self.assertTrue(res['node'][0]['group'][0]['dest_bytes'] > 100)
+
+        res = self.phedexApi.getGroupUsage(group=group)['phedex']
+        self.assertTrue(len(res['node']) > 50)
+        self.assertEqual(len(res['node'][10]['group']), 1)
+        self.assertEqual(res['node'][10]['group'][0]['name'], group)
+
+        return
 
 
 if __name__ == '__main__':

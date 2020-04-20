@@ -1,4 +1,5 @@
 import time
+
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 
@@ -39,8 +40,8 @@ class RequestDBReader(object):
         """
         self.defaultStale = {}
 
-    def _getCouchView(self, view, options, keys=[]):
-
+    def _getCouchView(self, view, options, keys=None):
+        keys = keys or []
         options = self.setDefaultStaleOptions(options)
 
         if keys and isinstance(keys, basestring):
@@ -126,7 +127,6 @@ class RequestDBReader(object):
 
         return self._getCouchView("bystatusandtime", options)
 
-
     def _getRequestByTeamAndStatus(self, team, status, limit):
         """
         'status': is the status of the workflow
@@ -188,7 +188,7 @@ class RequestDBReader(object):
         :return: a list of request names
         """
         if startTime == 0:
-            data = self._getRequestByStatus([status], detail, limit = None, skip = None)
+            data = self._getRequestByStatus([status], detail, limit=None, skip=None)
         else:
             data = self._getRequestByStatusAndStartTime(status, detail, startTime)
 
@@ -208,7 +208,7 @@ class RequestDBReader(object):
         else:
             data = self._getRequestByStatusAndEndTime(status, detail, endTime)
 
-        requestInfo = self._formatCouchData(data, detail = detail)
+        requestInfo = self._formatCouchData(data, detail=detail)
         return requestInfo
 
     def getRequestByTeamAndStatus(self, team, status, detail=False, limit=None):
@@ -229,7 +229,8 @@ class RequestDBReader(object):
         requestInfo = self._formatCouchData(data, detail=detail)
         return requestInfo
 
-    def getRequestByCouchView(self, view, options, keys=[], returnDict=True):
+    def getRequestByCouchView(self, view, options, keys=None, returnDict=True):
+        keys = keys or []
         options.setdefault("include_docs", True)
         data = self._getCouchView(view, options, keys)
         requestInfo = self._formatCouchData(data, returnDict=returnDict)

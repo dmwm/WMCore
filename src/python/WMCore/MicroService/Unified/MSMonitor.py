@@ -12,6 +12,7 @@ from __future__ import division, print_function
 import time
 
 # WMCore modules
+from WMCore.MicroService.DataStructs.DefaultStructs import MONITOR_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
 
 
@@ -20,11 +21,12 @@ class MSMonitor(MSCore):
     MSMonitor class provide whole logic behind
     the transferor monitoring module.
     """
+
     def __init__(self, msConfig, logger=None):
         super(MSMonitor, self).__init__(msConfig, logger)
         # update interval is used to check records in CouchDB and update them
         # after this interval, default 6h
-        self.updateInterval = self.msConfig.get('updateInterval', 6*60*60)
+        self.updateInterval = self.msConfig.get('updateInterval', 6 * 60 * 60)
 
     def updateCaches(self):
         """
@@ -73,31 +75,40 @@ class MSMonitor(MSCore):
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Monitor
 
         :param reqStatus: request status to process
-        :return:
+        :return: a summary of the activity of the last cycle
         """
+        summary = dict(MONITOR_REPORT)
         try:
             # get requests from ReqMgr2 data-service for given status
             # here with detail=False we get back list of records
             requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=False)
-            self.logger.debug('+++ monit found %s requests in %s state',
-                              len(requests), reqStatus)
+            self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
 
             campaigns, transferRecords = self.updateCaches()
+            self.updateReportDict(summary, "total_num_campaigns", len(campaigns))
+            self.updateReportDict(summary, "total_num_transfers", len(transferRecords))
             if not campaigns or not transferRecords:
                 # then wait until the next cycle
                 msg = "Failed to fetch data from one of the data sources. Retrying again in the next cycle"
                 self.logger.error(msg)
-                return
+                self.updateReportDict(summary, "error", msg)
+                return summary
             transferRecords = self.filterTransferDocs(requests, transferRecords)
-        except Exception as err:  # general error
-            self.logger.exception('Failed to bootstrap the MSMonitor thread. Error: %s', str(err))
-            return
+            self.updateReportDict(summary, "filtered_transfer_docs", len(transferRecords))
+        except Exception as ex:  # general error
+            msg = 'Unknown exception bootstrapping the MSMonitor thread. Error: %s', str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+            return summary
 
         try:
             # keep track of request and their new statuses
             self.getTransferInfo(transferRecords)
             requestsToStage = self.getCompletedWorkflows(transferRecords, campaigns)
             failedDocs = self.updateTransferDocs(transferRecords)
+            self.updateReportDict(summary, "success_transfer_doc_update",
+                                  len(transferRecords) - len(failedDocs))
+            self.updateReportDict(summary, "failed_transfer_doc_update", len(failedDocs))
             # finally, update statuses for requests
             for reqName in requestsToStage:
                 if reqName in failedDocs:
@@ -105,12 +116,18 @@ class MSMonitor(MSCore):
                     msg += "the transfer document failed to get updated"
                     self.logger.warning(msg)
                     continue
-                self.change(reqName, 'staged', '+++ monit')
-                msg = "%s updated %d transfer records and " % (self.__class__.__name__, len(transferRecords))
-                msg += "changed the request status for %d workflows" % (len(requestsToStage) - len(failedDocs))
-                self.logger.info(msg)
-        except Exception as err:  # general error
-            self.logger.exception('+++ monit error: %s', str(err))
+                self.change(reqName, 'staged', self.__class__.__name__)
+            self.updateReportDict(summary, "request_status_updated",
+                                  summary['success_transfer_doc_update'] - summary['failed_transfer_doc_update'])
+            msg = "%s processed %d transfer records, where " % (self.__class__.__name__, len(transferRecords))
+            msg += "%d completed their data transfers and " % len(requestsToStage)
+            msg += "%d failed to get their transfer documents updated in CouchDB." % len(failedDocs)
+            self.logger.info(msg)
+        except Exception as ex:
+            msg = "Unknown exception processing the transfer records. Error: %s", str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+        return summary
 
     def getTransferInfo(self, transferRecords):
         """
@@ -119,14 +136,14 @@ class MSMonitor(MSCore):
         :param transferRecords: list of transfer records
         """
         # FIXME: create concurrent phedex calls using multi_getdata
-        tstamp = time.time()
+        tstamp = int(time.time())
         for doc in transferRecords:
             self.logger.debug("Checking transfers for: %s", doc['workflowName'])
             for rec in doc.get('transfers', []):
                 # obtain new transfer ids and completion for given dataset
                 completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
                 # Per Alan request, we'll update only completion and not tids
-                rec['completion'].append(round(completion, 1))
+                rec['completion'].append(round(completion, 2))
             doc['lastUpdate'] = tstamp
 
     def _getTransferstatus(self, dataset, requestList):
@@ -152,7 +169,11 @@ class MSMonitor(MSCore):
         for reqId in requestList:
             # if we query by dataset and the subscription was at block level,
             # we get an empty response. So always wildcard the block parameter
-            data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            if hasattr(self, "rucio"):
+                # FIXME: then it should check the rule status
+                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            else:
+                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
             if not data or not data['phedex']['dataset']:
                 self.logger.error("Failed to retrieve information for dataset: %s and request ID: %s",
                                   dataset, reqId)
@@ -170,7 +191,7 @@ class MSMonitor(MSCore):
                             completion.append(int(subs['percent_files']))
         if not completion:
             return 0
-        return sum(completion)/len(completion)
+        return sum(completion) / len(completion)
 
     def getCompletedWorkflows(self, transfers, campaigns):
         """

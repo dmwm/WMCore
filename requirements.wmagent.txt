@@ -9,7 +9,7 @@ dbs-client==3.7.8
 decorator==3.4.2
 future==0.16.0
 httplib2==0.7.3
-psutil==5.4.5
+psutil==5.6.6
 py==1.7.0
 pyOpenSSL==18.0.0
 pycurl-client==3.7.8
@@ -18,4 +18,4 @@ python-cjson==1.2.1
 pyzmq==17.1.2
 retry==0.9.1
 stomp.py==4.1.15
-rucio-clients==1.19.3
+rucio-clients==1.22.2

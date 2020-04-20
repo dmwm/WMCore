@@ -19,6 +19,7 @@ def moveTransferorStatus(reqmgrSvc, logger):
     Once that's fully functional and in production, we can completely
     remove this function.
     """
+    logger.info("Advancing MicroServices statuses")
     thisTransition = {"assigned": "staging",
                       "staging": "staged"}
     # Let's try to keep these requests in this status for a bit longer
@@ -37,10 +38,6 @@ def moveTransferorStatus(reqmgrSvc, logger):
 def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
 
     for status, nextStatus in AUTO_TRANSITION.iteritems():
-        ### FIXME: remove this if statement when the function above gets removed
-        if status in ["staging", "assigned"]:
-            continue
-
         count = 0
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
         for wf in requests:
@@ -162,8 +159,9 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
 
-        self.logger.info("Advancing status")
-        moveTransferorStatus(reqmgrSvc, self.logger)
+        self.logger.info("Advancing statuses")
+        if getattr(config, "enableMSStatusTransition", False):
+            moveTransferorStatus(reqmgrSvc, self.logger)
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
         moveToArchived(wmstatsSvc, reqmgrSvc, self.logDB, config.archiveDelayHours, self.logger)

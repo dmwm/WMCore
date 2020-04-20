@@ -1,7 +1,8 @@
 { 
 "createRequest":
 {		 
-    "Comments": "ReReco wf with one skim processing. Two runs whitelisted. 10l per job. Two hours opened. Xrootd enabled",
+    "Comments": {"WorkFlowDesc": ["ReReco wf with one skim processing. Two runs whitelisted. 10l per job. Two hours opened. Xrootd enabled"],
+	             "CheckList": ["ReReco+skim workflow", "TrustSitelists enabled"]},
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "CMSSWVersion": "CMSSW_5_3_7_patch5",

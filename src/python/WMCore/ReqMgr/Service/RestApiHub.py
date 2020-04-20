@@ -13,9 +13,8 @@ from WMCore.REST.Services import ProcessMatrix
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
 from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData, PermissionsConfig, CMSSWVersions,
-                                             WMAgentConfig, CampaignConfig, UnifiedConfig, TransferInfo)
-from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec,
-    WorkloadConfig, WorkloadSplitting)
+                                             WMAgentConfig, CampaignConfig, UnifiedConfig, TransferInfo, ParentLocks)
+from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec, WorkloadConfig, WorkloadSplitting)
 from WMCore.ReqMgr.Service.Request import Request, RequestStatus, RequestType
 from WMCore.ReqMgr.Service.WMStatsInfo import WMStatsInfo
 
@@ -64,5 +63,6 @@ class RestApiHub(RESTApi):
                    "workload_config": WorkloadConfig(app, IndividualCouchManager(config), config, mount),
                    "splitting": WorkloadSplitting(app, IndividualCouchManager(config), config, mount),
                    "wmstats_info": WMStatsInfo(app, IndividualCouchManager(config), config, mount),
-                   "proc_status": ProcessMatrix(app, self, config, mount)
-                  })
+                   "proc_status": ProcessMatrix(app, self, config, mount),
+                   "parentlocks": ParentLocks(app, IndividualCouchManager(config), config, mount)
+                   })

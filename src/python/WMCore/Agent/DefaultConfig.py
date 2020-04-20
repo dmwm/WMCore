@@ -16,7 +16,7 @@ DEFAULT_AGENT_CONFIG = {
     # In JobSumitter, submit jobs over the threshold if the priority is higher than current pending/running jobs
     "CondorOverflowFraction": 0.2,  # default 20% over threshold
     # ExitCodes returned by jobs which doesn't need to be retried
-    "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 8501, 50660, 50661, 50664, 71102],
+    "NoRetryExitCodes": [70, 73, 8001, 8006, 8009, 8023, 8026, 8501, 50660, 50661, 50664, 71102, 71104, 71105],
     # Number of times a job will be retried
     "MaxRetries" : {'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 4},
     # Speed drain thresholds - a draining agent's config is updated when # of remaining condor jobs is below a threshold

@@ -32,4 +32,5 @@ class RestApiHub(RESTApi):
         cherrypy.log("MicroService entire configuration:\n%s" % Configuration.getInstance())
         cherrypy.log("MicroService REST configuration subset:\n%s" % config)
 
-        self._add({"data": Data(app, self, config, mount)})
+        self._add({"status": Data(app, self, config, mount),
+                   "info": Data(app, self, config, mount)})

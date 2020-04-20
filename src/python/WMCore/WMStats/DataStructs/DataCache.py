@@ -24,6 +24,11 @@ class DataCache(object):
             return {}
 
     @staticmethod
+    def isEmpty():
+        # simple check to see if the data cache is populated
+        return not DataCache._lastedActiveDataFromAgent.get("data")
+
+    @staticmethod
     def setlatestJobData(jobData):
         DataCache._lastedActiveDataFromAgent["time"] = int(time.time())
         DataCache._lastedActiveDataFromAgent["data"] = jobData

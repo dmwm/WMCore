@@ -118,6 +118,12 @@ class APINotSupported(RESTError):
     app_code = 207
     message = "API not supported"
 
+class DataCacheEmpty(RESTError):
+    "The wmstats data cache has not be created."
+    http_code = 503
+    app_code = 208
+    message = "DataCache is Empty"
+
 class DatabaseError(RESTError):
     """Parent class for database-related errors.
 

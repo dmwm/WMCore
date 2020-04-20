@@ -309,6 +309,7 @@ class CampaignConfig(AuxBaseAPI):
     def setName(self):
         self.name = "CAMPAIGN_CONFIG"
 
+
 class UnifiedConfig(AuxBaseAPI):
     """
     Handle central production unified configuration
@@ -316,6 +317,7 @@ class UnifiedConfig(AuxBaseAPI):
 
     def setName(self):
         self.name = "UNIFIED_CONFIG"
+
 
 class TransferInfo(AuxBaseAPI):
     """
@@ -325,3 +327,12 @@ class TransferInfo(AuxBaseAPI):
 
     def setName(self):
         self.name = "TRANSFER"
+
+
+class ParentLocks(AuxBaseAPI):
+    """
+    Handle list of locked parent datasets
+    """
+
+    def setName(self):
+        self.name = "PARENT_LOCKS"

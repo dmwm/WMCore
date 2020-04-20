@@ -1,11 +1,7 @@
 import json
 import logging
-try:
-    from urllib import urlencode
-except ImportError:
-    # PY3
-    from urllib.parse import urlencode
 from xml.dom.minidom import parseString
+
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.Service import Service
 
@@ -51,8 +47,6 @@ class PhEDEx(Service):
         if clearCache:
             self.clearCache(ifile, args, verb=verb)
 
-        if args:
-            args = urlencode(args, doseq=True)
         fobj = self.refreshCache(ifile, callname, args, verb=verb)
         result = fobj.read()
         fobj.close()
@@ -458,3 +452,18 @@ class PhEDEx(Service):
             blockNodes[blockInfo['name']] = list(nodes)
 
         return blockNodes
+
+    def getGroupUsage(self, **kwargs):
+        """
+        _getGroupUsage_
+
+        Get storage statistics node per group, like data already
+        stored and data subscribed
+        :param kwargs: accepts the optional parameters, as defined by PhEDEx:
+            node    node name, could be multiple
+            se      storage element name, could be multiple
+            group   group name, could be multiple
+        :return: a dictionary if `json` response type is defined, otherwise it's XML
+        """
+        callname = 'groupusage'
+        return self._getResult(callname, clearCache=True, args=kwargs, verb="GET")

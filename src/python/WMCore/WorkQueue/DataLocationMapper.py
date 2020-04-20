@@ -57,7 +57,7 @@ class DataLocationMapper(object):
             raise ValueError(msg)
 
         if self.params.get('phedex'):
-            self.phedex = self.params['phedex']
+            self.phedex = self.params['phedex']  # NOTE: this might be a Rucio instance
         if self.params.get('cric'):
             self.cric = self.params['cric']
 
@@ -65,7 +65,7 @@ class DataLocationMapper(object):
         # the same object is not shared amongst multiple threads
         self.dbses = {}
 
-    def __call__(self, dataItems, dbses=None):
+    def __call__(self, dataItems):
         result = {}
 
         dataByDbs = self.organiseByDbs(dataItems)
@@ -82,12 +82,27 @@ class DataLocationMapper(object):
 
     def locationsFromPhEDEx(self, dataItems):
         """Get data location from phedex"""
-        if self.params['locationFrom'] == 'subscription':
+        result = defaultdict(set)
+        if hasattr(self.phedex, "getBlocksInContainer"):
+            ### It's RUCIO!!!
+            self.logger.info("Fetching location from Rucio...")
+            for dataItem in dataItems:
+                try:
+                    if isDataset(dataItem):
+                        response = self.phedex.getReplicaInfoForBlocks(dataset=dataItem)
+                        for item in response:
+                            result[dataItem].update(item['replica'])
+                    else:
+                        response = self.phedex.getReplicaInfoForBlocks(block=dataItem)
+                        for item in response:
+                            result[item['name']].update(item['replica'])
+                except Exception as ex:
+                    self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
+        elif self.params['locationFrom'] == 'subscription':
             self.logger.info("Fetching subscription data from PhEDEx")
             # subscription api doesn't support partial update
-            result = self.phedex.getSubscriptionMapping(*dataItems), True
+            result = self.phedex.getSubscriptionMapping(*dataItems)
         elif self.params['locationFrom'] == 'location':
-            result = defaultdict(set)
             args = {}
             if not self.params['incompleteBlocks']:
                 args['complete'] = 'y'
@@ -139,7 +154,7 @@ class DataLocationMapper(object):
             psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
-        return result, True  # partial dbs updates not supported
+        return result
 
     def organiseByDbs(self, dataItems):
         """Sort items by dbs instances - return dict with DBSReader as key & data items as values"""

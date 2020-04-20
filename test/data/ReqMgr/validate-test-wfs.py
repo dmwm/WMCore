@@ -9,8 +9,11 @@ import pwd
 import sys
 import urllib
 import urllib2
-from pprint import pprint
+import re
 from urllib2 import HTTPError, URLError
+from textwrap import TextWrapper
+from collections import OrderedDict
+
 
 # table parameters
 SEPARATELINE = "|" + "-" * 51 + "|"
@@ -239,6 +242,64 @@ def compareSpecial(d1, d2, key=None):
     return 'ok'
 
 
+def twClosure(replace_whitespace=False,
+              break_long_words=False,
+              width=120,
+              initial_indent=''):
+    """
+    Deals with indentation of dictionaries with very long key, value pairs.
+    replace_whitespace: Replace each whitespace character with a single space.
+    break_long_words: If True words longer than width will be broken.
+    width: The maximum length of wrapped lines.
+    initial_indent: String that will be prepended to the first line of the output
+
+    Wraps all strings for both keys and values to 120 chars.
+    Uses 4 spaces indentation for both keys and values.
+    Nested dictionaries and lists go to next line.
+    """
+    twr = TextWrapper(replace_whitespace=replace_whitespace,
+                      break_long_words=break_long_words,
+                      width=width,
+                      initial_indent=initial_indent)
+
+    def twEnclosed(obj, ind='', reCall=False):
+        """
+        The inner function of the closure
+        ind: Initial indentation for the single output string
+        reCall: Flag to indicate a recursive call (should not be used outside)
+        """
+        output = ''
+        if isinstance(obj, dict):
+            obj = OrderedDict(sorted(obj.items(),
+                                     key=lambda t: t[0],
+                                     reverse=False))
+            if reCall:
+                output += '\n'
+            ind += '    '
+            for key, value in obj.iteritems():
+                output += "%s%s: %s" % (ind,
+                                        ''.join(twr.wrap(key)),
+                                        twEnclosed(value, ind, reCall=True))
+        elif isinstance(obj, list):
+            if reCall:
+                output += '\n'
+            ind += '    '
+            for value in obj:
+                output += "%s%s" % (ind, twEnclosed(value, ind, reCall=True))
+        else:
+            output += "%s\n" % str(obj)# join(twr.wrap(str(obj)))
+        return output
+    return twEnclosed
+
+
+def twPrint(obj):
+    """
+    A simple caller of twClosure (see docstring for twClosure)
+    """
+    twPrinter = twClosure()
+    print(twPrinter(obj))
+
+
 def handleReqMgr(reqName, reqmgrUrl):
     """
     Query ReqMgr and performs all the processing and dirty keys
@@ -291,7 +352,7 @@ def handleReqMgr(reqName, reqmgrUrl):
 
     reqmgrOutDsets = reqmgrOut['OutputDatasets']
 
-    ### Handle new StepChain/TaskChain output parentage map
+    # Handle new StepChain/TaskChain output parentage map
     if reqmgrOut['RequestType'] in ('StepChain', 'TaskChain'):
         chainMap = reqmgrOut.get('ChainParentageMap', {})
         if chainMap:
@@ -301,8 +362,12 @@ def handleReqMgr(reqName, reqmgrUrl):
         else:
             print("WARNING: StepChain/TaskChain workflow without a 'ChainParentageMap' argument!")
 
-    ### Handle harvesting case
-    print(" - Comments: %s" % reqmgrOut.get('Comments', ''))
+    # Handle harvesting case
+
+    print("----------------------------------------------------\nComments:")
+    twPrint(reqmgrOut.get('Comments', ''))
+    print("----------------------------------------------------\n")
+
     harvesting(reqmgrOut, reqmgrOutDsets)
     if reqmgrOut['RequestType'] == 'DQMHarvest':
         print("There is nothing else that we can validate here...\n")
@@ -464,37 +529,38 @@ def main():
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb-testbed.cern.ch"
 
     for reqName in listRequests:
+        print("\n----------------------------------------------------")
         print("==> %s" % reqName)
-        ### Retrieve and process ReqMgr information
+        # Retrieve and process ReqMgr information
         reqmgrInputDset, reqmgrOutDsets = handleReqMgr(reqName, reqmgrUrl)
         if reqmgrInputDset is None:
             continue
 
-        ### Retrieve and process CouchDB information
+        # Retrieve and process CouchDB information
         couchInfo = handleCouch(reqName, reqmgrUrl, reqmgrOutDsets)
 
-        ### Retrieve and process PhEDEx information
+        # Retrieve and process PhEDEx information
         phedexInfo = handlePhedex(reqmgrOutDsets, cmswebUrl)
 
-        ### Retrieve and process DBS information
+        # Retrieve and process DBS information
         dbsInfo = handleDBS(reqmgrOutDsets, cmswebUrl)
 
         # Perform all the possible common validations
         validateAll(reqmgrInputDset, couchInfo, phedexInfo, dbsInfo)
 
-        ### Starts VERBOSE mode for the information retrieved so far
+        # Starts VERBOSE mode for the information retrieved so far
         if verbose:
             print("\n======> Request information from reqmgr2 db: ")
-            pprint(reqmgrInputDset)
+            twPrint(reqmgrInputDset)
             print("\n======> ReqMgr2 output dataset info: ")
-            pprint(reqmgrOutDsets)
+            twPrint(reqmgrOutDsets)
             print("\n======> Couch output dataset info: ")
-            pprint(couchInfo)
+            twPrint(couchInfo)
             print("\n======> DBS info: ")
-            pprint(dbsInfo)
+            twPrint(dbsInfo)
             print("\n======> PhEDEx info: ")
-            pprint(phedexInfo)
-        print("\n")
+            twPrint(phedexInfo)
+        print("\n----------------------------------------------------")
 
     sys.exit(0)
 

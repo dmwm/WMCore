@@ -18,7 +18,8 @@ class WorkflowTest(unittest.TestCase):
         Test setting the data campaign map for a TaskChain-like request
         """
         parentDset = "/any/parent-dataset/tier"
-        tChainSpec = {"TaskChain": 4,
+        tChainSpec = {"RequestType": "TaskChain",
+                      "TaskChain": 4,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "Task1": {"InputDataset": "/task1/input-dataset/tier",
@@ -56,7 +57,8 @@ class WorkflowTest(unittest.TestCase):
         Test loading a ReReco like request into Workflow
         """
         parentDset = "/rereco/parent-dataset/tier"
-        rerecoSpec = {"InputDataset": "/rereco/input-dataset/tier",
+        rerecoSpec = {"RequestType": "ReReco",
+                      "InputDataset": "/rereco/input-dataset/tier",
                       "Campaign": "any-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -85,7 +87,8 @@ class WorkflowTest(unittest.TestCase):
         """
         Test loading a TaskChain like request into Workflow
         """
-        tChainSpec = {"TaskChain": 3,
+        tChainSpec = {"RequestType": "TaskChain",
+                      "TaskChain": 3,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -120,7 +123,8 @@ class WorkflowTest(unittest.TestCase):
         """
         Test loading a StepChain like request into Workflow
         """
-        tChainSpec = {"StepChain": 3,
+        tChainSpec = {"RequestType": "StepChain",
+                      "StepChain": 3,
                       "Campaign": "top-campaign",
                       "RequestName": "whatever_name",
                       "DbsUrl": "a_dbs_url",
@@ -151,6 +155,196 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(wflow._getValue("NoKey"), None)
         self.assertEqual(len(wflow.getDataCampaignMap()), 3)
 
+    def testResubmission(self):
+        """
+        Test loading a Resubmission like request into Workflow
+        """
+        rerecoSpec = {"RequestType": "Resubmission",
+                      "InputDataset": "/rereco/input-dataset/tier",
+                      "Campaign": "any-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": ["FNAL"]}
+        wflow = Workflow(rerecoSpec['RequestName'], rerecoSpec)
+        # we do not set any map for Resubmission workflows
+        self.assertEqual(wflow.getDataCampaignMap(), [])
+
+    def testGetParam(self):
+        """
+        Test the `getReqParam` method
+        """
+        tChainSpec = {"RequestType": "StepChain",
+                      "StepChain": 1,
+                      "Campaign": "top-campaign",
+                      "RequestName": "whatever_name",
+                      "DbsUrl": "a_dbs_url",
+                      "TrustSitelists": True,
+                      "SiteWhitelist": ["CERN", "FNAL", "DESY"],
+                      "SiteBlacklist": [],
+                      "Step1": {"InputDataset": "/step1/input-dataset/tier",
+                                "MCPileup": "/step1/mc-pileup/tier",
+                                "Campaign": "step1-campaign"},
+                      }
+        wflow = Workflow(tChainSpec['RequestName'], tChainSpec)
+        self.assertTrue(wflow.getReqParam("TrustSitelists"))
+        self.assertIsNone(wflow.getReqParam("MCPileup"))
+        self.assertEqual(wflow.getReqParam("RequestType"), wflow.getReqType())
+        self.assertEqual(wflow.getReqParam("RequestName"), wflow.getName())
+
+    def testComparison(self):
+        """
+        Perform basic operations over Workflow objects
+        """
+        wflow1 = Workflow("workflow_1", {"RequestType": "StepChain"})
+        wflow2 = Workflow("workflow_2", {"RequestType": "TaskChain"})
+        wflow3 = Workflow("workflow_3", {"RequestType": "ReReco"})
+        wflow4 = Workflow("workflow_4", {"RequestType": "StepChain"})
+        listWflows = [wflow1, wflow2, wflow3, wflow4]
+
+        self.assertNotEqual(wflow1, wflow4)
+
+        badWflows = [wflow3, wflow3]
+        self.assertEqual(len(listWflows), 4)
+        self.assertEqual(len(badWflows), 2)
+        for wflow in set(badWflows):
+            listWflows.remove(wflow)
+        self.assertEqual(len(listWflows), 3)
+        self.assertEqual(len(badWflows), 2)
+
+    def testParentageRelationship(self):
+        """
+        Test methods related to the primary and parent datasets and blocks
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A"]},
+                      "parent_B": {"blockSize": 12, "locations": ["Site_B"]},
+                      "parent_C": {"blockSize": 13, "locations": ["Site_A", "Site_B"]}}
+        parentage = {"block_A": ["parent_B", "parent_D"],  # parent_D has no replicas!
+                     "block_B": ["parent_A", "parent_C"]}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX",
+                                        "IncludeParents": True})
+
+        self.assertEqual(wflow.getParentDataset(), "")
+        wflow.setParentDataset("Parent_dataset_XXX")
+        self.assertEqual(wflow.getParentDataset(), "Parent_dataset_XXX")
+
+        self.assertEqual(wflow.getPrimaryBlocks(), {})
+        wflow.setPrimaryBlocks(primDict)
+        self.assertItemsEqual(wflow.getPrimaryBlocks().keys(), ["block_A", "block_B"])
+
+        self.assertEqual(wflow.getParentBlocks(), {})
+        wflow.setParentBlocks(parentDict)
+        self.assertItemsEqual(wflow.getParentBlocks().keys(), ["parent_A", "parent_B", "parent_C"])
+
+        self.assertEqual(wflow.getChildToParentBlocks(), {})
+        wflow.setChildToParentBlocks(parentage)
+        self.assertItemsEqual(wflow.getChildToParentBlocks(), parentage)
+
+    def testGetChunkBlocks1(self):
+        """
+        Perform single chunk tests on the `getChunkBlocks` method.
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A", "Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A", "Site_B"]},
+                      "parent_B": {"blockSize": 8, "locations": []}}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+        wflow.setPrimaryBlocks(primDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 1)
+
+        # now set a parent
+        wflow.setParentDataset("Parent_dataset_XXX")
+        wflow.setParentBlocks(parentDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A", "parent_A", "parent_B"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 20)
+
+    def testGetChunkBlocks2(self):
+        """
+        Perform block distribution among many chunks, testing the `getChunkBlocks` method.
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+        wflow.setPrimaryBlocks(primDict)
+
+        # same number of chunks and primary blocks
+        blockChunks, sizeChunks = wflow.getChunkBlocks(2)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B"})
+        self.assertItemsEqual(blockChunks[1], {"block_A"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 2)
+        self.assertEqual(sizeChunks[1], 1)
+
+        # more chunks than blocks
+        blockChunks, sizeChunks = wflow.getChunkBlocks(5)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B"})
+        self.assertItemsEqual(blockChunks[1], {"block_A"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 2)
+        self.assertEqual(sizeChunks[1], 1)
+
+        # more blocks than chunks
+        primDict.update({"block_C": {"blockSize": 3, "locations": ["Site_C"]},
+                         "block_D": {"blockSize": 4, "locations": ["Site_D"]},
+                         "block_E": {"blockSize": 5, "locations": ["Site_E"]}})
+        wflow.setPrimaryBlocks(primDict)
+        blockChunks, sizeChunks = wflow.getChunkBlocks(3)
+        self.assertEqual(len(blockChunks), 3)
+        self.assertItemsEqual(blockChunks[0], {"block_E"})
+        self.assertItemsEqual(blockChunks[1], {"block_D", "block_A"})
+        self.assertItemsEqual(blockChunks[2], {"block_C", "block_B"})
+        self.assertEqual(len(sizeChunks), 3)
+        self.assertEqual(sizeChunks[0], 5)
+        self.assertEqual(sizeChunks[1], 5)
+        self.assertEqual(sizeChunks[2], 5)
+
+    def testGetChunkBlocks3(self):
+        """
+        Test the `getChunkBlocks` method and especially the parent/child
+        relationship
+        """
+        primDict = {"block_A": {"blockSize": 1, "locations": ["Site_A"]},
+                    "block_B": {"blockSize": 2, "locations": ["Site_B"]}}
+        parentDict = {"parent_A": {"blockSize": 11, "locations": ["Site_A"]},
+                      "parent_B": {"blockSize": 12, "locations": ["Site_B"]},
+                      "parent_C": {"blockSize": 13, "locations": ["Site_A", "Site_B"]}}
+        parentage = {"block_A": ["parent_B", "parent_D"],  # parent_D has no replicas!
+                     "block_B": ["parent_A", "parent_C"]}
+        wflow = Workflow("workflow_1", {"RequestType": "TaskChain",
+                                        "InputDataset": "Dataset_name_XXX"})
+
+        # now set a parent
+        wflow.setParentDataset("Parent_dataset_XXX")
+        wflow.setPrimaryBlocks(primDict)
+        wflow.setParentBlocks(parentDict)
+        wflow.setChildToParentBlocks(parentage)
+
+        blockChunks, sizeChunks = wflow.getChunkBlocks(1)
+        self.assertEqual(len(blockChunks), 1)
+        self.assertItemsEqual(blockChunks[0], {"block_A", "block_B", "parent_A", "parent_B", "parent_C"})
+        self.assertEqual(len(sizeChunks), 1)
+        self.assertEqual(sizeChunks[0], 39)
+
+        blockChunks, sizeChunks = wflow.getChunkBlocks(2)
+        self.assertEqual(len(blockChunks), 2)
+        self.assertItemsEqual(blockChunks[0], {"block_B", "parent_A", "parent_C"})
+        self.assertItemsEqual(blockChunks[1], {"block_A", "parent_B"})
+        self.assertEqual(len(sizeChunks), 2)
+        self.assertEqual(sizeChunks[0], 26)
+        self.assertEqual(sizeChunks[1], 13)
 
 if __name__ == '__main__':
     unittest.main()

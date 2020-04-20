@@ -139,6 +139,17 @@ class PhEDExSubscription(object):
         """
         return self.blocks
 
+    def getBlocks(self):
+        """
+        _getBlocks_
+
+        Return only the list of blocks
+        """
+        blocks = []
+        for dset, listBlocks in self.blocks.items():
+            blocks.extend(listBlocks)
+        return blocks
+
     def getNodes(self):
         return list(self.nodes)
 

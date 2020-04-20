@@ -5,7 +5,6 @@ Test case for Rucio WMCore Service class
 from __future__ import print_function, division, absolute_import
 
 import os
-from pprint import pprint
 
 from rucio.client import Client as testClient
 
@@ -25,7 +24,7 @@ class RucioTest(EmulatedUnitTestCase):
         # TODO figure out what's going on with CRIC mock
         super(RucioTest, self).__init__(methodName=methodName, mockCRIC=False)
 
-        self.acct = "wmagent_testing"
+        self.acct = "wma_test"
 
         # HACK: do not verify the SSL certificate because docker images
         # do not contain the CA certificate bundle
@@ -34,8 +33,8 @@ class RucioTest(EmulatedUnitTestCase):
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
 
-        self.defaultArgs = {"host": 'http://cms-rucio-testbed.cern.ch',
-                            "auth_host": 'https://cms-rucio-auth-testbed.cern.ch',
+        self.defaultArgs = {"host": 'http://cms-rucio-int.cern.ch',
+                            "auth_host": 'https://cms-rucio-auth-int.cern.ch',
                             "auth_type": "x509", "account": self.acct,
                             "ca_cert": False, "timeout": 30, "request_retries": 3,
                             "creds": self.creds}
@@ -74,8 +73,8 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue(getattr(self.myRucio.cli, "user_agent").startswith("wmcore-client/"))
         self.assertTrue(getattr(self.client, "user_agent").startswith("rucio-clients/"))
 
-        newParams = {"host": 'http://cms-rucio-testbed.cern.ch',
-                     "auth_host": 'https://cms-rucio-auth-testbed.cern.ch',
+        newParams = {"host": 'http://cms-rucio-int.cern.ch',
+                     "auth_host": 'https://cms-rucio-auth-int.cern.ch',
                      "auth_type": "x509", "account": self.acct,
                      "ca_cert": False, "timeout": 5, "phedexCompatible": False}
         newKeys = newParams.keys()
@@ -99,6 +98,19 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertEqual(res['account_type'], "USER")
         self.assertTrue({"status", "account", "account_type"}.issubset(set(res2.keys())))
         self.assertTrue({self.acct, "ACTIVE", "USER"}.issubset(set(res2.values())))
+
+    def testGetAccountUsage(self):
+        """
+        Test whether we can fetch data about a specific rucio account
+        """
+        res = list(self.client.get_account_usage(self.acct))
+        res2 = self.myRucio.getAccountUsage(self.acct)
+        # I have manually created a rule for this account, so it will be there...
+        self.assertEqual(res, res2)
+
+        # now test against an account that either does not exist or that we cannot access
+        res = self.myRucio.getAccountUsage("admin")
+        self.assertIsNone(res)
 
     # @attr('integration')
     def testWhoAmI(self):
@@ -182,3 +194,43 @@ class RucioTest(EmulatedUnitTestCase):
         Test `getPFN` method
         """
         self.assertRaises(NotImplementedError, self.myRucio.getPFN)
+
+    def testListContent(self):
+        """
+        Test `listContent` method, to list content of a given DID
+        """
+        # listing blocks for a dataset
+        res = self.myRucio.listContent(DSET)
+        self.assertTrue(len(res) > 10)
+        self.assertEqual(res[0]["type"], "DATASET")
+
+        # listing files for a block
+        res = self.myRucio.listContent(BLOCK)
+        self.assertTrue(len(res) > 10)
+        self.assertEqual(res[0]["type"], "FILE")
+
+        res = self.myRucio.listContent("/Primary/ProcStr-v1/tier")
+        self.assertItemsEqual(res, [])
+
+    def testListDataRules(self):
+        """
+        Test `listContent` method
+        """
+        res = self.myRucio.listDataRules(DSET)
+        self.assertItemsEqual(res, [])
+
+    def testGetRule(self):
+        """
+        Test `getRule` method
+        """
+        # Badly formatted rule id, raises/catches a general exception
+        res = self.myRucio.getRule("blah")
+        self.assertItemsEqual(res, {})
+
+        # Properly formatted rule, but inexistent id
+        res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc0")
+        self.assertItemsEqual(res, {})
+
+        # Properly formatted rule, rule manually created
+        res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc1")
+        self.assertTrue(res)

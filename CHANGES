@@ -1,3 +1,213 @@
+1.3.3.pre2 to 1.3.3:
+  - Bump deployment version and deployment tag (Alan Malta Rodrigues) #9635
+  - Update default RucioInjector.listTiersToInject to an empty list (Alan Malta Rodrigues) #9646
+  - Move checkProxy script under WMCore; script to renew proxy (Alan Malta Rodrigues) #9642
+
+
+1.3.3.pre1 to 1.3.3.pre2:
+  - added phedexGroup param to the unit tests (Alan Malta Rodrigues) #9630
+  - Added rule_id column to dbsbuffer_block; create a rule for every block produced (Alan Malta Rodrigues) #9630
+  - pylint and unit tests fixes (Alan Malta Rodrigues) #9631
+  - Hard-wire empty lists for lumis/eventsPerLumi in WMArchive docs (Alan Malta Rodrigues) #9631
+
+
+1.3.2 to 1.3.3.pre1:
+  - added unit tests for those 2 functions (Alan Malta Rodrigues) #9627
+  - Make list of allowed tiers for Rucio; disallowed tiers for PhEDEx (Alan Malta Rodrigues) #9627
+  - fix unit tests and emulators (Alan Malta Rodrigues) #9626
+  - Replace agentName WMAgentCommissioning by WMAgent (Alan Malta Rodrigues) #9626
+  - unit tests (Alan Malta Rodrigues) #9617
+  - Basics of RucioInjector; moved DAOs from PhEDExInjector over; MemoryCache util (Alan Malta Rodrigues) #9617
+  - Additional Rucio wrapper methods to delete rules and fetch rules history (Alan Malta Rodrigues) #9617
+
+
+1.3.2.pre6 to 1.3.2:
+
+
+1.3.2.pre5 to 1.3.2.pre6:
+  - allow to renew credential based on userName (belforte) #9615
+  - Fix pop error when ssbStatus is unknown (Erik Gough) #9602
+  - Fixed UserFileCache.removeFile throwing on success (Christopher Brainerd) #9595
+
+
+1.3.2.pre4 to 1.3.2.pre5:
+  - Limit MSTransferor in terms of successful workflows (Alan Malta Rodrigues) #9593
+  - change automatic email content for large data placements (Alan Malta Rodrigues) #9590
+  - Bump CMSMonitoring version (Valentin Kuznetsov) #9591
+  - Take PhEDEx auto-approval setting from reqmgr2ms configuration file (Alan Malta Rodrigues) #9590
+
+
+1.3.2.pre3 to 1.3.2.pre4:
+  - Report RSE storage summary in terabytes instead of bytes (Alan Malta Rodrigues) #9588
+  - Support SSB site status to be unknown (Alan Malta Rodrigues) #9585
+  - Send notification/email on large data transfers Fixes #9564 (khurtado) #9582
+  - Add additional workflow statuses for data locking (Erik Gough) #9583
+  - fix keyword argument (Alan Malta Rodrigues) #9578
+  - fix url (Alan Malta Rodrigues) #9578
+  - added `failed` status to the list of transfer docs to be kept around (Alan Malta Rodrigues) #9581
+  - Use available secondary dataset regardless of which group its subscribed to (Alan Malta Rodrigues) #9578
+  - Minor updates to the MicroServices schematic (Alan Malta Rodrigues) #9575
+
+
+1.3.2.pre2 to 1.3.2.pre3:
+  - Cleanup unneeded transfer info couch documents (Alan Malta Rodrigues) #9574
+  - Move parentlocks API from reqmon to reqmgr2 (Erik Gough) #9567
+  - Disable couch compaction cron entries (Alan Malta Rodrigues) #9573
+
+
+1.3.2.pre1 to 1.3.2.pre2:
+  - Replace SSB by Grafana in AgentStatusWatcher (Alan Malta Rodrigues) #9555
+  - Wrapper to MonIT Grafana APIs (Alan Malta Rodrigues) #9555
+  - ReqMgr couch view to yield requests with IncludeParents=True (Alan Malta Rodrigues) #9571
+  - bump deployment example to use changes in wmagent manage script (Alan Malta Rodrigues) #9569
+  - Use absolute numbers for lumis and completion in the workflow completion (Alan Malta Rodrigues) #9566
+
+
+1.3.1.pre3 to 1.3.2.pre1:
+  - added unittests for primary/parent block distribution (Alan Malta Rodrigues) #9560
+  - Fix MSTransferor logic for block distribution (Alan Malta Rodrigues) #9560
+  - Bump psutil from 5.4.5 to 5.6.6 (dependabot[bot]) #9553
+  - Fix initialization of the logger (Valentin Kuznetsov) #9550
+
+
+1.3.1.pre2 to 1.3.1.pre3:
+  - Consider the RelVal phedex group for pileup dataset location (Alan Malta Rodrigues) #9542
+
+
+1.3.1.pre1 to 1.3.1.pre2:
+  - New REST API parentlocks; new WMStats CP thread for resolving parentage (Erik Gough) #9546
+  - when userName argument is present. Use it as myproxy credential. Fix #9544 (belforte) #9548
+
+
+1.3.0 to 1.3.1.pre1:
+  - added a few unittest for the GET methods (Alan Malta Rodrigues) 
+  - Wrap around Rucio write APIs for data registration (Alan Malta Rodrigues) 
+  - Update the request state transition diagram (Alan Malta Rodrigues) 
+  - Update request spec dependency chart (Alan Malta Rodrigues) 
+  - Bump deployment example (Alan Malta Rodrigues) 
+
+
+1.3.0.pre6 to 1.3.0:
+  - Handle non-EDM files without file location in JobAccountant (Alan Malta Rodrigues) 
+  - A simple function with python-like indentation. #9521 (Todor Ivanov) 
+  - Catch expection loading job pickle object in JobSubmitter; new exit code (Alan Malta Rodrigues) 
+  - Add check list to the request json templates (Alan Malta Rodrigues) 
+
+
+1.3.0.pre5 to 1.3.0.pre6:
+  - Round workflow completion to 2 decimal digits; remove fake transfer ID (Alan Malta Rodrigues) #9517
+  - Prevent crash on failed DNS lookups (Erik Gough) #9514
+
+
+1.3.0.pre4 to 1.3.0.pre5:
+  - added a unit test for basic operations with Workflows (Alan Malta Rodrigues) #9511
+  - Catch data-service queries that failed and retry workflow in the next cycle (Alan Malta Rodrigues) #9511
+  - pylint changes (Alan Malta Rodrigues) #9510
+  - Remove DashboardMonitor from the request spec files (Alan Malta Rodrigues) #9510
+  - Make assigned->staging->staged transition configurable in ReqMgr2 (Alan Malta Rodrigues) #9508
+  - Properly deal with RunWhitelist/RunBlacklist within MS (Alan Malta Rodrigues) #9506
+  - Fix tagcollector cache filename. (khurtado) #9458
+
+
+1.3.0.pre3 to 1.3.0.pre4:
+  - When evaluating existent data location, drop MSS/T3/CERNBOX/Export (Alan Malta Rodrigues) #9505
+  - Fix to block white/black list in MSTransferor (Alan Malta Rodrigues) #9503
+  - Fix info REST API for ReqMgr2MS; changed kwarg to detail (Alan Malta Rodrigues) #9496
+  - Support isDocker config in unittests (Erik Gough) #9453
+  - Update JobSubmitter for docker support (Erik Gough) #9453
+
+
+1.3.0.pre2 to 1.3.0.pre3:
+  - Disconsider phedex group for input data existence check (Alan Malta Rodrigues) #9485
+  - unit test and pylint fixes (Alan Malta Rodrigues) #9483
+  - Skip input data placement if data has availability AND AAA is enabled (Alan Malta Rodrigues) #9483
+  - Change 'Comments' format in Json templates. (Todor Ivanov) #9467
+
+
+1.3.0.pre1 to 1.3.0.pre2:
+  - fix unit tests (Alan Malta Rodrigues) #9480
+  - ReqMgr2MS more configurable: # of workflows; status transition; data transfer (Alan Malta Rodrigues) #9480
+  - Delegate assigned->staging->staged status transition to ReqMgr2MS (Alan Malta Rodrigues) #9481
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9473
+  - Properly use the status/info MS REST APIs (Alan Malta Rodrigues) #9473
+  - Fix ReqMgrAux update wmagent config method (Alan Malta Rodrigues) #9470
+
+
+1.2.9 to 1.3.0.pre1:
+  - Script to check workflow completion (Alan Malta Rodrigues) #9465
+  - Set of scripts useful to daily debugging/actions (Alan Malta Rodrigues) #9464
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9457
+  - Do not transfer block/dataset if already available within the SiteWhitelist (Alan Malta Rodrigues) #9457
+  - added more test campaigns to the parseUnifiedCampaigns script (Alan Malta Rodrigues) #9459
+  - Activate agent after applying patches (Erik Gough) #9454
+
+
+1.2.9.pre4 to 1.2.9:
+
+
+1.2.9.pre3 to 1.2.9.pre4:
+  - log workflows and doc ids going through a deletion process (Alan Malta Rodrigues) #9446
+  - Close PhEDEx blocks in smaller bulks of location and dataset (Alan Malta Rodrigues) #9438
+
+
+1.2.9.pre2 to 1.2.9.pre3:
+  - fix unit tests and pylint (Alan Malta Rodrigues) #9444
+  - Keep different datatier caches for different DBS URLs (Alan Malta Rodrigues) #9444
+  - Adding an error message for missing PU dataset. (Todor Ivanov) #9433
+
+
+1.2.9.pre1 to 1.2.9.pre2:
+  - Fix summary message in MSMonitor; other minor improvements (Alan Malta Rodrigues) #9429
+  - Fix cacheduration settings for MicroServices (Alan Malta Rodrigues) #9427
+  - fix unstable unit test (Alan Malta Rodrigues) #9416
+  - Keep record of data volume subscribed; continuously evalute node usage (Alan Malta Rodrigues) #9416
+  - Fetch quota from Detox; fetch usage from Rucio/PhEDEx; input primary/parent block placement made by chunks (Alan Malta Rodrigues) #9416
+
+
+1.2.8 to 1.2.9.pre1:
+  - Dont call the same CouchDB view twice; support status+type+requestor in the ReqMgr2 REST API (Alan Malta Rodrigues) #9421
+  - Revert "No need to insert output files into WMBS if the job failed" (Alan Malta Rodrigues) #9422
+  - CouchDB ReqMgr view for status+type+requestor (Alan Malta Rodrigues) #9421
+  - More explantory exitType for jobs removed by pilot (Todor Ivanov) #9420
+  - Bump WMAgent deployment to 1.2.8 (Alan Malta Rodrigues) #9417
+  - unit tests and pylint fixes (Alan Malta Rodrigues) #9394
+  - Added wrapper APIs for PhEDEx group and Rucio account usage (Alan Malta Rodrigues) #9394
+  - Pylint fixes (Todor Ivanov) #9400
+  - Clear all occurrences of the typo: 'ouput -> output' fix #9390 (Todor Ivanov) #9400
+  - No need to insert output files into WMBS if the job failed (Alan Malta Rodrigues) #9403
+
+
+1.2.8.pre3 to 1.2.8:
+
+
+1.2.8.pre2 to 1.2.8.pre3:
+  - pylint fixes (Alan Malta Rodrigues) #9409
+  - fix ReqMgr2 request API by request type (Alan Malta Rodrigues) #9409
+  - added force-complete to the request state transition diagram (Alan Malta Rodrigues) #9408
+  - Update request state transition diagram to include staging/staged (Alan Malta Rodrigues) #9407
+  - Bypass "timed out" errors in DBS3Upload when contacting WMStats (Alan Malta Rodrigues) #9405
+  - Update workload management schematic; created work units diagram (Alan Malta Rodrigues) #9399
+  - pylint and unit tests (Alan Malta Rodrigues) #9397
+  - Don.t crash DBS3Upload on wmstats connection time out (Alan Malta Rodrigues) #9397
+  - Data location update through DBS has to return a dict. not tuple (Alan Malta Rodrigues) #9392
+
+
+1.2.8.pre1 to 1.2.8.pre2:
+  - fix unit tests (Alan Malta Rodrigues) #9389
+  - Use env var to switch between PhEDEx and Rucio (Alan Malta Rodrigues) #9389
+  - Add heartbeat monitor to reqmgr2ms (khurtado) #9388
+  - Workaround for bug in: https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=7261 (khurtado) #9385
+
+
+1.2.7 to 1.2.8.pre1:
+  - fix unit test (Alan Malta Rodrigues) #9360
+  - Enable pycurl by default for all Service client APIs (Alan Malta Rodrigues) #9360
+
+
+1.2.7.pre3 to 1.2.7:
+  - added more test campaigns to the parseUnifiedCampaigns script (Alan Malta Rodrigues) #9387
+
+
 1.2.7.pre2 to 1.2.7.pre3:
   - Consider RunWhitelist/RunBlacklist and runs from LumiList for MSTransferor (Alan Malta Rodrigues) #9378
   - Use a clean environment when running voms-proxy commands from AgentStatusPoller (Alan Malta Rodrigues) #9380

@@ -74,7 +74,10 @@ dependencies = {
         'packages': ['Utils', 'WMCore.MicroService+', 'WMCore.Services+'],
         'modules': ['WMCore.Wrappers.__init__',
                     'WMCore.Wrappers.JsonWrapper.__init__',
-                    'WMCore.Wrappers.JsonWrapper.JSONThunker'
+                    'WMCore.Wrappers.JsonWrapper.JSONThunker',
+                    'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
+                    'WMCore.ReqMgr.DataStructs.RequestStatus',
+                    'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],

@@ -75,11 +75,12 @@ config.section_("Agent")
 config.Agent.hostName = serverHostName
 config.Agent.contact = contactName
 config.Agent.teamName = "REPLACE_TEAM_NAME"
-config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentName = "WMAgent"
 config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True
+config.Agent.isDocker = False
 
 config.section_("General")
 config.General.workDir = workDirectory
@@ -164,9 +165,10 @@ config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 # phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
-config.PhEDExInjector.pollInterval = 100
-config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.pollInterval = 300
+config.PhEDExInjector.subscribeInterval = 6 * 60 * 60  # 6h
 config.PhEDExInjector.diskSites = diskSites
+config.PhEDExInjector.phedexGroup = "DataOps"
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -337,10 +339,9 @@ config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatu
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
 config.AgentStatusWatcher.logLevel = globalLogLevel
 config.AgentStatusWatcher.resourceUpdaterPollInterval = 900  # [second]
-config.AgentStatusWatcher.siteStatusMetric = 237  # [column number in SSB] The source of the information in SSB for Site status
-config.AgentStatusWatcher.cpuBoundMetric = 160  # [column number in SSB] The source of the information in SSB for CPUBound
-config.AgentStatusWatcher.ioBoundMetric = 161  # [column number in SSB] The source of the information in SSB for IOBound
-config.AgentStatusWatcher.dashboard = "Dashboard URL"
+config.AgentStatusWatcher.grafanaURL = "https://monit-grafana.cern.ch"
+config.AgentStatusWatcher.grafanaToken = "OVERWRITE_BY_SECRETS"
+config.AgentStatusWatcher.grafanaSSB = 9475  # monit-grafana API number for Site Status Board
 config.AgentStatusWatcher.pendingSlotsSitePercent = 75  # [percent] Pending slots percent over site max running for a site
 config.AgentStatusWatcher.pendingSlotsTaskPercent = 70  # [percent] Pending slots percent over task max running for tasks
 config.AgentStatusWatcher.runningExpressPercent = 30  # [percent] Only used for tier0 agent
@@ -356,3 +357,19 @@ config.AgentStatusWatcher.enableAMQ = False
 config.AgentStatusWatcher.userAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.passAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.topicAMQ = "OVERWRITE_BY_SECRETS"
+
+config.component_("RucioInjector")
+config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
+config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
+config.RucioInjector.logLevel = globalLogLevel
+config.RucioInjector.enabled = False
+config.RucioInjector.pollInterval = 300
+config.RucioInjector.pollIntervalRules = 43200
+config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
+config.RucioInjector.createBlockRules = True
+config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
+config.RucioInjector.listTiersToInject = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

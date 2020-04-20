@@ -8,6 +8,7 @@ from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
 
+
 class ReRecoWorkloadFactory(DataProcessing):
     """
     _ReRecoWorkloadFactory_
@@ -32,7 +33,7 @@ class ReRecoWorkloadFactory(DataProcessing):
         workload.setDashboardActivity("reprocessing")
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs,
-                                         OpenRunningTimeout = self.openRunningTimeout)
+                                         OpenRunningTimeout=self.openRunningTimeout)
         procTask = workload.newTask("DataProcessing")
 
         cmsswStepType = "CMSSW"
@@ -46,13 +47,13 @@ class ReRecoWorkloadFactory(DataProcessing):
 
         outputMods = self.setupProcessingTask(procTask, taskType,
                                               self.inputDataset,
-                                              couchDBName = self.couchDBName,
-                                              configCacheUrl = self.configCacheUrl,
-                                              forceUnmerged = forceUnmerged,
-                                              configDoc = self.configCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs,
-                                              stepType = cmsswStepType)
+                                              couchDBName=self.couchDBName,
+                                              configCacheUrl=self.configCacheUrl,
+                                              forceUnmerged=forceUnmerged,
+                                              configDoc=self.configCacheID,
+                                              splitAlgo=self.procJobSplitAlgo,
+                                              splitArgs=self.procJobSplitArgs,
+                                              stepType=cmsswStepType)
         self.addLogCollectTask(procTask)
 
         for outputModuleName in outputMods:
@@ -70,8 +71,7 @@ class ReRecoWorkloadFactory(DataProcessing):
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -107,10 +107,10 @@ class ReRecoWorkloadFactory(DataProcessing):
             skimJobSplitArgs = skimConfig["SkimJobSplitArgs"]
             if skimmableTask.jobSplittingAlgorithm == "EventBased":
                 skimJobSplitAlgo = "WMBSMergeBySize"
-                skimJobSplitArgs = {"max_merge_size"   : self.maxMergeSize,
-                                    "min_merge_size"   : self.minMergeSize,
-                                    "max_merge_events" : self.maxMergeEvents,
-                                    "max_wait_time"    : self.maxWaitTime}
+                skimJobSplitArgs = {"max_merge_size": self.maxMergeSize,
+                                    "min_merge_size": self.minMergeSize,
+                                    "max_merge_events": self.maxMergeEvents,
+                                    "max_wait_time": self.maxWaitTime}
 
             # Define the input module
             inputModule = "Merged"
@@ -118,18 +118,18 @@ class ReRecoWorkloadFactory(DataProcessing):
                 inputModule = skimConfig["SkimInput"]
 
             outputMods = self.setupProcessingTask(skimTask, "Skim",
-                                                  inputStep = parentCmsswStep,
-                                                  inputModule = inputModule,
-                                                  couchDBName = self.couchDBName,
-                                                  configCacheUrl = self.configCacheUrl,
-                                                  configDoc = skimConfig["ConfigCacheID"],
-                                                  splitAlgo = skimJobSplitAlgo,
-                                                  splitArgs = skimJobSplitArgs,
-                                                  timePerEvent = skimTimePerEvent,
-                                                  sizePerEvent = skimSizePerEvent,
-                                                  memoryReq = skimMemory)
+                                                  inputStep=parentCmsswStep,
+                                                  inputModule=inputModule,
+                                                  couchDBName=self.couchDBName,
+                                                  configCacheUrl=self.configCacheUrl,
+                                                  configDoc=skimConfig["ConfigCacheID"],
+                                                  splitAlgo=skimJobSplitAlgo,
+                                                  splitArgs=skimJobSplitArgs,
+                                                  timePerEvent=skimTimePerEvent,
+                                                  sizePerEvent=skimSizePerEvent,
+                                                  memoryReq=skimMemory)
 
-            self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
+            self.addLogCollectTask(skimTask, taskName="%sLogCollect" % skimConfig["SkimName"])
 
             for outputModuleName in outputMods:
                 self.addMergeTask(skimTask, skimJobSplitAlgo, outputModuleName)
@@ -156,11 +156,12 @@ class ReRecoWorkloadFactory(DataProcessing):
             skimConfig["SizePerEvent"] = float(arguments.get("SkimSizePerEvent%s" % skimIndex, self.sizePerEvent))
             skimConfig["Memory"] = float(arguments.get("SkimMemory%s" % skimIndex, self.memory))
             skimConfig["SkimJobSplitAlgo"] = arguments.get("SkimSplittingAlgo%s" % skimIndex, "FileBased")
-            skimConfig["SkimJobSplitArgs"] = {"include_parents" : True}
+            skimConfig["SkimJobSplitArgs"] = {"include_parents": True}
             if skimConfig["SkimJobSplitAlgo"] == "FileBased":
                 skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
-            elif skimConfig["SkimJobSplitAlgo"] == "EventBased" or skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
-                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int((8.0 * 3600.0) / skimConfig["TimePerEvent"])))
+            elif skimConfig["SkimJobSplitAlgo"] in ["EventBased", "EventAwareLumiBased"]:
+                standardSkim = int((8.0 * 3600.0) / skimConfig["TimePerEvent"])
+                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, standardSkim))
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["job_time_limit"] = 48 * 3600  # 2 days
             elif skimConfig["SkimJobSplitAlgo"] == "LumiBased":
@@ -174,9 +175,9 @@ class ReRecoWorkloadFactory(DataProcessing):
     def getWorkloadCreateArgs():
 
         baseArgs = DataProcessing.getWorkloadCreateArgs()
-        specArgs = {"RequestType" : {"default" : "ReReco", "optional" : False},
-                    "TransientOutputModules" : {"default" : [], "type" : makeList,
-                                                "attr" : "transientModules", "null" : False}
+        specArgs = {"RequestType": {"default": "ReReco", "optional": False},
+                    "TransientOutputModules": {"default": [], "type": makeList,
+                                               "attr": "transientModules", "null": False}
                     }
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
@@ -192,36 +193,36 @@ class ReRecoWorkloadFactory(DataProcessing):
         in a generic form. This method follows the same definition of getWorkloadCreateArgs in StdBase.
         """
         skimArgs = {
-                    "SkimName#N" : {"default" : None, "type" : str,
-                                    "optional" : False, "validate" : None,
-                                    "null" : False},
-                    "SkimInput#N" : {"default" : None, "type" : str,
-                                     "optional" : False, "validate" : None,
-                                     "null" : False},
-                    "Skim#NConfigCacheID" : {"default" : None, "type" : str,
-                                             "optional" : False, "validate" : None,
-                                             "null" : False},
-                    "SkimTimePerEvent#N" : {"default" : None, "type" : float,
-                                            "optional" : True, "validate" : lambda x : x > 0,
-                                            "null" : False},
-                    "SkimSizePerEvent#N" : {"default" : None, "type" : float,
-                                            "optional" : True, "validate" : lambda x : x > 0,
-                                            "null" : False},
-                    "SkimMemory#N" : {"default" : None, "type" : float,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "null" : False},
-                    "SkimSplittingAlgo#N" : {"default" : None, "type" : str,
-                                             "optional" : True, "validate" : None,
-                                             "null" : False},
-                    "SkimEventsPerJob#N" : {"default" : None, "type" : int,
-                                            "optional" : True, "validate" : lambda x : x > 0,
-                                            "null" : False},
-                    "SkimLumisPerJob#N" : {"default" : 8, "type" : int,
-                                           "optional" : True, "validate" : lambda x : x > 0,
-                                           "null" : False},
-                    "SkimFilesPerJob#N" : {"default" : 1, "type" : int,
-                                           "optional" : True, "validate" : lambda x : x > 0,
-                                           "null" : False}}
+            "SkimName#N": {"default": None, "type": str,
+                           "optional": False, "validate": None,
+                           "null": False},
+            "SkimInput#N": {"default": None, "type": str,
+                            "optional": False, "validate": None,
+                            "null": False},
+            "Skim#NConfigCacheID": {"default": None, "type": str,
+                                    "optional": False, "validate": None,
+                                    "null": False},
+            "SkimTimePerEvent#N": {"default": None, "type": float,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "null": False},
+            "SkimSizePerEvent#N": {"default": None, "type": float,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "null": False},
+            "SkimMemory#N": {"default": None, "type": float,
+                             "optional": True, "validate": lambda x: x > 0,
+                             "null": False},
+            "SkimSplittingAlgo#N": {"default": None, "type": str,
+                                    "optional": True, "validate": None,
+                                    "null": False},
+            "SkimEventsPerJob#N": {"default": None, "type": int,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "null": False},
+            "SkimLumisPerJob#N": {"default": 8, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "null": False},
+            "SkimFilesPerJob#N": {"default": 1, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "null": False}}
         return skimArgs
 
     def validateSchema(self, schema):
@@ -231,10 +232,10 @@ class ReRecoWorkloadFactory(DataProcessing):
         Check for required fields, and some skim facts
         """
         DataProcessing.validateSchema(self, schema)
-        mainOutputModules = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                                           configCacheUrl = schema['ConfigCacheUrl'],
-                                                           couchDBName = schema["CouchDBName"],
-                                                           getOutputModules = True).keys()
+        mainOutputModules = self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
+                                                           configCacheUrl=schema['ConfigCacheUrl'],
+                                                           couchDBName=schema["CouchDBName"],
+                                                           getOutputModules=True).keys()
 
         # Skim facts have to be validated outside the usual master validation
         skimSchema = {k: v for (k, v) in schema.iteritems() if k.startswith("Skim")}
@@ -251,13 +252,14 @@ class ReRecoWorkloadFactory(DataProcessing):
             except Exception as ex:
                 self.raiseValidationException(str(ex))
 
-            self.validateConfigCacheExists(configID = schema["Skim%sConfigCacheID" % skimIndex],
-                                           configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"],
+            self.validateConfigCacheExists(configID=schema["Skim%sConfigCacheID" % skimIndex],
+                                           configCacheUrl=schema['ConfigCacheUrl'],
+                                           couchDBName=schema["CouchDBName"],
                                            getOutputModules=False)
             if schema["SkimInput%s" % skimIndex] not in mainOutputModules:
-                error = "Processing config does not have the following output module: %s." % schema["SkimInput%s" % skimIndex]
-                self.raiseValidationException(msg = error)
+                error = "Processing config does not have the following output module: %s." % schema[
+                    "SkimInput%s" % skimIndex]
+                self.raiseValidationException(msg=error)
             skimInputs.add(schema["SkimInput%s" % skimIndex])
             skimIndex += 1
 
@@ -265,4 +267,5 @@ class ReRecoWorkloadFactory(DataProcessing):
         if "TransientOutputModules" in schema:
             diffSet = set(schema["TransientOutputModules"]) - skimInputs
             if diffSet:
-                self.raiseValidationException(msg = "A transient output module was specified but no skim was defined for it")
+                self.raiseValidationException(
+                    msg="A transient output module was specified but no skim was defined for it")

@@ -13,14 +13,15 @@ import pickle
 import time
 # WMCore modules
 from pprint import pformat
-from copy import copy
-
+from copy import deepcopy
+from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.Common import \
     elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, getIO, \
     dbsInfo, phedexInfo, getComputingTime, getNCopies, teraBytes, \
-    findBlockParents, findParent, getDbsBlocksRun, getFileLumisInBlock, phedexValidBlocks
+    findBlockParents, findParent, getBlocksByDsetAndRun, getFileLumisInBlock, \
+    getBlockReplicasAndSize, getPileupDatasetSizes, getPileupSubscriptions, getRunsInBlock
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
@@ -38,7 +39,6 @@ class RequestInfo(MSCore):
         Basic setup for this RequestInfo module
         """
         super(RequestInfo, self).__init__(msConfig, logger)
-        self.cachePileupSize = {}
 
     def __call__(self, reqRecords):
         """
@@ -57,7 +57,7 @@ class RequestInfo(MSCore):
         # create a Workflow object representing the request
         workflows = []
         for record in reqRecords:
-            wflow = Workflow(record['RequestName'], record)
+            wflow = Workflow(record['RequestName'], record, logger=self.logger)
             workflows.append(wflow)
             msg = "Processing request: %s, with campaigns: %s, " % (wflow.getName(),
                                                                     wflow.getCampaigns())
@@ -65,45 +65,46 @@ class RequestInfo(MSCore):
             self.logger.info(msg)
 
         # get complete requests information (based on Unified Transferor logic)
-        self.unified(uConfig, workflows)
+        self.unified(workflows)
 
         return workflows
 
-    def clearPileupCache(self):
-        """
-        Clears the in-memory pileup cache for every cycle of
-        the MSTransferor module.
-        Cache stores only the total size for secondary datasets
-        """
-        self.cachePileupSize.clear()
-
-    def unified(self, uConfig, workflows):
+    def unified(self, workflows):
         """
         Unified Transferor black box
-        :param uConfig: unified Configuration
         :param workflows: input workflow objects
         """
         # get aux info for dataset/blocks from inputs/parents/pileups
         # make subscriptions based on site white/black lists
-        self.logger.info("unified processing %d requests", len(workflows))
+        self.logger.info("Unified method processing %d requests", len(workflows))
 
         orig = time.time()
         # start by finding what are the parent datasets for requests requiring it
         time0 = time.time()
-        self.getParentDatasets(workflows)
+        parentMap = self.getParentDatasets(workflows)
+        self.setParentDatasets(workflows, parentMap)
         self.logger.debug(elapsedTime(time0, "### getParentDatasets"))
 
-        # get final primary and secondaries list of blocks to be replicated
-        # as well as an initial list of block parents
+        # then check the secondary dataset sizes and locations
         time0 = time.time()
-        self.getInputDataBlocks(workflows)
+        sizeByDset, locationByDset = self.getSecondaryDatasets(workflows)
+        self.setSecondaryDatasets(workflows, sizeByDset, locationByDset)
+        self.logger.debug(elapsedTime(time0, "### getSecondaryDatasets"))
+
+        # get final primary and parent list of valid blocks,
+        # considering run, block and lumi lists
+        time0 = time.time()
+        blocksByDset = self.getInputDataBlocks(workflows)
+        self.setInputDataBlocks(workflows, blocksByDset)
         self.logger.debug(elapsedTime(time0, "### getInputDataBlocks"))
 
         # get a final list of parent blocks
         time0 = time.time()
-        self.getParentChildBlocks(workflows)
+        parentageMap = self.getParentChildBlocks(workflows)
+        self.setParentChildBlocks(workflows, parentageMap)
         self.logger.debug(elapsedTime(time0, "### getParentChildBlocks"))
-        self.logger.debug(elapsedTime(orig, '### total time'))
+        self.logger.info(elapsedTime(orig, '### total time for unified method'))
+        self.logger.info("Unified method successfully processed %d requests", len(workflows))
 
         return workflows
 
@@ -134,7 +135,7 @@ class RequestInfo(MSCore):
 
         # find dataset info
         time0 = time.time()
-        datasetBlocks, datasetSizes, datasetTransfers = dbsInfo(datasets, self.msConfig['dbsUrl'])
+        datasetBlocks, datasetSizes, _datasetTransfers = dbsInfo(datasets, self.msConfig['dbsUrl'])
         self.logger.debug(elapsedTime(time0, "### dbsInfo"))
 
         # find block nodes information for our datasets
@@ -214,12 +215,30 @@ class RequestInfo(MSCore):
         self.logger.debug(elapsedTime(orig, '### total time'))
         return requestsToProcess
 
+    def _workflowRemoval(self, listOfWorkflows, workflowsToRetry):
+        """
+        Receives the initial list of workflows and another list of workflows
+        that failed somewhere in the MS processing (like fetching information
+        from the data-services); and remove those workflows from this cycle of
+        the MSTransferor, such that they can be retried in the next cycle.
+        :param listOfWorkflows: reference to the list of the initial workflows
+        :param workflowsToRetry: list of workflows with missing information
+        :return: nothing, the workflow removal is done in place
+        """
+        for wflow in set(workflowsToRetry):
+            self.logger.warning("Removing workflow that failed processing in MSTransferor: %s", wflow.getName())
+            listOfWorkflows.remove(wflow)
+
     def getParentDatasets(self, workflows):
         """
-        Given a list of requests, find which requests need to process the parent
+        Given a list of requests, find which requests need to process a parent
         dataset, and discover what the parent dataset name is.
+        :return: dictionary with the child and the parent dataset
         """
+        retryWorkflows = []
+        retryDatasets = []
         datasetByDbs = {}
+        parentByDset = {}
         for wflow in workflows:
             if wflow.hasParents():
                 datasetByDbs.setdefault(wflow.getDbsUrl(), set())
@@ -228,112 +247,225 @@ class RequestInfo(MSCore):
         for dbsUrl, datasets in datasetByDbs.items():
             self.logger.info("Resolving %d dataset parentage against DBS: %s", len(datasets), dbsUrl)
             # first find out what's the parent dataset name
-            parentageMap = findParent(datasets, dbsUrl)
+            parentByDset.update(findParent(datasets, dbsUrl))
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in parentByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
             for wflow in workflows:
-                if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
-                    wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
+                if wflow.hasParents() and wflow.getInputDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
+
+        return parentByDset
+
+    def setParentDatasets(self, workflows, parentageMap):
+        """
+        Set the parent dataset for workflows requiring parents
+        """
+        for wflow in workflows:
+            if wflow.hasParents() and wflow.getInputDataset() in parentageMap:
+                wflow.setParentDataset(parentageMap[wflow.getInputDataset()])
+
+    def getSecondaryDatasets(self, workflows):
+        """
+        Given a list of requests, list all the pileup datasets and, find their
+        total dataset sizes and which locations host completed and subscribed datasets.
+        NOTE it only uses valid blocks (i.e., blocks with at least one replica!)
+        :param workflows: a list of Workflow objects
+        :return: two dictionaries keyed by the dataset.
+           First contains dataset size as value.
+           Second contains a list of locations as value.
+        """
+        retryWorkflows = []
+        retryDatasets = []
+        datasets = set()
+        for wflow in workflows:
+            datasets = datasets | wflow.getPileupDatasets()
+
+        # now fetch valid blocks from PhEDEx and calculate the total dataset size
+        self.logger.info("Fetching pileup dataset sizes for %d datasets against PhEDEx: %s",
+                         len(datasets), self.msConfig['phedexUrl'])
+        sizesByDset = getPileupDatasetSizes(datasets, self.msConfig['phedexUrl'])
+
+        # then fetch data location for subscribed data, under the group provided in the config
+        self.logger.info("Fetching pileup dataset location for %d datasets against PhEDEx: %s",
+                         len(datasets), self.msConfig['phedexUrl'])
+        locationsByDset = getPileupSubscriptions(datasets, self.msConfig['phedexUrl'],
+                                                 percentMin=self.msConfig['minPercentCompletion'])
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in sizesByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        for dset, value in locationsByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                for pileup in wflow.getPileupDatasets():
+                    if pileup in  retryDatasets:
+                        retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
+        return sizesByDset, locationsByDset
+
+    def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset):
+        """
+        Given dictionaries with the pileup dataset size and locations, set the
+        workflow object accordingly.
+        """
+        for wflow in workflows:
+            for dsetName in wflow.getPileupDatasets():
+                wflow.setSecondarySummary(dsetName, sizesByDset[dsetName], locationsByDset[dsetName])
 
     def getInputDataBlocks(self, workflows):
         """
-        Given a list of requests and their input data -  primary, secondary and
-        parent datasets - find all their respective blocks (and their sizes) to
-        be transferred.
+        Given a list of requests, list all the primary and parent datasets and, find
+        their block sizes and which locations host completed and subscribed blocks
         NOTE it only uses valid blocks (i.e., blocks with at least one replica!)
         :param workflows: a list of Workflow objects
+        :return: dictionary with dataset and a few block information
         """
+        retryWorkflows = []
+        retryDatasets = []
         datasets = set()
         for wflow in workflows:
-            if wflow.getReqType() == 'StoreResults':
-                # don't make any transfer, such requests are assigned where
-                # the data is already available
-                continue
-            else:
-                for dataIn in wflow.getDataCampaignMap():
-                    if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
-                        # fetch the total dataset size from the cache then
-                        continue
+            for dataIn in wflow.getDataCampaignMap():
+                if dataIn['type'] in ["primary", "parent"]:
                     datasets.add(dataIn['name'])
 
-        # now fetch block names from DBS
+        # now fetch block names from PhEDEx
         self.logger.info("Fetching block info for %d datasets against PhEDEx: %s",
                          len(datasets), self.msConfig['phedexUrl'])
-        blocksByDset = phedexValidBlocks(datasets, self.msConfig['phedexUrl'])
+        blocksByDset = getBlockReplicasAndSize(datasets, self.msConfig['phedexUrl'])
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in blocksByDset.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
+            for wflow in workflows:
+                if wflow.getInputDataset() in retryDatasets or wflow.getParentDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
+        return blocksByDset
+
+    def setInputDataBlocks(self, workflows, blocksByDset):
+        """
+        Provided a dictionary structure of dictionary, block name, and a couple of
+        block information, set the workflow attributes accordingly.
+        """
+        retryWorkflows = []
         for wflow in workflows:
-            for dataIn in wflow.getDataCampaignMap():
-                if dataIn['type'] == "secondary" and dataIn['name'] in self.cachePileupSize:
-                    self.logger.debug("Using PU data from the cache for %s", dataIn['name'])
-                    wflow.setSecondarySummary(dataIn['name'], self.cachePileupSize[dataIn['name']])
-                elif dataIn['type'] == "secondary":
-                    # simply calculate the total dataset size and cache it as well
-                    totalSize = self._getPileupSize(dataIn['name'], blocksByDset[dataIn['name']])
-                    wflow.setSecondarySummary(dataIn['name'], totalSize)
-                elif dataIn['type'] == "primary":
-                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']])
-                    wflow.setPrimaryBlocks(newBlockDict)
-                elif dataIn['type'] == "parent":
-                    newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
-                                                             blocksByDset[dataIn['name']])
-                    wflow.setParentBlocks(newBlockDict)
+            try:
+                for dataIn in wflow.getDataCampaignMap():
+                    if dataIn['type'] == "primary":
+                        newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                                 blocksByDset[dataIn['name']])
+                        wflow.setPrimaryBlocks(newBlockDict)
+                    elif dataIn['type'] == "parent":
+                        newBlockDict = self._handleInputDataInfo(wflow, dataIn['name'],
+                                                                 blocksByDset[dataIn['name']])
+                        wflow.setParentBlocks(newBlockDict)
+            except Exception:
+                self.logger.error("Workflow: %s will be retried in the next cycle", wflow.getName())
+                retryWorkflows.append(wflow)
+
+        # remove workflows that failed one or more of the bulk queries to the data-service
+        self._workflowRemoval(workflows, retryWorkflows)
 
     def _handleInputDataInfo(self, wflow, dset, blocksDict):
         """
-        Handle primary input data, such that we can also consider a
-        Run white/black lists, and also compare against
-        blocks without any valid files.
+        Applies any run/block/lumi list on the primary and parent
+        blocks provided.
+        It's a convoluted logic, such as:
+         1) if there is no run/block/lumi list, just return the initial blocksDict
+         2) if it has lumi list, filter runs from it and run block discovery
+            given a dataset name and a list of runs
+         3) if it has RunWhitelist, run block discovery for a given dataset name
+            and a list of runs
+         4) if it has only RunBlacklist, discover the run list of all initial blocks
+            provided in blocksDict and remove blocks matching only the black list
+         5) for the steps above, always check whether the block has replicas
+         6) NOW that the block data discovery is completed (considering runs):
+           * if LumiList is not enabled, just return the current list of blocks
+           * else, fetch file/run/lumi information in bulk of blocks and compare it
+           to the LumiList, skipping blocks without a single file that matches it.
 
         Note that the LumiList check is dealt with in a similar way
         as done in the WorkQueue StartPolicyInterface/getMaskedBlocks:
 
         :param wflow: the Workflow object
         :param dset: dataset name
-        :param blocksDict: dictionary of blocks and block size
+        :param blocksDict: dictionary of blocks, their size and location
         :return: dictionary of block names and block size
         """
-        # FIXME: this is heavy and should be done concurrently
         finalBlocks = {}
         dbsUrl = wflow.getDbsUrl()
-        runList = wflow.getRunlist()
+        runWhite = wflow.getRunWhitelist()
+        runBlack = set(wflow.getRunBlacklist())
         lumiList = wflow.getLumilist()
         if lumiList:
-            # LumiList has precedence over RunWhitelist/RunBlacklist
-            runList = []
+            # LumiList has precedence over RunWhitelist
+            runWhite = []
             for run in lumiList.getRuns():
-                runList.append(int(run))
-            runList = list(set(runList))
-        if runList:
+                runWhite.append(int(run))
+            runWhite = list(set(runWhite))
+        if runWhite:
             # Run number 1 is not supported by DBSServer
-            if int(runList[0]) == 1:
-                finalBlocks = copy(blocksDict)
+            if int(runWhite[0]) == 1:
+                finalBlocks = deepcopy(blocksDict)
             else:
+                runWhite = list(set(runWhite) - runBlack)
                 self.logger.info("Fetching blocks matching a list of runs for %s", wflow.getName())
-                # then find blocks matching that run list
-                blocks = getDbsBlocksRun(dset, runList, dbsUrl)
-                # now filter blocks without any valid files
+                try:
+                    blocks = getBlocksByDsetAndRun(dset, runWhite, dbsUrl)
+                except Exception as exc:
+                    self.logger.error("Failed to retrieve blocks by dataset and run. Details: %s", str(exc))
+                    raise
                 for block in blocks:
                     if block in blocksDict:
-                        finalBlocks[block] = blocksDict[block]
+                        finalBlocks[block] = deepcopy(blocksDict[block])
                     else:
                         self.logger.info("Dropping block with no replicas in PhEDEx: %s", block)
-            # now apply filters based on the blocks white and black list
-            whiteBlocks = wflow.getBlockWhitelist()
-            if whiteBlocks:
-                for block in list(finalBlocks):
-                    if block not in whiteBlocks:
-                        finalBlocks.pop(block)
-            blackBlocks = wflow.getBlockBlacklist()
-            for block in blackBlocks:
-                finalBlocks.pop(block, None)
-            if lumiList:
-                self.logger.info("Fetching block/lumi information for %d blocks in %s",
-                                 len(finalBlocks), wflow.getName())
-                goodBlocks = set()
-                # now with a smaller set of blocks in hand, we collect their lumi
-                # information and discard any blocks not matching the lumi list
-                for block in finalBlocks:
-                    fileLumis = getFileLumisInBlock(block, dbsUrl, validFileOnly=1)
+        elif runBlack:
+            # only run blacklist set
+            self.logger.info("Fetching runs in blocks for RunBlacklist for %s", wflow.getName())
+            try:
+                blockRuns = getRunsInBlock(list(blocksDict), dbsUrl)
+            except Exception as exc:
+                self.logger.error("Failed to bulk retrieve runs per block. Details: %s", str(exc))
+                raise
+            for block, runs in blockRuns.items():
+                if not set(runs).difference(runBlack):
+                    self.logger.info("Dropping block with only blacklisted runs: %s", block)
+                elif block in blocksDict:
+                    finalBlocks[block] = deepcopy(blocksDict[block])
+
+        if lumiList:
+            self.logger.info("Fetching block/lumi information for %d blocks in %s",
+                             len(finalBlocks), wflow.getName())
+            self.logger.debug("with the following run whitelist: %s", runWhite)
+            goodBlocks = set()
+            # now with a smaller set of blocks in hand, we collect their lumi
+            # information and discard any blocks not matching the lumi list
+            for blockSlice in grouper(finalBlocks, 10):
+                try:
+                    blockFileLumis = getFileLumisInBlock(blockSlice, dbsUrl, validFileOnly=1)
+                except Exception as exc:
+                    self.logger.error("Failed to bulk retrieve run/lumi per block. Details: %s", str(exc))
+                    raise
+                for block, fileLumis in blockFileLumis.items():
                     for fileLumi in fileLumis:
-                        if int(fileLumi['run_num']) not in runList:
+                        if int(fileLumi['run_num']) not in runWhite:
                             continue
                         runNumber = str(fileLumi['run_num'])
                         lumis = fileLumi['lumi_section_num']
@@ -342,26 +474,15 @@ class RequestInfo(MSCore):
                             # then it has lumis that we need, keep this block and move on
                             goodBlocks.add(block)
                             break
-                # last but not least, drop any blocks that are not in the good list
-                for block in list(finalBlocks):
-                    if block not in goodBlocks:
-                        finalBlocks.pop(block)
-            return finalBlocks
-        # case where there is no lumi list neither run list
-        return blocksDict
+            # last but not least, drop any blocks that are not in the good list
+            for block in list(finalBlocks):
+                if block not in goodBlocks:
+                    self.logger.info("Dropping block not matching LumiList: %s", block)
+                    finalBlocks.pop(block)
 
-    def _getPileupSize(self, dsetName, blocksDict):
-        """
-        Iterate over all blocks in the dictionary and sum up their
-        block sizes. In the end store the dataset and its total size
-        in the local cache as well.
-        :param dsetName: secondary dataset name string.
-        :param blocksDict: dictionary of block names and their size
-        :return: total size in bytes
-        """
-        totalSize = sum(blocksDict.values())
-        self.cachePileupSize[dsetName] = totalSize
-        return totalSize
+        if not finalBlocks:
+            finalBlocks = blocksDict
+        return finalBlocks
 
     def getParentChildBlocks(self, workflows):
         """
@@ -370,27 +491,48 @@ class RequestInfo(MSCore):
         :param workflows: list of workflow objects
         :return: nothing, updates the workflow attributes in place
         """
+        retryWorkflows = []
+        retryDatasets = []
         blocksByDbs = {}
+        parentageMap = {}
         for wflow in workflows:
             blocksByDbs.setdefault(wflow.getDbsUrl(), set())
             if wflow.getParentDataset():
-                blocksByDbs[wflow.getDbsUrl()] = \
-                    blocksByDbs[wflow.getDbsUrl()].union(set(wflow.getPrimaryBlocks().keys()))
+                blocksByDbs[wflow.getDbsUrl()] = blocksByDbs[wflow.getDbsUrl()] | set(wflow.getPrimaryBlocks().keys())
 
         for dbsUrl, blocks in blocksByDbs.items():
             if not blocks:
                 continue
             self.logger.debug("Fetching DBS parent blocks for %d children blocks...", len(blocks))
             # first find out what's the parent dataset name
-            parentageMap = findBlockParents(blocks, dbsUrl)
+            parentageMap.update(findBlockParents(blocks, dbsUrl))
+
+        # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
+        # FIXME: isn't there a better way to do this?!?
+        for dset, value in parentageMap.items():
+            if value is None:
+                retryDatasets.append(dset)
+        if retryDatasets:
             for wflow in workflows:
-                if wflow.getParentDataset() and wflow.getInputDataset() in parentageMap:
-                    wflow.setChildToParentBlocks(parentageMap[wflow.getInputDataset()])
+                if wflow.getParentDataset() in retryDatasets:
+                    retryWorkflows.append(wflow)
+            # remove workflows that failed one or more of the bulk queries to the data-service
+            self._workflowRemoval(workflows, retryWorkflows)
+        return parentageMap
+
+    def setParentChildBlocks(self, workflows, parentageMap):
+        """
+        Provided a dictionary with the dataset, the child block and a set
+        of the parent blocks, set the workflow attribute accordingly
+        """
+        for wflow in workflows:
+            if wflow.getParentDataset() and wflow.getInputDataset() in parentageMap:
+                wflow.setChildToParentBlocks(parentageMap[wflow.getInputDataset()])
 
     # FIXME: get rid of this method and use the Workflow objects instead
     def _getRequestWorkflows(self, requestNames):
         "Helper function to get all specs for given set of request names"
-        urls = [str('%s/data/request/%s' % (self.msConfig['reqmgrUrl'], r)) for r in requestNames]
+        urls = [str('%s/data/request/%s' % (self.msConfig['reqmgr2Url'], r)) for r in requestNames]
         self.logger.debug("getRequestWorkflows")
         for u in urls:
             self.logger.debug("url %s", u)

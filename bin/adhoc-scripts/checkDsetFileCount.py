@@ -1,9 +1,13 @@
 #!/usr/bin/env python
-
+"""
+Script meant to be used to check the status of a dataset (or lfn) against DBS
+and PhEDEx. It also prints any discrepancy between those 2 data management tools.
+"""
 from __future__ import print_function, division
 
 import httplib
 import json
+import os
 import sys
 import urllib
 import urllib2
@@ -16,10 +20,10 @@ dbs_url = main_url + "/dbs/prod/global/DBSReader/"
 
 
 class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
-    def __init__(self, key, cert):
+    def __init__(self):
         urllib2.HTTPSHandler.__init__(self)
-        self.key = key
-        self.cert = cert
+        self.key = os.getenv("X509_USER_PROXY")
+        self.cert = os.getenv("X509_USER_PROXY")
 
     def https_open(self, req):
         return self.do_open(self.getConnection, req)
@@ -28,8 +32,8 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
-def get_content(url, cert, params=None):
-    opener = urllib2.build_opener(HTTPSClientAuthHandler(cert, cert))
+def get_content(url, params=None):
+    opener = urllib2.build_opener(HTTPSClientAuthHandler())
     try:
         if params:
             response = opener.open(url, params)
@@ -46,25 +50,25 @@ def get_content(url, cert, params=None):
     return output
 
 
-def phedex_info(dataset, cert):
+def phedex_info(dataset):
     """
     Query blockreplicas PhEDEx API to retrieve detailed information
     for a specific dataset
     """
     api_url = phedex_url + "blockreplicas" + "?" + urllib.urlencode([('dataset', dataset)])
-    phedex_summary = json.loads(get_content(api_url, cert))
+    phedex_summary = json.loads(get_content(api_url))
     return phedex_summary
 
 
-def dbs_info(dataset, cert):
+def dbs_info(dataset):
     """
     Queries 2 DBS APIs to get both summary and detailed information
     """
     dbs_out = {}
     api_url = dbs_url + "blocksummaries" + "?" + urllib.urlencode({'dataset': dataset})
-    dbs_out['blocksummaries'] = json.loads(get_content(api_url, cert))
+    dbs_out['blocksummaries'] = json.loads(get_content(api_url))
     api_url = dbs_url + "files" + "?" + urllib.urlencode({'dataset': dataset}) + "&detail=1"
-    dbs_out['files'] = json.loads(get_content(api_url, cert))
+    dbs_out['files'] = json.loads(get_content(api_url))
     return dbs_out
 
 
@@ -79,13 +83,12 @@ def main(argv=None):
     It returns the number of files for this dataset/lfn available
     in PhEDEx and DBS
     """
-    usage = "usage: %prog -d dataset_name -p proxy_location"
+    usage = "usage: %prog -d dataset_name"
     parser = ArgumentParser(usage=usage)
     parser.add_argument('-d', '--dataset', help='Dataset name', dest='dataset')
     parser.add_argument('-l', '--lfn', help='Logical file name', dest='lfn')
-    parser.add_argument('-p', '--proxy', help='Path to your proxy or cert location', dest='proxy')
     options = parser.parse_args()
-    if not ((options.dataset or options.lfn) and options.proxy):
+    if not (options.dataset or options.lfn):
         parser.error("Please supply either dataset name or file name \
                       and certificate location")
         sys.exit(1)
@@ -95,12 +98,11 @@ def main(argv=None):
         lfn = options.lfn
         lfnAux = lfn.split('/')
         dataset = '/' + lfnAux[4] + '/' + lfnAux[3] + '-' + lfnAux[6] + '/' + lfnAux[5]
-    cert = options.proxy
 
     print("Dataset: %s" % dataset)
 
-    phedex_out = phedex_info(dataset, cert)
-    dbs_out = dbs_info(dataset, cert)
+    phedex_out = phedex_info(dataset)
+    dbs_out = dbs_info(dataset)
     phedex_files = 0
     phedex_blocks = {}
     for item in phedex_out["phedex"]["block"]:

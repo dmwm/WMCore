@@ -6,7 +6,7 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import division
+from __future__ import division, print_function
 
 import json
 import logging
@@ -66,6 +66,9 @@ def dbsInfo(datasets, dbsUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
+            continue
         rows = json.loads(row['data'])
         blocks = []
         size = 0
@@ -80,14 +83,59 @@ def dbsInfo(datasets, dbsUrl):
     return datasetBlocks, datasetSizes, datasetTransfers
 
 
-def phedexValidBlocks(datasets, phedexUrl):
+def getPileupDatasetSizes(datasets, phedexUrl):
     """
     Given a list of datasets, find all their blocks with replicas
-    available, i.e., blocks that have valid files to be processed.
+    available, i.e., blocks that have valid files to be processed,
+    and calculate the total dataset size
     :param datasets: list of dataset names
     :param phedexUrl: a string with the PhEDEx URL
-    :return: a dictionary of datasets, with their blocks and the
-    size of each block
+    :return: a dictionary of datasets and their respective sizes
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    sizeByDset = {}
+    if not datasets:
+        return sizeByDset
+
+    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s %s" % (dataset,
+                                                                                     row.get('code'),
+                                                                                     row.get('error')))
+            sizeByDset.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        sizeByDset.setdefault(dataset, 0)  # flat dict in the format of blockName: blockSize
+        try:
+            for item in rows['phedex']['block']:
+                sizeByDset[dataset] += item['bytes']
+        except Exception as exc:
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s" % (dataset, str(exc)))
+            sizeByDset[dataset] = None
+    return sizeByDset
+
+
+def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
+    """
+    Given a list of datasets, find all their blocks with replicas
+    available (thus blocks with at least 1 valid file), completed
+    and subscribed.
+    If PhEDEx group is provided, make sure it's subscribed under that
+    same group.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: optional PhEDEx group name
+    :return: a dictionary in the form of:
+    {"dataset":
+        {"block":
+            {"blockSize": 111, "locations": ["x", "y"]}
+        }
+    }
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     dsetBlockSize = {}
     if not datasets:
@@ -98,24 +146,95 @@ def phedexValidBlocks(datasets, phedexUrl):
 
     for row in data:
         dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s %s" % (dataset,
+                                                                                       row.get('code'),
+                                                                                       row.get('error')))
+            dsetBlockSize.setdefault(dataset, None)
+            continue
         rows = json.loads(row['data'])
-        dsetBlockSize.setdefault(dataset, {})  # flat dict in the format of blockName: blockSize
-        for item in rows['phedex']['block']:
-            dsetBlockSize[dataset].update({item['name']: item['bytes']})
+        dsetBlockSize.setdefault(dataset, {})
+        try:
+            for item in rows['phedex']['block']:
+                block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
+                for repli in item['replica']:
+                    if repli['complete'] == 'y' and repli['subscribed'] == 'y':
+                        if not group:
+                            block[item['name']]['locations'].append(repli['node'])
+                        elif repli['group'] == group:
+                            block[item['name']]['locations'].append(repli['node'])
+                dsetBlockSize[dataset].update(block)
+        except Exception as exc:
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s" % (dataset, str(exc)))
+            dsetBlockSize[dataset] = None
     return dsetBlockSize
 
 
-def getDbsBlocksRun(datasetName, runList, dbsUrl):
+# FIXME: implement the same logic for Rucio
+def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
+    """
+    Provided a list of datasets, find dataset level subscriptions where it's
+    as complete as `percent_min`.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: optional string with the PhEDEx group
+    :param percent_min: only return subscriptions that are this complete
+    :return: a dictionary of datasets and a list of their location.
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    locationByDset = {}
+    if not datasets:
+        return locationByDset
+
+    if group:
+        url = "%s/subscriptions?group=%s" % (phedexUrl, group)
+        url += "&percent_min=%s&dataset=%s"
+    else:
+        url = "%s/subscriptions?" % phedexUrl
+        url += "percent_min=%s&dataset=%s"
+    urls = [url % (percentMin, dset) for dset in datasets]
+
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s %s" % (dataset,
+                                                                                      row.get('code'),
+                                                                                      row.get('error')))
+            locationByDset.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        locationByDset.setdefault(dataset, [])
+        try:
+            for item in rows['phedex']['dataset']:
+                for subs in item['subscription']:
+                    locationByDset[dataset].append(subs['node'])
+        except Exception as exc:
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s" % (dataset, str(exc)))
+            locationByDset[dataset] = None
+    return locationByDset
+
+
+def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
     """
     Given a dataset name and a list of runs, find all the blocks
     :return: flat list of blocks
     """
     blocks = set()
+    if isinstance(runList, set):
+        runList = list(runList)
 
     urls = ['%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runList).replace(" ", ""), datasetName)]
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
+                                                                             row.get('code'),
+                                                                             row.get('error'))
+            raise RuntimeError(msg)
         rows = json.loads(row['data'])
         for item in rows:
             blocks.add(item['block_name'])
@@ -123,37 +242,89 @@ def getDbsBlocksRun(datasetName, runList, dbsUrl):
     return list(blocks)
 
 
-def getFileLumisInBlock(blockName, dbsUrl, validFileOnly=1):
+def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
     """
-    Given a block name, retrieve its run/lumis for each valid file
-    :return: list of dictionaries, just what gets returned by DBS
+    Given a list of blocks, find their file run lumi information
+    in DBS for up to 10 blocks concurrently
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :param validFileOnly: integer flag for valid files only or not
+    :return: a dict of blocks with list of file/run/lumi info
     """
-    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(blockName))]
-    data = multi_getdata(urls, ckey(), cert())
+    runLumisByBlock = {}
+    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(b)) for b in blocks]
+    # limit it to 10 concurrent calls not to overload DBS
+    data = multi_getdata(urls, ckey(), cert(), num_conn=10)
 
     for row in data:
-        # there should be a single element
-        return json.loads(row['data'])
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
+                                                                                 row.get('code'),
+                                                                                 row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runLumisByBlock.setdefault(blockName, [])
+        for item in rows:
+            runLumisByBlock[blockName].append(item)
+    return runLumisByBlock
 
 
 def findBlockParents(blocks, dbsUrl):
     """
-    Helper function to find block parents given a block name.
+    Helper function to find block parents given a list of block names.
     Return a dictionary in the format of:
     {"child dataset name": {"child block": ["parent blocks"],
                             "child block": ["parent blocks"], ...}}
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     parentsByBlock = {}
     urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        dataset = blockName.split("#")[0]
+        if row['data'] is None:
+            print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
+                                                                              row.get('code'),
+                                                                              row.get('error')))
+            parentsByBlock.setdefault(dataset, None)
+            continue
         rows = json.loads(row['data'])
-        for item in rows:
-            dataset = item['this_block_name'].split("#")[0]
+        try:
+            if dataset in parentsByBlock and parentsByBlock[dataset] is None:
+                # then one of the block calls has failed, keep it failed!
+                continue
             parentsByBlock.setdefault(dataset, {})
-            parentsByBlock[dataset].setdefault(item['this_block_name'], set())
-            parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
+            for item in rows:
+                parentsByBlock[dataset].setdefault(item['this_block_name'], set())
+                parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
+        except Exception as exc:
+            print("Failure in findBlockParents for block %s. Error: %s" % (blockName, str(exc)))
+            parentsByBlock[dataset] = None
     return parentsByBlock
+
+
+def getRunsInBlock(blocks, dbsUrl):
+    """
+    Provided a list of block names, find their run numbers
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :return: a dictionary of block names and a list of run numbers
+    """
+    runsByBlock = {}
+    urls = ['%s/runs?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    data = multi_getdata(urls, ckey(), cert())
+    for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
+                                                                            row.get('code'),
+                                                                            row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runsByBlock[blockName] = rows[0]['run_num']
+    return runsByBlock
 
 
 def phedexInfo(datasets, phedexUrl):
@@ -162,6 +333,12 @@ def phedexInfo(datasets, phedexUrl):
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
+                                                                row.get('code'),
+                                                                row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows['phedex']['block']:
             nodes = [r['node'] for r in item['replica'] if r['complete'] == 'y']
@@ -178,6 +355,16 @@ def getWorkflow(requestName, reqMgrUrl):
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
     return data.get('result', [])
+
+
+def getDetoxQuota(url):
+    "Get list of workflow info from ReqMgr2 data-service for given request name"
+    headers = {}
+    params = {}
+    mgr = RequestHandler()
+    res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
+    res = res.split('\n')
+    return res
 
 
 def workflowsInfo(workflows):
@@ -226,12 +413,15 @@ def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
             % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
-        key = row['url'].split('=')[-1]
-        if what == 'block_name':
-            key = unquote(key)
+        data = unquote(row['url'].split('=')[-1])
+        if row['data'] is None:
+            print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
+                                                                    row.get('code'),
+                                                                    row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
-            eventsLumis[key] = item
+            eventsLumis[data] = item
     return eventsLumis
 
 
@@ -331,8 +521,13 @@ def getNCopies(cpuHours, minN=2, maxN=3, weight=50000, constant=100000):
 
 
 def teraBytes(size):
-    "Return size in TB"
-    return float(size) / float(1024 ** 4)
+    "Return size in TB (Terabytes)"
+    return size / (1000 ** 4)
+
+
+def gigaBytes(size):
+    "Return size in GB (Gigabytes), rounded to 2 digits"
+    return round(size / (1000 ** 3), 2)
 
 
 def ckey():
@@ -426,6 +621,7 @@ def findParent(datasets, dbsUrl):
     """
     Helper function to find the parent dataset.
     It returns a dictionary key'ed by the child dataset
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     parentByDset = {}
     if not datasets:
@@ -435,7 +631,18 @@ def findParent(datasets, dbsUrl):
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
+                                                                          row.get('code'),
+                                                                          row.get('error')))
+            parentByDset.setdefault(dataset, None)
+            continue
         rows = json.loads(row['data'])
-        for item in rows:
-            parentByDset[item['this_dataset']] = item['parent_dataset']
+        try:
+            for item in rows:
+                parentByDset[item['this_dataset']] = item['parent_dataset']
+        except Exception as exc:
+            print("Failure in findParent for dataset %s. Error: %s" % (dataset, str(exc)))
+            parentByDset[dataset] = None
     return parentByDset

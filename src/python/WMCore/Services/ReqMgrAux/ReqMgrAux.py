@@ -86,7 +86,11 @@ class ReqMgrAux(Service):
                   'campaignconfig': self.getCampaignConfig,
                   'transferinfo': self.getTransferInfo}
 
-        thisDoc = apiMap[callName](resource)[0]
+        thisDoc = apiMap[callName](resource)
+        # getWMAgentConfig method returns directly the document, while the others
+        # return a list of document(s)
+        if isinstance(thisDoc, (list, set)):
+            thisDoc = thisDoc[0]
         thisDoc.update(kwparams)
         return self["requests"].put("%s/%s" % (callName, resource), thisDoc)[0]['result']
 
@@ -106,7 +110,6 @@ class ReqMgrAux(Service):
         msg = "Failed to update CMSSW document. Response: %s" % resp
         self["logger"].warning(msg)
         return False
-
 
     def getWMAgentConfig(self, agentName):
         """
@@ -309,6 +312,32 @@ class ReqMgrAux(Service):
         self["logger"].warning(msg)
         return False
 
+    def updateParentLocks(self, content, docName=None):
+        """
+        Update the list of locked parent datasets with the content provided, replacing
+        the old document.
+        :param content: a dictionary with the data to be updated
+        :return: a boolean with the result of the operation
+        """
+        api = 'parentlocks'
+        if docName:
+            resp = self["requests"].put("%s/%s" % (api, docName), content)[0]['result']
+        else:
+            resp = self["requests"].put("%s" % api, content)[0]['result']
+
+        if resp and resp[0].get("ok", False):
+            self["logger"].info("Parent dataset locks successfully updated.")
+            return True
+
+        self["logger"].warning("Failed to update parent dataset locks. Response: %s", resp)
+        return False
+
+    def getParentLocks(self):
+        """
+        get the list of parent locks
+        """
+        return self._getDataFromMemoryCache('parentlocks')
+
     def deleteConfigDoc(self, docType, docName):
         """
         Given a document type and a document name, delete it from the
@@ -348,6 +377,7 @@ def isDrainMode(config):
         return agentConfig["UserDrainMode"] or agentConfig["AgentDrainMode"]
     # if the cache is empty this will raise Key not exist exception.
     return AUXDB_AGENT_CONFIG_CACHE["UserDrainMode"] or AUXDB_AGENT_CONFIG_CACHE["AgentDrainMode"]
+
 
 def listDiskUsageOverThreshold(config, updateDB):
     """

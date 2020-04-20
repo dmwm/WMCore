@@ -88,6 +88,9 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         config.PhEDExInjector.group = "Saturn"
         config.PhEDExInjector.pollInterval = 30
         config.PhEDExInjector.subscribeInterval = 60
+        config.PhEDExInjector.phedexGroup = "DataOps"
+        config.component_("RucioInjector")
+        config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]
 
         return config
 

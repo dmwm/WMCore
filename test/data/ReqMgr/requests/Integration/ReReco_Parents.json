@@ -1,7 +1,8 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReReco with IncludeParents True, 3 runs whitelisted, 8h opened",
+    "Comments": {"WorkFlowDesc": ["ReReco with IncludeParents True, 3 runs whitelisted, 8h opened"],
+                 "CheckList": ["ReReco with IncludeParents"]},
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        

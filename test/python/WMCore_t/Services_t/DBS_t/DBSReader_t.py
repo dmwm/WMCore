@@ -7,7 +7,7 @@ Unit test for the DBS helper class.
 
 import unittest
 
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
+from WMCore.Services.DBS.DBS3Reader import getDataTiers, DBS3Reader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -51,14 +51,26 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """
         listDatatiers returns all datatiers available
         """
-        results = DBSReader.listDatatiers(self.endpoint)
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listDatatiers()
+        self.assertTrue('RAW' in results)
+        self.assertTrue('GEN-SIM-RECO' in results)
+        self.assertTrue('GEN-SIM' in results)
+        self.assertFalse('RAW-ALAN' in results)
+        return
+
+    def testGetDataTiers(self):
+        """
+        Test the getDataTiers function
+        """
+        results = getDataTiers(self.endpoint)
         self.assertTrue('RAW' in results)
         self.assertTrue('GEN-SIM-RECO' in results)
         self.assertTrue('GEN-SIM' in results)
         self.assertFalse('RAW-ALAN' in results)
         # dbsUrl is mandatory
-        with self.assertRaises(DBSReaderError):
-            _ = DBSReader.listDatatiers()
+        with self.assertRaises(TypeError):
+            _ = getDataTiers()
         return
 
     def testListPrimaryDatasets(self):
@@ -142,9 +154,12 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue(173658 in details[TESTFILE]['Lumis'])
         self.assertEqual(sorted(details[TESTFILE]['Lumis'][173658]),
                          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-                          27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-                          51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
-                          75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,
+                          27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+                          50,
+                          51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+                          74,
+                          75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97,
+                          98,
                           99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111])
 
     def testGetDBSSummaryInfo(self):
@@ -230,15 +245,15 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """listFilesInBlockWithParents gets files with parents for a block"""
         self.dbs = DBSReader(self.endpoint)
         files = self.dbs.listFilesInBlockWithParents(
-            '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
+                '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
         self.assertEqual(4, len(files))
         self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0',
                          files[0]['block_name'])
         self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0',
                          files[0]['BlockName'])
         self.assertEqual(
-            '/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
-            files[0]['ParentList'][0]['LogicalFileName'])
+                '/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
+                files[0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.listFilesInBlockWithParents, BLOCK + 'asas')
 

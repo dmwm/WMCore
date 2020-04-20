@@ -107,7 +107,6 @@ class StepChainWorkloadFactory(StdBase):
 
         self.workload.setStepMapping(self.stepMapping)
         self.workload.setStepParentageMapping(self.stepParentageMapping)
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
         # and push the parentage map to the reqmgr2 workload cache doc
         arguments['ChainParentageMap'] = self.workload.getChainParentageSimpleMapping()
 
@@ -181,12 +180,12 @@ class StepChainWorkloadFactory(StdBase):
                 self.stepParentageMapping[stepName]['ParentStepCmsRun'] = parentStepCmsRun
 
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                parentDset = self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                parentDset = self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
                 self.stepParentageMapping[stepName]['ParentDataset'] = parentDset
 
-    def findParentStepWithOuputDataset(self, origArgs, stepNumber, stepName, outModName):
+    def findParentStepWithOutputDataset(self, origArgs, stepNumber, stepName, outModName):
         """
-        _findParentStepWithOuputDataset_
+        _findParentStepWithOutputDataset_
         Given the parent step name and output module name, finds the parent dataset 
         :param origArgs: request arguments
         :param stepNumber: step number of the parent step
@@ -202,7 +201,7 @@ class StepChainWorkloadFactory(StdBase):
             parentStepName = self.stepParentageMapping[stepName]['ParentStepName']
             if parentStepNumber:
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                return self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                return self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
             else:
                 # this is Step1, return the InputDataset if any
                 return origArgs[stepNumber].get("InputDataset")
@@ -540,8 +539,8 @@ class StepChainWorkloadFactory(StdBase):
 
         lastStep = "Step%s" % schema['StepChain']
         if not strToBool(schema[lastStep].get('KeepOutput', True)):
-            msg = "Dropping the output of the last step is prohibited.\n"
-            msg += "Set the 'KeepOutput' value to True and try again."
+            msg = "Dropping the output (KeepOutput=False) of the last step is prohibited.\n"
+            msg += "You probably want to remove that step completely and try again."
             self.raiseValidationException(msg=msg)
 
         outputModTier = []

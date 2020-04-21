@@ -20,7 +20,7 @@ from PSetTweaks.WMTweak import applyTweak, makeJobTweak, makeOutputTweak, makeTa
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported
+from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported, isEnforceGUIDInFileNameSupported
 
 
 def fixupGlobalTag(process):
@@ -637,6 +637,32 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+    def handleEnforceGUIDInFileName(self):
+        """
+        _handleEnforceGUIDInFileName_
+
+        Enable enforceGUIDInFileName for CMSSW releases that support it.
+        """
+        # only check this if we are in the first step of a workflow as output files of chained processing
+        # steps will not have correct GUID information
+        if self.step.data._internal_name != "cmsRun1":
+            self.logger.info("Not evaluating enforceGUIDInFileName parameter for step %s",
+                             self.step.data._internal_name)
+            return
+
+        self.logger.info("Evaluating if release %s supports enforceGUIDInFileName parameter...",
+                         self.getCmsswVersion())
+
+        # enable if release supports enforceGUIDInFileName and parameter is not set
+        if (isEnforceGUIDInFileNameSupported(self.getCmsswVersion()) and
+                not hasattr(self.process.source, "enforceGUIDInFileName")):
+            self.logger.info("Setting enforceGUIDInFileName to True.")
+            self.process.source.enforceGUIDInFileName = cms.untracked.bool(True)
+        else:
+            self.logger.info("CMSSW release does not support enforceGUIDInFileName.")
+
+        return
+
     def getCmsswVersion(self):
         """
         _getCmsswVersion_
@@ -769,6 +795,9 @@ class SetupCMSSWPset(ScriptInterface):
 
         # tweak for jobs reading LHE articles from CERN
         self.handleLHEInput()
+
+        # tweak jobs for enforceGUIDInFileName
+        self.handleEnforceGUIDInFileName()
 
         # Check if we accept skipping bad files
         if hasattr(self.step.data.application.configuration, "skipBadFiles"):

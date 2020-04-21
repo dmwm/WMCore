@@ -1,3 +1,15 @@
+1.3.3 to 1.3.4.pre1:
+  - RucioInjector has to close only those blocks injected into Rucio (Alan Malta Rodrigues) #9648
+  - Introducing the MSOutput module for Reqmgr2ms. (Todor Ivanov) #9640
+  - Introducing the DDM Service Wrapper. (Todor Ivanov) 171
+  - more unit tests (Alan Malta Rodrigues) #9629
+  - Validate KeepOutput settings in TaskChain spec (Alan Malta Rodrigues) #9637
+  - Workaround voms-proxy-init imcompatibilities (Alan Malta Rodrigues) #9637
+  - Add runtime check for enforceGUIDInFileName (Erik Gough) #9649
+  - Update rucio-clients version and add pymongo to the requirements list (Alan Malta Rodrigues) #9618
+ #9644
+
+
 1.3.3.pre2 to 1.3.3:
   - Bump deployment version and deployment tag (Alan Malta Rodrigues) #9635
   - Update default RucioInjector.listTiersToInject to an empty list (Alan Malta Rodrigues) #9646

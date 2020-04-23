@@ -266,7 +266,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # create relevant sites in wmbs
         rc = ResourceControl()
-        site_se_mapping = {'T2_XX_SiteA': 'a.example.com', 'T2_XX_SiteB': 'b.example.com'}
+        site_se_mapping = {'T2_XX_SiteA': 'T2_XX_SiteA', 'T2_XX_SiteB': 'T2_XX_SiteB'}
         for site, se in site_se_mapping.iteritems():
             rc.insertSite(site, 100, 200, se, cmsName=site, plugin="MockPlugin")
             daofactory = DAOFactory(package="WMCore.WMBS",
@@ -874,22 +874,22 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.queueWork(processingSpec.specUrl())
         elements = len(self.queue)
         self.queue.updateLocationInfo()
+        self.assertEqual(len(self.queue.status()), NBLOCKS_HICOMM)
         work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
+        self.assertEqual(len(ids), NBLOCKS_HICOMM)
         canceled = self.queue.cancelWork(ids)
         self.assertEqual(sorted(canceled), sorted(ids))
-        self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status()), NBLOCKS_HICOMM)
+        self.assertEqual(len(self.queue.status(status='Running')), NBLOCKS_HICOMM)
         self.assertEqual(len(self.queue.statusInbox(status='Canceled')), 1)
 
-        # now cancel a request
+        # create a new request with one fake file
         self.queue.queueWork(self.spec.specUrl())
-        elements = len(self.queue)
-        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000},
-                                  {})
-        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue), 1)
+        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(self.queue.status(status='Running')), len(self.queue.status()))
         ids = [x.id for x in work]
         canceled = self.queue.cancelWork(WorkflowName='testProduction')

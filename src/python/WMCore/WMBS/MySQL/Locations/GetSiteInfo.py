@@ -19,10 +19,14 @@ class GetSiteInfo(DBFormatter):
                  INNER JOIN wmbs_location_pnns wls ON wls.location = wl.id
                  INNER JOIN wmbs_pnns wpnn ON wpnn.id = wls.pnn
                  INNER JOIN wmbs_location_state wlst ON wlst.id = wl.state
-               WHERE wl.site_name = :site"""
+          """
 
     def execute(self, siteName=None, conn=None, transaction=False):
-        results = self.dbi.processData(self.sql, {'site': siteName},
+        if not siteName:
+            results = self.dbi.processData(self.sql, conn=conn,
+                                           transaction=transaction)
+        else:
+            sql = self.sql + " WHERE wl.site_name = :site"
+            results = self.dbi.processData(sql, {'site': siteName},
                                        conn=conn, transaction=transaction)
-        formatted = self.formatDict(results)
-        return formatted
+        return self.formatDict(results)

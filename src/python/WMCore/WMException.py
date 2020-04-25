@@ -6,7 +6,11 @@ General Exception class for WM modules
 
 """
 
-import exceptions
+try:
+    import exceptions
+except ImportError:
+    import builtins as exceptions
+
 import inspect
 import logging
 import sys

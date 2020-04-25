@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 import urllib2
-from cStringIO import StringIO
+from io import StringIO
 from functools import reduce
 from gzip import GzipFile
 from hashlib import md5

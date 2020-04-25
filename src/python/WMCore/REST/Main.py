@@ -20,7 +20,7 @@ import thread
 import time
 import traceback
 from argparse import ArgumentParser
-from cStringIO import StringIO
+from io import StringIO
 from glob import glob
 from subprocess import Popen, PIPE
 from pprint import pformat

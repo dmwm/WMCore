@@ -12,7 +12,7 @@ tasks might be extended to multi-threading in the future.
 from __future__ import division, print_function
 
 # system modules
-from httplib import HTTPException
+from http.client import HTTPException
 from operator import itemgetter
 from pprint import pformat
 from retry import retry

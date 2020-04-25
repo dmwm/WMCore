@@ -45,7 +45,7 @@ import logging
 import threading
 import time
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory

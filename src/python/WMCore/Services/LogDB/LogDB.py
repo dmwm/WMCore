@@ -9,7 +9,7 @@ import logging
 import re
 import threading
 from collections import defaultdict
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore.Lexicon import splitCouchServiceURL
 # project modules

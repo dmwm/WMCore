@@ -38,8 +38,8 @@ for row in data:
 """
 from __future__ import print_function
 
-import cStringIO as StringIO
-import httplib
+from io import StringIO
+import http.client as httplib
 import json
 import logging
 import os
@@ -199,8 +199,8 @@ class RequestHandler(object):
         if headers:
             curl.setopt(pycurl.HTTPHEADER, \
                         ["%s: %s" % (k, v) for k, v in headers.items()])
-        bbuf = StringIO.StringIO()
-        hbuf = StringIO.StringIO()
+        bbuf = StringIO()
+        hbuf = StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
         curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
         if capath:
@@ -421,8 +421,8 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=N
                 bbuf = io.BytesIO()
                 hbuf = io.BytesIO()
             else:
-                bbuf = StringIO.StringIO()
-                hbuf = StringIO.StringIO()
+                bbuf = StringIO()
+                hbuf = StringIO()
             curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
             curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
             mcurl.add_handle(curl)

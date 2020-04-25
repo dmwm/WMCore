@@ -18,7 +18,7 @@ import time
 import traceback
 import urllib
 from datetime import datetime
-from httplib import HTTPException
+from http.client import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Services.Requests import JSONRequests

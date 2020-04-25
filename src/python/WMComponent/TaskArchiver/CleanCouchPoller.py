@@ -1,7 +1,7 @@
 """
 Perform cleanup actions
 """
-import httplib
+import http.client as httplib
 import json
 import logging
 import os.path

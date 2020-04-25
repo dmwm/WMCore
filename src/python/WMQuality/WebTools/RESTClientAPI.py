@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import urllib
-from httplib import HTTPConnection
+from http.client import HTTPConnection
 
 try:
     from urlparse import urlparse

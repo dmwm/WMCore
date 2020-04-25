@@ -11,7 +11,7 @@ The response from the remote server is cached if expires/etags are set.
 from __future__ import division, print_function
 
 import base64
-import cStringIO as StringIO
+from io import StringIO
 import logging
 import os
 import shutil
@@ -32,7 +32,7 @@ try:
 except ImportError:
     # PY3
     from urllib.parse import urlparse
-from httplib import HTTPException
+from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
@@ -475,8 +475,8 @@ class Requests(dict):
         fullParams = [(fieldName, (c.FORM_FILE, fileName))]
         fullParams.extend(params)
         c.setopt(c.HTTPPOST, fullParams)
-        bbuf = StringIO.StringIO()
-        hbuf = StringIO.StringIO()
+        bbuf = StringIO()
+        hbuf = StringIO()
         c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
         c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
         if capath:
@@ -513,7 +513,7 @@ class Requests(dict):
         capath = self.getCAPath()
         import pycurl
 
-        hbuf = StringIO.StringIO()
+        hbuf = StringIO()
 
         with open(fileName, "wb") as fp:
             curl = pycurl.Curl()

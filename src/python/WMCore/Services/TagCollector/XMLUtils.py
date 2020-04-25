@@ -9,7 +9,7 @@ Description: Set of utilities for RequestManager code
 
 from __future__ import (division, print_function)
 
-import cStringIO as StringIO
+from io import StringIO
 import re
 import xml.etree.cElementTree as ET
 
@@ -39,7 +39,7 @@ def adjust_value(value):
 def xml_parser(data, prim_key):
     "Generic XML parser"
     if isinstance(data, basestring):
-        stream = StringIO.StringIO()
+        stream = io.StringIO()
         stream.write(data)
         stream.seek(0)
     else:

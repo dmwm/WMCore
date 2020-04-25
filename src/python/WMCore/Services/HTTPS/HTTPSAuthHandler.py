@@ -7,7 +7,7 @@ src/python/WMCore/WMSpec/Steps/Executors/DQMUpload.py
 from __future__ import print_function, division
 import logging
 import urllib2
-import httplib
+import http.client as httplib
 import ssl
 
 

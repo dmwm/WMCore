@@ -6,8 +6,11 @@ Record a set of tweakable parameters from a CMSSW Configuration in a CMSSW
 independent python structure
 
 """
+try:
+    from StringIO import StringIO ## for Python 2
+except ImportError:
+    from io import StringIO ## for Python 3
 
-import StringIO
 import imp
 import inspect
 import json
@@ -394,7 +397,7 @@ class PSetTweak:
 
 
             jsoniser = JSONiser()
-            jsoniser.dejson(json.load(StringIO.StringIO(jsonContent)))
+            jsoniser.dejson(json.load(StringIO(jsonContent)))
 
             for param, value in jsoniser.parameters.items():
                 self.addParameter(param , value)

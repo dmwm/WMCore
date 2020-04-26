@@ -12,7 +12,8 @@ import os
 import tempfile
 from WMQuality.TestInit import TestInit
 from Utils.TemporaryEnvironment import tmpEnv
-from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch, isCMSSWSupported
+from WMCore.WMRuntime.Tools.Scram import (Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch,
+                                          isCMSSWSupported, isEnforceGUIDInFileNameSupported)
 
 
 class Scram_t(unittest.TestCase):
@@ -162,6 +163,45 @@ class Scram_t(unittest.TestCase):
         self.assertTrue(isCMSSWSupported('CMSSW_2_2_3', 'CMSSW_1_2_3'))
         self.assertTrue(isCMSSWSupported('CMSSW_1_3_3', 'CMSSW_1_2_3'))
         self.assertTrue(isCMSSWSupported('CMSSW_1_2_4', 'CMSSW_1_2_3'))
+
+    def testisEnforceGUIDInFileNameSupported(self):
+        """
+        Test functionality of the `isEnforceGUIDInFileNameSupported` function
+        """
+        ### invalid input
+        self.assertFalse(isEnforceGUIDInFileNameSupported(None))
+        self.assertFalse(isEnforceGUIDInFileNameSupported(''))
+
+        ### forever supported
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_11_0_0'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_11_0_2'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_11_1_0_pre1'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_11_1_0_patch1'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_11_1_1'))
+
+        ### specific releases
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_2_20_UL'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_9_4_16_UL'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_8_0_34_UL'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_7_1_45_patch3'))
+
+        ### minor supported releases
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_6_8'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_6_9'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_6_8_patch1'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_6_9_patch1'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_10_2_20'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_9_4_16'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_9_3_17'))
+        self.assertTrue(isEnforceGUIDInFileNameSupported('CMSSW_8_0_34'))
+
+        ### releases not supported
+        self.assertFalse(isEnforceGUIDInFileNameSupported('CMSSW_10_6_7'))
+        self.assertFalse(isEnforceGUIDInFileNameSupported('CMSSW_10_7_0'))
+        self.assertFalse(isEnforceGUIDInFileNameSupported('CMSSW_10_2_19'))
+        self.assertFalse(isEnforceGUIDInFileNameSupported('CMSSW_10_3_10'))
+        self.assertFalse(isEnforceGUIDInFileNameSupported('CMSSW_5_3_10'))
+
 
 if __name__ == '__main__':
     unittest.main()

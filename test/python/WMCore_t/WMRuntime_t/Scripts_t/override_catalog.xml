@@ -1,0 +1,4 @@
+<storage-mapping>
+	<pfn-to-lfn path-match="../my_first_step/my_input_module.root" protocol="direct" result="../my_first_step/my_input_module.root"/>
+	<lfn-to-pfn path-match="../my_first_step/my_input_module.root" protocol="direct" result="../my_first_step/my_input_module.root"/>
+</storage-mapping>

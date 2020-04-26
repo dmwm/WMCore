@@ -643,11 +643,21 @@ class SetupCMSSWPset(ScriptInterface):
 
         Enable enforceGUIDInFileName for CMSSW releases that support it.
         """
+        # skip it for CRAB jobs
+        if self.crabPSet:
+            return
+
         # only check this if we are in the first step of a workflow as output files of chained processing
         # steps will not have correct GUID information
         if self.step.data._internal_name != "cmsRun1":
             self.logger.info("Not evaluating enforceGUIDInFileName parameter for step %s",
                              self.step.data._internal_name)
+            return
+
+        # only enable if source is PoolSource or EmbeddedRootSource
+        if self.process.source.type_() not in ["PoolSource", "EmbeddedRootSource"]:
+            self.logger.info("Not evaluating enforceGUIDInFileName parameter for process source %s",
+                             self.process.source.type_())
             return
 
         self.logger.info("Evaluating if release %s supports enforceGUIDInFileName parameter...",

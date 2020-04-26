@@ -31,6 +31,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.Policy.Start import startPolicy
@@ -427,11 +428,16 @@ class WorkQueue(WorkQueueBase):
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         # the parent element (from local couch) can be fetch via:
         # curl -ks -X GET 'http://localhost:5984/workqueue/<ParentQueueId>'
-        msg = "Running WMBS preparation for %s with ParentQueueId %s"
-        self.logger.info(msg, match['RequestName'], match['ParentQueueId'])
+
+        # Keep in mind that WQE contains sites, wmbs location contains pnns
+        commonSites = possibleSites(match)
+        commonLocation = self.cric.PSNstoPNNs(commonSites)
+        msg = "Running WMBS preparation for %s with ParentQueueId %s,\n  with common location %s"
+        self.logger.info(msg, match['RequestName'], match['ParentQueueId'], commonLocation)
 
         mask = match['Mask']
-        wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
+        wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask,
+                                self.params['CacheDir'], commonLocation)
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)
         self.logger.info("Created top level subscription %s for %s with %s files",

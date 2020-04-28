@@ -35,7 +35,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         super(StepChainParentageFixTask, self).__init__(config)
         self.reqmgrDB = RequestDBWriter(config.reqmgrdb_url)
         self.dbsSvc = DBS3Reader(config.dbs_url, logger=self.logger)
-        self.statusToCheck = ["announced", "normal-archived"]
+        self.statusToCheck = ["closed-out", "announced", "normal-archived"]
 
     def setConcurrentTasks(self, config):
         """
@@ -48,12 +48,14 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         Look through the stepchain workflows with ParentageResolved flag is False.
         Fix the StepChain parentage and update the ParentageResolved flag to True
         """
-        self.logger.info("Updating parentage for StepChain workflows for %s", self.statusToCheck)
+        self.logger.info("Running fixStepChainParentage thread for statuses: %s", self.statusToCheck)
         childDatasets = set()
         requests = set()
         requestsByChildDataset = {}
         for status in self.statusToCheck:
             reqByChildDS= getChildDatasetsForStepChainMissingParent(self.reqmgrDB, status)
+            self.logger.info("Retrieved %d datasets to fix parentage, in status: %s",
+                             len(reqByChildDS), status)
             childDatasets = childDatasets.union(set(reqByChildDS.keys()))
             # We need to just get one of the StepChain workflow if multiple workflow contains the same datasets. (i.e. ACDC)
             requestsByChildDataset.update(reqByChildDS)
@@ -65,6 +67,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         totalChildDS = len(childDatasets)
         fixCount = 0
         for childDS in childDatasets:
+            self.logger.info("Resolving parentage for dataset: %s", childDS)
             start = int(time.time())
             failedBlocks = self.dbsSvc.fixMissingParentageDatasets(childDS, insertFlag=True)
             end = int(time.time())

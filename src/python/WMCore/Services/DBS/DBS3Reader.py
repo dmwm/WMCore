@@ -1008,6 +1008,7 @@ class DBS3Reader(object):
         :return: blocks which failed to insert parentage. for retry
         """
         pDatasets = self.listDatasetParents(childDataset)
+        self.logger.info("Parent datasets for %s are: %s", childDataset, pDatasets)
         # print("parent datasets %s\n" % pDatasets)
         # pDatasets format is
         # [{'this_dataset': '/SingleMuon/Run2016D-03Feb2017-v1/MINIAOD', 'parent_dataset_id': 13265209, 'parent_dataset': '/SingleMuon/Run2016D-23Sep2016-v1/AOD'}]
@@ -1017,6 +1018,7 @@ class DBS3Reader(object):
 
         blocks = self.listBlocksWithNoParents(childDataset)
         failedBlocks = []
+        self.logger.info("Found %d blocks without parentage information", len(blocks))
         for blockName in blocks:
             try:
                 numFiles = self.findAndInsertMissingParentage(blockName, insertFlag=insertFlag)

@@ -18,7 +18,7 @@ import time
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.Rucio.Rucio import Rucio
+from WMCore.Services.Rucio.Rucio import Rucio, RUCIO_VALID_PROJECT
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -83,6 +83,10 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.createBlockRules = config.RucioInjector.createBlockRules
         self.skipRulesForTiers = config.RucioInjector.skipRulesForTiers
         self.listTiersToInject = config.RucioInjector.listTiersToInject
+        if config.RucioInjector.metaDIDProject not in RUCIO_VALID_PROJECT:
+            msg = "Component configured with an invalid 'project' DID: %s"
+            raise RucioInjectorException(msg % config.RucioInjector.metaDIDProject)
+        self.metaDIDProject = dict(project=config.RucioInjector.metaDIDProject)
 
         # setup cache for container and blocks (containers can be much longer, make 6 days now)
         self.containersCache = MemoryCache(config.RucioInjector.cacheExpiration * 3, set())
@@ -204,7 +208,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             for container in uninjectedData[location]:
                 # same container can be at multiple locations
                 if container not in self.containersCache and container not in newContainers:
-                    if self.rucio.createContainer(container):
+                    if self.rucio.createContainer(container, meta=self.metaDIDProject):
                         logging.info("Container %s inserted into Rucio", container)
                         newContainers.add(container)
                     else:
@@ -227,7 +231,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:
                     if block not in self.blocksCache:
-                        if self.rucio.createBlock(block, rse=rseName):
+                        if self.rucio.createBlock(block, rse=rseName, meta=self.metaDIDProject):
                             logging.info("Block %s inserted into Rucio", block)
                             newBlocks.add(block)
                         else:

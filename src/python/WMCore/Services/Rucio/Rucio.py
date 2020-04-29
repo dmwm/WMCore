@@ -455,6 +455,8 @@ class Rucio(object):
            * comment:   Comment about the rule.
            * meta:      Metadata, as dictionary.
         :return: it returns either an empty list or a list with a string id for the rule created
+
+        NOTE: if there is an AccessDenied rucio exception, it raises a WMRucioException
         """
         kwargs.setdefault('grouping', 'ALL')
         kwargs.setdefault('account', self.rucioParams.get('account'))
@@ -473,6 +475,9 @@ class Rucio(object):
         response = []
         try:
             response = self.cli.add_replication_rule(dids, copies, rseExpression, **kwargs)
+        except AccessDenied as ex:
+            msg = "AccessDenied creating DID replication rule. Error: %s" % str(ex)
+            raise WMRucioException(msg)
         except Exception as ex:
             self.logger.error("Exception creating rule replica for data: %s. Error: %s", names, str(ex))
         return response

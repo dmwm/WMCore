@@ -18,7 +18,7 @@ import time
 from Utils.MemoryCache import MemoryCache
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.Rucio.Rucio import Rucio, RUCIO_VALID_PROJECT
+from WMCore.Services.Rucio.Rucio import Rucio, WMRucioException, RUCIO_VALID_PROJECT
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -272,12 +272,13 @@ class RucioInjectorPoller(BaseWorkerThread):
             if not self._isBlockTierAllowed(item['blockname']):
                 logging.debug("Component configured to skip block rule for: %s", item['blockname'])
                 continue
+            kwargs = dict(activity="Production Output", account=self.rucioAcct,
+                          grouping="DATASET", comment="WMAgent automatic container rule",
+                          meta=self.metaData)
             rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
             # DATASET = replicates all files in the same block to the same RSE
-            resp = self.rucio.createReplicationRule(item['blockname'], rseExpression="rse=%s" % rseName,
-                                                    account=self.rucioAcct, grouping="DATASET",
-                                                    comment="WMAgent production site",
-                                                    meta=self.metaData)
+            resp = self.rucio.createReplicationRule(item['blockname'],
+                                                    rseExpression="rse=%s" % rseName, **kwargs)
             if resp:
                 msg = "Block rule created for block: %s, at: %s, with rule id: %s"
                 logging.info(msg, item['blockname'], item['pnn'], resp[0])
@@ -411,24 +412,37 @@ class RucioInjectorPoller(BaseWorkerThread):
         # Create the subscription objects and add them to the list
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
-            rse = subInfo['site']
+            kwargs = dict(ask_approval=False, activity="Production Output",
+                          account=self.rucioAcct, grouping="ALL",
+                          comment="WMAgent automatic container rule", meta=self.metaData)
+            rse = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
             if not self._isContainerTierAllowed(container):
                 logging.debug("Component configured to skip container rule for: %s", container)
                 continue
-            logging.info("Creating container rule for %s against RSE %s", container, rse)
 
             rseName = "%s_Test" % rse if self.testRSEs else rse
-            # ALL = replicates all files to the same RSE
-            resp = self.rucio.createReplicationRule(container, rseExpression="rse=%s" % rseName,
-                                                    account=self.rucioAcct, grouping="ALL",
-                                                    comment="WMAgent automatic container rule",
-                                                    meta=self.metaData)
+            logging.info("Creating container rule for %s against RSE %s", container, rseName)
+            try:
+                # ALL = replicates all files to the same RSE
+                resp = self.rucio.createReplicationRule(container,
+                                                        rseExpression="rse=%s" % rseName, **kwargs)
+            except WMRucioException as exc:
+                msg = "Failed to create container rule for (retrying with approval): %s" % container
+                logging.warning(msg)
+                kwargs["ask_approval"] = True
+                try:
+                    resp = self.rucio.createReplicationRule(container,
+                                                            rseExpression="rse=%s" % rseName, **kwargs)
+                except Exception as exc:
+                    msg = "Failed once again to create container rule for: %s" % container
+                    msg += "\nWill retry again in the next cycle. Error: %s" % str(exc)
+                    continue
             if resp:
                 logging.info("Container rule created for %s under rule id: %s", container, resp)
                 subscriptionsMade.append(subInfo['id'])
             else:
-                logging.error("Failed to create rule for block: %s", container)
+                logging.error("Failed to create rule for container: %s", container)
 
         # Register the result in DBSBuffer
         if subscriptionsMade:

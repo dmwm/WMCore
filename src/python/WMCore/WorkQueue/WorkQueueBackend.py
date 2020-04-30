@@ -354,6 +354,7 @@ class WorkQueueBackend(object):
         options = {}
         options['include_docs'] = True
         options['descending'] = True
+        options['limit'] = 50000
         options['resources'] = thresholds
         if team:
             options['team'] = team

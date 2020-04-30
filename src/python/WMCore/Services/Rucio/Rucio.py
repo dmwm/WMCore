@@ -16,12 +16,33 @@ from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, Acc
 from WMCore.WMException import WMException
 
 
+RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
+
+
 class WMRucioException(WMException):
     """
     _WMRucioException_
     Generic WMCore exception for Rucio
     """
     pass
+
+
+def validateMetaData(did, metaDict, logger):
+    """
+    This function can be extended in the future, for now it will only
+    validate the DID creation metadata, more specifically only the
+    "project" parameter
+    :param did: the DID that will be inserted
+    :param metaDict: a dictionary with all the DID metadata data to be inserted
+    :param logger: a logger object
+    :return: False if validation fails, otherwise True
+    """
+    if metaDict.get("project", "Production") in RUCIO_VALID_PROJECT:
+        return True
+    msg = "DID: %s has an invalid 'project' meta-data value: %s" % (did, metaDict['project'])
+    msg += "The supported 'project' values are: %s" % str(RUCIO_VALID_PROJECT)
+    logger.error(msg)
+    return False
 
 
 class Rucio(object):
@@ -258,6 +279,8 @@ class Rucio(object):
         :return: a boolean to represent whether it succeeded or not
         """
         response = False
+        if not validateMetaData(name, kwargs.get("meta", {}), logger=self.logger):
+            return response
         try:
             # add_container(scope, name, statuses=None, meta=None, rules=None, lifetime=None)
             response = self.cli.add_container(scope, name, **kwargs)
@@ -292,6 +315,8 @@ class Rucio(object):
               being produced
         """
         response = False
+        if not validateMetaData(name, kwargs.get("meta", {}), logger=self.logger):
+            return response
         try:
             # add_dataset(scope, name, statuses=None, meta=None, rules=None, lifetime=None, files=None, rse=None)
             response = self.cli.add_dataset(scope, name, **kwargs)

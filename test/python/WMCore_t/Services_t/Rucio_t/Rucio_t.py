@@ -8,7 +8,7 @@ import os
 
 from rucio.client import Client as testClient
 
-from WMCore.Services.Rucio.Rucio import Rucio
+from WMCore.Services.Rucio.Rucio import Rucio, validateMetaData, RUCIO_VALID_PROJECT
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
@@ -234,3 +234,19 @@ class RucioTest(EmulatedUnitTestCase):
         # Properly formatted rule, rule manually created
         res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc1")
         self.assertTrue(res)
+
+    def testMetaDataValidation(self):
+        """
+        Test the `validateMetaData` validation function
+        """
+        for thisProj in RUCIO_VALID_PROJECT:
+            response = validateMetaData("any_DID_name", dict(project=thisProj), self.myRucio.logger)
+            self.assertTrue(response)
+
+        # test with no "project" meta data at all
+        response = validateMetaData("any_DID_name", dict(), self.myRucio.logger)
+        self.assertTrue(response)
+
+        # now an invalid "project" meta data
+        response = validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
+        self.assertFalse(response)

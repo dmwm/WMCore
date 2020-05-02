@@ -242,16 +242,13 @@ class RucioInjectorPoller(BaseWorkerThread):
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isBlockTierAllowed(self, blockName):
         """
-        Performs a couple of checks on the block datatier, such as:
-          * is the datatier supposed to be injected by this component
-          * is the datatier supposed to get rules created by this component
+        Checks whether this blockname contains a datatier that we want to
+        be handled by this component, thus block-level rule creation as well
         :return: True if the component can proceed with this block, False otherwise
         """
         endBlock = blockName.rsplit('/', 1)[1]
         endTier = endBlock.split('#')[0]
         if endTier not in self.listTiersToInject:
-            return False
-        if endTier in self.skipRulesForTiers:
             return False
         return True
 
@@ -355,6 +352,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                 if not self._isContainerTierAllowed(container, checkRulesList=False):
                     continue
                 for block in migratedBlocks[location][container]:
+                    logging.info("Closing block: %s", block)
                     if self.rucio.closeBlockContainer(block):
                         self.setBlockClosed.execute(block)
                     else:

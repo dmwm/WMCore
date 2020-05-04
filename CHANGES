@@ -1,3 +1,9 @@
+1.3.3.patch2 to 1.3.3.patch3:
+  - Always create block-level rules for blocks inserted by RucioInjector (Alan Malta Rodrigues) #9673
+  - Properly deal with MSS/Tape container rule creation (Alan Malta Rodrigues) #9673
+  - Added 'project' metadata for block and container objects (Alan Malta Rodrigues) #9673
+
+
 1.3.3.patch1 to 1.3.3.patch2:
   - Consider PU location for top level MC task (Alan Malta Rodrigues) #9662
   - Check process source when enabling GUID checks (Erik Gough) #9662

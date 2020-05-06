@@ -117,10 +117,10 @@ class WorkQueueBackend(object):
         """
         # Can't save spec to inbox, it needs to be visible to child queues
         # Can't save empty dict so add dummy variable
-        dummy_values = {'name': wmspec.name()}
+        dummyValues = {'name': wmspec.name()}
         # change specUrl in spec before saving (otherwise it points to previous url)
         wmspec.setSpecUrl(self.db['host'] + "/%s/%s/spec" % (self.db.name, wmspec.name()))
-        return wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
+        return wmspec.saveCouch(self.hostWithAuth, self.db.name, dummyValues)
 
     def getWMSpec(self, name):
         """Get the spec"""
@@ -136,7 +136,7 @@ class WorkQueueBackend(object):
                                             i.e. a workflow which has been split
         """
         if not units:
-            return
+            return []
         # store spec file separately - assume all elements share same spec
         self.insertWMSpec(units[0]['WMSpec'])
         newUnitsInserted = []
@@ -500,15 +500,15 @@ class WorkQueueBackend(object):
         """
         for db in [self.inbox, self.db]:
             for row in db.loadView('WorkQueue', 'conflicts')['rows']:
-                element_id = row['id']
+                elementId = row['id']
                 try:
-                    conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev)) \
+                    conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(elementId, rev)) \
                                             for rev in row['value']]
                     fixed_elements = fixElementConflicts(*conflicting_elements)
                     if self.saveElements(fixed_elements[0]):
                         self.saveElements(*fixed_elements[1:])  # delete others (if merged value update accepted)
                 except Exception as ex:
-                    self.logger.error("Error resolving conflict for %s: %s" % (element_id, str(ex)))
+                    self.logger.error("Error resolving conflict for %s: %s" % (elementId, str(ex)))
 
     def recordTaskActivity(self, taskname, comment=''):
         """Record a task for monitoring"""

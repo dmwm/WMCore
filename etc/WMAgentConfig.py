@@ -133,7 +133,7 @@ config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
-config.WorkQueueManager.queueParams["WorkPerCycle"] = 100  # don't pull more than this number of elements per cycle
+config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
 
 config.component_("DBS3Upload")

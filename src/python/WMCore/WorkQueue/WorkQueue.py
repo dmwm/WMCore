@@ -132,6 +132,9 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
 
+        # to be used in some CouchDB view calls, as a limit parameter
+        self.params.setdefault('sliceSize', 5000)
+
         self.params['QueueURL'] = self.backend.queueUrl  # url this queue is visible on
         # backend took previous QueueURL and sanitized it
         self.params.setdefault('WMBSUrl', None)  # this will only be set on local Queue
@@ -199,7 +202,8 @@ class WorkQueue(WorkQueueBase):
                                                               fullRefreshInterval=self.params[
                                                                   'FullLocationRefreshInterval'],
                                                               updateIntervalCoarseness=self.params[
-                                                                  'LocationRefreshInterval'])
+                                                                  'LocationRefreshInterval'],
+                                                              sliceSize=self.params['sliceSize'])
 
         # used for only global WQ
         if self.params.get('ReqMgrServiceURL'):

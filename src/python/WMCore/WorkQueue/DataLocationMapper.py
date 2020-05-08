@@ -181,25 +181,36 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         super(WorkQueueDataLocationMapper, self).__init__(logger, **kwargs)
 
     def __call__(self):
-        dataItems = self.backend.getActiveData()
+        self.logger.info("Executing WorkQueueDataLocationMapper ...")
+        # instead of fetching the whole data in one call, let's use some
+        # couch functionalities and break that down in slices
 
-        dataLocations = super(WorkQueueDataLocationMapper, self).__call__(dataItems)
-        self.logger.info("Found %d unique input data to update location", len(dataItems))
+        counter = 0
+        while True:
+            self.logger.info("Fetching WorkQueue active data with limit: %s, skip: %s",
+                             self.params["sliceSize"], self.params["sliceSize"] * counter)
+            dataItems = self.backend.getActiveData()
+            if not dataItems:
+                break
+            self.logger.info("Have %d active data to resolve their location", len(dataItems))
+            dataLocations = super(WorkQueueDataLocationMapper, self).__call__(dataItems)
 
-        # elements with multiple changed data items will fail fix this, or move to store data outside element
-        modified = []
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
-                elements = self.backend.getElementsForData(data)
-                for element in elements:
-                    if element.get('NoInputUpdate', False):
-                        continue
-                    if sorted(locations) != sorted(element['Inputs'][data]):
-                        self.logger.info("%s, setting location to: %s", data, locations)
-                        element['Inputs'][data] = locations
-                        modified.append(element)
-        self.logger.info("Updating %d elements for Input location update", len(modified))
-        self.backend.saveElements(*modified)
+            self.logger.info("Found %d unique input data to update location", len(dataItems))
+            # elements with multiple changed data items will fail fix this, or move to store data outside element
+            modified = []
+            for _, dataMapping in dataLocations.items():
+                for data, locations in dataMapping.items():
+                    elements = self.backend.getElementsForData(data)
+                    for element in elements:
+                        if element.get('NoInputUpdate', False):
+                            continue
+                        if sorted(locations) != sorted(element['Inputs'][data]):
+                            self.logger.info("%s, setting location to: %s", data, locations)
+                            element['Inputs'][data] = locations
+                            modified.append(element)
+            self.logger.info("Updating %d elements for Input location update", len(modified))
+            self.backend.saveElements(*modified)
+            counter += 1
 
         numParents = self.updateParentLocation()
         numPileups = self.updatePileupLocation()

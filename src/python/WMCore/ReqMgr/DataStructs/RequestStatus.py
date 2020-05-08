@@ -83,6 +83,25 @@ ACTIVE_STATUS = ["new",
                  "aborted-completed",
                  "rejected"]
 
+### WMSTATS_JOB_INFO + WMSTATS_NO_JOB_INFO is meant to be equal to ACTIVE_STATUS
+WMSTATS_JOB_INFO = ["running-open",
+                    "running-closed",
+                    "force-complete",
+                    "completed",
+                    "closed-out"]
+
+WMSTATS_NO_JOB_INFO = ["new",
+                       "assignment-approved",
+                       "assigned",
+                       "staging",
+                       "staged",
+                       "acquired",
+                       "failed",
+                       "announced",
+                       "aborted",
+                       "aborted-completed",
+                       "rejected"]
+
 ### Used for monitoring in T0-WMStats. See: Services/WMStats/WMStatsReader
 T0_ACTIVE_STATUS = ["new",
                     "Closed",

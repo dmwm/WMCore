@@ -43,6 +43,7 @@ from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 
 
 def createConfigForJSON(config):
@@ -166,11 +167,9 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # Tier0 Agent don't need this
         if hasattr(self.config, "Tier0Feeder"):
-            self.wmstatsServerSvc = None
+            self.reqmgrReader = None
         else:
-            wmstatsSvcURL = self.config.General.centralWMStatsURL.replace("couchdb/wmstats",
-                                                                          "wmstatsserver")
-            self.wmstatsServerSvc = WMStatsServer(wmstatsSvcURL)
+            self.reqmgrReader = RequestDBReader(self.config.AnalyticsDataCollector.centralRequestDBURL)
 
         self.dbsUtil = DBSBufferUtil()
 
@@ -334,12 +333,22 @@ class DBSUploadPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         success = True
-        if not self.wmstatsServerSvc:
+        if not self.reqmgrReader:
             self.datasetParentageCache = {}
             return success
 
+        statusList = ["running-open", "running-closed", "completed"]
         try:
-            self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
+            results = self.reqmgrReader.getRequestsByStatusAndType(statusList, "StepChain", detail=True)
+
+            # same logic as of WMStatsServer.getChildParentDatasetMap
+            self.datasetParentageCache = {}
+            for reqName, reqData in results.items():
+                if reqData["ChainParentageMap"]:
+                    for childParentDS in reqData["ChainParentageMap"].values():
+                        if childParentDS["ParentDset"]:
+                            for childDS in childParentDS["ChildDsets"]:
+                                self.datasetParentageCache[childDS] = childParentDS["ParentDset"]
         except Exception as ex:
             reason = getattr(ex, 'reason', '')
             msg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '

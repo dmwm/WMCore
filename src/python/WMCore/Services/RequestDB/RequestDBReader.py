@@ -251,3 +251,20 @@ class RequestDBReader(object):
         data = self._getCouchView("byparentageflag", options)
         datasetParentageInfo = self._formatCouchData(data, returnDict=True)
         return datasetParentageInfo
+
+    def getRequestsByStatusAndType(self, status, reqType, detail=False):
+        """
+        Fetch requests by status and type
+        :param status: either a single status or a list of them
+        :param reqType: either a single request type or a list of them
+        :return: a list of workflows matching the input parameters
+        """
+        if not isinstance(status, (list, set)):
+            status = [status]
+        if not isinstance(reqType, (list, set)):
+            reqType = [reqType]
+        query_keys = [[s, rt] for rt in reqType for s in status]
+
+        options = {"include_docs": detail}
+        data = self._getCouchView("requestsbystatusandtype", options, query_keys)
+        return self._formatCouchData(data, returnDict=True)

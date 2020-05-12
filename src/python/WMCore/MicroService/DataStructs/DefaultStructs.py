@@ -52,8 +52,10 @@ OUTPUT_REPORT = dict(start_time=0,
                      end_time=0,
                      execution_time=0,
                      error="",
+                     total_num_requests=0,
+                     total_num_campaigns=0,
                      num_datasets_subscribed=0,
-                     ddm_request_id=0)
+                     num_ddm_requests=0)
 
 
 OUTPUT_MONGO_DOC = dict()

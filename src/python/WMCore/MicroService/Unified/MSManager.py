@@ -94,17 +94,28 @@ class MSManager(object):
 
         # initialize output module
         if 'output' in self.services:
-            self.msOutput = MSOutput(self.msConfig, logger=self.logger)
+            reqStatus = ['completed', 'closed-out', 'announced']
+            self.msOutput = MSOutput(self.msConfig, logger=self.logger,
+                                     mode='MSOutput')
             thname = 'MSOutput'
             self.outputThread = start_new_thread(thname, daemon,
                                                  (self.output,
-                                                  ['completed',
-                                                   'closed-out',
-                                                   'announced'],
+                                                  reqStatus,
                                                   self.msConfig['interval'],
                                                   self.logger))
             self.logger.debug(
-                "+++ Running %s thread %s", thname, self.outputThread.running())
+                "=== Running %s thread %s", thname, self.outputThread.running())
+
+            self.msMongoDBUploader = MSOutput(self.msConfig, logger=self.logger,
+                                              mode='MongoDBUploader')
+            thname = 'MongoDBUploader'
+            self.mongoDBUploaderThread = start_new_thread(thname, daemon,
+                                                          (self.mongoDBUploader,
+                                                           reqStatus,
+                                                           self.msConfig['interval'],
+                                                           self.logger))
+            self.logger.debug(
+                "=== Running %s thread %s", thname, self.mongoDBUploaderThread.running())
 
     def _parseConfig(self, config):
         """
@@ -158,7 +169,8 @@ class MSManager(object):
         MSManager Output Dataplacement function.
         It subscribes the output datasets to the Data Management System.
         For references see
-        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Transferor
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Output
+        reqStatus: Status of requests to work on
         """
         startTime = datetime.utcnow()
         self.logger.info("Starting the output thread...")
@@ -166,6 +178,22 @@ class MSManager(object):
         endTime = datetime.utcnow()
         self.updateTimeUTC(res, startTime, endTime)
         self.logger.info("Total output execution time: %d secs", res['execution_time'])
+        self.statusOutput = res
+
+    def mongoDBUploader(self, reqStatus):
+        """
+        MSManager MongoDB Uploader function.
+        It uploads the documents describing a workflow output Data subscription
+        into MongoDb. For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Output
+        reqStatus: Status of requests to work on
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the output thread...")
+        res = self.msMongoDBUploader.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total mongoDBUploader execution time: %d secs", res['execution_time'])
         self.statusOutput = res
 
     def stop(self):

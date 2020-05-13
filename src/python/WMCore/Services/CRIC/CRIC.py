@@ -168,11 +168,12 @@ class CRIC(Service):
                 self["logger"].debug("No PSNs for PNN: %s" % pnn)
         return list(psns)
 
-    def PSNstoPNNs(self, psns):
+    def PSNstoPNNs(self, psns, allowPNNLess=False):
         """
         Given a list of PSNs, return all their PNNs
 
         :param psns: a string or a list of PSNs
+        :param allowPNNLess: flag to return the PSN as a PNN if no match
         :return: a list with unique PNNs matching those PSNs
         """
         mapping = self._CRICSiteQuery(callname='data-processing')
@@ -188,6 +189,9 @@ class CRIC(Service):
                     pnnSet.add(item['phedex_name'])
             if pnnSet:
                 pnns.update(pnnSet)
+            elif allowPNNLess:
+                pnns.add(psn)
+                self["logger"].debug("PSN %s has no PNNs. PNNLess flag enabled though.", psn)
             else:
                 self["logger"].debug("No PNNs for PSN: %s" % psn)
         return list(pnns)

@@ -188,7 +188,7 @@ class WMStatsWriter(WMStatsReader):
         threshold = int(time.time()) - sec
         options = {"startkey": threshold, "descending": True,
                    "stale": "update_after"}
-        result = self.couchDB.loadView(self.couchapp, "time", options)
+        result = self._getCouchView("time", options)
 
         for row in result['rows']:
             doc = {}
@@ -261,9 +261,8 @@ class WMStatsWriter(WMStatsReader):
         """
         delete all wmstats docs for a given requestName
         """
-        view = "allWorkflows"
-        options = {"key": requestName, "reduce": False}
-        docs = self.couchDB.loadView(self.couchapp, view, options=options)['rows']
+        options = {"reduce": False, "key": requestName}
+        docs = self._getCouchView("allWorkflows", options)['rows']
 
         for j in docs:
             doc = {}

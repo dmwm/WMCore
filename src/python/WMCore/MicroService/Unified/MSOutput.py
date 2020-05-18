@@ -10,6 +10,7 @@ from __future__ import division, print_function
 
 # system modules
 from retry import retry
+from pymongo import IndexModel, errors
 from pprint import pformat
 
 # WMCore modules
@@ -19,7 +20,11 @@ from WMCore.MicroService.DataStructs.Workflow import Workflow
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
+from WMCore.Services.CRIC.CRIC import CRIC
 from Utils.EmailAlert import EmailAlert
+from Utils.Pipeline import Pipeline, Functor
+from WMCore.Database.MongoDB import MongoDB
+from WMCore.MicroService.Unified.MSOutputTemplate import MSOutputTemplate
 
 
 class MSOutput(MSCore):
@@ -33,10 +38,10 @@ class MSOutput(MSCore):
         Runs the basic setup and initialization for the MSOutput module
         :microConfig: microservice configuration
         :mode: MSOutput Run mode:
-            - MSOutput:
+            - MSOutputConsumer:
                 Reads The workflow and transfer subscriptions from MongoDB and
                 makes transfer subscriptions.
-            - MongoDBUploader:
+            - MSOutputProducer:
                 Fetches Workflows in a given status from Reqmgr2 then creates
                 and uploads the documents to MongoDB.
         """
@@ -53,8 +58,30 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD'])
         self.msConfig.setdefault("rucioAccount", 'wma_test')
+        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
+        self.msConfig.setdefault("mongoDBPort", 8230)
         self.uConfig = {}
         self.emailAlert = EmailAlert(self.msConfig)
+
+        self.cric = CRIC(logger=self.logger)
+        self.uConfig = {}
+        self.campaigns = {}
+        self.psn2pnnMap = {}
+
+        msOutIndex = IndexModel('RequestName', unique=True)
+        msOutDBConfig = {
+            'database': 'msOutDB',
+            'server': self.msConfig['mongoDBUrl'],
+            'port': self.msConfig['mongoDBPort'],
+            'logger': self.logger,
+            'create': True,
+            'collections': [
+                ('msOutRelValColl', msOutIndex),
+                ('msOutNonRelValColl', msOutIndex)]}
+
+        self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
+        self.msOutRelValColl = self.msOutDB['msOutRelValColl']
+        self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -62,9 +89,21 @@ class MSOutput(MSCore):
         Fetch some data required for the output logic, e.g.:
         * unified configuration
         """
+        self.logger.info("Updating local cache information.")
         self.uConfig = self.unifiedConfig()
+        campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
+        self.psn2pnnMap = self.cric.PSNtoPNNMap()
         if not self.uConfig:
             raise RuntimeWarning("Failed to fetch the unified configuration")
+        elif not campaigns:
+            raise RuntimeWarning("Failed to fetch the campaign configurations")
+        elif not self.psn2pnnMap:
+            raise RuntimeWarning("Failed to fetch PSN x PNN map from CRIC")
+        else:
+            # let's make campaign look-up easier and more efficient
+            self.campaigns = {}
+            for camp in campaigns:
+                self.campaigns[camp['CampaignName']] = camp
 
     def execute(self, reqStatus):
         """
@@ -72,15 +111,15 @@ class MSOutput(MSCore):
         :return: summary
         """
 
-        # TODO:
+        # DONE:
         # To implement two modes of running the outputModule:
-        # MongoDBUploader - to fill in the MongoDB with workflows
-        # MSOutput - to deal with every each one of them accordingly
+        # MSOutputProducer - to fill in the MongoDB with workflows
+        # MSOutputConsumer - to deal with every each one of them accordingly
         # The threads to be created from MSmanager - the code base should be
         # contained all in this file
         # we need to add additional status to the mongo documment called
         # msOutpuStatus: (processing|done) or a bool value in order to avoid
-        # race conditions in case we have more than a single consummer running.
+        # race conditions in case we have more than a single consumer running.
 
         # start threads in MSManager which should call this method
         # NOTE:
@@ -95,7 +134,7 @@ class MSOutput(MSCore):
         #      object (through the bookkeeping machinery we choose/develop)
         summary = dict(OUTPUT_REPORT)
 
-        if self.mode == 'MongoDBUploader':
+        if self.mode == 'MSOutputProducer':
             self.logger.info("MSOutput is running in mode: %s" % self.mode)
             try:
                 total_num_requests = 0
@@ -108,8 +147,6 @@ class MSOutput(MSCore):
                     msg += "Service set to process up to {} requests per cycle.".format(
                         self.msConfig["limitRequestsPerCycle"])
                     self.logger.info(msg)
-                    self.logger.debug("requestRecords: {}".format(pformat(requestRecords)))
-
             except Exception as err:  # general error
                 msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
                 self.logger.exception(msg)
@@ -129,9 +166,10 @@ class MSOutput(MSCore):
                 self.updateReportDict(summary, "error", msg)
                 return summary
 
+            self.msOutputProducer(requestRecords)
             return summary
 
-        elif self.mode == 'MSOutput':
+        elif self.mode == 'MSOutputConsumer':
             self.logger.info("MSOutput is running in mode: %s" % self.mode)
 
             # this one is put here just for example.
@@ -200,13 +238,59 @@ class MSOutput(MSCore):
         # The following is taken from MSMonitor, just for an example.
         # get requests from ReqMgr2 data-service for given status
         # here with detail=False we get back list of records
-        requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
+        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
+        if not result:
+            requests = {}
+        else:
+            requests = result[0]
         self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
 
         return requests
 
-    def mongoUploader(self):
-        pass
+    def msOutputProducer(self, requestRecords):
+        """
+        A top level function to drive the upload of all the documents to MongoDB
+        """
+
+        # TODO:
+        #      To implement this as a functional pipeline the following sequence:
+        #      1) document streamer - to generate all the records coming from Reqmgr2
+        #      2) document stripper - to cut all the cut all the kews we do not need
+        #         Mongodb document creator - to pass it through the MongoDBTemplate
+        #      3) document updater - fetch & update all the needed info like campaign config etc.
+        #      4) MongoDB upload/update - to upload/update the document in Mongodb
+
+        # TODO:
+        #    to have the requestRecords generated through a call to docStreamer
+        #    and the call should happen from inside this function so that all
+        #    the Objects generated do not leave the scope of this function and
+        #    with that  to reduce big memory footprint
+
+        # DONE:
+        #    to set a destructive function at the end of the pipeline
+        # NOTE:
+        #    To discuss the collection names
+        self.logger.info("Running the msOutputProducer ...")
+        counter = 0
+        msPipelineRelVal = Pipeline([Functor(self.docTransformer),
+                                     Functor(self.docUpdater),
+                                     Functor(self.docUploader, self.msOutRelValColl),
+                                     Functor(self.docCleaner)])
+        msPipelineNonRelVal = Pipeline([Functor(self.docTransformer),
+                                        Functor(self.docUpdater),
+                                        Functor(self.docUploader, self.msOutNonRelValColl),
+                                        Functor(self.docCleaner)])
+        # TODO:
+        #    To generate the object from within the Function scope see above.
+        # for _, request in self.docStreamer():
+        for request in requestRecords:
+            counter += 1
+            if 'SubRequestType' in request.keys() and 'RelVal' in request['SubRequestType']:
+                msPipelineRelVal.run(request)
+            else:
+                msPipelineNonRelVal.run(request)
+            # if counter == stride:
+            #     break
 
     def mongoReader(self):
         pass
@@ -226,32 +310,75 @@ class MSOutput(MSCore):
         # Measure time and log queries
         pass
 
-    def _pushToMongo(self, reqStatus):
+    def _pushToMongo(self, mongoDBTemplate=None):
         """
         An auxiliary function to push documents with workflow/request
         representation into mongoDB
 
-        reqStatus: Is not the right parameter for that function
-        pass
-
-        {
-        "workflowName": "blah",
-        "transferStatus": "blah", # either "pending" or "done",
-        "creationTime": integer timestamp,
-        "lastUpdate": integer timestamp,
-        "outputDatasets": ["list of datasets"],
-        "transferIDs": ["list of transfer IDs"],
-        "destination": ["list of locations"],
-        "destinationOutputMap": [{"destination": ["list of locations"],
-                                  "datasets": ["list of datasets"]},
-                                 {"destination": ["list of locations"],
-                                  "datasets": ["list of datasets"]}],
-        "campaignOutputMap": [{"campaignName": "blah",
-                               "datasets": ["list of datasets"]},
-                              {"campaignName": "blah",
-                               "datasets": ["list of datasets"]}],
-        "numberOfCopies": integer
-        }
+        mongoDBTemplate: Is not the right parameter for that function
         """
+        if mongoDBTemplate is None:
+            mongoDBTemplate = self.mongoDBTemplate
 
+    def docStreamer(self):
+        """
+        A simple representation of a document streamer
+        """
+        # TODO:
+        #    To implement streaming in strides - chunks of documents of size 'stride'
+        requests = self.getRequestRecords()
+        while requests:
+            yield requests.popitem()
+
+    def docTransformer(self, doc):
+        """
+        A function used to transform a request record from reqmgr2 to a document
+        suitable for uploading to Mongodb
+        """
+        # Solution 1: Destructive function - to force clear of the the externally
+        #             referenced object and to return a new one (current solution)
+        #             NOTE: Leaves an empty dictionary behind (the clear method just
+        #                   clears all the keys of the dict, but does not delete it)
+        # Solution 2: To work in place (will keep the dynamic structure of the passed dict)
+        # Solution 3: To have 2 object buffers for the two diff types outside the function
+        try:
+            msOutDoc = MSOutputTemplate(doc)
+            doc.clear()
+        except Exception as ex:
+            msg = "ERR: Unable to create MSOutputTemplate for document %s" % pformat(doc)
+            msg += "ERR: %s" % str(ex)
+            self.logger.error(msg)
+        return msOutDoc
+
+    def docUpdater(self, msOutDocs):
+        """
+        A function intended to fetch and fill into the document all the needed
+        additional information like campaignOutputMap etc.
+        """
         pass
+
+    def docUploader(self, msOutDoc, dbColl, stride=None):
+        """
+        A function to upload documents to MongoDB. The session object to the  relevant
+        database and Collection must be passed as arguments
+        :msOutDocs: A list of documents of type MSOutputTemplate
+        :dbColl: an object containing an active connection to a MongoDB Collection
+        :stride: the max number of documents we are about to upload at once
+        """
+        # DONE: to determine the collection to which the document belongs based
+        #       on 'isRelval' key or some other criteria
+        # NOTE: We must return the document(s) at the end so that it can be explicitly
+        #       deleted outside the pipeline
+
+        # Skipping documents avoiding index unique property (documents having the
+        # same value for the indexed key as an already uploaded document)
+        try:
+            dbColl.insert_one(msOutDoc)
+        except errors.DuplicateKeyError as ex:
+            # TODO: Here we may wish to double check and make document update, so
+            #       that a change of the Request on ReqMgr may be reflected here too
+            pass
+        return msOutDoc
+
+    def docCleaner(self, doc):
+        return doc.clear()

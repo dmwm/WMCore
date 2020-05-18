@@ -45,6 +45,7 @@ from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
 
 def getdata(url, params, headers=None):
@@ -378,15 +379,18 @@ class ReqMgrService(TemplatedPage):
         self.wmstatsurl = cdict.get('wmstats_url', '%s/wmstatsserver' % base_url)
         if not self.wmstatsurl:
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
-        self.team_cache = []
+        # cache team information for 2 hours to limit wmstatsserver API calls
+        self.TEAM_CACHE = MemoryCacheStruct(7200, self.refreshTeams)
 
         # fetch assignment arguments specification from StdBase
         self.assignArgs = StdBase().getWorkloadAssignArgs()
         self.assignArgs = {key: val['default'] for key, val in self.assignArgs.items()}
 
     def getTeams(self):
-        "Helper function to get teams from wmstats or local cache"
-        teams = self.team_cache
+        return self.TEAM_CACHE.getData()
+
+    def refreshTeams(self):
+        "Helper function to cache team info from wmstats"
         url = '%s/data/teams' % self.wmstatsurl
         params = {}
         headers = {'Accept': 'application/json'}
@@ -396,11 +400,10 @@ class ReqMgrService(TemplatedPage):
                 print("WARNING: fail to get teams from %s" % url)
                 print(data)
             teams = data.get('result', [])
-            self.team_cache = teams
+            return teams
         except Exception as exp:
             print("WARNING: fail to get teams from %s" % url)
             print(str(exp))
-        return teams
 
     def update_scripts(self, force=False):
         "Update scripts dict"

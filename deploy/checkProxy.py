@@ -12,6 +12,10 @@ import os
 import re
 import subprocess
 import sys
+import socket
+
+
+HOST = socket.gethostname()
 
 
 def main(argv):
@@ -39,7 +43,6 @@ def main(argv):
     mail = os.getenv('USER')
     sendMail = True
     time = 3
-    host = os.getenv('HOSTNAME')
 
     try:
         opts, _args = getopt.getopt(argv, "", valid)
@@ -77,7 +80,7 @@ def main(argv):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, _err = p.communicate()
     proxyInfo = [line for line in out.split('\n') if line]
-    processTimeLeft(host, sendMail, verbose, proxyInfo, time, mail)
+    processTimeLeft(sendMail, verbose, proxyInfo, time, mail)
 
     if myproxy:
         os.environ["X509_USER_CERT"] = proxy
@@ -86,19 +89,18 @@ def main(argv):
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         proxyInfo = [line for line in out.split('\n') if line]
-        processTimeLeft(host, sendMail, verbose, proxyInfo, time, mail)
+        processTimeLeft(sendMail, verbose, proxyInfo, time, mail)
 
 
 def sendMailNotification(mail, message, proxyInfo='', verbose=False):
-    host = os.getenv('HOSTNAME')
     if verbose:
-        print("Host: {}".format(host))
+        print("Host: {}".format(HOST))
     # append proxy info to message
     for line in proxyInfo:
         message += "%s\n" % line
     # echo %msg | mail -s 'HOST proxy status' MAIL_ADD
     command = " echo \"%s\" | " % (message)
-    command += "mail -s '%s: Proxy status'" % (host)
+    command += "mail -s '%s: Proxy status'" % (HOST)
     command += " %s" % (mail)
 
     if verbose:
@@ -108,7 +110,7 @@ def sendMailNotification(mail, message, proxyInfo='', verbose=False):
         print("Email notification exit code: {}".format(retCode))
 
 
-def processTimeLeft(host, sendMail, verbose, proxyInfo, time, mail):
+def processTimeLeft(sendMail, verbose, proxyInfo, time, mail):
     """
     Receive the whole proxy info and return its time left.
     In case no proxy information is provided, it sends an
@@ -125,7 +127,7 @@ def processTimeLeft(host, sendMail, verbose, proxyInfo, time, mail):
                 timeLeft = timeLeft.split(':')[0]
                 continue
     else:
-        msg = "No valid proxy found in %s. " % host
+        msg = "No valid proxy found in %s. " % HOST
         msg += "Please create one.\n"
 
         if verbose:
@@ -140,11 +142,11 @@ def processTimeLeft(host, sendMail, verbose, proxyInfo, time, mail):
 
         ### // build message
     if int(time) >= int(timeLeft):
-        msg = "\nProxy file in %s is about to expire. " % host
+        msg = "\nProxy file in %s is about to expire. " % HOST
         msg += "Please renew it.\n"
         msg += "Hours left: %i\n" % int(timeLeft)
         if int(timeLeft) == 0:
-            msg = "Proxy file in %s HAS expired." % host
+            msg = "Proxy file in %s HAS expired." % HOST
             msg += "Please renew it.\n"
 
         if verbose:

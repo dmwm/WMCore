@@ -1,3 +1,15 @@
+1.3.4.pre2 to 1.3.5.pre1:
+  - Add patchComponent.sh script (Todor Ivanov) #9698
+  - Properly get hostname in checkProxy script (Alan Malta Rodrigues) #9696
+  - Cache team information in ReqMgr (Erik Gough) #9694
+  - Fixes #9688 (khurtado) #9689
+  - Print warning in Executor if condor_chirp is not found. (khurtado) #9682
+  - Always create block-level rules for blocks inserted by RucioInjector (Alan Malta Rodrigues) #9672
+  - Properly deal with MSS/Tape container rule creation (Alan Malta Rodrigues) #9666
+  - unit tests for the project validation (Alan Malta Rodrigues) #9667
+  - Added 'project' metadata for block and container objects (Alan Malta Rodrigues) #9667
+
+
 1.3.4.pre1 to 1.3.4.pre2:
   - Make StepChain parentage cherrypy thread more verbose (Alan Malta Rodrigues) #9657
   - Update port and library for webtest in the REST unit tests (Alan Malta Rodrigues) #9477

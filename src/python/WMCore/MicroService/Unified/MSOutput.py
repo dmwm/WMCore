@@ -25,6 +25,7 @@ from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.Unified.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.Unified.MSOutputStreamer import MSOutputStreamer
 
 
 class MSOutput(MSCore):
@@ -60,6 +61,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioAccount", 'wma_test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
+        self.msConfig.setdefault("streamerBufferFile", "/tmp/msOutput/requestRecords")
         self.uConfig = {}
         self.emailAlert = EmailAlert(self.msConfig)
 
@@ -166,7 +168,10 @@ class MSOutput(MSCore):
                 self.updateReportDict(summary, "error", msg)
                 return summary
 
-            self.msOutputProducer(requestRecords)
+            streamer = MSOutputStreamer(bufferFile=self.msConfig['streamerBufferFile'],
+                                        requestRecords=requestRecords,
+                                        logger=self.logger)
+            self.msOutputProducer(streamer())
             return summary
 
         elif self.mode == 'MSOutputConsumer':
@@ -283,7 +288,7 @@ class MSOutput(MSCore):
         # TODO:
         #    To generate the object from within the Function scope see above.
         # for _, request in self.docStreamer():
-        for request in requestRecords:
+        for _, request in requestRecords:
             counter += 1
             if 'SubRequestType' in request.keys() and 'RelVal' in request['SubRequestType']:
                 msPipelineRelVal.run(request)

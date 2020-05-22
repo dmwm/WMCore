@@ -344,7 +344,7 @@ class WMStatsReader(object):
 
         options = {"group_level": 1, "reduce": True}
 
-        results = self.couchDB.loadView(self.couchapp, "allWorkflows", options=options)['rows']
+        results = self._getCouchView("allWorkflows", options)['rows']
         requestNames = [x['key'] for x in results]
 
         workflowDict = self.reqDB.getStatusAndTypeByRequest(requestNames)
@@ -371,7 +371,7 @@ class WMStatsReader(object):
 
         options = {'reduce': True, 'group_level': 5, 'startkey': [requestName],
                    'endkey': [requestName, {}]}
-        results = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)
+        results = self._getCouchView("jobsByStatusWorkflow", options)
         jobDetails = {}
         for row in results['rows']:
             # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']
@@ -393,7 +393,7 @@ class WMStatsReader(object):
         options = {'include_docs': True, 'reduce': False,
                    'startkey': startKey, 'endkey': endKey,
                    'limit': limit}
-        result = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)
+        result = self._getCouchView("jobsByStatusWorkflow", options)
         jobInfoDoc = {}
         for row in result['rows']:
             keys = row['key']
@@ -417,7 +417,7 @@ class WMStatsReader(object):
 
     def getAllAgentRequestRevByID(self, agentURL):
         options = {"reduce": False}
-        results = self.couchDB.loadView(self.couchapp, "byAgentURL", options=options, keys=[agentURL])
+        results = self._getCouchView("byAgentURL", options, keys=[agentURL])
         idRevMap = {}
         for row in results['rows']:
             idRevMap[row['id']] = row['value']['rev']

@@ -101,14 +101,14 @@ class MSOutputTemplate(dict):
                     myDoc[key] = deepcopy(doc[key])
 
         # if any object attribute is passed as a **kwargs parameter then
-        # overwrite those from the doc
+        # overwrite the equivalent parameter which was coming with the doc
         self._checkAttr(docTemplate, myDoc, update=True, throw=True, **kwargs)
 
         # enforce a full check on the final document
         self._checkAttr(docTemplate, myDoc, update=False, throw=True, **myDoc)
 
         # final validation:
-        if self._checkValid(myDoc):
+        if self._checkValid(myDoc, throw=True):
             self.update(myDoc)
 
     def checkAttr(self):
@@ -171,7 +171,7 @@ class MSOutputTemplate(dict):
                     return False
         return True
 
-    def _checkValid(self, myDoc):
+    def _checkValid(self, myDoc, throw=False):
         """
         An internal method to be used in order to check for some mandatory fields
         before announcing the created document for valid
@@ -195,7 +195,10 @@ class MSOutputTemplate(dict):
         if not all(valid):
             # NOTE: Same as above
             msg = "ERROR: Missing Mandatory Fields: {} for: {}".format(missing, template)
-            raise KeyError(msg)
+            if throw:
+                raise KeyError(msg)
+            else:
+                return False
         return True
 
     def setRelVal(self, isRelVal):

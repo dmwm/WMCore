@@ -355,12 +355,12 @@ class MSOutput(MSCore):
             self.logger.error(msg)
         return msOutDoc
 
-    def docUpdater(self, msOutDocs):
+    def docUpdater(self, msOutDoc):
         """
         A function intended to fetch and fill into the document all the needed
         additional information like campaignOutputMap etc.
         """
-        pass
+        return msOutDoc
 
     def docUploader(self, msOutDoc, dbColl, stride=None):
         """

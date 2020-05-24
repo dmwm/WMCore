@@ -95,9 +95,10 @@ class MSManager(object):
         # initialize output module
         if 'output' in self.services:
             reqStatus = ['completed', 'closed-out', 'announced']
-            self.msOutputConsumer = MSOutput(self.msConfig, logger=self.logger,
-                                             mode='MSOutputConsumer')
+
             thname = 'MSOutputConsumer'
+            self.msOutputConsumer = MSOutput(self.msConfig, logger=self.logger,
+                                             mode=thname)
             self.outputConsumerThread = start_new_thread(thname, daemon,
                                                          (self.outputConsumer,
                                                           reqStatus,
@@ -106,9 +107,9 @@ class MSManager(object):
             self.logger.debug(
                 "=== Running %s thread %s", thname, self.outputConsumerThread.running())
 
-            self.msOutputProducer = MSOutput(self.msConfig, logger=self.logger,
-                                             mode='MSOutputProducer')
             thname = 'MSOutputProducer'
+            self.msOutputProducer = MSOutput(self.msConfig, logger=self.logger,
+                                             mode=thname)
             self.outputProducerThread = start_new_thread(thname, daemon,
                                                          (self.outputProducer,
                                                           reqStatus,

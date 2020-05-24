@@ -66,7 +66,7 @@ class MSOutputTemplate(dict):
             ('RequestName', None, unicode),
             ('RequestStatus', None, unicode),
             ('creationTime', None, Timestamp),
-            ('lastUpdate', None, float),
+            ('lastUpdate', None, Timestamp),
             ('isRelVal', None, bool),
             ('isTaken', None, bool),
             ('OutputDatasets', None, list),

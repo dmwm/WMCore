@@ -24,7 +24,7 @@ from WMCore.Services.CRIC.CRIC import CRIC
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
-from WMCore.MicroService.Unified.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
 from WMCore.MicroService.Unified.MSOutputStreamer import MSOutputStreamer
 
 
@@ -113,16 +113,6 @@ class MSOutput(MSCore):
         :return: summary
         """
 
-        # DONE:
-        # To implement two modes of running the outputModule:
-        # MSOutputProducer - to fill in the MongoDB with workflows
-        # MSOutputConsumer - to deal with every each one of them accordingly
-        # The threads to be created from MSmanager - the code base should be
-        # contained all in this file
-        # we need to add additional status to the mongo documment called
-        # msOutpuStatus: (processing|done) or a bool value in order to avoid
-        # race conditions in case we have more than a single consumer running.
-
         # start threads in MSManager which should call this method
         # NOTE:
         #    Here we should make the whole logic - like:
@@ -134,62 +124,77 @@ class MSOutput(MSCore):
         #    * Associate and keep track of the requestID/subscriptionID/ruleID
         #      returned by the Data Management System and the workflow
         #      object (through the bookkeeping machinery we choose/develop)
-        summary = dict(OUTPUT_REPORT)
 
         if self.mode == 'MSOutputProducer':
-            self.logger.info("MSOutput is running in mode: %s" % self.mode)
-            try:
-                total_num_requests = 0
-                for status in reqStatus:
-                    requestRecords = self.getRequestRecords(status)
-                    total_num_requests += len(requestRecords)
-                    self.updateReportDict(summary, "total_num_requests", total_num_requests)
-                    msg = "  retrieved {} requests in status {}.".format(
-                        len(requestRecords), status)
-                    msg += "Service set to process up to {} requests per cycle.".format(
-                        self.msConfig["limitRequestsPerCycle"])
-                    self.logger.info(msg)
-            except Exception as err:  # general error
-                msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
-                self.logger.exception(msg)
-                self.updateReportDict(summary, "error", msg)
-
-            try:
-                self.updateCaches()
-            except RuntimeWarning as ex:
-                msg = "All retries exhausted! Last error was: '%s'" % str(ex)
-                msg += "\nRetrying to update caches again in the next cycle."
-                self.logger.error(msg)
-                self.updateReportDict(summary, "error", msg)
-                return summary
-            except Exception as ex:
-                msg = "Unknown exception updating caches. Error: %s" % str(ex)
-                self.logger.exception(msg)
-                self.updateReportDict(summary, "error", msg)
-                return summary
-
-            streamer = MSOutputStreamer(bufferFile=self.msConfig['streamerBufferFile'],
-                                        requestRecords=requestRecords,
-                                        logger=self.logger)
-            self.msOutputProducer(streamer())
-            return summary
+            summary = self._executeProducer(reqStatus)
 
         elif self.mode == 'MSOutputConsumer':
-            self.logger.info("MSOutput is running in mode: %s" % self.mode)
-
-            # this one is put here just for example.
-            self.updateReportDict(summary, "ddm_request_id", 42)
-
-            # here to call all the funciotns from bellow and at the end to call
-            # makeSubscriptions with the proper subscr parameters
-            # those could be determined or kept in the mongoDB
-            return summary
+            summary = self._executeConsumer(reqStatus)
 
         else:
             msg = "MSOutput is running in unsupported mode: %s\n" % self.mode
             msg += "Skipping the current run!"
             self.logger.warning(msg)
+
+        return summary
+
+    def _executeProducer(self, reqStatus):
+        """
+        The function to update caches and to execute the Producer function itslef
+        """
+        summary = dict(OUTPUT_REPORT)
+        self.logger.info("MSOutput is running in mode: %s" % self.mode)
+        try:
+            total_num_requests = 0
+            for status in reqStatus:
+                requestRecords = self.getRequestRecords(status)
+                total_num_requests += len(requestRecords)
+                self.updateReportDict(summary, "total_num_requests", total_num_requests)
+                msg = "  retrieved {} requests in status {}.".format(
+                    len(requestRecords), status)
+                msg += "Service set to process up to {} requests per cycle.".format(
+                    self.msConfig["limitRequestsPerCycle"])
+                self.logger.info(msg)
+        except Exception as err:  # general error
+            msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+
+        try:
+            self.updateCaches()
+        except RuntimeWarning as ex:
+            msg = "All retries exhausted! Last error was: '%s'" % str(ex)
+            msg += "\nRetrying to update caches again in the next cycle."
+            self.logger.error(msg)
+            self.updateReportDict(summary, "error", msg)
             return summary
+        except Exception as ex:
+            msg = "Unknown exception updating caches. Error: %s" % str(ex)
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+            return summary
+
+        streamer = MSOutputStreamer(bufferFile=self.msConfig['streamerBufferFile'],
+                                    requestRecords=requestRecords,
+                                    logger=self.logger)
+        self.msOutputProducer(streamer())
+        return summary
+
+    def _executeConsumer(self, reqStatus):
+        """
+        The function to execute the Consumer function itslef
+        """
+
+        summary = dict(OUTPUT_REPORT)
+        self.logger.info("MSOutput is running in mode: %s" % self.mode)
+
+        # this one is put here just for example.
+        self.updateReportDict(summary, "ddm_request_id", 42)
+
+        # here to call all the funciotns from bellow and at the end to call
+        # makeSubscriptions with the proper subscr parameters
+        # those could be determined or kept in the mongoDB
+        return summary
 
     def makeSubscriptions(self, workflows=[]):
         """

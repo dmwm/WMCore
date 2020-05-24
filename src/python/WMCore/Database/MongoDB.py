@@ -10,11 +10,11 @@ class MongoDB(object):
                  server=None,
                  port=None,
                  create=False,
-                 collections=[],
+                 collections=None,
                  testIndexes=False,
                  logger=None):
         """
-        :databases:   A list of databases to connect to
+        :databases:   A database Name to connect to
         :create:      A flag to trigger a database creation (if missing) during
                       object construction, together with collections if present.
         :collections: A list of tuples describing collections with indexes -
@@ -23,26 +23,21 @@ class MongoDB(object):
         :testIndexes: A flag to trigger index test and eventually to create them
                       if missing (TODO)
         """
-        # DONE:
-        #    Database: msoutput
-        #    To create two different collections for Relval and NonRelval
-        # DONE:
-        #    To read the configuration parameters (server, port) from service config
         self.server = server # '127.0.0.1'
         self.port = port # 8230
+        self.logger = logger
         try:
             self.client = MongoClient(self.server, self.port)
             self.client.server_info()
         except Exception as ex:
-            msg = "ERR: could not connect to MongoDB server: %s\n%s" % (self.server, str(ex))
+            msg = "Could not connect to MongoDB server: %s\n%s" % (self.server, str(ex))
             msg += "Giving up Now."
             self.logger.error(msg)
             raise ex
         self.create = create
         self.testIndexes = testIndexes
-        self.logger = logger
         self.dbName = database
-        self.collections = collections
+        self.collections = collections or []
 
         self._dbConnect(database)
 
@@ -58,20 +53,24 @@ class MongoDB(object):
         pass
 
     def _collTest(self, coll, db):
-        # self[self.db].list_collection_names()
+        # self[db].list_collection_names()
         pass
 
     def _collCreate(self, coll, db):
         """
+        A function used to explicitly create a collection with the relevant
+        indexes - used to avoid the Lazy Creating from MongoDB and eventual issues
+        in case we end up with no indexed collection, especially ones missing
+        the (`unique` index parameter)
         :coll: A tuple describing one collection with indexes -
                The first element is considered to be the collection name, and all
-               the rest elements are considered to be indexes.
-               The indexes must beof type IndexModel. See pymongo documentation:
+               the rest of the elements are considered to be indexes.
+               The indexes must be of type IndexModel. See pymongo documentation:
 
                https://api.mongodb.com/python/current/api/pymongo/collection.html#pymongo.collection.Collection.create_index
+
+        :db:   The database name for the collection
         """
-        # DONE:
-        #     to create indexes on the proper fields
 
         collName = coll[0]
         collIndexes = list(coll[1:])
@@ -79,11 +78,10 @@ class MongoDB(object):
             self.client[db].create_collection(collName)
         except errors.CollectionInvalid:
             # this error is thrown in case of an already existing collection
-            pass
+            msg = "Collection '{}' Already exists in database '{}'".format(coll, db)
+            self.logger.warning(msg)
+
         if collIndexes:
-            # DONE:
-            #    To implement a check for index types - should be either string or type IndexModel
-            #    see: https://api.mongodb.com/python/current/api/pymongo/operations.html#pymongo.operations.IndexModel
             for index in collIndexes:
                 if not isinstance(index, IndexModel):
                     msg = "ERR: Bad Index type for collection %s" % collName
@@ -91,12 +89,16 @@ class MongoDB(object):
             try:
                 self.client[db][collName].create_indexes(collIndexes)
             except Exception as ex:
-                msg = "ERR: Failed to create indexes on collection: %s\n%s" % (collName, str(ex))
+                msg = "Failed to create indexes on collection: %s\n%s" % (collName, str(ex))
                 self.logger.error(msg)
                 raise ex
 
     def _dbTest(self, db):
+        """
+        Tests database connection.
+        """
         # Test connection (from mongoDB documentation):
+        # https://api.mongodb.com/python/3.4.0/api/pymongo/mongo_client.html
         try:
             # The 'ismaster' command is cheap and does not require auth.
             self.client.admin.command('ismaster')
@@ -107,7 +109,7 @@ class MongoDB(object):
 
         # Test for database existence
         if db not in self.client.database_names():
-            msg = "ERR: Missing MongoDB databases: %s" % db
+            msg = "Missing MongoDB databases: %s" % db
             self.logger.error(msg)
             raise errors.InvalidName
 
@@ -123,12 +125,12 @@ class MongoDB(object):
             setattr(self, db, self.client[db])
             self._dbTest(db)
         except errors.ConnectionFailure as ex:
-            msg = "ERR: Could not connect to MongoDB server for database: %s\n%s\n" % (db, str(ex))
+            msg = "Could not connect to MongoDB server for database: %s\n%s\n" % (db, str(ex))
             msg += "Giving up Now."
             self.logger.error(msg)
             raise ex
         except errors.InvalidName as ex:
-            msg = "ERR: Could not connect to a missing MongoDB databases: %s\n%s" % (db, str(ex))
+            msg = "Could not connect to a missing MongoDB databases: %s\n%s" % (db, str(ex))
             self.logger.error(msg)
             if self.create:
                 msg = "Trying to create: %s" % db
@@ -137,20 +139,20 @@ class MongoDB(object):
                     # self._dbCreate(getattr(self, db))
                     self._dbCreate(db)
                 except Exception as ex:
-                    msg = "ERR: could not create MongoDB databases: %s\n%s\n" % (db, str(ex))
+                    msg = "Could not create MongoDB databases: %s\n%s\n" % (db, str(ex))
                     msg += "Giving up Now."
                     self.logger.error(msg)
                     raise ex
                 try:
                     self._dbTest(db)
                 except Exception as ex:
-                    msg = "ERR: Second failure while testing %s\n%s\n" % (db, str(ex))
+                    msg = "Second failure while testing %s\n%s\n" % (db, str(ex))
                     msg += "Giving up Now."
                     self.logger.error(msg)
                     raise(ex)
                 msg = "Database %s successfully created" % db
                 self.logger.error(msg)
         except Exception as ex:
-            msg = "ERR: General Exception while trying to connect to : %s\n%s" % (db, str(ex))
+            msg = "General Exception while trying to connect to : %s\n%s" % (db, str(ex))
             self.logger.error(msg)
             raise ex

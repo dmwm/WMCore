@@ -1,7 +1,7 @@
 from functools import reduce
 
 
-class Functor:
+class Functor(object):
     """
     A simple functor class used to construct a function call which later to be
     applied on an (any type) object.
@@ -62,17 +62,23 @@ class Functor:
         return self.func(obj, *self.args, **self.kwargs)
 
 
-class Pipeline:
+class Pipeline(object):
     """
     A simple Functional Pipeline Class: applies a set of functions to an object,
-    where the output of every previous function is an input to the next one
+    where the output of every previous function is an input to the next one.
     """
-    # DONE:
-    #   To implement passing arguments to the functions - it will allow us to
-    #   keep the object creation outside of the pipeline
-    def __init__(self, funcLine=[]):
+    # NOTE:
+    #    Similar and inspiring approaches but yet some different implementations
+    #    are discussed in the following two links [1] & [2]. With a quite good
+    #    explanation in [1], which helped a lot. All in all at the bottom always
+    #    sits the reduce function.
+    #    [1]
+    #    https://softwarejourneyman.com/python-function-pipelines.html
+    #    [2]
+    #    https://gitlab.com/mc706/functional-pipeline
+
+    def __init__(self, funcLine=None):
         """
-        :obj: The object to be passed through the pipeline
         :funcLine: A list of functions or Functors of function + arguments (see
                    the Class definition above) that are to be applied sequentially
                    to the object.
@@ -107,7 +113,7 @@ class Pipeline:
         adder kwargs: {'update': True}
         adder res: 27
         """
-        self.funcLine = funcLine
+        self.funcLine = funcLine or []
 
     def run(self, obj):
         return reduce(lambda obj, functor: functor(obj), self.funcLine, obj)

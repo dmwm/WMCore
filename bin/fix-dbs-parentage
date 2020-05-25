@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Fix the missing dataset parenatage by dates specified.
+Fix the missing dataset parentage by dates specified.
 
 1. Looking for the dataset which has a parent datasets
 2. Check any of the blocks has missing parents.
@@ -30,11 +30,6 @@ insert options (when missing parentage is found you can specify to insert to DBS
 --insert: insert to the specified dbs instance (production or testbed)
 --no-insert: not inserting the data - only for the testing purpose
 
-Method for the search: (By default it searches only for blocks with missing parents first then searches file parentage for those blocks)
-
--f: search for all the files in the dataset for missing parentage - very expensive to run only use when block has parent
-    but some files in the block doesn't have parents. This is normally used -d option for only one dataset.
-
 Usage:
 
 Uses block parentage to fix the problem (faster checks block parentage first to fix the missing parentage.)
@@ -51,11 +46,13 @@ from __future__ import print_function, division
 import time
 import datetime
 import argparse
+import logging
+import sys
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 from dbs.apis.dbsClient import DbsApi
 
-def updateParentageInfo(datasetList, fileFix=False, insertFlag=False):
+def updateParentageInfo(datasetList, insertFlag=False, logger=logger):
 
     missingParentsFailed = {}
     start = int(time.time())
@@ -63,15 +60,10 @@ def updateParentageInfo(datasetList, fileFix=False, insertFlag=False):
     if insertFlag:
         answer = input("fixing DBS parentage: Are you sure?('y'/'n') - needs ' single quote: ").lower()
         if answer != 'y':
-            print("Aborting the procedure, Nothing updated")
+            logger.info("Aborting the procedure, Nothing updated")
             exit(1)
     else:
-        print("Only testing perfomance: No insert")
-
-    if fileFix:
-        print("Missing parentage fix using missing file checking for datasets")
-    else:
-        print("Missing parentage fix using missing block checking for datasets")
+        logger.info("Only testing perfomance: No insert")
 
     for dataset in datasetList:
         if isinstance(dataset, dict):
@@ -79,11 +71,7 @@ def updateParentageInfo(datasetList, fileFix=False, insertFlag=False):
         else:
             dsName = dataset
 
-        if fileFix:
-            failedBlocks = dbsService.insertMissingParentageForAllFiles(dsName, filterFilesWithParents=fileFix,
-                                                                        insertFlag=insertFlag)
-        else:
-            failedBlocks = dbsService.fixMissingParentageDatasets(dsName, insertFlag=insertFlag)
+        failedBlocks = dbsService.fixMissingParentageDatasets(dsName, insertFlag=insertFlag)
 
         missingParentsFailed[dsName] = failedBlocks
     return missingParentsFailed
@@ -107,10 +95,10 @@ if __name__ == '__main__':
     group3.add_argument('--no-insert', dest='insert', action='store_false')
     parser.set_defaults(insert=False)
 
-    parser.add_argument('-f', '--fix-partial-block', dest='filefix', action='store_true',
-                        help='fix the case some not all the files in the block has missing parentage (ReReco)')
-
     args = parser.parse_args()
+
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+    logger = logging.getLogger()
 
     if args.start:
         start = time.mktime(datetime.datetime.strptime(args.start, "%d/%m/%Y").timetuple())
@@ -119,25 +107,26 @@ if __name__ == '__main__':
 
     if args.prod:
         dbsURL = 'https://cmsweb.cern.ch/dbs/prod/global/DBSWriter'
-        print("Using production: ", dbsURL)
+        logger.info("Using production: %s", dbsURL)
     else:
         dbsURL = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSWriter'
-        print("Using testbed: ", dbsURL)
+        logger.info("Using testbed: %s", dbsURL)
+
     dbs = DbsApi(dbsURL)
-    dbsService = DBS3Reader(dbsURL)
+    dbsService = DBS3Reader(dbsURL, logger=logger)
 
     if args.dataset:
         datasetList = [args.dataset]
     else:
         datasetList = dbs.listDatasets(min_cdate=int(start), max_cdate=int(end))
 
-    print("Number of datasets to check: ", len(datasetList))
+    logger.info("Number of datasets to check: %s", len(datasetList))
 
     startTime = int(time.time())
-    failedBlocks = updateParentageInfo(datasetList, fileFix=args.filefix, insertFlag=args.insert)
+    failedBlocks = updateParentageInfo(datasetList, insertFlag=args.insert, logger=logger)
     endTime = int(time.time())
 
     for dataset in failedBlocks:
         if failedBlocks[dataset]:
-            print("Update failed blocks: dataset: %s, blocks %s", (dataset, failedBlocks[dataset]))
-    print("Total Time: ", endTime - startTime)
+            logger.info("Update failed blocks: dataset: %s, blocks %s", dataset, failedBlocks[dataset])
+    logger.info("Total Time: %s", endTime - startTime)

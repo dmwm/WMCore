@@ -70,7 +70,12 @@ class DDMReqTemplate(dict):
             for tup in tempTuple:
                 if kw == tup[0]:
                     found = True
-                    if isinstance(kwargs[kw], tup[2]):
+                    # pass the type check for None values but do not substitute the
+                    # default value with None - use the default provided from the template
+                    if kwargs[kw] is None:
+                        typeok = True
+                    # Perform a type check and if passed absorb the value from kwargs
+                    elif isinstance(kwargs[kw], tup[2]):
                         typeok = True
                         template[kw] = kwargs[kw]
             if not found:

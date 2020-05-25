@@ -17,6 +17,7 @@ class MSOutputTemplate(dict):
     {
     "RequestName": "ReqName",
     "RequestStatus": "(clompletd|cloed-out|announced),
+    'Campaign': "Campaign",
     "creationTime": integer timestamp,
     "lastUpdate": integer timestamp,
     "isRelVal": (True|False),
@@ -65,16 +66,18 @@ class MSOutputTemplate(dict):
             ('_id', None, unicode),
             ('RequestName', None, unicode),
             ('RequestStatus', None, unicode),
+            ('Campaign', None, unicode),
             ('creationTime', None, Timestamp),
             ('lastUpdate', None, Timestamp),
             ('isRelVal', None, bool),
-            ('isTaken', None, bool),
+            ('isTaken', False, bool),
+            ('isTakenby', None, (str, unicode)),
             ('OutputDatasets', None, list),
             ('destination', None, list),
             ('destinationOutputMap', None, dict),
             ('campaignOutputMap', None, dict),
             ('transferStatus', None, unicode),
-            ('transferIDs', None, unicode),
+            ('transferIDs', None, int),
             ('numberOfCopies', None, int)]
 
         self.docTemplate = docTemplate
@@ -194,12 +197,19 @@ class MSOutputTemplate(dict):
 
         if not all(valid):
             # NOTE: Same as above
-            msg = "ERROR: Missing Mandatory Fields: {} for: {}".format(missing, template)
+            msg = "ERROR: Missing Mandatory Fields: {} for: {}".format(missing, myDoc)
             if throw:
                 raise KeyError(msg)
             else:
                 return False
         return True
+
+    def setKey(self, key, value):
+        myDoc = {key: value}
+        if self._checkAttr(self.docTemplate, myDoc, throw=True, update=False, **myDoc):
+            self.update(myDoc)
+            return True
+        return False
 
     def setRelVal(self, isRelVal):
         myDoc = {'isRelVal': isRelVal}

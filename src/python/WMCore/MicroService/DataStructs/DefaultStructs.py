@@ -48,14 +48,22 @@ TRANSFER_RECORD = dict(dataset="",
 
 # summary metrics for the MSOutput thread
 # (also available through the `info` REST API)
-OUTPUT_REPORT = dict(start_time=0,
-                     end_time=0,
-                     execution_time=0,
-                     error="",
-                     total_num_requests=0,
-                     total_num_campaigns=0,
-                     num_datasets_subscribed=0,
-                     num_ddm_requests=0)
+OUTPUT_PRODUCER_REPORT = dict(thread_id="",
+                              start_time=0,
+                              end_time=0,
+                              execution_time=0,
+                              error="",
+                              total_num_requests=0,
+                              total_num_campaigns=0,
+                              num_datasets_subscribed=0,
+                              num_ddm_requests=0)
 
-
-OUTPUT_MONGO_DOC = dict()
+OUTPUT_CONSUMER_REPORT = dict(thread_id="",
+                              start_time=0,
+                              end_time=0,
+                              execution_time=0,
+                              error="",
+                              total_num_requests=0,
+                              total_num_campaigns=0,
+                              num_datasets_subscribed=0,
+                              num_ddm_requests=0)

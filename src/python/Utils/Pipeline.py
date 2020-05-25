@@ -77,7 +77,7 @@ class Pipeline(object):
     #    [2]
     #    https://gitlab.com/mc706/functional-pipeline
 
-    def __init__(self, funcLine=None):
+    def __init__(self, funcLine=None, name=None):
         """
         :funcLine: A list of functions or Functors of function + arguments (see
                    the Class definition above) that are to be applied sequentially
@@ -114,6 +114,7 @@ class Pipeline(object):
         adder res: 27
         """
         self.funcLine = funcLine or []
+        self.name = name
 
     def run(self, obj):
         return reduce(lambda obj, functor: functor(obj), self.funcLine, obj)

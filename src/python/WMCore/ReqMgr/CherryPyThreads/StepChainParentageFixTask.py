@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from __future__ import (division, print_function)
+
 import time
 from collections import defaultdict
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
-from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 
 def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):

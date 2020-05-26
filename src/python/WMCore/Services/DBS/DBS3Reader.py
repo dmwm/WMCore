@@ -9,11 +9,11 @@ from __future__ import print_function, division
 
 import logging
 from collections import defaultdict
-from retry import retry
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import dbsClientException
+from retry import retry
 
 from Utils.IteratorTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3

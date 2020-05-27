@@ -59,11 +59,6 @@
   },
 
   {
-    "from": "_view/latestAgentSite",
-    "to": "../WMStatsErl/_view/latestAgentSite"
-  },
-
-  {
     "from": "_view/latestRequest",
     "to": "../WMStatsErl/_view/latestRequest"
   },

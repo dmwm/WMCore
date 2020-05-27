@@ -1,3 +1,13 @@
+1.3.5.pre1 to 1.3.5.pre2:
+  - Remove WMStats latestAgentSite view (Alan Malta Rodrigues) #9709
+  - pylint fixes (Alan Malta Rodrigues) #9707
+  - Resolve StepChain parentage information with new DBS APIs (Alan Malta Rodrigues) #9707
+  - Use DELETE method to delete single couch documents (Alan Malta Rodrigues) #9706
+  - Bump httplib2 from 0.7.3 to 0.18.0 (dependabot[bot]) #9704
+  - Break up WMStats DataCache update into multiple calls (Alan Malta Rodrigues) #9684
+  - Always request stale views from WMStatsReader (Alan Malta Rodrigues) #9692
+
+
 1.3.4.pre2 to 1.3.5.pre1:
   - Add patchComponent.sh script (Todor Ivanov) #9698
   - Properly get hostname in checkProxy script (Alan Malta Rodrigues) #9696

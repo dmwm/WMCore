@@ -44,48 +44,48 @@
   },
 
   {
-    "from": "_view/agentInfo",
-    "to": "../WMStatsErl/_view/agentInfo"
-  },
-
-  {
-    "from": "_view/byAgentURL",
-    "to": "../WMStatsErl/_view/byAgentURL"
-  },
-
-  {
-    "from": "_view/cooledoffRequests",
-    "to": "../WMStatsErl/_view/cooledoffRequests"
-  },
-
-  {
-    "from": "_view/latestRequest",
-    "to": "../WMStatsErl/_view/latestRequest"
-  },
-
-  {
     "from": "_view/requestAgentUrl",
     "to": "../WMStatsErl/_view/requestAgentUrl"
   },
 
   {
-    "from": "_view/requestHistory",
-    "to": "../WMStatsErl/_view/requestHistory"
+    "from": "_view/byAgentURL",
+    "to": "../WMStatsErl1/_view/byAgentURL"
   },
-  
-  {
-    "from": "_view/jobsByStatusWorkflow",
-    "to": "../WMStatsErl/_view/jobsByStatusWorkflow"
-  },
-  
+
   {
     "from": "_view/allWorkflows",
-    "to": "../WMStatsErl/_view/allWorkflows"
+    "to": "../WMStatsErl2/_view/allWorkflows"
   },
-  
+
+  {
+    "from": "_view/jobsByStatusWorkflow",
+    "to": "../WMStatsErl3/_view/jobsByStatusWorkflow"
+  },
+
+  {
+    "from": "_view/cooledoffRequests",
+    "to": "../WMStatsErl4/_view/cooledoffRequests"
+  },
+
   {
     "from": "_view/time",
-    "to": "../WMStatsErl/_view/time"
+    "to": "../WMStatsErl5/_view/time"
+  },
+
+  {
+    "from": "_view/requestHistory",
+    "to": "../WMStatsErl6/_view/requestHistory"
+  },
+
+  {
+    "from": "_view/agentInfo",
+    "to": "../WMStatsErl7/_view/agentInfo"
+  },
+
+  {
+    "from": "_view/latestRequest",
+    "to": "../WMStatsErl7/_view/latestRequest"
   },
   
   {

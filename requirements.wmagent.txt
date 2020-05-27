@@ -8,7 +8,7 @@ cx-Oracle==5.2.1
 dbs-client==3.7.8
 decorator==3.4.2
 future==0.16.0
-httplib2==0.7.3
+httplib2==0.18.0
 psutil==5.6.6
 py==1.7.0
 pyOpenSSL==18.0.0

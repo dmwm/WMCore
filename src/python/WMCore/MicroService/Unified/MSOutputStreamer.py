@@ -9,18 +9,18 @@ placement service in WMCore MicroServices.
 from __future__ import division, print_function
 
 import json
-from itertools import islice
-from collections import deque
+# from itertools import islice
+# from collections import deque
 
 
-class MSOutputStreamer():
+class MSOutputStreamer(object):
     """
     MSOutputStreamer class
     """
     # NOTE: This module here is just a placeholder for future development
     #       It is placed here so we can make the basic construction of the MSOutput module
 
-    def __init__(self, requestRecords=None, bufferFile=None, stride=1, logger=None, *args, **kwargs):
+    def __init__(self, requestRecords=None, bufferFile=None, stride=1, logger=None):
         """
         Creates a basic streamer object.
         For the purpose of testing this two modes of streaming are defined:

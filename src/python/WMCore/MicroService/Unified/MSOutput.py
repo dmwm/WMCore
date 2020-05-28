@@ -9,7 +9,6 @@ the Output data placement in WMCore MicroServices.
 from __future__ import division, print_function
 
 # system modules
-from retry import retry
 from pymongo import IndexModel, ReturnDocument, errors
 from pymongo.command_cursor import CommandCursor
 from pprint import pformat
@@ -18,6 +17,7 @@ from bson import Timestamp
 from time import time
 from socket import gethostname
 from threading import current_thread
+from retry import retry
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_PRODUCER_REPORT
@@ -37,6 +37,7 @@ class MSOutputException(Exception):
     General Exception Class for MSOutput Module in WMCore MicroServices
     """
     def __init__(self):
+        super(MSOutputException, self).__init__()
         self.messages = "MSOtputException: "
 
 
@@ -90,6 +91,10 @@ class MSOutput(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
+
+        self.currHost = gethostname()
+        self.currThread = current_thread()
+        self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
 
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
@@ -148,10 +153,6 @@ class MSOutput(MSCore):
         #    * Associate and keep track of the requestID/subscriptionID/ruleID
         #      returned by the Data Management System and the workflow
         #      object (through the bookkeeping machinery we choose/develop)
-        self.currHost = gethostname()
-        self.currThread = current_thread()
-        self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
-
         if self.mode == 'MSOutputProducer':
             summary = self._executeProducer(reqStatus)
 
@@ -171,8 +172,8 @@ class MSOutput(MSCore):
         """
         summary = dict(OUTPUT_PRODUCER_REPORT)
         self.updateReportDict(summary, "thread_id", self.currThreadIdent)
-        self.logger.info("{}: MSOutput is running in mode: {}".format(self.currThreadIdent,
-                                                                      self.mode))
+        msg = "{}: MSOutput is running in mode: {}".format(self.currThreadIdent, self.mode)
+        self.logger.info(msg)
 
         try:
             requestRecords = {}
@@ -227,8 +228,8 @@ class MSOutput(MSCore):
 
         summary = dict(OUTPUT_CONSUMER_REPORT)
         self.updateReportDict(summary, "thread_id", self.currThreadIdent)
-        self.logger.info("{}: MSOutput is running in mode: {} ".format(self.currThreadIdent,
-                                                                       self.mode))
+        msg = "{}: MSOutput is running in mode: {} ".format(self.currThreadIdent, self.mode)
+        self.logger.info(msg)
         msg = "{}: Service set to process up to {} requests ".format(self.currThreadIdent,
                                                                      self.msConfig["limitRequestsPerCycle"])
         msg += "per cycle per each type 'RelVal' and 'NonRelval' workflows."
@@ -247,7 +248,7 @@ class MSOutput(MSCore):
             self.updateReportDict(summary, "total_num_requests", total_num_requests)
         except Exception as ex:
             msg = "{}: Unknown exception while running Consumer thread. ".format(self.currThreadIdent)
-            msg += "Error: %s".format(str(ex))
+            msg += "Error: {}".format(str(ex))
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
@@ -543,16 +544,6 @@ class MSOutput(MSCore):
             #     break
         return counter
 
-    def docStreamer(self):
-        """
-        A simple representation of a document streamer
-        """
-        # TODO:
-        #    To implement streaming in strides - chunks of documents of size 'stride'
-        requests = self.getRequestRecords()
-        while requests:
-            yield requests.popitem()
-
     def docTransformer(self, doc):
         """
         A function used to transform a request record from reqmgr2 to a document
@@ -574,6 +565,9 @@ class MSOutput(MSCore):
         return msOutDoc
 
     def docDump(self, msOutDoc, pipeLine=None):
+        """
+        Prints document contents
+        """
         msg = "{}: {}: Processed 'msOutDoc' with '_id': {}.".format(self.currThreadIdent,
                                                                     pipeLine,
                                                                     msOutDoc['_id'])
@@ -651,6 +645,10 @@ class MSOutput(MSCore):
         return msOutDoc
 
     def docReadfromMongo(self, mQueryDict, dbColl, setTaken=False):
+        """
+        Reads a single Document from MongoDB and if setTaken flag is on then
+        Sets the relevant flags (isTaken, isTakenby) in the document at MongoDB
+        """
         # NOTE:
         #    In case the current query returns an empty document from MongoDB
         #    (eg. all workflows have been processed) the MSOutputTemplate
@@ -687,4 +685,8 @@ class MSOutput(MSCore):
         return msOutDoc
 
     def docCleaner(self, doc):
+        """
+        Calls the dictionary internal method clear() and purges all the contents
+        of the document
+        """
         return doc.clear()

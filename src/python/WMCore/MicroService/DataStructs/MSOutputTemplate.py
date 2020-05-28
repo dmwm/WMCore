@@ -1,7 +1,12 @@
+"""
+File       : MSOutputTemplate.py
+Description: Provides a document Template for MSOutput MicroServices
+"""
+
 import time
 
 from copy import deepcopy
-from bson import Timestamp, ObjectId
+from bson import Timestamp
 
 
 class MSOutputTemplate(dict):
@@ -99,7 +104,7 @@ class MSOutputTemplate(dict):
             # the document passed and fill them into internal document so that they
             # can pass the needed checks later, throw the unneeded/unrecognised
             # key/values from the passed document
-            for key in map(lambda tup: tup[0], docTemplate):
+            for key in [tup[0] for tup in docTemplate]:
                 if key in doc.keys():
                     myDoc[key] = deepcopy(doc[key])
 
@@ -137,14 +142,14 @@ class MSOutputTemplate(dict):
         """
 
         # check if we can fit all the arguments provided through **kwargs
-        for kw, arg in kwargs.items():
+        for kw in kwargs.keys():
             found = False
             typeok = False
             for tup in docTemplate:
                 if kw == tup[0]:
                     found = True
                     # NOTE: Here we can allow more than one type per field if we
-                    #       set them as a list of types eg. [str, unicode]
+                    #       set them as a tuple of types eg. (str, unicode)
                     if isinstance(kwargs[kw], tup[2]) or kwargs[kw] is None:
                         typeok = True
                         if update:
@@ -205,6 +210,9 @@ class MSOutputTemplate(dict):
         return True
 
     def setKey(self, key, value):
+        """
+        A method to be used for setting a key in the document
+        """
         myDoc = {key: value}
         if self._checkAttr(self.docTemplate, myDoc, throw=True, update=False, **myDoc):
             self.update(myDoc)
@@ -212,6 +220,9 @@ class MSOutputTemplate(dict):
         return False
 
     def setRelVal(self, isRelVal):
+        """
+        A method to be used for setting the isRelval key in the document
+        """
         myDoc = {'isRelVal': isRelVal}
         if self._checkAttr(self.docTemplate, myDoc, throw=False, update=False, **myDoc):
             self.update(myDoc)
@@ -219,20 +230,37 @@ class MSOutputTemplate(dict):
         return False
 
     def setWflowType(self):
+        """
+        __setWflowType__
+        """
         pass
 
     def setCampMap(self):
+        """
+        __setCampMap__
+        """
         pass
 
     def setDestMap(self):
+        """
+        __setDestMap_
+        """
         pass
 
     def updateTime(self):
-        pass
+        """
+        __updateTeim__
+        """
+        self.setKey('lastUpdate', Timestamp(int(time.time()), 1))
 
     def updateStatus(self):
+        """
+        __updateStatus__
+        """
         pass
 
     def strip(self):
+        """
+        __strp__
+        """
         pass
-

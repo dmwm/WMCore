@@ -1,3 +1,8 @@
+"""
+File       : MongoDB.py
+Description: Provides a wrapper class for MongoDB
+"""
+
 from pymongo import MongoClient, errors, IndexModel
 
 
@@ -49,12 +54,18 @@ class MongoDB(object):
             for collection in self.collections:
                 self._indexTest(collection, database)
 
-    def _indexTest(self, index):
+    def _indexTest(self, index, db):
         pass
 
     def _collTest(self, coll, db):
         # self[db].list_collection_names()
         pass
+
+    def collCreate(self, coll):
+        """
+        A public method for _collCreate
+        """
+        self._collCreate(coll, self.database)
 
     def _collCreate(self, coll, db):
         """
@@ -120,7 +131,16 @@ class MongoDB(object):
         # NOTE: never delete the _initCollection if you want the database to persist
         # self.client[db].drop_collection('_initCollection')
 
+    def dbConnect(self):
+        """
+        A public method for _dbConnect
+        """
+        self._dbConnect(self.database)
+
     def _dbConnect(self, db):
+        """
+        The function to be used for the initial database connection creation and testing
+        """
         try:
             setattr(self, db, self.client[db])
             self._dbTest(db)
@@ -149,7 +169,7 @@ class MongoDB(object):
                     msg = "Second failure while testing %s\n%s\n" % (db, str(ex))
                     msg += "Giving up Now."
                     self.logger.error(msg)
-                    raise(ex)
+                    raise ex
                 msg = "Database %s successfully created" % db
                 self.logger.error(msg)
         except Exception as ex:

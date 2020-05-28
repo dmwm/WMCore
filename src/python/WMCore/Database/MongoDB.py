@@ -3,6 +3,9 @@ File       : MongoDB.py
 Description: Provides a wrapper class for MongoDB
 """
 
+# futures
+from __future__ import division, print_function
+
 from pymongo import MongoClient, errors, IndexModel
 
 
@@ -20,6 +23,8 @@ class MongoDB(object):
                  logger=None):
         """
         :databases:   A database Name to connect to
+        :server:      The server url (see https://docs.mongodb.com/manual/reference/connection-string/)
+        :port:        Server port
         :create:      A flag to trigger a database creation (if missing) during
                       object construction, together with collections if present.
         :collections: A list of tuples describing collections with indexes -
@@ -27,6 +32,7 @@ class MongoDB(object):
                       the rest elements are considered as indexes
         :testIndexes: A flag to trigger index test and eventually to create them
                       if missing (TODO)
+        :logger:      Logger
         """
         self.server = server # '127.0.0.1'
         self.port = port # 8230
@@ -52,9 +58,9 @@ class MongoDB(object):
 
         if self.testIndexes and self.collections:
             for collection in self.collections:
-                self._indexTest(collection, database)
+                self._indexTest(collection[0], collection[1])
 
-    def _indexTest(self, index, db):
+    def _indexTest(self, collection, index):
         pass
 
     def _collTest(self, coll, db):

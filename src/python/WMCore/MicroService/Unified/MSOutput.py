@@ -30,24 +30,28 @@ from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
 from WMCore.MicroService.Unified.MSOutputStreamer import MSOutputStreamer
+from WMCore.WMException import WMException
 
 
-class MSOutputException(Exception):
+class MSOutputException(WMException):
     """
     General Exception Class for MSOutput Module in WMCore MicroServices
     """
-    def __init__(self):
-        super(MSOutputException, self).__init__()
-        self.messages = "MSOtputException: "
+    def __init__(self, message):
+        self.myMessage = "MSOtputException: %s" % message
+        super(MSOutputException, self).__init__(self.myMessage)
 
 
 class EmptyResultError(MSOutputException):
     """
     A MSOutputException signalling an empty result from database query.
     """
-    def __init__(self):
-        super(EmptyResultError, self).__init__()
-        self.messages += "Empty Result from database query."
+    def __init__(self, message=None):
+        if message:
+            self.myMessage = "EmptyResultError: %s"
+        else:
+            self.myMessage = "EmptyResultError."
+        super(EmptyResultError, self).__init__(self.myMessage)
 
 
 class MSOutput(MSCore):
@@ -56,7 +60,7 @@ class MSOutput(MSCore):
     in MicroServices.
     """
 
-    def __init__(self, msConfig, logger=None, mode=None):
+    def __init__(self, msConfig, mode, logger=None):
         """
         Runs the basic setup and initialization for the MSOutput module
         :microConfig: microservice configuration
@@ -83,7 +87,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioAccount", 'wma_test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
-        self.msConfig.setdefault("streamerBufferFile", "/tmp/msOutput/requestRecords")
+        self.msConfig.setdefault("streamerBufferFile", None)
         self.uConfig = {}
         self.emailAlert = EmailAlert(self.msConfig)
 
@@ -91,10 +95,6 @@ class MSOutput(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
-
-        self.currHost = gethostname()
-        self.currThread = current_thread()
-        self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
 
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
@@ -153,6 +153,10 @@ class MSOutput(MSCore):
         #    * Associate and keep track of the requestID/subscriptionID/ruleID
         #      returned by the Data Management System and the workflow
         #      object (through the bookkeeping machinery we choose/develop)
+        self.currHost = gethostname()
+        self.currThread = current_thread()
+        self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
+
         if self.mode == 'MSOutputProducer':
             summary = self._executeProducer(reqStatus)
 
@@ -398,7 +402,7 @@ class MSOutput(MSCore):
                                               Functor(self.makeSubscriptions),
                                               Functor(self.docKeyUpdate,
                                                       isTaken=False,
-                                                      isTakenby=None,
+                                                      isTakenBy=None,
                                                       lastUpdate=Timestamp(int(time()), 1)),
                                               Functor(self.docUploader,
                                                       self.msOutRelValColl,
@@ -416,7 +420,7 @@ class MSOutput(MSCore):
                                                  Functor(self.makeSubscriptions),
                                                  Functor(self.docKeyUpdate,
                                                          isTaken=False,
-                                                         isTakenby=None,
+                                                         isTakenBy=None,
                                                          lastUpdate=Timestamp(int(time()), 1)),
                                                  Functor(self.docUploader,
                                                          self.msOutNonRelValColl,
@@ -434,66 +438,41 @@ class MSOutput(MSCore):
         #    some function from within the pipeLine has not caught it and the msOutDoc
         #    has left the pipe and died before the relevant document in MongoDB
         #    has been released (its flag 'isTaken' to be set back to False)
-        wfCounterRelVal = 0
-        while wfCounterRelVal < self.msConfig['limitRequestsPerCycle']:
-            # take only workflows which are not already taken or a transfer
-            # subscription have never been done for them
-            mQueryDict = {'isTaken': False, 'transferStatus': None}
-            try:
-                pipeLineName = msPipelineRelVal.name
-                msPipelineRelVal.run(mQueryDict)
-            except KeyError as ex:
-                msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
-                msg += "Continue to the next document."
-                self.logger.warning(msg)
-                continue
-            except TypeError as ex:
-                msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
-                msg += "Continue to the next document."
-                self.logger.warning(msg)
-                continue
-            except EmptyResultError as ex:
-                msg = "%s All relevant records in MongoDB exhausted." % pipeLineName
-                msg += "We are done for the current cycle."
-                self.logger.info(msg)
-                break
-            except Exception as ex:
-                msg = "%s General Error from pipeline. Err: %s" % (pipeLineName, str(ex))
-                msg += "Giving up Now."
-                self.logger.error(msg)
-                self.logger.exception(ex)
-                break
-            wfCounterRelVal += 1
+        wfCounters = {}
+        for pipeLine in [msPipelineRelVal, msPipelineNonRelVal]:
+            pipeLineName = pipeLine.getPiplineName()
+            wfCounters[pipeLineName] = 0
+            while wfCounters[pipeLineName] < self.msConfig['limitRequestsPerCycle']:
+                # take only workflows which are not already taken or a transfer
+                # subscription have never been done for them
+                mQueryDict = {'isTaken': False, 'transferStatus': None}
+                try:
+                    pipeLine.run(mQueryDict)
+                except KeyError as ex:
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
+                    msg += "Continue to the next document."
+                    self.logger.exception(msg)
+                    continue
+                except TypeError as ex:
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
+                    msg += "Continue to the next document."
+                    self.logger.exception(msg)
+                    continue
+                except EmptyResultError as ex:
+                    msg = "%s All relevant records in MongoDB exhausted." % pipeLineName
+                    msg += "We are done for the current cycle."
+                    self.logger.info(msg)
+                    break
+                except Exception as ex:
+                    msg = "%s General Error from pipeline. Err: %s" % (pipeLineName, str(ex))
+                    msg += "Giving up Now."
+                    self.logger.error(msg)
+                    self.logger.exception(ex)
+                    break
+                wfCounters[pipeLineName] += 1
 
-        wfCounterNonRelVal = 0
-        while wfCounterNonRelVal < self.msConfig['limitRequestsPerCycle']:
-            try:
-                pipeLineName = msPipelineNonRelVal.name
-                msPipelineNonRelVal.run(mQueryDict)
-            except KeyError as ex:
-                msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
-                msg += "Continue to the next document."
-                self.logger.warning(msg)
-                continue
-            except TypeError as ex:
-                msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
-                msg += "Continue to the next document."
-                self.logger.warning(msg)
-                continue
-            except EmptyResultError as ex:
-                msg = "%s All relevant records in MongoDB exhausted. " % pipeLineName
-                msg += "We are done for the current cycle."
-                self.logger.info(msg)
-                break
-            except Exception as ex:
-                msg = "%s General Error from pipeline. Err: %s" % (pipeLineName, str(ex))
-                msg += "Giving up Now."
-                self.logger.error(msg)
-                self.logger.exception(ex)
-                break
-            wfCounterNonRelVal += 1
-
-        return wfCounterRelVal + wfCounterNonRelVal
+        wfCounterTotal = sum(wfCounters.values())
+        return wfCounterTotal
  
     def msOutputProducer(self, requestRecords):
         """
@@ -536,7 +515,7 @@ class MSOutput(MSCore):
         counter = 0
         for _, request in requestRecords:
             counter += 1
-            if 'SubRequestType' in request.keys() and 'RelVal' in request['SubRequestType']:
+            if request.get('SubRequestType') == 'RelVal':
                 msPipelineRelVal.run(request)
             else:
                 msPipelineNonRelVal.run(request)
@@ -647,7 +626,7 @@ class MSOutput(MSCore):
     def docReadfromMongo(self, mQueryDict, dbColl, setTaken=False):
         """
         Reads a single Document from MongoDB and if setTaken flag is on then
-        Sets the relevant flags (isTaken, isTakenby) in the document at MongoDB
+        Sets the relevant flags (isTaken, isTakenBy) in the document at MongoDB
         """
         # NOTE:
         #    In case the current query returns an empty document from MongoDB
@@ -660,7 +639,7 @@ class MSOutput(MSCore):
             retrString = self.currThreadIdent
             mongoDoc = dbColl.find_one_and_update(mQueryDict,
                                                   {'$set': {'isTaken': True,
-                                                            'isTakenby': retrString,
+                                                            'isTakenBy': retrString,
                                                             'lastUpdate': lastUpdate}},
                                                   return_document=ReturnDocument.AFTER)
         else:

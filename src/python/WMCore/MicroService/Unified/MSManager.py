@@ -77,8 +77,7 @@ class MSManager(object):
                                                   'assigned',
                                                   self.msConfig['interval'],
                                                   self.logger))
-            self.logger.debug(
-                "### Running %s thread %s", thname, self.transfThread.running())
+            self.logger.info("### Running %s thread %s", thname, self.transfThread.running())
 
         # initialize monitoring module
         if 'monitor' in self.services:
@@ -89,34 +88,29 @@ class MSManager(object):
                                                  'staging',
                                                  self.msConfig['interval'],
                                                  self.logger))
-            self.logger.debug(
-                "+++ Running %s thread %s", thname, self.monitThread.running())
+            self.logger.info("+++ Running %s thread %s", thname, self.monitThread.running())
 
         # initialize output module
         if 'output' in self.services:
             reqStatus = ['completed', 'closed-out', 'announced']
 
             thname = 'MSOutputConsumer'
-            self.msOutputConsumer = MSOutput(self.msConfig, logger=self.logger,
-                                             mode=thname)
+            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             self.outputConsumerThread = start_new_thread(thname, daemon,
                                                          (self.outputConsumer,
                                                           reqStatus,
                                                           self.msConfig['interval'],
                                                           self.logger))
-            self.logger.debug(
-                "=== Running %s thread %s", thname, self.outputConsumerThread.running())
+            self.logger.info("=== Running %s thread %s", thname, self.outputConsumerThread.running())
 
             thname = 'MSOutputProducer'
-            self.msOutputProducer = MSOutput(self.msConfig, logger=self.logger,
-                                             mode=thname)
+            self.msOutputProducer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             self.outputProducerThread = start_new_thread(thname, daemon,
                                                          (self.outputProducer,
                                                           reqStatus,
                                                           self.msConfig['interval'],
                                                           self.logger))
-            self.logger.debug(
-                "=== Running %s thread %s", thname, self.outputProducerThread.running())
+            self.logger.info("=== Running %s thread %s", thname, self.outputProducerThread.running())
 
     def _parseConfig(self, config):
         """

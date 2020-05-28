@@ -56,7 +56,7 @@ OUTPUT_PRODUCER_REPORT = dict(thread_id="",
                               total_num_requests=0,
                               total_num_campaigns=0,
                               num_datasets_subscribed=0,
-                              num_ddm_requests=0)
+                              num_data_requests=0)
 
 OUTPUT_CONSUMER_REPORT = dict(thread_id="",
                               start_time=0,
@@ -66,4 +66,4 @@ OUTPUT_CONSUMER_REPORT = dict(thread_id="",
                               total_num_requests=0,
                               total_num_campaigns=0,
                               num_datasets_subscribed=0,
-                              num_ddm_requests=0)
+                              num_data_requests=0)

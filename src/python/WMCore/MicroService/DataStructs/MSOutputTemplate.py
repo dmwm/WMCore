@@ -3,6 +3,9 @@ File       : MSOutputTemplate.py
 Description: Provides a document Template for MSOutput MicroServices
 """
 
+# futures
+from __future__ import division, print_function
+
 import time
 
 from copy import deepcopy
@@ -27,6 +30,7 @@ class MSOutputTemplate(dict):
     "lastUpdate": integer timestamp,
     "isRelVal": (True|False),
     "isTaken": (True|False),
+    "isTakenBy": "ThreadIdentifier",
     "destination": ["list of locations"],
     "OutputDatasets": ["list of datasets"],
     "destinationOutputMap": [{"destination": ["list of locations"],
@@ -70,13 +74,12 @@ class MSOutputTemplate(dict):
         docTemplate = [
             ('_id', None, unicode),
             ('RequestName', None, unicode),
-            ('RequestStatus', None, unicode),
             ('Campaign', None, unicode),
             ('creationTime', None, Timestamp),
             ('lastUpdate', None, Timestamp),
             ('isRelVal', None, bool),
             ('isTaken', False, bool),
-            ('isTakenby', None, (str, unicode)),
+            ('isTakenBy', None, (str, unicode)),
             ('OutputDatasets', None, list),
             ('destination', None, list),
             ('destinationOutputMap', None, dict),
@@ -154,7 +157,7 @@ class MSOutputTemplate(dict):
                         typeok = True
                         if update:
                             # NOTE: Here we may consider deepcopy
-                            myDoc[kw] = kwargs[kw]
+                            myDoc[kw] = deepcopy(kwargs[kw])
             if not found:
                 # NOTE: We can raise an error here and decide if we want to drop
                 #       the whole document or we can jut ignore the current field
@@ -229,11 +232,14 @@ class MSOutputTemplate(dict):
             return True
         return False
 
-    def setWflowType(self):
+    def updateDoc(self, myDoc):
         """
-        __setWflowType__
+        Method to be used for updating the document fields from a dictionary
         """
-        pass
+        if self._checkAttr(self.docTemplate, myDoc, throw=False, update=False, **myDoc):
+            self.update(myDoc)
+            return True
+        return False
 
     def setCampMap(self):
         """
@@ -252,15 +258,3 @@ class MSOutputTemplate(dict):
         __updateTeim__
         """
         self.setKey('lastUpdate', Timestamp(int(time.time()), 1))
-
-    def updateStatus(self):
-        """
-        __updateStatus__
-        """
-        pass
-
-    def strip(self):
-        """
-        __strp__
-        """
-        pass

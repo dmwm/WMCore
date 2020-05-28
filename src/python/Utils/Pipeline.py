@@ -1,3 +1,15 @@
+"""
+File       : Pipeline.py
+Description: Provides 2 basic classes:
+             - Functor:  A class to create function calls from a function object
+                         and arbitrary number of arguments
+             - Pipeline: A class to provide building blocks for creating functional
+                         pipelines for cumulative execution on an arbitrary object
+"""
+
+# futures
+from __future__ import division, print_function
+
 from functools import reduce
 
 
@@ -115,6 +127,13 @@ class Pipeline(object):
         """
         self.funcLine = funcLine or []
         self.name = name
+
+    def getPiplineName(self):
+        """
+        __gePipelineName__
+        """
+        name = self.name or "Unnamed Pipeline"
+        return name
 
     def run(self, obj):
         return reduce(lambda obj, functor: functor(obj), self.funcLine, obj)

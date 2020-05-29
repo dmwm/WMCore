@@ -1,3 +1,8 @@
+1.3.5.pre2 to 1.3.5.pre3:
+  - MSOutput nonRelVal - two run modes for MSOutput thread (Todor Ivanov) #9691
+  - Distribute WMStats couch views among different design docs (Alan Malta Rodrigues) #9710
+
+
 1.3.5.pre1 to 1.3.5.pre2:
   - Remove WMStats latestAgentSite view (Alan Malta Rodrigues) #9709
   - pylint fixes (Alan Malta Rodrigues) #9707

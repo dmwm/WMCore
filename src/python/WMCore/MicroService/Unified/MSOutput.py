@@ -9,16 +9,48 @@ the Output data placement in WMCore MicroServices.
 from __future__ import division, print_function
 
 # system modules
+from pymongo import IndexModel, ReturnDocument, errors
+from pymongo.command_cursor import CommandCursor
+from pprint import pformat
+from copy import deepcopy
+from time import time
+from socket import gethostname
+from threading import current_thread
 from retry import retry
 
 # WMCore modules
-from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT,\
-    OUTPUT_MONGO_DOC
-from WMCore.MicroService.DataStructs.Workflow import Workflow
+from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_PRODUCER_REPORT
+from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_CONSUMER_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.RequestInfo import RequestInfo
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
+from WMCore.Services.CRIC.CRIC import CRIC
 from Utils.EmailAlert import EmailAlert
+from Utils.Pipeline import Pipeline, Functor
+from WMCore.Database.MongoDB import MongoDB
+from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.Unified.MSOutputStreamer import MSOutputStreamer
+from WMCore.WMException import WMException
+
+
+class MSOutputException(WMException):
+    """
+    General Exception Class for MSOutput Module in WMCore MicroServices
+    """
+    def __init__(self, message):
+        self.myMessage = "MSOtputException: %s" % message
+        super(MSOutputException, self).__init__(self.myMessage)
+
+
+class EmptyResultError(MSOutputException):
+    """
+    A MSOutputException signalling an empty result from database query.
+    """
+    def __init__(self, message=None):
+        if message:
+            self.myMessage = "EmptyResultError: %s"
+        else:
+            self.myMessage = "EmptyResultError."
+        super(EmptyResultError, self).__init__(self.myMessage)
 
 
 class MSOutput(MSCore):
@@ -27,13 +59,21 @@ class MSOutput(MSCore):
     in MicroServices.
     """
 
-    def __init__(self, msConfig, logger=None):
+    def __init__(self, msConfig, mode, logger=None):
         """
         Runs the basic setup and initialization for the MSOutput module
-        :param microConfig: microservice configuration
+        :microConfig: microservice configuration
+        :mode: MSOutput Run mode:
+            - MSOutputConsumer:
+                Reads The workflow and transfer subscriptions from MongoDB and
+                makes transfer subscriptions.
+            - MSOutputProducer:
+                Fetches Workflows in a given status from Reqmgr2 then creates
+                and uploads the documents to MongoDB.
         """
         super(MSOutput, self).__init__(msConfig, logger)
 
+        self.mode = mode
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
         self.msConfig.setdefault("verbose", True)
         self.msConfig.setdefault("interval", 600)
@@ -44,8 +84,34 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD'])
         self.msConfig.setdefault("rucioAccount", 'wma_test')
+        self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
+        self.msConfig.setdefault("mongoDBPort", 8230)
+        self.msConfig.setdefault("streamerBufferFile", None)
         self.uConfig = {}
         self.emailAlert = EmailAlert(self.msConfig)
+
+        self.cric = CRIC(logger=self.logger)
+        self.uConfig = {}
+        self.campaigns = {}
+        self.psn2pnnMap = {}
+
+        msOutIndex = IndexModel('RequestName', unique=True)
+        msOutDBConfig = {
+            'database': 'msOutDB',
+            'server': self.msConfig['mongoDBUrl'],
+            'port': self.msConfig['mongoDBPort'],
+            'logger': self.logger,
+            'create': True,
+            'collections': [
+                ('msOutRelValColl', msOutIndex),
+                ('msOutNonRelValColl', msOutIndex)]}
+
+        self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
+        self.msOutRelValColl = self.msOutDB['msOutRelValColl']
+        self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
+        self.ddm = DDM(url=self.msConfig['ddmUrl'],
+                       logger=self.logger,
+                       enableDataPlacement=self.msConfig['enableDataPlacement'])
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -53,15 +119,28 @@ class MSOutput(MSCore):
         Fetch some data required for the output logic, e.g.:
         * unified configuration
         """
+        self.logger.info("Updating local cache information.")
         self.uConfig = self.unifiedConfig()
+        campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
+        self.psn2pnnMap = self.cric.PSNtoPNNMap()
         if not self.uConfig:
             raise RuntimeWarning("Failed to fetch the unified configuration")
+        elif not campaigns:
+            raise RuntimeWarning("Failed to fetch the campaign configurations")
+        elif not self.psn2pnnMap:
+            raise RuntimeWarning("Failed to fetch PSN x PNN map from CRIC")
+        else:
+            # let's make campaign look-up easier and more efficient
+            self.campaigns = {}
+            for camp in campaigns:
+                self.campaigns[camp['CampaignName']] = camp
 
     def execute(self, reqStatus):
         """
         Executes the whole output data placement logic
         :return: summary
         """
+
         # start threads in MSManager which should call this method
         # NOTE:
         #    Here we should make the whole logic - like:
@@ -73,39 +152,112 @@ class MSOutput(MSCore):
         #    * Associate and keep track of the requestID/subscriptionID/ruleID
         #      returned by the Data Management System and the workflow
         #      object (through the bookkeeping machinery we choose/develop)
-        summary = dict(OUTPUT_REPORT)
+        self.currHost = gethostname()
+        self.currThread = current_thread()
+        self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
 
-        # We should decide here what variable name to use request vs. workflow
+        if self.mode == 'MSOutputProducer':
+            summary = self._executeProducer(reqStatus)
+
+        elif self.mode == 'MSOutputConsumer':
+            summary = self._executeConsumer()
+
+        else:
+            msg = "MSOutput is running in unsupported mode: %s\n" % self.mode
+            msg += "Skipping the current run!"
+            self.logger.warning(msg)
+
+        return summary
+
+    def _executeProducer(self, reqStatus):
+        """
+        The function to update caches and to execute the Producer function itslef
+        """
+        summary = dict(OUTPUT_PRODUCER_REPORT)
+        self.updateReportDict(summary, "thread_id", self.currThreadIdent)
+        msg = "{}: MSOutput is running in mode: {}".format(self.currThreadIdent, self.mode)
+        self.logger.info(msg)
+
         try:
-            requestRecords = self.getRequestRecords(reqStatus)
-            self.updateReportDict(summary, "total_num_requests", len(requestRecords))
-            msg = "  retrieved %s requests. " % len(requestRecords)
-            msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
-            self.logger.info(msg)
+            requestRecords = {}
+            for status in reqStatus:
+                requestRecords.update(self.getRequestRecords(status))
+                msg = "{}: Retrieved {} requests in status {} from ReqMgr2. ".format(self.currThreadIdent,
+                                                                                     len(requestRecords),
+                                                                                     status)
+                self.logger.info(msg)
         except Exception as err:  # general error
-            msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
+            msg = "{}: Unknown exception while fetching requests from ReqMgr2. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(err))
             self.logger.exception(msg)
-            self.updateReportDict(summary, "error", msg)
 
         try:
             self.updateCaches()
         except RuntimeWarning as ex:
-            msg = "All retries exhausted! Last error was: '%s'" % str(ex)
+            msg = "{}: All retries exhausted! Last error was: '{}'".format(self.currThreadIdent,
+                                                                           str(ex))
             msg += "\nRetrying to update caches again in the next cycle."
             self.logger.error(msg)
             self.updateReportDict(summary, "error", msg)
             return summary
         except Exception as ex:
-            msg = "Unknown exception updating caches. Error: %s" % str(ex)
+            msg = "{}: Unknown exception updating caches. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(ex))
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
             return summary
 
-        # this one is put here just for example.
-        self.updateReportDict(summary, "ddm_request_id", 42)
+        try:
+            streamer = MSOutputStreamer(bufferFile=self.msConfig['streamerBufferFile'],
+                                        requestRecords=requestRecords,
+                                        logger=self.logger)
+            total_num_requests = self.msOutputProducer(streamer())
+            msg = "{}: Total {} requests processed from the streamer. ".format(self.currThreadIdent,
+                                                                               total_num_requests)
+            self.logger.info(msg)
+            self.updateReportDict(summary, "total_num_requests", total_num_requests)
+        except Exception as ex:
+            msg = "{}: Unknown exception while running the Producer thread. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(ex))
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+
         return summary
 
-    def makeSubscriptions(self, workflows=[]):
+    def _executeConsumer(self):
+        """
+        The function to execute the Consumer function itslef
+        """
+
+        summary = dict(OUTPUT_CONSUMER_REPORT)
+        self.updateReportDict(summary, "thread_id", self.currThreadIdent)
+        msg = "{}: MSOutput is running in mode: {} ".format(self.currThreadIdent, self.mode)
+        self.logger.info(msg)
+        msg = "{}: Service set to process up to {} requests ".format(self.currThreadIdent,
+                                                                     self.msConfig["limitRequestsPerCycle"])
+        msg += "per cycle per each type 'RelVal' and 'NonRelval' workflows."
+        self.logger.info(msg)
+
+        if not self.msConfig['enableDataPlacement']:
+            msg = "{} enableDataPlacement = False. ".format(self.currThreadIdent)
+            msg += "Running the MSOutput service in dry run mode"
+            self.logger.warning(msg)
+
+        try:
+            total_num_requests = self.msOutputConsumer()
+            msg = "{}: Total {} requests processed. ".format(self.currThreadIdent,
+                                                             total_num_requests)
+            self.logger.info(msg)
+            self.updateReportDict(summary, "total_num_requests", total_num_requests)
+        except Exception as ex:
+            msg = "{}: Unknown exception while running Consumer thread. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(ex))
+            self.logger.exception(msg)
+            self.updateReportDict(summary, "error", msg)
+
+        return summary
+
+    def makeSubscriptions(self, workflow):
         """
         The common function to make the final subscriptions. It depends on the
         default Data Management System configured through msConfig. Based on that
@@ -116,24 +268,83 @@ class MSOutput(MSCore):
         # NOTE:
         #    Here is just an example construction of the function. None of the
         #    data structures used to visualise it is correct. To Be Updated
-        results = []
+ 
         if self.msConfig['defaultDataManSys'] == 'DDM':
-            # TODO: Here to put the dryrun mode: True/False
-            ddm = DDM(
-                url=self.msConfig['ddmUrl'],
-                logger=self.logger,
-                enableDataPlacement=self.msConfig['enableDataPlacement'])
+            # NOTE:
+            #    We always aggregate per workflow here (regardless of enableAggSubscr)
+            #    and then if we work in strides and enableAggSubscr is True then
+            #    we will aggregate all similar subscription for all workflows
+            #    in a single subscription - then comes the mess how to map back
+            #    which workflow's outputs went to which transfer subscription etc.
+            #    (TODO:)
+            #
+            # NOTE:
+            #    Once we move to working in strides of multiple workflows at a time
+            #    then the workflow sent to that function should not be a single one
+            #    but an iterator of length 'stride' and then we should be doing:
+            #    for workflow in workflows:
+            if isinstance(workflow, MSOutputTemplate):
+                if workflow['isRelVal']:
+                    pass
+                else:
+                    try:
+                        ddmRequest = DDMReqTemplate('copy',
+                                                    item=workflow['OutputDatasets'],
+                                                    n=workflow['numberOfCopies'],
+                                                    site=workflow['destination'])
+                    except Exception as ex:
+                        msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
+                        msg += "Error: {}".format(ex)
+                        self.logger.exception(msg)
+                        return workflow
 
-            ddmReqList = []
-            for workflow in workflows:
-                for output in workflow['output']:
-                    ddmReqList.append(DDMReqTemplate('copy', item=output))
+                    try:
+                        # In the message bellow we may want to put the list of datasets too
+                        msg = "Making transfer subscriptions for {}".format(workflow['RequestName'])
+                        self.logger.info(msg)
+                        ddmResult = self.ddm.makeRequest(ddmRequest)
+                    except Exception as ex:
+                        msg = "Could not make transfer subscription for Workflow: {}".format(workflow['RequestName'])
+                        msg += "Error: {}".format(ex)
+                        self.logger.exception(msg)
+                        return workflow
 
-            if self.msConfig['enableAggSubscr']:
-                results = ddm.makeAggRequests(ddmReqList, aggKey='item')
+                    if 'data' in ddmResult.keys():
+                        self.docKeyUpdate(workflow,
+                                          transferStatus=deepcopy(ddmResult['data'][0]['status']),
+                                          transferIDs=deepcopy(ddmResult['data'][0]['request_id']))
+                        return workflow
+                    else:
+                        msg = "No data found in ddmResult for %s. Either dry run mode or " % workflow['RequestName']
+                        msg += "broken transfer submission to DDM. "
+                        msg += "ddmResult: \n%s" % pformat(ddmResult)
+                        self.logger.warning(msg)
+
+            elif isinstance(workflow, (list, set, CommandCursor)):
+                ddmRequests = {}
+                for wflow in workflow:
+                    wflowName = wflow['RequestName']
+                    ddmRequests[wflowName] = DDMReqTemplate('copy',
+                                                            item=wflow['OutputDatasets'],
+                                                            n=wflow['numberOfCopies'],
+                                                            site=wflow['destination'])
+                if self.msConfig['enableAggSubscr']:
+                    # ddmResults = self.ddm.makeAggRequests(ddmRequests.values(), aggKey='item')
+                    # TODO:
+                    #    Here to deal with the reverse mapping of DDM request_id to workflow
+                    pass
+                else:
+                    # for wflowName, ddmReq in ddmRequests.items():
+                    #     ddmResults.append(self.ddm.makeRequests(ddmReq))
+                    # TODO:
+                    #    Here to deal with making request per workflow and
+                    #    reconstructing and returning the same type of object
+                    #    as the one that have been passed to the current call.
+                    pass
             else:
-                for ddmReq in ddmReqList:
-                    results.append(ddm.makeRequests(ddmReqList, aggKey='item'))
+                msg = "Unsupported type %s for workflows!\n" % type(workflow)
+                msg += "Skipping this call"
+                self.logger.error(msg)
 
         elif self.msConfig['defaultDataManSys'] == 'PhEDEx':
             pass
@@ -141,7 +352,12 @@ class MSOutput(MSCore):
         elif self.msConfig['defaultDataManSys'] == 'Rucio':
             pass
 
-        return results
+        # NOTE:
+        #    if we are about to implement this through a pipeline we MUST not
+        #    return the result here but the WHOLE document with updated fields
+        #    for the transfer as it will be passed to the next function in
+        #    the pipeline and uploaded to MongoDB
+        return workflow
 
     def getRequestRecords(self, reqStatus):
         """
@@ -151,20 +367,330 @@ class MSOutput(MSCore):
 
         # NOTE:
         #    If we are about to use an additional database for book keeping like
-        #    MongoDb, we can fetch up to 'limitRequestsPerCycle' and keep track
+        #    MongoDB, we can fetch up to 'limitRequestsPerCycle' and keep track
         #    their status.
 
         # The following is taken from MSMonitor, just for an example.
         # get requests from ReqMgr2 data-service for given status
         # here with detail=False we get back list of records
-        requests = self.reqmgr2.getRequestByStatus([reqStatus], detail=False)
+        result = self.reqmgr2.getRequestByStatus([reqStatus], detail=True)
+        if not result:
+            requests = {}
+        else:
+            requests = result[0]
         self.logger.info('  retrieved %s requests in status: %s', len(requests), reqStatus)
 
         return requests
 
-    def _pushToMongo(self, reqStatus):
+    def msOutputConsumer(self):
         """
-        An auxiliary function to push documents with workflow/request
-        representation into mongoDB
+        A top level function to drive the creation and book keeping of all the
+        subscriptions to the Data Management System
         """
-        pass
+        # DONE:
+        #    Done: To check if the 'enableDataPlacement' flag is really taken into account
+        #    Done: To make this for both relvals and non relvals
+        #    Done: To return the result
+        #    Done: To make report document
+        #    Done: To build it through a pipe
+        #    Done: To write back the updated document to MonogoDB
+        msPipelineRelVal = Pipeline(name="MSOutputConsumer PipelineRelVal",
+                                    funcLine=[Functor(self.docReadfromMongo,
+                                                      self.msOutRelValColl,
+                                                      setTaken=False),
+                                              Functor(self.makeSubscriptions),
+                                              Functor(self.docKeyUpdate,
+                                                      isTaken=False,
+                                                      isTakenBy=None,
+                                                      lastUpdate=int(time())),
+                                              Functor(self.docUploader,
+                                                      self.msOutRelValColl,
+                                                      update=True,
+                                                      keys=['isTaken',
+                                                            'lastUpdate',
+                                                            'transferStatus',
+                                                            'transferIDs']),
+                                              Functor(self.docDump, pipeLine='PipelineRelVal'),
+                                              Functor(self.docCleaner)])
+        msPipelineNonRelVal = Pipeline(name="MSOutputConsumer PipelineNonRelVal",
+                                       funcLine=[Functor(self.docReadfromMongo,
+                                                         self.msOutNonRelValColl,
+                                                         setTaken=False),
+                                                 Functor(self.makeSubscriptions),
+                                                 Functor(self.docKeyUpdate,
+                                                         isTaken=False,
+                                                         isTakenBy=None,
+                                                         lastUpdate=int(time())),
+                                                 Functor(self.docUploader,
+                                                         self.msOutNonRelValColl,
+                                                         update=True,
+                                                         keys=['isTaken',
+                                                               'lastUpdate',
+                                                               'transferStatus',
+                                                               'transferIDs']),
+                                                 Functor(self.docDump, pipeLine='PipelineNonRelVal'),
+                                                 Functor(self.docCleaner)])
+
+        # NOTE:
+        #    If we actually have any exception that has reached to the top level
+        #    exception handlers (eg. here - outside the pipeLine), this means
+        #    some function from within the pipeLine has not caught it and the msOutDoc
+        #    has left the pipe and died before the relevant document in MongoDB
+        #    has been released (its flag 'isTaken' to be set back to False)
+        wfCounters = {}
+        for pipeLine in [msPipelineRelVal, msPipelineNonRelVal]:
+            pipeLineName = pipeLine.getPipelineName()
+            wfCounters[pipeLineName] = 0
+            while wfCounters[pipeLineName] < self.msConfig['limitRequestsPerCycle']:
+                # take only workflows:
+                # - which are not already taken or
+                # - a transfer subscription have never been done for them and
+                # - avoid retrying workflows in the same cycle
+                currTime = int(time())
+                treshTime = currTime - self.msConfig['interval']
+                mQueryDict = {'isTaken': False,
+                              'transferStatus': None,
+                              '$or': [{'lastUpdate': None},
+                                      {'lastUpdate': {'$lt': treshTime}}]}
+                try:
+                    pipeLine.run(mQueryDict)
+                except KeyError as ex:
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
+                    msg += "Continue to the next document."
+                    self.logger.exception(msg)
+                    continue
+                except TypeError as ex:
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
+                    msg += "Continue to the next document."
+                    self.logger.exception(msg)
+                    continue
+                except EmptyResultError as ex:
+                    msg = "%s All relevant records in MongoDB exhausted. " % pipeLineName
+                    msg += "We are done for the current cycle."
+                    self.logger.info(msg)
+                    break
+                except Exception as ex:
+                    msg = "%s General Error from pipeline. Err: %s. " % (pipeLineName, str(ex))
+                    msg += "Giving up Now."
+                    self.logger.error(msg)
+                    self.logger.exception(ex)
+                    break
+                wfCounters[pipeLineName] += 1
+
+        wfCounterTotal = sum(wfCounters.values())
+        return wfCounterTotal
+ 
+    def msOutputProducer(self, requestRecords):
+        """
+        A top level function to drive the upload of all the documents to MongoDB
+        """
+
+        # DONE:
+        #    To implement this as a functional pipeline in the following sequence:
+        #    1) document streamer - to generate all the records coming from Reqmgr2
+        #    2) document stripper - to cut all the cut all the kews we do not need
+        #       Mongodb document creator - to pass it through the MongoDBTemplate
+        #    3) document updater - fetch & update all the needed info like campaign config etc.
+        #    4) MongoDB upload/update - to upload/update the document in Mongodb
+
+        # DONE:
+        #    to have the requestRecords generated through a call to docStreamer
+        #    and the call should happen from inside this function so that all
+        #    the Objects generated do not leave the scope of this function and
+        #    with that  to reduce big memory footprint
+
+        # DONE:
+        #    to set a destructive function at the end of the pipeline
+        # NOTE:
+        #    To discuss the collection names
+        self.logger.info("Running the msOutputProducer ...")
+        msPipelineRelVal = Pipeline(name="MSOutputProducer PipelineRelVal",
+                                    funcLine=[Functor(self.docTransformer),
+                                              Functor(self.docKeyUpdate, isRelVal=True),
+                                              Functor(self.docInfoUpdate),
+                                              Functor(self.docUploader, self.msOutRelValColl),
+                                              Functor(self.docCleaner)])
+        msPipelineNonRelVal = Pipeline(name="MSOutputProducer PipelineNonRelVal",
+                                       funcLine=[Functor(self.docTransformer),
+                                                 Functor(self.docKeyUpdate, isRelVal=False),
+                                                 Functor(self.docInfoUpdate),
+                                                 Functor(self.docUploader, self.msOutNonRelValColl),
+                                                 Functor(self.docCleaner)])
+        # TODO:
+        #    To generate the object from within the Function scope see above.
+        counter = 0
+        for _, request in requestRecords:
+            counter += 1
+            try:
+                if request.get('SubRequestType') == 'RelVal':
+                    pipeLine = msPipelineRelVal
+                    pipeLineName = pipeLine.getPipelineName()
+                    pipeLine.run(request)
+                else:
+                    pipeLine = msPipelineNonRelVal
+                    pipeLineName = pipeLine.getPipelineName()
+                    pipeLine.run(request)
+            except KeyError as ex:
+                msg = "%s Possibly broken read from Reqmgr2 API or other Err: %s. " % (pipeLineName, str(ex))
+                msg += "Continue to the next document."
+                self.logger.exception(msg)
+                continue
+            except TypeError as ex:
+                msg = "%s Possibly broken read from Reqmgr2 API or other Err: %s. " % (pipeLineName, str(ex))
+                msg += "Continue to the next document."
+                self.logger.exception(msg)
+                continue
+            except Exception as ex:
+                msg = "%s General Error from pipeline. Err: %s. " % (pipeLineName, str(ex))
+                msg += "Giving up Now."
+                self.logger.error(msg)
+                self.logger.exception(ex)
+                break
+        return counter
+
+    def docTransformer(self, doc):
+        """
+        A function used to transform a request record from reqmgr2 to a document
+        suitable for uploading to Mongodb
+        """
+        # Solution 1: Destructive function - to force clear of the the externally
+        #             referenced object and to return a new one (current solution)
+        #             NOTE: Leaves an empty dictionary behind (the clear method just
+        #                   clears all the keys of the dict, but does not delete it)
+        # Solution 2: To work in place (will keep the dynamic structure of the passed dict)
+        # Solution 3: To have 2 object buffers for the two diff types outside the function
+        try:
+            msOutDoc = MSOutputTemplate(doc)
+            doc.clear()
+        except Exception as ex:
+            msg = "ERR: Unable to create MSOutputTemplate for document %s" % pformat(doc)
+            msg += "ERR: %s" % str(ex)
+            self.logger.error(msg)
+        return msOutDoc
+
+    def docDump(self, msOutDoc, pipeLine=None):
+        """
+        Prints document contents
+        """
+        msg = "{}: {}: Processed 'msOutDoc' with '_id': {}.".format(self.currThreadIdent,
+                                                                    pipeLine,
+                                                                    msOutDoc['_id'])
+        self.logger.info(msg)
+        self.logger.debug(pformat(msOutDoc))
+        return msOutDoc
+
+    def docKeyUpdate(self, msOutDoc, **kwargs):
+        """
+        A function used to update one or few particular fields in a document
+        :**kwargs: The keys/value pairs to be updated (will be tested against MSOutputTemplate)
+        """
+        for key, value in kwargs.items():
+            try:
+                msOutDoc.setKey(key, value)
+            except Exception as ex:
+                msg = "Cannot update key {} for doc: {}\n".format(key, msOutDoc['_id'])
+                msg += "Error: {}".format(str(ex))
+                self.logger.warning(msg)
+        return msOutDoc
+
+    def docInfoUpdate(self, msOutDoc):
+        """
+        A function intended to fetch and fill into the document all the needed
+        additional information like campaignOutputMap etc.
+        """
+        return msOutDoc
+
+    def docUploader(self, msOutDoc, dbColl, update=False, keys=None, stride=None):
+        """
+        A function to upload documents to MongoDB. The session object to the  relevant
+        database and Collection must be passed as arguments
+        :msOutDocs: A list of documents of type MSOutputTemplate
+        :dbColl: an object containing an active connection to a MongoDB Collection
+        :stride: the max number of documents we are about to upload at once
+        :update: A flag to trigger document update in MongoDB in case of duplicates
+        :keys:   A list of keys to update. If missing the whole document will be updated
+        """
+        # DONE: to determine the collection to which the document belongs based
+        #       on 'isRelval' key or some other criteria
+        # NOTE: We must return the document(s) at the end so that it can be explicitly
+        #       deleted outside the pipeline
+
+        # Skipping documents avoiding index unique property (documents having the
+        # same value for the indexed key as an already uploaded document)
+        try:
+            dbColl.insert_one(msOutDoc)
+        except errors.DuplicateKeyError:
+            # DONE:
+            #    Here we may wish to double check and make document update, so
+            #    that a change of the Request on ReqMgr may be reflected here too
+            # NOTE:
+            #    If we use the 'update' option with a fresh document created from
+            #    Reqmgr and we overwrite an already existing document in MongoDB
+            #    which have been already worked on - we will loose the information
+            #    that have been stored in the MonggDB - so always use 'update'
+            #    with the proper set of keys to be updated
+            if not keys:
+                keys = []
+
+            # update only the requested keyes:
+            if update and keys:
+                updateDict = {}
+                for key in keys:
+                    updateDict[key] = msOutDoc[key]
+                msOutDoc = dbColl.find_one_and_update(
+                    {'_id': msOutDoc['_id']},
+                    {'$set': updateDict},
+                    return_document=ReturnDocument.AFTER)
+            if update and not keys:
+                msOutDoc = dbColl.find_one_and_update(
+                    {'_id': msOutDoc['_id']},
+                    {'$set': msOutDoc},
+                    return_document=ReturnDocument.AFTER)
+        return msOutDoc
+
+    def docReadfromMongo(self, mQueryDict, dbColl, setTaken=False):
+        """
+        Reads a single Document from MongoDB and if setTaken flag is on then
+        Sets the relevant flags (isTaken, isTakenBy) in the document at MongoDB
+        """
+        # NOTE:
+        #    In case the current query returns an empty document from MongoDB
+        #    (eg. all workflows have been processed) the MSOutputTemplate
+        #    will throw an error. We should catch this one here and interrupt
+        #    the pipeLine traversal, otherwise an error either here or in one of the
+        #    following stages will most probably occur and the whole run will be broken.
+        if setTaken:
+            lastUpdate = int(time())
+            retrString = self.currThreadIdent
+            mongoDoc = dbColl.find_one_and_update(mQueryDict,
+                                                  {'$set': {'isTaken': True,
+                                                            'isTakenBy': retrString,
+                                                            'lastUpdate': lastUpdate}},
+                                                  return_document=ReturnDocument.AFTER)
+        else:
+            mongoDoc = dbColl.find_one(mQueryDict)
+        if mongoDoc:
+            try:
+                msOutDoc = MSOutputTemplate(mongoDoc)
+            except Exception as ex:
+                msg = "Unable to create msOutDoc from %s." % mongoDoc
+                self.logger.warning(msg)
+                raise ex
+                # NOTE:
+                #    Here if we do not update the isTaken flag in MongoDB back
+                #    to False, the document will not be released in MongoDb and
+                #    will stay locked. If we are ending up here it means for some
+                #    reason we have a malformed document in MongoDB. We should make
+                #    a design choice - should we release the document or should
+                #    we leave it locked for further investigations or maybe
+                #    mark it with another flag eg. 'isMalformed': True
+        else:
+            raise EmptyResultError
+        return msOutDoc
+
+    def docCleaner(self, doc):
+        """
+        Calls the dictionary internal method clear() and purges all the contents
+        of the document
+        """
+        return doc.clear()

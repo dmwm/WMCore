@@ -439,7 +439,7 @@ class MSOutput(MSCore):
         #    has been released (its flag 'isTaken' to be set back to False)
         wfCounters = {}
         for pipeLine in [msPipelineRelVal, msPipelineNonRelVal]:
-            pipeLineName = pipeLine.getPiplineName()
+            pipeLineName = pipeLine.getPipelineName()
             wfCounters[pipeLineName] = 0
             while wfCounters[pipeLineName] < self.msConfig['limitRequestsPerCycle']:
                 # take only workflows:
@@ -455,22 +455,22 @@ class MSOutput(MSCore):
                 try:
                     pipeLine.run(mQueryDict)
                 except KeyError as ex:
-                    msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
                     msg += "Continue to the next document."
                     self.logger.exception(msg)
                     continue
                 except TypeError as ex:
-                    msg = "%s Possibly malformed record in MongoDB. Err: %s." % (pipeLineName, str(ex))
+                    msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
                     msg += "Continue to the next document."
                     self.logger.exception(msg)
                     continue
                 except EmptyResultError as ex:
-                    msg = "%s All relevant records in MongoDB exhausted." % pipeLineName
+                    msg = "%s All relevant records in MongoDB exhausted. " % pipeLineName
                     msg += "We are done for the current cycle."
                     self.logger.info(msg)
                     break
                 except Exception as ex:
-                    msg = "%s General Error from pipeline. Err: %s" % (pipeLineName, str(ex))
+                    msg = "%s General Error from pipeline. Err: %s. " % (pipeLineName, str(ex))
                     msg += "Giving up Now."
                     self.logger.error(msg)
                     self.logger.exception(ex)
@@ -521,12 +521,31 @@ class MSOutput(MSCore):
         counter = 0
         for _, request in requestRecords:
             counter += 1
-            if request.get('SubRequestType') == 'RelVal':
-                msPipelineRelVal.run(request)
-            else:
-                msPipelineNonRelVal.run(request)
-            # if counter == stride:
-            #     break
+            try:
+                if request.get('SubRequestType') == 'RelVal':
+                    pipeLine = msPipelineRelVal
+                    pipeLineName = pipeLine.getPipelineName()
+                    pipeLine.run(request)
+                else:
+                    pipeLine = msPipelineNonRelVal
+                    pipeLineName = pipeLine.getPipelineName()
+                    pipeLine.run(request)
+            except KeyError as ex:
+                msg = "%s Possibly broken read from Reqmgr2 API or other Err: %s. " % (pipeLineName, str(ex))
+                msg += "Continue to the next document."
+                self.logger.exception(msg)
+                continue
+            except TypeError as ex:
+                msg = "%s Possibly broken read from Reqmgr2 API or other Err: %s. " % (pipeLineName, str(ex))
+                msg += "Continue to the next document."
+                self.logger.exception(msg)
+                continue
+            except Exception as ex:
+                msg = "%s General Error from pipeline. Err: %s. " % (pipeLineName, str(ex))
+                msg += "Giving up Now."
+                self.logger.error(msg)
+                self.logger.exception(ex)
+                break
         return counter
 
     def docTransformer(self, doc):

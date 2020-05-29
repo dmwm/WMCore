@@ -128,9 +128,9 @@ class Pipeline(object):
         self.funcLine = funcLine or []
         self.name = name
 
-    def getPiplineName(self):
+    def getPipelineName(self):
         """
-        __gePipelineName__
+        __getPipelineName__
         """
         name = self.name or "Unnamed Pipeline"
         return name

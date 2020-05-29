@@ -13,7 +13,6 @@ from pymongo import IndexModel, ReturnDocument, errors
 from pymongo.command_cursor import CommandCursor
 from pprint import pformat
 from copy import deepcopy
-from bson import Timestamp
 from time import time
 from socket import gethostname
 from threading import current_thread
@@ -403,7 +402,7 @@ class MSOutput(MSCore):
                                               Functor(self.docKeyUpdate,
                                                       isTaken=False,
                                                       isTakenBy=None,
-                                                      lastUpdate=Timestamp(int(time()), 1)),
+                                                      lastUpdate=int(time())),
                                               Functor(self.docUploader,
                                                       self.msOutRelValColl,
                                                       update=True,
@@ -421,7 +420,7 @@ class MSOutput(MSCore):
                                                  Functor(self.docKeyUpdate,
                                                          isTaken=False,
                                                          isTakenBy=None,
-                                                         lastUpdate=Timestamp(int(time()), 1)),
+                                                         lastUpdate=int(time())),
                                                  Functor(self.docUploader,
                                                          self.msOutNonRelValColl,
                                                          update=True,
@@ -443,9 +442,16 @@ class MSOutput(MSCore):
             pipeLineName = pipeLine.getPiplineName()
             wfCounters[pipeLineName] = 0
             while wfCounters[pipeLineName] < self.msConfig['limitRequestsPerCycle']:
-                # take only workflows which are not already taken or a transfer
-                # subscription have never been done for them
-                mQueryDict = {'isTaken': False, 'transferStatus': None}
+                # take only workflows:
+                # - which are not already taken or
+                # - a transfer subscription have never been done for them and
+                # - avoid retrying workflows in the same cycle
+                currTime = int(time())
+                treshTime = currTime - self.msConfig['interval']
+                mQueryDict = {'isTaken': False,
+                              'transferStatus': None,
+                              '$or': [{'lastUpdate': None},
+                                      {'lastUpdate': {'$lt': treshTime}}]}
                 try:
                     pipeLine.run(mQueryDict)
                 except KeyError as ex:
@@ -635,7 +641,7 @@ class MSOutput(MSCore):
         #    the pipeLine traversal, otherwise an error either here or in one of the
         #    following stages will most probably occur and the whole run will be broken.
         if setTaken:
-            lastUpdate = Timestamp(int(time()), 1)
+            lastUpdate = int(time())
             retrString = self.currThreadIdent
             mongoDoc = dbColl.find_one_and_update(mQueryDict,
                                                   {'$set': {'isTaken': True,

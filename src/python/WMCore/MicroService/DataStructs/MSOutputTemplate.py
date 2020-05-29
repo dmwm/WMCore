@@ -6,10 +6,9 @@ Description: Provides a document Template for MSOutput MicroServices
 # futures
 from __future__ import division, print_function
 
-import time
+from time import time
 
 from copy import deepcopy
-from bson import Timestamp
 
 
 class MSOutputTemplate(dict):
@@ -75,8 +74,8 @@ class MSOutputTemplate(dict):
             ('_id', None, unicode),
             ('RequestName', None, unicode),
             ('Campaign', None, unicode),
-            ('creationTime', None, Timestamp),
-            ('lastUpdate', None, Timestamp),
+            ('creationTime', None, int),
+            ('lastUpdate', None, int),
             ('isRelVal', None, bool),
             ('isTaken', False, bool),
             ('isTakenBy', None, (str, unicode)),
@@ -99,7 +98,7 @@ class MSOutputTemplate(dict):
         # set creation time - if already present in the document it will be
         # overwritten with the value from the document itself during the _checkAttr
         # call and this value here will be ignored
-        myDoc['creationTime'] = Timestamp(int(time.time()), 1)
+        myDoc['creationTime'] = int(time())
 
         # if no document was passed consider only **kwargs
         if doc is not None:
@@ -249,12 +248,12 @@ class MSOutputTemplate(dict):
 
     def setDestMap(self):
         """
-        __setDestMap_
+        __setDestMap__
         """
         pass
 
     def updateTime(self):
         """
-        __updateTeim__
+        __updateTime__
         """
-        self.setKey('lastUpdate', Timestamp(int(time.time()), 1))
+        self.setKey('lastUpdate', int(time()))

@@ -181,9 +181,10 @@ class MSOutput(MSCore):
         try:
             requestRecords = {}
             for status in reqStatus:
+                numRequestRecords = len(requestRecords)
                 requestRecords.update(self.getRequestRecords(status))
                 msg = "{}: Retrieved {} requests in status {} from ReqMgr2. ".format(self.currThreadIdent,
-                                                                                     len(requestRecords),
+                                                                                     len(requestRecords) - numRequestRecords,
                                                                                      status)
                 self.logger.info(msg)
         except Exception as err:  # general error

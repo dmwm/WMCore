@@ -81,10 +81,10 @@ class MSOutputTemplate(dict):
             ('isTakenBy', None, (str, unicode)),
             ('OutputDatasets', None, list),
             ('destination', None, list),
-            ('destinationOutputMap', None, dict),
+            ('destinationOutputMap', None, list),
             ('campaignOutputMap', None, list),
-            ('transferStatus', None, unicode),
-            ('transferIDs', None, int),
+            ('transferStatus', None, (str, unicode)),
+            ('transferIDs', None, list),
             ('numberOfCopies', None, int)]
 
         self.docTemplate = docTemplate
@@ -234,11 +234,11 @@ class MSOutputTemplate(dict):
             return True
         return False
 
-    def updateDoc(self, myDoc):
+    def updateDoc(self, myDoc, throw=False):
         """
-        Method to be used for updating the document fields from a dictionary
+        A method to be used for updating the document fields from a dictionary
         """
-        if self._checkAttr(self.docTemplate, myDoc, throw=False, update=False, **myDoc):
+        if self._checkAttr(self.docTemplate, myDoc, throw=throw, update=False, **myDoc):
             self.update(myDoc)
             return True
         return False

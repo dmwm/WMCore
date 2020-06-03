@@ -284,41 +284,80 @@ class MSOutput(MSCore):
             #    but an iterator of length 'stride' and then we should be doing:
             #    for workflow in workflows:
             if isinstance(workflow, MSOutputTemplate):
-                if workflow['isRelVal']:
-                    pass
-                else:
-                    try:
+                ddmReqList = []
+                try:
+                    if workflow['isRelVal']:
+                        for dMap in workflow['destinationOutputMap']:
+                            try:
+                                ddmRequest = DDMReqTemplate('copy',
+                                                            item=dMap['datasets'],
+                                                            n=workflow['numberOfCopies'],
+                                                            site=dMap['destination'],
+                                                            group='RelVal')
+                            except KeyError as ex:
+                                # NOTE:
+                                #    If we get to here it is most probably because the 'site'
+                                #    mandatory field to the DDM request is missing (due to an
+                                #    'ALCARECO' dataset or similar). Since this is expected
+                                #    to happen a lot, we'd better just log a warning and continue
+                                msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
+                                msg += "Error: {}".format(ex)
+                                self.logger.warning(msg)
+                                continue
+                            ddmReqList.append(ddmRequest)
+                    else:
+                        # FIXME:
+                        #    We need to create the campaignMap and use it for
+                        #    creating the requests for the nonRelVal workflows
+                        #    it should be also the case when we migrate to Rucio
                         ddmRequest = DDMReqTemplate('copy',
                                                     item=workflow['OutputDatasets'],
                                                     n=workflow['numberOfCopies'],
                                                     site=workflow['destination'])
-                    except Exception as ex:
-                        msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
-                        msg += "Error: {}".format(ex)
-                        self.logger.exception(msg)
-                        return workflow
+                        ddmReqList.append(ddmRequest)
+                except Exception as ex:
+                    msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
+                    msg += "Error: {}".format(ex)
+                    self.logger.exception(msg)
+                    return workflow
 
-                    try:
-                        # In the message bellow we may want to put the list of datasets too
-                        msg = "Making transfer subscriptions for {}".format(workflow['RequestName'])
-                        self.logger.info(msg)
-                        ddmResult = self.ddm.makeRequest(ddmRequest)
-                    except Exception as ex:
-                        msg = "Could not make transfer subscription for Workflow: {}".format(workflow['RequestName'])
-                        msg += "Error: {}".format(ex)
-                        self.logger.exception(msg)
-                        return workflow
+                try:
+                    # In the message bellow we may want to put the list of datasets too
+                    msg = "Making transfer subscriptions for {}".format(workflow['RequestName'])
+                    self.logger.info(msg)
+                    ddmResultList = self.ddm.makeAggRequests(ddmReqList, aggKey='item')
+                except Exception as ex:
+                    msg = "Could not make transfer subscription for Workflow: {}".format(workflow['RequestName'])
+                    msg += "Error: {}".format(ex)
+                    self.logger.exception(msg)
+                    return workflow
 
+                ddmStatusList = ['new', 'activated', 'completed', 'rejected', 'cancelled']
+                transferIDs = []
+                transferStatusList = []
+                for ddmResult in ddmResultList:
                     if 'data' in ddmResult.keys():
-                        self.docKeyUpdate(workflow,
-                                          transferStatus=deepcopy(ddmResult['data'][0]['status']),
-                                          transferIDs=deepcopy(ddmResult['data'][0]['request_id']))
-                        return workflow
-                    else:
-                        msg = "No data found in ddmResult for %s. Either dry run mode or " % workflow['RequestName']
-                        msg += "broken transfer submission to DDM. "
-                        msg += "ddmResult: \n%s" % pformat(ddmResult)
-                        self.logger.warning(msg)
+                        id = deepcopy(ddmResult['data'][0]['request_id'])
+                        status = deepcopy(ddmResult['data'][0]['status'])
+                        transferStatusList.append({'transferID': id,
+                                                   'status': status})
+                        transferIDs.append(id)
+
+                if transferStatusList and all(map(lambda x:
+                                                  True if x['status'] in ddmStatusList else False,
+                                                  transferStatusList)):
+                    self.docKeyUpdate(workflow,
+                                      transferStatus='done',
+                                      transferIDs=transferIDs)
+                    return workflow
+                else:
+                    self.docKeyUpdate(workflow,
+                                      transferStatus='incomplete')
+                    msg = "No data found in ddmResults for %s. Either dry run mode or " % workflow['RequestName']
+                    msg += "broken transfer submission to DDM. "
+                    msg += "ddmResults: \n%s" % pformat(ddmResultList)
+                    self.logger.warning(msg)
+                return workflow
 
             elif isinstance(workflow, (list, set, CommandCursor)):
                 ddmRequests = {}
@@ -446,12 +485,24 @@ class MSOutput(MSCore):
                 # - which are not already taken or
                 # - a transfer subscription have never been done for them and
                 # - avoid retrying workflows in the same cycle
+                # NOTE:
+                #    Once we are running the service not in a dry run mode we may
+                #    consider adding and $or condition in mQueryDict for transferStatus:
+                #    '$or': [{'transferStatus': None},
+                #            {'transferStatus': 'incomplete'}]
+                #    So that we can collect also workflows with partially or fully
+                #    unsuccessful transfers
                 currTime = int(time())
                 treshTime = currTime - self.msConfig['interval']
-                mQueryDict = {'isTaken': False,
-                              'transferStatus': None,
-                              '$or': [{'lastUpdate': None},
-                                      {'lastUpdate': {'$lt': treshTime}}]}
+                mQueryDict = {
+                    '$and': [
+                        {'isTaken': False},
+                        {'$or': [
+                            {'transferStatus': None},
+                            {'transferStatus': 'incomplete'}]},
+                        {'$or': [
+                            {'lastUpdate': None},
+                            {'lastUpdate': {'$lt': treshTime}}]}]}
                 try:
                     pipeLine.run(mQueryDict)
                 except KeyError as ex:
@@ -503,17 +554,21 @@ class MSOutput(MSCore):
         #    to set a destructive function at the end of the pipeline
         # NOTE:
         #    To discuss the collection names
+        # NOTE:
+        #    Here we should never use docUploader with `update=True`, because
+        #    this will erase the latest state of already existing and fully or
+        #    partially processed documents by the Consumer pipeline
         self.logger.info("Running the msOutputProducer ...")
         msPipelineRelVal = Pipeline(name="MSOutputProducer PipelineRelVal",
                                     funcLine=[Functor(self.docTransformer),
                                               Functor(self.docKeyUpdate, isRelVal=True),
-                                              Functor(self.docInfoUpdate),
+                                              Functor(self.docInfoUpdate, pipeLine='PipelineRelVal'),
                                               Functor(self.docUploader, self.msOutRelValColl),
                                               Functor(self.docCleaner)])
         msPipelineNonRelVal = Pipeline(name="MSOutputProducer PipelineNonRelVal",
                                        funcLine=[Functor(self.docTransformer),
                                                  Functor(self.docKeyUpdate, isRelVal=False),
-                                                 Functor(self.docInfoUpdate),
+                                                 Functor(self.docInfoUpdate, pipeLine='PipelineNonRelVal'),
                                                  Functor(self.docUploader, self.msOutNonRelValColl),
                                                  Functor(self.docCleaner)])
         # TODO:
@@ -587,17 +642,90 @@ class MSOutput(MSCore):
         for key, value in kwargs.items():
             try:
                 msOutDoc.setKey(key, value)
+                msOutDoc.updateTime()
             except Exception as ex:
                 msg = "Cannot update key {} for doc: {}\n".format(key, msOutDoc['_id'])
                 msg += "Error: {}".format(str(ex))
                 self.logger.warning(msg)
         return msOutDoc
 
-    def docInfoUpdate(self, msOutDoc):
+    def docInfoUpdate(self, msOutDoc, pipeLine=None):
         """
         A function intended to fetch and fill into the document all the needed
         additional information like campaignOutputMap etc.
         """
+
+        # Fill the destinationOutputMap first
+        if msOutDoc['isRelVal']:
+            destinationOutputMap = []
+            wflowDstSet = set()
+            updateDict = {}
+            for dataset in msOutDoc['OutputDatasets']:
+                _, dsn, procString, dataTier = dataset.split('/')
+                destination = set()
+                if dataTier != "RECO" and dataTier != "ALCARECO":
+                    destination.add('T2_CH_CERN')
+                if dataTier == "GEN-SIM":
+                    destination.add('T1_US_FNAL_Disk')
+                if dataTier == "GEN-SIM-DIGI-RAW":
+                    destination.add('T1_US_FNAL_Disk')
+                if dataTier == "GEN-SIM-RECO":
+                    destination.add('T1_US_FNAL_Disk')
+                if "RelValTTBar" in dsn and "TkAlMinBias" in procString and dataTier != "ALCARECO":
+                    destination.add('T2_CH_CERN')
+                if "MinimumBias" in dsn and "SiStripCalMinBias" in procString and dataTier != "ALCARECO":
+                    destination.add('T2_CH_CERN')
+                dMap = {'datasets': [dataset],
+                        'destination': list(destination)}
+                destinationOutputMap.append(dMap)
+                wflowDstSet |= destination
+
+            # here we try to aggregate the destination map per destination
+            aggDstMap = []
+
+            # populate the first element in the aggregated list
+            aggDstMap.append(destinationOutputMap.pop())
+
+            # feed the rest
+            while len(destinationOutputMap) != 0:
+                dMap = destinationOutputMap.pop()
+                found = False
+                for aggMap in aggDstMap:
+                    if set(dMap['destination']) == set(aggMap['destination']):
+                        # Check if the two objects are not references to one and the
+                        # same object. Only then copy the values of the dMap,
+                        # otherwise we will enter an endless cycle.
+                        if dMap is not aggMap:
+                            for i in dMap['datasets']:
+                                aggMap['datasets'].append(i)
+                        found = True
+                        del(dMap)
+                        break
+                if not found:
+                    aggDstMap.append(dMap)
+
+            # finally reassign the destination map with the aggregated one
+            destinationOutputMap = aggDstMap
+
+            wflowDstList = list(wflowDstSet)
+            updateDict['destination'] = wflowDstList
+            updateDict['destinationOutputMap'] = destinationOutputMap
+            try:
+                msOutDoc.updateDoc(updateDict, throw=True)
+                # msg = "%s: %s: 'msOutDoc': %s"
+                # self.logger.debug(msg,
+                #                   self.currThreadIdent,
+                #                   pipeLine,
+                #                   pformat(msOutDoc))
+            except Exception as ex:
+                msg = "%s: %s: Could not update the additional information for "
+                msg += "'msOutDoc' with '_id': %s \n"
+                msg += "Error: %s"
+                self.logger.exception(msg,
+                                      self.currThreadIdent,
+                                      pipeLine,
+                                      msOutDoc['_id'],
+                                      str(ex))
         return msOutDoc
 
     def docUploader(self, msOutDoc, dbColl, update=False, keys=None, stride=None):
@@ -632,7 +760,7 @@ class MSOutput(MSCore):
             if not keys:
                 keys = []
 
-            # update only the requested keyes:
+            # update only the requested keys:
             if update and keys:
                 updateDict = {}
                 for key in keys:

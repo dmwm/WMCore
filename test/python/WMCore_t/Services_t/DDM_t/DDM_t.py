@@ -25,17 +25,18 @@ class DDMReqTemplateTest(EmulatedUnitTestCase):
         Setup for unit tests
         """
         super(DDMReqTemplateTest, self).setUp()
-        self.myddmReq = DDMReqTemplate('copy')
-        self.myddmReq['item'] = ['/LQLQToTopMuTopTau_M-1200_TuneCP5_13TeV_pythia8/RunIIFall17NanoAODv5-PU2017_12Apr2018_Nano1June2019_102X_mc2017_realistic_v7-v1/NANOAODSIM']
+        self.myddmReq = DDMReqTemplate('copy',
+                                       item=['/LQLQToTopMuTopTau_M-1200_TuneCP5_13TeV_pythia8/RunIIFall17NanoAODv5-PU2017_12Apr2018_Nano1June2019_102X_mc2017_realistic_v7-v1/NANOAODSIM'])
 
     def testConstructor(self):
         # Test construct with default values:
         expectedDdmReq = {'group': 'DataOps',
-                          'item': [],
+                          'item': ['someDatasetName'],
                           'site': ['T2_*', 'T1_*_Disk'],
                           'n': None,
                           'cache': None}
-        self.ddmReq = DDMReqTemplate('copy')
+        self.ddmReq = DDMReqTemplate('copy',
+                                     item=['someDatasetName'])
         self.assertEqual(self.ddmReq, expectedDdmReq)
 
         # Test bad API:
@@ -96,7 +97,7 @@ class DDMReqTemplateTest(EmulatedUnitTestCase):
         self.assertFalse(ddmReq2.isEqual(ddmReq3, 'item'))
 
         # Test compare requests with equal keys, different APIS:
-        ddmReq0 = DDMReqTemplate('pollcopy', item=['DataSet1'], site=['T2_*', 'T1_*_Disk'])
+        ddmReq0 = DDMReqTemplate('pollcopy', request_id=46633, item=['DataSet1'], site=['T2_*', 'T1_*_Disk'])
         self.assertFalse(ddmReq0.isEqual(ddmReq1))
         self.assertFalse(ddmReq0.isEqual(ddmReq1, 'item'))
         self.assertFalse(ddmReq0.isEqual(ddmReq2, 'item'))

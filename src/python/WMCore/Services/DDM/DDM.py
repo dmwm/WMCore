@@ -43,6 +43,7 @@ class DDMReqTemplate(dict):
                          ('group', 'DataOps', str),
                          ('n', None, int),
                          ('cache', None, str)]
+            required = ['item', 'site']
 
         elif api == 'pollcopy':
             tempTuple = [('request_id', None, int),
@@ -50,9 +51,11 @@ class DDMReqTemplate(dict):
                          ('site', None, list),
                          ('status', None, str),
                          ('user', None, str)]
+            required = ['request_id']
 
         elif api == 'cancelcopy':
             tempTuple = [('request_id', None, int)]
+            required = ['request_id']
 
         else:
             msg = "ERROR: Unsupported API: {}".format(api)
@@ -87,6 +90,20 @@ class DDMReqTemplate(dict):
                     kw,
                     kwargs[kw])
                 raise TypeError(msg)
+
+        # check if all mandatory fields do exist
+        valid = []
+        missing = []
+        for mandField in required:
+            if mandField in template.keys() and template[mandField]:
+                valid.append(True)
+            else:
+                valid.append(False)
+                missing.append(mandField)
+
+        if not all(valid):
+            msg = "ERROR: Missing Mandatory Fields: {} for: {}".format(missing, template)
+            raise KeyError(msg)
 
         self.update(template)
 

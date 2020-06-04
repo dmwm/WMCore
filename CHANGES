@@ -1,3 +1,10 @@
+1.3.5.pre4 to 1.3.5.pre5:
+  - MSOutput implementation for 'RelVal' workflows. (Todor Ivanov) #9720
+  - Create a map of output datasets by campaign for the MSOutput component (Alan Malta Rodrigues) #9719
+  - Limit number of rows returned from WorkQueue workRestrictions (Alan Malta Rodrigues) #9679
+  - Fix wrong number of requests by status retrieved from Reqmgr2 (Todor Ivanov) #9715
+
+
 1.3.5.pre3 to 1.3.5.pre4:
   - add new WMStatsErl ddocs to the reqmon package dependency (Alan Malta Rodrigues) #9713
 

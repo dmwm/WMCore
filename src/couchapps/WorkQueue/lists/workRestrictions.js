@@ -14,6 +14,13 @@ function(head, req) {
     }
 
     try {
+        var num_elem = JSON.parse(req.query.num_elem);
+    } catch (ex) {
+        send('"Error parsing number of elements" ' +  req.query.num_elem);
+        return;
+    }
+
+    try {
         var resources = JSON.parse(req.query.resources);
     } catch (ex) {
         send('"Error parsing resources" ' +  req.query.resources);
@@ -48,7 +55,11 @@ function(head, req) {
         if (resources.length == 0) {
             break;
         }
-        
+
+        if (num_elem <= 0) {
+            break;
+        }
+
         //in case document is already deleted	
         if (!row.doc) {
         	continue;
@@ -133,6 +144,7 @@ function(head, req) {
             }
             send(toJSON(row["doc"])); // need whole document, id etc...
             first = false; // from now on prepend "," to output
+            num_elem--; // decrement the counter for the number of elements
             break; // we have work, move to next element (break out of site loop)
         } // end resources
     } // end rows

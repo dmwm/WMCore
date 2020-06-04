@@ -114,6 +114,9 @@ class MSOutputTemplate(dict):
         # overwrite the equivalent parameter which was coming with the doc
         self._checkAttr(docTemplate, myDoc, update=True, throw=True, **kwargs)
 
+        if doc is not None:
+            self._setCampMap(doc, myDoc)
+
         # enforce a full check on the final document
         self._checkAttr(docTemplate, myDoc, update=False, throw=True, **myDoc)
 
@@ -240,11 +243,41 @@ class MSOutputTemplate(dict):
             return True
         return False
 
-    def setCampMap(self):
+    def _setCampMap(self, reqDoc, thisDoc):
         """
         __setCampMap__
+        Provided the request content retrieved from ReqMgr2, build a map
+        of output dataset per campaign.
+        :param reqDoc: meant to be the request dictionary retrieved from ReqMgr2
+        :param thisDoc: meant to be a template msoutput object
         """
-        pass
+        # first, check whether we are loading a document from MongoDB or CouchDB
+        if "RequestType" not in reqDoc:
+            # then no mapping needs to be created
+            return True
+
+        campOutputMap = {}
+        finalMap = []
+        if reqDoc["RequestType"] in ["StepChain", "TaskChain"]:
+            for key in reqDoc["ChainParentageMap"]:
+                # key is Step1, Step2 or Task1, Task2, etc
+                # use the Task/Step level campaign, fallback to the top level one
+                if not reqDoc["ChainParentageMap"][key]["ChildDsets"]:
+                    # this task/step does not stage any output data
+                    continue
+                campName = reqDoc[key].get("Campaign", reqDoc.get("Campaign"))
+                campOutputMap.setdefault(campName, [])
+                campOutputMap[campName].extend(reqDoc["ChainParentageMap"][key]["ChildDsets"])
+            # now just write the final data structure out
+            for campName, dsetList in campOutputMap.items():
+                finalMap.append(dict(campaignName=campName, datasets=dsetList))
+        else:
+            # ReReco and StoreResults
+            finalMap.append(dict(campaignName=reqDoc["Campaign"], datasets=reqDoc["OutputDatasets"]))
+
+        # finally, update this object
+        thisDoc["campaignOutputMap"] = finalMap
+        return True
 
     def setDestMap(self):
         """

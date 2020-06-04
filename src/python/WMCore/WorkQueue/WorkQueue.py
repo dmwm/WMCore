@@ -482,14 +482,18 @@ class WorkQueue(WorkQueueBase):
 
     def _assignToChildQueue(self, queue, *elements):
         """Assign work from parent to queue"""
+        workByRequest = {}
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
             ele['ParentQueueUrl'] = self.params['ParentQueueCouchUrl']
             ele['WMBSUrl'] = self.params["WMBSUrl"]
+            workByRequest.setdefault(ele['RequestName'], 0)
+            workByRequest[ele['RequestName']] += 1
         work = self.parent_queue.saveElements(*elements)
-        requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
-        self.logger.info('Acquired work for request(s): %s', requests)
+        self.logger.info("Assigned work to the child queue for:")
+        for reqName, numElem in workByRequest.items():
+            self.logger.info("    %d elements for: %s", numElem, reqName)
         return work
 
     def doneWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None):
@@ -788,6 +792,7 @@ class WorkQueue(WorkQueueBase):
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
         numElems = self.params['WorkPerCycle']
+        self.logger.info("Going to fetch work from the parent queue: %s", self.parent_queue.queueUrl)
         work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
 
         if not work:
@@ -809,7 +814,6 @@ class WorkQueue(WorkQueueBase):
         if (resources, jobCounts) == (False, False):
             return 0
 
-        self.logger.info("Pull work for sites %s: ", str(resources))
         work = self.getAvailableWorkfromParent(resources, jobCounts)
         if not work:
             return 0
@@ -950,7 +954,7 @@ class WorkQueue(WorkQueueBase):
                 elements = self.status(RequestName=wf, syncWithWMBS=useWMBS)
                 parents = self.backend.getInboxElements(RequestName=wf)
 
-                self.logger.debug("Queue status follows:")
+                self.logger.debug("Queue %s status follows:", self.backend.queueUrl)
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
                     self.logger.debug("Request %s, Status %s, Full info: %s", result['RequestName'], result['Status'], result)
@@ -1005,13 +1009,13 @@ class WorkQueue(WorkQueueBase):
             res = self.deleteCompletedWFElements()
             self.logger.info("Deleted %d elements from workqueue/inbox database", res)
         except Exception as ex:
-            self.logger.exception('Error deleting WQ elements: %s', str(ex))
+            self.logger.exception('Error deleting WQ elements. Details: %s', str(ex))
 
         try:
             self.logger.info("Syncing and cancelling work ...")
             self.performSyncAndCancelAction(skipWMBS)
         except Exception as ex:
-            self.logger.error('Error syncing and canceling WQ elements: %s', str(ex))
+            self.logger.error('Error syncing and canceling WQ elements. Details: %s', str(ex))
 
     def _splitWork(self, wmspec, data=None, mask=None, inbound=None, continuous=False):
         """
@@ -1045,6 +1049,8 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Splitting %s with policy %s params = %s', topLevelTask.getPathName(),
                              policyName, self.params['SplittingMapping'])
             units, rejectedWork, badWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
+            self.logger.info('Work splitting completed with %d units, %d rejectedWork and %d badWork',
+                             len(units), len(rejectedWork), len(badWork))
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                                                   unit['Task'].getPathName(),
@@ -1089,6 +1095,8 @@ class WorkQueue(WorkQueueBase):
             return result
         if not inbound_work:
             inbound_work = self.backend.getElementsForSplitting()
+            self.logger.info('Retrieved %d elements for splitting with continuous flag: %s',
+                             len(inbound_work), continuous)
         for inbound in inbound_work:
             try:
                 # Check we haven't already split the work, unless it's continuous processing

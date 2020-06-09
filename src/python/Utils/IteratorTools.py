@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 from __future__ import division, print_function
 
+from future.utils import viewitems
+from builtins import str, map
 import collections
-from itertools import islice
-from itertools import chain
+from itertools import islice, chain
 
 def grouper(iterable, n):
     """
@@ -30,7 +31,7 @@ def nestedDictUpdate(d, u):
     Code from Alex Matelli
     http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     """
-    for k, v in u.iteritems():
+    for k, v in viewitems(u):
         if isinstance(v, collections.Mapping):
             r = nestedDictUpdate(d.get(k, {}), v)
             d[k] = r
@@ -38,16 +39,16 @@ def nestedDictUpdate(d, u):
             d[k] = u[k]
     return d
 
-def convertFromUnicodeToStr(data):
+def convertFromUnicodeToBytes(data):
     """
     code fram
     http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
     """
-    if isinstance(data, basestring):
-        return str(data)
+    if isinstance(data, str):
+        return data.encode('utf-8')
     elif isinstance(data, collections.Mapping):
-        return dict(list(map(convertFromUnicodeToStr, data.iteritems())))
+        return dict(list(map(convertFromUnicodeToBytes, viewitems(data))))
     elif isinstance(data, collections.Iterable):
-        return type(data)(list(map(convertFromUnicodeToStr, data)))
+        return type(data)(list(map(convertFromUnicodeToBytes, data)))
     else:
         return data

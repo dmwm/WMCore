@@ -1,6 +1,6 @@
 """
 """
-import StringIO
+from io import BytesIO
 import logging
 import logging.config
 import os
@@ -104,7 +104,7 @@ class ServiceTest(unittest.TestCase):
         f.close()
         self.assertTrue(isfile(f))
 
-        strio = StringIO.StringIO()
+        strio = BytesIO()
         self.assertTrue(isfile(strio))
         strio.close()
         self.assertTrue(isfile(strio))

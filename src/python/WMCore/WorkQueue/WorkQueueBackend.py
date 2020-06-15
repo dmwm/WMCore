@@ -376,9 +376,11 @@ class WorkQueueBackend(object):
             result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
             result = json.loads(result)
             if not result:
-                self.logger.info("No available work in WQ or it did not pass work/data restrictions")
+                self.logger.info("No available work or it did not pass work/data restrictions for: %s ",
+                                 self.queueUrl)
             else:
-                self.logger.info("Retrieved %d elements from couch workRestrictions list", len(result))
+                self.logger.info("Retrieved %d elements from workRestrictions list for: %s",
+                                 len(result), self.queueUrl)
 
         # Iterate through the results; apply whitelist / blacklist / data
         # locality restrictions.  Only assign jobs if they are high enough
@@ -396,7 +398,10 @@ class WorkQueueBackend(object):
         sortedElements.sort(key=lambda x: x['Priority'], reverse=True)
 
         sites = thresholds.keys()
-        self.logger.info("Current siteJobCounts: %s", siteJobCounts)
+        self.logger.info("Current siteJobCounts:")
+        for site, jobsByPrio in siteJobCounts.items():
+            self.logger.info("    %s : %s", site, jobsByPrio)
+
         for element in sortedElements:
             commonSites = possibleSites(element)
             prio = element['Priority']
@@ -419,7 +424,8 @@ class WorkQueueBackend(object):
             else:
                 self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
-        self.logger.info("And %d elements passed location and siteJobCounts restrictions", len(elements))
+        self.logger.info("And %d elements passed location and siteJobCounts restrictions for: %s",
+                         len(elements), self.queueUrl)
         return elements, thresholds, siteJobCounts
 
     def getActiveData(self):

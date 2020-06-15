@@ -473,7 +473,7 @@ class HarvestTest(unittest.TestCase):
             for job in jobGroup.jobs:
                 baggage = job.getBaggage()
                 self.assertTrue(getattr(baggage, "multiRun", False), "It's supposed to be a multiRun job")
-                self.assertEqual(getattr(baggage, "runLimits", ""), "-1-6")
+                self.assertEqual(getattr(baggage, "forceRunNumber", False), 999999)
 
     def testByRunHarvesting(self):
         """

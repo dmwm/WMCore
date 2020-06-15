@@ -538,22 +538,18 @@ class SetupCMSSWPset(ScriptInterface):
 
         runIsComplete = getattr(self.jobBag, "runIsComplete", False)
         multiRun = getattr(self.jobBag, "multiRun", False)
-        runLimits = getattr(self.jobBag, "runLimits", "")
-        self.logger.info("DQMFileSaver set to multiRun: %s, runIsComplete: %s, runLimits: %s",
-                         multiRun, runIsComplete, runLimits)
+        forceRunNumber = getattr(self.jobBag, "forceRunNumber", False)
+        self.logger.info("DQMFileSaver set to multiRun: %s, runIsComplete: %s, forceRunNumber: %s",
+                         multiRun, runIsComplete, forceRunNumber)
 
         self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
         if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_0"):
-            self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
+            if forceRunNumber:
+                self.process.dqmSaver.forceRunNumber = cms.untracked.int32(forceRunNumber)
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.step.data.application.configuration.pickledarguments)
             datasetName = args.get('datasetName', None)
             if datasetName:
-                if multiRun:
-                    # then change the dataset name in order to get a different root file name
-                    datasetName = datasetName.rsplit('/', 1)
-                    datasetName[0] += runLimits
-                    datasetName = "/".join(datasetName)
                 self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
         return
 

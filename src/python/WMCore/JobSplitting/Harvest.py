@@ -173,12 +173,15 @@ class Harvest(JobFactory):
             self.currentJob.addBaggageParameter("runIsComplete", True)
         self.mergeLumiRange(self.currentJob['mask']['runAndLumis'])
 
-        # now calculate the minimum and maximum run number, it has to go to the root name
-        minRun = min(self.currentJob['mask']['runAndLumis'].keys())
-        maxRun = max(self.currentJob['mask']['runAndLumis'].keys())
+        # assume run_number 1 is MC (might - one day - no longer work)
+        if set(self.currentJob['mask']['runAndLumis'].keys()) == {1}:
+            forceRunNumber = 1
+        else:
+            # then it's data harvesting, force run number in runtime
+            forceRunNumber = 999999
 
         self.currentJob.addBaggageParameter("multiRun", True)
-        self.currentJob.addBaggageParameter("runLimits", "-%s-%s" % (minRun, maxRun))
+        self.currentJob.addBaggageParameter("forceRunNumber", forceRunNumber)
 
         return
 

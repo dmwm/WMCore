@@ -10,8 +10,7 @@ import os
 import pycurl
 import subprocess
 
-from StringIO import StringIO
-
+from io import BytesIO
 
 from WMCore.WMException import WMException
 
@@ -63,7 +62,7 @@ class McM(object):
         """
 
         try:
-            b = StringIO()
+            b = BytesIO()
             c = pycurl.Curl()
 
             fullUrl = '%s/%s' % (self.url, extendURL)

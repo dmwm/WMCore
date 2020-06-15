@@ -999,7 +999,8 @@ class WorkQueue(WorkQueueBase):
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
-        self.logger.info(msg)
+
+        self.logger.debug(msg)
         self.backend.recordTaskActivity('housekeeping', msg)
 
     def performQueueCleanupActions(self, skipWMBS=False):

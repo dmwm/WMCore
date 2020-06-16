@@ -429,7 +429,9 @@ class RequestInfo(MSCore):
                 try:
                     blocks = getBlocksByDsetAndRun(dset, runWhite, dbsUrl)
                 except Exception as exc:
-                    self.logger.error("Failed to retrieve blocks by dataset and run. Details: %s", str(exc))
+                    msg = "Failed to retrieve blocks by dataset '%s'and run: %s\n" % (dset, runWhite)
+                    msg += "Error details: %s" % str(exc)
+                    self.logger.error(msg)
                     raise
                 for block in blocks:
                     if block in blocksDict:

@@ -700,6 +700,7 @@ class StepChainTests(EmulatedUnitTestCase):
                             'NonCustodialSubType': 'Move',
                             'Priority': 'High'}
         assignDict = {"SiteWhitelist": ["T2_US_Nebraska", "T2_IT_Rome"], "Team": "The-A-Team",
+                      "RequestStatus": "assigned", "RequestPriority": 111,
                       "CustodialSites": subscriptionInfo['CustodialSites'],
                       "NonCustodialSites": subscriptionInfo['NonCustodialSites'],
                       "AutoApproveSubscriptionSites": subscriptionInfo['AutoApproveSites'],
@@ -722,8 +723,14 @@ class StepChainTests(EmulatedUnitTestCase):
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
+        # test default request priority
+        self.assertEqual(testWorkload.priority(), 8000)
+
         # and assign it
         testWorkload.updateArguments(assignDict)
+
+        # test new priority in the spec
+        self.assertEqual(testWorkload.priority(), assignDict["RequestPriority"])
 
         outputDsets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDsets), 4)

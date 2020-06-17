@@ -15,6 +15,8 @@ import math
 import re
 import time
 
+from Utils.IteratorTools import grouper
+
 try:
     from urllib import quote, unquote
 except ImportError:
@@ -62,6 +64,7 @@ def dbsInfo(datasets, dbsUrl):
         return datasetBlocks, datasetSizes, datasetTransfers
 
     urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl, d) for d in datasets]
+    logging.info("Executing %d requests against DBS 'blocks' API, with details", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
@@ -98,6 +101,7 @@ def getPileupDatasetSizes(datasets, phedexUrl):
         return sizeByDset
 
     urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
@@ -142,6 +146,7 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
         return dsetBlockSize
 
     urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
@@ -194,6 +199,7 @@ def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
         url += "percent_min=%s&dataset=%s"
     urls = [url % (percentMin, dset) for dset in datasets]
 
+    logging.info("Executing %d requests against PhEDEx 'subscriptions' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
@@ -225,7 +231,10 @@ def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
     if isinstance(runList, set):
         runList = list(runList)
 
-    urls = ['%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runList).replace(" ", ""), datasetName)]
+    urls = []
+    for runSlice in grouper(runList, 50):
+        urls.append('%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runSlice).replace(" ", ""), datasetName))
+    logging.info("Executing %d requests against DBS 'blocks' API, with run_num list", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:
@@ -254,6 +263,7 @@ def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
     runLumisByBlock = {}
     urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(b)) for b in blocks]
     # limit it to 10 concurrent calls not to overload DBS
+    logging.info("Executing %d requests against DBS 'filelumis' API, concurrency limited to 10", len(urls))
     data = multi_getdata(urls, ckey(), cert(), num_conn=10)
 
     for row in data:
@@ -280,6 +290,7 @@ def findBlockParents(blocks, dbsUrl):
     """
     parentsByBlock = {}
     urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    logging.info("Executing %d requests against DBS 'blockparents' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
@@ -314,6 +325,7 @@ def getRunsInBlock(blocks, dbsUrl):
     """
     runsByBlock = {}
     urls = ['%s/runs?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    logging.info("Executing %d requests against DBS 'runs' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
         blockName = unquote(row['url'].rsplit('=')[-1])
@@ -330,6 +342,7 @@ def getRunsInBlock(blocks, dbsUrl):
 def phedexInfo(datasets, phedexUrl):
     "Fetch PhEDEx info about nodes for all datasets"
     urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl, d) for d in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicasummary' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
@@ -628,6 +641,7 @@ def findParent(datasets, dbsUrl):
         return parentByDset
 
     urls = ['%s/datasetparents?dataset=%s' % (dbsUrl, d) for d in datasets]
+    logging.info("Executing %d requests against DBS 'datasetparents' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
 
     for row in data:

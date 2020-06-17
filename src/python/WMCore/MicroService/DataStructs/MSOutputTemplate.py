@@ -258,7 +258,7 @@ class MSOutputTemplate(dict):
 
         campOutputMap = {}
         finalMap = []
-        if reqDoc["RequestType"] in ["StepChain", "TaskChain"]:
+        if reqDoc["RequestType"] in ["StepChain", "TaskChain"] and "ChainParentageMap" in reqDoc:
             for key in reqDoc["ChainParentageMap"]:
                 # key is Step1, Step2 or Task1, Task2, etc
                 # use the Task/Step level campaign, fallback to the top level one
@@ -272,7 +272,7 @@ class MSOutputTemplate(dict):
             for campName, dsetList in campOutputMap.items():
                 finalMap.append(dict(campaignName=campName, datasets=dsetList))
         else:
-            # ReReco and StoreResults
+            # ReReco and StoreResults (or very old - <=2018 - non-archived workflows)
             finalMap.append(dict(campaignName=reqDoc["Campaign"], datasets=reqDoc["OutputDatasets"]))
 
         # finally, update this object

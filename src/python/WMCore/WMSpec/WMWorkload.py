@@ -411,7 +411,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def priority(self):
         """
         _priority_
-        return priorty of workload
+        return priority of workload
         """
         return self.data.request.priority
 
@@ -1908,6 +1908,12 @@ class WMWorkloadHelper(PersistencyHelper):
         specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         setAssignArgumentsWithDefault(kwargs, argumentDefinition)
+
+        if kwargs.get('RequestPriority') is not None and kwargs['RequestPriority'] != self.priority():
+            self.setPriority(kwargs['RequestPriority'])
+        else:
+            # if it's the same, pop it out to avoid priority transition update
+            kwargs.pop("RequestPriority", None)
 
         self.setWorkloadOverrides(kwargs["Override"])
         self.setSiteWhitelist(kwargs["SiteWhitelist"])

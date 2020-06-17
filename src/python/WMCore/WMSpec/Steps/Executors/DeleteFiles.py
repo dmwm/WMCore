@@ -8,15 +8,13 @@ Implementation of an Executor for a Delete step
 """
 from __future__ import print_function
 
-import logging
 import signal
-import traceback
 
-import WMCore.Storage.DeleteMgr as DeleteMgr
-import WMCore.Storage.FileManager
+from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
+from WMCore.Storage.FileManager import DeleteMgr as NewDeleteMgr
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
-
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 class DeleteFiles(Executor):
     """
@@ -36,7 +34,7 @@ class DeleteFiles(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
+        self.logger.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -49,7 +47,9 @@ class DeleteFiles(Executor):
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
 
-        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+        self.logger.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+        self.logger.info("Step set to numberOfRetries: %s, retryDelay: %s",
+                         self.step.retryCount, self.step.retryDelay)
 
         # Look!  I can steal from StageOut
         # DeleteMgr uses the same manager structure as StageOutMgr
@@ -57,9 +57,12 @@ class DeleteFiles(Executor):
         overrides = {}
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
+        # Wait up to 5min for a single file deletion
+        overrides.setdefault('waitTime', 300)
 
-        # Set wait to 15 minutes
-        waitTime = overrides.get('waitTime', 900)
+        self.logger.info("Step with the following overrides:")
+        for keyName, value in overrides.items():
+            self.logger.info("    %s : %s", keyName, value)
 
         # Pull out StageOutMgr Overrides
         # switch between old stageOut behavior and new, fancy stage out behavior
@@ -68,6 +71,7 @@ class DeleteFiles(Executor):
             useNewStageOutCode = True
 
         stageOutCall = {}
+        stageOutCall['logger'] = self.logger
         if "command" in overrides and "option" in overrides \
                 and "phedex-node" in overrides \
                 and "lfn-prefix" in overrides:
@@ -78,52 +82,49 @@ class DeleteFiles(Executor):
 
         # naw man, this is real
         # iterate over all the incoming files
-        manager = DeleteMgr.DeleteMgr(**stageOutCall)
-        manager.numberOfRetries = self.step.retryCount
-        manager.retryPauseTime = self.step.retryDelay
-        # naw man, this is real
-        # iterate over all the incoming files
         if not useNewStageOutCode:
             # old style
-            manager = DeleteMgr.DeleteMgr(**stageOutCall)
+            manager = DeleteMgr(**stageOutCall)
             manager.numberOfRetries = self.step.retryCount
             manager.retryPauseTime = self.step.retryDelay
         else:
             # new style
-            logging.critical("DeleteFiles IS USING NEW STAGEOUT CODE")
-            print("DeleteFiles IS USING NEW STAGEOUT CODE")
-            manager = WMCore.Storage.FileManager.DeleteMgr(
-                    retryPauseTime=self.step.retryDelay,
-                    numberOfRetries=self.step.retryCount,
-                    **stageOutCall)
+            self.logger.critical("DeleteFiles IS USING NEW STAGEOUT CODE")
+            manager = NewDeleteMgr(retryPauseTime=self.step.retryDelay,
+                                   numberOfRetries=self.step.retryCount,
+                                   **stageOutCall)
 
         # This is where the deleted files go
         filesDeleted = []
 
         for fileDict in self.job['input_files']:
-            logging.debug("Deleting LFN: %s", fileDict.get('lfn'))
+            self.logger.debug("Deleting LFN: %s", fileDict.get('lfn'))
             fileForTransfer = {'LFN': fileDict.get('lfn'),
                                'PFN': None,  # PFNs are assigned in the Delete Manager
                                'PNN': None,  # PNN is assigned in the delete manager
                                'StageOutCommand': None}
-            filesDeleted.append(self.deleteOneFile(fileForTransfer, manager, waitTime))
+            if self.deleteOneFile(fileForTransfer, manager, overrides['waitTime']):
+                filesDeleted.append(fileForTransfer)
 
+        # Alan: I do not get why we would have two sets of files to be deleted!
         if hasattr(self.step, 'filesToDelete'):
             # files from the configTree to be deleted
             for k, v in self.step.filesToDelete.dictionary_().iteritems():
                 if k.startswith('file'):
-                    logging.debug("Deleting LFN: %s", v)
+                    self.logger.info("Deleting LFN: %s", v)
                     fileForTransfer = {'LFN': v,
                                        'PFN': None,
                                        'PNN': None,
                                        'StageOutCommand': None}
-                    filesDeleted.append(self.deleteOneFile(fileForTransfer, manager, waitTime))
+                    if self.deleteOneFile(fileForTransfer, manager, overrides['waitTime']):
+                        filesDeleted.append(fileForTransfer)
+
+        if not filesDeleted:
+            raise DeleteMgrError(WM_JOB_ERROR_CODES[60313])
 
         # Now we've got to put things in the report
         for fileDict in filesDeleted:
             self.report.addRemovedCleanupFile(**fileDict)
-
-        return
 
     def deleteOneFile(self, fileForTransfer, manager, waitTime):
         signal.signal(signal.SIGALRM, alarmHandler)
@@ -136,14 +137,9 @@ class DeleteFiles(Executor):
 
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
-            logging.error(msg)
+            self.logger.error(msg)
         except Exception as ex:
-            msg = "General failure in StageOut for DeleteFiles"
-            msg += str(ex)
-            logging.error(msg)
-            logging.error("Traceback: ")
-            logging.error(traceback.format_exc())
-            raise
+            self.logger.error("General failure in StageOut for DeleteFiles. Error: %s", str(ex))
 
         signal.alarm(0)
 
@@ -158,5 +154,5 @@ class DeleteFiles(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
+        self.logger.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None

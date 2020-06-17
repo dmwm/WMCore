@@ -163,6 +163,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       60307: "General failure during files stage out.",  # (WMA, CRAB3)
                       60311: "Local Stage Out Failure using site specific plugin.",  # (WMA, CRAB3)
                       60312: "Failure in staging in log files during log collection (WMAgent).",  # (WMA)
+                      60313: "Failed to clean up any files that were no longer needed (WMAgent).",  # (WMA)
                       60315: "StageOut initialisation error (Due to TFC, SITECONF etc).",  # (WMA)
                       60317: "Forced timeout for stuck stage out.",  # (To be used in CRAB3/ASO)
                       60318: "Internal error in Crab cmscp.py stageout script.",  # (CRAB3)

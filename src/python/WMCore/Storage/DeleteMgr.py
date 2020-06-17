@@ -9,14 +9,26 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
-import os
-
+import logging
 #from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 #do we want seperate exceptions - for the moment no
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.Registry import retrieveStageOutImpl
+from WMCore.WMException import WMException
+
+
+class DeleteMgrError(WMException):
+    """
+    _DeleteMgrError_
+
+    Specific exception class to work out file deletion exception details
+    """
+    def __init__(self, message, **data):
+        WMException.__init__(self, message, **data)
+        self.data.setdefault("ErrorCode", 60313)
+        self.data.setdefault("ErrorType", self.__class__.__name__)
 
 
 class DeleteMgr:
@@ -29,6 +41,7 @@ class DeleteMgr:
     """
     def __init__(self, **overrideParams):
         self.override = False
+        self.logger = overrideParams.pop("logger", logging.getLogger())
         self.overrideConf = overrideParams
         if overrideParams != {}:
             self.override = True
@@ -102,7 +115,7 @@ class DeleteMgr:
             msg += str(ex)
             raise StageOutInitError( msg )
 
-        print(msg)
+        self.logger.info(msg)
         self.pnn = pnn
         return
 
@@ -140,7 +153,7 @@ class DeleteMgr:
         for key, val in overrideParams.items():
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
-        print(msg)
+        self.logger.info(msg)
         self.fallbacks.append(overrideParams)
         self.pnn = overrideParams['phedex-node']
         return
@@ -153,7 +166,7 @@ class DeleteMgr:
         Use call to delete a file
 
         """
-        print("==>Working on file: %s" % fileToDelete['LFN'])
+        self.logger.info("==>Working on file: %s" % fileToDelete['LFN'])
 
         lfn = fileToDelete['LFN']
         fileToDelete['PNN'] = self.pnn
@@ -164,27 +177,24 @@ class DeleteMgr:
         # // No override => use local-stage-out from site conf
         #//  invoke for all files and check failures/successes
         if not self.override:
-            print("===> Attempting To Delete.")
+            self.logger.info("===> Attempting To Delete.")
             try:
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
-            except StageOutFailure as ex:
-                msg = "===> Local Stage Out Failure for file:\n"
-                msg += "======>  %s\n" % fileToDelete['LFN']
-                msg += str(ex)
-                print(msg)
+            except Exception as ex:
+                self.logger.error("===> Local file deletion failure. Exception:\n%s", str(ex))
 
         if not deleteSuccess and len(self.fallbacks) > 0:
             #  //
             # // Still here => override start using the fallback stage outs
             #//  If override is set, then that will be the only fallback available
-            print("===> Attempting To Delete with Override.")
+            self.logger.info("===> Attempting To Delete files with fallback.")
             for fallback in self.fallbacks:
                 if not deleteSuccess:
                     try:
                         fileToDelete['PFN'] = self.deleteLFN(lfn, fallback)
                         deleteSuccess = True
-                    except StageOutFailure as ex:
+                    except Exception as ex:
                         continue
 
         if deleteSuccess:
@@ -192,7 +202,7 @@ class DeleteMgr:
             msg += "====> LFN: %s\n" % fileToDelete['LFN']
             msg += "====> PFN: %s\n" % fileToDelete['PFN']
             msg += "====> PNN:  %s\n" % fileToDelete['PNN']
-            print(msg)
+            self.logger.info(msg)
             return fileToDelete
         else:
             msg = "Unable to delete file:\n"
@@ -253,15 +263,9 @@ class DeleteMgr:
         try:
             impl.removeFile(pfn)
         except Exception as ex:
-            msg = "Failure for file deletion in:\n"
-            msg += str(ex)
-            try:
-                import traceback
-                msg += traceback.format_exc()
-            except AttributeError as ex:
-                msg += "Traceback unavailable\n"
-            raise StageOutFailure(msg, Command = command, Protocol = command,
-                                  LFN = lfn, TargetPFN = pfn)
+            self.logger.error("Failed to delete file: %s", pfn)
+            ex.addInfo(Protocol=command, LFN=lfn, TargetPFN=pfn)
+            raise ex
 
         return pfn
 
@@ -297,13 +301,13 @@ class DeleteMgr:
         if self.tfc == None:
             msg = "Trivial File Catalog not available to match LFN:\n"
             msg += lfn
-            print(msg)
+            self.logger.error(msg)
             return None
         if self.tfc.preferredProtocol == None:
             msg = "Trivial File Catalog does not have a preferred protocol\n"
             msg += "which prevents local stage out for:\n"
             msg += lfn
-            print(msg)
+            self.logger.error(msg)
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
@@ -314,7 +318,7 @@ class DeleteMgr:
 
         msg = "LFN to PFN match made:\n"
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print(msg)
+        self.logger.info(msg)
         return pfn
 
 

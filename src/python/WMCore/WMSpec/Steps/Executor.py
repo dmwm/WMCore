@@ -6,6 +6,7 @@ Interface definition for a step executor
 
 
 """
+from __future__ import absolute_import
 
 import os
 import sys
@@ -75,6 +76,8 @@ class Executor(object):
         self.workload = None
         self.job = None
         self.errorDestination = None
+        self.logger = logging.getLogger()
+        self.logger.info("Steps.Executor logging started")
 
     def initialise(self, step, job):
         """
@@ -201,6 +204,6 @@ class Executor(object):
                 msg = 'condor_chirp was found in: %s, but it was not an executable.' % condor_chirp_bin
             else:
                 msg = 'condor_chirp was not found in the system.'
-            logging.warning(msg)
+            self.logger.warning(msg)
 
         return

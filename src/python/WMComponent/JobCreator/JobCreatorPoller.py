@@ -27,6 +27,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.FwkJobReport.Report import Report
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 def retrieveWMSpec(workflow=None, wmWorkloadURL=None):
@@ -735,8 +736,8 @@ class JobCreatorPoller(BaseWorkerThread):
         fjrsToSave = []
         for failedJob in createFailedJobs:
             report = Report()
-            defaultMsg = "There is a condition which assures that this job will fail if it's submitted"
-            report.addError("CreationFailure", 99305, "CreationFailure", failedJob.get("failedReason", defaultMsg))
+            report.addError("CreationFailure", 99305, "CreationFailure",
+                            failedJob.get("failedReason", WM_JOB_ERROR_CODES[99305]))
             jobCache = failedJob.getCache()
             try:
                 fjrPath = os.path.join(jobCache, "Report.0.pkl")

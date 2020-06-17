@@ -619,9 +619,10 @@ class MSOutput(MSCore):
             msOutDoc = MSOutputTemplate(doc)
             doc.clear()
         except Exception as ex:
-            msg = "ERR: Unable to create MSOutputTemplate for document %s" % pformat(doc)
+            msg = "ERR: Unable to create MSOutputTemplate for document: \n%s\n" % pformat(doc)
             msg += "ERR: %s" % str(ex)
-            self.logger.error(msg)
+            self.logger.exception(msg)
+            raise ex
         return msOutDoc
 
     def docDump(self, msOutDoc, pipeLine=None):

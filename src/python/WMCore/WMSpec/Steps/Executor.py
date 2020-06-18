@@ -8,20 +8,21 @@ Interface definition for a step executor
 """
 from __future__ import absolute_import
 
-import os
-import sys
 import json
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 
 from Utils.FileTools import getFullPath
 from Utils.Utilities import zipEncodeStr
 from WMCore.FwkJobReport.Report import Report
-from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 getStepName = lambda step: WMStepHelper(step).name()
 getStepErrorDestination = lambda step: WMStepHelper(step).getErrorDestinationStep()
+
 
 def getStepSpace(stepName):
     """
@@ -37,13 +38,13 @@ def getStepSpace(stepName):
         taskspace = sys.modules[modName]
     else:
         try:
-            #taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
+            # taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
             taskspace = __import__(modName, globals(), locals(), ['taskSpace'])
 
         except ImportError as ex:
             msg = "Unable to load WMTaskSpace module:\n"
             msg += str(ex)
-            #TODO: Generic ExecutionException...
+            # TODO: Generic ExecutionException...
             raise RuntimeError(msg)
 
     try:
@@ -62,7 +63,6 @@ class Executor(object):
     Define API for a step during execution
 
     """
-
 
     def __init__(self):
         self.report = None
@@ -103,14 +103,14 @@ class Executor(object):
         self.step.execution.exitStatus = 0
         self.step.execution.reportLocation = "%s/Report.pkl" % (
             self.stepSpace.location,
-            )
+        )
 
         # Set overall step status to 1 (failed)
         self.report.setStepStatus(stepName=self.stepName, status=1)
 
         #  //
         # //  Does the step contain settings for an emulator?
-        #//   If so, load it up
+        # //   If so, load it up
 
         emulatorName = getattr(self.step.emulator, "emulatorName", None)
         if emulatorName != None:
@@ -119,7 +119,6 @@ class Executor(object):
             self.emulationMode = True
 
         return
-
 
     def saveReport(self):
         """
@@ -130,7 +129,6 @@ class Executor(object):
         """
         self.report.persist(self.step.execution.reportLocation)
         return
-
 
     def pre(self, emulator=None):
         """
@@ -145,7 +143,6 @@ class Executor(object):
         """
         return None
 
-
     def execute(self, emulator=None):
         """
         _execute_
@@ -158,7 +155,6 @@ class Executor(object):
         msg = "WMSpec.Steps.Executor.execute method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
         raise NotImplementedError(msg)
-
 
     def post(self, emulator=None):
         """

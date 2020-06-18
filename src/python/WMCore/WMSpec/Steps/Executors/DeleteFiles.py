@@ -12,9 +12,10 @@ import signal
 
 from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
 from WMCore.Storage.FileManager import DeleteMgr as NewDeleteMgr
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
-from WMCore.WMExceptions import WM_JOB_ERROR_CODES
+
 
 class DeleteFiles(Executor):
     """

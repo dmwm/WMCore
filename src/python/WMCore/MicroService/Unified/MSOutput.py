@@ -82,7 +82,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableAggSubscr", True)
         self.msConfig.setdefault("enableDataPlacement", False)
-        self.msConfig.setdefault("excludeDataTier", ['NANOAOD'])
+        self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
         self.msConfig.setdefault("rucioAccount", 'wma_test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
@@ -288,34 +288,30 @@ class MSOutput(MSCore):
                 ddmReqList = []
                 try:
                     if workflow['isRelVal']:
-                        for dMap in workflow['destinationOutputMap']:
-                            try:
-                                ddmRequest = DDMReqTemplate('copy',
-                                                            item=dMap['datasets'],
-                                                            n=workflow['numberOfCopies'],
-                                                            site=dMap['destination'],
-                                                            group='RelVal')
-                            except KeyError as ex:
-                                # NOTE:
-                                #    If we get to here it is most probably because the 'site'
-                                #    mandatory field to the DDM request is missing (due to an
-                                #    'ALCARECO' dataset or similar). Since this is expected
-                                #    to happen a lot, we'd better just log a warning and continue
-                                msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
-                                msg += "Error: {}".format(ex)
-                                self.logger.warning(msg)
-                                continue
-                            ddmReqList.append(ddmRequest)
+                        group = 'RelVal'
                     else:
-                        # FIXME:
-                        #    We need to create the campaignMap and use it for
-                        #    creating the requests for the nonRelVal workflows
-                        #    it should be also the case when we migrate to Rucio
-                        ddmRequest = DDMReqTemplate('copy',
-                                                    item=workflow['OutputDatasets'],
-                                                    n=workflow['numberOfCopies'],
-                                                    site=workflow['destination'])
+                        group = 'DataOps'
+
+                    for dMap in workflow['destinationOutputMap']:
+                        try:
+                            ddmRequest = DDMReqTemplate('copy',
+                                                        item=dMap['datasets'],
+                                                        n=workflow['numberOfCopies'],
+                                                        site=dMap['destination'],
+                                                        group=group)
+                        except KeyError as ex:
+                            # NOTE:
+                            #    If we get to here it is most probably because the 'site'
+                            #    mandatory field to the DDM request is missing (due to an
+                            #    'ALCARECO' dataset from a Relval workflow or similar).
+                            #    Since this is expected to happen a lot, we'd better just
+                            #    log a warning and continue
+                            msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
+                            msg += "Error: {}".format(ex)
+                            self.logger.warning(msg)
+                            continue
                         ddmReqList.append(ddmRequest)
+
                 except Exception as ex:
                     msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
                     msg += "Error: {}".format(ex)
@@ -324,9 +320,20 @@ class MSOutput(MSCore):
 
                 try:
                     # In the message bellow we may want to put the list of datasets too
-                    msg = "Making transfer subscriptions for {}".format(workflow['RequestName'])
-                    self.logger.info(msg)
-                    ddmResultList = self.ddm.makeAggRequests(ddmReqList, aggKey='item')
+                    msg = "Making transfer subscriptions for %s"
+                    self.logger.info(msg, workflow['RequestName'])
+
+                    if ddmReqList:
+                        ddmResultList = self.ddm.makeAggRequests(ddmReqList, aggKey='item')
+                    else:
+                        # NOTE:
+                        #    Nothing else to be done here. We mark the document as
+                        #    done so we do not iterate through it multiple times
+                        msg = "Skip submissions for %s. Either all data Tiers were "
+                        msg += "excluded or there were no Output Datasets at all."
+                        self.logger.warning(msg, workflow['RequestName'])
+                        self.docKeyUpdate(workflow, transferStatus='done')
+                        return workflow
                 except Exception as ex:
                     msg = "Could not make transfer subscription for Workflow: {}".format(workflow['RequestName'])
                     msg += "Error: {}".format(ex)
@@ -504,6 +511,10 @@ class MSOutput(MSCore):
                         {'$or': [
                             {'lastUpdate': None},
                             {'lastUpdate': {'$lt': treshTime}}]}]}
+
+                # FIXME:
+                #    To redefine those exceptions as MSoutputExceptions and
+                #    start using those here so we do not mix with general errors
                 try:
                     pipeLine.run(mQueryDict)
                 except KeyError as ex:
@@ -658,13 +669,29 @@ class MSOutput(MSCore):
         """
 
         # Fill the destinationOutputMap first
-        if msOutDoc['isRelVal']:
-            destinationOutputMap = []
-            wflowDstSet = set()
-            updateDict = {}
-            for dataset in msOutDoc['OutputDatasets']:
-                _, dsn, procString, dataTier = dataset.split('/')
-                destination = set()
+        destinationOutputMap = []
+        wflowDstSet = set()
+        updateDict = {}
+        for dataset in msOutDoc['OutputDatasets']:
+            _, dsn, procString, dataTier = dataset.split('/')
+            # NOTE:
+            #    Data tiers that have been configured to be excluded will never
+            #    enter the destinationOutputMap
+            if dataTier in self.msConfig['excludeDataTier']:
+                # msg = "%s: %s: "
+                # msg += "Data Tier: %s is blacklisted. "
+                # msg += "Skipping dataset placement for: %s:%s"
+                # self.logger.info(msg,
+                #                  self.currThreadIdent,
+                #                  pipeLine,
+                #                  dataTier,
+                #                  msOutDoc['RequestName'],
+                #                  dataset)
+                continue
+
+            destination = set()
+
+            if msOutDoc['isRelVal']:
                 if dataTier != "RECO" and dataTier != "ALCARECO":
                     destination.add('T2_CH_CERN')
                 if dataTier == "GEN-SIM":
@@ -677,57 +704,64 @@ class MSOutput(MSCore):
                     destination.add('T2_CH_CERN')
                 if "MinimumBias" in dsn and "SiStripCalMinBias" in procString and dataTier != "ALCARECO":
                     destination.add('T2_CH_CERN')
-                dMap = {'datasets': [dataset],
-                        'destination': list(destination)}
-                destinationOutputMap.append(dMap)
-                wflowDstSet |= destination
+            else:
+                # FIXME:
+                #    Here we need to use the already created campaignMap for
+                #    building the destinationOutputMap for nonRelVal workflows.
+                #    For the time being it is a fallback to all T1_* and all T2_*.
+                #    Once we migrate to Rucio we should change those defaults to
+                #    whatever is the format in Rucio (eg. referring a subscription
+                #    rule like: "store it at a good site" or "Store in the USA" etc.)
+                destination.add('T1_*')
+                destination.add('T2_*')
 
-            # here we try to aggregate the destination map per destination
-            aggDstMap = []
+            dMap = {'datasets': [dataset],
+                    'destination': list(destination)}
+            destinationOutputMap.append(dMap)
+            wflowDstSet |= destination
 
-            # populate the first element in the aggregated list
+        # here we try to aggregate the destination map per destination
+        aggDstMap = []
+
+        # populate the first element in the aggregated list
+        if len(destinationOutputMap) != 0:
             aggDstMap.append(destinationOutputMap.pop())
 
-            # feed the rest
-            while len(destinationOutputMap) != 0:
-                dMap = destinationOutputMap.pop()
-                found = False
-                for aggMap in aggDstMap:
-                    if set(dMap['destination']) == set(aggMap['destination']):
-                        # Check if the two objects are not references to one and the
-                        # same object. Only then copy the values of the dMap,
-                        # otherwise we will enter an endless cycle.
-                        if dMap is not aggMap:
-                            for i in dMap['datasets']:
-                                aggMap['datasets'].append(i)
-                        found = True
-                        del(dMap)
-                        break
-                if not found:
-                    aggDstMap.append(dMap)
+        # feed the rest
+        while len(destinationOutputMap) != 0:
+            dMap = destinationOutputMap.pop()
+            found = False
+            for aggMap in aggDstMap:
+                if set(dMap['destination']) == set(aggMap['destination']):
+                    # Check if the two objects are not references to one and the
+                    # same object. Only then copy the values of the dMap,
+                    # otherwise we will enter an endless cycle.
+                    if dMap is not aggMap:
+                        for i in dMap['datasets']:
+                            aggMap['datasets'].append(i)
+                    found = True
+                    del(dMap)
+                    break
+            if not found:
+                aggDstMap.append(dMap)
 
-            # finally reassign the destination map with the aggregated one
-            destinationOutputMap = aggDstMap
+        # finally reassign the destination map with the aggregated one
+        destinationOutputMap = aggDstMap
 
-            wflowDstList = list(wflowDstSet)
-            updateDict['destination'] = wflowDstList
-            updateDict['destinationOutputMap'] = destinationOutputMap
-            try:
-                msOutDoc.updateDoc(updateDict, throw=True)
-                # msg = "%s: %s: 'msOutDoc': %s"
-                # self.logger.debug(msg,
-                #                   self.currThreadIdent,
-                #                   pipeLine,
-                #                   pformat(msOutDoc))
-            except Exception as ex:
-                msg = "%s: %s: Could not update the additional information for "
-                msg += "'msOutDoc' with '_id': %s \n"
-                msg += "Error: %s"
-                self.logger.exception(msg,
-                                      self.currThreadIdent,
-                                      pipeLine,
-                                      msOutDoc['_id'],
-                                      str(ex))
+        wflowDstList = list(wflowDstSet)
+        updateDict['destination'] = wflowDstList
+        updateDict['destinationOutputMap'] = destinationOutputMap
+        try:
+            msOutDoc.updateDoc(updateDict, throw=True)
+        except Exception as ex:
+            msg = "%s: %s: Could not update the additional information for "
+            msg += "'msOutDoc' with '_id': %s \n"
+            msg += "Error: %s"
+            self.logger.exception(msg,
+                                  self.currThreadIdent,
+                                  pipeLine,
+                                  msOutDoc['_id'],
+                                  str(ex))
         return msOutDoc
 
     def docUploader(self, msOutDoc, dbColl, update=False, keys=None, stride=None):

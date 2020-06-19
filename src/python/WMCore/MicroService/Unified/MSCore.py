@@ -6,7 +6,6 @@ Description: MSCore class provides core functionality of the MS.
 # futures
 from __future__ import division, print_function
 
-from Utils.Utilities import usingRucio
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
@@ -20,32 +19,39 @@ class MSCore(object):
     MSTransferor, MSMonitor and MSOutput classes.
     """
 
-    def __init__(self, msConfig, logger=None):
+    def __init__(self, msConfig, **kwargs):
         """
         Provides setup for MSTransferor and MSMonitor classes
 
         :param config: MS service configuration
-        :param logger: logger object (optional)
+        :param kwargs: can be used to skip the initialization of specific services, such as:
+            logger: logger object
+            skipReqMgr: boolean to skip ReqMgr initialization
+            skipReqMgrAux: boolean to skip ReqMgrAux initialization
+            skipRucio: boolean to skip Rucio initialization
+            skipPhEDEx: boolean to skip PhEDEx initialization
         """
-        self.logger = getMSLogger(getattr(msConfig, 'verbose', False), logger)
+        self.logger = getMSLogger(getattr(msConfig, 'verbose', False), kwargs.get("logger"))
         self.msConfig = msConfig
         self.logger.info("Configuration including default values:\n%s", self.msConfig)
 
-        self.reqmgr2 = ReqMgr(self.msConfig['reqmgr2Url'], logger=self.logger)
-        self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgr2Url'],
-                                   httpDict={'cacheduration': 1.0},
-                                   logger=self.logger)
+        if not kwargs.get("skipReqMgr", False):
+            self.reqmgr2 = ReqMgr(self.msConfig['reqmgr2Url'], logger=self.logger)
+        if not kwargs.get("skipReqMgrAux", False):
+            self.reqmgrAux = ReqMgrAux(self.msConfig['reqmgr2Url'],
+                                       httpDict={'cacheduration': 1.0}, logger=self.logger)
 
-        # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
-        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-        if usingRucio():
-            # FIXME: we cannot use Rucio in write mode yet
-            # self.rucio = Rucio(self.msConfig['rucioAccount'], configDict={"logger": self.logger})
-            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5},
-                                 dbsUrl=dbsUrl, logger=self.logger)
-        else:
-            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5},
-                                 dbsUrl=dbsUrl, logger=self.logger)
+        self.phedex = None
+        self.rucio = None
+        if self.msConfig.get('useRucio', False) and not kwargs.get("skipRucio", False):
+            self.rucio = Rucio(acct=self.msConfig['rucioAccount'],
+                               hostUrl=self.msConfig['rucioUrl'],
+                               authUrl=self.msConfig['rucioAuthUrl'],
+                               configDict={"logger": self.logger, "user_agent": "wmcore-microservices"})
+        elif not kwargs.get("skipPhEDEx", False):
+            # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
+            dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5}, dbsUrl=dbsUrl, logger=self.logger)
 
     def unifiedConfig(self):
         """

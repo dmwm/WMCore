@@ -5,7 +5,7 @@ It can also communicate with other data management tools, like
 Detox, Rucio and PhEDEx.
 """
 from __future__ import division, print_function
-
+from future.utils import viewitems
 from WMCore.MicroService.Unified.Common import getDetoxQuota, getMSLogger, gigaBytes, teraBytes
 
 
@@ -15,24 +15,24 @@ class RSEQuotas(object):
     their storage usage
     """
 
-    def __init__(self, detoxUrl, dataAcct, quotaFraction, **kwargs):
+    def __init__(self, dataAcct, quotaFraction, useRucio, **kwargs):
         """
         Executes a basic setup, including proper logging.
-        :param detoxUrl: string with the detox url (to fetch the quota)
         :param dataAcct: string with either the Rucio account or PhEDEx group name
         :param quotaFraction: float point number representing the fraction of the quota
+        :param useRucio: boolean flag used to decide between Rucio and PhEDEx data management
         :param kwargs: the supported keyword arguments are:
           minimumThreshold: integer value defining the minimum available space required
-          useRucio: boolean flag used to decide between Rucio and PhEDEx data management
+          detoxUrl: string with the detox url (to fetch the quota)
           verbose: logger verbosity
           logger: logger object
         """
-        self.detoxUrl = detoxUrl
         self.dataAcct = dataAcct
         self.quotaFraction = quotaFraction
+        self.useRucio = useRucio
 
         self.minimumSpace = kwargs["minimumThreshold"]
-        self.useRucio = kwargs.get("useRucio", False)
+        self.detoxUrl = kwargs.get("detoxUrl", "")
         self.logger = getMSLogger(kwargs.get("verbose"), kwargs.get("logger"))
         msg = "RSEQuotas started with parameters: dataAcct=%s, quotaFraction=%s, "
         msg += "minimumThreshold=%s GB, useRucio=%s"
@@ -70,11 +70,12 @@ class RSEQuotas(object):
         """
         return self.outOfSpaceNodes
 
-    def fetchStorageQuota(self):
+    def fetchStorageQuota(self, dataSvcObj):
         """
         Fetch the DataOps quota from Detox. At this stage, we do not do
         any manipulation with the quota value (Unified uses 80% of the quota),
         use it as is!
+        :param dataSvcObj: object instance for the Rucio data service
 
         :return: create an instance cache structure to keep track of quota
           and available storage. The structure is as follows:
@@ -87,42 +88,52 @@ class RSEQuotas(object):
         NOTE: code extracted/modified from Unified, see `fetch_detox_info` in
           https://github.com/CMSCompOps/WmAgentScripts/blob/master/utils.py#L2514
         """
+        # FIXME: besides the 1-line below to clear the data structure, this method
+        # will be useless once we migrate to Rucio
         self.nodeUsage.clear()
         if self.useRucio:
-            msg = "You called getStorageQuota method, while we're supposed to use Rucio. "
-            msg += "Fix whatever mistake you made and come again. Skipping this method!"
-            self.logger.error(msg)
-            return
-        # FIXME: extremely fragile code that has to be replaced by a proper
-        # CRIC/Rucio API in the very near future
-        info = getDetoxQuota(self.detoxUrl)
+            response = dataSvcObj.getAccountLimits(self.dataAcct)
+            for rse, quota in viewitems(response):
+                if rse.endswith("_Tape") or rse.endswith("_Export"):
+                    continue
+                self.nodeUsage.setdefault(rse, {})
+                self.nodeUsage[rse] = dict(quota=int(quota),
+                                           bytes_limit=int(quota),
+                                           bytes=0,
+                                           bytes_remaining=int(quota),  # FIXME: always 0
+                                           quota_avail=0)
+            self.logger.info("Storage quota filled from Rucio")
+        else:
+            # FIXME: extremely fragile code that has to be replaced by a proper
+            # CRIC/Rucio API in the very near future
+            info = getDetoxQuota(self.detoxUrl)
 
-        doRead = False
-        for line in info:
-            if 'DDM Partition:' in line and self.dataAcct in line:
-                doRead = True
-                continue
-            elif 'DDM Partition:' in line:
-                doRead = False
-                continue
-            elif line.startswith('#'):
-                continue
+            doRead = False
+            for line in info:
+                if 'DDM Partition:' in line and self.dataAcct in line:
+                    doRead = True
+                    continue
+                elif 'DDM Partition:' in line:
+                    doRead = False
+                    continue
+                elif line.startswith('#'):
+                    continue
 
-            if not doRead:
-                continue
+                if not doRead:
+                    continue
 
-            _, quota, _, _, pnn = line.split()
+                _, quota, _, _, pnn = line.split()
 
-            if pnn.endswith("_MSS") or pnn.endswith("_Export"):
-                continue
-            self.nodeUsage.setdefault(pnn, {})
-            # convert from TB to bytes
-            self.nodeUsage[pnn] = dict(quota=int(quota) * (1000 ** 4),
-                                       bytes_limit=0,
-                                       bytes=0,
-                                       bytes_remaining=0,
-                                       quota_avail=0)
-        self.logger.info("Storage quota filled from Detox information")
+                if pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                    continue
+                self.nodeUsage.setdefault(pnn, {})
+                # convert from TB to bytes
+                self.nodeUsage[pnn] = dict(quota=int(quota) * (1000 ** 4),
+                                           bytes_limit=0,
+                                           bytes=0,
+                                           bytes_remaining=0,
+                                           quota_avail=0)
+            self.logger.info("Storage quota filled from Detox information")
 
     def fetchStorageUsage(self, dataSvcObj):
         """
@@ -147,11 +158,13 @@ class RSEQuotas(object):
             self.logger.debug("Using Rucio for storage usage, with acct: %s", self.dataAcct)
             for item in dataSvcObj.getAccountUsage(self.dataAcct):
                 if item['rse'] not in self.nodeUsage:
+                    self.logger.warning("Rucio RSE: %s has data usage but no quota available.", item['rse'])
                     continue
-                self.nodeUsage[item['rse']].update({'quota': item['bytes_limit'],
-                                                    'bytes_limit': item['bytes_limit'],
-                                                    'bytes': item['bytes'],
-                                                    'bytes_remaining': item['bytes_remaining']})
+                # bytes_limit is always 0, so skip it and use whatever came from the limits call
+                # bytes_remaining is always negative, so calculate it based on the limits
+                quota = self.nodeUsage[item['rse']]['quota']
+                self.nodeUsage[item['rse']].update({'bytes': item['bytes'],
+                                                    'bytes_remaining': quota - item['bytes']})
         else:
             self.logger.debug("Using PhEDEx for storage usage, with acct: %s", self.dataAcct)
             # for PhEDEx, we have also to remap the key's to keep in sync with Rucio
@@ -187,7 +200,7 @@ class RSEQuotas(object):
         """
         Print a summary of the current quotas, space usage and space available
         """
-        self.logger.info("Summary of the current quotas Terabytes:")
+        self.logger.info("Summary of the current quotas in Terabytes:")
         for node in sorted(self.nodeUsage.keys()):
             msg = "  %s:\t\tbytes_limit: %.2f, bytes_used: %.2f, bytes_remaining: %.2f, "
             msg += "quota: %.2f, quota_avail: %.2f"

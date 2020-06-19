@@ -6,7 +6,7 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 from future import standard_library
 standard_library.install_aliases()
@@ -17,7 +17,6 @@ import logging
 import math
 import re
 import time
-
 from urllib.parse import quote, unquote
 
 # WMCore modules
@@ -26,9 +25,6 @@ from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
 
-# py2/py3 modules
-# from future import standard_library
-# standard_library.install_aliases()
 
 # static variables
 STEP_PAT = re.compile(r'Step[0-9]')
@@ -111,7 +107,7 @@ def getPileupDatasetSizes(datasets, phedexUrl):
             sizeByDset.setdefault(dataset, None)
             continue
         rows = json.loads(row['data'])
-        sizeByDset.setdefault(dataset, 0)  # flat dict in the format of blockName: blockSize
+        sizeByDset.setdefault(dataset, 0)
         try:
             for item in rows['phedex']['block']:
                 sizeByDset[dataset] += item['bytes']
@@ -173,7 +169,6 @@ def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
     return dsetBlockSize
 
 
-# FIXME: implement the same logic for Rucio
 def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
     """
     Provided a list of datasets, find dataset level subscriptions where it's

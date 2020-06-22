@@ -44,6 +44,10 @@ class ConfigObject():
     def setValue(self, value):
         self.value = value
 
+    def __getitem__(self, item):
+        if isinstance(self.value, list):
+            return self.value[item]
+
 class _Untracked(object):
     """
     _Untracked_

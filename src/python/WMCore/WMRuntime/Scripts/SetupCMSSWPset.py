@@ -12,6 +12,7 @@ import os
 import pickle
 import random
 import socket
+import re
 
 import FWCore.ParameterSet.Config as cms
 
@@ -466,6 +467,9 @@ class SetupCMSSWPset(ScriptInterface):
                     random.shuffle(inputTypeAttrib.fileNames)
                     self.logger.info("Added %s events from the pileup blocks", eventsAvailable)
 
+                    # Handle enforceGUIDInFileName for pileup
+                    self.handleEnforceGUIDInFileName(inputTypeAttrib)
+
         return
 
     def _getPileupMixingModules(self):
@@ -637,7 +641,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
-    def handleEnforceGUIDInFileName(self):
+    def handleEnforceGUIDInFileName(self, secondaryInput=None):
         """
         _handleEnforceGUIDInFileName_
 
@@ -647,27 +651,33 @@ class SetupCMSSWPset(ScriptInterface):
         if self.crabPSet:
             return
 
-        # only check this if we are in the first step of a workflow as output files of chained processing
-        # steps will not have correct GUID information
-        if self.step.data._internal_name != "cmsRun1":
-            self.logger.info("Not evaluating enforceGUIDInFileName parameter for step %s",
-                             self.step.data._internal_name)
-            return
+        if secondaryInput:
+            inputSource = secondaryInput
+            self.logger.info("Evaluating enforceGUIDInFileName parameter for secondary input data.")
+        else:
+            inputSource = self.process.source
 
         # only enable if source is PoolSource or EmbeddedRootSource
-        if self.process.source.type_() not in ["PoolSource", "EmbeddedRootSource"]:
+        if inputSource.type_() not in ["PoolSource", "EmbeddedRootSource"]:
             self.logger.info("Not evaluating enforceGUIDInFileName parameter for process source %s",
-                             self.process.source.type_())
+                             inputSource.type_())
             return
 
         self.logger.info("Evaluating if release %s supports enforceGUIDInFileName parameter...",
                          self.getCmsswVersion())
 
-        # enable if release supports enforceGUIDInFileName and parameter is not set
-        if (isEnforceGUIDInFileNameSupported(self.getCmsswVersion()) and
-                not hasattr(self.process.source, "enforceGUIDInFileName")):
+        # enable if release supports enforceGUIDInFileName
+        if isEnforceGUIDInFileNameSupported(self.getCmsswVersion()):
+            # check to make sure primary input files follow guid naming convention
+            # prevents enabling guid checks on some workflows (StoreResults/StepChain) that use custom input file names
+            # EmbeddedRootSource input files will always follow guid naming convention
+            if inputSource.type_() == "PoolSource" and inputSource.fileNames:
+                guidRegEx = re.compile("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}.root$")
+                if not guidRegEx.search(inputSource.fileNames[0]):
+                    self.logger.info("Not enabling enforceGUIDInFileName due to non-GUID input file names")
+                    return
             self.logger.info("Setting enforceGUIDInFileName to True.")
-            self.process.source.enforceGUIDInFileName = cms.untracked.bool(True)
+            inputSource.enforceGUIDInFileName = cms.untracked.bool(True)
         else:
             self.logger.info("CMSSW release does not support enforceGUIDInFileName.")
 

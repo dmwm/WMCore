@@ -24,6 +24,7 @@ class Workflow(object):
         self.inputDataset = ""
         self.parentDataset = ""
         self.pileupDatasets = set()
+        self.pileupRSEList = set()
 
         self.campaigns = set()
         self.dataCampaignMap = []
@@ -80,6 +81,29 @@ class Workflow(object):
         Get the SiteWhitelist minus the black list for this request
         """
         return sorted(list(set(self.data['SiteWhitelist']) - set(self.data['SiteBlacklist'])))
+
+    def setPURSElist(self, rseSet):
+        """
+        Hook/hack to make sure that multiple pileup datasets are placed
+        in the same storage (unless secondaryAAA is enabled).
+        It will be used to place the primary/parent blocks under the same
+        location too (in case primaryAAA is enabled)
+        Set this location only once, any further updates should not work!
+        :param rseSet: a set of RSE names
+        """
+        if isinstance(rseSet, set):
+            self.pileupRSEList = rseSet
+        elif isinstance(rseSet, list):
+            self.pileupRSEList = set(rseSet)
+        else:
+            # assume it's a string
+            self.pileupRSEList = {rseSet}
+
+    def getPURSElist(self):
+        """
+        Retrieve the final list of RSEs where ALL the data needs to be placed
+        """
+        return self.pileupRSEList
 
     def getRunWhitelist(self):
         """

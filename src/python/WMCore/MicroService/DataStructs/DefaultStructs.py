@@ -30,6 +30,7 @@ TRANSFEROR_REPORT = dict(start_time=0,
                          nodes_out_of_space=None,
                          success_request_transition=0,
                          failed_request_transition=0,
+                         problematic_requests=0,
                          num_datasets_subscribed=0,
                          num_blocks_subscribed=0)
 

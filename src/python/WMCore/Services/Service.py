@@ -48,13 +48,16 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
 import datetime
 import json
 import logging
 import os
 import time
 from io import BytesIO
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException

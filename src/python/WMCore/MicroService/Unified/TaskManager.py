@@ -5,13 +5,17 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 # futures
 from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
 
 # system modules
 import time
 import json
 import hashlib
 import threading
-from Queue import Queue
+from queue import Queue
+
+# WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
 
 

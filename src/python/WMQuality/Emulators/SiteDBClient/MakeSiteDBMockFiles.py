@@ -4,11 +4,14 @@ MakeSiteDBMockFiles
 Program to create mock SiteDB JSON files used by the SiteDB mock-based emulator
 """
 
-from __future__ import (division, print_function)
+from __future__ import division, print_function
+
+from future import standard_library
+standard_library.install_aliases()
 
 import json
 import os
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMCore.WMBase import getTestBase

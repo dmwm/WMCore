@@ -8,6 +8,9 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
 import errno
 import logging
 import os
@@ -16,7 +19,7 @@ import re
 import signal
 import socket
 import sys
-import thread
+import _thread
 import time
 import traceback
 from argparse import ArgumentParser
@@ -210,7 +213,7 @@ class RESTMain(object):
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
+        _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 

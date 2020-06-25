@@ -1,11 +1,13 @@
 from __future__ import (division, print_function)
+from future import standard_library
+standard_library.install_aliases()
 
 import logging
+from urllib.parse import urlparse
 
 from collections import defaultdict
 from WMCore.Services.Service import Service
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
-from urlparse import urlparse
 
 class TagCollector(Service):
     """

@@ -7,9 +7,12 @@
 Couch DB command line admin tool
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+
+import urllib.parse
 
 __license__ = "GPL"
-
 __maintainer__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"
 __status__ = "Alpha"
@@ -101,8 +104,8 @@ def httplib_request(host, path, params, request='POST', debug=0):
     """request method using provided HTTP request and httplib library"""
     if debug:
         httplib.HTTPConnection.debuglevel = 1
-    if type(params) is not str:
-        params = urllib.urlencode(params, doseq=True)
+    if not isinstance(params, str):
+        params = urllib.parse.urlencode(params, doseq=True)
     if debug:
         print("input parameters", params)
     headers = {"Content-type": "application/x-www-form-urlencoded",
@@ -139,7 +142,7 @@ def print_data(data, lookup="value"):
     padding = ""
     for row in jsondict['rows']:
         values = row[lookup]
-        if type(values) is dict:
+        if isinstance(values, dict):
             if not padding:
                 for key in values.keys():
                     if len(key) > maxl:

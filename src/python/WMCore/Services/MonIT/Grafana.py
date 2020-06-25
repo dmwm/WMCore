@@ -5,17 +5,16 @@ Wrapper class, based on the PyCuRL module, providing an interface
 to CERN MonIT Grafana APIs
 """
 from __future__ import division, print_function, absolute_import
+from future import standard_library
+standard_library.install_aliases()
 
 import logging
 import json
 from copy import copy
 from pprint import pformat
+from urllib.parse import urljoin
+
 from WMCore.Services.pycurl_manager import RequestHandler
-try:
-    from urlparse import urljoin
-except ImportError:
-    # PY3
-    from urllib.parse import urljoin
 
 class Grafana(object):
     """

@@ -21,7 +21,10 @@ Expected input json file like:
 
 from __future__ import print_function, division
 
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+
+import http.client
 import json
 import os
 import sys
@@ -127,7 +130,7 @@ def submitWorkflow(schema):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
     encodedParams = json.dumps(schema)
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("POST", "/reqmgr2/data/request", encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()
@@ -150,7 +153,7 @@ def approveRequest(workflow):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
 
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("PUT", "/reqmgr2/data/request/%s" % workflow, encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()

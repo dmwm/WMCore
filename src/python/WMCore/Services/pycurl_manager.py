@@ -37,10 +37,10 @@ for row in data:
     print(row)
 """
 from __future__ import print_function
-
+from future import standard_library
+standard_library.install_aliases()
 
 # system modules
-import httplib
 import json
 import logging
 import os
@@ -49,11 +49,8 @@ import subprocess
 import sys
 import pycurl
 from io import BytesIO
-try:
-    from urllib import urlencode
-except ImportError:
-    # PY3
-    from urllib.parse import urlencode
+import http.client
+from urllib.parse import urlencode
 
 
 class ResponseHeader(object):
@@ -286,7 +283,7 @@ class RequestHandler(object):
             data = bbuf.getvalue()
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \
                   % (url, header.status, header.reason, header.header)
-            exc = httplib.HTTPException(msg)
+            exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)
             setattr(exc, 'url', url)

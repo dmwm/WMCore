@@ -9,18 +9,14 @@ of the job and the report.
 
 """
 from __future__ import print_function
-
-
-
-
-
+from future import standard_library
+standard_library.install_aliases()
 
 from xml.dom import minidom
 import logging
 import traceback
 
-
-import urllib, urllib2
+import urllib.request, urllib.parse
 import os
 import socket
 from contextlib import closing
@@ -63,12 +59,12 @@ def HTTPpost(params, url, onFailureFile = None):
     try:
         logging.debug("contacting %s" % url)
 
-        data = urllib.urlencode(params)
+        data = urllib.parse.urlencode(params)
         #put who we are in headers
         headers = { 'User-Agent' : USER_AGENT }
-        req = urllib2.Request(url, data, headers)
+        req = urllib.request.Request(url, data, headers)
 
-        with closing(urllib2.urlopen(req, data)) as response:
+        with closing(urllib.request.urlopen(req, data)) as response:
             logging.debug("received http code: %s, message: %s, response: %s", response.code,
                           response.msg, str(response.read()))
 

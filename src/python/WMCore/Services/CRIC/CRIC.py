@@ -1,9 +1,11 @@
 from __future__ import (division, print_function)
+from future import standard_library
+standard_library.install_aliases()
 
 import json
 import logging
 import re
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from WMCore.Services.Service import Service
 

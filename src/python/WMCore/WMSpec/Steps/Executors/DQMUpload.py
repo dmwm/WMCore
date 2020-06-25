@@ -6,11 +6,13 @@ Implementation of an Executor for a DQMUpload step
 
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import logging
 import os
 import sys
-import urllib2
+import urllib.request, urllib.error
 from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
@@ -162,7 +164,7 @@ class DQMUpload(Executor):
                 else:
                     msg = 'HTTP upload finished succesfully with response:\n' + msg
                     logging.info(msg)
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += '  Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
             msg += '  Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
@@ -238,11 +240,11 @@ class DQMUpload(Executor):
         logging.info(msg)
 
         handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
-        opener = urllib2.OpenerDirector()
+        opener = urllib.request.OpenerDirector()
         opener.add_handler(handler)
 
         # setup the request object
-        datareq = urllib2.Request(url + '/data/put')
+        datareq = urllib.request.Request(url + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
         self.marshall(args, {'file': filename}, datareq)
@@ -250,7 +252,7 @@ class DQMUpload(Executor):
         if 'https://' in url:
             result = opener.open(datareq)
         else:
-            opener.add_handler(urllib2.ProxyHandler({}))
+            opener.add_handler(urllib.request.ProxyHandler({}))
             result = opener.open(datareq)
 
         data = result.read()

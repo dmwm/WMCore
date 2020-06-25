@@ -3,16 +3,19 @@
 LogDB provides functionality to post/search messages into LogDB.
 https://github.com/dmwm/WMCore/issues/5705
 """
+# futures
+from future import standard_library
+standard_library.install_aliases()
 
-import logging
 # standard modules
+import logging
 import re
 import threading
 from collections import defaultdict
-from httplib import HTTPException
+from http.client import HTTPException
 
-from WMCore.Lexicon import splitCouchServiceURL
 # project modules
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 
 

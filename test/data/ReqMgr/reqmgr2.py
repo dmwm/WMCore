@@ -16,13 +16,16 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
 import json
 import logging
 import os
 import sys
-import urllib
+import urllib.parse
 from argparse import ArgumentParser
-from httplib import HTTPSConnection, HTTPConnection
+from http.client import HTTPSConnection, HTTPConnection
 
 
 class RESTClient(object):
@@ -119,7 +122,7 @@ class ReqMgrClient(RESTClient):
         urn = self.urn_prefix + "/request"
         for request_name in config.request_names:
             self.logger.info("Deleting '%s' request ...", request_name)
-            args = urllib.urlencode({"request_name": request_name})
+            args = urllib.parse.urlencode({"request_name": request_name})
             status, data = self.http_request("DELETE", urn, data=args)
             if status != 200:
                 self.logger.error("Failed to delete request with status: %s, data: %s", status, data)
@@ -228,7 +231,7 @@ class ReqMgrClient(RESTClient):
         self._caller_checker("/about", "GET")
         self._caller_checker("/info", "GET")
         group = "mygroup"
-        args = urllib.urlencode({"group_name": group})
+        args = urllib.parse.urlencode({"group_name": group})
         self._caller_checker("/group", "PUT", input_data=args)
         data = self._caller_checker("/group", "GET")
         assert group in data, "%s should be in %s" % (group, data)
@@ -236,7 +239,7 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/group", "GET")
         assert group not in data, "%s should be deleted from %s" % (group, data)
         team = "myteam"
-        args = urllib.urlencode({"team_name": team})
+        args = urllib.parse.urlencode({"team_name": team})
         self._caller_checker("/team", "PUT", input_data=args)
         data = self._caller_checker("/team", "GET")
         assert team in data, "%s should be in %s" % (team, data)

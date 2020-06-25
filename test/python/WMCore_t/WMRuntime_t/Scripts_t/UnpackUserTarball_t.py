@@ -6,6 +6,11 @@ Tests for the user tarball unpacker and additional file mover
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
+import urllib
+
 import logging
 import os
 import subprocess
@@ -130,14 +135,14 @@ class UnpackUserTarballTest(unittest.TestCase):
 
     def testBadUrl(self):
         """
-        _testUrlSandbox_
+        _testBadUrl_
 
         Test a single sandbox that is a URL
 
         """
 
         sys.argv = ['scriptName','http://home.fnal.gov/~ewv/not-there.txt','']
-        self.assertRaises(RuntimeError, UnpackUserTarball)
+        self.assertRaises(urllib.error.HTTPError, UnpackUserTarball)
 
 
     def testFileAndURLSandbox(self):

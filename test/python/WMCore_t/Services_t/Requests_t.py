@@ -5,7 +5,10 @@ Created on Aug 6, 2009
 
 @author: meloam
 '''
+
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import json
 import os
@@ -13,7 +16,7 @@ import shutil
 import tempfile
 import time
 import unittest
-from httplib import HTTPException
+from http.client import HTTPException
 
 import nose
 

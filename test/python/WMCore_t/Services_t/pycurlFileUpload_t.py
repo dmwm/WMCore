@@ -1,7 +1,10 @@
+from future import standard_library
+standard_library.install_aliases()
+
 import logging
 import os
 import unittest
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore.Services.Requests import Requests
 from WMCore.WMBase import getTestBase

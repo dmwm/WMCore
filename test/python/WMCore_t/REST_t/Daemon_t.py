@@ -2,7 +2,7 @@ from __future__ import print_function
 # system modules
 import cherrypy
 from multiprocessing import Process
-from cherrypy.test import webtest
+from cheroot.test import webtest
 from cherrypy import process
 from threading import Thread, Condition
 import time, random
@@ -13,7 +13,7 @@ from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall
 
 FAKE_FILE = fake_authz_key_file()
-PORT = 8888
+PORT = 8889
 
 class Task(Thread):
     """A pseudo-task which runs in a separate thread. Provides standard
@@ -67,6 +67,7 @@ class Status(RESTEntity):
 
     def validate(self, *args):
         """No arguments, no validation required."""
+        print("AMR validate executed")
         pass
 
     @staticmethod
@@ -79,6 +80,7 @@ class Status(RESTEntity):
     @restcall
     def get(self):
         """Get the status of all our registered tasks."""
+        print("AMR status get request received")
         return self.gather(self._tasks)
 
 class TaskAPI(RESTApi):
@@ -86,8 +88,11 @@ class TaskAPI(RESTApi):
     entity to report their status via HTTP GET."""
     def __init__(self, app, config, mount):
         RESTApi.__init__(self, app, config, mount)
+        print("AMR mounting RESTApi app: %s, config: %s, mount: %s" % (app, config, mount))
         tasks = [Task() for _ in xrange(0, 10)]
         self._add({ "status": Status(app, self, config, mount, tasks) })
+        print("AMR done mounting the 'status' API")
+
 
 class TaskTest(webtest.WebCase):
     """Client to verify :class:`TaskAPI` works."""
@@ -96,6 +101,7 @@ class TaskTest(webtest.WebCase):
         webtest.WebCase.PORT = PORT
         self.engine = cherrypy.engine
         self.proc = load_server(self.engine)
+        print("AMR server loaded")
 
     def tearDown(self):
         stop_server(self.proc, self.engine)
@@ -103,13 +109,17 @@ class TaskTest(webtest.WebCase):
     def test(self):
         h = self.h
         h.append(("Accept", "application/json"))
+        print("AMR headers: %s" % h)
+        print(self.getPage("/test", headers=h))
+        print(self.getPage("/test/status", headers=h))
         for _ in xrange(0, 10):
             self.getPage("/test/status", headers=h)
-            print(self.body)
+            print(self.bodyY)
             time.sleep(.3)
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
+    print("AMR srcfile : %s" % srcfile)
     setup_dummy_server(srcfile, "TaskAPI", authz_key_file=FAKE_FILE, port=PORT)
 
 def load_server(engine):

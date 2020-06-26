@@ -32,6 +32,7 @@ from datetime import datetime
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.MicroService.Unified.MSTransferor import MSTransferor
 from WMCore.MicroService.Unified.MSMonitor import MSMonitor
+from WMCore.MicroService.Unified.MSOutput import MSOutput
 from WMCore.MicroService.Unified.TaskManager import start_new_thread
 
 
@@ -65,6 +66,7 @@ class MSManager(object):
         self.logger.info("Configuration including default values:\n%s", self.msConfig)
         self.statusTrans = {}
         self.statusMon = {}
+        self.statusOutput = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -75,8 +77,7 @@ class MSManager(object):
                                                   'assigned',
                                                   self.msConfig['interval'],
                                                   self.logger))
-            self.logger.debug(
-                "### Running %s thread %s", thname, self.transfThread.running())
+            self.logger.info("### Running %s thread %s", thname, self.transfThread.running())
 
         # initialize monitoring module
         if 'monitor' in self.services:
@@ -87,8 +88,29 @@ class MSManager(object):
                                                  'staging',
                                                  self.msConfig['interval'],
                                                  self.logger))
-            self.logger.debug(
-                "+++ Running %s thread %s", thname, self.monitThread.running())
+            self.logger.info("+++ Running %s thread %s", thname, self.monitThread.running())
+
+        # initialize output module
+        if 'output' in self.services:
+            reqStatus = ['completed', 'closed-out', 'announced']
+
+            thname = 'MSOutputConsumer'
+            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
+            self.outputConsumerThread = start_new_thread(thname, daemon,
+                                                         (self.outputConsumer,
+                                                          reqStatus,
+                                                          self.msConfig['interval'],
+                                                          self.logger))
+            self.logger.info("=== Running %s thread %s", thname, self.outputConsumerThread.running())
+
+            thname = 'MSOutputProducer'
+            self.msOutputProducer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
+            self.outputProducerThread = start_new_thread(thname, daemon,
+                                                         (self.outputProducer,
+                                                          reqStatus,
+                                                          self.msConfig['interval'],
+                                                          self.logger))
+            self.logger.info("=== Running %s thread %s", thname, self.outputProducerThread.running())
 
     def _parseConfig(self, config):
         """
@@ -137,6 +159,38 @@ class MSManager(object):
         self.logger.info("Total monitor execution time: %d secs", res['execution_time'])
         self.statusMon = res
 
+    def outputConsumer(self, reqStatus):
+        """
+        MSManager Output Dataplacement function.
+        It subscribes the output datasets to the Data Management System.
+        For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Output
+        reqStatus: Status of requests to work on
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the output thread...")
+        res = self.msOutputConsumer.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total outputConsumer execution time: %d secs", res['execution_time'])
+        self.statusOutput = res
+
+    def outputProducer(self, reqStatus):
+        """
+        MSManager MongoDB Uploader function.
+        It uploads the documents describing a workflow output Data subscription
+        into MongoDb. For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Output
+        reqStatus: Status of requests to work on
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the output thread...")
+        res = self.msOutputProducer.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total outputProducer execution time: %d secs", res['execution_time'])
+        self.statusOutput = res
+
     def stop(self):
         "Stop MSManager"
         status = None
@@ -148,6 +202,13 @@ class MSManager(object):
         if 'transferor' in self.services and hasattr(self, 'transfThread'):
             self.transfThread.stop()  # stop checkStatus thread
             status = self.transfThread.running()
+        # stop MSOutput threads
+        if 'output' in self.services and hasattr(self, 'outputConsumerThread'):
+            self.outputConsumerThread.stop()
+            status = self.outputConsumerThread.running()
+        if 'output' in self.services and hasattr(self, 'outputProducerThread'):
+            self.outputProducerThread.stop()
+            status = self.outputProducerThread.running()
         return status
 
     def info(self, reqName=None):
@@ -185,6 +246,8 @@ class MSManager(object):
             data.update(self.statusTrans)
         elif detail and 'monitor' in self.services:
             data.update(self.statusMon)
+        elif detail and 'output' in self.services:
+            data.update(self.statusOutput)
         return data
 
     def updateTimeUTC(self, reportDict, startT, endT):

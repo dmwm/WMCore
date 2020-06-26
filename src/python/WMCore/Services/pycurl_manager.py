@@ -38,7 +38,8 @@ for row in data:
 """
 from __future__ import print_function
 
-import cStringIO as StringIO
+
+# system modules
 import httplib
 import json
 import logging
@@ -46,19 +47,13 @@ import os
 import re
 import subprocess
 import sys
-
+import pycurl
+from io import BytesIO
 try:
     from urllib import urlencode
 except ImportError:
     # PY3
     from urllib.parse import urlencode
-
-# python3
-if sys.version.startswith('3.'):
-    import io
-
-# 3d-party libraries
-import pycurl
 
 
 class ResponseHeader(object):
@@ -198,9 +193,9 @@ class RequestHandler(object):
         curl.setopt(pycurl.URL, str(url))
         if headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                        ["%s: %s" % (k, v) for k, v in headers.items()])
-        bbuf = StringIO.StringIO()
-        hbuf = StringIO.StringIO()
+                    ["%s: %s" % (k, v) for k, v in headers.items()])
+        bbuf = BytesIO()
+        hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
         curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
         if capath:
@@ -417,12 +412,8 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=N
             if cookie and url in cookie:
                 curl.setopt(pycurl.COOKIEFILE, cookie[url])
                 curl.setopt(pycurl.COOKIEJAR, cookie[url])
-            if sys.version.startswith('3.'):
-                bbuf = io.BytesIO()
-                hbuf = io.BytesIO()
-            else:
-                bbuf = StringIO.StringIO()
-                hbuf = StringIO.StringIO()
+            bbuf = BytesIO()
+            hbuf = BytesIO()
             curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
             curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
             mcurl.add_handle(curl)

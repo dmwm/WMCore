@@ -15,6 +15,9 @@ class Container():
     """
     pass
 
+    def type_(self):
+        return "PoolSource"
+
 class Process():
     """
     _Process_
@@ -63,5 +66,6 @@ class Process():
         self.services[service.serviceName] = service
         setattr(self, service.serviceName, service)
         return
+
 
 process = Process()

@@ -529,12 +529,13 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
 
-    def createWMBSHelperWithTopTask(self, wmspec, block, mask=None,
-                                    parentFlag=False, detail=False):
+    def createWMBSHelperWithTopTask(self, wmspec, block, mask=None, parentFlag=False,
+                                    detail=False, commonLocation=None):
 
         topLevelTask = getFirstTask(wmspec)
 
-        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir)
+        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir,
+                          commonLocation=commonLocation)
         if block:
             if parentFlag:
                 block = self.dbs.getFileBlockWithParents(block)[block]
@@ -891,6 +892,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
     def testDuplicateSubscription(self):
         """Can't duplicate subscriptions"""
+        siteWhitelist = ["T2_XX_SiteA", "T2_XX_SiteB"]
         # using default wmspec
         block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
@@ -918,7 +920,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.setupMCWMSpec()
         mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
                     LastEvent=999995, LastLumi=12345, LastRun=12)
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
         filesetId = wmbs.topLevelFileset.id
@@ -932,7 +935,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(numOfFiles, numDbsFiles)
 
         # reinsert subscription - shouldn't create anything new
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         wmbs.topLevelFileset.loadData()
         self.assertEqual(numOfFiles, len(wmbs.topLevelFileset.files))
         self.assertEqual(filesetId, wmbs.topLevelFileset.id)
@@ -977,13 +981,15 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # in BasicProductionWorkload.getProdArgs() but changing it to
         # "reqmgr_config_cache_t" from StdBase test arguments does not fix the
         # situation. testDuplicateSubscription probably has the same issue
+        siteWhitelist = ["T2_XX_SiteA", "T2_XX_SiteB"]
 
         self.setupMCWMSpec()
 
         mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
                     LastEvent=999995, LastLumi=12345, LastRun=12)
 
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         subscription = wmbs.topLevelSubscription
         self.assertEqual(1, subscription.exists())
         fileset = subscription['fileset']

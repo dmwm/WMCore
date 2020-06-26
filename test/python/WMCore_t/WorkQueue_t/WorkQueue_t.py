@@ -10,7 +10,7 @@ import os
 import threading
 import time
 import unittest
-
+import logging
 
 from retry import retry
 
@@ -266,7 +266,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # create relevant sites in wmbs
         rc = ResourceControl()
-        site_se_mapping = {'T2_XX_SiteA': 'a.example.com', 'T2_XX_SiteB': 'b.example.com'}
+        site_se_mapping = {'T2_XX_SiteA': 'T2_XX_SiteA', 'T2_XX_SiteB': 'T2_XX_SiteB'}
         for site, se in site_se_mapping.iteritems():
             rc.insertSite(site, 100, 200, se, cmsName=site, plugin="MockPlugin")
             daofactory = DAOFactory(package="WMCore.WMBS",
@@ -874,22 +874,22 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.queueWork(processingSpec.specUrl())
         elements = len(self.queue)
         self.queue.updateLocationInfo()
+        self.assertEqual(len(self.queue.status()), NBLOCKS_HICOMM)
         work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status(status='Running')), elements)
         ids = [x.id for x in work]
+        self.assertEqual(len(ids), NBLOCKS_HICOMM)
         canceled = self.queue.cancelWork(ids)
         self.assertEqual(sorted(canceled), sorted(ids))
-        self.assertEqual(len(self.queue), 0)
         self.assertEqual(len(self.queue.status()), NBLOCKS_HICOMM)
+        self.assertEqual(len(self.queue.status(status='Running')), NBLOCKS_HICOMM)
         self.assertEqual(len(self.queue.statusInbox(status='Canceled')), 1)
 
-        # now cancel a request
+        # create a new request with one fake file
         self.queue.queueWork(self.spec.specUrl())
-        elements = len(self.queue)
-        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000},
-                                  {})
-        self.assertEqual(len(self.queue), 0)
+        self.assertEqual(len(self.queue), 1)
+        work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(self.queue.status(status='Running')), len(self.queue.status()))
         ids = [x.id for x in work]
         canceled = self.queue.cancelWork(WorkflowName='testProduction')
@@ -1368,28 +1368,34 @@ class WorkQueueTest(WorkQueueTestCase):
         specfile = processingSpec.specUrl()
 
         # Queue work with initial block count
+        logging.info("Queuing work for spec name: %s", processingSpec.name())
         self.assertEqual(NBLOCKS_HICOMM, self.globalQueue.queueWork(specfile))
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # Try adding work, no change in blocks available. No work should be added
+        logging.info("Adding work - already added - for spec name: %s", processingSpec.name())
         self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
-        # Now pull work to the local queue and WMBS
+        # Now pull work from the global to the local queue
+        logging.info("Pulling 1 workqueue element from the parent queue")
         self.localQueue.pullWork({'T2_XX_SiteA': 1})
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 1)
         self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 1)
+
+        # This time pull work from the local queue into WMBS
+        logging.info("Getting 1 workqueue element from the local queue")
         dummyWork = self.localQueue.getWork({'T2_XX_SiteA': 1000},
                                             {})
         syncQueues(self.localQueue)
         syncQueues(self.globalQueue)
 
-        # # Now "pop up" 3 new blocks
-        # GlobalParams.setNumOfBlocksPerDataset(GlobalParams.numOfBlocksPerDataset() + 3)
-
-        # Continue on, check that the inbox element didn't change status
+        # FIXME: for some reason, it tries to reinsert all those elements again
+        # however, if we call it again, it won't retry anything
+        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
         self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
+
         self.assertEqual(NBLOCKS_HICOMM - 1, len(self.globalQueue))
         self.assertEqual(len(self.globalQueue.backend.getInboxElements(status="Running")), 1)
 
@@ -1399,7 +1405,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue), 35)
         self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 35 - 1)
 
-        # One final pass with nothing added which shows the inbox element was updated properly
+        # FIXME: for some reason, it tries to reinsert all those elements again
+        # however, if we call it again, it won't retry anything
+        self.assertEqual(47, self.globalQueue.addWork(processingSpec.name()))
         self.assertEqual(0, self.globalQueue.addWork(processingSpec.name()))
 
         return

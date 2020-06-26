@@ -422,9 +422,13 @@ class Database(CouchDBRequests):
         """
         Immediately delete a document identified by id and rev.
         """
-        doc = self.document(id, rev)
-        doc.delete()
-        return self.commitOne(doc)
+        uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
+        if not rev:
+            # then we need to fetch the latest revision number
+            doc = self.getDoc(id)
+            rev = doc["_rev"]
+        uri += '?' + urllib.urlencode({'rev': rev})
+        return self.delete(uri)
 
     def compact(self, views=None, blocking=False, blocking_poll=5, callback=False):
         """

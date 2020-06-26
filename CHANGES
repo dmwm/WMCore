@@ -1,3 +1,84 @@
+1.3.6.pre2 to 1.3.6.pre3:
+  - Implement a check for 'excludeDataTier' && Always create destinationOutputMap && Always use destinationOutput map for transfer subscriptions && Skip transfer submission for workflows with empty outputDataset list or with all data tiers excluded. (Todor Ivanov) #9755
+
+
+1.3.6.pre1 to 1.3.6.pre2:
+  - Properly handle exceptions inside docTransformer for MSOutput Producer thread. (Todor Ivanov) #9750
+
+
+1.3.5 to 1.3.6.pre1:
+  - Slice list of runs when calling DBS blocks REST API (Alan Malta Rodrigues) #9747
+  - Fix RequestPriority update during assignment (Alan Malta Rodrigues) #9748
+  - Add CreationFailure exit code (Erik Gough) #9533
+  - Print WQ queue url when fetching available elements; break long line down (Alan Malta Rodrigues) #9742
+  - Replace StringIO by the python3 io module (amaltaro) #8733
+  - Enable RucioInjector component for NANO tiers (Alan Malta Rodrigues) #9733
+
+
+1.3.5.pre5 to 1.3.5:
+
+
+1.3.5.pre4 to 1.3.5.pre5:
+  - MSOutput implementation for 'RelVal' workflows. (Todor Ivanov) #9720
+  - Create a map of output datasets by campaign for the MSOutput component (Alan Malta Rodrigues) #9719
+  - Limit number of rows returned from WorkQueue workRestrictions (Alan Malta Rodrigues) #9679
+  - Fix wrong number of requests by status retrieved from Reqmgr2 (Todor Ivanov) #9715
+
+
+1.3.5.pre3 to 1.3.5.pre4:
+  - add new WMStatsErl ddocs to the reqmon package dependency (Alan Malta Rodrigues) #9713
+
+
+1.3.5.pre2 to 1.3.5.pre3:
+  - MSOutput nonRelVal - two run modes for MSOutput thread (Todor Ivanov) #9691
+  - Distribute WMStats couch views among different design docs (Alan Malta Rodrigues) #9710
+
+
+1.3.5.pre1 to 1.3.5.pre2:
+  - Remove WMStats latestAgentSite view (Alan Malta Rodrigues) #9709
+  - pylint fixes (Alan Malta Rodrigues) #9707
+  - Resolve StepChain parentage information with new DBS APIs (Alan Malta Rodrigues) #9707
+  - Use DELETE method to delete single couch documents (Alan Malta Rodrigues) #9706
+  - Bump httplib2 from 0.7.3 to 0.18.0 (dependabot[bot]) #9704
+  - Break up WMStats DataCache update into multiple calls (Alan Malta Rodrigues) #9684
+  - Always request stale views from WMStatsReader (Alan Malta Rodrigues) #9692
+
+
+1.3.4.pre2 to 1.3.5.pre1:
+  - Add patchComponent.sh script (Todor Ivanov) #9698
+  - Properly get hostname in checkProxy script (Alan Malta Rodrigues) #9696
+  - Cache team information in ReqMgr (Erik Gough) #9694
+  - Fixes #9688 (khurtado) #9689
+  - Print warning in Executor if condor_chirp is not found. (khurtado) #9682
+  - Always create block-level rules for blocks inserted by RucioInjector (Alan Malta Rodrigues) #9672
+  - Properly deal with MSS/Tape container rule creation (Alan Malta Rodrigues) #9666
+  - unit tests for the project validation (Alan Malta Rodrigues) #9667
+  - Added 'project' metadata for block and container objects (Alan Malta Rodrigues) #9667
+
+
+1.3.4.pre1 to 1.3.4.pre2:
+  - Make StepChain parentage cherrypy thread more verbose (Alan Malta Rodrigues) #9657
+  - Update port and library for webtest in the REST unit tests (Alan Malta Rodrigues) #9477
+  - Properly parse subscriptions response for dataset and block level (Alan Malta Rodrigues) #9664
+  - fix unit tests (Alan Malta Rodrigues) #9659
+  - Consider PU location for top level MC task (Alan Malta Rodrigues) #9659
+  - fix unit tests (Alan Malta Rodrigues) #9660
+  - Check process source when enabling GUID checks (Erik Gough) #9660
+  - Add and earlier status ('closed-out') to fix the parentage dependencies (tivanov) #9657
+
+
+1.3.3 to 1.3.4.pre1:
+  - RucioInjector has to close only those blocks injected into Rucio (Alan Malta Rodrigues) #9648
+  - Introducing the MSOutput module for Reqmgr2ms. (Todor Ivanov) #9640
+  - Introducing the DDM Service Wrapper. (Todor Ivanov) 171
+  - more unit tests (Alan Malta Rodrigues) #9629
+  - Validate KeepOutput settings in TaskChain spec (Alan Malta Rodrigues) #9637
+  - Workaround voms-proxy-init imcompatibilities (Alan Malta Rodrigues) #9637
+  - Add runtime check for enforceGUIDInFileName (Erik Gough) #9649
+  - Update rucio-clients version and add pymongo to the requirements list (Alan Malta Rodrigues) #9618
+ #9644
+
+
 1.3.3.pre2 to 1.3.3:
   - Bump deployment version and deployment tag (Alan Malta Rodrigues) #9635
   - Update default RucioInjector.listTiersToInject to an empty list (Alan Malta Rodrigues) #9646

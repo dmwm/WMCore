@@ -11,6 +11,7 @@ import os
 import sys
 import json
 import subprocess
+import logging
 
 from Utils.FileTools import getFullPath
 from Utils.Utilities import zipEncodeStr
@@ -180,18 +181,26 @@ class Executor(object):
             value = zipEncodeStr(value, maxLen=maxLen)
 
         # construct condor_chirp binary location from CONDOR_CONFIG
+        # Note: This works when we do not use containers.
         condor_chirp_bin = None
         condor_config = os.getenv('CONDOR_CONFIG', None)
         if condor_config:
             condor_config_dir = os.path.dirname(condor_config)
             condor_chirp_bin = os.path.join(condor_config_dir, 'main/condor/libexec/condor_chirp')
-            if not os.path.isfile(condor_chirp_bin):
-                # Singularity container might not have CONDOR_CONFIG env.
-                #TODO: It should have fixed from Singularity setting
-                condor_chirp_bin = getFullPath("condor_chirp")
+
+        # If the above fails, look for the executable in the environment
+        # This is the usual case for containers
+        if not condor_chirp_bin or not os.path.isfile(condor_chirp_bin):
+            condor_chirp_bin = getFullPath("condor_chirp")
 
         if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
             args = [condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value)]
             subprocess.call(args)
+        else:
+            if condor_chirp_bin and not os.access(condor_chirp_bin, os.X_OK):
+                msg = 'condor_chirp was found in: %s, but it was not an executable.' % condor_chirp_bin
+            else:
+                msg = 'condor_chirp was not found in the system.'
+            logging.warning(msg)
 
         return

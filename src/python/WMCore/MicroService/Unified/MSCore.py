@@ -16,8 +16,8 @@ from WMCore.Services.Rucio.Rucio import Rucio
 
 class MSCore(object):
     """
-    This class provides core functionality for both
-    MSTransferor and MSMonitor classes.
+    This class provides core functionality for
+    MSTransferor, MSMonitor and MSOutput classes.
     """
 
     def __init__(self, msConfig, logger=None):

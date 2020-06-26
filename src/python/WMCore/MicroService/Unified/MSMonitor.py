@@ -124,7 +124,7 @@ class MSMonitor(MSCore):
             msg += "%d failed to get their transfer documents updated in CouchDB." % len(failedDocs)
             self.logger.info(msg)
         except Exception as ex:
-            msg = "Unknown exception processing the transfer records. Error: %s", str(ex)
+            msg = "Unknown exception processing the transfer records. Error: %s" % str(ex)
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
         return summary
@@ -139,12 +139,15 @@ class MSMonitor(MSCore):
         tstamp = int(time.time())
         for doc in transferRecords:
             self.logger.debug("Checking transfers for: %s", doc['workflowName'])
-            for rec in doc.get('transfers', []):
-                # obtain new transfer ids and completion for given dataset
-                completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
-                # Per Alan request, we'll update only completion and not tids
-                rec['completion'].append(round(completion, 2))
-            doc['lastUpdate'] = tstamp
+            try:
+                for rec in doc.get('transfers', []):
+                    # obtain new transfer ids and completion for given dataset
+                    completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
+                    rec['completion'].append(round(completion, 2))
+                doc['lastUpdate'] = tstamp
+            except Exception as exc:
+                msg = "Unknown exception checking workflow %s. Error: %s"
+                self.logger.exception(msg, doc['workflowName'], str(exc))
 
     def _getTransferstatus(self, dataset, requestList):
         """
@@ -180,15 +183,25 @@ class MSMonitor(MSCore):
             else:
                 self.logger.debug("Subscription result for dataset: %s and request ID: %s was: %s",
                                   dataset, reqId, data)
-            # the response structure is nested as hell!
+            # very much nested, especially for a block level subscription
             for dsetRow in data['phedex']['dataset']:
                 # TODO: check what happens when we subscribe both the primary and parent in the same request
-                for blockRow in dsetRow['block']:
+                for blockRow in dsetRow.get('block', []):
                     for subs in blockRow['subscription']:
                         if subs['percent_files'] is None:
                             completion.append(0)
                         else:
                             completion.append(int(subs['percent_files']))
+            # check if it's a level subscription
+            for dsetRow in data['phedex']['dataset']:
+                if 'block' in dsetRow:
+                    # already handled by the block above
+                    break
+                for subs in dsetRow['subscription']:
+                    if subs['percent_files'] is None:
+                        completion.append(0)
+                    else:
+                        completion.append(int(subs['percent_files']))
         if not completion:
             return 0
         return sum(completion) / len(completion)

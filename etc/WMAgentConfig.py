@@ -133,7 +133,7 @@ config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
-config.WorkQueueManager.queueParams["WorkPerCycle"] = 100  # don't pull more than this number of elements per cycle
+config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
 
 config.component_("DBS3Upload")
@@ -362,13 +362,14 @@ config.component_("RucioInjector")
 config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
 config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
 config.RucioInjector.logLevel = globalLogLevel
-config.RucioInjector.enabled = False
+config.RucioInjector.enabled = True
 config.RucioInjector.pollInterval = 300
 config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
-config.RucioInjector.listTiersToInject = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.metaDIDProject = "Production"
+config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]  # []
 config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"

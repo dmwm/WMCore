@@ -1,10 +1,12 @@
+#!/usr/bin/env python
 from __future__ import (division, print_function)
+
 import time
 from collections import defaultdict
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
-from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 
 def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
@@ -35,7 +37,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         super(StepChainParentageFixTask, self).__init__(config)
         self.reqmgrDB = RequestDBWriter(config.reqmgrdb_url)
         self.dbsSvc = DBS3Reader(config.dbs_url, logger=self.logger)
-        self.statusToCheck = ["announced", "normal-archived"]
+        self.statusToCheck = ["closed-out", "announced", "normal-archived"]
 
     def setConcurrentTasks(self, config):
         """
@@ -48,12 +50,14 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         Look through the stepchain workflows with ParentageResolved flag is False.
         Fix the StepChain parentage and update the ParentageResolved flag to True
         """
-        self.logger.info("Updating parentage for StepChain workflows for %s", self.statusToCheck)
+        self.logger.info("Running fixStepChainParentage thread for statuses: %s", self.statusToCheck)
         childDatasets = set()
         requests = set()
         requestsByChildDataset = {}
         for status in self.statusToCheck:
-            reqByChildDS= getChildDatasetsForStepChainMissingParent(self.reqmgrDB, status)
+            reqByChildDS = getChildDatasetsForStepChainMissingParent(self.reqmgrDB, status)
+            self.logger.info("Retrieved %d datasets to fix parentage, in status: %s",
+                             len(reqByChildDS), status)
             childDatasets = childDatasets.union(set(reqByChildDS.keys()))
             # We need to just get one of the StepChain workflow if multiple workflow contains the same datasets. (i.e. ACDC)
             requestsByChildDataset.update(reqByChildDS)
@@ -65,23 +69,34 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         totalChildDS = len(childDatasets)
         fixCount = 0
         for childDS in childDatasets:
-            start = int(time.time())
-            failedBlocks = self.dbsSvc.fixMissingParentageDatasets(childDS, insertFlag=True)
-            end = int(time.time())
-            timeTaken = end - start
-            if failedBlocks:
-                self.logger.warning("Failed to fix the parentage for %s will be retried: time took: %s (sec)",
-                                 failedBlocks, timeTaken)
+            self.logger.info("Resolving parentage for dataset: %s", childDS)
+            start = time.time()
+            try:
+                failedBlocks = self.dbsSvc.fixMissingParentageDatasets(childDS, insertFlag=True)
+            except Exception as exc:
+                self.logger.exception("Failed to resolve parentage data for dataset: %s. Error: %s",
+                                      childDS, str(exc))
                 failedRequests = failedRequests.union(requestsByChildDataset[childDS])
             else:
-                fixCount += 1
-                self.logger.info("Fixed %s parentage: %s out of %s datasets. time took: %s (sec)",
-                                 childDS, fixCount, totalChildDS, timeTaken)
+                if failedBlocks:
+                    self.logger.warning("These blocks failed to be resolved and will be retried later: %s",
+                                        failedBlocks)
+                    failedRequests = failedRequests.union(requestsByChildDataset[childDS])
+                else:
+                    fixCount += 1
+                    self.logger.info("Parentage for '%s' successfully updated. Processed %s out of %s datasets.",
+                                     childDS, fixCount, totalChildDS)
+            timeTaken = time.time() - start
+            self.logger.info("    spent %s secs on this dataset: %s", timeTaken, childDS)
 
         requestsToUpdate = requests - failedRequests
 
         for request in requestsToUpdate:
-            self.reqmgrDB.updateRequestProperty(request, {"ParentageResolved": True})
+            try:
+                self.reqmgrDB.updateRequestProperty(request, {"ParentageResolved": True})
+                self.logger.info("Marked ParentageResolved=True for request: %s", request)
+            except Exception as exc:
+                self.logger.error("Failed to update 'ParentageResolved' flag to True for request: %s", request)
 
-        self.logger.info("Total %s requests' ParentageResolved flag is set to True", len(requestsToUpdate))
-        self.logger.info("Total %s requests will be retried next cycle: %s", len(failedRequests), failedRequests)
+        msg = "A total of %d requests have been processed, where %d will have to be retried in the next cycle."
+        self.logger.info(msg, len(requestsToUpdate), len(failedRequests))

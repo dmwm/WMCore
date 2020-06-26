@@ -12,14 +12,11 @@ import unittest
 import os
 import sys
 
-import nose
-
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
 from WMCore.Configuration import ConfigSection
 from WMCore.Storage.TrivialFileCatalog import loadTFC
 from WMCore.WMSpec.WMStep import WMStep
-from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSWStepHelper
 from WMCore.WMSpec.Steps import StepFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -42,6 +39,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
 
+
     def createTestStep(self):
         """
         _createTestStep_
@@ -50,12 +48,15 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         newStep = WMStep("cmsRun1")
-        newStepHelper = CMSSWStepHelper(newStep)
+        stepTemplate = StepFactory.getStepTemplate("CMSSW")
+        stepTemplate.install(newStep)
+        newStepHelper = stepTemplate.helper(newStep)
+
         newStepHelper.setStepType("CMSSW")
         newStepHelper.setGlobalTag("SomeGlobalTag")
-        stepTemplate = StepFactory.getStepTemplate("CMSSW")
-        stepTemplate(newStep)
-        newStep.application.command.configuration = "PSet.py"
+        newStepHelper.data.application.section_("setup")
+        newStepHelper.cmsswSetup("CMSSW_11_0_2", scramArch=['slc7_amd64_gcc820'])
+
         return newStepHelper
 
 
@@ -106,9 +107,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
 
-        if os.environ.get('CMSSW_VERSION', None):
-            del os.environ['CMSSW_VERSION']
-
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -140,8 +138,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
-
-        os.environ['CMSSW_VERSION'] = "CMSSW_7_4_0"
 
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
@@ -178,8 +174,6 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
 
-        os.environ['CMSSW_VERSION'] = "CMSSW_7_6_0"
-
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -210,7 +204,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         try:
             from dbs.apis.dbsClient import DbsApi
         except ImportError as ex:
-            raise nose.SkipTest
+            raise unittest.SkipTest
 
         # this is modified and shortened version of
         # WMCore/test/python/WMCore_t/Misc_t/site-local-config.xml
@@ -276,7 +270,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # pileup configuration file, need to create it in self.testDir
         fetcher = PileupFetcher()
         fetcher.setWorkingDirectory(self.testDir)
-        fetcher.createPileupConfigFile(setupScript.step, fakeSites=['T1_US_FNAL'])
+        fetcher.createPileupConfigFile(setupScript.step)
 
         setupScript()
 

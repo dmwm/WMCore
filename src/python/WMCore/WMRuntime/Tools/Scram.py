@@ -103,6 +103,44 @@ def isCMSSWSupported(thisCMSSW, supportedCMSSW):
     return False
 
 
+def isEnforceGUIDInFileNameSupported(thisCMSSW):
+    """
+    _isEnforceGUIDInFileNameSupported_
+
+    Function used to validate whether the CMSSW release to be used supports
+    the enforceGUIDInFileName feature.
+    :param thisCMSSW: release to be used in this job
+
+    """
+    # a set of CMSSW releases that support the enforceGUIDInFileName feature. Releases in the same
+    # cycle with a higher minor revision number also support the feature.
+    supportedReleases = set(["CMSSW_10_6_8", "CMSSW_10_2_20", "CMSSW_9_4_16", "CMSSW_9_3_17", "CMSSW_8_0_34"])
+    # a set of specific CMSSW releases that supported the enforceGUIDInFileName feature.
+    specificSupportedReleases = set(["CMSSW_10_2_20_UL", "CMSSW_9_4_16_UL", "CMSSW_8_0_34_UL", "CMSSW_7_1_45_patch3"])
+
+    if not thisCMSSW:
+        logging.info("You must provide the CMSSW version being used by this job.")
+        return False
+
+    # true if CMSSW release is >= CMSSW_11_0_0
+    if isCMSSWSupported(thisCMSSW, "CMSSW_11_0_0"):
+        return True
+    # true if CMSSW release is in the specific release set
+    elif thisCMSSW in specificSupportedReleases:
+        return True
+    # true if the CMSSW release's minor revision is >= to one of the supported releases
+    else:
+        thisMajor, thisMid, thisMinor = [int(i) for i in thisCMSSW.split('_', 4)[1:4]]
+        for release in supportedReleases:
+            supportedMajor, supportedMid, supportedMinor = [int(i) for i in release.split('_', 4)[1:4]]
+            # major and mid revisions need an exact match
+            if thisMajor == supportedMajor and thisMid == supportedMid:
+                # minor revision need to be >= to the supported minor revision
+                if thisMinor >= supportedMinor:
+                    return True
+    return False
+
+
 def testWriter(func, *args):
     """
     _testWriter_

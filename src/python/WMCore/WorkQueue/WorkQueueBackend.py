@@ -71,6 +71,8 @@ class WorkQueueBackend(object):
         """Replicate from parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
+                self.logger.info("Forcing pullFromParent from parentCouch: %s to queueUrl %s/%s",
+                                 self.parentCouchUrl, self.queueUrl, self.inbox.name)
                 self.server.replicate(source=self.parentCouchUrl,
                                       destination="%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter='WorkQueue/queueFilter',
@@ -84,6 +86,8 @@ class WorkQueueBackend(object):
         """Replicate to parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
+                self.logger.info("Forcing sendToParent from queueUrl %s/%s to parentCouch: %s",
+                                 self.queueUrl, self.inbox.name, self.parentCouchUrl)
                 self.server.replicate(source="%s" % self.inbox.name,
                                       destination=self.parentCouchUrlWithAuth,
                                       filter='WorkQueue/queueFilter',
@@ -113,10 +117,10 @@ class WorkQueueBackend(object):
         """
         # Can't save spec to inbox, it needs to be visible to child queues
         # Can't save empty dict so add dummy variable
-        dummy_values = {'name': wmspec.name()}
+        dummyValues = {'name': wmspec.name()}
         # change specUrl in spec before saving (otherwise it points to previous url)
         wmspec.setSpecUrl(self.db['host'] + "/%s/%s/spec" % (self.db.name, wmspec.name()))
-        return wmspec.saveCouch(self.hostWithAuth, self.db.name, dummy_values)
+        return wmspec.saveCouch(self.hostWithAuth, self.db.name, dummyValues)
 
     def getWMSpec(self, name):
         """Get the spec"""
@@ -132,7 +136,7 @@ class WorkQueueBackend(object):
                                             i.e. a workflow which has been split
         """
         if not units:
-            return
+            return []
         # store spec file separately - assume all elements share same spec
         self.insertWMSpec(units[0]['WMSpec'])
         newUnitsInserted = []
@@ -337,6 +341,10 @@ class WorkQueueBackend(object):
         from GQ
         """
         self.logger.info("Getting up to %d available work from %s", numElems, self.queueUrl)
+        self.logger.info("  for team name: %s", team)
+        self.logger.info("  for wfs: %s", wfs)
+        self.logger.info("  with excludeWorkflows: %s", excludeWorkflows)
+        self.logger.info("  for thresholds: %s", thresholds)
 
         excludeWorkflows = excludeWorkflows or []
         elements = []
@@ -354,10 +362,10 @@ class WorkQueueBackend(object):
         options = {}
         options['include_docs'] = True
         options['descending'] = True
+        options['num_elem'] = numElems
         options['resources'] = thresholds
         if team:
             options['team'] = team
-            self.logger.info("setting team to %s" % team)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):
@@ -367,38 +375,40 @@ class WorkQueueBackend(object):
         else:
             result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
             result = json.loads(result)
-            if len(result) == 0:
-                self.logger.info("""No available work in WQ or didn't pass workqueue restriction
-                                    - check Pileup, site white list, etc""")
-            self.logger.debug("Available Work:\n %s \n for resources\n %s" % (result, thresholds))
+            if not result:
+                self.logger.info("No available work or it did not pass work/data restrictions for: %s ",
+                                 self.queueUrl)
+            else:
+                self.logger.info("Retrieved %d elements from workRestrictions list for: %s",
+                                 len(result), self.queueUrl)
+
         # Iterate through the results; apply whitelist / blacklist / data
         # locality restrictions.  Only assign jobs if they are high enough
         # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
-            # filter out exclude list from abvaling
-            if element['RequestName'] not in excludeWorkflows:
+            # make sure not to acquire work for aborted or force-completed workflows
+            if element['RequestName'] in excludeWorkflows:
+                msg = "Skipping aborted/force-completed workflow: %s, work id: %s"
+                self.logger.info(msg, element['RequestName'], element._id)
+            else:
                 sortedElements.append(element)
-
         # sort elements to get them in priority first and timestamp order
         sortedElements.sort(key=lambda element: element['CreationTime'])
         sortedElements.sort(key=lambda x: x['Priority'], reverse=True)
 
+        sites = thresholds.keys()
+        self.logger.info("Current siteJobCounts:")
+        for site, jobsByPrio in siteJobCounts.items():
+            self.logger.info("    %s : %s", site, jobsByPrio)
+
         for element in sortedElements:
-            if numElems <= 0:
-                self.logger.info("Reached the maximum number of elements to be pulled: %d", len(elements))
-                break
-
-            if not possibleSites(element):
-                self.logger.info("No possible sites for %s with doc id %s", element['RequestName'], element.id)
-                continue
-
+            commonSites = possibleSites(element)
             prio = element['Priority']
             possibleSite = None
-            sites = thresholds.keys()
             random.shuffle(sites)
             for site in sites:
-                if element.passesSiteRestriction(site):
+                if site in commonSites:
                     # Count the number of jobs currently running of greater priority
                     curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
@@ -407,16 +417,15 @@ class WorkQueueBackend(object):
                         break
 
             if possibleSite:
-                numElems -= 1
-                self.logger.debug("Possible site exists %s" % str(possibleSite))
                 elements.append(element)
-                if possibleSite not in siteJobCounts:
-                    siteJobCounts[possibleSite] = {}
+                siteJobCounts.setdefault(possibleSite, {})
                 siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
                                                     element['Jobs'] * element.get('blowupFactor', 1.0)
             else:
                 self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
+        self.logger.info("And %d elements passed location and siteJobCounts restrictions for: %s",
+                         len(elements), self.queueUrl)
         return elements, thresholds, siteJobCounts
 
     def getActiveData(self):
@@ -497,15 +506,15 @@ class WorkQueueBackend(object):
         """
         for db in [self.inbox, self.db]:
             for row in db.loadView('WorkQueue', 'conflicts')['rows']:
-                element_id = row['id']
+                elementId = row['id']
                 try:
-                    conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(element_id, rev)) \
+                    conflicting_elements = [CouchWorkQueueElement.fromDocument(db, db.document(elementId, rev)) \
                                             for rev in row['value']]
                     fixed_elements = fixElementConflicts(*conflicting_elements)
                     if self.saveElements(fixed_elements[0]):
                         self.saveElements(*fixed_elements[1:])  # delete others (if merged value update accepted)
                 except Exception as ex:
-                    self.logger.error("Error resolving conflict for %s: %s" % (element_id, str(ex)))
+                    self.logger.error("Error resolving conflict for %s: %s" % (elementId, str(ex)))
 
     def recordTaskActivity(self, taskname, comment=''):
         """Record a task for monitoring"""

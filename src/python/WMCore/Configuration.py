@@ -14,8 +14,10 @@ import os
 import sys
 import traceback
 
-# PY3 compatibility
-if sys.version_info == 3:  # PY3 Remove when python 3 transition complete
+PY3 = sys.version_info.major == 3
+
+# PY3 compatibility (can be removed once python2 gets dropped)
+if PY3:
     basestring = str
     unicode = str
     long = int

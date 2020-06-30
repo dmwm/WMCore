@@ -337,9 +337,9 @@ class WorkQueueTest(WorkQueueTestCase):
         reco = workload.newTask("reco")
         workload.setOwnerDetails(name="evansde77", group="DMWM")
         workload.setSiteWhitelist(site)
-        workload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
         # first task uses the input dataset
-        reco.addInputDataset(primary="PRIMARY", processed="processed-v1", tier="TIERONE")
+        reco.addInputDataset(name="/PRIMARY/processed-v1/TIERONE",
+                             primary="PRIMARY", processed="processed-v1", tier="TIERONE")
         reco.data.input.splitting.algorithm = "File"
         reco.data.input.splitting.include_parents = parentage
         reco.setTaskType("Processing")
@@ -354,6 +354,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                          lfnBase="/store/dunkindonuts",
                                          mergedLFNBase="/store/kfc")
 
+        workload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
         dcs = DataCollectionService(url=serverUrl, database=couchDB)
 
         def getJob(workload):
@@ -1156,7 +1157,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.setSiteWhitelist('T1_US_FNAL')
-        spec.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+        spec.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
         spec.save(spec.specUrl())
         self.localQueue.params['Team'] = 'cmsdataops'
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team="cmsdataops")

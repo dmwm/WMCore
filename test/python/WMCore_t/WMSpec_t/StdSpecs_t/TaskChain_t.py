@@ -728,22 +728,22 @@ class TaskChainTests(EmulatedUnitTestCase):
             self.assertEqual(flags, [False, False])
 
         # set both flags to true now
-        workload.setTrustLocationFlag(True, True)
+        workload.setTrustLocationFlag(True, False)
         for task in workload.getAllTasks():
             flags = task.getTrustSitelists()
             if task.isTopOfTree():
-                self.assertEqual(flags.values(), [True, True])
+                self.assertItemsEqual(flags.values(), [True, False])
             elif task.taskType() in ["Cleanup", "LogCollect"]:
-                self.assertEqual(flags.values(), [False, False])
+                self.assertItemsEqual(flags.values(), [False, False])
             else:
                 self.assertFalse(flags['trustlists'])
-                self.assertTrue(flags['trustPUlists'])
+                self.assertFalse(flags['trustPUlists'])
 
         # set both to false now
         workload.setTrustLocationFlag(False, False)
         for task in workload.getAllTasks(cpuOnly=True):
             flags = task.getTrustSitelists().values()
-            self.assertEqual(flags, [False, False])
+            self.assertItemsEqual(flags, [False, False])
         return
 
     def testMultipleGlobalTags(self):

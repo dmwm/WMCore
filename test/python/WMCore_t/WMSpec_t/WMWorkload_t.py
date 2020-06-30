@@ -2016,24 +2016,34 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = self.makeTestWorkload()[0]
 
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'),
-                         "Should be False, I did not set you yet.")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'),
-                         "Should be False, I did not set you yet.")
-        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True now")
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True now")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
+        with self.assertRaises(RuntimeError):
+            testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+
+        # then add an input dataset
+        for task in testWorkload.taskIterator():
+            task.addInputDataset(name='/My/Dataset-name/TIER', primary="My",
+                                 processed="Dataset-name", tier="TIER")
+
         testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=False)
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be False now")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False now")
-        testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=True)
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should still be False")
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'),
-                        "Bad job!! You should be True once again")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
         testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'),
-                        "Bad job!! You should be True once again")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False again")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
+
+        with self.assertRaises(RuntimeError):
+            testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+
+        # then add a pileup dataset
+        for task in testWorkload.taskIterator():
+            stepHelper = task.getStepHelper("cmsRun1")
+            stepHelper.setupPileup(pileupConfig={"mc": "/My/Pileup-name/TIER"}, dbsUrl="any_dbs_url")
+
+        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'))
         return
 
     def testOverrides(self):

@@ -73,8 +73,8 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue(getattr(self.myRucio.cli, "user_agent").startswith("wmcore-client/"))
         self.assertTrue(getattr(self.client, "user_agent").startswith("rucio-clients/"))
 
-        newParams = {"host": 'http://cms-rucio-int.cern.ch',
-                     "auth_host": 'https://cms-rucio-auth-int.cern.ch',
+        newParams = {"host": 'http://cmsrucio-int.cern.ch',
+                     "auth_host": 'https://cmsrucio-auth-int.cern.ch',
                      "auth_type": "x509", "account": self.acct,
                      "ca_cert": False, "timeout": 5, "phedexCompatible": False}
         newKeys = newParams.keys()

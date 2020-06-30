@@ -327,7 +327,17 @@ class StepChainTests(EmulatedUnitTestCase):
         outputDsets = [x['outputDataset'] for x in task.listOutputDatasetsAndModules()]
         self.assertItemsEqual(outputDsets, outDsets)
 
-        return
+        print(testArguments)
+        # test assignment with wrong Trust flags
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska"], "Team": "The-A-Team",
+                      "RequestStatus": "assigned",
+                      "TrustSitelists": False, "TrustPUSitelists": True
+                      }
+        with self.assertRaises(RuntimeError):
+            testWorkload.updateArguments(assignDict)
+        # now with correct flags
+        assignDict['TrustPUSitelists'] = False
+        testWorkload.updateArguments(assignDict)
 
     def testStepChainMC(self):
         """
@@ -481,8 +491,6 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step3']["CMSSWVersion"])
         self.assertEqual(step.data.application.setup.scramArch, testArguments['Step3']["ScramArch"])
 
-        return
-
     def testPileupWithoutInputData(self):
         """
         Test whether we can properly setup the Pileup information even
@@ -517,6 +525,17 @@ class StepChainTests(EmulatedUnitTestCase):
         stepHelper = task.getStepHelper('cmsRun1')
         puConfig = stepHelper.getPileup()
         self.assertItemsEqual([testArguments['Step1']["MCPileup"]], puConfig.mc.dataset)
+
+        # test assignment with wrong Trust flags
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska"], "Team": "The-A-Team",
+                      "RequestStatus": "assigned",
+                      "TrustSitelists": True, "TrustPUSitelists": True
+                      }
+        with self.assertRaises(RuntimeError):
+            testWorkload.updateArguments(assignDict)
+        # now with correct flags
+        assignDict['TrustSitelists'] = False
+        testWorkload.updateArguments(assignDict)
 
     def testMultiplePileupDsets(self):
         """

@@ -1870,6 +1870,12 @@ class WMWorkloadHelper(PersistencyHelper):
         it affects where secondary jobs are meant to run.
         The pileup flag has to be set for all the tasks in the workload.
         """
+        if inputFlag is True and not self.listInputDatasets():
+            msg = "Setting TrustSitelists=True for workflows without input dataset is forbidden!"
+            raise RuntimeError(msg)
+        if pileupFlag is True and not self.listPileupDatasets():
+            msg = "Setting TrustPUSitelists=True for workflows without pileup dataset is forbidden!"
+            raise RuntimeError(msg)
         for task in self.getAllTasks(cpuOnly=True):
             if task.isTopOfTree():
                 task.setTrustSitelists(inputFlag, pileupFlag)

@@ -35,18 +35,23 @@ case $TOBUILD in
       exit 1
 esac
 
+# clean up any previous builds
+rm -fv dist/*
+
 if $wmagent
   then
   /bin/cp requirements.wmagent.txt requirements.txt
   /bin/cp setup_wmagent.py setup.py
-  python setup.py sdist upload
+  python setup.py sdist
+  twine upload dist/wmagent-*
 fi
 
 if $wmcore
   then
   /bin/cp requirements.wmcore.txt requirements.txt
   /bin/cp setup_wmcore.py setup.py
-  python setup.py sdist upload
+  python setup.py sdist
+  twine upload dist/wmcore-*
 fi
 
 

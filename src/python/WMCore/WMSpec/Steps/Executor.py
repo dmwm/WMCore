@@ -169,6 +169,30 @@ class Executor(object):
         """
         return None
 
+    def getCondorChirpAttrDelayed(self, key):
+        """
+        _getCondorChirpAttrDelayed_
+
+        Util to call condor_chirp and retrieve the value for the given key
+
+        """
+        value = None
+        condor_chirp_bin = self.getCondorChirpBin()
+        if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
+            args = [condor_chirp_bin, 'get_job_attr_delayed', key]
+            try:
+                value = json.loads(subprocess.check_output(args))
+            except:
+                pass
+        else:
+            if condor_chirp_bin and not os.access(condor_chirp_bin, os.X_OK):
+                msg = 'condor_chirp was found in: %s, but it was not an executable.' % condor_chirp_bin
+            else:
+                msg = 'condor_chirp was not found in the system.'
+            self.logger.warning(msg)
+
+        return value
+
     def setCondorChirpAttrDelayed(self, key, value, compress=False, maxLen=5120):
         """
         _setCondorChirpAttrDelayed_
@@ -179,6 +203,26 @@ class Executor(object):
         if compress:
             value = zipEncodeStr(value, maxLen=maxLen)
 
+        condor_chirp_bin = self.getCondorChirpBin()
+        if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
+            args = [condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value)]
+            subprocess.call(args)
+        else:
+            if condor_chirp_bin and not os.access(condor_chirp_bin, os.X_OK):
+                msg = 'condor_chirp was found in: %s, but it was not an executable.' % condor_chirp_bin
+            else:
+                msg = 'condor_chirp was not found in the system.'
+            self.logger.warning(msg)
+
+        return
+
+    def getCondorChirpBin(self):
+        """
+        _getCondorChirpBin_
+
+        Util to find the condor_chirp binary
+
+        """
         # construct condor_chirp binary location from CONDOR_CONFIG
         # Note: This works when we do not use containers.
         condor_chirp_bin = None
@@ -192,14 +236,4 @@ class Executor(object):
         if not condor_chirp_bin or not os.path.isfile(condor_chirp_bin):
             condor_chirp_bin = getFullPath("condor_chirp")
 
-        if condor_chirp_bin and os.access(condor_chirp_bin, os.X_OK):
-            args = [condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value)]
-            subprocess.call(args)
-        else:
-            if condor_chirp_bin and not os.access(condor_chirp_bin, os.X_OK):
-                msg = 'condor_chirp was found in: %s, but it was not an executable.' % condor_chirp_bin
-            else:
-                msg = 'condor_chirp was not found in the system.'
-            self.logger.warning(msg)
-
-        return
+        return condor_chirp_bin

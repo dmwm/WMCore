@@ -92,7 +92,7 @@ class MSManager(object):
 
         # initialize output module
         if 'output' in self.services:
-            reqStatus = ['completed', 'closed-out', 'announced']
+            reqStatus = ['closed-out', 'announced']
 
             thname = 'MSOutputConsumer'
             self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)

@@ -9,8 +9,10 @@ from __future__ import division, print_function, absolute_import
 
 import logging
 from copy import deepcopy
+from pprint import pformat
+
 from rucio.client import Client
-from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied,
+from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound)
 from WMCore.WMException import WMException
@@ -478,9 +480,82 @@ class Rucio(object):
         except AccessDenied as ex:
             msg = "AccessDenied creating DID replication rule. Error: %s" % str(ex)
             raise WMRucioException(msg)
+        except DuplicateRule as ex:
+            # NOTE:
+            #    The unique constraint is per did and it is checked against the tuple:
+            #    rucioAccount + did = (name, scope) + rseExpression
+            # NOTE:
+            #    This exception will be thrown by Rucio even if a single Did has
+            #    a duplicate rule. In this case all the rest of the Dids will be
+            #    ignored, which in general should be addressed by Rucio. But since
+            #    it is not, we should break the list of Dids and proceed one by one
+            # NOTE:
+            #    This thing here may be slow, because it will wait for Rucio to
+            #    return the history of rules per every Did, but no shorter path exists
+            msg = "A duplicate rule for: \naccount: %s \ndids: %s \nrseExpression: %s.\n"
+            self.logger.info(msg,
+                             kwargs['account'],
+                             pformat(dids),
+                             rseExpression)
+
+            ruleIds = []
+            didsDup = []
+            for did in dids:
+                try:
+                    response = self.cli.add_replication_rule([did], copies, rseExpression, **kwargs)
+                    for ruleId in response:
+                        ruleIds.append(ruleId)
+                    self.logger.debug("Per did ruleIds: %s", ruleIds)
+                except DuplicateRule:
+                    didsDup.append(did)
+
+            ruleHistory = self.listRuleHistory(didsDup)
+            self.logger.debug("Rule History: %s\n", pformat(ruleHistory))
+
+            for did in ruleHistory:
+                for didHist in did['did_hist']:
+                    ruleIds.append(didHist['rule_id'])
+            ruleIds = list(set(ruleIds))
+            self.logger.debug("ruleIds: %s\n", ruleIds)
+            return ruleIds
         except Exception as ex:
             self.logger.error("Exception creating rule replica for data: %s. Error: %s", names, str(ex))
         return response
+
+    def listRuleHistory(self, dids):
+        """
+        _listRuleHistory_
+
+        A function to return a list of historical records of replication rules
+        per did.
+        :param dids: a list of dids of the form {'name': '...', 'scope: '...'}
+
+        The returned structure looks something like:
+        [{'did': {'name': 'DidName',
+                  'scope': 'cms'},
+          'did_hist': [{u'account': u'wma_test',
+                        u'created_at': datetime.datetime(2020, 6, 30, 1, 34, 51),
+                        u'locks_ok_cnt': 9,
+                        u'locks_replicating_cnt': 0,
+                        u'locks_stuck_cnt': 0,
+                        u'rse_expression': u'(tier=2|tier=1)&cms_type=real&rse_type=DISK',
+                        u'rule_id': u'1f0ab297e4b54e1abf7c086ac012b9e9',
+                        u'state': u'OK',
+                        u'updated_at': datetime.datetime(2020, 6, 30, 1, 34, 51)}]},
+         ...
+         {'did': {},
+          'did_hist': []}]
+        """
+        fullHistory = []
+        for did in dids:
+            didHistory = {}
+            didHistory['did'] = did
+            didHistory['did_hist'] = []
+            # check the full history of the current did
+            for hist in self.cli.list_replication_rule_full_history(did['scope'], did['name']):
+                didHistory['did_hist'].append(hist)
+            fullHistory.append(didHistory)
+        return fullHistory
 
     def listContent(self, name, scope='cms'):
         """

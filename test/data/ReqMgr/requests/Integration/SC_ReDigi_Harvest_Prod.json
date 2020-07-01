@@ -1,9 +1,10 @@
 {
     "assignRequest": {
         "AcquisitionEra": {
-            "DigiPU_2024PU": "AcquisitionEra-OVERRIDE-ME",
-            "RecoPU_2024PU": "AcquisitionEra-OVERRIDE-ME"
-        },
+            "DigiPU_2024PU": "AcquisitionEra-OVERRIDE-ME", 
+            "RecoPU_2024PU": "AcquisitionEra-OVERRIDE-ME", 
+            "Nano_2024PU": "AcquisitionEra-OVERRIDE-ME"
+        }, 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
         "MergedLFNBase": "/store/backfill/1", 
@@ -12,8 +13,9 @@
         }, 
         "ProcessingString": {
             "DigiPU_2024PU": "ProcessingString-OVERRIDE-ME",
-            "RecoPU_2024PU": "ProcessingString-OVERRIDE-ME"
-        },
+            "RecoPU_2024PU": "ProcessingString-OVERRIDE-ME",
+            "Nano_2024PU": "ProcessingString-OVERRIDE-ME"
+        }, 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
         "SiteWhitelist": [
@@ -24,77 +26,86 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "AcquisitionEra": "Integ_Test", 
         "CMSSWVersion": "CMSSW_11_2_0_pre8", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "WorkFlowDesc": ["PU recycling with 4 cores/8.5GB for Task1; Task2 with 4cores/12GB; PrepID at top level and Task2;",
-                             "DeterministicPU enabled for both tasks; Harvesting enabled; 10 lumis for Task1 and 5 lumis for Task2"],
-	    "CheckList": ["TaskChain: mc automatic harvesting", "TaskChain: Pileup workflow by recycling", "LumiBased splitting"]
+            "WorkFlowDesc": ["3 Steps with input data and same PU in Step1 and Step2; 2 LpJ; Harvesting enabled; ",
+                             "Drop output of Step1 - GEN-SIM-DIGI-RAW; Assigned with diff AcqEra/ProcStr;"],
+	    "CheckList": ["SC ReDigi; SC with different AcqEra/ProcStr/ProcVer; SC harvesting"]
         },
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DQMConfigCacheID": "bd52899bf308f6846f06edfe4d83acf8", 
+        "DQMConfigCacheID": "bd52899bf308f6846f06edfe4d83b4b6", 
         "DQMHarvestUnit": "byRun", 
         "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
         "EnableHarvesting": true, 
         "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
-        "Memory": 3000, 
-        "Multicore": 1, 
-        "PrepID": "TEST-CMSSW_11_2_0_pre8__PDMVRELVALS-100-QCD_Pt_600_800_14-00002", 
+        "IncludeParents": false, 
+        "Memory": 12000, 
+        "Multicore": 4, 
+        "PrepID": "TEST-CMSSW_11_2_0_pre8__PDMVRELVALS-100-TTbar_14TeV-00002", 
         "ProcessingString": "DEFAULT_ProcStr", 
         "ProcessingVersion": 1, 
         "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
-        "RequestType": "TaskChain", 
+        "RequestType": "StepChain", 
         "ScramArch": [
             "slc7_amd64_gcc820"
         ], 
         "SizePerEvent": 1, 
         "SubRequestType": "RelVal", 
-        "Task1": {
-            "AcquisitionEra": "CMSSW_11_2_0_pre8", 
+        "Step1": {
+            "AcquisitionEra": "Integ_TestStep1", 
             "CMSSWVersion": "CMSSW_11_2_0_pre8", 
             "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
-            "ConfigCacheID": "bd52899bf308f6846f06edfe4d82c8cc",
-            "DeterministicPileup": true,
+            "ConfigCacheID": "bd52899bf308f6846f06edfe4d82bb6f", 
             "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
-            "InputDataset": "/RelValQCD_Pt_600_800_14/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
-            "KeepOutput": true, 
-            "LumisPerJob": 10, 
+            "InputDataset": "/RelValTTbar_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
+            "KeepOutput": false, 
+            "LumisPerJob": 2, 
             "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
-            "Memory": 8500, 
-            "Multicore": 4, 
-            "ProcessingString": "Task1_WMCore_TEST", 
+            "ProcessingString": "StepChain_MC_Step1_TEST_WMCore", 
             "ScramArch": [
                 "slc7_amd64_gcc820"
             ], 
-            "SplittingAlgo": "LumiBased", 
-            "TaskName": "DigiPU_2024PU"
+            "StepName": "DigiPU_2024PU"
         }, 
-        "Task2": {
-            "AcquisitionEra": "CMSSW_11_2_0_pre8", 
+        "Step2": {
+            "AcquisitionEra": "Integ_TestStep2", 
             "CMSSWVersion": "CMSSW_11_2_0_pre8", 
             "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
-            "ConfigCacheID": "bd52899bf308f6846f06edfe4d8370cc", 
+            "ConfigCacheID": "bd52899bf308f6846f06edfe4d837b58", 
             "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
-            "DeterministicPileup": true,
             "InputFromOutputModule": "FEVTDEBUGHLToutput", 
-            "InputTask": "DigiPU_2024PU", 
+            "InputStep": "DigiPU_2024PU", 
             "KeepOutput": true, 
-            "LumisPerJob": 5, 
             "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
-            "Memory": 12000, 
             "Multicore": 4, 
-            "ProcessingString": "Task2_WMCore_TEST", 
+            "ProcessingString": "StepChain_MC_Step2_TEST_WMCore", 
             "ScramArch": [
                 "slc7_amd64_gcc820"
             ], 
-            "SplittingAlgo": "LumiBased", 
-            "TaskName": "RecoPU_2024PU"
+            "StepName": "RecoPU_2024PU"
         }, 
-        "TaskChain": 2, 
-        "TimePerEvent": 1
+        "Step3": {
+            "AcquisitionEra": "Integ_TestStep3", 
+            "CMSSWVersion": "CMSSW_11_2_0_pre8", 
+            "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
+            "ConfigCacheID": "bd52899bf308f6846f06edfe4d83d7a6", 
+            "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
+            "InputFromOutputModule": "MINIAODSIMoutput", 
+            "InputStep": "RecoPU_2024PU", 
+            "KeepOutput": true, 
+            "Multicore": 4, 
+            "ProcessingString": "StepChain_MC_Step3_TEST_WMCore", 
+            "ScramArch": [
+                "slc7_amd64_gcc820"
+            ], 
+            "StepName": "Nano_2024PU"
+        }, 
+        "StepChain": 3, 
+        "TimePerEvent": 5
     }
 }

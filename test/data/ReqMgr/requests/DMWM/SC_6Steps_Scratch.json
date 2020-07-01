@@ -1,0 +1,164 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteWhitelist": [],
+        "SiteBlacklist": [], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "CMSSWVersion": "CMSSW_10_6_12", 
+        "Campaign": "RunIISummer19UL16GEN", 
+        "Comments": {"WorkFlowDesc": ["SC from scratch with 6 steps and PU on step3; drop output of step2/GEN-SIM and step4/GEN-SIM-RAW; Step1 with 6 cores, others with 8 cores and 16GB",
+                                      "Step1 and Step3 with the same output module, GEN vs GEN-SIM-DIGI; Step3 under 10_6_13, others with 10_6_12; PrepID override at step level"],
+                     "CheckList": "StepChain from scratch; StepChain KeepOutput=False"}, 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+        "Memory": 16000, 
+        "Multicore": 8, 
+        "PrepID": "TEST-task_EGM-RunIISummer19UL16GEN-00009", 
+        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 210000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "StepChain", 
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ], 
+        "SizePerEvent": 5241.2780999999995, 
+        "Step1": {
+            "AcquisitionEra": "RunIISummer19UL16GEN", 
+            "CMSSWVersion": "CMSSW_10_6_12", 
+            "Campaign": "RunIISummer19UL16GEN", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a06ca2287", 
+            "EventsPerJob": 200, 
+            "EventsPerLumi": 100, 
+            "Multicore": 6, 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+            "KeepOutput": true, 
+            "PrepID": "EGM-RunIISummer19UL16GEN-Step1", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step1_WMCore_TEST", 
+            "RequestNumEvents": 8000, 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased", 
+            "StepName": "EGM_RunIISummer19UL16GEN_00009_0"
+        }, 
+        "Step2": {
+            "AcquisitionEra": "RunIISummer19UL16SIM", 
+            "CMSSWVersion": "CMSSW_10_6_12", 
+            "Campaign": "RunIISummer19UL16SIM", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a068e8a94", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputStep": "EGM_RunIISummer19UL16GEN_00009_0", 
+            "KeepOutput": false, 
+            "PrepID": "EGM-RunIISummer19UL16SIM-Step2", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step2_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "StepName": "EGM_RunIISummer19UL16SIM_00010_0"
+        }, 
+        "Step3": {
+            "AcquisitionEra": "RunIISummer19UL16DIGI", 
+            "CMSSWVersion": "CMSSW_10_6_13", 
+            "Campaign": "RunIISummer19UL16DIGI", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a06ca610b", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputStep": "EGM_RunIISummer19UL16SIM_00010_0", 
+            "KeepOutput": true, 
+            "MCPileup": "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM", 
+            "PrepID": "EGM-RunIISummer19UL16DIGI-Step3", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step3_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "StepName": "EGM_RunIISummer19UL16DIGI_00020_0"
+        }, 
+        "Step4": {
+            "AcquisitionEra": "RunIISummer19UL16HLT", 
+            "CMSSWVersion": "CMSSW_8_0_33_UL", 
+            "Campaign": "RunIISummer19UL16HLT", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a068eb66a", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputStep": "EGM_RunIISummer19UL16DIGI_00020_0", 
+            "KeepOutput": false, 
+            "PrepID": "EGM-RunIISummer19UL16HLT-Step4", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step4_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc530"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "StepName": "EGM_RunIISummer19UL16HLT_00021_0"
+        }, 
+        "Step5": {
+            "AcquisitionEra": "RunIISummer19UL16RECO", 
+            "CMSSWVersion": "CMSSW_10_6_12", 
+            "Campaign": "RunIISummer19UL16RECO", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a068f0a77", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputStep": "EGM_RunIISummer19UL16HLT_00021_0", 
+            "KeepOutput": true, 
+            "PrepID": "EGM-RunIISummer19UL16RECO-Step5", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step5_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "StepName": "EGM_RunIISummer19UL16RECO_00021_0"
+        }, 
+        "Step6": {
+            "AcquisitionEra": "RunIISummer19UL16MiniAOD", 
+            "CMSSWVersion": "CMSSW_10_6_12", 
+            "Campaign": "RunIISummer19UL16MiniAOD", 
+            "ConfigCacheID": "c08c58b43d1eb5c66e73a51a0690b8a9", 
+            "FilterEfficiency": 1, 
+            "GlobalTag": "106X_mcRun2_asymptotic_v13", 
+            "InputFromOutputModule": "AODSIMoutput", 
+            "InputStep": "EGM_RunIISummer19UL16RECO_00021_0", 
+            "KeepOutput": true, 
+            "PrepID": "EGM-RunIISummer19UL16MiniAOD-Step6", 
+            "PrimaryDataset": "DoubleElectron_FlatPt-1500To3000", 
+            "ProcessingString": "Step6_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc700"
+            ], 
+            "SplittingAlgo": "EventAwareLumiBased", 
+            "StepName": "EGM_RunIISummer19UL16MiniAOD_00021_0"
+        }, 
+        "StepChain": 6, 
+        "SubRequestType": "ReDigi", 
+        "TimePerEvent": 64.38789944815231
+    }
+}

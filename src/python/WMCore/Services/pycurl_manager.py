@@ -368,7 +368,7 @@ def cern_sso_cookie(url, fname, cert, ckey):
     proc.wait()
 
 
-def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=None):
+def getdata(urls, ckey, cert, headers=None, options=None, num_conn=50, cookie=None):
     """
     Get data for given list of urls, using provided number of connections
     and user credentials

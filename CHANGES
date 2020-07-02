@@ -1,3 +1,10 @@
+1.3.6.pre4 to 1.3.6.pre5:
+  - reduce default number of pycurl connections to 50 (Alan Malta Rodrigues) #9785
+  - Add support for Rucio in MSOutput Consumer thread && Handle DuplicateRule error from Rucio client. (Todor Ivanov) #9772
+  - Remove duplicated REQUIRED_OS logic, as this has been integrated in T2_CH_CERN_HLT already. (khurtado) #9767
+  - Add nose2 to the wmagent requirements file (Alan Malta Rodrigues) #9778
+
+
 1.3.6.pre3 to 1.3.6.pre4:
   - Update old integration Rucio URLs (Alan Malta Rodrigues) #9775 
   - Remove status 'completed' from msOutput. (tivanov) #9773

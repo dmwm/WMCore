@@ -25,8 +25,8 @@
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.3.3 -d HG2005b -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.3.3 -d HG2005b -t testbed-vocms001 -p "9643" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.3.3.patch4 -d HG2005b -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.3.3.patch4 -d HG2005b -t testbed-vocms001 -p "9643" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
 
 IAM=`whoami`

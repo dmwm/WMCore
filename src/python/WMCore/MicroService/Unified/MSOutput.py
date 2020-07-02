@@ -24,6 +24,7 @@ from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_CONSUMER_REPOR
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.Rucio.Rucio import Rucio
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
@@ -51,6 +52,18 @@ class EmptyResultError(MSOutputException):
         else:
             self.myMessage = "EmptyResultError."
         super(EmptyResultError, self).__init__(self.myMessage)
+
+
+class UnsupportedError(MSOutputException):
+    """
+    A MSOutputException signalling an unsupported mode for a function or method.
+    """
+    def __init__(self, message=None):
+        if message:
+            self.myMessage = "UnsupportedError: %s"
+        else:
+            self.myMessage = "UnsupportedError."
+        super(UnsupportedError, self).__init__(self.myMessage)
 
 
 class MSOutput(MSCore):
@@ -109,9 +122,13 @@ class MSOutput(MSCore):
         self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
-        self.ddm = DDM(url=self.msConfig['ddmUrl'],
-                       logger=self.logger,
-                       enableDataPlacement=self.msConfig['enableDataPlacement'])
+        if self.msConfig['defaultDataManSys'] == 'DDM':
+            self.ddm = DDM(url=self.msConfig['ddmUrl'],
+                           logger=self.logger,
+                           enableDataPlacement=self.msConfig['enableDataPlacement'])
+        elif self.msConfig['defaultDataManSys'] == 'Rucio':
+            self.rucio = Rucio(self.msConfig['rucioAccount'],
+                               configDict={"logger": self.logger})
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -269,7 +286,7 @@ class MSOutput(MSCore):
         # NOTE:
         #    Here is just an example construction of the function. None of the
         #    data structures used to visualise it is correct. To Be Updated
- 
+
         if self.msConfig['defaultDataManSys'] == 'DDM':
             # NOTE:
             #    We always aggregate per workflow here (regardless of enableAggSubscr)
@@ -320,8 +337,7 @@ class MSOutput(MSCore):
 
                 try:
                     # In the message bellow we may want to put the list of datasets too
-                    msg = "Making transfer subscriptions for %s"
-                    self.logger.info(msg, workflow['RequestName'])
+                    self.logger.info("Making transfer subscriptions for %s", workflow['RequestName'])
 
                     if ddmReqList:
                         ddmResultList = self.ddm.makeAggRequests(ddmReqList, aggKey='item')
@@ -330,7 +346,8 @@ class MSOutput(MSCore):
                         #    Nothing else to be done here. We mark the document as
                         #    done so we do not iterate through it multiple times
                         msg = "Skip submissions for %s. Either all data Tiers were "
-                        msg += "excluded or there were no Output Datasets at all."
+                        msg += "excluded or there were no Output Datasets at all. "
+                        msg += "Marking this workflow as `done`."
                         self.logger.warning(msg, workflow['RequestName'])
                         self.docKeyUpdate(workflow, transferStatus='done')
                         return workflow
@@ -388,17 +405,112 @@ class MSOutput(MSCore):
                     #    reconstructing and returning the same type of object
                     #    as the one that have been passed to the current call.
                     pass
+                # FIXME:
+                msg = "Not yet implemented mode with workflows of type %s!\n" % type(workflow)
+                msg += "Skipping this call"
+                self.logger.error(msg)
+                raise NotImplementedError
             else:
                 msg = "Unsupported type %s for workflows!\n" % type(workflow)
                 msg += "Skipping this call"
                 self.logger.error(msg)
+                raise UnsupportedError
 
         elif self.msConfig['defaultDataManSys'] == 'PhEDEx':
             pass
 
         elif self.msConfig['defaultDataManSys'] == 'Rucio':
-            pass
+            if isinstance(workflow, MSOutputTemplate):
+                self.logger.info("Making transfer subscriptions for %s", workflow['RequestName'])
 
+                rucioResultList = []
+                if workflow['destinationOutputMap']:
+                    for dMap in workflow['destinationOutputMap']:
+                        try:
+                            copies = workflow['numberOfCopies'] if workflow['numberOfCopies'] else 1
+                            # NOTE:
+                            #    Once we get rid of DDM this rseExpression generation
+                            #    should go in the Producer thread
+                            if workflow['isRelVal']:
+                                if dMap['destination']:
+                                    rseUnion = '('+'|'.join(dMap['destination'])+')'
+                                else:
+                                    # NOTE:
+                                    #    If we get to here it is most probably because the destination
+                                    #    in the destinationOutputMap is empty (due to an
+                                    #    'ALCARECO' dataset from a Relval workflow or similar).
+                                    #    Since this is expected to happen a lot, we'd better just
+                                    #    log a warning and continue
+                                    msg = "No destination provided. Avoid creating transfer subscription for "
+                                    msg += "Workflow: %s : Dataset Names: %s"
+                                    self.logger.warning(msg, workflow['RequestName'], dMap['datasets'])
+                                    continue
+                                rseExpression = rseUnion + '&cms_type=real&rse_type=DISK'
+                                # NOTE:
+                                #    The above rseExpression should resolve to something similar to:
+                                #    (T2_CH_CERN|T1_US_FNAL_Disk)&cms_type=real&rse_type=DISK
+                                #    where the first part is a Union of all destination sites and
+                                #    the second part is a general constraint for those to be real
+                                #    entries but not `Test` or `Temp` and we also target only sites
+                                #    marked as `Disk`
+                            else:
+                                rseExpression = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
+                                # NOTE:
+                                #    The above rseExpression should target all T1_*_Disk and T2_*
+                                #    sites, where the first part is a Union of those Tiers and
+                                #    the second part is a general constraint for those to be real
+                                #    entries but not `Test` or `Temp` and we also target only sites
+                                #    marked as `Disk`
+
+                            if self.msConfig['enableDataPlacement']:
+                                rucioResultList.append(self.rucio.createReplicationRule(dMap['datasets'],
+                                                                                        rseExpression,
+                                                                                        copies=copies))
+                            else:
+                                msg = "DRY-RUN:: The effective Rucio submission would look like: \n"
+                                msg += "account: %s \n"
+                                msg += "dids: %s \n"
+                                msg += "rseExpression: %s\n"
+                                msg += "copies: %s\n"
+                                self.logger.warning(msg,
+                                                    self.msConfig['rucioAccount'],
+                                                    pformat(dMap['datasets']),
+                                                    rseExpression,
+                                                    copies)
+                        except Exception as ex:
+                            msg = "Could not make transfer subscription for Workflow: %s\n:%s"
+                            self.logger.exception(msg, workflow['RequestName'], str(ex))
+                            return workflow
+                else:
+                    # NOTE:
+                    #    Nothing else to be done here. We mark the document as
+                    #    done so we do not iterate through it multiple times
+                    msg = "Skip submissions for %s. Either all data Tiers were "
+                    msg += "excluded or there were no Output Datasets at all. "
+                    msg += "Marking this workflow as `done`."
+                    self.logger.warning(msg, workflow['RequestName'])
+                    self.docKeyUpdate(workflow, transferStatus='done')
+                    return workflow
+
+                transferIDs = rucioResultList
+                if self.msConfig['enableDataPlacement']:
+                    self.docKeyUpdate(workflow,
+                                      transferStatus='done',
+                                      transferIDs=transferIDs)
+                return workflow
+
+            elif isinstance(workflow, (list, set, CommandCursor)):
+                # FIXME:
+                msg = "Not yet implemented mode with workflows of type %s!\n" % type(workflow)
+                msg += "Skipping this call"
+                self.logger.error(msg)
+                raise NotImplementedError
+
+            else:
+                msg = "Unsupported type %s for workflows!\n" % type(workflow)
+                msg += "Skipping this call"
+                self.logger.error(msg)
+                raise UnsupportedError
         # NOTE:
         #    if we are about to implement this through a pipeline we MUST not
         #    return the result here but the WHOLE document with updated fields
@@ -542,7 +654,7 @@ class MSOutput(MSCore):
 
         wfCounterTotal = sum(wfCounters.values())
         return wfCounterTotal
- 
+
     def msOutputProducer(self, requestRecords):
         """
         A top level function to drive the upload of all the documents to MongoDB
@@ -712,7 +824,7 @@ class MSOutput(MSCore):
                 #    Once we migrate to Rucio we should change those defaults to
                 #    whatever is the format in Rucio (eg. referring a subscription
                 #    rule like: "store it at a good site" or "Store in the USA" etc.)
-                destination.add('T1_*')
+                destination.add('T1_*_Disk')
                 destination.add('T2_*')
 
             dMap = {'datasets': [dataset],
@@ -740,7 +852,7 @@ class MSOutput(MSCore):
                         for i in dMap['datasets']:
                             aggMap['datasets'].append(i)
                     found = True
-                    del(dMap)
+                    del dMap
                     break
             if not found:
                 aggDstMap.append(dMap)

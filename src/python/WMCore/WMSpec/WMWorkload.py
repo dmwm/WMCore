@@ -1861,19 +1861,25 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setTrustLocationFlag(self, inputFlag=False, pileupFlag=False):
         """
-        _setTrustLocationFlag_
-
         Set the input and the pileup flags in the top level tasks
         indicating that site lists should be used as location data
 
         The input data flag has to be set only for top level tasks, otherwise
         it affects where secondary jobs are meant to run.
         The pileup flag has to be set for all the tasks in the workload.
+
+        Validate these parameters to make sure they are only set for workflows
+        that require those type of input datasets (ACDCs are not validated)
         """
-        if inputFlag is True and not self.listInputDatasets():
+        isACDCWorkflow = False
+        for task in self.taskIterator():
+            if task.getInputACDC():
+                isACDCWorkflow = True
+
+        if inputFlag is True and isACDCWorkflow is False and not self.listInputDatasets():
             msg = "Setting TrustSitelists=True for workflows without input dataset is forbidden!"
             raise RuntimeError(msg)
-        if pileupFlag is True and not self.listPileupDatasets():
+        if pileupFlag is True and isACDCWorkflow is False and not self.listPileupDatasets():
             msg = "Setting TrustPUSitelists=True for workflows without pileup dataset is forbidden!"
             raise RuntimeError(msg)
         for task in self.getAllTasks(cpuOnly=True):

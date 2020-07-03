@@ -1,3 +1,7 @@
+1.3.6.pre5 to 1.3.6.pre6:
+  - Do not validate Trust flags for ACDC workflows (Alan Malta Rodrigues) #9793
+
+
 1.3.6.pre4 to 1.3.6.pre5:
   - reduce default number of pycurl connections to 50 (Alan Malta Rodrigues) #9785
   - Add support for Rucio in MSOutput Consumer thread && Handle DuplicateRule error from Rucio client. (Todor Ivanov) #9772

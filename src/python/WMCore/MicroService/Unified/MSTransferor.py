@@ -16,7 +16,7 @@ from httplib import HTTPException
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
-from random import randint
+from random import randint, choice
 from copy import deepcopy
 
 # WMCore modules
@@ -389,11 +389,14 @@ class MSTransferor(MSCore):
             elif size == maxSize:
                 finalPNN.add(pnn)
         self.logger.info("The PNN that would require less data to be transferred is: %s", finalPNN)
-        # TODO: 100GB is a magic number here. It really depends on how much CPU/h the
-        # workflow would require, and perhaps something else
-        if maxSize < 100 * 1024 ** 3:
-            finalPNN = set(volumeByPNN.keys())
-            self.logger.info("However, the available data volume is too small, so using all PNNs: %s", finalPNN)
+        if len(finalPNN) > 1:
+            # magically picks one site from the list. It could pick the one with highest
+            # available quota, but that might overload that one site...
+            # make sure it's a set object
+            finalPNN = choice(list(finalPNN))
+            finalPNN = {finalPNN}
+            self.logger.info("Randomly picked PNN: %s as final location", finalPNN)
+
         return finalPNN
 
     def checkPUDataLocation(self, wflow):

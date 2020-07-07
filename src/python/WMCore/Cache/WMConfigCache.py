@@ -5,14 +5,16 @@ _WMConfigCache_
 Being in itself a wrapped class around a config cache
 """
 
-from future.utils import with_metaclass
 from future import standard_library
 standard_library.install_aliases()
+import urllib.request, urllib.parse, urllib.error
+from builtins import str
+from future.utils import with_metaclass
+from future.utils import viewkeys, viewvalues
 
 import hashlib
 import logging
 import traceback
-import urllib.request
 from contextlib import closing
 
 import WMCore.GroupUser.Decorators as Decorators
@@ -269,12 +271,12 @@ class ConfigCache(WMObject):
         """
         try:
             self.document = self.database.document(id=configID)
-            if 'owner' in self.document.keys():
+            if 'owner' in self.document:
                 self.connectUserGroup(groupname=self.document['owner'].get('group', None),
                                       username=self.document['owner'].get('user', None))
-            if '_attachments' in self.document.keys():
+            if '_attachments' in self.document:
                 # Then we need to load the attachments
-                for key in self.document['_attachments'].keys():
+                for key in viewkeys(self.document['_attachments']):
                     self.loadAttachment(name=key)
         except CouchNotFoundError as ex:
             msg = "Document with id %s not found in couch\n" % (configID)
@@ -301,7 +303,7 @@ class ConfigCache(WMObject):
         attach = self.database.getAttachment(self.document["_id"], name)
 
         if not overwrite:
-            if name in self.attachments.keys():
+            if name in self.attachments:
                 logging.info("Attachment already exists, so we're skipping")
                 return
 
@@ -400,7 +402,7 @@ class ConfigCache(WMObject):
         Retrieve the dataset information for the config in the ConfigCache.
         """
         psetTweaks = self.getPSetTweaks()
-        if not 'process' in psetTweaks.keys():
+        if 'process' not in psetTweaks:
             raise ConfigCacheException("Could not find process field in PSet while getting output modules!")
         try:
             outputModuleNames = psetTweaks["process"]["outputModules_"]
@@ -548,14 +550,14 @@ class ConfigCache(WMObject):
                 # Something's gone wrong with trying to open the configCache
                 msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
                 raise ConfigCacheException("%s: %s" % (msg, str(ex)))
-            for outputModule in outputModuleInfo.values():
+            for outputModule in viewvalues(outputModuleInfo):
                 dataTier = outputModule.get('dataTier', None)
                 filterName = outputModule.get('filterName', None)
                 if not dataTier:
                     raise ConfigCacheException("No DataTier in output module.")
 
                 # Add dataTier to duplicate dictionary
-                if not dataTier in duplicateCheck.keys():
+                if dataTier not in duplicateCheck:
                     duplicateCheck[dataTier] = []
                 if filterName in duplicateCheck[dataTier]:
                     # Then we've seen this combination before

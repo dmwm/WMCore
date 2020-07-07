@@ -5,6 +5,7 @@ _WMObject_
 Helper class that other objects should inherit from
 
 """
+from builtins import object
 __all__ = []
 
 

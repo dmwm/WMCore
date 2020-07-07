@@ -12,6 +12,12 @@ from __future__ import division, print_function
 from future import standard_library
 standard_library.install_aliases()
 
+from future import standard_library
+standard_library.install_aliases()
+
+from builtins import str, bytes, object
+from future.utils import viewvalues
+
 import base64
 import logging
 import os
@@ -45,11 +51,6 @@ except ImportError:
     # Mock ServerNotFoundError since we don't want that WMCore depend on httplib2 using pycurl
     class ServerNotFoundError(Exception):
         pass
-
-# Python3 compatibility
-if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
-    basestring = str
-
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -194,9 +195,7 @@ class Requests(dict):
         if verb == 'GET' and data:
             uri = "%s?%s" % (uri, data)
 
-        # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
-        # PY3 Don't let futurize change this
-        assert isinstance(data, (str, basestring)), \
+        assert isinstance(data, (str, bytes)), \
             "Data in makeRequest is %s and not encoded to a string" % type(data)
 
         # And now overwrite any headers that have been passed into the call:
@@ -224,7 +223,7 @@ class Requests(dict):
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
-            for con in conn.connections.values():
+            for con in viewvalues(conn.connections):
                 con.close()
             conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client
@@ -262,7 +261,7 @@ class Requests(dict):
                    "User-Agent": "WMCore.Services.Requests/v002",
                    "Accept": self['accept_type']}
 
-        for key in self.additionalHeaders.keys():
+        for key in self.additionalHeaders:
             headers[key] = self.additionalHeaders[key]
         # And now overwrite any headers that have been passed into the call:
         # WARNING: doesn't work with deplate so only accept gzip

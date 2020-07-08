@@ -68,9 +68,8 @@ class testFileTools(unittest.TestCase):
         silly = "This is a rather ridiculous string"
         filename = os.path.join(self.testDir, 'fileInfo.test')
 
-        f = open(filename, 'w')
-        f.write(silly)
-        f.close()
+        with open(filename, 'w') as fObj:
+            fObj.write(silly)
 
         info = FileTools.getFileInfo(filename=filename)
         self.assertEqual(info['Name'], filename)
@@ -83,6 +82,27 @@ class testFileTools(unittest.TestCase):
         self.assertIsNotNone(fullPath)
         fullPath = FileTools.getFullPath("this_shouldnt_be")
         self.assertEqual(fullPath, None)
+
+    def testChecksum(self):
+        """
+        Test file checksums calculation
+        """
+        filename = os.path.join(self.testDir, 'fileInfo.test')
+        with open(filename, 'w') as fObj:
+            fObj.write("")
+
+        (adler32, cksum) = FileTools.calculateChecksums(filename=filename)
+        self.assertEqual(adler32, "00000001")
+        self.assertEqual(cksum, "4294967295")
+
+        silly = "This is a rather ridiculous string"
+        with open(filename, 'w') as fObj:
+            fObj.write(silly * 100001)
+        (adler32, cksum) = FileTools.calculateChecksums(filename=filename)
+        self.assertEqual(adler32, "827db5b1")
+        self.assertEqual(cksum, "3774692924")
+        return
+
 
 if __name__ == "__main__":
     unittest.main()

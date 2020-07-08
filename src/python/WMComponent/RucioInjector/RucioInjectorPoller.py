@@ -306,7 +306,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                         listLfns.append(fileInfo['lfn'])
                         injectData.append(dict(name=fileInfo['lfn'], scope=self.scope,
                                                bytes=fileInfo['size'], state="A",
-                                               adler32=fileInfo['checksum']['adler32']))
+                                               adler32=fileInfo['checksum']['adler32'].zfill(8)))
 
                     if self.rucio.createReplicas(rse=rseName, files=injectData, block=block):
                         logging.info("Successfully inserted %d files on block %s", len(listLfns), block)

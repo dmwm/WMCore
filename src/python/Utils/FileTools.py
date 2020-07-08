@@ -49,7 +49,7 @@ def calculateChecksums(filename):
     if len(cksumStdout) != 2 or int(cksumStdout[1]) != filesize:
         raise RuntimeError("Something went wrong with the cksum calculation !")
 
-    return ("%x" % (adler32Checksum & 0xffffffff), "%s" % cksumStdout[0])
+    return (format(adler32Checksum & 0xffffffff, '08x'), "%s" % cksumStdout[0])
 
 
 def tail(filename, nLines=20):

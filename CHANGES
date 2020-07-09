@@ -1,3 +1,10 @@
+1.3.6 to 1.3.6.patch1:
+  - Add leading zeros to adler32 to ensure 8 chars length (Alan Malta Rodrigues) #9812
+  - [py2py3] Utils - compatible with both python2 and python3 (Dario Mapelli) #9812
+  - [py2py3] PSetTweaks - compatible with both python2 and python3 (Dario Mapelli) #9812
+  - Fix missing job report error codes (Erik Gough) #9812
+
+
 1.3.6.pre7 to 1.3.6:
   - Add MSOutput to WMCore diagram. (tivanov) #9804
   - Add MSOutput to Micro Services diagram. (tivanov) #9802

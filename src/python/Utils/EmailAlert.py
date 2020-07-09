@@ -3,11 +3,12 @@ EmailAlert - send alerts via email
 """
 
 from __future__ import division
+from builtins import str, object
 import smtplib
 import logging
 
 
-class EmailAlert:
+class EmailAlert(object):
     """
     A simple class to send alerts via email
     """

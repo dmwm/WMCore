@@ -1,3 +1,9 @@
+1.3.6.patch1 to 1.3.6.patch2:
+  - Add leading zeros to adler32 to ensure 8 chars length (Alan Malta Rodrigues) #9833
+  - Fix missing job report error codes (Erik Gough) #9833
+  - Revert "Bundle patch for WMAgent 1.3.6.patch1" (Alan Malta Rodrigues) #9833
+
+
 1.3.6 to 1.3.6.patch1:
   - Add leading zeros to adler32 to ensure 8 chars length (Alan Malta Rodrigues) #9812
   - [py2py3] Utils - compatible with both python2 and python3 (Dario Mapelli) #9812

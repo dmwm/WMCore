@@ -10,7 +10,6 @@ Description: Provides 2 basic classes:
 # futures
 from __future__ import division, print_function
 
-from builtins import object
 from functools import reduce
 
 

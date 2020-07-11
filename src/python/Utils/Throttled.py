@@ -7,7 +7,6 @@ Should be used in Web server APIs which wants to throttle clients.
 from __future__ import division
 
 # standard modules
-from builtins import object
 import logging
 import threading
 

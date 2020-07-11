@@ -11,7 +11,6 @@ data type.
 """
 
 from __future__ import (print_function, division)
-from builtins import object
 from time import time
 
 

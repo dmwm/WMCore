@@ -634,7 +634,7 @@ class AccountantWorker(WMConnectionBase):
         path location.
         """
         report = Report()
-        report.addError("cmsRun1", errorCode, "MissingJobReport", errorDescription)
+        report.addError("cmsRun1", 84, errorCode, errorDescription)
         report.data.cmsRun1.status = "Failed"
         return report
 

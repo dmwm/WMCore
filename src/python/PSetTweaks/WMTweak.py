@@ -7,10 +7,7 @@ Note: This can be used within the CMSSW environment to act on a
 process/config but does not depend on any CMSSW libraries. It needs to stay like this.
 
 """
-from __future__ import print_function, division
-
-from builtins import map, range, str, object
-from future.utils import viewitems, viewkeys
+from __future__ import print_function
 
 import logging
 import os
@@ -122,7 +119,7 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    jobLfnGroup = modifier + str(job.get("counter", 0) // 1000).zfill(4)
+    jobLfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
     return jobLfnGroup
 
 
@@ -216,7 +213,7 @@ def expandParameter(process, param):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
-            for lastResultKey, lastResultVal in viewitems(lastResults):
+            for lastResultKey, lastResultVal in lastResults.items():
                 for param in listParams(lastResultVal):
                     newResultKey = "%s.%s" % (lastResultKey, param)
                     newResultVal = getattr(lastResultVal, param)
@@ -230,7 +227,7 @@ def expandParameter(process, param):
 
         else:
             newResults = {}
-            for lastResultKey, lastResultVal in viewitems(lastResults):
+            for lastResultKey, lastResultVal in lastResults.items():
                 newResultKey = "%s.%s" % (lastResultKey, pset)
                 newResultVal = getattr(lastResultVal, pset, None)
                 if not hasattr(newResultVal, "parameters_"):
@@ -268,7 +265,7 @@ class TweakMaker(object):
         # handle process parameters
         processParams = []
         for param in self.processLevel:
-            processParams.extend(viewkeys(expandParameter(process, param)))
+            processParams.extend(expandParameter(process, param).keys())
 
         for param in processParams:
             if hasParameter(process, param):
@@ -477,7 +474,7 @@ def makeJobTweak(job):
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
-    for run in viewkeys(runs):
+    for run in runs.keys():
         lumiPairs = runs[run]
         for lumiPair in lumiPairs:
             if len(lumiPair) != 2:
@@ -495,7 +492,7 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k, v in viewitems(baggageParams):
+    for k, v in baggageParams.items():
         result.addParameter(k, v)
 
     return result

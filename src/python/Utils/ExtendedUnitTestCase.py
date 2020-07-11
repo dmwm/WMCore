@@ -4,7 +4,6 @@ Unit testing base class with our extensions
 """
 
 from __future__ import (division, print_function)
-from future.utils import viewitems
 
 import copy
 import unittest
@@ -24,7 +23,7 @@ class ExtendedUnitTestCase(unittest.TestCase):
         """
 
         def traverse_dict(dictionary):
-            for key, value in viewitems(dictionary):
+            for key, value in dictionary.iteritems():
                 if isinstance(value, dict):
                     traverse_dict(value)
                 elif isinstance(value, list):
@@ -40,7 +39,7 @@ class ExtendedUnitTestCase(unittest.TestCase):
             theList.sort()
             return
 
-        if not isinstance(expected_obj, type(actual_obj)):
+        if type(expected_obj) != type(actual_obj):
             self.fail(msg="The two objects are different type and cannot be compared: %s and %s" % (
             type(expected_obj), type(actual_obj)))
 

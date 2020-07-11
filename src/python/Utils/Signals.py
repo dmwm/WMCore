@@ -10,9 +10,7 @@ running program will receive SIGUSR1 signal. E.g., in unix shell
 just do
 shell# kill -s SIGUSR1 <pid>
 """
-# future
 from __future__ import print_function, division
-from future.utils import viewitems
 
 # system modules
 import sys
@@ -28,7 +26,7 @@ def dumpthreads(isignal, iframe):
     print("DAS stack, signal=%s, frame=%s" % (isignal, iframe))
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     code = []
-    for tid, stack in viewitems(sys._current_frames()):
+    for tid, stack in sys._current_frames().items():
         code.append("\n# Thread: %s(%d)" % (id2name.get(tid,""), tid))
         for filename, lineno, name, line in traceback.extract_stack(stack):
             code.append('File: "%s", line %d, in %s' % (filename, lineno, name))

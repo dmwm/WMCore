@@ -22,4 +22,4 @@ python-cjson==1.2.1
 pyzmq==17.1.2
 retry==0.9.1
 stomp.py==4.1.15
-rucio-clients==1.22.2
+rucio-clients==1.23.0

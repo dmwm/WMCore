@@ -211,7 +211,7 @@ fi
 
 if [[ "$HOSTNAME" == *cern.ch ]]; then
   MYPROXY_CREDNAME="amaltaroCERN"
-  FORCEDOWN="'T3_US_NERSC'"
+  FORCEDOWN="'T3_US_NERSC', 'T3_US_SDSC', 'T3_US_ANL', 'T3_US_TACC', 'T3_US_PSC'"
 elif [[ "$HOSTNAME" == *fnal.gov ]]; then
   MYPROXY_CREDNAME="amaltaroFNAL"
   FORCEDOWN=""

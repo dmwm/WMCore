@@ -65,6 +65,28 @@ class SandboxCreator:
         with open(path + "/__init__.py", 'w') as initHandle:
             initHandle.write("# dummy file for now")
 
+    def _tweakWorkload(self, workload):
+        """
+        Hook to be able to tweak the workflow workload on the agent side
+        :param workload: a workload object
+        """
+        newMaxPSS = 4000
+
+        for task in workload.getAllTasks():
+            if task.taskType() == "Merge" and "MergeDQMoutput" in task.name():
+                pass
+            elif task.taskType() == "Harvesting":
+                pass
+            else:
+                continue
+
+            ### Well, then hack the workload object
+            logging.info("Setting task: %s memory requirements and watchdog PSS to: %d",
+                         task.name(), newMaxPSS)
+            task.setMaxPSS(newMaxPSS)
+            task._setPerformanceMonitorConfig()
+            task.monitoring.PerformanceMonitor.maxPSS = newMaxPSS
+
     def makeSandbox(self, buildItHere, workload):
         """
             __makeSandbox__
@@ -89,6 +111,9 @@ class SandboxCreator:
         # // Set up Fetcher plugins, use default list for maintaining
         # //  compatibility
         commonFetchers = ["CMSSWFetcher", "URLFetcher", "PileupFetcher"]
+
+        ### Start hacking around with the workload object
+        self._tweakWorkload(workload)
 
         # generate the real path and make it
         self._makePathonPackage(path)

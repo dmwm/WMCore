@@ -562,7 +562,14 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.EstimatedSingleCoreMins'] = str(estimatedMinsSingleCore)
             ad['My.OriginalMaxWallTimeMins'] = str(estimatedMins)
             ad['My.MaxWallTimeMins'] = 'WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins'
-            requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
+
+            ### adapt memory requirement here as well
+            if job['task_type'] == "Merge" and "MergeDQMoutput" in job['task_name']:
+                requestMemory = 4000
+            elif job['task_type'] == "Harvesting":
+                requestMemory = 4000
+            else:
+                requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
             ad['My.OriginalMemory'] = str(requestMemory)
             ad['My.ExtraMemory'] = str(self.extraMem)
             ad['request_memory'] = 'OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)'

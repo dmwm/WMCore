@@ -145,7 +145,7 @@ class Rucio(object):
         """
         res = None
         try:
-            res = list(self.cli.get_account_usage(acct, rse=rse))
+            res = list(self.cli.get_local_account_usage(acct, rse=rse))
         except (AccountNotFound, AccessDenied) as ex:
             self.logger.error("Failed to get account usage information from Rucio. Error: %s", str(ex))
         return res

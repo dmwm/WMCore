@@ -1,3 +1,15 @@
+1.3.7.pre1 to 1.4.0.pre2:
+  - Update Rucio get_account_usage to get_local_account_usage API (Alan Malta Rodrigues) #9850
+  - [py2py3] WMQuality.TestInit - Remove dependency on MySQL-python (Dario Mapelli) #9848
+  - Bump rucio-clients from 1.22.2 to .1.23.0 (Alan Malta Rodrigues) #9846
+  - Force HEPCloud resources to be down in the CERN agents (Alan Malta Rodrigues) #9844
+  - [py2py3] Configuration - sys.version_info compatible with py2.6 (Dario Mapelli) #9839
+  - Upload to pypi using twine (Erik Gough) #9780
+  - Update WMAgent and WMCore python requirements (Alan Malta Rodrigues) #9825
+  - Bump deployment script example (Alan Malta Rodrigues) #9813
+  - Use PSN as PNN for opportunistic diskless resources (Alan Malta Rodrigues) #9693
+
+
 1.3.6 to 1.3.7.pre1:
   - Add leading zeros to adler32 to ensure 8 chars length (Alan Malta Rodrigues) #9809
   - [py2py3] PSetTweaks - compatible with both python2 and python3 (Dario Mapelli) #9740

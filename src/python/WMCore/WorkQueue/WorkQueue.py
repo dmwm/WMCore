@@ -431,7 +431,7 @@ class WorkQueue(WorkQueueBase):
 
         # Keep in mind that WQE contains sites, wmbs location contains pnns
         commonSites = possibleSites(match)
-        commonLocation = self.cric.PSNstoPNNs(commonSites)
+        commonLocation = self.cric.PSNstoPNNs(commonSites, allowPNNLess=True)
         msg = "Running WMBS preparation for %s with ParentQueueId %s,\n  with common location %s"
         self.logger.info(msg, match['RequestName'], match['ParentQueueId'], commonLocation)
 

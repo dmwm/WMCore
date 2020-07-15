@@ -103,8 +103,21 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test whether we can fetch data about a specific rucio account
         """
-        res = list(self.client.get_account_usage(self.acct))
+        # test against a specific RSE
+        res = list(self.client.get_local_account_usage(self.acct, rse="T1_US_FNAL_Disk"))
+        res2 = self.myRucio.getAccountUsage(self.acct, rse="T1_US_FNAL_Disk")
+        self.assertEqual(res[0]["rse"], "T1_US_FNAL_Disk")
+        self.assertTrue(res[0]["files"] >= 1)
+        self.assertTrue(res[0]["bytes"] >= 1000)
+        self.assertTrue("bytes_remaining" in res[0])
+        self.assertTrue(res[0]["bytes_limit"] >= 0)
+        self.assertEqual(res, res2)
+
+        # test against all RSEs
+        res = list(self.client.get_local_account_usage(self.acct))
         res2 = self.myRucio.getAccountUsage(self.acct)
+        self.assertTrue(len(res) > 1)
+        self.assertTrue(len(res2) > 1)
         # I have manually created a rule for this account, so it will be there...
         self.assertEqual(res, res2)
 

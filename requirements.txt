@@ -24,7 +24,7 @@ pyzmq==17.1.2
 retry==0.9.1
 setuptools==39.2.0
 stomp.py==4.1.15
-rucio-clients==1.22.2
+rucio-clients==1.23.0
 CMSMonitoring>=0.3.4
 # All dependencies needed to run MicroServices
 pymongo==3.10.1

@@ -86,7 +86,7 @@ class MockCRICApi(object):
                 psns.update(psnSet)
         return list(psns)
 
-    def PSNstoPNNs(self, psns):
+    def PSNstoPNNs(self, psns, allowPNNLess=False):
         callname = 'data-processing'
         mapping = self.genericLookup(callname)
         if isinstance(psns, basestring):
@@ -100,6 +100,8 @@ class MockCRICApi(object):
                     pnnSet.add(item['phedex_name'])
             if pnnSet:
                 pnns.update(pnnSet)
+            elif allowPNNLess:
+                pnns.add(psn)
         return list(pnns)
 
     def PSNtoPNNMap(self, psnPattern=''):

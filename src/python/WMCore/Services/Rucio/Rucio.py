@@ -132,6 +132,19 @@ class Rucio(object):
             self.logger.error("Failed to get account information from Rucio. Error: %s", str(ex))
         return res
 
+    def getAccountLimits(self, acct):
+        """
+        Provided an account name, fetch the storage quota for all RSEs
+        :param acct: a string with the rucio account name
+        :return: a dictionary of RSE name and quota in bytes.
+        """
+        res = {}
+        try:
+            res = self.cli.get_local_account_limits(acct)
+        except AccountNotFound as ex:
+            self.logger.error("Account: %s not found in the Rucio Server. Error: %s", acct, str(ex))
+        return res
+
     def getAccountUsage(self, acct, rse=None):
         """
         _getAccountUsage_

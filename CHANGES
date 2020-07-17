@@ -1,3 +1,9 @@
+1.4.0.pre2 to 1.4.0.pre3:
+  - added getAccountLimits method to the Rucio wrapper (Alan Malta Rodrigues) #9857
+  - Fix HEAD request via pycurl_manager; added a few extra getters (Alan Malta Rodrigues) #9855
+  - Do not send parent/child data to DBS if there is nothing to be fixed (Alan Malta Rodrigues) #9853
+
+
 1.3.7.pre1 to 1.4.0.pre2:
   - Update Rucio get_account_usage to get_local_account_usage API (Alan Malta Rodrigues) #9850
   - [py2py3] WMQuality.TestInit - Remove dependency on MySQL-python (Dario Mapelli) #9848

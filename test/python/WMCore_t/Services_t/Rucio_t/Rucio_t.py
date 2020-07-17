@@ -101,7 +101,7 @@ class RucioTest(EmulatedUnitTestCase):
 
     def testGetAccountUsage(self):
         """
-        Test whether we can fetch data about a specific rucio account
+        Test whether we can fetch the data usage for a given rucio account
         """
         # test against a specific RSE
         res = list(self.client.get_local_account_usage(self.acct, rse="T1_US_FNAL_Disk"))
@@ -124,6 +124,25 @@ class RucioTest(EmulatedUnitTestCase):
         # now test against an account that either does not exist or that we cannot access
         res = self.myRucio.getAccountUsage("admin")
         self.assertIsNone(res)
+
+    def testGetAccountLimits(self):
+        """
+        Test whether we can fetch the data quota for a given rucio account
+        """
+        res = self.client.get_local_account_limits(self.acct)
+        res2 = self.myRucio.getAccountLimits(self.acct)
+        self.assertTrue(len(res) > 10)
+        self.assertTrue(len(res2) > 10)
+        #print(res)
+        self.assertEqual(res["T1_US_FNAL_Disk"], res2["T1_US_FNAL_Disk"])
+
+        # test an account that we have no access to
+        res = self.myRucio.getAccountLimits("wma_prod")
+        self.assertEqual(res, {})
+
+        # finally, test an account that does not exist
+        res = self.myRucio.getAccountLimits("any_random_account")
+        self.assertEqual(res, {})
 
     # @attr('integration')
     def testWhoAmI(self):

@@ -965,7 +965,7 @@ class DBS3Reader(object):
                     mapChildParent.setdefault(childFileID, set())
                     mapChildParent[childFileID].add(parentId)
 
-        if insertFlag:
+        if insertFlag and mapChildParent:
             # convert dictionary to list of unique childID, parentID tuples
             listChildParent = []
             for childID in mapChildParent:

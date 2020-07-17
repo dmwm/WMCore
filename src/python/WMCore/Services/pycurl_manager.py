@@ -90,6 +90,30 @@ class ResponseHeader(object):
             except:
                 pass
 
+    def getReason(self):
+        """
+        Return the HTTP request reason
+        """
+        return self.reason
+
+    def getHeader(self):
+        """
+        Return the header dictionary object
+        """
+        return self.header
+
+    def getHeaderKey(self, keyName):
+        """
+        Provided a key name, return it from the HTTP header.
+        Note that - by design - header keys are meant to be
+        case insensitive
+        :param keyName: a header key name to be looked up
+        :return: the value for that header key, or None if not found
+        """
+        for keyHea, valHea in self.header.items():
+            if keyHea.lower() == keyName.lower():
+                return valHea
+
 
 class RequestHandler(object):
     """
@@ -291,7 +315,7 @@ class RequestHandler(object):
                   verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch HTTP header"""
         header, _ = self.request(url, params, headers, verb,
-                                 verbose, ckey, cert, doseq)
+                                 verbose, ckey, cert, doseq=doseq)
         return header
 
     def multirequest(self, url, parray, headers=None,

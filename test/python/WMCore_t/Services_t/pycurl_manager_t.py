@@ -4,10 +4,9 @@ Unit test for pycurl_manager module.
 
 from __future__ import division
 
-import os
 import tempfile
 import unittest
-
+from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader, getdata, cern_sso_cookie
 
 
@@ -17,8 +16,10 @@ class PyCurlManager(unittest.TestCase):
     def setUp(self):
         "initialization"
         self.mgr = RequestHandler()
-        self.ckey = os.path.join(os.environ['HOME'], '.globus/userkey.pem')
-        self.cert = os.path.join(os.environ['HOME'], '.globus/usercert.pem')
+        #self.ckey = os.path.join(os.environ['HOME'], '.globus/userkey.pem')
+        #self.cert = os.path.join(os.environ['HOME'], '.globus/usercert.pem')
+        self.ckey = getKeyCertFromEnv()[0]
+        self.cert = getKeyCertFromEnv()[1]
 
         self.cricheader = 'Date: Tue, 06 Nov 2018 14:50:29 GMT\r\nServer: Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips mod_wsgi/3.4 Python/2.7.5 mod_gridsite/2.3.4\r\nVary: Cookie\r\nX-Frame-Options: SAMEORIGIN\r\nSet-Cookie: sessionid=bc1xu8zi5rbbsd5fgjuklb2tk2r3f6tw; expires=Sun, 11-Nov-2018 14:50:29 GMT; httponly; Max-Age=432000; Path=/\r\nContent-Length: 32631\r\nContent-Type: application/json\r\n\r\n'
         self.dbsheader = 'Date: Tue, 06 Nov 2018 14:39:07 GMT\r\nServer: Apache\r\nCMS-Server-Time: D=1503 t=1541515147806112\r\nTransfer-Encoding: chunked\r\nContent-Type: text/html\r\n\r\n'
@@ -134,6 +135,18 @@ class PyCurlManager(unittest.TestCase):
         self.assertEqual(resp.header['Vary'], 'Cookie')
         self.assertEqual(resp.header['X-Frame-Options'], 'SAMEORIGIN')
         return
+
+    def testHeadRequest(self):
+        """
+        Test a HEAD request.
+        """
+        params = {}
+        headers = {}
+        url = 'https://cmsweb.cern.ch/reqmgr2/data/info'
+        res = self.mgr.getheader(url, params=params, headers=headers, ckey=self.ckey, cert=self.cert)
+        self.assertEqual(res.getReason(), "OK")
+        self.assertTrue(len(res.getHeader()) > 10)
+        self.assertTrue(res.getHeaderKey("Server").startswith("CherryPy/"))
 
 
 if __name__ == "__main__":

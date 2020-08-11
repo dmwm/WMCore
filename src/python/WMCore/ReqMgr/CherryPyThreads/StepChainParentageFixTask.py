@@ -21,9 +21,8 @@ def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
     for reqName, info in results.items():
 
         for dsInfo in info.values():
-            if dsInfo["ParentDset"]:
-                for childDS in dsInfo["ChildDsets"]:
-                    requestsByChildDataset[childDS].add(reqName)
+            for childDS in dsInfo["ChildDsets"]:
+                requestsByChildDataset[childDS].add(reqName)
     return requestsByChildDataset
 
 

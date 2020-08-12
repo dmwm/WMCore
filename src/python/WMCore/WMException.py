@@ -6,7 +6,7 @@ General Exception class for WM modules
 
 """
 
-from builtins import str
+from builtins import bytes
 from future.utils import viewitems
 
 import inspect
@@ -29,7 +29,7 @@ class WMException(Exception):
 
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
-        if hasattr(message, "decode"):
+        if type(message) == bytes:
             # Fix for the unicode encoding issue, see #8056 and #8403
             # interprets this string using utf-8 codec and ignoring any errors
             message = message.decode('utf-8', 'ignore')
@@ -153,7 +153,7 @@ class WMException(Exception):
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
-        if hasattr(strg, "decode"):
+        if type(strg) == bytes:
             # Fix for the unicode encoding issue, #8043
             strg = strg.decode('utf-8', 'ignore')
         return strg

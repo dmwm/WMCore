@@ -1,3 +1,7 @@
+1.3.6 to 1.3.6.crab1:
+  - allow not adding hostname to DN for hash (belforte) #9867
+
+
 1.3.6.pre7 to 1.3.6:
   - Add MSOutput to WMCore diagram. (tivanov) #9804
   - Add MSOutput to Micro Services diagram. (tivanov) #9802

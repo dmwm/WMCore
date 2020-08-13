@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 """
 _WMException_t_
 
@@ -49,6 +50,22 @@ class WMExceptionTest(unittest.TestCase):
         data['key2'] = 'data2'
         exception.addInfo(**data)
         self.logger.debug("String version of exception: " + str(exception))
+
+    def testExceptionUnicode(self):
+        """
+        create an exception with non-ascii characters and do some tests.
+        """
+
+        exception = WMException("an exception message with nr. 100 and some non-ascii characters: ₩♏ℭ☺яε", 100)
+        self.logger.debug("String version of exception: " + str(exception))
+        self.logger.debug("XML version of exception: " + exception.xml())
+        self.logger.debug("Adding data")
+        data = {}
+        data['key1'] = 'value1'
+        data['key2'] = 'data2'
+        exception.addInfo(**data)
+        self.logger.debug("String version of exception: " + str(exception))
+
 
 if __name__ == "__main__":
     unittest.main()

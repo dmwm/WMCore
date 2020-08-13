@@ -321,9 +321,10 @@ class Proxy(Credential):
         list of authorized retrievers as a list of DN's of CRAB TaskWorkers maintained in
         central CRAB configuration.
         The username is passed to myproxy-* command via the "-l" option
-        Two different algorithms for defining this username have been used in CRAB:
+        Three different algorithms for defining this username have been used in CRAB:
         1. the hash of the user DN + the fqdn of the CRAB REST host
         2. the user CERN primary account username + the _CRAB string
+        3. the hash of the user DN
         During spring 2020 CRAB migrates from 1. to 2. For a smooth migration the
         new client needs to upload both credentials and the TW will try 2. and fall back to 1.
         Only after all tasks submited with old client are gone from the system, can we change
@@ -335,14 +336,22 @@ class Proxy(Credential):
         the userName key in the dictionary passed as argument to Proxy() at __init__ time
            - if the dictionary contains the key 'userName', algorithm 2 is used
            - if the dictionary does not have it, algorithm 1. is used
+        But at times user change their DN and can't act on credentials stored in myproxy
+        with old DN. They need to switch to a new credential name, for this 3. neede3d to be put back
+        in Summer 2020.
         """
         if self.userName:
             self.logger.debug("using %s as credential login name", self.userName)
             username = self.userName
         else:
-            self.logger.debug(
-                "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-            username = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+            if self.myproxyAccount:
+                self.logger.debug(
+                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
+                username = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+            else:
+                self.logger.debug(
+                    "Calculating hash of %s for credential name" % (self.userDN))
+                username = sha1(self.userDN).hexdigest()
         return username
 
     def checkAttribute(self, proxy=None):

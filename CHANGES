@@ -1,3 +1,10 @@
+1.4.0.pre3 to 1.4.0.pre4:
+  - Notify Todor upon component automatic restarts (Alan Malta Rodrigues) #9866
+  - Update ParentageResolved flag for StepChains without parent as well (Alan Malta Rodrigues) #9865
+  - Script to print a summary of LQEs stuck in Available for a given workflow (Alan Malta Rodrigues) #9863
+  - allow not adding hostname to DN for hash (belforte) #9867
+
+
 1.4.0.pre2 to 1.4.0.pre3:
   - added getAccountLimits method to the Rucio wrapper (Alan Malta Rodrigues) #9857
   - Fix HEAD request via pycurl_manager; added a few extra getters (Alan Malta Rodrigues) #9855

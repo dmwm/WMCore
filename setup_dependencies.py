@@ -52,6 +52,22 @@ dependencies = {
                     'src/templates/WMCore/WebTools',
                     'src/templates/WMCore/WebTools/Masthead', ]
     },
+    'wmcore': {
+        'packages': ['WMCore+',
+                     'WMComponent+',
+                     'WMQuality+',
+                     'PSetTweaks+',
+                     'Utils+'],
+        'modules': [],
+        'systems': [],
+        'statics': ['src/couchapps+',
+                    'src/css+',
+                    'src/html+',
+                    'src/javascript+',
+                    'src/templates+',
+                    'etc+'
+                    ],
+    },
     'reqmgr2': {
         'packages': ['WMCore.ReqMgr+',
                      'WMCore.WMDataMining+',

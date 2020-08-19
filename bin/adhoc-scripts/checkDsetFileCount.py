@@ -4,24 +4,25 @@ Script meant to be used to check the status of a dataset (or lfn) against DBS
 and PhEDEx. It also prints any discrepancy between those 2 data management tools.
 """
 from __future__ import print_function, division
+from future import standard_library
+standard_library.install_aliases()
 
-import httplib
+import http.client
 import json
 import os
 import sys
-import urllib
-import urllib2
+import urllib.request, urllib.parse
+from urllib.error import HTTPError, URLError
 from argparse import ArgumentParser
-from urllib2 import HTTPError, URLError
 
 main_url = "https://cmsweb.cern.ch"
 phedex_url = main_url + "/phedex/datasvc/json/prod/"
 dbs_url = main_url + "/dbs/prod/global/DBSReader/"
 
 
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
     def __init__(self):
-        urllib2.HTTPSHandler.__init__(self)
+        urllib.request.HTTPSHandler.__init__(self)
         self.key = os.getenv("X509_USER_PROXY")
         self.cert = os.getenv("X509_USER_PROXY")
 
@@ -29,11 +30,11 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return http.client.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def get_content(url, params=None):
-    opener = urllib2.build_opener(HTTPSClientAuthHandler())
+    opener = urllib.request.build_opener(HTTPSClientAuthHandler())
     try:
         if params:
             response = opener.open(url, params)
@@ -55,7 +56,7 @@ def phedex_info(dataset):
     Query blockreplicas PhEDEx API to retrieve detailed information
     for a specific dataset
     """
-    api_url = phedex_url + "blockreplicas" + "?" + urllib.urlencode([('dataset', dataset)])
+    api_url = phedex_url + "blockreplicas" + "?" + urllib.parse.urlencode([('dataset', dataset)])
     phedex_summary = json.loads(get_content(api_url))
     return phedex_summary
 
@@ -65,9 +66,9 @@ def dbs_info(dataset):
     Queries 2 DBS APIs to get both summary and detailed information
     """
     dbs_out = {}
-    api_url = dbs_url + "blocksummaries" + "?" + urllib.urlencode({'dataset': dataset})
+    api_url = dbs_url + "blocksummaries" + "?" + urllib.parse.urlencode({'dataset': dataset})
     dbs_out['blocksummaries'] = json.loads(get_content(api_url))
-    api_url = dbs_url + "files" + "?" + urllib.urlencode({'dataset': dataset}) + "&detail=1"
+    api_url = dbs_url + "files" + "?" + urllib.parse.urlencode({'dataset': dataset}) + "&detail=1"
     dbs_out['files'] = json.loads(get_content(api_url))
     return dbs_out
 

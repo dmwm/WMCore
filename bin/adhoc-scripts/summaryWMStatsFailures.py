@@ -6,7 +6,9 @@ per task
 """
 from __future__ import print_function, division
 
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+import http.client
 import json
 import os
 import sys
@@ -16,7 +18,7 @@ from pprint import pformat
 def getWMStatsData(workflow):
     url = 'cmsweb.cern.ch'
     headers = {"Accept": "application/json", "Content-type": "application/json"}
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     urn = "/wmstatsserver/data/request/%s" % workflow
     conn.request("GET", urn, headers=headers)
     r2 = conn.getresponse()

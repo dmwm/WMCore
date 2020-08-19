@@ -1,13 +1,12 @@
+from future import standard_library
+standard_library.install_aliases()
+
 import hashlib
 import hmac
-import urllib
-from httplib import HTTPConnection
+import urllib.parse
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+from http.client import HTTPConnection
+
 from WMCore.WebTools.Page import make_rfc_timestamp
 
 
@@ -29,15 +28,15 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
 
     data = None
     if verb == 'GET' and values:
-        data = urllib.urlencode(values, doseq=True)
+        data = urllib.parse.urlencode(values, doseq=True)
     elif verb != 'GET' and values:
         # needs to test other encoding type
         if contentType == "application/x-www-form-urlencoded":
-            data = urllib.urlencode(values)
+            data = urllib.parse.urlencode(values)
         else:
             # for other encoding scheme values assumed to be encoded already
             data = values
-    parser = urlparse(url)
+    parser = urllib.parse.urlparse(url)
     uri = parser.path
     if parser.query:
         uri += "?" + parser.query

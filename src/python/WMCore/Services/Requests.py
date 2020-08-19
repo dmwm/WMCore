@@ -9,6 +9,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set.
 """
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import base64
 import logging
@@ -21,18 +23,9 @@ import tempfile
 import traceback
 import types
 
-try:
-    from urllib import urlencode
-except ImportError:
-    # PY3
-    from urllib.parse import urlencode
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 from io import BytesIO
-from httplib import HTTPException
+from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv

@@ -25,14 +25,13 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
 import os
 import re
 
-try:
-    from urlparse import urlsplit
-except ImportError:
-    # PY3
-    from urllib.parse import urlsplit
+from urllib.parse import urlsplit
 from xml.dom.minidom import Element
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode

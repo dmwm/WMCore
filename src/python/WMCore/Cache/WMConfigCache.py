@@ -5,13 +5,15 @@ _WMConfigCache_
 Being in itself a wrapped class around a config cache
 """
 
+from future.utils import with_metaclass
+from future import standard_library
+standard_library.install_aliases()
+
 import hashlib
 import logging
 import traceback
-import urllib
+import urllib.request
 from contextlib import closing
-
-from future.utils import with_metaclass
 
 import WMCore.GroupUser.Decorators as Decorators
 from Utils.Patterns import Singleton
@@ -432,7 +434,7 @@ class ConfigCache(WMObject):
 
         """
         # The newConfig parameter is a URL suitable for passing to urlopen.
-        with closing(urllib.urlopen(newConfig)) as f:
+        with closing(urllib.request.urlopen(newConfig)) as f:
             configString = f.read(-1)
         configMD5 = hashlib.md5(configString).hexdigest()
 

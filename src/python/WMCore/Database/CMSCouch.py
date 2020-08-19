@@ -10,25 +10,28 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
+
 import base64
 import hashlib
 import logging
 import re
 import time
 import traceback
-import urllib
+import urllib.parse
 from datetime import datetime
-from httplib import HTTPException
+from http.client import HTTPException
 
 from Utils.IteratorTools import grouper, nestedDictUpdate
 from WMCore.Services.Requests import JSONRequests
 
 
 def check_name(dbname):
-    match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
+    match = re.match("^[a-z0-9_$()+-/]+$", urllib.parse.unquote_plus(dbname))
     if not match:
         msg = '%s is not a valid database name'
-        raise ValueError(msg % urllib.unquote_plus(dbname))
+        raise ValueError(msg % urllib.parse.unquote_plus(dbname))
 
 
 def check_server_url(srvurl):
@@ -172,7 +175,7 @@ class Database(CouchDBRequests):
         """
         check_name(dbname)
 
-        self.name = urllib.quote_plus(dbname)
+        self.name = urllib.parse.quote_plus(dbname)
 
         CouchDBRequests.__init__(self, url=url, ckey=ckey, cert=cert)
         self._reset_queue()
@@ -302,9 +305,9 @@ class Database(CouchDBRequests):
         on CouchDB revisions for document history is not safe, as any compaction will
         remove the older revisions.
         """
-        uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
+        uri = '/%s/%s' % (self.name, urllib.parse.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev': rev})
+            uri += '?' + urllib.parse.urlencode({'rev': rev})
         return Document(id=id, inputDict=self.get(uri))
 
     def getPrevisousRevision(self, doc_id, numberBefore=1):
@@ -314,7 +317,7 @@ class Database(CouchDBRequests):
                               special case 0 means the first revision.
         :return: previous revision document specified by numberBefore
         """
-        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.quote_plus(doc_id))
+        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.parse.quote_plus(doc_id))
         revisionRecord = self.get(uri)
         rev = revisionRecord[0]['ok']['_revisions']
 
@@ -340,11 +343,11 @@ class Database(CouchDBRequests):
         """
         fields = fields or {}
         # Clean up /'s in the name etc.
-        doc_id = urllib.quote_plus(doc_id)
+        doc_id = urllib.parse.quote_plus(doc_id)
 
         if not useBody:
             updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
-                        (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+                        (self.name, design, update_func, doc_id, urllib.parse.urlencode(fields))
 
             return self.put(uri=updateUri, decode=False)
         else:
@@ -400,7 +403,7 @@ class Database(CouchDBRequests):
         http://wiki.apache.org/couchdb/Document_Update_Handlers
         """
         # Clean up /'s in the name etc.
-        doc_id = urllib.quote_plus(doc_id)
+        doc_id = urllib.parse.quote_plus(doc_id)
 
         updateUri = '/%s/%s' % (self.name, doc_id)
         return self.put(uri=updateUri, data=fields, decode=False)
@@ -409,9 +412,9 @@ class Database(CouchDBRequests):
         """
         Check if a document exists by ID. If specified check that the revision rev exists.
         """
-        uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
+        uri = "/%s/%s" % (self.name, urllib.parse.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev': rev})
+            uri += '?' + urllib.parse.urlencode({'rev': rev})
         try:
             self.makeRequest(uri, {}, 'HEAD')
             return True
@@ -422,12 +425,12 @@ class Database(CouchDBRequests):
         """
         Immediately delete a document identified by id and rev.
         """
-        uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
+        uri = '/%s/%s' % (self.name, urllib.parse.quote_plus(id))
         if not rev:
             # then we need to fetch the latest revision number
             doc = self.getDoc(id)
             rev = doc["_rev"]
-        uri += '?' + urllib.urlencode({'rev': rev})
+        uri += '?' + urllib.parse.urlencode({'rev': rev})
         return self.delete(uri)
 
     def compact(self, views=None, blocking=False, blocking_poll=5, callback=False):
@@ -530,7 +533,7 @@ class Database(CouchDBRequests):
 
         if keys:
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_view/%s?%s' % \
                                    (self.name, design, view, data), {'keys': keys})
             else:
@@ -560,7 +563,7 @@ class Database(CouchDBRequests):
 
         if keys:
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
                                    (self.name, design, list, view, data), {'keys': keys},
                                    decode=False)
@@ -602,7 +605,7 @@ class Database(CouchDBRequests):
 
         if keys:
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 return self.post('/%s/_all_docs?%s' % (self.name, data),
                                  {'keys': keys})
             else:
@@ -871,7 +874,7 @@ class RotatingDatabase(Database):
         find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
         uri = '/%s/_temp_view' % self.seed_db.name
         if options:
-            uri += '?%s' % urllib.urlencode(options)
+            uri += '?%s' % urllib.parse.urlencode(options)
         data = self.seed_db.post(uri, find)
         return data['rows']
 
@@ -955,7 +958,7 @@ class CouchServer(CouchDBRequests):
         """
         check_name(dbname)
 
-        self.put("/%s" % urllib.quote_plus(dbname))
+        self.put("/%s" % urllib.parse.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
         return Database(dbname=dbname, url=self.url, size=size, ckey=self.ckey, cert=self.cert)
@@ -963,7 +966,7 @@ class CouchServer(CouchDBRequests):
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
         check_name(dbname)
-        dbname = urllib.quote_plus(dbname)
+        dbname = urllib.parse.quote_plus(dbname)
         return self.delete("/%s" % dbname)
 
     def connectDatabase(self, dbname='database', create=True, size=1000):

@@ -41,11 +41,14 @@ deleted from the site it was originally injected at.
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
 import logging
 import threading
 import time
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory

@@ -5,27 +5,28 @@ completion, so the ration of input lumis vs output lumis.
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
 import argparse
-import httplib
+import http.client
 import json
 import os
 import pwd
 import sys
-import urllib
-import urllib2
-from urllib2 import HTTPError, URLError
+import urllib.request, urllib.parse
+from urllib.error import HTTPError, URLError
 
 # ID for the User-Agent
 CLIENT_ID = 'workflowCompletion::python/%s.%s' % sys.version_info[:2]
 
 
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
     """
     Basic HTTPS class
     """
 
     def __init__(self, key, cert):
-        urllib2.HTTPSHandler.__init__(self)
+        urllib.request.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
 
@@ -36,7 +37,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return http.client.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def getX509():
@@ -53,7 +54,7 @@ def getContent(url, params=None):
     cert = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
     handler = HTTPSClientAuthHandler(cert, cert)
-    opener = urllib2.build_opener(handler)
+    opener = urllib.request.build_opener(handler)
     opener.addheaders = [("User-Agent", client),
                          ("Accept", "application/json")]
     try:
@@ -107,7 +108,7 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
 
     dbsOutput = {}
     for dataset in reqmgrOutDsets:
-        fullUrl = dbsUrl + "filesummaries?" + urllib.urlencode({'dataset': dataset})
+        fullUrl = dbsUrl + "filesummaries?" + urllib.parse.urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         if data:
             dbsOutput[dataset] = data[0]['num_lumi']

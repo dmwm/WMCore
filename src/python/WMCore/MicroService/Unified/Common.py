@@ -8,22 +8,20 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 # futures
 from __future__ import division, print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
+# system modules
 import json
 import logging
 import math
-# system modules
 import re
 import time
 
-from Utils.IteratorTools import grouper
-
-try:
-    from urllib import quote, unquote
-except ImportError:
-    # PY3
-    from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote
 
 # WMCore modules
+from Utils.IteratorTools import grouper
 from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata

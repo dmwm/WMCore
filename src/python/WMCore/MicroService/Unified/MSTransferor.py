@@ -10,9 +10,11 @@ tasks might be extended to multi-threading in the future.
 """
 # futures
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
 
 # system modules
-from httplib import HTTPException
+from http.client import HTTPException
 from operator import itemgetter
 from pprint import pformat
 from retry import retry

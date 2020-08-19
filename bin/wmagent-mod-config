@@ -10,6 +10,8 @@ Note: this script is also used by ASO deployment, see:
 https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import getopt
 import imp
@@ -17,11 +19,7 @@ import os
 import socket
 import sys
 import traceback
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL

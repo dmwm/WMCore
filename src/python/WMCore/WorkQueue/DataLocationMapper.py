@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
 
+from future import standard_library
+standard_library.install_aliases()
+
 from collections import defaultdict
 import logging
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+
+from urllib.parse import urlparse
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock

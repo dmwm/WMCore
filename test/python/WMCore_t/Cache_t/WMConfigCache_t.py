@@ -9,6 +9,7 @@ import os
 import unittest
 import tempfile
 import subprocess
+import urllib
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
@@ -94,6 +95,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
+        psetPath = "file://" + urllib.quote(os.path.abspath(psetPath))
         configCache.addConfig(newConfig = psetPath, psetHash = None)
 
         configCache.setLabel("sample-label")
@@ -129,6 +131,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
         psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
+        psetPath = "file://" + urllib.quote(os.path.abspath(psetPath))
         configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
 

@@ -8,15 +8,15 @@ handled appropriately by the client methods, on success returns True.
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
+
 import io
 import logging
 import mmap
 import re
-try:
-    from urlparse import urlparse, urlunparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse, urlunparse
+
+from urllib.parse import urlparse, urlunparse
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 

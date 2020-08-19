@@ -1,8 +1,11 @@
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
 import unittest
 import time
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore_t.ReqMgr_t.TestConfig import config
 from nose.plugins.attrib import attr

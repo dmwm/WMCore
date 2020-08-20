@@ -12,6 +12,9 @@ from __future__ import print_function, division
 
 from future import standard_library
 standard_library.install_aliases()
+from builtins import str, object
+from future.utils import viewitems
+import urllib.request, urllib.parse, urllib.error
 
 import base64
 import hashlib
@@ -19,7 +22,6 @@ import logging
 import re
 import time
 import traceback
-import urllib.parse
 from datetime import datetime
 from http.client import HTTPException
 
@@ -201,7 +203,7 @@ class Database(CouchDBRequests):
             data[label] = int(time.time())
         else:
             for doc in data:
-                if label not in doc.keys():
+                if label not in doc:
                     doc[label] = int(time.time())
         return data
 
@@ -523,7 +525,7 @@ class Database(CouchDBRequests):
         options = options or {}
         keys = keys or []
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in viewitems(options):
             # We can't encode the stale option, as it will be converted to '"ok"'
             # which couch barfs on.
             if k == "stale":
@@ -558,7 +560,7 @@ class Database(CouchDBRequests):
         options = options or {}
         keys = keys or []
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in viewitems(options):
             encodedOptions[k] = self.encode(v)
 
         if keys:
@@ -600,7 +602,7 @@ class Database(CouchDBRequests):
         options = options or {}
         keys = keys or []
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in viewitems(options):
             encodedOptions[k] = self.encode(v)
 
         if keys:

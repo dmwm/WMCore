@@ -10,6 +10,8 @@ from __future__ import print_function, division
 
 from future import standard_library
 standard_library.install_aliases()
+from builtins import str
+from future.utils import viewvalues
 
 import io
 import logging
@@ -258,7 +260,7 @@ def physicsgroup(candidate):
 def procversion(candidate):
     """ Integers """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'^[0-9]+$', str(candi))
         return True
     else:
@@ -270,7 +272,7 @@ def procstring(candidate):
     if not candidate:
         raise AssertionError("ProcStr cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -282,7 +284,7 @@ def procstringT0(candidate):
     ProcessingString validation function for T0 specs
     """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'^$|[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -297,7 +299,7 @@ def acqname(candidate):
     if not candidate:
         raise AssertionError("AcqEra cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'[a-zA-Z][a-zA-Z0-9_]*$', candi)
         return True
     else:

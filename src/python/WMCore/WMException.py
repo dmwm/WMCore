@@ -6,7 +6,9 @@ General Exception class for WM modules
 
 """
 
-import exceptions
+from builtins import str
+from future.utils import viewitems
+
 import inspect
 import logging
 import sys
@@ -16,7 +18,7 @@ WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
 WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
 
 
-class WMException(exceptions.Exception):
+class WMException(Exception):
     """
     _WMException_
 
@@ -32,7 +34,7 @@ class WMException(exceptions.Exception):
             # interprets this string using utf-8 codec and ignoring any errors
             message = message.decode('utf-8', 'ignore')
 
-        exceptions.Exception.__init__(self, self.name, message)
+        Exception.__init__(self, self.name, message)
 
         #  //
         # // Init data dictionary with defaults
@@ -111,7 +113,7 @@ class WMException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
+        for key, value in viewitems(data):
             self[key] = value
         return
 
@@ -125,7 +127,7 @@ class WMException(exceptions.Exception):
         strg += self._message
         strg += "</Message>\n"
         strg += "<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -145,7 +147,7 @@ class WMException(exceptions.Exception):
         strg = WMEXCEPTION_START_STR
         strg += "\nException Class: %s\n" % self.name
         strg += "Message: %s\n" % self._message
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "\t%s : %s\n" % (key, value,)
         strg += "\nTraceback: \n"
         strg += self.traceback

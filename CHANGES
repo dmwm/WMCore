@@ -1,3 +1,11 @@
+1.4.0.pre4 to 1.4.0.pre5:
+  - [py2py3] WMCore.Cache - compatible with both python2 and python3 (Dario Mapelli) #9818
+  - remove unneeded ImportError for py2/py3 (Alan Malta Rodrigues) #9875
+  - [py2py3] update stdlib - not pickle - test (Dario Mapelli) #9762
+  - [py2py3] update stdlib - not pickle (Dario Mapelli) #9762
+  - PY3: Properly deal with strings in REST/Main (Alan Malta Rodrigues) #9871
+
+
 1.4.0.pre3 to 1.4.0.pre4:
   - Notify Todor upon component automatic restarts (Alan Malta Rodrigues) #9866
   - Update ParentageResolved flag for StepChains without parent as well (Alan Malta Rodrigues) #9865

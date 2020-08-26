@@ -14,6 +14,7 @@ import time
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import MONITOR_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.Services.Rucio.Rucio import Rucio
 
 
 class MSMonitor(MSCore):
@@ -27,6 +28,10 @@ class MSMonitor(MSCore):
         # update interval is used to check records in CouchDB and update them
         # after this interval, default 6h
         self.updateInterval = self.msConfig.get('updateInterval', 6 * 60 * 60)
+        self.rucio = Rucio(acct=self.msConfig['rucioAccount'],
+                           hostUrl=self.msConfig['rucioUrl'],
+                           authUrl=self.msConfig['rucioAuthUrl'],
+                           configDict={"logger": self.logger, "user_agent": "WMCore-MSMonitor"})
 
     def updateCaches(self):
         """
@@ -103,11 +108,11 @@ class MSMonitor(MSCore):
 
         try:
             # keep track of request and their new statuses
-            self.getTransferInfo(transferRecords)
+            skippedWorkflows = self.getTransferInfo(transferRecords)
             requestsToStage = self.getCompletedWorkflows(transferRecords, campaigns)
-            failedDocs = self.updateTransferDocs(transferRecords)
+            failedDocs = self.updateTransferDocs(transferRecords, skippedWorkflows)
             self.updateReportDict(summary, "success_transfer_doc_update",
-                                  len(transferRecords) - len(failedDocs))
+                                  len(transferRecords) - len(failedDocs) - len(skippedWorkflows))
             self.updateReportDict(summary, "failed_transfer_doc_update", len(failedDocs))
             # finally, update statuses for requests
             for reqName in requestsToStage:
@@ -120,7 +125,8 @@ class MSMonitor(MSCore):
             self.updateReportDict(summary, "request_status_updated",
                                   summary['success_transfer_doc_update'] - summary['failed_transfer_doc_update'])
             msg = "%s processed %d transfer records, where " % (self.__class__.__name__, len(transferRecords))
-            msg += "%d completed their data transfers and " % len(requestsToStage)
+            msg += "%d completed their data transfers, " % len(requestsToStage)
+            msg += "%d failed to contact the DM system and were skipped in this cycle and " % len(skippedWorkflows)
             msg += "%d failed to get their transfer documents updated in CouchDB." % len(failedDocs)
             self.logger.info(msg)
         except Exception as ex:
@@ -134,27 +140,41 @@ class MSMonitor(MSCore):
         Contact the data management tool in order to get a status
         update for the transfer request.
         :param transferRecords: list of transfer records
+        :return skippedWorkflows: a list of workflow names which a call to the data
+        management system did not succeed
         """
-        # FIXME: create concurrent phedex calls using multi_getdata
+        # FIXME: create concurrent phedex/rucio calls using multi_getdata
+        skippedWorkflows = []
         tstamp = int(time.time())
         for doc in transferRecords:
             self.logger.debug("Checking transfers for: %s", doc['workflowName'])
+            if not doc['transfers']:
+                # nothing to be done, simply update the document last timestamp
+                doc['lastUpdate'] = tstamp
+                continue
+
             try:
-                for rec in doc.get('transfers', []):
+                for rec in doc['transfers']:
                     # obtain new transfer ids and completion for given dataset
-                    completion = self._getTransferstatus(rec['dataset'], rec['transferIDs'])
-                    rec['completion'].append(round(completion, 2))
+                    # FIXME: dirty way to know which data management tool to be used
+                    if len(rec['transferIDs'][0]) > 10:
+                        completion = self._getRucioTransferstatus(rec['transferIDs'])
+                    else:
+                        completion = self._getPhEDExTransferstatus(rec['dataset'], rec['transferIDs'])
+                    rec['completion'].append(round(completion, 3))
                 doc['lastUpdate'] = tstamp
             except Exception as exc:
                 msg = "Unknown exception checking workflow %s. Error: %s"
-                self.logger.exception(msg, doc['workflowName'], str(exc))
+                self.logger.error(msg, doc['workflowName'], str(exc))
+                skippedWorkflows.append(doc['workflowName'])
+            return skippedWorkflows
 
-    def _getTransferstatus(self, dataset, requestList):
+    def _getPhEDExTransferstatus(self, dataset, requestList):
         """
-        Fetch the transfer request status from the data management tool
+        Fetch the transfer request status from PhEDEx
         :param dataset: dataset name string
         :param requestList: list of request IDs
-        :return: the transfer percent completion normalized to the nodes
+        :return: the overall transfers percent completion
 
         The subscription API response structure is something like:
         {u'phedex': {u'call_time': 0.09359,
@@ -168,43 +188,83 @@ class MSMonitor(MSCore):
                                                                   u'percent_files': 100,
                                                                   ...
         """
-        completion = []
+        transferCompletion = []
         for reqId in requestList:
+            reqCompletion = []
             # if we query by dataset and the subscription was at block level,
             # we get an empty response. So always wildcard the block parameter
-            if hasattr(self, "rucio"):
-                # FIXME: then it should check the rule status
-                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
-            else:
-                data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
+            data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
             if not data or not data['phedex']['dataset']:
-                self.logger.error("Failed to retrieve information for dataset: %s and request ID: %s",
-                                  dataset, reqId)
-            else:
-                self.logger.debug("Subscription result for dataset: %s and request ID: %s was: %s",
-                                  dataset, reqId, data)
+                msg = "PhEDEx subscriptions API returned an invalid data: {} ".format(data)
+                msg += "for dataset: {} and request ID: {}".format(dataset, reqId)
+                raise RuntimeError(msg)
+
             # very much nested, especially for a block level subscription
             for dsetRow in data['phedex']['dataset']:
                 # TODO: check what happens when we subscribe both the primary and parent in the same request
                 for blockRow in dsetRow.get('block', []):
                     for subs in blockRow['subscription']:
                         if subs['percent_files'] is None:
-                            completion.append(0)
+                            reqCompletion.append(0)
                         else:
-                            completion.append(int(subs['percent_files']))
-            # check if it's a level subscription
+                            reqCompletion.append(int(subs['percent_files']))
+            # check which level subscription was made
             for dsetRow in data['phedex']['dataset']:
                 if 'block' in dsetRow:
                     # already handled by the block above
                     break
                 for subs in dsetRow['subscription']:
                     if subs['percent_files'] is None:
-                        completion.append(0)
+                        reqCompletion.append(0)
                     else:
-                        completion.append(int(subs['percent_files']))
+                        reqCompletion.append(int(subs['percent_files']))
+            if not reqCompletion:
+                transferCompletion.append(0)
+            else:
+                transferCompletion.append(sum(reqCompletion) / len(reqCompletion))
+            self.logger.info("PhEDEx request ID: %s has a completion rate of: %s", reqId, transferCompletion[-1])
+        if not transferCompletion:
+            return 0
+        return sum(transferCompletion) / len(transferCompletion)
+
+    def _getRucioTransferstatus(self, rulesList):
+        """
+        Given a list of Rucio rules ID - for a given input data - check the
+        overall transfer status from Rucio
+        :param rulesList: list of rules ID
+        :return: the overall transfers percent completion
+
+        The Rucio getRule API returns data in the form of:
+            {u'account': u'transfer_ops',
+             u'grouping': u'ALL',
+             u'id': u'40cbe787a42b4f6e991611f6fac3bb11',
+             u'locked': True,
+             u'locks_ok_cnt': 8,
+             u'locks_replicating_cnt': 0,
+             u'locks_stuck_cnt': 0,
+             u'meta': None,
+             etc etc
+            """
+        completion = []
+        for ruleID in rulesList:
+            # if we query by dataset and the subscription was at block level,
+            # we get an empty response. So always wildcard the block parameter
+            data = self.rucio.getRule(ruleID)
+            if not data:
+                msg = "Failed to retrieve rule information from Rucio for rule ID: {}".format(ruleID)
+                raise RuntimeError(msg)
+
+            if data['state'] == "OK":
+                lockCompletion = 1.0
+            else:
+                totalLocks = data['locks_ok_cnt'] + data['locks_replicating_cnt'] + data['locks_stuck_cnt']
+                lockCompletion = data['locks_ok_cnt'] / totalLocks
+            completion.append(lockCompletion)
+            self.logger.info("Rule ID: %s has a completion rate of: %s", ruleID, lockCompletion)
         if not completion:
             return 0
         return sum(completion) / len(completion)
+
 
     def getCompletedWorkflows(self, transfers, campaigns):
         """
@@ -236,15 +296,19 @@ class MSMonitor(MSCore):
                 completedWfs.append(reqName)
         return completedWfs
 
-    def updateTransferDocs(self, docs):
+    def updateTransferDocs(self, docs, workflowsToSkip):
         """
         Given a list of transfer documents, update all of them in
         ReqMgrAux database.
         :param docs: list of transfer docs
+        :param workflowsToSkip: list of workflow names that should not be updated in CouchDB
         :return: a list of request names that failed to be updated
         """
         failedWfs = []
         for rec in docs:
+            if rec['workflowName'] in workflowsToSkip:
+                self.logger.warning("Not updating transfer record in CouchDB for: %s", rec['workflowName'])
+                continue
             if not self.reqmgrAux.updateTransferInfo(rec['workflowName'], rec):
                 # then it failed to update the doc, ReqMgrAux client is logging it already
                 failedWfs.append(rec['workflowName'])

@@ -1,3 +1,9 @@
+1.4.0.pre5 to 1.4.0.pre6:
+  - Use python and python libraries from CVMFS COMP under slc7_amd64_gcc630 (Alan Malta Rodrigues) #9819
+  - MS: Track Rucio rule progress in MSMonitor (Alan Malta Rodrigues) #9881
+  - Improve py2 compatibility of WMException __init__ (Dario Mapelli) #9868
+
+
 1.4.0.pre4 to 1.4.0.pre5:
   - [py2py3] WMCore.Cache - compatible with both python2 and python3 (Dario Mapelli) #9818
   - remove unneeded ImportError for py2/py3 (Alan Malta Rodrigues) #9875

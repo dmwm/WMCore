@@ -8,15 +8,15 @@ CMS Workload Management system (and migration from PhEDEx).
 from __future__ import division, print_function, absolute_import
 
 import logging
+import random
 from copy import deepcopy
 from pprint import pformat
-
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound)
-from WMCore.WMException import WMException
 
+from WMCore.WMException import WMException
 
 RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
 
@@ -45,6 +45,20 @@ def validateMetaData(did, metaDict, logger):
     msg += "The supported 'project' values are: %s" % str(RUCIO_VALID_PROJECT)
     logger.error(msg)
     return False
+
+
+def weighted_choice(choices):
+    # from https://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
+    # Python 3.6 includes something like this in the random library itself
+
+    total = sum(w for c, w in choices)
+    r = random.uniform(0, total)
+    upto = 0
+    for c, w in choices:
+        if upto + w >= r:
+            return c
+        upto += w
+    assert False, "Shouldn't get here"
 
 
 class Rucio(object):
@@ -651,3 +665,34 @@ class Rucio(object):
             self.logger.error("Exception deleting rule id: %s. Error: %s", ruleId, str(ex))
             res = False
         return res
+
+    def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='ddm_quota', minNeeded=0):
+        """
+        _pickRSE_
+
+        Use a weighted random selection algorithm to pick an RSE for a dataset based on an attribute
+        The attribute should correlate to space available.
+        :param rseExpression: Rucio RSE expression to pick RSEs (defaults to production Tape RSEs)
+        :param rseAttribute: The RSE attribute to use as a weight. Must be a number
+        :param minNeeded: If the RSE attribute is less than this number, the RSE will not be considered.
+
+        Returns: A tuple of the chosen RSE and if the chosen RSE requires approval to write (rule property)
+        """
+        matching_rses = self.cli.list_rses(rseExpression)
+        rses_with_weights = []
+
+        for rse in matching_rses:
+            attrs = self.cli.list_rse_attributes(rse['rse'])
+            if rseAttribute:
+                try:
+                    quota = float(attrs.get(rseAttribute, 0))
+                except (TypeError, KeyError):
+                    quota = 0
+            else:
+                quota = 1
+            requires_approval = attrs.get('requires_approval', False)
+            if quota > minNeeded:
+                rses_with_weights.append(((rse['rse'], requires_approval), quota))
+
+        choice = weighted_choice(rses_with_weights)
+        return choice

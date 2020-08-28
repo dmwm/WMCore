@@ -29,7 +29,10 @@ class MSMonitorTest(EmulatedUnitTestCase):
                          'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
                          'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
-                         'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'}
+                         'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader',
+                         'rucioAccount': "wma_test",
+                         'rucioUrl': "http://cmsrucio-int.cern.ch",
+                         'rucioAuthUrl': "https://cmsrucio-auth-int.cern.ch"}
 
         self.ms = MSMonitor(self.msConfig)
         self.ms.reqmgrAux = MockReqMgrAux()
@@ -89,7 +92,7 @@ class MSMonitorTest(EmulatedUnitTestCase):
         Test the updateTransferInfo method
         """
         _, transferRecords = self.ms.updateCaches()
-        failed = self.ms.updateTransferDocs(transferRecords)
+        failed = self.ms.updateTransferDocs(transferRecords, workflowsToSkip=[])
         self.assertEqual(len(failed), len(transferRecords))
 
 

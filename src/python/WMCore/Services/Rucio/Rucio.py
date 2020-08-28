@@ -87,9 +87,7 @@ class Rucio(object):
         # yield output compatible with the PhEDEx service class
         self.phedexCompat = self.rucioParams.get("phedexCompatible", True)
 
-        msg = "WMCore Rucio initialization with acct: %s, host: %s, auth: %s" % (acct, hostUrl, authUrl)
-        msg += " and these extra parameters: %s" % self.rucioParams
-        self.logger.info(msg)
+        self.logger.info("WMCore Rucio initialization parameters: %s", self.rucioParams)
         self.cli = Client(rucio_host=hostUrl, auth_host=authUrl, account=acct,
                           ca_cert=self.rucioParams['ca_cert'], auth_type=self.rucioParams['auth_type'],
                           creds=self.rucioParams['creds'], timeout=self.rucioParams['timeout'],
@@ -98,7 +96,7 @@ class Rucio(object):
         for k in ("host", "auth_host", "auth_type", "account", "user_agent",
                   "ca_cert", "creds", "timeout", "request_retries"):
             clientParams[k] = getattr(self.cli, k)
-        self.logger.info("Rucio client initialization with: %s", clientParams)
+        self.logger.info("Rucio client initialization parameters: %s", clientParams)
 
     def pingServer(self):
         """
@@ -398,7 +396,6 @@ class Rucio(object):
         for item in files:
             item['scope'] = scope
 
-        # TODO: test to make sure 'state' is a valid argument
         response = False
         try:
             # add_replicas(rse, files, ignore_availability=True)

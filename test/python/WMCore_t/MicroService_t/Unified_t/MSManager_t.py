@@ -24,7 +24,9 @@ class MSManagerTest(unittest.TestCase):
         data.quotaUsage = 0.8
         data.quotaAccount = "DataOps"
         data.enableStatusTransition = True
-        data.rucioAccount = "test"
+        data.rucioAccount = "wma_test"
+        data.rucioUrl = "http://cmsrucio-int.cern.ch"
+        data.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
         data.phedexUrl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
         data.dbsUrl = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
         data.smtpServer = "localhost"

@@ -492,7 +492,7 @@ class Rucio(object):
         kwargs.setdefault('purge_replicas', False)
         kwargs.setdefault('ignore_availability', False)
         kwargs.setdefault('ask_approval', False)
-        kwargs.setdefault('asynchronous', False)
+        kwargs.setdefault('asynchronous', True)
         kwargs.setdefault('priority', 3)
 
         if not isinstance(names, (list, set)):

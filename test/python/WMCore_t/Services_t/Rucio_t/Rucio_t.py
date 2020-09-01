@@ -282,3 +282,11 @@ class RucioTest(EmulatedUnitTestCase):
         # now an invalid "project" meta data
         response = validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
         self.assertFalse(response)
+
+    def testPickRSE(self):
+        """
+        Test the `pickRSE` method
+        """
+        resp = self.myRucio.pickRSE(rseExpression="ddm_quota>0", rseAttribute="ddm_quota")
+        self.assertTrue(len(resp) == 2)
+        self.assertTrue(resp[1] is True or resp[1] is False)

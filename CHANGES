@@ -1,3 +1,9 @@
+1.4.0.pre6 to 1.4.0.pre7:
+  - default rucio rules to asynchronous (Alan Malta Rodrigues) #9759
+  - MSTransferor: support input data placement with Rucio (Alan Malta Rodrigues) #9759
+  - Pick site function (Eric Vaandering) #9884
+
+
 1.4.0.pre5 to 1.4.0.pre6:
   - Use python and python libraries from CVMFS COMP under slc7_amd64_gcc630 (Alan Malta Rodrigues) #9819
   - MS: Track Rucio rule progress in MSMonitor (Alan Malta Rodrigues) #9881

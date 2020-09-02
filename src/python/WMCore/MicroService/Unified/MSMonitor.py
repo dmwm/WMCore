@@ -24,7 +24,7 @@ class MSMonitor(MSCore):
     """
 
     def __init__(self, msConfig, logger=None):
-        super(MSMonitor, self).__init__(msConfig, logger)
+        super(MSMonitor, self).__init__(msConfig, logger=logger)
         # update interval is used to check records in CouchDB and update them
         # after this interval, default 6h
         self.updateInterval = self.msConfig.get('updateInterval', 6 * 60 * 60)
@@ -167,7 +167,7 @@ class MSMonitor(MSCore):
                 msg = "Unknown exception checking workflow %s. Error: %s"
                 self.logger.error(msg, doc['workflowName'], str(exc))
                 skippedWorkflows.append(doc['workflowName'])
-            return skippedWorkflows
+        return skippedWorkflows
 
     def _getPhEDExTransferstatus(self, dataset, requestList):
         """
@@ -244,7 +244,9 @@ class MSMonitor(MSCore):
              u'locks_stuck_cnt': 0,
              u'meta': None,
              etc etc
-            """
+        NOTE: completion in Rucio is different than in PhEDEx. PhEDEx gives the
+        percentage value; while Rucio gives the ratio (0 - 1).
+        """
         completion = []
         for ruleID in rulesList:
             # if we query by dataset and the subscription was at block level,
@@ -255,12 +257,14 @@ class MSMonitor(MSCore):
                 raise RuntimeError(msg)
 
             if data['state'] == "OK":
-                lockCompletion = 1.0
+                lockCompletion = 100.0
             else:
                 totalLocks = data['locks_ok_cnt'] + data['locks_replicating_cnt'] + data['locks_stuck_cnt']
                 lockCompletion = data['locks_ok_cnt'] / totalLocks
-            completion.append(lockCompletion)
+            completion.append(lockCompletion * 100)
             self.logger.info("Rule ID: %s has a completion rate of: %s", ruleID, lockCompletion)
+            self.logger.debug("Rule ID: %s, DID: %s, state: %s, grouping: %s, rse_expression: %s",
+                              ruleID, data['name'], data['state'], data['grouping'], data['rse_expression'])
         if not completion:
             return 0
         return sum(completion) / len(completion)

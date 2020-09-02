@@ -84,7 +84,7 @@ class MSOutput(MSCore):
                 Fetches Workflows in a given status from Reqmgr2 then creates
                 and uploads the documents to MongoDB.
         """
-        super(MSOutput, self).__init__(msConfig, logger)
+        super(MSOutput, self).__init__(msConfig, logger=logger)
 
         self.mode = mode
         self.msConfig.setdefault("limitRequestsPerCycle", 500)

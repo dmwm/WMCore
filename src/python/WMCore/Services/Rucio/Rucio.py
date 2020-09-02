@@ -486,15 +486,16 @@ class Rucio(object):
         """
         kwargs.setdefault('grouping', 'ALL')
         kwargs.setdefault('account', self.rucioParams.get('account'))
+        kwargs.setdefault('lifetime', None)
         kwargs.setdefault('locked', False)
         kwargs.setdefault('notify', 'N')
         kwargs.setdefault('purge_replicas', False)
         kwargs.setdefault('ignore_availability', False)
         kwargs.setdefault('ask_approval', False)
-        kwargs.setdefault('asynchronous', False)
+        kwargs.setdefault('asynchronous', True)
         kwargs.setdefault('priority', 3)
 
-        if not isinstance(names, list):
+        if not isinstance(names, (list, set)):
             names = [names]
         dids = [{'scope': scope, 'name': did} for did in names]
 

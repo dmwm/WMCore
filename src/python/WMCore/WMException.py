@@ -27,7 +27,7 @@ class WMException(exceptions.Exception):
 
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
-        if hasattr(message, "decode"):
+        if type(message) == str:
             # Fix for the unicode encoding issue, see #8056 and #8403
             # interprets this string using utf-8 codec and ignoring any errors
             message = message.decode('utf-8', 'ignore')
@@ -144,16 +144,16 @@ class WMException(exceptions.Exception):
         # WARNING: Do not change this string - it is used to extract error from log
         strg = WMEXCEPTION_START_STR
         strg += "\nException Class: %s\n" % self.name
-        strg += "Message: %s\n" % self._message
+        strg += "Message: %s\n" % self._message.encode('utf-8')
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value,)
         strg += "\nTraceback: \n"
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
-        if hasattr(strg, "decode"):
-            # Fix for the unicode encoding issue, #8043
-            strg = strg.decode('utf-8', 'ignore')
+        # if type(strg) == str:
+        #     # Fix for the unicode encoding issue, #8403
+        #     strg = strg.decode('utf-8', 'ignore')
         return strg
 
     def message(self):

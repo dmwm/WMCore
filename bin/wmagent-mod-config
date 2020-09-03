@@ -111,8 +111,6 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
         config.General.centralWMStatsURL = args["wmstats_url"]
-        # Both PhEDExInjector and WorkQueueManager use it, so we better make it general
-        config.General.rucioAccount = args["rucio_account"]
         # t0 agent doesn't have reqmgr2_url
         if "reqmgr2_url" in args:
             config.General.ReqMgr2ServiceURL = args["reqmgr2_url"]

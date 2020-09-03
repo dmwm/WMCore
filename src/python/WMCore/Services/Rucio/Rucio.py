@@ -13,9 +13,9 @@ from copy import deepcopy
 from pprint import pformat
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
-                                    DataIdentifierAlreadyExists, DuplicateContent,
+                                    DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound)
-
+from Utils.MemoryCache import MemoryCache
 from WMCore.WMException import WMException
 
 RUCIO_VALID_PROJECT = ("Production", "RelVal", "Tier0", "Test", "User")
@@ -47,7 +47,7 @@ def validateMetaData(did, metaDict, logger):
     return False
 
 
-def weighted_choice(choices):
+def weightedChoice(choices):
     # from https://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
     # Python 3.6 includes something like this in the random library itself
 
@@ -86,6 +86,8 @@ class Rucio(object):
         :param configDict: dictionary with extra parameters
         """
         configDict = configDict or {}
+        # default RSE data caching to 12h
+        rseCacheExpiration = configDict.pop('cacheExpiration', 12 * 60 * 60)
         self.logger = configDict.pop("logger", logging.getLogger())
 
         self.rucioParams = deepcopy(configDict)
@@ -111,6 +113,9 @@ class Rucio(object):
                   "ca_cert", "creds", "timeout", "request_retries"):
             clientParams[k] = getattr(self.cli, k)
         self.logger.info("Rucio client initialization parameters: %s", clientParams)
+
+        # keep a map of rse expression to RSE names mapped for some time
+        self.cachedRSEs = MemoryCache(rseCacheExpiration, {})
 
     def pingServer(self):
         """
@@ -667,6 +672,29 @@ class Rucio(object):
             res = False
         return res
 
+    def evaluateRSEExpression(self, rseExpr, useCache=True):
+        """
+        Provided an RSE expression, resolve it and return a flat list of RSEs
+        :param rseExpr: an RSE expression (which could be the RSE itself...)
+        :param useCache: boolean defining whether cached data is meant to be used or not
+        :return: a list of RSE names
+        """
+        if self.cachedRSEs.isCacheExpired():
+            self.cachedRSEs.reset()
+        if useCache and rseExpr in self.cachedRSEs:
+            return self.cachedRSEs[rseExpr]
+        else:
+            matchingRSEs = []
+            try:
+                for item in self.cli.list_rses(rseExpr):
+                    matchingRSEs.append(item['rse'])
+            except InvalidRSEExpression as exc:
+                msg = "Provided RSE expression is considered invalid: {}. Error: {}".format(rseExpr, str(exc))
+                raise WMRucioException(msg)
+        # add this key/value pair to the cache
+        self.cachedRSEs.addItemToCache({rseExpr: matchingRSEs})
+        return matchingRSEs
+
     def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='ddm_quota', minNeeded=0):
         """
         _pickRSE_
@@ -679,11 +707,11 @@ class Rucio(object):
 
         Returns: A tuple of the chosen RSE and if the chosen RSE requires approval to write (rule property)
         """
-        matching_rses = self.cli.list_rses(rseExpression)
-        rses_with_weights = []
+        matchingRSEs = self.evaluateRSEExpression(rseExpression)
+        rsesWithWeights = []
 
-        for rse in matching_rses:
-            attrs = self.cli.list_rse_attributes(rse['rse'])
+        for rse in matchingRSEs:
+            attrs = self.cli.list_rse_attributes(rse)
             if rseAttribute:
                 try:
                     quota = float(attrs.get(rseAttribute, 0))
@@ -691,9 +719,9 @@ class Rucio(object):
                     quota = 0
             else:
                 quota = 1
-            requires_approval = attrs.get('requires_approval', False)
+            requiresApproval = attrs.get('requires_approval', False)
             if quota > minNeeded:
-                rses_with_weights.append(((rse['rse'], requires_approval), quota))
+                rsesWithWeights.append(((rse, requiresApproval), quota))
 
-        choice = weighted_choice(rses_with_weights)
+        choice = weightedChoice(rsesWithWeights)
         return choice

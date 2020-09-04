@@ -283,6 +283,15 @@ class RucioTest(EmulatedUnitTestCase):
         response = validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
         self.assertFalse(response)
 
+    def testEvaluateRSEExpression(self):
+        """
+        Test the `evaluateRSEExpression` method
+        """
+        for i in range(2):
+            res = self.myRucio.evaluateRSEExpression("T1_US_FNAL_Tape", useCache=False)
+            self.assertItemsEqual(res, ["T1_US_FNAL_Tape"])
+        self.myRucio.evaluateRSEExpression("T1_US_FNAL_Tape", useCache=True)
+
     def testPickRSE(self):
         """
         Test the `pickRSE` method

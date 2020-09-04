@@ -11,6 +11,9 @@ data type.
 """
 
 from __future__ import (print_function, division)
+
+from copy import copy
+
 from builtins import object
 from time import time
 
@@ -43,6 +46,27 @@ class MemoryCache(object):
         """
         return item in self._cache
 
+    def __getitem__(self, keyName):
+        """
+        If the cache is a dictionary, return that item from the cache. Else, raise an exception.
+        :param keyName: the key name from the dictionary
+        """
+        if isinstance(self._cache, dict):
+            return copy(self._cache.get(keyName))
+        else:
+            raise MemoryCacheException("Cannot retrieve an item from a non-dict MemoryCache object: {}".format(self._cache))
+
+    def reset(self):
+        """
+        Resets the cache to its current data type
+        """
+        if isinstance(self._cache, (dict, set)):
+            self._cache.clear()
+        elif isinstance(self._cache, list):
+            del self._cache[:]
+        else:
+            raise MemoryCacheException("The cache needs to be reset manually, data type unknown")
+
     def isCacheExpired(self):
         """
         Evaluate whether the cache has already expired, returning
@@ -69,6 +93,7 @@ class MemoryCache(object):
         if not isinstance(self._cache, type(inputData)):
             raise TypeError("Current cache data type: %s, while new value is: %s" %
                             (type(self._cache), type(inputData)))
+        self.reset()
         self.lastUpdate = int(time())
         self._cache = inputData
 

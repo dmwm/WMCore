@@ -10,7 +10,6 @@ from __future__ import division, print_function, absolute_import
 import logging
 import random
 from copy import deepcopy
-from pprint import pformat
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
@@ -519,35 +518,23 @@ class Rucio(object):
             #    a duplicate rule. In this case all the rest of the Dids will be
             #    ignored, which in general should be addressed by Rucio. But since
             #    it is not, we should break the list of Dids and proceed one by one
-            # NOTE:
-            #    This thing here may be slow, because it will wait for Rucio to
-            #    return the history of rules per every Did, but no shorter path exists
-            msg = "A duplicate rule for: \naccount: %s \ndids: %s \nrseExpression: %s.\n"
-            self.logger.info(msg,
-                             kwargs['account'],
-                             pformat(dids),
-                             rseExpression)
+            self.logger.warning("Resolving duplicate rules and separating every DID in a new rule...")
 
             ruleIds = []
-            didsDup = []
+            # now try creating a new rule for every single DID in a separated call
             for did in dids:
                 try:
                     response = self.cli.add_replication_rule([did], copies, rseExpression, **kwargs)
-                    for ruleId in response:
-                        ruleIds.append(ruleId)
-                    self.logger.debug("Per did ruleIds: %s", ruleIds)
+                    ruleIds.extend(response)
                 except DuplicateRule:
-                    didsDup.append(did)
-
-            ruleHistory = self.listRuleHistory(didsDup)
-            self.logger.debug("Rule History: %s\n", pformat(ruleHistory))
-
-            for did in ruleHistory:
-                for didHist in did['did_hist']:
-                    ruleIds.append(didHist['rule_id'])
-            ruleIds = list(set(ruleIds))
-            self.logger.debug("ruleIds: %s\n", ruleIds)
-            return ruleIds
+                    self.logger.warning("Found duplicate rule for account: %s\n, rseExp: %s\ndids: %s",
+                                        kwargs['account'], rseExpression, dids)
+                    # Well, then let us find which rule_id is already in the system
+                    for rule in self.listDataRules(did['name'], did['scope']):
+                        if rule['account'] == kwargs['account'] and rule['rse_expression'] == rseExpression:
+                            # then this is the duplicate rule!
+                            ruleIds.append(rule['id'])
+            return list(set(ruleIds))
         except Exception as ex:
             self.logger.error("Exception creating rule replica for data: %s. Error: %s", names, str(ex))
         return response

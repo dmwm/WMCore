@@ -262,7 +262,34 @@ class Rucio(object):
         Copy of the method from the PhEDEx service class
         Used by CRABServer
         """
-        raise NotImplementedError("Apparently not available in the Rucio client as well")
+        nodes = nodes or []
+        lfns = lfns or []
+
+        if len(nodes) != len(lfns):
+            msg = "Node lists should have the same lenght as the lfn one."
+            raise WMRucioException(msg)
+
+        response = {}
+        for node in list(set(nodes)):
+            good_lfns = [x[1] for x  in zip(nodes, lfns) if x[0] == node]
+
+            try:
+                pfns = self.cli.lfns2pfns(node, good_lfns, scheme=protocol)
+            except Exception as ex:
+                msg = "Exception retrievieng lfn for site %s: %s. Error: %s" % (node, good_lfns, str(ex))
+                raise WMRucioException(msg)
+
+            # return the same format as PhEDEx service class one:
+            # a tuple of the input as the key
+            # the pfn as the value
+            # {'node': [u'T2_IT_Pisa'], 'custodial': 'n', 'lfn': [u'/store/user/rucio/dciangot/NanoRucio/DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8/NanoTestPost-Direct2/200827_073811/0000'], 'protocol': 'srmv2'}
+
+            for lfn, pfn in zip(good_lfns, pfns):
+                key = (node, lfn, destinantion, protocol, custodial) 
+                value = pfn
+                response.update({key, value})
+
+        return response
 
     def createContainer(self, name, scope='cms', **kwargs):
         """

@@ -243,7 +243,6 @@ class Rucio(object):
         compatible with PhEDEx.
         """
         kwargs.setdefault("scope", "cms")
-        kwargs.setdefault("deep", False)  # lookup at the file level, probably not needed...
 
         blockNames = []
         result = []

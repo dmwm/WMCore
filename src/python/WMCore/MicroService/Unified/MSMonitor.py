@@ -260,9 +260,9 @@ class MSMonitor(MSCore):
                 lockCompletion = 100.0
             else:
                 totalLocks = data['locks_ok_cnt'] + data['locks_replicating_cnt'] + data['locks_stuck_cnt']
-                lockCompletion = data['locks_ok_cnt'] / totalLocks
-            completion.append(lockCompletion * 100)
-            self.logger.info("Rule ID: %s has a completion rate of: %s", ruleID, lockCompletion)
+                lockCompletion = (data['locks_ok_cnt'] / totalLocks) * 100
+            completion.append(lockCompletion)
+            self.logger.info("Rule ID: %s has a completion rate of: %s%%", ruleID, lockCompletion)
             self.logger.debug("Rule ID: %s, DID: %s, state: %s, grouping: %s, rse_expression: %s",
                               ruleID, data['name'], data['state'], data['grouping'], data['rse_expression'])
         if not completion:

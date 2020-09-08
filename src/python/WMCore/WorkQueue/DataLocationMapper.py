@@ -49,6 +49,7 @@ class DataLocationMapper(object):
         self.params.setdefault('locationFrom', 'subscription')
         self.params.setdefault('incompleteBlocks', False)
         self.params.setdefault('requireBlocksSubscribed', True)
+        self.params.setdefault('rucioAccount', "wmcore_transferor")
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
@@ -73,32 +74,42 @@ class DataLocationMapper(object):
         for dbs, dataItems in dataByDbs.items():
             # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
-                output = self.locationsFromPhEDEx(dataItems)
+                if hasattr(self.phedex, "getBlocksInContainer"):
+                    # FIXME: eventually change the attribute to rucio...
+                    # then it's Rucio
+                    output = self.locationsFromRucio(dataItems)
+                else:
+                    output = self.locationsFromPhEDEx(dataItems)
             else:
                 output = self.locationsFromDBS(dbs, dataItems)
             result[dbs] = output
 
         return result
 
+    def locationsFromRucio(self, dataItems):
+        """
+        Get data location from Rucio. Location is mapped to the actual
+        sites associated with them, so PSNs are actually returned
+        :param dataItems: list of datasets/blocks names
+        :return: dictionary key'ed by the dataset/block, with a list of PSNs as value
+        """
+        result = defaultdict(set)
+        self.logger.info("Fetching location from Rucio...")
+        for dataItem in dataItems:
+            try:
+                dataLocations = self.phedex.getDataLockedAndAvailable(name=dataItem,
+                                                                      account=self.params['rucioAccount'])
+                # resolve the PNNs into PSNs
+                result[dataItem] = self.cric.PNNstoPSNs(dataLocations)
+            except Exception as ex:
+                self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
+
+        return result
+
     def locationsFromPhEDEx(self, dataItems):
         """Get data location from phedex"""
         result = defaultdict(set)
-        if hasattr(self.phedex, "getBlocksInContainer"):
-            ### It's RUCIO!!!
-            self.logger.info("Fetching location from Rucio...")
-            for dataItem in dataItems:
-                try:
-                    if isDataset(dataItem):
-                        response = self.phedex.getReplicaInfoForBlocks(dataset=dataItem)
-                        for item in response:
-                            result[dataItem].update(item['replica'])
-                    else:
-                        response = self.phedex.getReplicaInfoForBlocks(block=dataItem)
-                        for item in response:
-                            result[item['name']].update(item['replica'])
-                except Exception as ex:
-                    self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
-        elif self.params['locationFrom'] == 'subscription':
+        if self.params['locationFrom'] == 'subscription':
             self.logger.info("Fetching subscription data from PhEDEx")
             # subscription api doesn't support partial update
             result = self.phedex.getSubscriptionMapping(*dataItems)

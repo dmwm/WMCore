@@ -183,9 +183,10 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError('Only blocks can be released on location')
 
-        self.params.setdefault('rucioAccount', "wma_prod")
+        self.params.setdefault('rucioAccount', "wmcore_transferor")
         if usingRucio():
-            self.phedexService = Rucio(self.params['rucioAccount'])
+            # FIXME: rename this attribute once PhEDEx is gone
+            self.phedexService = Rucio(self.params['rucioAccount'], configDict=dict(logger=self.logger))
         else:
             self.phedexService = PhEDEx()
 

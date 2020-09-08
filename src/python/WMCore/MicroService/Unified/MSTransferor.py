@@ -629,7 +629,11 @@ class MSTransferor(MSCore):
                 if not blocks and dataIn["type"] == "primary":
                     # no valid files in any blocks, it will likely fail in global workqueue
                     return success, response
-                if blocks:
+                if wflow.getReqType() == "DQMHarvest":
+                    # enforce a dataset level PhEDEx subscription / container-level Rucio rule
+                    subLevel = "dataset"
+                    dataBlocks = None
+                elif blocks:
                     subLevel = "block"
                     dataBlocks = {dataIn['name']: blocks}
                 else:
@@ -876,6 +880,10 @@ class MSTransferor(MSCore):
 
         ### NOTE: data placement done in a block basis
         if dataIn["type"] == "primary":
+            # Except for DQMHarvest workflows, which must have a data placement of the
+            # whole dataset within the same location
+            if wflow.getReqType() == "DQMHarvest":
+                numNodes = 1
             # if we are using Rucio and there is no parent dataset, just put all
             # the data in a single rule for all RSEs and let Rucio decide where data will land
             if self.msConfig['useRucio'] and not wflow.getParentBlocks():

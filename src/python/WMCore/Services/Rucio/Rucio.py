@@ -189,14 +189,9 @@ class Rucio(object):
         :return: a list of block names
         """
         blockNames = []
-        try:
-            response = self.cli.get_did(scope=scope, name=container)
-        except DataIdentifierNotFound:
-            self.logger.warning("Cannot find a data identifier for: %s", container)
-            return blockNames
-
-        if response['type'].upper() != 'CONTAINER':
+        if not self.isContainer(container):
             # input container wasn't really a container
+            self.logger.warning("Provided DID name is not a CONTAINER type: %s", container)
             return blockNames
 
         response = self.cli.list_content(scope=scope, name=container)
@@ -712,3 +707,147 @@ class Rucio(object):
 
         choice = weightedChoice(rsesWithWeights)
         return choice
+
+    def isContainer(self, didName, scope='cms'):
+        """
+        Checks whether the DID name corresponds to a container type or not.
+        :param didName: string with the DID name
+        :param scope: string containing the Rucio scope (defaults to 'cms')
+        :return: True if the DID is a container, else False
+        """
+        response = self.cli.get_did(scope=scope, name=didName)
+        return response['type'].upper() == 'CONTAINER'
+
+    def getDataLockedAndAvailable(self, **kwargs):
+        """
+        This method retrieves all the locations where a given DID is
+        currently available and locked. It can be used for the data
+        location logic in global and local workqueue.
+
+        Logic is as follows:
+        1. look for all replication rules matching the provided keyword args
+        2. location of single RSE rules and in state OK are set as a location
+        3.a. if the input DID name is a block, get all the locks AVAILABLE for that block
+          and compare the rule ID against the multi RSE rules. Keep the RSE if it matches
+        3.b. otherwise - if it's a container - method `_getContainerLockedAndAvailable`
+          gets called to resolve all the blocks and locks
+        4. union of the single RSEs and the matched multi RSEs is returned as the
+        final location of the provided DID
+
+        :param kwargs: key/value pairs to filter out the rules. Most common filters are likely:
+            scope: string with the scope name
+            name: string with the DID name
+            account: string with the rucio account name
+            state: string with the state name
+            grouping: string with the grouping name
+        :return: a flat list with the RSE names locking and holding the input DID
+
+        NOTE: some of the supported values can be looked up at:
+        https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
+        """
+        if 'name' not in kwargs:
+            raise WMRucioException("A DID name must be provided to the getDataLockedAndAvailable API")
+        if 'grouping' in kwargs:
+            # long strings seem not to be working, like ALL / DATASET
+            if kwargs['grouping'] == "ALL":
+                kwargs['grouping'] = "A"
+            elif kwargs['grouping'] == "DATASET":
+                kwargs['grouping'] = "D"
+
+        kwargs.setdefault("scope", "cms")
+
+        multiRSERules = []
+        finalRSEs = set()
+
+        # First, find all the rules and where data is supposed to be locked
+        rules = self.cli.list_replication_rules(kwargs)
+        for rule in rules:
+            # now resolve the RSE expressions
+            rses = self.evaluateRSEExpression(rule['rse_expression'])
+            if rule['copies'] == len(rses) and rule['state'] == "OK":
+                # then we can guarantee that data is locked and available on these RSEs
+                finalRSEs.update(set(rses))
+            else:
+                multiRSERules.append(rule['id'])
+        self.logger.debug("Data location for %s from single RSE locks and available at: %s",
+                          kwargs['name'], list(finalRSEs))
+        if not multiRSERules:
+            # then that is it, we can return the current RSEs holding and locking this data
+            return list(finalRSEs)
+
+        # At this point, we might already have some of the RSEs where the data is available and locked
+        # Now check dataset locks and compare those rules against our list of multi RSE rules
+        if self.isContainer(kwargs['name']):
+            # It's a container! Find what those RSEs are and add them to the finalRSEs set
+            rseLocks = self._getContainerLockedAndAvailable(multiRSERules, **kwargs)
+            self.logger.debug("Data location for %s from multiple RSE locks and available at: %s",
+                              kwargs['name'], list(rseLocks))
+        else:
+            # It's a single block! Find what those RSEs are and add them to the finalRSEs set
+            rseLocks = set()
+            for blockLock in self.cli.get_dataset_locks(kwargs['scope'], kwargs['name']):
+                if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
+                    rseLocks.add(blockLock['rse'])
+            self.logger.debug("Data location for %s from multiple RSE locks and available at: %s",
+                              kwargs['name'], list(rseLocks))
+
+        finalRSEs = list(finalRSEs | rseLocks)
+        return finalRSEs
+
+    def _getContainerLockedAndAvailable(self, multiRSERules, **kwargs):
+        """
+        This method is only supposed to be called internally (private method),
+        because it won't consider the container level rules.
+
+        This method retrieves all the locations where a given container DID is
+        currently available and locked. It can be used for the data
+        location logic in global and local workqueue.
+
+        Logic is as follows:
+        1. find all the blocks in the provided container name
+        2. loop over all the block names and fetch their locks AVAILABLE
+        2.a. compare the rule ID against the multi RSE rules. Keep the RSE if it matches
+        3.a. if keyword argument grouping is ALL, returns an intersection of all blocks RSEs
+        3.b. else - grouping DATASET - returns an union of all blocks RSEs
+
+        :param multiRSERules: list of container level rules to be matched against
+        :param kwargs: key/value pairs to filter out the rules. Most common filters are likely:
+            scope: string with the scope name
+            name: string with the DID name
+            account: string with the rucio account name
+            state: string with the state name
+            grouping: string with the grouping name
+        :return: a set with the RSE names locking and holding this input DID
+
+        NOTE: some of the supported values can be looked up at:
+        https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
+        """
+        finalRSEs = set()
+        blockNames = self.getBlocksInContainer(kwargs['name'])
+        self.logger.debug("Container: %s contains %d blocks. Querying dataset_locks ...",
+                          kwargs['name'], len(blockNames))
+
+        rsesByBlocks = {}
+        for block in blockNames:
+            rsesByBlocks.setdefault(block, set())
+            ### FIXME: feature request made to the Rucio team to support bulk operations:
+            ### https://github.com/rucio/rucio/issues/3982
+            for blockLock in self.cli.get_dataset_locks(block, kwargs['name']):
+                if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
+                    rsesByBlocks[block].add(blockLock['rse'])
+
+        ### The question now is:
+        ###   1. do we want to have a full copy of the container in the same RSEs (grouping=A)
+        ###   2. or we want all locations holding at least one block of the container (grouping=D)
+        if kwargs['grouping'] == 'A':
+            firstRun = True
+            for _block, rses in rsesByBlocks.viewitems():
+                if firstRun:
+                    finalRSEs = rses
+                    firstRun = False
+                else:
+                    finalRSEs = finalRSEs & rses
+        else:
+            for _block, rses in rsesByBlocks.viewitems():
+                finalRSEs = finalRSEs | rses
+        return finalRSEs

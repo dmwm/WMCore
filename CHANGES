@@ -1,3 +1,11 @@
+1.4.0.pre7 to 1.4.0.pre8:
+  - Single node dataset-level subscription for DQMHarvest workflows (Alan Malta Rodrigues) #9889
+  - Rucio wrapper API to find where data is locked and available (Alan Malta Rodrigues) #9889
+  - Fix rule progress calculation in MSMonitor (Alan Malta Rodrigues) #9899
+  - Fix Rucio rule creation when there are duplicate rules (Alan Malta Rodrigues) #9897
+  - Support caching of RSE expressions in the Rucio wrapper (Alan Malta Rodrigues) #9892
+
+
 1.4.0.pre6 to 1.4.0.pre7:
   - default rucio rules to asynchronous (Alan Malta Rodrigues) #9759
   - MSTransferor: support input data placement with Rucio (Alan Malta Rodrigues) #9759

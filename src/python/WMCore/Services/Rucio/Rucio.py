@@ -243,7 +243,6 @@ class Rucio(object):
         compatible with PhEDEx.
         """
         kwargs.setdefault("scope", "cms")
-        kwargs.setdefault("deep", False)  # lookup at the file level, probably not needed...
 
         blockNames = []
         result = []
@@ -253,31 +252,37 @@ class Rucio(object):
         elif 'block' in kwargs:
             blockNames = [kwargs['block']]
 
-        # FIXME: make bulk requests once https://github.com/rucio/rucio/issues/2459 gets fixed
         if isinstance(kwargs.get('dataset', None), (list, set)):
             for datasetName in kwargs['dataset']:
                 blockNames.extend(self.getBlocksInContainer(datasetName, scope=kwargs['scope']))
         elif 'dataset' in kwargs:
             blockNames.extend(self.getBlocksInContainer(kwargs['dataset'], scope=kwargs['scope']))
 
-        for blockName in blockNames:
-            replicas = []
-            response = self.cli.list_dataset_replicas(kwargs['scope'], blockName,
-                                                      deep=kwargs['deep'])
-            for item in response:
-                # same as complete='y' used for PhEDEx (which is always set within WMCore)
-                if item['state'].upper() == 'AVAILABLE':
-                    replicas.append(item['rse'])
-            result.append({'name': blockName, 'replica': list(set(replicas))})
+        inputDids = []
+        for block in blockNames:
+            inputDids.append({"scope": kwargs["scope"], "type": "DATASET", "name": block})
+
+        resultDict = {}
+        for item in self.cli.list_dataset_replicas_bulk(inputDids):
+            resultDict.setdefault(item['name'], [])
+            if item['state'].upper() == 'AVAILABLE':
+                resultDict[item['name']].append(item['rse'])
 
         if self.phedexCompat:
-            # convert plain node list to list of nodes dict
-            for block in result:
-                replicas = []
-                for node in block['replica']:
-                    replicas.append({'node': node})
-                block['replica'] = replicas
+            # then we need to convert it to a format like:
+            # {"phedex": {"block": [{"name": "block_A", "replica": [{"node": "nodeA"}, {"node": "nodeB"}]},
+            #                        etc etc
+            #                        }}
+            for blockName, rses in resultDict.viewitems():
+                replicas = [{"node": rse} for rse in rses]
+                result.append({"name": blockName, "replica": replicas})
             result = {'phedex': {'block': result}}
+        else:
+            # then a list of dictionaries sounds right, e.g.:
+            # [{"name": "block_A", "replica": ["nodeA", "nodeB"]},
+            #  {"name": "block_B", etc etc}]
+            for blockName, rses in resultDict.viewitems():
+                result.append({"name": blockName, "replica": list(set(rses))})
 
         return result
 
@@ -715,7 +720,11 @@ class Rucio(object):
         :param scope: string containing the Rucio scope (defaults to 'cms')
         :return: True if the DID is a container, else False
         """
-        response = self.cli.get_did(scope=scope, name=didName)
+        try:
+            response = self.cli.get_did(scope=scope, name=didName)
+        except DataIdentifierNotFound as exc:
+            msg = "Data identifier not found in Rucio: {}. Error: {}".format(didName, str(exc))
+            raise WMRucioException(msg)
         return response['type'].upper() == 'CONTAINER'
 
     def getDataLockedAndAvailable(self, **kwargs):

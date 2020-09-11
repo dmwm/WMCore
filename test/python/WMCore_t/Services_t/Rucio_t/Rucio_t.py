@@ -8,7 +8,7 @@ import os
 
 from rucio.client import Client as testClient
 
-from WMCore.Services.Rucio.Rucio import Rucio, validateMetaData, RUCIO_VALID_PROJECT
+from WMCore.Services.Rucio.Rucio import Rucio, validateMetaData, RUCIO_VALID_PROJECT, WMRucioException
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
@@ -169,8 +169,8 @@ class RucioTest(EmulatedUnitTestCase):
         inside a container.
         """
         # test a CMS dataset that does not exist
-        res = self.myRucio.getBlocksInContainer("Alan")
-        self.assertEqual(res, [])
+        with self.assertRaises(WMRucioException):
+            self.myRucio.getBlocksInContainer("Alan")
 
         # provide a CMS block instead of a dataset
         res = self.myRucio.getBlocksInContainer(BLOCK)

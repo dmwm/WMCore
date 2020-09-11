@@ -1,7 +1,8 @@
 """
 _SetupCMSSWPset_
 
-Create a CMSSW PSet suitable for running a WMAgent job.
+Create a CMSSW PSetTweak JSON to modify the PSet Configuration
+for the WMAgent Job
 
 """
 from __future__ import print_function
@@ -14,9 +15,7 @@ import random
 import socket
 import re
 
-import FWCore.ParameterSet.Config as cms
-
-from PSetTweaks.PSetTweak import PSetTweak
+from PSetTweaks.PSetTweak import PSetTweak, PSetHolder
 from PSetTweaks.WMTweak import applyTweak, makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
@@ -24,163 +23,11 @@ from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported, isEnforceGUIDInFileNameSupported
 
 
-def fixupGlobalTag(process):
-    """
-    _fixupGlobalTag_
-
-    Make sure that the process has a GlobalTag.globaltag string.
-
-    Requires that the configuration already has a properly configured GlobalTag object.
-
-    """
-    if hasattr(process, "GlobalTag"):
-        if not hasattr(process.GlobalTag, "globaltag"):
-            process.GlobalTag.globaltag = cms.string("")
-    return
-
-
-def fixupGlobalTagTransaction(process):
-    """
-    _fixupGlobalTagTransaction_
-
-    Make sure that the process has a GlobalTag.DBParameters.transactionId string.
-
-    Requires that the configuration already has a properly configured GlobalTag object
-
-    (used to customize conditions access for Tier0 express processing)
-
-    """
-    if hasattr(process, "GlobalTag"):
-        if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
-            process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
-    return
-
-
-def fixupFirstRun(process):
-    """
-    _fixupFirstRun_
-
-    Make sure that the process has a firstRun parameter.
-
-    """
-    if not hasattr(process.source, "firstRun"):
-        process.source.firstRun = cms.untracked.uint32(0)
-    return
-
-
-def fixupLastRun(process):
-    """
-    _fixupLastRun_
-
-    Make sure that the process has a lastRun parameter.
-
-    """
-    if not hasattr(process.source, "lastRun"):
-        process.source.lastRun = cms.untracked.uint32(0)
-    return
-
-
-def fixupLumisToProcess(process):
-    """
-    _fixupLumisToProcess_
-
-    Make sure that the process has a lumisToProcess parameter.
-
-    """
-    if not hasattr(process.source, "lumisToProcess"):
-        process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
-    return
-
-
-def fixupSkipEvents(process):
-    """
-    _fixupSkipEvents_
-
-    Make sure that the process has a skip events parameter.
-
-    """
-    if not hasattr(process.source, "skipEvents"):
-        process.source.skipEvents = cms.untracked.uint32(0)
-    return
-
-
-def fixupFirstEvent(process):
-    """
-    _fixupFirstEvent_
-
-    Make sure that the process has a first event parameter.
-
-    """
-    if not hasattr(process.source, "firstEvent"):
-        process.source.firstEvent = cms.untracked.uint32(0)
-    return
-
-
-def fixupMaxEvents(process):
-    """
-    _fixupMaxEvents_
-
-    Make sure that the process has a max events parameter.
-
-    """
-    if not hasattr(process, "maxEvents"):
-        process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(-1))
-    if not hasattr(process.maxEvents, "input"):
-        process.maxEvents.input = cms.untracked.int32(-1)
-    return
-
-
-def fixupFileNames(process):
-    """
-    _fixupFileNames_
-
-    Make sure that the process has a fileNames parameter.
-
-    """
-    if not hasattr(process.source, "fileNames"):
-        process.source.fileNames = cms.untracked.vstring()
-    return
-
-
-def fixupSecondaryFileNames(process):
-    """
-    _fixupSecondaryFileNames_
-
-    Make sure that the process has a secondaryFileNames parameter.
-
-    """
-    if not hasattr(process.source, "secondaryFileNames"):
-        process.source.secondaryFileNames = cms.untracked.vstring()
-    return
-
-
-def fixupFirstLumi(process):
-    """
-    _fixupFirstLumi
-
-    Make sure that the process has firstLuminosityBlock parameter.
-    """
-    if not hasattr(process.source, "firstLuminosityBlock"):
-        process.source.firstLuminosityBlock = cms.untracked.uint32(1)
-    return
-
-
 class SetupCMSSWPset(ScriptInterface):
     """
     _SetupCMSSWPset_
 
     """
-    fixupDict = {"process.GlobalTag.globaltag": fixupGlobalTag,
-                 "process.GlobalTag.DBParameters.transactionId": fixupGlobalTagTransaction,
-                 "process.source.fileNames": fixupFileNames,
-                 "process.source.secondaryFileNames": fixupSecondaryFileNames,
-                 "process.maxEvents.input": fixupMaxEvents,
-                 "process.source.skipEvents": fixupSkipEvents,
-                 "process.source.firstEvent": fixupFirstEvent,
-                 "process.source.firstRun": fixupFirstRun,
-                 "process.source.lastRun": fixupLastRun,
-                 "process.source.lumisToProcess": fixupLumisToProcess,
-                 "process.source.firstLuminosityBlock": fixupFirstLumi}
 
     def __init__(self, crabPSet=False):
         ScriptInterface.__init__(self)
@@ -256,37 +103,6 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
-    def fixupProcess(self):
-        """
-        _fixupProcess_
-
-        Look over the process object and make sure that all of the attributes
-        that we expect to exist actually exist.
-
-        """
-        # Make sure that for each output module the following parameters exist
-        # in the PSet returned from the framework:
-        #   fileName
-        #   logicalFileName
-        #   dataset.dataTier
-        #   dataset.filterName
-        if hasattr(self.process, "outputModules"):
-            outputModuleNames = self.process.outputModules.keys()
-        else:
-            outputModuleNames = self.process.outputModules_()
-        for outMod in outputModuleNames:
-            outModRef = getattr(self.process, outMod)
-            if not hasattr(outModRef, "dataset"):
-                outModRef.dataset = cms.untracked.PSet()
-            if not hasattr(outModRef.dataset, "dataTier"):
-                outModRef.dataset.dataTier = cms.untracked.string("")
-            if not hasattr(outModRef.dataset, "filterName"):
-                outModRef.dataset.filterName = cms.untracked.string("")
-            if not hasattr(outModRef, "fileName"):
-                outModRef.fileName = cms.untracked.string("")
-            if not hasattr(outModRef, "logicalFileName"):
-                outModRef.logicalFileName = cms.untracked.string("")
-        return
 
     def applyTweak(self, psetTweak):
         """
@@ -305,6 +121,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         Handle Random Seed settings for the job
         """
+        stepName = self.step.data._internal_name
         seeding = getattr(self.jobBag, "seeding", None)
         self.logger.info("Job seeding set to: %s", seeding)
         if seeding == "ReproducibleSeeding":
@@ -313,30 +130,22 @@ class SetupCMSSWPset(ScriptInterface):
             for x in randService:
                 parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
                 tweak.addParameter(parameter, x.initialSeed)
+            self.logger.info("--- Random seeding Level Tweaks ---")
+            seedTweakfile = "/tmp/seedTweak_{0}.json".format(stepName)
+            seedTweakInput = "/tmp/seedTweak_input_{0}.pkl".format(stepName)
+            seedTweakOutput = "/tmp/seedTweak_output_{0}.pkl".format(stepName)
+            self.logger.info("Create job level tweak, write to: {0}".format(seedTweakfile))
+            self.logger.info("Pickled applyTweak input object: {0}".format(seedTweakInput))
+            pickle.dump(self.process, open(seedTweakInput, "wb"))
+            tweak.persist(seedTweakfile, formatting="json")
             applyTweak(self.process, tweak, self.fixupDict)
+            self.logger.info("Pickled applyTweak output object: {0}".format(seedTweakOutput))
+            pickle.dump(self.process, open(seedTweakOutput, "wb"))
         else:
             if hasattr(self.process, "RandomNumberGeneratorService"):
                 from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
                 helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
                 helper.populate()
-        return
-
-    def handlePerformanceSettings(self):
-        """
-        _handlePerformanceSettings_
-
-        Install the standard performance report services
-        """
-        # include the default performance report services
-        if getattr(self.step.data.application.command, 'silentMemoryCheck', False):
-            self.process.add_(cms.Service("SimpleMemoryCheck", jobReportOutputOnly=cms.untracked.bool(True)))
-        else:
-            self.process.add_(cms.Service("SimpleMemoryCheck"))
-
-        self.process.add_(cms.Service("CPU"))
-        self.process.add_(cms.Service("Timing"))
-        self.process.Timing.summaryOnly = cms.untracked(cms.bool(True))
-
         return
 
     def handleChainedProcessing(self):
@@ -529,66 +338,7 @@ class SetupCMSSWPset(ScriptInterface):
             if hasattr(producers[producer], "nEvents"):
                 producers[producer].nEvents = self.process.maxEvents.input.value()
 
-    def handleDQMFileSaver(self):
-        """
-        _handleDQMFileSaver_
 
-        Harvesting jobs have the dqmFileSaver EDAnalyzer that must
-        be tweaked with the dataset name in order to store it
-        properly in the DQMGUI, others tweaks can be added as well
-        """
-        if not hasattr(self.process, "dqmSaver"):
-            return
-
-        runIsComplete = getattr(self.jobBag, "runIsComplete", False)
-        multiRun = getattr(self.jobBag, "multiRun", False)
-        runLimits = getattr(self.jobBag, "runLimits", "")
-        self.logger.info("DQMFileSaver set to multiRun: %s, runIsComplete: %s, runLimits: %s",
-                         multiRun, runIsComplete, runLimits)
-
-        self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
-        if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_0"):
-            self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
-        if hasattr(self.step.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.step.data.application.configuration.pickledarguments)
-            datasetName = args.get('datasetName', None)
-            if datasetName:
-                if multiRun:
-                    # then change the dataset name in order to get a different root file name
-                    datasetName = datasetName.rsplit('/', 1)
-                    datasetName[0] += runLimits
-                    datasetName = "/".join(datasetName)
-                self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
-        return
-
-    def handleLHEInput(self):
-        """
-        _handleLHEInput_
-
-        Enable lazy-download for jobs reading LHE articles from CERN, such
-        that these jobs can read data remotely
-        """
-        if getattr(self.jobBag, "lheInputFiles", False):
-            self.logger.info("Enabling 'lazy-download' for lheInputFiles job")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCacheHintDir=cms.untracked.string("lazy-download")))
-
-        return
-
-    def handleRepackSettings(self):
-        """
-        _handleRepackSettings_
-
-        Repacking small events is super inefficient reading directly from EOS.
-        """
-        self.logger.info("Hardcoding read/cache strategies for repack")
-        self.process.add_(
-            cms.Service("SiteLocalConfigService",
-                        overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
-                        )
-        )
-
-        return
 
     def handleSingleCoreOverride(self):
         """
@@ -610,36 +360,6 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
-    def handleSpecialCERNMergeSettings(self, funcName):
-        """
-        _handleSpecialCERNMergeSettings_
-
-        CERN has a 30ms latency between Meyrin and Wigner, which kills merge performance
-        Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
-        Enable lazy-download for all merge jobs
-        """
-        if self.getCmsswVersion().startswith("CMSSW_7_5") and False:
-            self.logger.info("Using fastCloning/lazydownload")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")))
-        elif funcName == "merge":
-            self.logger.info("Using lazydownload")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCacheHintDir=cms.untracked.string("lazy-download")))
-        return
-
-    def handleCondorStatusService(self):
-        """
-        _handleCondorStatusService_
-
-        Enable CondorStatusService for CMSSW releases that support it.
-        """
-        if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_0"):
-            self.logger.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
-            self.process.add_(cms.Service("CondorStatusService",
-                                          tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
-
-        return
 
     def handleEnforceGUIDInFileName(self, secondaryInput=None):
         """
@@ -719,32 +439,15 @@ class SetupCMSSWPset(ScriptInterface):
                 self.logger.exception("Error creating process for Config/DataProcessing:")
                 raise ex
 
-            if funcName == "repack":
-                self.handleRepackSettings()
-
             if funcName in ["merge", "alcaHarvesting"]:
                 self.handleSingleCoreOverride()
 
-            if socket.getfqdn().endswith("cern.ch"):
-                self.handleSpecialCERNMergeSettings(funcName)
-
-        else:
-            try:
-                self.loadPSet()
-            except Exception as ex:
-                self.logger.exception("Error loading PSet:")
-                raise ex
-
         # Check process.source exists
-        if getattr(self.process, "source", None) is None:
-            msg = "Error in CMSSW PSet: process is missing attribute 'source'"
-            msg += " or process.source is defined with None value."
-            self.logger.error(msg)
-            raise RuntimeError(msg)
+        if self.process is None:
+            self.process = PSetHolder("process")
+            setattr(self.process, "source", PSetHolder("source"))
+            self.process.parameters_.append("source")
 
-        self.handleCondorStatusService()
-
-        self.fixupProcess()
 
         # In case of CRAB3, the number of threads in the PSet should not be overridden
         if not self.crabPSet:
@@ -760,30 +463,32 @@ class SetupCMSSWPset(ScriptInterface):
                     eventStreams = 0
                 options = getattr(self.process, "options", None)
                 if options is None:
-                    self.process.options = cms.untracked.PSet()
-                    options = getattr(self.process, "options")
-                options.numberOfThreads = cms.untracked.uint32(numCores)
-                options.numberOfStreams = cms.untracked.uint32(eventStreams)
+                    setattr(self.process, "options", PSetHolder("options"))
+
+                setattr(self.process.options, "numberOfThreads", numCores)
+                setattr(self.process.options, "numberOfStreams", eventStreams)
+                self.process.options.numberOfThreads.parameters_.append("numberOfThreads")
+                self.process.options.numberOfThreads.parameters_.append("numberOfStreams")
+
             except AttributeError as ex:
                 self.logger.error("Failed to override numberOfThreads: %s", str(ex))
 
-        psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
-        if psetTweak is not None:
-            self.applyPSetTweak(psetTweak, self.fixupDict)
-
+        tweak = PSetTweak()
         # Apply task level tweaks
-        taskTweak = makeTaskTweak(self.step.data)
-        applyTweak(self.process, taskTweak, self.fixupDict)
+        stepName = self.step.data._internal_name
+        self.logger.info("--- Task Level Tweaks ---")
+        makeTaskTweak(self.step.data, tweak)
 
         # Check if chained processing is enabled
         # If not - apply the per job tweaks
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
         if hasattr(self.step.data.input, "chainedProcessing") and self.step.data.input.chainedProcessing:
-            self.handleChainedProcessing()
+            pass
+            #self.handleChainedProcessing()
         else:
             # Apply per job PSet Tweaks
-            jobTweak = makeJobTweak(self.job)
-            applyTweak(self.process, jobTweak, self.fixupDict)
+            self.logger.info("--- Job Level Tweaks ---")
+            jobTweak = makeJobTweak(self.job, tweak)
 
         # check for pileup settings presence, pileup support implementation
         # and if enabled, process pileup configuration / settings
@@ -794,8 +499,9 @@ class SetupCMSSWPset(ScriptInterface):
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
-            outTweak = makeOutputTweak(mod, self.job)
-            applyTweak(self.process, outTweak, self.fixupDict)
+            modName = str(getattr(mod, "_internal_name"))
+            self.logger.info("--- outputModule Level Tweaks ---")
+            outTweak = makeOutputTweak(mod, self.job, tweak)
 
         # revlimiter for testing
         if getattr(self.step.data.application.command, "oneEventMode", False):
@@ -804,41 +510,32 @@ class SetupCMSSWPset(ScriptInterface):
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
 
-        # make sure default parametersets for perf reports are installed
-        self.handlePerformanceSettings()
-
         # check for event numbers in the producers
-        self.handleProducersNumberOfEvents()
-
-        # fixup the dqmFileSaver
-        self.handleDQMFileSaver()
-
-        # tweak for jobs reading LHE articles from CERN
-        self.handleLHEInput()
+        #self.handleProducersNumberOfEvents()
 
         # tweak jobs for enforceGUIDInFileName
-        self.handleEnforceGUIDInFileName()
+        #self.handleEnforceGUIDInFileName()
 
         # Check if we accept skipping bad files
         if hasattr(self.step.data.application.configuration, "skipBadFiles"):
-            self.process.source.skipBadFiles = \
-                cms.untracked.bool(self.step.data.application.configuration.skipBadFiles)
+            tweak.addParameter("process.source.skipBadFiles", bool(self.step.data.application.configuration.skipBadFiles))
 
         # Apply events per lumi section if available
         if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
-            self.process.source.numberEventsInLuminosityBlock = \
-                cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
+            tweak.addParameter("process.source.numberEventsInLuminosityBlock",
+                self.step.data.application.configuration.eventsPerLumi)
 
         # limit run time if desired
         if hasattr(self.step.data.application.configuration, "maxSecondsUntilRampdown"):
-            self.process.maxSecondsUntilRampdown = cms.untracked.PSet(
-                input=cms.untracked.int32(self.step.data.application.configuration.maxSecondsUntilRampdown))
+            setattr(self.process, "maxSecondsUntilRampdown", PSetHolder("maxSecondsUntilRampdown"))
+            setattr(self.process.maxSecondsUntilRampdown, "input", self.step.data.application.configuration.maxSecondsUntilRampdown)
+            self.process.maxSecondsUntilRampdown.parameters_.append("input")
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application, 'overrideCatalog'):
             self.logger.info("Found a TFC override: %s", self.step.data.application.overrideCatalog)
-            self.process.source.overrideCatalog = \
-                cms.untracked.string(self.step.data.application.overrideCatalog)
+            tweak.addParameter("process.source.overrideCatalog",
+                str(self.step.data.application.overrideCatalog))
 
         configFile = self.step.data.application.command.configuration
         configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
@@ -846,15 +543,10 @@ class SetupCMSSWPset(ScriptInterface):
         try:
             with open("%s/%s" % (workingDir, configPickle), 'wb') as pHandle:
                 pickle.dump(self.process, pHandle)
-
-            with open("%s/%s" % (workingDir, configFile), 'w') as handle:
-                handle.write("import FWCore.ParameterSet.Config as cms\n")
-                handle.write("import pickle\n")
-                handle.write("with open('%s', 'rb') as handle:\n" % configPickle)
-                handle.write("    process = pickle.load(handle)\n")
         except Exception as ex:
             self.logger.exception("Error writing out PSet:")
-            raise ex
-        self.logger.info("CMSSW PSet setup completed!")
+            raise
+        tweak.persist("PSetTweak.json")
+        self.logger.info("CMSSW PSetTweak JSON completed!")
 
         return 0

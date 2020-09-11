@@ -83,7 +83,8 @@ class CMSSW(Executor):
             self.stepSpace.getFromSandbox("pileupconf.json")
 
         # add in ths scram env PSet manip script whatever happens
-        self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
+        #self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
+        self.step.runtime.preScripts.append("SetupCMSSWPset")
         return None
 
     def execute(self, emulator=None):
@@ -218,7 +219,7 @@ class CMSSW(Executor):
             # invoke scripts with scram()
             runtimeDir = getattr(self.step.runtime, 'scramPreDir', None)
             invokeCommand = self.step.runtime.invokeCommand if hasattr(self.step.runtime, 'invokeCommand') else \
-                "%s -m WMCore.WMRuntime.ScriptInvoke %s" % (sys.executable, stepModule)
+                "%s -m WMCore.WMRuntime.ScriptInvoke %s" % ("python", stepModule)
             invokeCommand += " %s \n" % script
             retCode = scram(invokeCommand, runtimeDir=runtimeDir)
             if retCode > 0:
@@ -227,6 +228,11 @@ class CMSSW(Executor):
                 msg += scram.diagnostic()
                 logging.critical(msg)
                 raise WMExecutionFailure(50513, "PreScriptScramFailure", msg)
+
+
+        # Skip the rest of the code
+        #self.logger.info("****Skipping CMSSW execution...")
+        #return
 
         configPath = "%s/%s-main.sh" % (self.step.builder.workingDir, self.stepName)
         with open(configPath, 'w') as handle:
@@ -252,6 +258,10 @@ class CMSSW(Executor):
                 userFiles,
                 cmsswArguments]
         logging.info("Executing CMSSW. args: %s", args)
+
+        # Skip the rest of the code
+        self.logger.info("****Skipping CMSSW execution...")
+        return
 
         # possibly needed environment overrides for CMSSW call go here
         envOverride = {}

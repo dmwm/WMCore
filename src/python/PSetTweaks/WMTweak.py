@@ -7,10 +7,7 @@ Note: This can be used within the CMSSW environment to act on a
 process/config but does not depend on any CMSSW libraries. It needs to stay like this.
 
 """
-from __future__ import print_function, division
-
-from builtins import map, range, str, object
-from future.utils import viewitems, viewkeys
+from __future__ import print_function
 
 import logging
 import os
@@ -122,7 +119,7 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    jobLfnGroup = modifier + str(job.get("counter", 0) // 1000).zfill(4)
+    jobLfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
     return jobLfnGroup
 
 
@@ -216,7 +213,7 @@ def expandParameter(process, param):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
-            for lastResultKey, lastResultVal in viewitems(lastResults):
+            for lastResultKey, lastResultVal in lastResults.items():
                 for param in listParams(lastResultVal):
                     newResultKey = "%s.%s" % (lastResultKey, param)
                     newResultVal = getattr(lastResultVal, param)
@@ -230,7 +227,7 @@ def expandParameter(process, param):
 
         else:
             newResults = {}
-            for lastResultKey, lastResultVal in viewitems(lastResults):
+            for lastResultKey, lastResultVal in lastResults.items():
                 newResultKey = "%s.%s" % (lastResultKey, pset)
                 newResultVal = getattr(lastResultVal, pset, None)
                 if not hasattr(newResultVal, "parameters_"):
@@ -268,7 +265,7 @@ class TweakMaker(object):
         # handle process parameters
         processParams = []
         for param in self.processLevel:
-            processParams.extend(viewkeys(expandParameter(process, param)))
+            processParams.extend(expandParameter(process, param).keys())
 
         for param in processParams:
             if hasParameter(process, param):
@@ -312,6 +309,7 @@ def applyTweak(process, tweak, fixup=None):
     This is useful for preparing the process before the value is applied (ie-
     making sure all the necessary PSets and configuration values exist).
     """
+    print("***applyTweak was called")
     for param, value in tweak:
         if fixup and param in fixup:
             fixup[param](process)
@@ -374,13 +372,12 @@ def decomposeConfigSection(csect):
     return decomposer.parameters
 
 
-def makeTaskTweak(stepSection):
+def makeTaskTweak(stepSection, result):
     """
     _makeTaskTweak_
 
     Create a tweak for options in the task that apply to all jobs.
     """
-    result = PSetTweak()
 
     # GlobalTag
     if hasattr(stepSection, "application"):
@@ -392,17 +389,16 @@ def makeTaskTweak(stepSection):
                 if 'globalTagTransaction' in args:
                     result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
 
-    return result
+    return
 
 
-def makeJobTweak(job):
+def makeJobTweak(job, result):
     """
     _makeJobTweak_
 
     Convert information from a WMBS Job object into a PSetTweak
     that can be used to modify a CMSSW process.
     """
-    result = PSetTweak()
     baggage = job.getBaggage()
 
     # Check in the baggage if we are processing .lhe files
@@ -477,7 +473,7 @@ def makeJobTweak(job):
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
-    for run in viewkeys(runs):
+    for run in runs.keys():
         lumiPairs = runs[run]
         for lumiPair in lumiPairs:
             if len(lumiPair) != 2:
@@ -495,20 +491,19 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k, v in viewitems(baggageParams):
+    for k, v in baggageParams.items():
         result.addParameter(k, v)
 
-    return result
+    return
 
 
-def makeOutputTweak(outMod, job):
+def makeOutputTweak(outMod, job, result):
     """
     _makeOutputTweak_
 
     Make a PSetTweak for the output module and job instance provided
 
     """
-    result = PSetTweak()
     # output filenames
     modName = str(getattr(outMod, "_internal_name"))
     fileName = "%s.root" % modName
@@ -523,7 +518,7 @@ def makeOutputTweak(outMod, job):
     # TODO: Nice standard way to meddle with the other parameters in the
     #      output module based on the settings in the section
 
-    return result
+    return
 
 
 def readAdValues(attrs, adname, castInt=False):

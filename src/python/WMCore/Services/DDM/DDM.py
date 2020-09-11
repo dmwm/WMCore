@@ -243,12 +243,10 @@ class DDM(Service):
         try:
             # TODO: here/getResult to send the request parameters to the logger
             result = self._getResult(ddmReq, apiUrl, callname)
-        except Exception as e:
-            msg = "ERROR: sending data to DDM: \n"
-            msg += "API: {}\n".format(ddmReq.api)
-            msg += "ddmReq: {}\n".format(pformat(ddmReq))
-            msg += "ERROR: {}".format(str(e))
-            self['logger'].debug(msg)
+        except Exception as exc:
+            msg = "Failed to make a DDM request for data dictionary: {}".format(ddmReq)
+            msg += " Error details: {}".format(str(exc))
+            self['logger'].error(msg)
             return None
         return result
 
@@ -329,7 +327,7 @@ class DDM(Service):
                 msg = "ERROR: sending data to DDM: "
                 msg += "API: {}: ddmReq: {}\n".format(ddmReq.api, pformat(ddmReq))
                 msg += "ERROR: {}".format(str(e))
-                self['logger'].debug(msg)
+                self['logger'].error(msg)
                 print(str(e))
                 results.append(None)
         return results

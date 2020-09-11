@@ -10,10 +10,7 @@ from __future__ import division, print_function
 
 # system modules
 from pymongo import IndexModel, ReturnDocument, errors
-from pymongo.command_cursor import CommandCursor
 from pprint import pformat
-from copy import deepcopy
-from time import time
 from socket import gethostname
 from threading import current_thread
 from retry import retry
@@ -24,7 +21,6 @@ from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_CONSUMER_REPOR
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.Rucio.Rucio import Rucio
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
@@ -89,10 +85,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
         self.msConfig.setdefault("verbose", True)
         self.msConfig.setdefault("interval", 600)
-        self.msConfig.setdefault("services", ['output'])
-        self.msConfig.setdefault("defaultDataManSys", "DDM")
         self.msConfig.setdefault("defaultGroup", "DataOps")
-        self.msConfig.setdefault("enableAggSubscr", True)
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
         self.msConfig.setdefault("rucioAccount", 'wma_test')
@@ -121,13 +114,10 @@ class MSOutput(MSCore):
         self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
-        if self.msConfig['defaultDataManSys'] == 'DDM':
+        if not self.msConfig.get('useRucio', False):
             self.ddm = DDM(url=self.msConfig['ddmUrl'],
                            logger=self.logger,
                            enableDataPlacement=self.msConfig['enableDataPlacement'])
-        elif self.msConfig['defaultDataManSys'] == 'Rucio':
-            self.rucio = Rucio(self.msConfig['rucioAccount'],
-                               configDict={"logger": self.logger})
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -274,235 +264,133 @@ class MSOutput(MSCore):
         The relevant service wrapper is called.
         :return: A list of results from the REST interface of the DMS in question
         """
+        if not isinstance(workflow, MSOutputTemplate):
+            msg = "Unsupported type object '{}' for workflows! ".format(type(workflow))
+            msg += "It needs to be of type: MSOutputTemplate"
+            raise UnsupportedError(msg)
 
         # NOTE:
         #    Here is just an example construction of the function. None of the
         #    data structures used to visualise it is correct. To Be Updated
 
-        if self.msConfig['defaultDataManSys'] == 'DDM':
-            # NOTE:
-            #    We always aggregate per workflow here (regardless of enableAggSubscr)
-            #    and then if we work in strides and enableAggSubscr is True then
-            #    we will aggregate all similar subscription for all workflows
-            #    in a single subscription - then comes the mess how to map back
-            #    which workflow's outputs went to which transfer subscription etc.
-            #    (TODO:)
-            #
+        # if anything fail along the way, set it back to "pending"
+        transferStatus = "done"
+        if not self.msConfig.get('useRucio', False):
             # NOTE:
             #    Once we move to working in strides of multiple workflows at a time
             #    then the workflow sent to that function should not be a single one
             #    but an iterator of length 'stride' and then we should be doing:
             #    for workflow in workflows:
-            if isinstance(workflow, MSOutputTemplate):
-                ddmReqList = []
-                try:
-                    if workflow['IsRelVal']:
-                        group = 'RelVal'
-                    else:
-                        group = 'DataOps'
+            if workflow['IsRelVal']:
+                group = 'RelVal'
+            else:
+                group = 'DataOps'
 
-                    for dMap in workflow['DestinationOutputMap']:
-                        try:
-                            ddmRequest = DDMReqTemplate('copy',
-                                                        item=dMap['Datasets'],
-                                                        n=workflow['NumberOfCopies'],
-                                                        site=dMap['Destination'],
-                                                        group=group)
-                        except KeyError as ex:
-                            # NOTE:
-                            #    If we get to here it is most probably because the 'site'
-                            #    mandatory field to the DDM request is missing (due to an
-                            #    'ALCARECO' dataset from a Relval workflow or similar).
-                            #    Since this is expected to happen a lot, we'd better just
-                            #    log a warning and continue
-                            msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
-                            msg += "Error: {}".format(ex)
-                            self.logger.warning(msg)
-                            continue
-                        ddmReqList.append(ddmRequest)
-
-                except Exception as ex:
-                    msg = "Could not create DDMReq for Workflow: {}".format(workflow['RequestName'])
-                    msg += "Error: {}".format(ex)
-                    self.logger.exception(msg)
-                    return workflow
-
-                try:
-                    # In the message bellow we may want to put the list of datasets too
-                    self.logger.info("Making transfer subscriptions for %s", workflow['RequestName'])
-
-                    if ddmReqList:
-                        ddmResultList = self.ddm.makeAggRequests(ddmReqList, aggKey='item')
-                    else:
-                        # NOTE:
-                        #    Nothing else to be done here. We mark the document as
-                        #    done so we do not iterate through it multiple times
-                        msg = "Skip submissions for %s. Either all data Tiers were "
-                        msg += "excluded or there were no Output Datasets at all. "
-                        msg += "Marking this workflow as `done`."
-                        self.logger.warning(msg, workflow['RequestName'])
-                        self.docKeyUpdate(workflow, TransferStatus='done')
-                        return workflow
-                except Exception as ex:
-                    msg = "Could not make transfer subscription for Workflow: {}".format(workflow['RequestName'])
-                    msg += "Error: {}".format(ex)
-                    self.logger.exception(msg)
-                    return workflow
-
-                ddmStatusList = ['new', 'activated', 'completed', 'rejected', 'cancelled']
-                transferIDs = []
-                transferStatusList = []
-                for ddmResult in ddmResultList:
-                    if 'data' in ddmResult.keys():
-                        transferId = deepcopy(ddmResult['data'][0]['request_id'])
-                        status = deepcopy(ddmResult['data'][0]['status'])
-                        transferStatusList.append({'transferID': transferId,
-                                                   'status': status})
-                        transferIDs.append(id)
-
-                if transferStatusList and all(map(lambda x:
-                                                  True if x['status'] in ddmStatusList else False,
-                                                  transferStatusList)):
-                    self.docKeyUpdate(workflow,
-                                      TransferStatus='done',
-                                      TransferIDs=transferIDs)
-                    return workflow
-                else:
-                    self.docKeyUpdate(workflow,
-                                      TransferStatus='pending')
-                    msg = "No data found in ddmResults for %s. Either dry run mode or " % workflow['RequestName']
-                    msg += "broken transfer submission to DDM. "
-                    msg += "ddmResults: \n%s" % pformat(ddmResultList)
+            for dMap in workflow['OutputMap']:
+                if dMap['Copies'] == 0:
+                    msg = "Output dataset configured to 0 copies, so skipping it. Details:"
+                    msg += "\n\tWorkflow name: {}".format(workflow['RequestName'])
+                    msg += "\n\tDataset name: {}".format(dMap['Dataset'])
+                    msg += "\n\tCampaign name: {}".format(dMap['Campaign'])
                     self.logger.warning(msg)
-                return workflow
+                    continue
+                if dMap['DiskRuleID']:
+                    msg = "Output dataset: {} from workflow: {} ".format(dMap['Dataset'], workflow['RequestName'])
+                    msg += " has been already subscribed under request id: {}".format(dMap['DiskRuleID'])
+                    self.logger.info(msg)
+                    continue
 
-            elif isinstance(workflow, (list, set, CommandCursor)):
-                ddmRequests = {}
-                for wflow in workflow:
-                    wflowName = wflow['RequestName']
-                    ddmRequests[wflowName] = DDMReqTemplate('copy',
-                                                            item=wflow['OutputDatasets'],
-                                                            n=wflow['NumberOfCopies'],
-                                                            site=wflow['Destination'])
-                if self.msConfig['enableAggSubscr']:
-                    # ddmResults = self.ddm.makeAggRequests(ddmRequests.values(), aggKey='item')
-                    # TODO:
-                    #    Here to deal with the reverse mapping of DDM request_id to workflow
-                    pass
+                # overwrite the current DiskDestination by something that will work for DDM
+                if workflow['IsRelVal']:
+                    # Alan does not like it, but we have what we have...
+                    destination = dMap['DiskDestination'].replace("&cms_type=real&rse_type=DISK", "")
+                    destination = destination.replace("(", "")
+                    destination = destination.replace(")", "")
+                    destination = destination.split("|")
                 else:
-                    # for wflowName, ddmReq in ddmRequests.items():
-                    #     ddmResults.append(self.ddm.makeRequests(ddmReq))
-                    # TODO:
-                    #    Here to deal with making request per workflow and
-                    #    reconstructing and returning the same type of object
-                    #    as the one that have been passed to the current call.
-                    pass
-                # FIXME:
-                msg = "Not yet implemented mode with workflows of type %s!\n" % type(workflow)
-                msg += "Skipping this call"
-                self.logger.error(msg)
-                raise NotImplementedError
-            else:
-                msg = "Unsupported type %s for workflows!\n" % type(workflow)
-                msg += "Skipping this call"
-                self.logger.error(msg)
-                raise UnsupportedError
+                    destination = ['T1_*_Disk', 'T2_*']
 
-        elif self.msConfig['defaultDataManSys'] == 'PhEDEx':
-            pass
+                # NOTE: both "site" and "item" are meant to be lists here
+                ddmRequest = DDMReqTemplate('copy',
+                                            item=[dMap['Dataset']],
+                                            n=dMap['Copies'],
+                                            site=destination,
+                                            group=group)
 
-        elif self.msConfig['defaultDataManSys'] == 'Rucio':
-            if isinstance(workflow, MSOutputTemplate):
-                self.logger.info("Making transfer subscriptions for %s", workflow['RequestName'])
-
-                rucioResultList = []
-                if workflow['DestinationOutputMap']:
-                    for dMap in workflow['DestinationOutputMap']:
-                        try:
-                            copies = workflow['NumberOfCopies']
-                            # NOTE:
-                            #    Once we get rid of DDM this rseExpression generation
-                            #    should go in the Producer thread
-                            if workflow['IsRelVal']:
-                                if dMap['Destination']:
-                                    rseUnion = '('+'|'.join(dMap['Destination'])+')'
-                                else:
-                                    # NOTE:
-                                    #    If we get to here it is most probably because the destination
-                                    #    in the destinationOutputMap is empty (due to an
-                                    #    'ALCARECO' dataset from a Relval workflow or similar).
-                                    #    Since this is expected to happen a lot, we'd better just
-                                    #    log a warning and continue
-                                    msg = "No destination provided. Avoid creating transfer subscription for "
-                                    msg += "Workflow: %s : Dataset Names: %s"
-                                    self.logger.warning(msg, workflow['RequestName'], dMap['datasets'])
-                                    continue
-                                rseExpression = rseUnion + '&cms_type=real&rse_type=DISK'
-                                # NOTE:
-                                #    The above rseExpression should resolve to something similar to:
-                                #    (T2_CH_CERN|T1_US_FNAL_Disk)&cms_type=real&rse_type=DISK
-                                #    where the first part is a Union of all destination sites and
-                                #    the second part is a general constraint for those to be real
-                                #    entries but not `Test` or `Temp` and we also target only sites
-                                #    marked as `Disk`
-                            else:
-                                rseExpression = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
-                                # NOTE:
-                                #    The above rseExpression should target all T1_*_Disk and T2_*
-                                #    sites, where the first part is a Union of those Tiers and
-                                #    the second part is a general constraint for those to be real
-                                #    entries but not `Test` or `Temp` and we also target only sites
-                                #    marked as `Disk`
-
-                            if self.msConfig['enableDataPlacement']:
-                                rucioResultList.append(self.rucio.createReplicationRule(dMap['datasets'],
-                                                                                        rseExpression,
-                                                                                        copies=copies))
-                            else:
-                                msg = "DRY-RUN:: The effective Rucio submission would look like: \n"
-                                msg += "account: %s \n"
-                                msg += "dids: %s \n"
-                                msg += "rseExpression: %s\n"
-                                msg += "copies: %s\n"
-                                self.logger.warning(msg,
-                                                    self.msConfig['rucioAccount'],
-                                                    pformat(dMap['datasets']),
-                                                    rseExpression,
-                                                    copies)
-                        except Exception as ex:
-                            msg = "Could not make transfer subscription for Workflow: %s\n:%s"
-                            self.logger.exception(msg, workflow['RequestName'], str(ex))
-                            return workflow
+                self.logger.info("Performing DDM subscription for workflow: %s, dataset: %s",
+                                 workflow['RequestName'], dMap['Dataset'])
+                resp = self.ddm.makeRequest(ddmRequest)
+                if not resp:
+                    # then the call failed
+                    transferStatus = "pending"
+                elif resp is ddmRequest:
+                    msg = "DRY-RUN DDM: skipping subscription for: {}".format(ddmRequest)
+                    self.logger.info(msg)
+                elif 'data' in resp:
+                    self.logger.debug("DDM response: {}".format(resp))
+                    transferId = resp['data'][0]['request_id']
+                    dMap['DiskRuleID'] = str(transferId)
                 else:
-                    # NOTE:
-                    #    Nothing else to be done here. We mark the document as
-                    #    done so we do not iterate through it multiple times
-                    msg = "Skip submissions for %s. Either all data Tiers were "
-                    msg += "excluded or there were no Output Datasets at all. "
-                    msg += "Marking this workflow as `done`."
-                    self.logger.warning(msg, workflow['RequestName'])
-                    self.docKeyUpdate(workflow, TransferStatus='done')
+                    self.logger.error("Something seriously BAD happened with the DDM request!")
                     return workflow
 
-                transferIDs = rucioResultList
+        elif self.msConfig.get('useRucio', False):
+            ruleAttrs = {'activity': 'Production Output',
+                         'lifetime': self.msConfig['rulesLifetime'],
+                         'account': self.msConfig['rucioAccount'],
+                         'grouping': "ALL",
+                         'comment': 'WMCore MSOutput output data placement'}
+            # if anything fail along the way, set it back to "pending"
+            transferStatus = "done"
+            for dMap in workflow['OutputMap']:
+                if dMap['Copies'] == 0:
+                    msg = "Output dataset configured to 0 copies, so skipping it. Details:"
+                    msg += "\n\tWorkflow name: {}".format(workflow['RequestName'])
+                    msg += "\n\tDataset name: {}".format(dMap['Dataset'])
+                    msg += "\n\tCampaign name: {}".format(dMap['Campaign'])
+                    self.logger.warning(msg)
+                    continue
+                if dMap['DiskRuleID']:
+                    msg = "Output dataset: {} from workflow: {} ".format(dMap['Dataset'], workflow['RequestName'])
+                    msg += " has been already locked by rule id: {}".format(dMap['DiskRuleID'])
+                    self.logger.info(msg)
+                    continue
+
+                self.logger.info("Performing rucio rule creation for workflow: %s, dataset: %s",
+                                 workflow['RequestName'], dMap['Dataset'])
+
+                ruleAttrs.update({'copies': dMap['Copies']})
                 if self.msConfig['enableDataPlacement']:
-                    self.docKeyUpdate(workflow,
-                                      TransferStatus='done',
-                                      TransferIDs=transferIDs)
-                return workflow
+                    resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['DiskDestination'], **ruleAttrs)
+                    if not resp:
+                        # then the call failed
+                        transferStatus = "pending"
+                    elif len(resp) == 1:
+                        dMap['DiskRuleID'] = resp[0]
+                    elif len(resp) > 1:
+                        msg = "Rule creation returned multiple rule IDs and it needs to be investigated!!! "
+                        msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
+                                                                                       dMap['DiskDestination'],
+                                                                                       ruleAttrs['account'])
+                        self.logger.error(msg)
+                        return workflow
+                else:
+                    msg = "DRY-RUN RUCIO: skipping rule creation for DID: {}, ".format(dMap['Dataset'])
+                    msg += "rseExpr: {} and standard parameters: {}".format(dMap['DiskDestination'], ruleAttrs)
+                    self.logger.info(msg)
 
-            elif isinstance(workflow, (list, set, CommandCursor)):
-                # FIXME:
-                msg = "Not yet implemented mode with workflows of type %s!\n" % type(workflow)
-                msg += "Skipping this call"
-                self.logger.error(msg)
-                raise NotImplementedError
+        # Finally, update the MSOutput template document with either partial or
+        # complete transfer ids
+        self.docKeyUpdate(workflow, OutputMap=workflow['OutputMap'])
+        workflow.updateTime()
+        if transferStatus == "done":
+            self.logger.info("All the transfer requests succeeded for: %s. Marking it as 'done'",
+                             workflow['RequestName'])
+            self.docKeyUpdate(workflow, TransferStatus='done')
+        else:
+            self.logger.info("Transfer requests partially successful for: %s. Keeping it 'pending'",
+                             workflow['RequestName'])
 
-            else:
-                msg = "Unsupported type %s for workflows!\n" % type(workflow)
-                msg += "Skipping this call"
-                self.logger.error(msg)
-                raise UnsupportedError
         # NOTE:
         #    if we are about to implement this through a pipeline we MUST not
         #    return the result here but the WHOLE document with updated fields
@@ -539,24 +427,20 @@ class MSOutput(MSCore):
         #    Done: To write back the updated document to MonogoDB
         msPipelineRelVal = Pipeline(name="MSOutputConsumer PipelineRelVal",
                                     funcLine=[Functor(self.makeSubscriptions),
-                                              Functor(self.docKeyUpdate,
-                                                      LastUpdate=int(time())),
                                               Functor(self.docUploader,
                                                       update=True,
                                                       keys=['LastUpdate',
                                                             'TransferStatus',
-                                                            'TransferIDs']),
+                                                            'OutputMap']),
                                               Functor(self.docDump, pipeLine='PipelineRelVal'),
                                               Functor(self.docCleaner)])
         msPipelineNonRelVal = Pipeline(name="MSOutputConsumer PipelineNonRelVal",
                                        funcLine=[Functor(self.makeSubscriptions),
-                                                 Functor(self.docKeyUpdate,
-                                                         LastUpdate=int(time())),
                                                  Functor(self.docUploader,
                                                          update=True,
                                                          keys=['LastUpdate',
                                                                'TransferStatus',
-                                                               'TransferIDs']),
+                                                               'OutputMap']),
                                                  Functor(self.docDump, pipeLine='PipelineNonRelVal'),
                                                  Functor(self.docCleaner)])
 
@@ -692,19 +576,15 @@ class MSOutput(MSCore):
 
     def docInfoUpdate(self, msOutDoc):
         """
-        A function intended to fetch and fill into the document all the needed
-        additional information like campaignOutputMap etc.
+        Parses the request parameters (a mongoDB record not yet persisted) and finds
+        out what are the disk destinations and how many copies of each dataset need to
+        be made.
+        :param msOutDoc: a MSOutput template object
+        :return: nothing, the MSOutput template record is update in memory.
         """
-
-        # Fill the destinationOutputMap first
-        destinationOutputMap = []
-        wflowDstSet = set()
-        updateDict = {}
-        for dataset in msOutDoc['OutputDatasets']:
-            _, dsn, procString, dataTier = dataset.split('/')
-            # NOTE:
-            #    Data tiers that have been configured to be excluded will never
-            #    enter the destinationOutputMap
+        updatedOutputMap = []
+        for dataItem in msOutDoc['OutputMap']:
+            _, dsn, procString, dataTier = dataItem['Dataset'].split('/')
             if dataTier in self.msConfig['excludeDataTier']:
                 # msg = "%s: %s: "
                 # msg += "Data Tier: %s is blacklisted. "
@@ -715,10 +595,11 @@ class MSOutput(MSCore):
                 #                  dataTier,
                 #                  msOutDoc['RequestName'],
                 #                  dataset)
+                dataItem['Copies'] = 0
+                updatedOutputMap.append(dataItem)
                 continue
 
             destination = set()
-
             if msOutDoc['IsRelVal']:
                 if dataTier != "RECO" and dataTier != "ALCARECO":
                     destination.add('T2_CH_CERN')
@@ -732,6 +613,20 @@ class MSOutput(MSCore):
                     destination.add('T2_CH_CERN')
                 if "MinimumBias" in dsn and "SiStripCalMinBias" in procString and dataTier != "ALCARECO":
                     destination.add('T2_CH_CERN')
+
+                if destination:
+                    # NOTE: This default rseExpression should resolve to something similar to:
+                    # (T2_CH_CERN|T1_US_FNAL_Disk)&cms_type=real&rse_type=DISK
+                    # where the first part is a Union of all destination sites and the second part
+                    # is a general constraint for those to be real entries (not `Test` or `Temp`)
+                    # and we also target only Disk endpoints
+                    rseUnion = '(' + '|'.join(destination) + ')'
+                    dataItem['DiskDestination'] = rseUnion + '&cms_type=real&rse_type=DISK'
+                else:
+                    # then this dataset is not supposed to be locked on disk (why?!?!)
+                    dataItem['Copies'] = 0
+                    updatedOutputMap.append(dataItem)
+                    continue
             else:
                 # FIXME:
                 #    Here we need to use the already created campaignMap for
@@ -740,55 +635,21 @@ class MSOutput(MSCore):
                 #    Once we migrate to Rucio we should change those defaults to
                 #    whatever is the format in Rucio (eg. referring a subscription
                 #    rule like: "store it at a good site" or "Store in the USA" etc.)
-                destination.add('T1_*_Disk')
-                destination.add('T2_*')
 
-            dMap = {'Datasets': [dataset],
-                    'Destination': list(destination)}
-            destinationOutputMap.append(dMap)
-            wflowDstSet |= destination
+                # NOTE: This default rseExpression should target all T1_*_Disk and T2_*
+                # sites, where the first part is a Union of those Tiers and the second
+                # part is a general constraint for those to be real entries (not `Test`
+                # or `Temp`) and we also target only Disk endpoints
+                dataItem['DiskDestination'] = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
+            updatedOutputMap.append(dataItem)
 
-        # here we try to aggregate the destination map per destination
-        aggDstMap = []
-
-        # populate the first element in the aggregated list
-        if len(destinationOutputMap) != 0:
-            aggDstMap.append(destinationOutputMap.pop())
-
-        # feed the rest
-        while len(destinationOutputMap) != 0:
-            dMap = destinationOutputMap.pop()
-            found = False
-            for aggMap in aggDstMap:
-                if set(dMap['Destination']) == set(aggMap['Destination']):
-                    # Check if the two objects are not references to one and the
-                    # same object. Only then copy the values of the dMap,
-                    # otherwise we will enter an endless cycle.
-                    if dMap is not aggMap:
-                        for i in dMap['Datasets']:
-                            aggMap['Datasets'].append(i)
-                    found = True
-                    del dMap
-                    break
-            if not found:
-                aggDstMap.append(dMap)
-
-        # finally reassign the destination map with the aggregated one
-        destinationOutputMap = aggDstMap
-
-        wflowDstList = list(wflowDstSet)
-        updateDict['Destination'] = wflowDstList
-        updateDict['DestinationOutputMap'] = destinationOutputMap
         try:
-            msOutDoc.updateDoc(updateDict, throw=True)
+            msOutDoc.updateDoc({"OutputMap": updatedOutputMap}, throw=True)
         except Exception as ex:
             msg = "%s: Could not update the additional information for "
             msg += "'msOutDoc' with '_id': %s \n"
             msg += "Error: %s"
-            self.logger.exception(msg,
-                                  self.currThreadIdent,
-                                  msOutDoc['_id'],
-                                  str(ex))
+            self.logger.exception(msg, self.currThreadIdent, msOutDoc['_id'], str(ex))
         return msOutDoc
 
     def docUploader(self, msOutDoc, update=False, keys=None, stride=None):
@@ -862,13 +723,13 @@ class MSOutput(MSCore):
             if counter >= limit:
                 return
             try:
-                msOutDoc = MSOutputTemplate(mongoDoc)
+                msOutDoc = MSOutputTemplate(mongoDoc, producerDoc=False)
                 counter += 1
                 yield msOutDoc
             except Exception as ex:
-                msg = "Failed to create MSOutputTemplate object from mongo record: {}".format(mongoDoc)
-                msg += "Error message was: {}".format(str(ex))
-                self.logger.warning(msg)
+                msg = "Failed to create MSOutputTemplate object from mongo record: {}.".format(mongoDoc)
+                msg += " Error message was: {}".format(str(ex))
+                self.logger.exception(msg)
                 raise ex
         else:
             self.logger.info("Query: '%s' did not return any records from MongoDB", mQueryDict)

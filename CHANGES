@@ -1,3 +1,10 @@
+1.4.0.pre8 to 1.4.0.pre9:
+  - Update schema for MSOutput records with OutputMap; Updated MSOutput logic (Alan Malta Rodrigues) #9904
+  - remove deep parameter (Alan Malta Rodrigues) #9900
+  - Get block replicas info using the Rucio bulk API (Alan Malta Rodrigues) #9900
+  - MS: Update MSOutput record schema (Alan Malta Rodrigues) #9901
+
+
 1.4.0.pre7 to 1.4.0.pre8:
   - Single node dataset-level subscription for DQMHarvest workflows (Alan Malta Rodrigues) #9889
   - Rucio wrapper API to find where data is locked and available (Alan Malta Rodrigues) #9889

@@ -20,14 +20,6 @@ class MSOutputTemplate(dict):
     various fields in the object. So that we assure the uniformity of all documents.
     """
     # TODO:
-    #    To add an identifier parameter to __init__
-    #    to distinguish inbound from outbound documents.
-
-    # DONE:
-    #    to figure out how to pass params as dict not only kwargs so I can use
-    #    the same logic for both inbound and outbound documents
-
-    # TODO:
     #    to implement document mutex in a model similar to the one described here:
     #    https://stackoverflow.com/questions/32728670/mutex-with-mongodb
     #    ```
@@ -40,11 +32,15 @@ class MSOutputTemplate(dict):
     #    this may happen from outside or from the object itself. The former method
     #    keeps the document independent from the underlying Database technology
 
-    def __init__(self, doc=None, **kwargs):
+    def __init__(self, doc, **kwargs):
         super(MSOutputTemplate, self).__init__(**kwargs)
 
-        doc = doc or {}
-        self.required = ['_id', 'RequestName', 'CreationTime']
+        # producerDoc has to be used to label what is the source of our input document,
+        # such as:
+        #   True: we are passing a reqmgr2 request dictionary
+        #   False: we are passing an already formatted mongoDB record
+        self.producerDoc = kwargs.pop("producerDoc", True)
+        self.required = ['_id', 'RequestName', 'RequestType', 'CreationTime']
         self.allowEmpty = ['OutputDatasets']
         self.allowedStatus = ["pending", "done"]
 
@@ -60,8 +56,9 @@ class MSOutputTemplate(dict):
         # overwrite the equivalent parameter which was coming with the doc
         self._checkAttr(myDoc, update=True, throw=True, **kwargs)
 
-        if doc:
-            self._setCampMap(doc, myDoc)
+        if self.producerDoc:
+            # then it's a ReqMgr2 request dictionary. Call the setters
+            self._setOutputMap(doc, myDoc)
 
         # enforce a full check on the final document
         self._checkAttr(myDoc, update=False, throw=True, **myDoc)
@@ -69,8 +66,9 @@ class MSOutputTemplate(dict):
         # final validation:
         if self._checkValid(myDoc, throw=True):
             self.update(myDoc)
-        # finally, set whether it's Release Validation workflow or not
-        self._setRelVal(doc)
+        if self.producerDoc:
+            # finally, set whether it's Release Validation workflow or not
+            self._setRelVal(doc)
 
     def docSchema(self):
         """
@@ -88,44 +86,63 @@ class MSOutputTemplate(dict):
             "CreationTime": integer timestamp,
             "LastUpdate": integer timestamp,
             "IsRelVal": (True|False),
-            "Destination": ["list of locations"],
             "OutputDatasets": ["list of output datasets"],
-            "DestinationOutputMap": [{"Destination": ["list of locations"],
-                                      "Datasets": ["list of datasets"]},
-                                     {"Destination": ["list of locations"],
-                                      "Datasets": ["list of datasets"]}],
-            "CampaignOutputMap": [{"CampaignName": "blah",
-                                   "Datasets": ["list of datasets"]},
-                                  {"CampaignName": "blah",
-                                   "Datasets": ["list of datasets"]}],
-            "TransferOutputMap": [{"TransferID": "rucio rule id",
-                                   "TransferType": "disk",
-                                   "DatasetName": "dataset name"},
-                                  {"TransferID": "rucio rule id",
-                                   "TransferType": "tape",
-                                   "DatasetName": "dataset name"},],
-            "TransferStatus": "pending"|"done,
-            "TransferIDs": ["list of transfer IDs"],
-            "NumberOfCopies": integer
+            "OutputMap": [{'Campaign': 'campaign name',
+                           'Dataset': 'output dataset name',
+                           'Copies': 1,
+                           'DiskDestination': "",
+                           'TapeDestination': "",
+                           'DiskRuleID': "",
+                           'TapeRuleID': ""},
+                          {'Campaign': 'another (or the same) campaign name',
+                           'Dataset': 'another output dataset name',
+                           'Copies': 1,
+                           ...}],
+                    "TransferStatus": "pending"|"done,
+            "RequestType": ""
             }
         :return: a list of tuples
         """
         docTemplate = [
             ('_id', None, (str, unicode)),
             ('RequestName', None, (str, unicode)),
+            ('RequestType', "", (str, unicode)),
             ('Campaign', [], (str, unicode)),
             ('CreationTime', int(time()), int),
             ('LastUpdate', None, int),
             ('IsRelVal', False, bool),
             ('OutputDatasets', [], list),
-            ('Destination', [], list),
-            ('DestinationOutputMap', [], list),
-            ('CampaignOutputMap', [], list),
-            ('TransferOutputMap', [], list),
-            ('TransferStatus', "pending", (str, unicode)),
-            ('TransferIDs', [], list),
-            ('NumberOfCopies', 1, int)]
+            ('OutputMap', [], list),
+            ('TransferStatus', "pending", (str, unicode))]
         return docTemplate
+
+    def outputMapSchema(self):
+        """
+        Return the data schema for the OutputMap attribute in the MongoDB record.
+        It's a tuple where:
+        * 1st element: is the key name / attribute name
+        * 2nd element: is the default value
+        * 3rd element: is the expected data type
+
+        Template format:
+            {'Campaign': u'RunIIAutumn18DRPremix',
+             'Dataset': u'/Pseudoscalar2HDM_MonoZLL_mScan_mH-500_ma-300/DMWM-TC_PreMix_khurtado_TC_PreMix-v11/AODSIM',
+             'Copies': 1,
+             'DiskDestination': "",
+             'TapeDestination': "",
+             'DiskRuleID': "",
+             'TapeRuleID': ""}
+        :return: a list of tuples
+        """
+        outMapTemplate = [
+            ('Campaign', "", (str, unicode)),
+            ('Dataset', "", (str, unicode)),
+            ('Copies', 1, int),
+            ('DiskDestination', "", (str, unicode)),
+            ('TapeDestination', "", (str, unicode)),
+            ('DiskRuleID', "", (str, unicode)),
+            ('TapeRuleID', "", (str, unicode))]
+        return outMapTemplate
 
     def _checkAttr(self, myDoc, update=False, throw=False, **kwargs):
         """
@@ -247,20 +264,16 @@ class MSOutputTemplate(dict):
             return True
         return False
 
-    def _setCampMap(self, reqDoc, thisDoc):
+    def _getCampMap(self, reqDoc):
         """
-        Provided the request content retrieved from ReqMgr2, build a map
-        of output dataset per campaign.
-        :param reqDoc: meant to be the request dictionary retrieved from ReqMgr2
-        :param thisDoc: meant to be a template msoutput object
+        Parse the request dictionary and creates a map of output datasets and the
+        campaign name they are associated to.
+        :param reqDoc: a request dictionary retrieved from ReqMgr2
+        :return: a dictionary like
+        {"campaign_name_A": ["dataset_A", "dataset_B"],
+         "campaign_name_B": ["dataset_C"]}
         """
-        # first, check whether we are loading a document from MongoDB or CouchDB
-        if "RequestType" not in reqDoc:
-            # then no mapping needs to be created
-            return True
-
         campOutputMap = {}
-        finalMap = []
         if reqDoc["RequestType"] in ["StepChain", "TaskChain"] and "ChainParentageMap" in reqDoc:
             for key in reqDoc["ChainParentageMap"]:
                 # key is Step1, Step2 or Task1, Task2, etc
@@ -271,22 +284,29 @@ class MSOutputTemplate(dict):
                 campName = reqDoc[key].get("Campaign", reqDoc.get("Campaign"))
                 campOutputMap.setdefault(campName, [])
                 campOutputMap[campName].extend(reqDoc["ChainParentageMap"][key]["ChildDsets"])
-            # now just write the final data structure out
-            for campName, dsetList in campOutputMap.items():
-                finalMap.append(dict(CampaignName=campName, Datasets=dsetList))
         else:
-            # ReReco and StoreResults (or very old - <=2018 - non-archived workflows)
-            finalMap.append(dict(CampaignName=reqDoc["Campaign"], Datasets=reqDoc["OutputDatasets"]))
+            campOutputMap[reqDoc["Campaign"]] = reqDoc["OutputDatasets"]
+        return campOutputMap
 
+    def _setOutputMap(self, reqDoc, thisDoc):
+        """
+        Provided the request content retrieved from ReqMgr2, build the parameters
+        associated to every output dataset, including the campaign name.
+        :param reqDoc: meant to be the request dictionary retrieved from ReqMgr2
+        :param thisDoc: meant to be a template msoutput object
+        """
+        outputMap = []
+        campaignMap = self._getCampMap(reqDoc)
+        for camp, dsets in campaignMap.viewitems():
+            for outDset in dsets:
+                dsetMap = {tuple[0]:tuple[1] for tuple in self.outputMapSchema()}
+                dsetMap['Campaign'] = camp
+                dsetMap['Dataset'] = outDset
+                outputMap.append(dsetMap)
+
+        ### FIXME: need to validate the final output map values
         # finally, update this object
-        thisDoc["CampaignOutputMap"] = finalMap
-        return True
-
-    def setDestMap(self):
-        """
-        __setDestMap__
-        """
-        pass
+        thisDoc["OutputMap"] = outputMap
 
     def updateTime(self):
         """

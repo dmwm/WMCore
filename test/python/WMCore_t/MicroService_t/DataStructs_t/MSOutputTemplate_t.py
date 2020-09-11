@@ -5,7 +5,6 @@ from __future__ import division, print_function
 
 import unittest
 from copy import deepcopy
-from pprint import pprint
 
 from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
 
@@ -59,133 +58,132 @@ class MSOutputTemplateTest(unittest.TestCase):
 
     mongoDoc = {"_id": "any-mongo-doc-id",
                 "RequestName": "mongo-doc-name",
+                "RequestType": "mongo-doc-type",
                 "Campaign": "top-campaign",
                 "CreationTime": 123,
                 "LastUpdate": 123456,
                 "IsRelVal": False,
                 "OutputDatasets": ["output-dataset-1", "output-dataset-2"],
-                "Destination": ["Site_1", "Site_2"],
-                "DestinationOutputMap": [{"Destination": ["Site_1"],
-                                          "Datasets": ["output-dataset-1"]},
-                                         {"Destination": ["Site_2"],
-                                          "Datasets": ["output-dataset-2"]}],
-                "CampaignOutputMap": [{"CampaignName": "top-campaign",
-                                       "Datasets": ["output-dataset-1", "output-dataset-2"]}],
-                "TransferOutputMap": [{"TransferID": "xxx",
-                                       "TransferType": "disk",
-                                       "DatasetName": "output-dataset-1"},
-                                      {"TransferID": "yyy",
-                                       "TransferType": "tape",
-                                       "DatasetName": "output-dataset-2"}],
-                "TransferStatus": "pending",  # either "pending" or "done",
-                "TransferIDs": ["123456"],
-                "NumberOfCopies": 1
+                "OutputMap": [{'Campaign': 'campaign-1',
+                               'Dataset': 'output-dataset-1',
+                               'Copies': 1,
+                               'DiskDestination': "",
+                               'TapeDestination': "",
+                               'DiskRuleID': "",
+                               'TapeRuleID': ""},
+                              {'Campaign': 'campaign-2',
+                               'Dataset': 'output-dataset-2',
+                               'Copies': 0,
+                               'DiskDestination': "",
+                               'TapeDestination': "",
+                               'DiskRuleID': "",
+                               'TapeRuleID': ""}],
+                "TransferStatus": "pending"
                 }
+
+    outputMapKeys = ["Campaign", "Copies", "Dataset", "DiskDestination", "DiskRuleID",
+                     "TapeDestination", "TapeRuleID"]
 
     def testTaskChainSpec(self):
         """
         Test creating a MSOutputTemplate object out of a TaskChain request dictionary
         """
         msOutDoc = MSOutputTemplate(self.taskchainSpec)
-        for key in ["Destination", "DestinationOutputMap", "TransferIDs", "TransferOutputMap"]:
-            self.assertEqual(msOutDoc[key], [])
-        pprint(msOutDoc)
 
         self.assertTrue(msOutDoc["CreationTime"] > 0)
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
-        self.assertEqual(msOutDoc["NumberOfCopies"], 1)
         self.assertEqual(msOutDoc["Campaign"], self.taskchainSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.taskchainSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.taskchainSpec["RequestName"])
+        self.assertEqual(msOutDoc["RequestType"], self.taskchainSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.taskchainSpec["_id"])
-        self.assertEqual(len(msOutDoc["CampaignOutputMap"]), 2)
+        self.assertEqual(len(msOutDoc["OutputMap"]), 2)
+        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
         for idx in range(2):
-            if msOutDoc["CampaignOutputMap"][idx]["CampaignName"] == self.taskchainSpec["Task1"]["Campaign"]:
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["Datasets"], ["output-dataset-1"])
+            if msOutDoc["OutputMap"][idx]["Campaign"] == self.taskchainSpec["Task1"]["Campaign"]:
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-1")
             else:
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["CampaignName"],
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Campaign"],
                                  self.taskchainSpec["Task2"]["Campaign"])
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["Datasets"], ["output-dataset-2"])
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-2")
+            self.assertEqual(msOutDoc["OutputMap"][idx]["Copies"], 1)
+            self.assertEqual(msOutDoc["OutputMap"][idx]["DiskDestination"], "")
+            self.assertEqual(msOutDoc["OutputMap"][idx]["DiskRuleID"], "")
+            self.assertEqual(msOutDoc["OutputMap"][idx]["TapeDestination"], "")
+            self.assertEqual(msOutDoc["OutputMap"][idx]["TapeRuleID"], "")
 
     def testStepChainSpec(self):
         """
         Test creating a MSOutputTemplate object out of a StepChain request dictionary
         """
         msOutDoc = MSOutputTemplate(self.stepchainSpec)
-        for key in ["Destination", "DestinationOutputMap", "TransferIDs", "TransferOutputMap"]:
-            self.assertEqual(msOutDoc[key], [])
-        pprint(msOutDoc)
 
         self.assertTrue(msOutDoc["CreationTime"] > 0)
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
-        self.assertEqual(msOutDoc["NumberOfCopies"], 1)
         self.assertEqual(msOutDoc["Campaign"], self.stepchainSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.stepchainSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.stepchainSpec["RequestName"])
+        self.assertEqual(msOutDoc["RequestType"], self.stepchainSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.stepchainSpec["_id"])
-        self.assertEqual(len(msOutDoc["CampaignOutputMap"]), 2)
+        self.assertEqual(len(msOutDoc["OutputMap"]), 2)
+        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
         for idx in range(2):
-            if msOutDoc["CampaignOutputMap"][idx]["CampaignName"] == self.stepchainSpec["Step1"]["Campaign"]:
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["Datasets"], ["output-dataset-1"])
+            if msOutDoc["OutputMap"][idx]["Campaign"] == self.stepchainSpec["Step1"]["Campaign"]:
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-1")
             else:
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["CampaignName"],
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Campaign"],
                                  self.stepchainSpec["Step2"]["Campaign"])
-                self.assertEqual(msOutDoc["CampaignOutputMap"][idx]["Datasets"], ["output-dataset-2"])
-        self.assertTrue(msOutDoc["CreationTime"] > 0)
+                self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-2")
 
     def testReRecoSpec(self):
         """
         Test creating a MSOutputTemplate object out of a ReReco request dictionary
         """
         msOutDoc = MSOutputTemplate(self.rerecoSpec)
-        for key in ["Destination", "DestinationOutputMap", "TransferIDs", "TransferOutputMap"]:
-            self.assertEqual(msOutDoc[key], [])
-        pprint(msOutDoc)
 
         self.assertTrue(msOutDoc["CreationTime"] > 0)
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
-        self.assertEqual(msOutDoc["NumberOfCopies"], 1)
         self.assertEqual(msOutDoc["Campaign"], self.rerecoSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.rerecoSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.rerecoSpec["RequestName"])
+        self.assertEqual(msOutDoc["RequestType"], self.rerecoSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.rerecoSpec["_id"])
-        self.assertEqual(len(msOutDoc["CampaignOutputMap"]), 1)
-        self.assertEqual(msOutDoc["CampaignOutputMap"][0]["CampaignName"], self.rerecoSpec["Campaign"])
-        self.assertItemsEqual(msOutDoc["CampaignOutputMap"][0]["Datasets"], self.rerecoSpec["OutputDatasets"])
-        self.assertTrue(msOutDoc["CreationTime"] > 0)
+        self.assertEqual(len(msOutDoc["OutputMap"]), 2)
+        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
+        self.assertEqual(msOutDoc["OutputMap"][0]["Campaign"], self.rerecoSpec["Campaign"])
+        self.assertEqual(msOutDoc["OutputMap"][1]["Campaign"], self.rerecoSpec["Campaign"])
+        self.assertItemsEqual([msOutDoc["OutputMap"][0]["Dataset"], msOutDoc["OutputMap"][1]["Dataset"]],
+                              self.rerecoSpec["OutputDatasets"])
 
     def testMongoDoc(self):
         """
         Test creating a MSOutputTemplate object out of a MongoDB record
         """
-        msOutDoc = MSOutputTemplate(self.mongoDoc)
-        pprint(msOutDoc)
+        msOutDoc = MSOutputTemplate(self.mongoDoc, producerDoc=False)
         self.assertFalse(msOutDoc["IsRelVal"])
 
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
         self.assertEqual(msOutDoc["CreationTime"], self.mongoDoc["CreationTime"])
         self.assertEqual(msOutDoc["LastUpdate"], self.mongoDoc["LastUpdate"])
-        self.assertEqual(msOutDoc["NumberOfCopies"], self.mongoDoc["NumberOfCopies"])
-        self.assertItemsEqual(msOutDoc["TransferIDs"], self.mongoDoc["TransferIDs"])
 
         self.assertEqual(msOutDoc["Campaign"], self.mongoDoc["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.mongoDoc["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.mongoDoc["RequestName"])
+        self.assertEqual(msOutDoc["RequestType"], self.mongoDoc["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.mongoDoc["_id"])
-        self.assertItemsEqual(msOutDoc["Destination"], self.mongoDoc["Destination"])
-        self.assertItemsEqual(msOutDoc["DestinationOutputMap"], self.mongoDoc["DestinationOutputMap"])
-        self.assertItemsEqual(msOutDoc["CampaignOutputMap"], self.mongoDoc["CampaignOutputMap"])
-        self.assertItemsEqual(msOutDoc["TransferOutputMap"], self.mongoDoc["TransferOutputMap"])
+        self.assertEqual(len(msOutDoc["OutputMap"]), 2)
+        self.assertItemsEqual([msOutDoc["OutputMap"][0]["Dataset"], msOutDoc["OutputMap"][1]["Dataset"]],
+                              self.mongoDoc["OutputDatasets"])
 
         newDoc = deepcopy(self.mongoDoc)
         newDoc.update({"IsRelVal": True, "TransferStatus": "done", "LastUpdate": 333})
-        msOutDoc = MSOutputTemplate(newDoc)
+        msOutDoc = MSOutputTemplate(newDoc, producerDoc=False)
         self.assertTrue(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "done")
         self.assertEqual(msOutDoc["LastUpdate"], 333)
@@ -203,9 +201,8 @@ class MSOutputTemplateTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             msOutDoc.setKey("alan", True)
 
-        self.assertItemsEqual(msOutDoc["Destination"], ["Site_1", "Site_2"])
-        msOutDoc.updateDoc({"Destination": [], "LastUpdate": 444})
-        self.assertItemsEqual(msOutDoc["Destination"], [])
+        msOutDoc.updateDoc({"IsRelVal": False, "LastUpdate": 444})
+        self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["LastUpdate"], 444)
 
         msOutDoc.updateTime()

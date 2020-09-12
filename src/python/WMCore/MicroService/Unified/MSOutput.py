@@ -9,18 +9,19 @@ the Output data placement in WMCore MicroServices.
 from __future__ import division, print_function
 
 # system modules
+from http.client import HTTPException
 from pymongo import IndexModel, ReturnDocument, errors
 from pprint import pformat
 from threading import current_thread
 from retry import retry
 
 # WMCore modules
-from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_PRODUCER_REPORT
-from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_CONSUMER_REPORT
+from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
 from WMCore.Services.CRIC.CRIC import CRIC
 from Utils.EmailAlert import EmailAlert
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
@@ -124,8 +125,8 @@ class MSOutput(MSCore):
         Fetch some data required for the output logic, e.g.:
         * unified configuration
         """
-        self.logger.info("Updating local cache information.")
-        self.logger.info("Request names cache size: %s", len(self.requestNamesCached))
+        self.logger.info("%s: Updating local cache information.", self.currThreadIdent)
+        self.logger.info("%s: Request names cache size: %s", self.currThreadIdent, len(self.requestNamesCached))
 
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
@@ -144,54 +145,15 @@ class MSOutput(MSCore):
 
     def execute(self, reqStatus):
         """
-        Executes the whole output data placement logic
-        :return: summary
+        Executes the whole output data placement logic. However, updating the
+        local caches is a requirement to proceed with the rest of the execution.
+        :return: summary report for an execution cycle
         """
+        summary = dict(OUTPUT_REPORT)
 
-        # start threads in MSManager which should call this method
-        # NOTE:
-        #    Here we should make the whole logic - like:
-        #    * Calling the system to fetch the workflows from;
-        #    * Creating the workflow objects;
-        #    * Pushing them into the back end database system we choose for bookkeeping
-        #    * Updating their status in that system, both MsStatus (subscribed,
-        #      processing, etc.) and also the Reqmgr status
-        #    * Associate and keep track of the requestID/subscriptionID/ruleID
-        #      returned by the Data Management System and the workflow
-        #      object (through the bookkeeping machinery we choose/develop)
         self.currThread = current_thread()
-        self.currThreadIdent = "%s" % self.currThread.name
-
-        if self.mode == 'MSOutputProducer':
-            summary = self._executeProducer(reqStatus)
-
-        elif self.mode == 'MSOutputConsumer':
-            summary = self._executeConsumer()
-
-        else:
-            msg = "MSOutput is running in unsupported mode: %s\n" % self.mode
-            msg += "Skipping the current run!"
-            self.logger.warning(msg)
-
-        return summary
-
-    def _executeProducer(self, reqStatus):
-        """
-        The function to update caches and to execute the Producer function itself
-        """
-        summary = dict(OUTPUT_PRODUCER_REPORT)
+        self.currThreadIdent = self.currThread.name
         self.updateReportDict(summary, "thread_id", self.currThreadIdent)
-        msg = "{}: MSOutput is running in mode: {}".format(self.currThreadIdent, self.mode)
-        self.logger.info(msg)
-
-        try:
-            requestRecords = {}
-            for status in reqStatus:
-                requestRecords.update(self.getRequestRecords(status))
-        except Exception as err:  # general error
-            msg = "{}: Unknown exception while fetching requests from ReqMgr2. ".format(self.currThreadIdent)
-            msg += "Error: {}".format(str(err))
-            self.logger.exception(msg)
 
         try:
             self.updateCaches()
@@ -209,6 +171,37 @@ class MSOutput(MSCore):
             self.updateReportDict(summary, "error", msg)
             return summary
 
+        if self.mode == 'MSOutputProducer':
+            self._executeProducer(reqStatus, summary)
+
+        elif self.mode == 'MSOutputConsumer':
+            self._executeConsumer(summary)
+
+        else:
+            msg = "MSOutput is running in unsupported mode: %s\n" % self.mode
+            msg += "Skipping the current run!"
+            self.logger.warning(msg)
+            self.updateReportDict(summary, "error", msg)
+
+        return summary
+
+    def _executeProducer(self, reqStatus, summary):
+        """
+        The function to update caches and to execute the Producer function itself
+        :param summary: dictionary with some high level summary for this cycle execution
+        """
+        msg = "{}: MSOutput is running in mode: {}".format(self.currThreadIdent, self.mode)
+        self.logger.info(msg)
+
+        try:
+            requestRecords = {}
+            for status in reqStatus:
+                requestRecords.update(self.getRequestRecords(status))
+        except Exception as err:  # general error
+            msg = "{}: Unknown exception while fetching requests from ReqMgr2. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(err))
+            self.logger.exception(msg)
+
         try:
             total_num_requests = self.msOutputProducer(requestRecords)
             msg = "{}: Total {} requests processed from the streamer. ".format(self.currThreadIdent,
@@ -221,15 +214,11 @@ class MSOutput(MSCore):
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
-        return summary
-
-    def _executeConsumer(self):
+    def _executeConsumer(self, summary):
         """
-        The function to execute the Consumer function itslef
+        The function to execute the Consumer function itself
+        :param summary: dictionary with some high level summary for this cycle execution
         """
-
-        summary = dict(OUTPUT_CONSUMER_REPORT)
-        self.updateReportDict(summary, "thread_id", self.currThreadIdent)
         msg = "{}: MSOutput is running in mode: {} ".format(self.currThreadIdent, self.mode)
         self.logger.info(msg)
         msg = "{}: Service set to process up to {} requests ".format(self.currThreadIdent,
@@ -254,14 +243,12 @@ class MSOutput(MSCore):
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
-        return summary
-
     def makeSubscriptions(self, workflow):
         """
         The common function to make the final subscriptions. It depends on the
         default Data Management System configured through msConfig. Based on that
         The relevant service wrapper is called.
-        :return: A list of results from the REST interface of the DMS in question
+        :return: the MSOutputTemplate object itself (with the necessary updates in place)
         """
         if not isinstance(workflow, MSOutputTemplate):
             msg = "Unsupported type object '{}' for workflows! ".format(type(workflow))
@@ -301,11 +288,8 @@ class MSOutput(MSCore):
 
                 # overwrite the current DiskDestination by something that will work for DDM
                 if workflow['IsRelVal']:
-                    # Alan does not like it, but we have what we have...
-                    destination = dMap['DiskDestination'].replace("&cms_type=real&rse_type=DISK", "")
-                    destination = destination.replace("(", "")
-                    destination = destination.replace(")", "")
-                    destination = destination.split("|")
+                    # destination is currently expressed as an RSE expression, convert it to a list
+                    destination = dMap['DiskDestination'].split("|")
                 else:
                     destination = ['T1_*_Disk', 'T2_*']
 
@@ -326,7 +310,7 @@ class MSOutput(MSCore):
                     msg = "DRY-RUN DDM: skipping subscription for: {}".format(ddmRequest)
                     self.logger.info(msg)
                 elif 'data' in resp:
-                    self.logger.debug("DDM response: {}".format(resp))
+                    self.logger.debug("DDM response: %s", resp)
                     transferId = resp['data'][0]['request_id']
                     dMap['DiskRuleID'] = str(transferId)
                 else:
@@ -371,7 +355,7 @@ class MSOutput(MSCore):
                         msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
                                                                                        dMap['DiskDestination'],
                                                                                        ruleAttrs['account'])
-                        self.logger.error(msg)
+                        self.logger.critical(msg)
                         return workflow
                 else:
                     msg = "DRY-RUN RUCIO: skipping rule creation for DID: {}, ".format(dMap['Dataset'])
@@ -383,11 +367,11 @@ class MSOutput(MSCore):
         self.docKeyUpdate(workflow, OutputMap=workflow['OutputMap'])
         workflow.updateTime()
         if transferStatus == "done":
-            self.logger.info("All the transfer requests succeeded for: %s. Marking it as 'done'",
+            self.logger.info("All the disk requests succeeded for: %s. Marking it as 'done'",
                              workflow['RequestName'])
             self.docKeyUpdate(workflow, TransferStatus='done')
         else:
-            self.logger.info("Transfer requests partially successful for: %s. Keeping it 'pending'",
+            self.logger.info("Disk requests partially successful for: %s. Keeping it 'pending'",
                              workflow['RequestName'])
 
         # NOTE:
@@ -396,6 +380,127 @@ class MSOutput(MSCore):
         #    for the transfer as it will be passed to the next function in
         #    the pipeline and uploaded to MongoDB
         return workflow
+
+    def makeTapeSubscriptions(self, workflow):
+        """
+        Makes the output data placement to the Tape endpoints. It works either with
+        PhEDEx or with Rucio, configurable. It also relies on the Unified configuration
+        to decide whether a given datatier can go to tape, and where it can be auto-approved.
+        :param workflow: a MSOutputTemplate object representing a workflow
+        :return: the MSOutputTemplate object itself (with the necessary updates in place)
+        """
+        # if anything fails along the way, set it back to "pending"
+        transferStatus = "done"
+        # this RSE name will be used for all output datasets to be subscribed
+        # within this workflow
+        tapeRSE = self._getTapeDestination()
+        for dMap in workflow['OutputMap']:
+            if not self.canDatasetGoToTape(dMap, workflow):
+                continue
+
+            # this RSE name will be used for all output datasets to be subscribed
+            # within this workflow
+            dMap['TapeDestination'] = tapeRSE
+            if not self.msConfig.get('useRucio', False):
+                phedexGroup = "RelVal" if workflow['IsRelVal'] else "DataOps"
+                subscription = PhEDExSubscription(datasetPathList=dMap['Dataset'],
+                                                  nodeList=dMap['TapeDestination'],
+                                                  group=phedexGroup,
+                                                  level="dataset",
+                                                  custodial="y",
+                                                  priority="low",
+                                                  request_only="y",  # FIXME: auto-approve when possible?
+                                                  comments="WMCore MSOutput output data placement")
+                msg = "Creating PhEDEx TAPE subscription for dataset: {}, ".format(dMap['Dataset'])
+                msg += "group: {} and RSE: {}".format(phedexGroup, dMap['TapeDestination'])
+                self.logger.info(msg)
+                if self.msConfig['enableDataPlacement']:
+                    try:
+                        resp = self.phedex.subscribe(subscription)
+                    except HTTPException as ex:
+                        msg = "Subscription failed for workflow: {} and dataset: {}".format(workflow["RequestName"],
+                                                                                            dMap['Dataset'])
+                        if ex.status == 400 and "request matched no data in TMDB" in ex.reason:
+                            msg += " because data cannot be found in TMDB. Bypassing this dataset..."
+                            self.logger.warning(msg)
+                        else:
+                            msg += " with status code: {} and result: {}. ".format(ex.status, ex.result)
+                            msg += "It will be retried in the next cycle"
+                            self.logger.error(msg)
+                            transferStatus = "pending"
+                    except Exception as ex:
+                        msg = "Unknown exception while subscribing data for workflow: {} ".format(workflow["RequestName"])
+                        msg += "and dataset: {}. Will retry again later. Error details: {}".format(dMap['Dataset'], str(ex))
+                        self.logger.exception(msg)
+                        transferStatus = "pending"
+                    else:
+                        dMap['TapeRuleID'] = resp['phedex']['request_created'][0]['id']
+                else:
+                    msg = "DRY-RUN PHEDEX: skipping tape subscription for: {}".format(subscription)
+                    self.logger.info(msg)
+            # then it's Rucio
+            else:
+                ruleAttrs = {'activity': 'Production Output',
+                             'account': self.msConfig['rucioAccount'],
+                             'copies': 1,
+                             'grouping': "ALL",
+                             'comment': 'WMCore MSOutput output data placement'}
+                msg = "Creating Rucio TAPE rule for container: {} and RSE: {}".format(dMap['Dataset'],
+                                                                                      dMap['TapeDestination'])
+                self.logger.info(msg)
+
+                if self.msConfig['enableDataPlacement']:
+                    resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['TapeDestination'], **ruleAttrs)
+                    if not resp:
+                        # then the call failed
+                        transferStatus = "pending"
+                    elif len(resp) == 1:
+                        dMap['TapeRuleID'] = resp[0]
+                    elif len(resp) > 1:
+                        msg = "Tape rule creation returned multiple rule IDs and it needs to be investigated!!! "
+                        msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
+                                                                                       dMap['TapeDestination'],
+                                                                                       ruleAttrs['account'])
+                        self.logger.critical(msg)
+                        return workflow
+                else:
+                    msg = "DRY-RUN RUCIO: skipping tape rule creation for DID: {}, ".format(dMap['Dataset'])
+                    msg += "rseExpr: {} and standard parameters: {}".format(dMap['TapeDestination'], ruleAttrs)
+                    self.logger.info(msg)
+
+        # Finally, update the MSOutput template document with either partial or
+        # complete transfer ids
+        self.docKeyUpdate(workflow, OutputMap=workflow['OutputMap'])
+        workflow.updateTime()
+        # NOTE: updating the TransferStatus at this stage is a bit trickier, we
+        # cannot bypass bad disk data placements!
+        if transferStatus == "done" and workflow['TransferStatus'] == "done":
+            self.logger.info("All the tape requests succeeded for: %s. Marking it as 'done'",
+                             workflow['RequestName'])
+        elif transferStatus == "done" and workflow['TransferStatus'] == "pending":
+            self.logger.info("All the tape requests succeeded for: %s, but disk ones are still pending",
+                             workflow['RequestName'])
+        elif transferStatus == "pending" and workflow['TransferStatus'] == "done":
+            self.logger.info("Tape requests partially successful for: %s. Marking it as 'pending'",
+                             workflow['RequestName'])
+            self.docKeyUpdate(workflow, TransferStatus='pending')
+        else:
+            self.logger.info("Tape requests partially successful for: %s. Keeping it as 'pending'",
+                             workflow['RequestName'])
+
+        return workflow
+
+    def _getTapeDestination(self):
+        """
+        Depending on which Data Management system this service is configured
+        to use. Run a different procedure to find out which tape endpoint will
+        be selected as a destination for all the output datasets in a given workflow
+        :return: a string with the RSE name
+        """
+        # FIXME TODO FIXME: implement me!!!
+        if self.msConfig.get('useRucio'):
+            return "T1_US_FNAL_Tape"
+        return "T1_US_FNAL_MSS"
 
     def getRequestRecords(self, reqStatus):
         """
@@ -426,6 +531,7 @@ class MSOutput(MSCore):
         #    Done: To write back the updated document to MonogoDB
         msPipelineRelVal = Pipeline(name="MSOutputConsumer PipelineRelVal",
                                     funcLine=[Functor(self.makeSubscriptions),
+                                              Functor(self.makeTapeSubscriptions),
                                               Functor(self.docUploader,
                                                       update=True,
                                                       keys=['LastUpdate',
@@ -435,6 +541,7 @@ class MSOutput(MSCore):
                                               Functor(self.docCleaner)])
         msPipelineNonRelVal = Pipeline(name="MSOutputConsumer PipelineNonRelVal",
                                        funcLine=[Functor(self.makeSubscriptions),
+                                                 Functor(self.makeTapeSubscriptions),
                                                  Functor(self.docUploader,
                                                          update=True,
                                                          keys=['LastUpdate',
@@ -625,13 +732,7 @@ class MSOutput(MSCore):
                     destination.add('T2_CH_CERN')
 
                 if destination:
-                    # NOTE: This default rseExpression should resolve to something similar to:
-                    # (T2_CH_CERN|T1_US_FNAL_Disk)&cms_type=real&rse_type=DISK
-                    # where the first part is a Union of all destination sites and the second part
-                    # is a general constraint for those to be real entries (not `Test` or `Temp`)
-                    # and we also target only Disk endpoints
-                    rseUnion = '(' + '|'.join(destination) + ')'
-                    dataItem['DiskDestination'] = rseUnion + '&cms_type=real&rse_type=DISK'
+                    dataItem['DiskDestination'] = '|'.join(destination)
                 else:
                     self.logger.warning("RelVal dataset: %s without any destination", dataItem['Dataset'])
                     dataItem['Copies'] = 0
@@ -662,35 +763,35 @@ class MSOutput(MSCore):
             self.logger.exception(msg, self.currThreadIdent, msOutDoc['_id'], str(ex))
         return msOutDoc
 
-    def canDatasetGoToDisk(self, outputMap, isRelVal=False):
+    def canDatasetGoToDisk(self, dataItem, isRelVal=False):
         """
         This function evaluates whether a dataset can be passed to the
         Data Management system, considering the following configurations:
           1) list of blacklisted tiers in the MicroService configuration
           2) list of white listed tiers bypassing the Unified configuration
           3) list of black and white listed tiers in the Unified config
-        :param outputMap: output map dictionary present in the MongoDB record
+        :param dataItem: dictionary information for this dataset, from MongoDB record
         :param isRelVal: boolean flag identifying if dataset belongs to a RelVal request
         :return: True if the dataset is allowed to pass, False otherwise
         """
-        dataTier = outputMap['Dataset'].split('/')[-1]
+        dataTier = dataItem['Dataset'].split('/')[-1]
         if dataTier in self.msConfig['excludeDataTier']:
             self.logger.warning("Skipping dataset: %s because it's excluded in the MS configuration",
-                                outputMap['Dataset'])
+                                dataItem['Dataset'])
             return False
 
         try:
-            if dataTier in self.campaigns[outputMap['Campaign']]["TiersToDM"]:
+            if dataTier in self.campaigns[dataItem['Campaign']]["TiersToDM"]:
                 return True
         except KeyError:
             if isRelVal:
-                msg = "Campaign not found for RelVal dataset: {} ".format(outputMap['Dataset'])
-                msg += "under campaign: {}. Letting it pass though...".format(outputMap['Campaign'])
+                msg = "Campaign not found for RelVal dataset: {} ".format(dataItem['Dataset'])
+                msg += "under campaign: {}. Letting it pass though...".format(dataItem['Campaign'])
                 self.logger.warning(msg)
                 return True
-            emailSubject = "[MSOutput] Campaign '{}' not found in central CouchDB".format(outputMap['Campaign'])
-            emailMsg = "Dataset: {} cannot have an output transfer rule ".format(outputMap['Dataset'])
-            emailMsg += "because its campaign: {} cannot be found in central CouchDB".format(outputMap['Campaign'])
+            emailSubject = "[MSOutput] Campaign '{}' not found in central CouchDB".format(dataItem['Campaign'])
+            emailMsg = "Dataset: {} cannot have an output transfer rule ".format(dataItem['Dataset'])
+            emailMsg += "because its campaign: {} cannot be found in central CouchDB".format(dataItem['Campaign'])
             emailMsg += "In order to get output data placement working, add it ASAP please."
             self.logger.critical(emailMsg)
             self.emailAlert.send(emailSubject, emailMsg)
@@ -702,12 +803,49 @@ class MSOutput(MSCore):
             return False
         else:
             emailSubject = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
-            emailMsg = "Dataset: {} contains a datatier: {}".format(outputMap['Dataset'], dataTier)
+            emailMsg = "Dataset: {} contains a datatier: {}".format(dataItem['Dataset'], dataTier)
             emailMsg += " not yet inserted into Unified configuration."
             emailMsg += "Please add it ASAP. Letting it pass for now..."
             self.logger.critical(emailMsg)
             self.emailAlert.send(emailSubject, emailMsg)
             return True
+
+    def canDatasetGoToTape(self, dataItem, workflow):
+        """
+        This function evaluates whether a dataset can be passed to the
+        Data Management system, considering the following configurations:
+          1) list of blacklisted tiers in the MicroService configuration
+          2) list of white listed tiers bypassing the Unified configuration
+          3) list of black and white listed tiers in the Unified config
+        :param dataItem: output map dictionary present in the MongoDB record
+        :param workflow: MSOutputTemplate object retrieved from MongoDB
+        :return: True if the dataset is allowed to pass, False otherwise
+        """
+        # NOTE: Unified has a `tape_size_limit` parameter, to prevent automatic
+        # tape subscription for too large samples. We are not going to implement
+        # it - for the moment - at least.
+
+        if dataItem['TapeRuleID']:
+            msg = "Output dataset: {} from workflow: {} ".format(dataItem['Dataset'], workflow['RequestName'])
+            msg += " has been already subscribed to TAPE under request id: {}".format(dataItem['TapeRuleID'])
+            self.logger.info(msg)
+            return False
+
+        dataTier = dataItem['Dataset'].split('/')[-1]
+        if dataTier in self.msConfig['excludeDataTier']:
+            msg = "Skipping tape data placement for dataset: {} ".format(dataItem['Dataset'])
+            msg += "because it's been excluded in the MS configuration."
+            self.logger.warning(msg)
+            return False
+
+        if dataTier in self.uConfig['tiers_with_no_custodial']['value']:
+            msg = "Skipping tape data placement for dataset: {} ".format(dataItem['Dataset'])
+            msg += "because Unified configuration sets it not to go to tape."
+            self.logger.warning(msg)
+            return False
+
+        # if we are here, that means the dataset can proceed to tape
+        return True
 
     def docUploader(self, msOutDoc, update=False, keys=None, stride=None):
         """

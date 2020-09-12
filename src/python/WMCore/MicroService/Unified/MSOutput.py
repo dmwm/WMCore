@@ -589,6 +589,12 @@ class MSOutput(MSCore):
         self.logger.info("Producing MongoDB record for workflow: %s", msOutDoc["RequestName"])
         updatedOutputMap = []
         for dataItem in msOutDoc['OutputMap']:
+            if msOutDoc['RequestType'] == "Resubmission":
+                # make sure not to subscribe the same datasets multiple times, even
+                # worse, to different locations! Initial workflow will take care of everything!
+                dataItem['Copies'] = 0
+                updatedOutputMap.append(dataItem)
+                continue
             if not self.canDatasetGoToDisk(dataItem, msOutDoc['IsRelVal']):
                 # nope, this dataset cannot proceed to Disk!!
                 dataItem['Copies'] = 0

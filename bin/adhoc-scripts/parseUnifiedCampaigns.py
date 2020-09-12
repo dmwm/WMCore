@@ -28,7 +28,8 @@ where individual records have the following structure:
     "datasetB": ["list of sites for SiteWhitelist"]
  },
  "MaxCopies": integer,
- "PartialCopy": integer
+ "PartialCopy": integer,
+ "TiersToDM": ["datatiers blocked in unified configuration that can be passed to DDM"]
 }
 ```
 
@@ -201,6 +202,7 @@ def parse(istream, verbose=0):
         'SecondaryLocation': 'SecondaryLocation',
         'secondaries': 'Secondaries',
         'partial_copy': 'PartialCopy',
+        'toDDM': 'TiersToDM',
         'maxcopies': 'MaxCopies'}
     # campaign schema dict
     confRec = {
@@ -212,6 +214,7 @@ def parse(istream, verbose=0):
         'SecondaryLocation': [],
         'Secondaries': {},
         'PartialCopy': 1,
+        'TiersToDM': [],
         'MaxCopies': 1}
 
     if not isinstance(istream, list):
@@ -259,6 +262,7 @@ def upload(mgr, campRec):
     if not mgr:
         return
     campaign = campRec.get('CampaignName', '')
+    print("Inserting campaign record: %s" % json.dumps(campRec))
     if campaign:
         res = mgr.postCampaignConfig(campaign, campRec)
         print(res)
@@ -275,14 +279,16 @@ def insertTestCampaigns(mgr):
     if not mgr:
         return
 
-    defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1,
+    defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1, 'TiersToDM': [],
                    'PrimaryAAA': False, 'Secondaries': {}, 'SecondaryAAA': False,
                    'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
-    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
-                "Dec2019_Val", "Jan2020_Val", "Feb2020_Val", "Agent128_Val",
-                "Agent130_Val", "HG1912_Val", "HG2001_Val", "HG2002_Val")
+    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_10_6_1_patch1_Step1",  "CMSSW_10_6_1_patch1_Step2",
+                "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
+                "Sept2020_Val", "Oct2020_Val", "Nov2020_Val", "Dec2020_Val",
+                "Agent140_Val", "Agent142_Val", "Agent144_Val",
+                "HG2009_Val", "HG2010_Val", "HG2011_Val", "HG2012_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)
@@ -340,7 +346,6 @@ def main():
     output = []  # in case we want to dump all records to a json file
     for rec in process(data):
         output.append(rec)
-        print(json.dumps(rec))
         upload(mgr, rec)
     if opts.testcamp:
         insertTestCampaigns(mgr)

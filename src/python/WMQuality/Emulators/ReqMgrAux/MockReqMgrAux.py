@@ -28,6 +28,7 @@ class MockReqMgrAux(object):
                  "SecondaryLocation": ["T1", "T2"],
                  "Secondaries": {"datasetA": ["T1", "T2"], "datasetB": ["T1"]},
                  "MaxCopies": 2,
+                 "TiersToDM": [],
                  "PartialCopy": 1
                  }
         self.campaigns = [cdict]

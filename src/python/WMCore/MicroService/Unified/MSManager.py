@@ -27,6 +27,7 @@ from __future__ import division, print_function
 # system modules
 from time import sleep
 from datetime import datetime
+from collections import deque
 
 # WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
@@ -93,18 +94,24 @@ class MSManager(object):
         # initialize output module
         if 'output' in self.services:
             reqStatus = ['closed-out', 'announced']
+            # thread safe cache to keep the last X requests processed in MSOutput
+            requestNamesCached = deque(maxlen=self.msConfig.get("cacheRequestSize", 10000))
 
             thname = 'MSOutputConsumer'
-            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
+            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname,
+                                             reqCache=requestNamesCached, logger=self.logger)
+            # set the consumer to run twice faster than the producer
+            consumerInterval = self.msConfig['interval'] // 2
             self.outputConsumerThread = start_new_thread(thname, daemon,
                                                          (self.outputConsumer,
                                                           reqStatus,
-                                                          self.msConfig['interval'],
+                                                          consumerInterval,
                                                           self.logger))
             self.logger.info("=== Running %s thread %s", thname, self.outputConsumerThread.running())
 
             thname = 'MSOutputProducer'
-            self.msOutputProducer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
+            self.msOutputProducer = MSOutput(self.msConfig, mode=thname,
+                                             reqCache=requestNamesCached, logger=self.logger)
             self.outputProducerThread = start_new_thread(thname, daemon,
                                                          (self.outputProducer,
                                                           reqStatus,

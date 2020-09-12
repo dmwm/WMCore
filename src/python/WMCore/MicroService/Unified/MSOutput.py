@@ -11,7 +11,6 @@ from __future__ import division, print_function
 # system modules
 from pymongo import IndexModel, ReturnDocument, errors
 from pprint import pformat
-from socket import gethostname
 from threading import current_thread
 from retry import retry
 
@@ -67,7 +66,7 @@ class MSOutput(MSCore):
     in MicroServices.
     """
 
-    def __init__(self, msConfig, mode, logger=None):
+    def __init__(self, msConfig, mode, reqCache, logger=None):
         """
         Runs the basic setup and initialization for the MSOutput module
         :microConfig: microservice configuration
@@ -83,8 +82,6 @@ class MSOutput(MSCore):
 
         self.mode = mode
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
-        self.msConfig.setdefault("verbose", True)
-        self.msConfig.setdefault("interval", 600)
         self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
@@ -99,6 +96,8 @@ class MSOutput(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
+        # cache to store request names shared between the Producer and Consumer threads
+        self.requestNamesCached = reqCache
 
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
@@ -126,6 +125,8 @@ class MSOutput(MSCore):
         * unified configuration
         """
         self.logger.info("Updating local cache information.")
+        self.logger.info("Request names cache size: %s", len(self.requestNamesCached))
+
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
@@ -158,9 +159,7 @@ class MSOutput(MSCore):
         #    * Associate and keep track of the requestID/subscriptionID/ruleID
         #      returned by the Data Management System and the workflow
         #      object (through the bookkeeping machinery we choose/develop)
-        #self.currHost = gethostname()
         self.currThread = current_thread()
-        #self.currThreadIdent = "%s:%s@%s" % (self.currThread.name, self.currThread.ident, self.currHost)
         self.currThreadIdent = "%s" % self.currThread.name
 
         if self.mode == 'MSOutputProducer':
@@ -458,6 +457,8 @@ class MSOutput(MSCore):
                 #    To redefine those exceptions as MSoutputExceptions and
                 #    start using those here so we do not mix with general errors
                 try:
+                    # If it's in MongoDB, it can get into our in-memory cache
+                    self.requestNamesCached.append(docOut['RequestName'])
                     pipeLine.run(docOut)
                 except (KeyError, TypeError) as ex:
                     msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
@@ -512,6 +513,9 @@ class MSOutput(MSCore):
         #    To generate the object from within the Function scope see above.
         counter = 0
         for _, request in requestRecords.viewitems():
+            if request['RequestName'] in self.requestNamesCached:
+                # if it's cached, then it's already in MongoDB, no need to redo this thing!
+                continue
             counter += 1
             try:
                 pipeLineName = msPipeline.getPipelineName()
@@ -576,31 +580,31 @@ class MSOutput(MSCore):
 
     def docInfoUpdate(self, msOutDoc):
         """
-        Parses the request parameters (a mongoDB record not yet persisted) and finds
+        Parses the request parameters (a mongoDB record, not yet persisted) and finds
         out what are the disk destinations and how many copies of each dataset need to
         be made.
         :param msOutDoc: a MSOutput template object
         :return: nothing, the MSOutput template record is update in memory.
         """
+        self.logger.info("Producing MongoDB record for workflow: %s", msOutDoc["RequestName"])
         updatedOutputMap = []
         for dataItem in msOutDoc['OutputMap']:
-            _, dsn, procString, dataTier = dataItem['Dataset'].split('/')
-            if dataTier in self.msConfig['excludeDataTier']:
-                # msg = "%s: %s: "
-                # msg += "Data Tier: %s is blacklisted. "
-                # msg += "Skipping dataset placement for: %s:%s"
-                # self.logger.info(msg,
-                #                  self.currThreadIdent,
-                #                  pipeLine,
-                #                  dataTier,
-                #                  msOutDoc['RequestName'],
-                #                  dataset)
+            if not self.canDatasetGoToDisk(dataItem, msOutDoc['IsRelVal']):
+                # nope, this dataset cannot proceed to Disk!!
                 dataItem['Copies'] = 0
                 updatedOutputMap.append(dataItem)
                 continue
 
-            destination = set()
+            try:
+                dataItem['Copies'] = self.campaigns[dataItem['Campaign']]["MaxCopies"]
+            except KeyError:
+                # it can happen for RelVals, but canDatasetGoToDisk method above
+                # will already take the necessary action for non existent campaign
+                dataItem['Copies'] = 1
+
             if msOutDoc['IsRelVal']:
+                _, dsn, procString, dataTier = dataItem['Dataset'].split('/')
+                destination = set()
                 if dataTier != "RECO" and dataTier != "ALCARECO":
                     destination.add('T2_CH_CERN')
                 if dataTier == "GEN-SIM":
@@ -623,7 +627,7 @@ class MSOutput(MSCore):
                     rseUnion = '(' + '|'.join(destination) + ')'
                     dataItem['DiskDestination'] = rseUnion + '&cms_type=real&rse_type=DISK'
                 else:
-                    # then this dataset is not supposed to be locked on disk (why?!?!)
+                    self.logger.warning("RelVal dataset: %s without any destination", dataItem['Dataset'])
                     dataItem['Copies'] = 0
                     updatedOutputMap.append(dataItem)
                     continue
@@ -651,6 +655,53 @@ class MSOutput(MSCore):
             msg += "Error: %s"
             self.logger.exception(msg, self.currThreadIdent, msOutDoc['_id'], str(ex))
         return msOutDoc
+
+    def canDatasetGoToDisk(self, outputMap, isRelVal=False):
+        """
+        This function evaluates whether a dataset can be passed to the
+        Data Management system, considering the following configurations:
+          1) list of blacklisted tiers in the MicroService configuration
+          2) list of white listed tiers bypassing the Unified configuration
+          3) list of black and white listed tiers in the Unified config
+        :param outputMap: output map dictionary present in the MongoDB record
+        :param isRelVal: boolean flag identifying if dataset belongs to a RelVal request
+        :return: True if the dataset is allowed to pass, False otherwise
+        """
+        dataTier = outputMap['Dataset'].split('/')[-1]
+        if dataTier in self.msConfig['excludeDataTier']:
+            self.logger.warning("Skipping dataset: %s because it's excluded in the MS configuration",
+                                outputMap['Dataset'])
+            return False
+
+        try:
+            if dataTier in self.campaigns[outputMap['Campaign']]["TiersToDM"]:
+                return True
+        except KeyError:
+            if isRelVal:
+                msg = "Campaign not found for RelVal dataset: {} ".format(outputMap['Dataset'])
+                msg += "under campaign: {}. Letting it pass though...".format(outputMap['Campaign'])
+                self.logger.warning(msg)
+                return True
+            emailSubject = "[MSOutput] Campaign '{}' not found in central CouchDB".format(outputMap['Campaign'])
+            emailMsg = "Dataset: {} cannot have an output transfer rule ".format(outputMap['Dataset'])
+            emailMsg += "because its campaign: {} cannot be found in central CouchDB".format(outputMap['Campaign'])
+            emailMsg += "In order to get output data placement working, add it ASAP please."
+            self.logger.critical(emailMsg)
+            self.emailAlert.send(emailSubject, emailMsg)
+            raise
+
+        if dataTier in self.uConfig['tiers_to_DDM']['value']:
+            return True
+        elif dataTier in self.uConfig['tiers_no_DDM']['value']:
+            return False
+        else:
+            emailSubject = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
+            emailMsg = "Dataset: {} contains a datatier: {}".format(outputMap['Dataset'], dataTier)
+            emailMsg += " not yet inserted into Unified configuration."
+            emailMsg += "Please add it ASAP. Letting it pass for now..."
+            self.logger.critical(emailMsg)
+            self.emailAlert.send(emailSubject, emailMsg)
+            return True
 
     def docUploader(self, msOutDoc, update=False, keys=None, stride=None):
         """

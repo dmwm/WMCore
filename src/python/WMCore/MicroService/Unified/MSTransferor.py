@@ -534,6 +534,7 @@ class MSTransferor(MSCore):
                 dsetName = dataIn["name"]
                 campConfig = self.campaigns[dataIn['campaign']]
 
+                commonPsns = set()
                 # if the dataset has a location list, use solely that one
                 if campConfig['Secondaries'].get(dsetName, []):
                     commonPsns = set(psns) & set(campConfig['Secondaries'][dsetName])

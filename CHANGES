@@ -1,3 +1,12 @@
+1.4.0.pre9 to 1.4.0.pre10:
+  - MSOutput: PhEDEx/Rucio logic to decide which RSE to use for Tape transfers (Alan Malta Rodrigues) #9912
+  - MSOutput: support custodial/tape data placement (Alan Malta Rodrigues) #9911
+  - MSOutput: skip output data placement for Resubmission request type (Alan Malta Rodrigues) #9910
+  - Avoid failing MSTransferor cycle if Campaigns are misconfigured (Alan Malta Rodrigues) #9909
+  - Added TiersToDM parameter to the campaign configuration; dump of Unified campaigns (Alan Malta Rodrigues) #9906
+  - Evaluate whether dataset can be replicated through the DM system or not (Alan Malta Rodrigues) #9906
+
+
 1.4.0.pre8 to 1.4.0.pre9:
   - Update schema for MSOutput records with OutputMap; Updated MSOutput logic (Alan Malta Rodrigues) #9904
   - remove deep parameter (Alan Malta Rodrigues) #9900

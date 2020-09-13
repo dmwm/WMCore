@@ -18,8 +18,10 @@ from retry import retry
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.MicroService.Unified.Common import teraBytes
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
 from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.Rucio.Rucio import weightedChoice
 from Utils.EmailAlert import EmailAlert
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from Utils.Pipeline import Pipeline, Functor
@@ -100,6 +102,10 @@ class MSOutput(MSCore):
         # cache to store request names shared between the Producer and Consumer threads
         self.requestNamesCached = reqCache
 
+        self.tapeStatus = dict()
+        for endpoint, quota in self.msConfig['tapePledges'].viewitems():
+            self.tapeStatus[endpoint] = dict(quota=quota, usage=0, remaining=0)
+
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
             'database': 'msOutDB',
@@ -118,6 +124,7 @@ class MSOutput(MSCore):
             self.ddm = DDM(url=self.msConfig['ddmUrl'],
                            logger=self.logger,
                            enableDataPlacement=self.msConfig['enableDataPlacement'])
+
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -393,7 +400,7 @@ class MSOutput(MSCore):
         transferStatus = "done"
         # this RSE name will be used for all output datasets to be subscribed
         # within this workflow
-        tapeRSE = self._getTapeDestination()
+        tapeRSE, requiresApproval = self._getTapeDestination()
         for dMap in workflow['OutputMap']:
             if not self.canDatasetGoToTape(dMap, workflow):
                 continue
@@ -401,6 +408,7 @@ class MSOutput(MSCore):
             # this RSE name will be used for all output datasets to be subscribed
             # within this workflow
             dMap['TapeDestination'] = tapeRSE
+            requestOnly = "y" if requiresApproval else "n"
             if not self.msConfig.get('useRucio', False):
                 phedexGroup = "RelVal" if workflow['IsRelVal'] else "DataOps"
                 subscription = PhEDExSubscription(datasetPathList=dMap['Dataset'],
@@ -409,7 +417,7 @@ class MSOutput(MSCore):
                                                   level="dataset",
                                                   custodial="y",
                                                   priority="low",
-                                                  request_only="y",  # FIXME: auto-approve when possible?
+                                                  request_only=requestOnly,
                                                   comments="WMCore MSOutput output data placement")
                 msg = "Creating PhEDEx TAPE subscription for dataset: {}, ".format(dMap['Dataset'])
                 msg += "group: {} and RSE: {}".format(phedexGroup, dMap['TapeDestination'])
@@ -438,12 +446,13 @@ class MSOutput(MSCore):
                 else:
                     msg = "DRY-RUN PHEDEX: skipping tape subscription for: {}".format(subscription)
                     self.logger.info(msg)
-            # then it's Rucio
+            ####### then it's Rucio
             else:
                 ruleAttrs = {'activity': 'Production Output',
                              'account': self.msConfig['rucioAccount'],
                              'copies': 1,
                              'grouping': "ALL",
+                             'ask_approval': requiresApproval,
                              'comment': 'WMCore MSOutput output data placement'}
                 msg = "Creating Rucio TAPE rule for container: {} and RSE: {}".format(dMap['Dataset'],
                                                                                       dMap['TapeDestination'])
@@ -493,14 +502,30 @@ class MSOutput(MSCore):
     def _getTapeDestination(self):
         """
         Depending on which Data Management system this service is configured
-        to use. Run a different procedure to find out which tape endpoint will
-        be selected as a destination for all the output datasets in a given workflow
+        to use. Run a different procedure to find out which tape endpoint to
+        select as a destination for all the output datasets in a given workflow
         :return: a string with the RSE name
         """
-        # FIXME TODO FIXME: implement me!!!
         if self.msConfig.get('useRucio'):
-            return "T1_US_FNAL_Tape"
-        return "T1_US_FNAL_MSS"
+            # This API returns a tuple with the RSE name and whether it requires approval
+            return self.rucio.pickRSE()
+
+        # well, then it's PhEDEx
+        res = self.phedex.getGroupUsage(node=self.tapeStatus.keys(), group=self.msConfig['defaultGroup'])
+        if not res['phedex']['node']:
+            raise MSOutputException("Failed to fetch node/group usage from PhEDEx")
+
+        pnnsWithWeights = []
+        self.logger.info("Summary of the current MSS situation (in Terabytes):")
+        for item in res['phedex']['node']:
+            self.tapeStatus[item['name']]['usage'] = teraBytes(item['group'][0]['dest_bytes'])
+            self.tapeStatus[item['name']]['remaining'] = self.tapeStatus[item['name']]['quota'] - \
+                                                         self.tapeStatus[item['name']]['usage']
+            self.logger.info("\tPNN: %s\t\t%s", item['name'], self.tapeStatus[item['name']])
+            pnnsWithWeights.append((item['name'], self.tapeStatus[item['name']]['remaining']))
+        winnerPnn = weightedChoice(pnnsWithWeights)
+        requiresApproval = True if winnerPnn not in self.uConfig['sites_auto_approve']['value'] else False
+        return winnerPnn, requiresApproval
 
     def getRequestRecords(self, reqStatus):
         """

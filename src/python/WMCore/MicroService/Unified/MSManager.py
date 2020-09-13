@@ -168,14 +168,14 @@ class MSManager(object):
 
     def outputConsumer(self, reqStatus):
         """
-        MSManager Output Dataplacement function.
+        MSManager Output Data Placement function.
         It subscribes the output datasets to the Data Management System.
         For references see
         https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Output
         reqStatus: Status of requests to work on
         """
         startTime = datetime.utcnow()
-        self.logger.info("Starting the output thread...")
+        self.logger.info("Starting the outputConsumer thread...")
         res = self.msOutputConsumer.execute(reqStatus)
         endTime = datetime.utcnow()
         self.updateTimeUTC(res, startTime, endTime)
@@ -191,7 +191,7 @@ class MSManager(object):
         reqStatus: Status of requests to work on
         """
         startTime = datetime.utcnow()
-        self.logger.info("Starting the output thread...")
+        self.logger.info("Starting the outputProducer thread...")
         res = self.msOutputProducer.execute(reqStatus)
         endTime = datetime.utcnow()
         self.updateTimeUTC(res, startTime, endTime)

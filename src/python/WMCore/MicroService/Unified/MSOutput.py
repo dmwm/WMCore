@@ -18,7 +18,7 @@ from retry import retry
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.Common import teraBytes
+from WMCore.MicroService.Unified.Common import teraBytes, gigaBytes
 from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.Rucio.Rucio import weightedChoice
@@ -399,9 +399,13 @@ class MSOutput(MSCore):
         """
         # if anything fails along the way, set it back to "pending"
         transferStatus = "done"
+
         # this RSE name will be used for all output datasets to be subscribed
         # within this workflow
-        tapeRSE, requiresApproval = self._getTapeDestination()
+        dataBytesForTape = self._getDataVolumeForTape(workflow)
+        tapeRSE, requiresApproval = self._getTapeDestination(dataBytesForTape)
+        self.logger.info("Workflow: %s, total output size: %s GB, against RSE: %s",
+                         workflow['RequestName'], gigaBytes(dataBytesForTape), tapeRSE)
         for dMap in workflow['OutputMap']:
             if not self.canDatasetGoToTape(dMap, workflow):
                 continue
@@ -500,16 +504,17 @@ class MSOutput(MSCore):
 
         return workflow
 
-    def _getTapeDestination(self):
+    def _getTapeDestination(self, dataSize):
         """
         Depending on which Data Management system this service is configured
         to use. Run a different procedure to find out which tape endpoint to
         select as a destination for all the output datasets in a given workflow
+        :param dataSize: integer with the total amount of data to be transferred, in bytes
         :return: a string with the RSE name
         """
         if self.msConfig.get('useRucio'):
             # This API returns a tuple with the RSE name and whether it requires approval
-            return self.rucio.pickRSE(rseAttribute=self.msConfig["rucioRSEAttribute"])
+            return self.rucio.pickRSE(rseAttribute=self.msConfig["rucioRSEAttribute"], minNeeded=dataSize)
 
         # well, then it's PhEDEx
         res = self.phedex.getGroupUsage(node=self.tapeStatus.keys(), group=self.msConfig['defaultGroup'])
@@ -523,7 +528,9 @@ class MSOutput(MSCore):
             self.tapeStatus[item['name']]['remaining'] = self.tapeStatus[item['name']]['quota'] - \
                                                          self.tapeStatus[item['name']]['usage']
             self.logger.info("\tPNN: %s\t\t%s", item['name'], self.tapeStatus[item['name']])
-            pnnsWithWeights.append((item['name'], self.tapeStatus[item['name']]['remaining']))
+            # drop Tape endpoints that cannot host all that data
+            if self.tapeStatus[item['name']]['remaining'] > teraBytes(dataSize):
+                pnnsWithWeights.append((item['name'], self.tapeStatus[item['name']]['remaining']))
         winnerPnn = weightedChoice(pnnsWithWeights)
         requiresApproval = True if winnerPnn not in self.uConfig['sites_auto_approve']['value'] else False
         return winnerPnn, requiresApproval
@@ -728,6 +735,10 @@ class MSOutput(MSCore):
                 dataItem['Copies'] = 0
                 updatedOutputMap.append(dataItem)
                 continue
+            ### Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
+            bytesSize = self._getDatasetSize(dataItem['Dataset'])
+            dataItem['DatasetSize'] = bytesSize
+
             if not self.canDatasetGoToDisk(dataItem, msOutDoc['IsRelVal']):
                 # nope, this dataset cannot proceed to Disk!!
                 dataItem['Copies'] = 0
@@ -789,6 +800,25 @@ class MSOutput(MSCore):
             self.logger.exception(msg, self.currThreadIdent, msOutDoc['_id'], str(ex))
         return msOutDoc
 
+    def _getDatasetSize(self, datasetName):
+        """
+        Retrieve the dataset size from the correct DM system
+        This size is needed for the tape data placement
+        :param datasetName: string with the dataset name
+        :return: an integer with the total dataset size, in bytes
+        """
+        if self.msConfig.get('useRucio'):
+            didInfo = self.rucio.getDID(datasetName)
+            # let the exception be raised if we failed to calculate the dataset size
+            return didInfo["bytes"]
+
+        # then it's PhEDEx
+        didInfo = self.phedex.getReplicaInfoForBlocks(dataset=datasetName)
+        bytesSize = 0
+        for item in didInfo['phedex']['block']:
+            bytesSize += item['bytes']
+        return bytesSize
+
     def canDatasetGoToDisk(self, dataItem, isRelVal=False):
         """
         This function evaluates whether a dataset can be passed to the
@@ -837,6 +867,29 @@ class MSOutput(MSCore):
             if self.msConfig["sendNotification"] and not isRelVal:
                 self.emailAlert.send(emailSubject, emailMsg)
             return True
+
+    def _getDataVolumeForTape(self, workflow):
+        """
+        This function does a similar logic as `canDatasetGoToTape` and
+        calculates the total size of all the output datasets that need
+        to be pinned on tape
+        :param workflow: MSOutputTemplate object retrieved from MongoDB
+        :return: integer with the total size in bytes
+        """
+        totalSize = 0
+        for dataItem in workflow['OutputMap']:
+            if dataItem['TapeRuleID']:
+                continue
+            dataTier = dataItem['Dataset'].split('/')[-1]
+            if dataTier in self.msConfig['excludeDataTier']:
+                continue
+            elif dataTier in self.uConfig['tiers_with_no_custodial']['value']:
+                continue
+
+            # otherwise, we are about to transfer it
+            totalSize += dataItem['DatasetSize']
+
+        return totalSize
 
     def canDatasetGoToTape(self, dataItem, workflow):
         """

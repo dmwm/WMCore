@@ -88,10 +88,11 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
-        self.msConfig.setdefault("rucioAccount", 'wma_test')
+        self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
+        self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
-        self.msConfig.setdefault("streamerBufferFile", None)
+        self.msConfig.setdefault("sendNotification", False)
         self.uConfig = {}
         self.emailAlert = EmailAlert(self.msConfig)
 
@@ -508,7 +509,7 @@ class MSOutput(MSCore):
         """
         if self.msConfig.get('useRucio'):
             # This API returns a tuple with the RSE name and whether it requires approval
-            return self.rucio.pickRSE()
+            return self.rucio.pickRSE(rseAttribute=self.msConfig["rucioRSEAttribute"])
 
         # well, then it's PhEDEx
         res = self.phedex.getGroupUsage(node=self.tapeStatus.keys(), group=self.msConfig['defaultGroup'])
@@ -816,10 +817,11 @@ class MSOutput(MSCore):
                 return True
             emailSubject = "[MSOutput] Campaign '{}' not found in central CouchDB".format(dataItem['Campaign'])
             emailMsg = "Dataset: {} cannot have an output transfer rule ".format(dataItem['Dataset'])
-            emailMsg += "because its campaign: {} cannot be found in central CouchDB".format(dataItem['Campaign'])
-            emailMsg += "In order to get output data placement working, add it ASAP please."
+            emailMsg += "because its campaign: {} cannot be found in central CouchDB.".format(dataItem['Campaign'])
+            emailMsg += " In order to get output data placement working, add it ASAP please."
             self.logger.critical(emailMsg)
-            self.emailAlert.send(emailSubject, emailMsg)
+            if self.msConfig["sendNotification"]:
+                self.emailAlert.send(emailSubject, emailMsg)
             raise
 
         if dataTier in self.uConfig['tiers_to_DDM']['value']:
@@ -829,10 +831,11 @@ class MSOutput(MSCore):
         else:
             emailSubject = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
             emailMsg = "Dataset: {} contains a datatier: {}".format(dataItem['Dataset'], dataTier)
-            emailMsg += " not yet inserted into Unified configuration."
+            emailMsg += " not yet inserted into Unified configuration. "
             emailMsg += "Please add it ASAP. Letting it pass for now..."
             self.logger.critical(emailMsg)
-            self.emailAlert.send(emailSubject, emailMsg)
+            if self.msConfig["sendNotification"] and not isRelVal:
+                self.emailAlert.send(emailSubject, emailMsg)
             return True
 
     def canDatasetGoToTape(self, dataItem, workflow):

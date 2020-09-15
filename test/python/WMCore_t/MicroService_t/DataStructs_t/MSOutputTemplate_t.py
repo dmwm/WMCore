@@ -66,6 +66,7 @@ class MSOutputTemplateTest(unittest.TestCase):
                 "OutputDatasets": ["output-dataset-1", "output-dataset-2"],
                 "OutputMap": [{'Campaign': 'campaign-1',
                                'Dataset': 'output-dataset-1',
+                               'DatasetSize': 123,
                                'Copies': 1,
                                'DiskDestination': "",
                                'TapeDestination': "",
@@ -73,6 +74,7 @@ class MSOutputTemplateTest(unittest.TestCase):
                                'TapeRuleID': ""},
                               {'Campaign': 'campaign-2',
                                'Dataset': 'output-dataset-2',
+                               'DatasetSize': 456,
                                'Copies': 0,
                                'DiskDestination': "",
                                'TapeDestination': "",
@@ -81,8 +83,8 @@ class MSOutputTemplateTest(unittest.TestCase):
                 "TransferStatus": "pending"
                 }
 
-    outputMapKeys = ["Campaign", "Copies", "Dataset", "DiskDestination", "DiskRuleID",
-                     "TapeDestination", "TapeRuleID"]
+    outputMapKeys = ["Campaign", "Copies", "Dataset", "DatasetSize", "DiskDestination",
+                     "DiskRuleID", "TapeDestination", "TapeRuleID"]
 
     def testTaskChainSpec(self):
         """
@@ -102,6 +104,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
         self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
         for idx in range(2):
+            self.assertEqual(msOutDoc["OutputMap"][idx]["DatasetSize"], 0)
             if msOutDoc["OutputMap"][idx]["Campaign"] == self.taskchainSpec["Task1"]["Campaign"]:
                 self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-1")
             else:
@@ -132,6 +135,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
         self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
         for idx in range(2):
+            self.assertEqual(msOutDoc["OutputMap"][idx]["DatasetSize"], 0)
             if msOutDoc["OutputMap"][idx]["Campaign"] == self.stepchainSpec["Step1"]["Campaign"]:
                 self.assertEqual(msOutDoc["OutputMap"][idx]["Dataset"], "output-dataset-1")
             else:
@@ -155,6 +159,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(msOutDoc["RequestType"], self.rerecoSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.rerecoSpec["_id"])
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
+        self.assertEqual(msOutDoc["OutputMap"][0]["DatasetSize"], 0)
         self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
         self.assertEqual(msOutDoc["OutputMap"][0]["Campaign"], self.rerecoSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputMap"][1]["Campaign"], self.rerecoSpec["Campaign"])
@@ -180,6 +185,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
         self.assertItemsEqual([msOutDoc["OutputMap"][0]["Dataset"], msOutDoc["OutputMap"][1]["Dataset"]],
                               self.mongoDoc["OutputDatasets"])
+        self.assertTrue(msOutDoc["OutputMap"][0]["DatasetSize"] in [123, 456])
 
         newDoc = deepcopy(self.mongoDoc)
         newDoc.update({"IsRelVal": True, "TransferStatus": "done", "LastUpdate": 333})

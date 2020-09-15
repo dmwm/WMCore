@@ -127,6 +127,7 @@ class MSOutputTemplate(dict):
         Template format:
             {'Campaign': u'RunIIAutumn18DRPremix',
              'Dataset': u'/Pseudoscalar2HDM_MonoZLL_mScan_mH-500_ma-300/DMWM-TC_PreMix_khurtado_TC_PreMix-v11/AODSIM',
+             'DatasetSize': 0,
              'Copies': 1,
              'DiskDestination': "",
              'TapeDestination': "",
@@ -137,6 +138,7 @@ class MSOutputTemplate(dict):
         outMapTemplate = [
             ('Campaign', "", (str, unicode)),
             ('Dataset', "", (str, unicode)),
+            ('DatasetSize', 0, int),
             ('Copies', 1, int),
             ('DiskDestination', "", (str, unicode)),
             ('TapeDestination', "", (str, unicode)),

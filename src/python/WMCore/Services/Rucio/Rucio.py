@@ -727,6 +727,21 @@ class Rucio(object):
             raise WMRucioException(msg)
         return response['type'].upper() == 'CONTAINER'
 
+    def getDID(self, didName, dynamic=True, scope='cms'):
+        """
+        Retrieves basic information for a single data identifier.
+        :param didName: string with the DID name
+        :param dynamic: boolean to dynamically calculate the DID size (default to True)
+        :param scope: string containing the Rucio scope (defaults to 'cms')
+        :return: a dictionary with basic DID information
+        """
+        try:
+            response = self.cli.get_did(scope=scope, name=didName, dynamic=dynamic)
+        except DataIdentifierNotFound as exc:
+            response = dict()
+            self.logger.error("Data identifier not found in Rucio: %s. Error: %s", didName, str(exc))
+        return response
+
     def getDataLockedAndAvailable(self, **kwargs):
         """
         This method retrieves all the locations where a given DID is

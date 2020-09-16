@@ -53,6 +53,7 @@ def commonDataLocation(element):
     :param element: workqueue element object
     :return: list with the common **data** location
     """
+    commonLoc = set()
     if element['PileupData']:
         commonLoc = set(element['PileupData'].values()[0])
     if element['Inputs']:

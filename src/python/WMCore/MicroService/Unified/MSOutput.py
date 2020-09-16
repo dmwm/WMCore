@@ -87,6 +87,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
         self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableDataPlacement", False)
+        self.msConfig.setdefault("enableRelValCustodial", False)
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
@@ -878,6 +879,8 @@ class MSOutput(MSCore):
         """
         totalSize = 0
         for dataItem in workflow['OutputMap']:
+            if workflow['IsRelVal'] and not self.msConfig['enableRelValCustodial']:
+                return False
             if dataItem['TapeRuleID']:
                 continue
             dataTier = dataItem['Dataset'].split('/')[-1]
@@ -901,10 +904,14 @@ class MSOutput(MSCore):
         :param dataItem: output map dictionary present in the MongoDB record
         :param workflow: MSOutputTemplate object retrieved from MongoDB
         :return: True if the dataset is allowed to pass, False otherwise
+
+        NOTE: changes here should usually be applied to `_getDataVolumeForTape` too
         """
         # NOTE: Unified has a `tape_size_limit` parameter, to prevent automatic
         # tape subscription for too large samples. We are not going to implement
         # it - for the moment - at least.
+        if workflow['IsRelVal'] and not self.msConfig['enableRelValCustodial']:
+            return False
 
         if dataItem['TapeRuleID']:
             msg = "Output dataset: {} from workflow: {} ".format(dataItem['Dataset'], workflow['RequestName'])

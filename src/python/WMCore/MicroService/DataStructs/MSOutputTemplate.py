@@ -245,7 +245,7 @@ class MSOutputTemplate(dict):
         Evaluates whether it's a release validation request, if so, set the flag to True
         :param myDoc: the request dictionary
         """
-        if myDoc.get('SubRequestType') == 'RelVal':
+        if myDoc.get('SubRequestType') in ['RelVal', 'HIRelVal']:
             self.setKey('IsRelVal', True)
 
     def setTransferStatus(self, newStatus):

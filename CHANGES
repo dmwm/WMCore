@@ -1,3 +1,10 @@
+1.4.0 to 1.4.1.pre1:
+  - MSOutput: skip tape data placement for RelVals (Alan Malta Rodrigues) #9920
+  - MSOutput: flag HIRelVal workflows as RelVal in the mongodb records (Alan Malta Rodrigues) #9919
+  - MSOutput: new DatasetSize param for the mongo record; fetch container size from DM systems (Alan Malta Rodrigues) #9916
+  - MSOutput: make alert notification and RSE attribute configurable (Alan Malta Rodrigues) #9915
+
+
 1.4.0.pre10 to 1.4.0:
 
 

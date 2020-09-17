@@ -59,10 +59,9 @@ for endpoint, outFile, calls, datasets in INSTANCES:
             calls.append(['listFileLumis', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
             calls.append(['listFileArray', {'block_name': unicode(block['block_name']),
                                             'detail': True, 'validFileOnly': 1}])
-            calls.append(['listFileSummaries', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
-            calls.append(['listFileSummaries', {'block_name': str(block['block_name']), 'validFileOnly': 1}])
-            calls.append(['listRuns', {'block_name': unicode(block['block_name'])}])
-            calls.append(['listFileParents', {'block_name': unicode(block['block_name'])}])
+            calls.append(['listFileSummaries', {'block_name': block['block_name'], 'validFileOnly': 1}])
+            calls.append(['listRuns', {'block_name': block['block_name']}])
+            calls.append(['listFileParents', {'block_name': block['block_name']}])
             files = realDBS.listFiles(block_name=block['block_name'])
             for dbsFile in files:
                 lfn = unicode(dbsFile['logical_file_name'])

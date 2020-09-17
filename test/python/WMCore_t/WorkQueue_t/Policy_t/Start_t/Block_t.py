@@ -69,7 +69,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 self.assertTrue(1 <= unit['NumberOfFiles'])
                 self.assertTrue(0 <= unit['NumberOfEvents'])
             self.assertEqual(len(units),
-                             len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+                             len(dbs[inputDataset.dbsurl].listFileBlocks(dataset)))
 
     def testMultiTaskProcessingWorkload(self):
         """Multi Task Processing Workflow"""
@@ -92,7 +92,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 self.assertEqual(MultiTaskProcessingWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
             self.assertEqual(len(units),
-                             len(dbs[inputDataset.dbsurl].getFileBlocksInfo(datasets[0])))
+                             len(dbs[inputDataset.dbsurl].listFileBlocks(datasets[0])))
             count += 1
         self.assertEqual(tasks, count)
 
@@ -239,7 +239,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
             self.assertNotEqual(len(units),
-                                len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+                                len(dbs[inputDataset.dbsurl].listFileBlocks(dataset)))
 
     def testLumiSplitTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
@@ -347,7 +347,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 self.assertEqual(True, unit['ParentFlag'])
                 self.assertEqual(1, len(unit['ParentData']))
             self.assertEqual(len(units),
-                             len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+                             len(dbs[inputDataset.dbsurl].listFileBlocks(dataset)))
 
     def testIgnore0SizeBlocks(self):
         """Ignore blocks with 0 files"""
@@ -386,7 +386,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 self.assertTrue(1 <= unit['NumberOfFiles'])
                 self.assertTrue(0 <= unit['NumberOfEvents'])
             self.assertEqual(len(units),
-                             len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+                             len(dbs[inputDataset.dbsurl].listFileBlocks(dataset)))
 
         # Modify the spec and task, get first a fresh policy instance
         policyInstance = Block(**self.splitArgs)

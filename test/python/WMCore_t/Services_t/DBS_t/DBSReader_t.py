@@ -190,29 +190,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         with self.assertRaises(DBSReaderError):
             self.dbs.getDBSSummaryInfo(DATASET, BLOCK + 'asas')
 
-    def testGetFileBlocksInfo(self):
-        """getFileBlocksInfo returns block info, including location lookup"""
-        self.dbs = DBSReader(self.endpoint)
-        blocks = self.dbs.getFileBlocksInfo(DATASET)
-        block = self.dbs.getFileBlocksInfo(DATASET, blockName=BLOCK)
-        self.assertEqual(1, len(block))
-        block = block[0]
-        self.assertEqual(46, len(blocks))
-        self.assertTrue(block['Name'] in [x['Name'] for x in blocks])
-        self.assertEqual(BLOCK, block['Name'])
-        self.assertEqual(0, block['OpenForWriting'])
-        self.assertEqual(150780132, block['BlockSize'])
-        self.assertEqual(2, block['NumberOfFiles'])
-        # possibly fragile but assume block located at least at cern
-        self.assertTrue(block['PhEDExNodeList'])
-
-        # weird error handling - depends on whether block or dataset is missing
-        with self.assertRaises(DBSReaderError):
-            self.dbs.getFileBlocksInfo(DATASET + 'blah')
-
-        with self.assertRaises(DBSReaderError):
-            self.dbs.getFileBlocksInfo(DATASET, blockName=BLOCK + 'asas')
-
     def testListFileBlocks(self):
         """listFileBlocks returns block names in dataset"""
         self.dbs = DBSReader(self.endpoint)
@@ -273,11 +250,11 @@ class DBSReaderTest(EmulatedUnitTestCase):
                      'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
         self.dbs = DBSReader('https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/')
 
-        self.assertTrue(self.dbs.listFileBlockLocation(BLOCK))
+        self.assertEqual(self.dbs.listFileBlockLocation(BLOCK), [])
         # This block is only found on DBS
-        self.assertTrue(self.dbs.listFileBlockLocation(DBS_BLOCK))
+        self.assertItemsEqual(self.dbs.listFileBlockLocation(DBS_BLOCK), [u'T2_ES_CIEMAT'])
         # doesn't raise on non-existant block
-        self.assertTrue(self.dbs.listFileBlockLocation(WRONG_BLOCK))
+        self.assertEqual(self.dbs.listFileBlockLocation(WRONG_BLOCK), [])
         # test bulk call:
         ## two blocks in phedex
         self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, BLOCK2])))
@@ -294,8 +271,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """getFileBlock returns block"""
         self.dbs = DBSReader(self.endpoint)
         block = self.dbs.getFileBlock(BLOCK)
-        self.assertEqual(len(block), 1)
-        block = block[BLOCK]
+        self.assertEqual(len(block), 3)
         self.assertEqual(2, len(block['Files']))
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlock, BLOCK + 'asas')
@@ -304,25 +280,16 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """getFileBlockWithParents returns block and parents"""
         self.dbs = DBSReader(self.endpoint)
         block = self.dbs.getFileBlockWithParents(BLOCK_WITH_PARENTS)
-        self.assertEqual(len(block), 1)
-        block = block[BLOCK_WITH_PARENTS]
+        self.assertEqual(len(block), 3)
         self.assertEqual(PARENT_FILE, block['Files'][0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlockWithParents, BLOCK + 'asas')
-
-    def testGetFiles(self):
-        """getFiles returns files in dataset"""
-        self.dbs = DBSReader(self.endpoint)
-        files = self.dbs.getFiles(DATASET)
-        self.assertEqual(len(files), 46)
 
     def testListBlockParents(self):
         """listBlockParents returns block parents"""
         self.dbs = DBSReader(self.endpoint)
         parents = self.dbs.listBlockParents(BLOCK_WITH_PARENTS)
-        self.assertEqual(1, len(parents))
-        self.assertEqual(PARENT_BLOCK, parents[0]['Name'])
-        self.assertTrue(parents[0]['PhEDExNodeList'])
+        self.assertItemsEqual([PARENT_BLOCK], parents)
 
         self.assertFalse(self.dbs.listBlockParents(PARENT_BLOCK))
 

@@ -261,3 +261,19 @@ class StartPolicyInterface(PolicyInterface):
                         locations.update(blockSites)
                 result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
+
+    def blockLocationRucioPhedex(self, blockName):
+        """
+        Wrapper around Rucio and PhEDEx systems.
+        Fetch the current location of the block name (if Rucio,
+        also consider the locks made on that block)
+        :param blockName: string with the block name
+        :return: a list of RSEs
+        """
+        if hasattr(self, "rucio"):
+            location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                            account=self.args['rucioAcct'])
+        else:
+            location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName],
+                                                                  complete='y')[blockName]
+        return location

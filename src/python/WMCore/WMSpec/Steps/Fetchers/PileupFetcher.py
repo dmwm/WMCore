@@ -91,8 +91,6 @@ class PileupFetcher(FetcherInterface):
         :param blockDict: dictionary with DBS summary info
         :return: update blockDict in place
         """
-        node_filter = set(['UNKNOWN', None])
-
         if hasattr(self, "rucio"):
             # then it's Rucio!!
             blockReplicasInfo = self.rucio.getReplicaInfoForBlocks(dataset=dset)
@@ -106,9 +104,8 @@ class PileupFetcher(FetcherInterface):
         else:
             blockReplicasInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=dset, complete='y')
             for block in blockReplicasInfo:
-                nodes = set(blockReplicasInfo[block]) - node_filter
                 try:
-                    blockDict[block]['PhEDExNodeNames'] = list(nodes)
+                    blockDict[block]['PhEDExNodeNames'] = list(blockReplicasInfo[block])
                     blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
                 except KeyError:
                     logging.warning("Block '%s' does not have any complete PhEDEx replica", block)

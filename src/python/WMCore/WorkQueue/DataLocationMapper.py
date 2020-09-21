@@ -57,8 +57,8 @@ class DataLocationMapper(object):
                 self.params['locationFrom'], validLocationFrom)
             raise ValueError(msg)
 
-        if self.params.get('phedex'):
-            self.phedex = self.params['phedex']  # NOTE: this might be a Rucio instance
+        self.phedex = self.params.get('phedex')
+        self.rucio = self.params.get('rucio')
         if self.params.get('cric'):
             self.cric = self.params['cric']
 
@@ -74,8 +74,7 @@ class DataLocationMapper(object):
         for dbs, dataItems in dataByDbs.items():
             # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
-                if hasattr(self.phedex, "getBlocksInContainer"):
-                    # FIXME: eventually change the attribute to rucio...
+                if self.rucio:
                     # then it's Rucio
                     output = self.locationsFromRucio(dataItems)
                 else:
@@ -97,8 +96,8 @@ class DataLocationMapper(object):
         self.logger.info("Fetching location from Rucio...")
         for dataItem in dataItems:
             try:
-                dataLocations = self.phedex.getDataLockedAndAvailable(name=dataItem,
-                                                                      account=self.params['rucioAccount'])
+                dataLocations = self.rucio.getDataLockedAndAvailable(name=dataItem,
+                                                                     account=self.params['rucioAccount'])
                 # resolve the PNNs into PSNs
                 result[dataItem] = self.cric.PNNstoPSNs(dataLocations)
             except Exception as ex:
@@ -152,9 +151,9 @@ class DataLocationMapper(object):
         for dataItem in dataItems:
             try:
                 if isDataset(dataItem):
-                    phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly=True)
+                    phedexNodeNames = dbs.listDatasetLocation(dataItem)
                 else:
-                    phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly=True)
+                    phedexNodeNames = dbs.listFileBlockLocation(dataItem)
                 result[dataItem].update(phedexNodeNames)
             except Exception as ex:
                 self.logger.error('Error getting block location from dbs for %s: %s', dataItem, str(ex))

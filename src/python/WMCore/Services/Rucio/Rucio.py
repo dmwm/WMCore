@@ -208,36 +208,6 @@ class Rucio(object):
         Get block replica information.
         It mimics the same API available in the PhEDEx Service module.
 
-        kwargs originally available for PhEDEx are:
-        - dataset       dataset name, can be multiple (*)
-        - block         block name, can be multiple (*)
-        - node          node name, can be multiple (*)
-        - se            storage element name, can be multiple (*)
-        - update_since  unix timestamp, only return replicas updated since this time
-        - create_since  unix timestamp, only return replicas created since this time
-        - complete      y or n, whether or not to require complete or incomplete blocks.
-                        Default is to return either
-        - subscribed    y or n, filter for subscription. default is to return either.
-        - custodial     y or n. filter for custodial responsibility.
-                        Default is to return either.
-        - group         group name. Default is to return replicas for any group.
-
-        kwargs supported by Rucio are:
-        - dids             The list of data identifiers (DIDs) like : [{'scope': <scope1>, 'name': <name1>},
-                           {'scope': <scope2>, 'name': <name2>}, ...]
-        - schemes          A list of schemes to filter the replicas. (e.g. file, http, ...)
-        - unavailable      Also include unavailable replicas in the list. Default to False
-        - metalink         False (default) retrieves as JSON, True retrieves as metalink4+xml.
-        - rse_expression   The RSE expression to restrict replicas on a set of RSEs.
-        - client_location  Client location dictionary for PFN modification {'ip', 'fqdn', 'site'}
-        - sort             Sort the replicas:
-                           geoip - based on src/dst IP topographical distance
-                           closeness - based on src/dst closeness
-                           dynamic - Rucio Dynamic Smart Sort (tm)
-        - domain           Define the domain. None is fallback to 'wan', otherwise 'wan', 'lan', or 'all'
-        - resolve_archives When set to True, find archives which contain the replicas.
-        - resolve_parents  When set to True, find all parent datasets which contain the replicas.
-
         :kwargs: either a dataset or a block name has to be provided. Not both!
         :return: a list of dictionaries with replica information; or a dictionary
         compatible with PhEDEx.

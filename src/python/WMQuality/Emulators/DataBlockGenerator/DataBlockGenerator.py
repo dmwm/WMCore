@@ -98,9 +98,6 @@ class DataBlockGenerator(object):
         except NoDatasetError:
             return []
 
-    def getFiles(self, block, parentFlag = False):
-        return self._fileGenerator(block, parentFlag)
-
     def getLocation(self, block):
         return Globals.getSites(block)
 

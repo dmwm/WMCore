@@ -52,16 +52,17 @@ class EmulatedUnitTestCase(unittest.TestCase):
         """
 
         if self.mockDBS:
-            self.dbsPatcher1 = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
-            self.dbsPatcher2 = mock.patch('WMCore.Services.DBS.DBS3Reader.DbsApi', new=MockDbsApi)
-            self.inUseDbsApi = self.dbsPatcher1.start()
-            self.inUseDbsApi = self.dbsPatcher2.start()
-            self.addCleanup(self.dbsPatcher1.stop)
-            self.addCleanup(self.dbsPatcher2.stop)
+            self.dbsPatchers = []
+            patchDBSAt = ["dbs.apis.dbsClient.DbsApi",
+                          "WMCore.Services.DBS.DBS3Reader.DbsApi"]
+            for module in patchDBSAt:
+                self.dbsPatchers.append(mock.patch(module, new=MockDbsApi))
+                self.dbsPatchers[-1].start()
+                self.addCleanup(self.dbsPatchers[-1].stop)
 
         if self.mockPhEDEx:
             self.phedexPatchers = []
-            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.Services.DBS.DBS3Reader.PhEDEx',
+            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx',
                              'WMCore.WorkQueue.WorkQueue.PhEDEx',
                              'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.PhEDEx',
                              'WMComponent.PhEDExInjector.PhEDExInjectorPoller.PhEDEx']

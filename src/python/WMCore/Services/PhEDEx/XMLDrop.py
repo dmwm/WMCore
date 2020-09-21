@@ -249,8 +249,7 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
 
     for block in blockNames:
         blockContent = reader.getFileBlock(block)
-        isOpen = reader.blockIsOpen(block)
-        if isOpen:
+        if blockContent['IsOpen']:
             xmlBlock = dataset.getFileblock(block, "y")
         else:
             xmlBlock = dataset.getFileblock(block, "n")

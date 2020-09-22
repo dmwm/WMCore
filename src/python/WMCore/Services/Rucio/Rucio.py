@@ -60,6 +60,32 @@ def weightedChoice(choices):
     assert False, "Shouldn't get here"
 
 
+def isTapeRSE(rseName):
+    """
+    Given an RSE name, return True if it's a Tape RSE (rse_type=TAPE), otherwise False
+    :param rseName: string with the RSE name
+    :return: True or False
+    """
+    # NOTE: a more reliable - but more expensive - way to know that would be
+    # to query `get_rse` and evaluate the rse_type parameter
+    return rseName.endswith("_Tape")
+
+
+def dropTapeRSEs(listRSEs):
+    """
+    Method to parse a list of RSE names and return only those that
+    are not a rse_type=TAPE, so in general only Disk endpoints
+    :param listRSEs: list with the RSE names
+    :return: a new list with only DISK RSE names
+    """
+    diskRSEs = []
+    for rse in listRSEs:
+        if rse.endswith("_Tape"):
+            continue
+        diskRSEs.append(rse)
+    return diskRSEs
+
+
 class Rucio(object):
     """
     Service class providing additional Rucio functionality on top of the
@@ -629,17 +655,20 @@ class Rucio(object):
             res = False
         return res
 
-    def evaluateRSEExpression(self, rseExpr, useCache=True):
+    def evaluateRSEExpression(self, rseExpr, useCache=True, returnTape=True):
         """
         Provided an RSE expression, resolve it and return a flat list of RSEs
         :param rseExpr: an RSE expression (which could be the RSE itself...)
         :param useCache: boolean defining whether cached data is meant to be used or not
+        :param returnTape: boolean to also return Tape RSEs from the RSE expression result
         :return: a list of RSE names
         """
         if self.cachedRSEs.isCacheExpired():
             self.cachedRSEs.reset()
         if useCache and rseExpr in self.cachedRSEs:
-            return self.cachedRSEs[rseExpr]
+            if returnTape:
+                return self.cachedRSEs[rseExpr]
+            return dropTapeRSEs(self.cachedRSEs[rseExpr])
         else:
             matchingRSEs = []
             try:
@@ -650,7 +679,9 @@ class Rucio(object):
                 raise WMRucioException(msg)
         # add this key/value pair to the cache
         self.cachedRSEs.addItemToCache({rseExpr: matchingRSEs})
-        return matchingRSEs
+        if returnTape:
+            return matchingRSEs
+        return dropTapeRSEs(matchingRSEs)
 
     def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='ddm_quota', minNeeded=0):
         """
@@ -879,11 +910,12 @@ class Rucio(object):
 
         # First, find all the rules and where data is supposed to be locked
         for rule in self.cli.list_replication_rules(kargs):
-            rses = self.evaluateRSEExpression(rule['rse_expression'])
-            if rule['copies'] == len(rses) and rule['state'] == "OK":
+            rses = self.evaluateRSEExpression(rule['rse_expression'], returnTape=False)
+            if rses and rule['copies'] == len(rses) and rule['state'] == "OK":
                 # then we can guarantee that data is locked and available on these RSEs
                 finalRSEs.update(set(rses))
-            else:
+            # it could be that the rule was made against Tape only, so check
+            elif rses:
                 multiRSERules.append(rule['id'])
         self.logger.info("Pileup container location for %s from single RSE locks at: %s",
                          kargs['name'], list(finalRSEs))
@@ -900,6 +932,8 @@ class Rucio(object):
         # List every single block lock and check if the rule belongs to the WMCore system
         for blockName in result:
             for blockLock in self.cli.get_dataset_locks(scope, blockName):
+                if isTapeRSE(blockLock['rse']):
+                    continue
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     result[blockName].add(blockLock['rse'])
         return result

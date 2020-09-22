@@ -6,13 +6,16 @@ from __future__ import print_function, division, absolute_import
 
 import os
 
+from nose.plugins.attrib import attr
 from rucio.client import Client as testClient
 
-from WMCore.Services.Rucio.Rucio import Rucio, validateMetaData, RUCIO_VALID_PROJECT, WMRucioException
+from WMCore.Services.Rucio import Rucio
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
 BLOCK = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD#f924e248-e029-11e7-aa2a-02163e01b396"
+PUDSET = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM"
+PUBLOCK = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM#7f525c30-932f-4f79-963f-0198af37db74"
 
 
 class RucioTest(EmulatedUnitTestCase):
@@ -45,10 +48,10 @@ class RucioTest(EmulatedUnitTestCase):
         """
         super(RucioTest, self).setUp()
 
-        self.myRucio = Rucio(self.acct,
-                             hostUrl=self.defaultArgs['host'],
-                             authUrl=self.defaultArgs['auth_host'],
-                             configDict=self.defaultArgs)
+        self.myRucio = Rucio.Rucio(self.acct,
+                                   hostUrl=self.defaultArgs['host'],
+                                   authUrl=self.defaultArgs['auth_host'],
+                                   configDict=self.defaultArgs)
 
         self.client = testClient(rucio_host=self.defaultArgs['host'],
                                  auth_host=self.defaultArgs['auth_host'],
@@ -80,8 +83,8 @@ class RucioTest(EmulatedUnitTestCase):
         newKeys = newParams.keys()
         newKeys.remove("phedexCompatible")
 
-        rucio = Rucio(newParams['account'], hostUrl=newParams['host'],
-                      authUrl=newParams['auth_host'], configDict=newParams)
+        rucio = Rucio.Rucio(newParams['account'], hostUrl=newParams['host'],
+                            authUrl=newParams['auth_host'], configDict=newParams)
 
         self.assertEqual(getattr(rucio, "phedexCompat"), False)
         for key in newKeys:
@@ -133,7 +136,7 @@ class RucioTest(EmulatedUnitTestCase):
         res2 = self.myRucio.getAccountLimits(self.acct)
         self.assertTrue(len(res) > 10)
         self.assertTrue(len(res2) > 10)
-        #print(res)
+        # print(res)
         self.assertEqual(res["T1_US_FNAL_Disk"], res2["T1_US_FNAL_Disk"])
 
         # test an account that we have no access to
@@ -169,7 +172,7 @@ class RucioTest(EmulatedUnitTestCase):
         inside a container.
         """
         # test a CMS dataset that does not exist
-        with self.assertRaises(WMRucioException):
+        with self.assertRaises(Rucio.WMRucioException):
             self.myRucio.getBlocksInContainer("Alan")
 
         # provide a CMS block instead of a dataset
@@ -208,10 +211,10 @@ class RucioTest(EmulatedUnitTestCase):
         """
         theseArgs = self.defaultArgs.copy()
         theseArgs['phedexCompatible'] = False
-        myRucio = Rucio(self.acct,
-                        hostUrl=theseArgs['host'],
-                        authUrl=theseArgs['auth_host'],
-                        configDict=theseArgs)
+        myRucio = Rucio.Rucio(self.acct,
+                              hostUrl=theseArgs['host'],
+                              authUrl=theseArgs['auth_host'],
+                              configDict=theseArgs)
 
         res = myRucio.getReplicaInfoForBlocks(dataset=DSET)
         self.assertTrue(isinstance(res, list))
@@ -271,16 +274,16 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test the `validateMetaData` validation function
         """
-        for thisProj in RUCIO_VALID_PROJECT:
-            response = validateMetaData("any_DID_name", dict(project=thisProj), self.myRucio.logger)
+        for thisProj in Rucio.RUCIO_VALID_PROJECT:
+            response = Rucio.validateMetaData("any_DID_name", dict(project=thisProj), self.myRucio.logger)
             self.assertTrue(response)
 
         # test with no "project" meta data at all
-        response = validateMetaData("any_DID_name", dict(), self.myRucio.logger)
+        response = Rucio.validateMetaData("any_DID_name", dict(), self.myRucio.logger)
         self.assertTrue(response)
 
         # now an invalid "project" meta data
-        response = validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
+        response = Rucio.validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
         self.assertFalse(response)
 
     def testEvaluateRSEExpression(self):
@@ -299,3 +302,46 @@ class RucioTest(EmulatedUnitTestCase):
         resp = self.myRucio.pickRSE(rseExpression="ddm_quota>0", rseAttribute="ddm_quota")
         self.assertTrue(len(resp) == 2)
         self.assertTrue(resp[1] is True or resp[1] is False)
+
+    def testIsTapeRSE(self):
+        """
+        Test the `isTapeRSE` utilitarian function
+        """
+        self.assertTrue(Rucio.isTapeRSE("T1_US_FNAL_Tape"))
+        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Disk"))
+        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Disk_Test"))
+        self.assertFalse(Rucio.isTapeRSE("T1_US_FNAL_Tape_Test"))
+        self.assertFalse(Rucio.isTapeRSE(""))
+
+    def testDropTapeRSEs(self):
+        """
+        Test the `dropTapeRSEs` utilitarian function
+        """
+        tapeOnly = ["T1_US_FNAL_Tape", "T1_ES_PIC_Tape"]
+        diskOnly = ["T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test", "T2_CH_CERN"]
+        mixed = ["T1_US_FNAL_Tape", "T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test", "T1_ES_PIC_Tape"]
+        self.assertItemsEqual(Rucio.dropTapeRSEs(tapeOnly), [])
+        self.assertItemsEqual(Rucio.dropTapeRSEs(diskOnly), diskOnly)
+        self.assertItemsEqual(Rucio.dropTapeRSEs(mixed), ["T1_US_FNAL_Disk", "T1_US_FNAL_Disk_Test"])
+
+    @attr('integration')  # jenkins cannot access this rucio account
+    def testGetPileupLockedAndAvailable(self):
+        """
+        Test `getPileupLockedAndAvailable` method
+        """
+        # as much as I dislike it, we need to use the production instance...
+        newParams = {"host": 'http://cms-rucio.cern.ch',
+                     "auth_host": 'https://cms-rucio-auth.cern.ch',
+                     "auth_type": "x509", "account": "wmcore_transferor",
+                     "ca_cert": False, "timeout": 5}
+        prodRucio = Rucio.Rucio(newParams['account'],
+                                hostUrl=newParams['host'],
+                                authUrl=newParams['auth_host'],
+                                configDict=newParams)
+        resp = prodRucio.getPileupLockedAndAvailable(PUDSET, "transfer_ops")
+        # this dataset contains 10 blocks
+        self.assertEqual(len(resp), 10)
+        self.assertTrue(PUBLOCK in resp)
+        # with more than 10 block replicas in the grid
+        for block, rses in resp.viewitems():
+            self.assertTrue(len(rses) > 5)

@@ -140,13 +140,17 @@ def check_system(command):
         print(msg)
         sys.exit(1)
 
-def things_to_build(command):
+def things_to_build(command, pypi=False):
     """
     Take a build/install command and determine all the packages and modules it needs to build/install. Modules are
     explicitly listed in the dependancies but packages needs to be generated (to pick up sub directories).
     """
     # work out all the dependent packages
-    dependency_tree = walk_dep_tree(dependencies[command.system])
+    if pypi:
+        dependency_tree = walk_dep_tree(dependencies[command])
+    else:
+        dependency_tree = walk_dep_tree(dependencies[command.system])
+
     # and the corresponding source directories and files
     package_src_dirs = []
     module_src_files = []

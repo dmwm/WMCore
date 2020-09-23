@@ -79,6 +79,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
 
         """
         reader = DBS3Reader(dbsUrl)
+        # FIXME: this will have to be converted to Rucio data location, eventually...
         phedex = PhEDEx()
 
         inputArgs = defaultArguments["PileupConfig"]
@@ -118,15 +119,13 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                     self.assertEqual(set(blockDict[dbsFileBlockName]["PhEDExNodeNames"]), pnns, m)
                     m = ("FileList don't agree for pileup type '%s', dataset '%s' "
                          " in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    storedFileList = [item['logical_file_name'] for item in blockDict[dbsFileBlockName]["FileList"]]
-                    self.assertItemsEqual(storedFileList, fileList, m)
+                    self.assertItemsEqual(blockDict[dbsFileBlockName]["FileList"], fileList, m)
 
     def _queryPileUpConfigFile(self, defaultArguments, task, taskPath):
         """
         Query and compare contents of the the pileup JSON
         configuration files. Iterate over tasks's steps as
         it happens in the PileupFetcher.
-
         """
         for step in task.steps().nodeIterator():
             helper = WMStep.WMStepHelper(step)
@@ -137,10 +136,8 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                 stepPath = "%s/%s" % (taskPath, helper.name())
                 pileupConfig = "%s/%s" % (stepPath, "pileupconf.json")
                 try:
-                    f = open(pileupConfig, 'r')
-                    json = f.read()
-                    pileupDict = decoder.decode(json)
-                    f.close()
+                    with open(pileupConfig) as fObj:
+                        pileupDict = decoder.decode(fObj.read())
                 except IOError:
                     m = "Could not read pileup JSON configuration file: '%s'" % pileupConfig
                     self.fail(m)

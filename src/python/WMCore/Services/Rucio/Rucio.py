@@ -60,6 +60,32 @@ def weightedChoice(choices):
     assert False, "Shouldn't get here"
 
 
+def isTapeRSE(rseName):
+    """
+    Given an RSE name, return True if it's a Tape RSE (rse_type=TAPE), otherwise False
+    :param rseName: string with the RSE name
+    :return: True or False
+    """
+    # NOTE: a more reliable - but more expensive - way to know that would be
+    # to query `get_rse` and evaluate the rse_type parameter
+    return rseName.endswith("_Tape")
+
+
+def dropTapeRSEs(listRSEs):
+    """
+    Method to parse a list of RSE names and return only those that
+    are not a rse_type=TAPE, so in general only Disk endpoints
+    :param listRSEs: list with the RSE names
+    :return: a new list with only DISK RSE names
+    """
+    diskRSEs = []
+    for rse in listRSEs:
+        if rse.endswith("_Tape"):
+            continue
+        diskRSEs.append(rse)
+    return diskRSEs
+
+
 class Rucio(object):
     """
     Service class providing additional Rucio functionality on top of the
@@ -629,17 +655,20 @@ class Rucio(object):
             res = False
         return res
 
-    def evaluateRSEExpression(self, rseExpr, useCache=True):
+    def evaluateRSEExpression(self, rseExpr, useCache=True, returnTape=True):
         """
         Provided an RSE expression, resolve it and return a flat list of RSEs
         :param rseExpr: an RSE expression (which could be the RSE itself...)
         :param useCache: boolean defining whether cached data is meant to be used or not
+        :param returnTape: boolean to also return Tape RSEs from the RSE expression result
         :return: a list of RSE names
         """
         if self.cachedRSEs.isCacheExpired():
             self.cachedRSEs.reset()
         if useCache and rseExpr in self.cachedRSEs:
-            return self.cachedRSEs[rseExpr]
+            if returnTape:
+                return self.cachedRSEs[rseExpr]
+            return dropTapeRSEs(self.cachedRSEs[rseExpr])
         else:
             matchingRSEs = []
             try:
@@ -650,7 +679,9 @@ class Rucio(object):
                 raise WMRucioException(msg)
         # add this key/value pair to the cache
         self.cachedRSEs.addItemToCache({rseExpr: matchingRSEs})
-        return matchingRSEs
+        if returnTape:
+            return matchingRSEs
+        return dropTapeRSEs(matchingRSEs)
 
     def pickRSE(self, rseExpression='rse_type=TAPE\cms_type=test', rseAttribute='ddm_quota', minNeeded=0):
         """
@@ -826,7 +857,7 @@ class Rucio(object):
             rsesByBlocks.setdefault(block, set())
             ### FIXME: feature request made to the Rucio team to support bulk operations:
             ### https://github.com/rucio/rucio/issues/3982
-            for blockLock in self.cli.get_dataset_locks(block, kwargs['name']):
+            for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     rsesByBlocks[block].add(blockLock['rse'])
 
@@ -845,3 +876,64 @@ class Rucio(object):
             for _block, rses in rsesByBlocks.viewitems():
                 finalRSEs = finalRSEs | rses
         return finalRSEs
+
+    def getPileupLockedAndAvailable(self, container, account, scope="cms"):
+        """
+        Method to resolve where the pileup container (and all its blocks)
+        is locked and available.
+
+        Pileup location resolution involves the following logic:
+        1. find replication rules at the container level
+          * if num of copies is equal to num of rses, and state is Ok, use
+          those RSEs as container location (thus, every single block)
+          * elif there are more rses than copies, keep that rule id for the next step
+        2. discover all the blocks in the container
+        3. if there are no multi RSEs rules, just build the block location map and return
+        3. otherwise, for every block, list their current locks and if they are in state=OK
+           and they belong to one of our multiRSEs rule, use that RSE as block location
+        :param container: string with the container name
+        :param account: string with the account name
+        :param scope: string with the scope name (default is "cms")
+        :return: a flat dictionary where the keys are the block names, and the value is
+          a set with the RSE locations
+
+        NOTE: This is somewhat complex, so I decided to make it more readable with
+        a specific method for this process, even though that adds some code duplication.
+        """
+        result = dict()
+        if not self.isContainer(container):
+            raise WMRucioException("Pileup location needs to be resolved for a container DID type")
+
+        multiRSERules = []
+        finalRSEs = set()
+        kargs = dict(name=container, account=account, scope=scope)
+
+        # First, find all the rules and where data is supposed to be locked
+        for rule in self.cli.list_replication_rules(kargs):
+            rses = self.evaluateRSEExpression(rule['rse_expression'], returnTape=False)
+            if rses and rule['copies'] == len(rses) and rule['state'] == "OK":
+                # then we can guarantee that data is locked and available on these RSEs
+                finalRSEs.update(set(rses))
+            # it could be that the rule was made against Tape only, so check
+            elif rses:
+                multiRSERules.append(rule['id'])
+        self.logger.info("Pileup container location for %s from single RSE locks at: %s",
+                         kargs['name'], list(finalRSEs))
+
+        # Second, find all the blocks in this pileup container and assign the container
+        # level locations to them
+        for blockName in self.getBlocksInContainer(kargs['name']):
+            result.update({blockName: finalRSEs})
+        if not multiRSERules:
+            # then that is it, we can return the current RSEs holding and locking this data
+            return result
+
+        # if we got here, then there is a third step to be done.
+        # List every single block lock and check if the rule belongs to the WMCore system
+        for blockName in result:
+            for blockLock in self.cli.get_dataset_locks(scope, blockName):
+                if isTapeRSE(blockLock['rse']):
+                    continue
+                if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
+                    result[blockName].add(blockLock['rse'])
+        return result

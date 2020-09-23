@@ -313,6 +313,9 @@ def applyTweak(process, tweak, fixup=None):
     making sure all the necessary PSets and configuration values exist).
     """
     for param, value in tweak:
+        if isinstance(value, type(u'')) and hasattr(value, "encode"):
+            logging.info("Found unicode parameter type for param: %s, with value: %s", param, value)
+            value = value.encode("utf-8")
         if fixup and param in fixup:
             fixup[param](process)
 

@@ -371,6 +371,36 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         # FIXME: figure out the proper logic for rule block deletion
         logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
+        logging.info("Starting deleteBlocks methods --> I'M ON IT...")
+
+        #Get list of blocks that can be deleted
+        blockDict=self.findDeletableBlocks.execute(transaction=False)
+
+        if not blockDict:
+            logging.info("No blocks were found")
+            return
+
+		# Obtain list of target RSE for each block
+        for blockName in blockDict:
+            #Get rules associated with the block
+            res=rucio.listDataRules(blockName,self.scope)
+            noCopies=0
+
+            #Find out number of coppies requested by current account
+            for item in res:
+                if item['account']==self.rucioAcct:
+                    noCopies+=item['copies']
+
+            #Get number of sites in which data is locked
+            rses=rucio.getDataLockedAndAvailable(name=blockName,scope=self.scope,account=self.rucioAcct)
+
+            #If No. copies equals number of sites, the block can be deleted
+            if noCopies==len(rses):
+                logging.info("Block % will be deleted.", blockName)
+
+
+        return
+
 
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isContainerTierAllowed(self, containerName, checkRulesList=True):

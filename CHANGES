@@ -1,3 +1,13 @@
+1.4.1.pre1 to 1.4.1.pre2:
+  - Drop Tape RSEs from the pileup location (Alan Malta Rodrigues) #9930
+  - Construct the PU location via rucio considering MSTransferor locks (Alan Malta Rodrigues) #9930
+  - Decouple PhEDEx from the DBS3Reader wrapper module (Alan Malta Rodrigues) #9927
+  - Avoid passing unicode strings to FWCore.ParameterSet function (Alan Malta Rodrigues) #9924
+  - Fix checkStuckLGE script referencing unitialized variable (Alan Malta Rodrigues) #9922
+  - Remove wmarchive dependency (Valentin Kuznetsov) #9921
+  - PyPI packaging for ReqMgr2 (Erik Gough) #9874
+
+
 1.4.0 to 1.4.1.pre1:
   - MSOutput: skip tape data placement for RelVals (Alan Malta Rodrigues) #9920
   - MSOutput: flag HIRelVal workflows as RelVal in the mongodb records (Alan Malta Rodrigues) #9919

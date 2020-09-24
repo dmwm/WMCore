@@ -622,6 +622,23 @@ class Rucio(object):
             self.logger.error("Exception listing rules history for data: %s. Error: %s", name, str(ex))
         return list(res)
 
+    def listParentDIDs(self, name, scope='cms'):
+        """
+        _listParentDID__
+
+        List the parent block/container of the specified DID.
+        :param name: data identifier (either a block or a file name)
+        :param scope: string with the scope name
+        :return: a list with dictionary items
+        """
+        res = []
+        try:
+            res = self.cli.list_parent_dids(scope, name)
+        except Exception as ex:
+            self.logger.error("Exception listing parent DIDs for data: %s. Error: %s", name, str(ex))
+        return list(res)
+
+
     def getRule(self, ruleId, estimatedTtc=False):
         """
         _getRule_

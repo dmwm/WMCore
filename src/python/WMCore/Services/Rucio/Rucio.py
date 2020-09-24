@@ -782,11 +782,13 @@ class Rucio(object):
             account: string with the rucio account name
             state: string with the state name
             grouping: string with the grouping name
+        :param returnTape: boolean to return Tape RSEs in the output, if any
         :return: a flat list with the RSE names locking and holding the input DID
 
         NOTE: some of the supported values can be looked up at:
         https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
         """
+        returnTape = kwargs.pop("returnTape", False)
         if 'name' not in kwargs:
             raise WMRucioException("A DID name must be provided to the getDataLockedAndAvailable API")
         if 'grouping' in kwargs:
@@ -805,7 +807,7 @@ class Rucio(object):
         rules = self.cli.list_replication_rules(kwargs)
         for rule in rules:
             # now resolve the RSE expressions
-            rses = self.evaluateRSEExpression(rule['rse_expression'])
+            rses = self.evaluateRSEExpression(rule['rse_expression'], returnTape=returnTape)
             if rule['copies'] == len(rses) and rule['state'] == "OK":
                 # then we can guarantee that data is locked and available on these RSEs
                 finalRSEs.update(set(rses))
@@ -821,7 +823,7 @@ class Rucio(object):
         # Now check dataset locks and compare those rules against our list of multi RSE rules
         if self.isContainer(kwargs['name']):
             # It's a container! Find what those RSEs are and add them to the finalRSEs set
-            rseLocks = self._getContainerLockedAndAvailable(multiRSERules, **kwargs)
+            rseLocks = self._getContainerLockedAndAvailable(multiRSERules, returnTape=returnTape, **kwargs)
             self.logger.debug("Data location for %s from multiple RSE locks and available at: %s",
                               kwargs['name'], list(rseLocks))
         else:
@@ -859,11 +861,13 @@ class Rucio(object):
             account: string with the rucio account name
             state: string with the state name
             grouping: string with the grouping name
+        :param returnTape: boolean to return Tape RSEs in the output, if any
         :return: a set with the RSE names locking and holding this input DID
 
         NOTE: some of the supported values can be looked up at:
         https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
         """
+        returnTape = kwargs.pop("returnTape", False)
         finalRSEs = set()
         blockNames = self.getBlocksInContainer(kwargs['name'])
         self.logger.debug("Container: %s contains %d blocks. Querying dataset_locks ...",
@@ -875,13 +879,15 @@ class Rucio(object):
             ### FIXME: feature request made to the Rucio team to support bulk operations:
             ### https://github.com/rucio/rucio/issues/3982
             for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
+                if not returnTape and isTapeRSE(blockLock['rse']):
+                    continue
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     rsesByBlocks[block].add(blockLock['rse'])
 
         ### The question now is:
         ###   1. do we want to have a full copy of the container in the same RSEs (grouping=A)
         ###   2. or we want all locations holding at least one block of the container (grouping=D)
-        if kwargs['grouping'] == 'A':
+        if kwargs.get('grouping') == 'A':
             firstRun = True
             for _block, rses in rsesByBlocks.viewitems():
                 if firstRun:

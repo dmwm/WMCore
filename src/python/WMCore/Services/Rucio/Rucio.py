@@ -760,7 +760,8 @@ class Rucio(object):
             self.logger.error("Data identifier not found in Rucio: %s. Error: %s", didName, str(exc))
         return response
 
-    def getDataLockedAndAvailable(self, **kwargs):
+    # FIXME we can likely delete this method (replaced by another implementation)
+    def getDataLockedAndAvailable_old(self, **kwargs):
         """
         This method retrieves all the locations where a given DID is
         currently available and locked. It can be used for the data
@@ -788,6 +789,9 @@ class Rucio(object):
         NOTE: some of the supported values can be looked up at:
         https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
         """
+        msg = "This method `getDataLockedAndAvailable_old` is getting deprecated "
+        msg += "and it will be removed in future releases."
+        self.logger.warning(msg)
         returnTape = kwargs.pop("returnTape", False)
         if 'name' not in kwargs:
             raise WMRucioException("A DID name must be provided to the getDataLockedAndAvailable API")
@@ -838,7 +842,8 @@ class Rucio(object):
         finalRSEs = list(finalRSEs | rseLocks)
         return finalRSEs
 
-    def _getContainerLockedAndAvailable(self, multiRSERules, **kwargs):
+    # FIXME we can likely delete this method
+    def _getContainerLockedAndAvailable_old(self, multiRSERules, **kwargs):
         """
         This method is only supposed to be called internally (private method),
         because it won't consider the container level rules.
@@ -867,6 +872,9 @@ class Rucio(object):
         NOTE: some of the supported values can be looked up at:
         https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
         """
+        msg = "This method `_getContainerLockedAndAvailable_old` is getting deprecated "
+        msg += "and it will be removed in future releases."
+        self.logger.warning(msg)
         returnTape = kwargs.pop("returnTape", False)
         finalRSEs = set()
         blockNames = self.getBlocksInContainer(kwargs['name'])
@@ -960,3 +968,177 @@ class Rucio(object):
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     result[blockName].add(blockLock['rse'])
         return result
+
+    def getParentContainerRules(self, **kwargs):
+        """
+        This method takes a DID - such as a file or block - and it resolves its parent
+        DID(s). Then it loops over all parent DIDs and - according to the filters
+        provided in the kwargs - it lists all their rules.
+        :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
+          * name: string with the DID name (mandatory)
+          * scope: string with the scope name (optional)
+          * account: string with the rucio account name (optional)
+          * state: string with the state name (optional)
+          * grouping: string with the grouping name (optional)
+          * did_type: string with the DID type (optional)
+          * created_before: an RFC-1123 compliant date string (optional)
+          * created_after: an RFC-1123 compliant date string (optional)
+          * updated_before: an RFC-1123 compliant date string (optional)
+          * updated_after: an RFC-1123 compliant date string (optional)
+          * and any of the other supported query arguments from the ReplicationRule class, see:
+          https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/models.py#L884
+        :return: a list of rule ids made against the parent DIDs
+        """
+        if 'name' not in kwargs:
+            raise WMRucioException("A DID name must be provided to the getParentContainerLocation API")
+        if 'grouping' in kwargs:
+            # long strings seem not to be working, like ALL / DATASET. Make it short!
+            kwargs['grouping'] = kwargs['grouping'][0]
+        kwargs.setdefault("scope", "cms")
+        didName = kwargs['name']
+
+        listOfRules = []
+        for parentDID in self.listParentDIDs(kwargs['name']):
+            kwargs['name'] = parentDID['name']
+            for rule in self.cli.list_replication_rules(kwargs):
+                listOfRules.append(rule['id'])
+        # revert the original DID name, in case the client will keep using this dict...
+        kwargs['name'] = didName
+        return listOfRules
+
+    def getDataLockedAndAvailable(self, **kwargs):
+        """
+        This method retrieves all the locations where a given DID is
+        currently available and locked (note that, by default, it will not
+        return any Tape RSEs). The logic is as follows:
+          1. if DID is a container, then return the result from `getContainerLockedAndAvailable`
+          2. resolve the parent DID(s), if any
+          3. list all the replication rule ids for the parent DID(s), if any
+          4. then lists all the replication rules for this specific DID
+          5. then check where blocks are locked and available (state=OK), matching
+             one of the replication rule ids discovered in the previous steps
+        :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
+          * name: string with the DID name (mandatory)
+          * scope: string with the scope name (optional)
+          * account: string with the rucio account name (optional)
+          * state: string with the state name (optional)
+          * grouping: string with the grouping name (optional)
+          * did_type: string with the DID type (optional)
+          * created_before: an RFC-1123 compliant date string (optional)
+          * created_after: an RFC-1123 compliant date string (optional)
+          * updated_before: an RFC-1123 compliant date string (optional)
+          * updated_after: an RFC-1123 compliant date string (optional)
+          * and any of the other supported query arguments from the ReplicationRule class, see:
+          https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/models.py#L884
+        :param returnTape: boolean to return Tape RSEs in the output, if any
+        :return: a flat list with the RSE names locking and holding the input DID
+
+        NOTE: some of the supported values can be looked up at:
+        https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
+        """
+        if 'name' not in kwargs:
+            raise WMRucioException("A DID name must be provided to the getBlockLockedAndAvailable API")
+        if self.isContainer(kwargs['name']):
+            # then resolve it at container level and all its blocks
+            return self.getContainerLockedAndAvailable(**kwargs)
+
+        if 'grouping' in kwargs:
+            # long strings seem not to be working, like ALL / DATASET. Make it short!
+            kwargs['grouping'] = kwargs['grouping'][0]
+        kwargs.setdefault("scope", "cms")
+        returnTape = kwargs.pop("returnTape", False)
+
+        finalRSEs = set()
+        # first, fetch the rules locking the - possible - parent DIDs
+        allRuleIds = self.getParentContainerRules(**kwargs)
+
+        # then lists all the rules for this specific DID
+        for rule in self.cli.list_replication_rules(kwargs):
+            allRuleIds.append(rule['id'])
+
+        # now with all the rules in hands, we can start checking block locks
+        for blockLock in self.cli.get_dataset_locks(kwargs['scope'], kwargs['name']):
+            if blockLock['state'] == 'OK' and blockLock['rule_id'] in allRuleIds:
+                finalRSEs.add(blockLock['rse'])
+        if not returnTape:
+            finalRSEs = dropTapeRSEs(finalRSEs)
+        else:
+            finalRSEs = list(finalRSEs)
+        return finalRSEs
+
+    def getContainerLockedAndAvailable(self, **kwargs):
+        """
+        This method retrieves all the locations where a given container DID is
+        currently available and locked (note that, by default, it will not
+        return any Tape RSEs). The logic is as follows:
+          1. list the container-level replication rules
+          2. list all the blocks in the container
+          3. for each block, check where it's are locked and available (state=OK),
+             matching one of the replication rule ids discovered in the previous steps
+          4. the input `grouping` specified decides how the list of final RSEs are built
+        :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
+          * name: string with the DID name (mandatory)
+          * scope: string with the scope name (optional)
+          * account: string with the rucio account name (optional)
+          * state: string with the state name (optional)
+          * grouping: string with the grouping name (optional)
+          * did_type: string with the DID type (optional)
+          * created_before: an RFC-1123 compliant date string (optional)
+          * created_after: an RFC-1123 compliant date string (optional)
+          * updated_before: an RFC-1123 compliant date string (optional)
+          * updated_after: an RFC-1123 compliant date string (optional)
+          * and any of the other supported query arguments from the ReplicationRule class, see:
+          https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/models.py#L884
+        :param returnTape: boolean to return Tape RSEs in the output, if any
+        :return: a flat list with the RSE names locking and holding the input DID
+
+        NOTE-1: this is not a full scan of data locking and availability because it does
+        not list the replication rules for blocks!!!
+
+        NOTE-2: some of the supported values can be looked up at:
+        https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/constants.py#L184
+        """
+        if 'name' not in kwargs:
+            raise WMRucioException("A DID name must be provided to the getContainerLockedAndAvailable API")
+        if 'grouping' in kwargs:
+            # long strings seem not to be working, like ALL / DATASET. Make it short!
+            kwargs['grouping'] = kwargs['grouping'][0]
+        kwargs.setdefault("scope", "cms")
+        returnTape = kwargs.pop("returnTape", False)
+
+        finalRSEs = set()
+        allRuleIds = []
+        locationByBlock = dict()
+        # first, find all the rules locking this container matching the kwargs
+        for rule in self.cli.list_replication_rules(kwargs):
+            allRuleIds.append(rule['id'])
+
+        # second, find all the blocks in this container and loop over all of them,
+        # checking where they are locked and available
+        for block in self.getBlocksInContainer(kwargs['name']):
+            locationByBlock.setdefault(block, set())
+            for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
+                if blockLock['state'] == 'OK' and blockLock['rule_id'] in allRuleIds:
+                    locationByBlock[block].add(blockLock['rse'])
+
+        # lastly, the final list of RSEs will depend on data grouping requested
+        # ALL --> container location is an intersection of each block location
+        # DATASET --> container location is the union of each block location.
+        #   Note that a block without any location will not affect the final result.
+        if kwargs.get('grouping') == 'A':
+            firstRun = True
+            for rses in locationByBlock.viewvalues():
+                if firstRun:
+                    finalRSEs = rses
+                    firstRun = False
+                else:
+                    finalRSEs = finalRSEs & rses
+        else:
+            for rses in locationByBlock.viewvalues():
+                finalRSEs = finalRSEs | rses
+
+        if not returnTape:
+            finalRSEs = dropTapeRSEs(finalRSEs)
+        else:
+            finalRSEs = list(finalRSEs)
+        return finalRSEs

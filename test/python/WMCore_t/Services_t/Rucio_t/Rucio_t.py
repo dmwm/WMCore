@@ -14,8 +14,18 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
 BLOCK = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD#f924e248-e029-11e7-aa2a-02163e01b396"
+FILE = "/store/data/Run2017F/SingleElectron/MINIAOD/17Nov2017-v1/60000/EC3CEF3E-48E0-E711-A48D-0025905B85FC.root"
+# pileup container with 10 blocks
 PUDSET = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM"
 PUBLOCK = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM#7f525c30-932f-4f79-963f-0198af37db74"
+
+# production container with 4 blocks
+DSET2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM"
+BLOCK2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM#50aecec1-d5a8-4756-9ee4-f93995c5b524"
+
+# integration containers with with 2 blocks
+# DSET3 = "/NoBPTX/Integ_Test-ReReco_LumiMask_HG1812_Validation_TEST_Alan_v13-v11/AOD"
+# DSET4 = "/NoBPTX/Integ_Test-ReReco_LumiMask_HG1812_Validation_TEST_Alan_v13-v11/DQMIO"
 
 
 class RucioTest(EmulatedUnitTestCase):
@@ -136,7 +146,6 @@ class RucioTest(EmulatedUnitTestCase):
         res2 = self.myRucio.getAccountLimits(self.acct)
         self.assertTrue(len(res) > 10)
         self.assertTrue(len(res2) > 10)
-        # print(res)
         self.assertEqual(res["T1_US_FNAL_Disk"], res2["T1_US_FNAL_Disk"])
 
         # test an account that we have no access to
@@ -286,6 +295,28 @@ class RucioTest(EmulatedUnitTestCase):
         response = Rucio.validateMetaData("any_DID_name", dict(project="mistake"), self.myRucio.logger)
         self.assertFalse(response)
 
+    def testListParentDIDs(self):
+        """
+        Test `listParentDIDs` method, which lists the parent DIDs
+        """
+        # given a file, list its blocks (for now, single block)
+        res = self.myRucio.listParentDIDs(FILE)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0]['scope'], "cms")
+        self.assertEqual(res[0]['type'], "DATASET")
+        self.assertEqual(res[0]['name'], BLOCK)
+
+        # given a block, list its containers (for now, single container)
+        res = self.myRucio.listParentDIDs(BLOCK)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0]['scope'], "cms")
+        self.assertEqual(res[0]['type'], "CONTAINER")
+        self.assertEqual(res[0]['name'], DSET)
+
+        # given a container, returns nothing because containers have no parents
+        res = self.myRucio.listParentDIDs(DSET)
+        self.assertEqual(res, [])
+
     def testEvaluateRSEExpression(self):
         """
         Test the `evaluateRSEExpression` method
@@ -345,3 +376,46 @@ class RucioTest(EmulatedUnitTestCase):
         # with more than 10 block replicas in the grid
         for block, rses in resp.viewitems():
             self.assertTrue(len(rses) > 5)
+
+    @attr('integration')  # jenkins cannot access this rucio account
+    def testGetDataLockedAndAvailable(self):
+        """
+        Test `getDataLockedAndAvailable` method
+        """
+        # as much as I dislike it, we need to use the production instance...
+        newParams = {"host": 'http://cms-rucio.cern.ch',
+                     "auth_host": 'https://cms-rucio-auth.cern.ch',
+                     "auth_type": "x509", "account": "wmcore_transferor",
+                     "ca_cert": False, "timeout": 5}
+        prodRucio = Rucio.Rucio(newParams['account'],
+                                hostUrl=newParams['host'],
+                                authUrl=newParams['auth_host'],
+                                configDict=newParams)
+
+        # matches rules for this container and transfer_ops account, returns an union of the blocks RSEs
+        resp = prodRucio.getDataLockedAndAvailable(name=DSET2, account="transfer_ops")
+        self.assertItemsEqual(resp, ['T2_CH_CSCS', 'T1_FR_CCIN2P3_Disk', 'T1_IT_CNAF_Disk', 'T2_US_Purdue',
+                                     'T1_RU_JINR_Disk', 'T2_FI_HIP', 'T2_UK_London_IC', 'T2_FR_GRIF_LLR',
+                                     'T2_US_Nebraska', 'T2_IT_Bari', 'T2_FR_IPHC', 'T2_DE_DESY', 'T2_BE_IIHE',
+                                     'T1_DE_KIT_Disk', 'T2_BR_SPRACE', 'T1_US_FNAL_Disk', 'T1_UK_RAL_Disk',
+                                     'T2_US_Vanderbilt'])
+
+        # matches the same rules as above (all multi RSEs), but returns an intersection of the RSEs
+        resp = prodRucio.getDataLockedAndAvailable(name=DSET2, account="transfer_ops", grouping="ALL")
+        # FIXME: there is a serious block distribution problem with Rucio, there should be 6 disk RSE locations..
+        self.assertItemsEqual(resp, ['T1_US_FNAL_Disk'])
+
+        # there are no rules for the blocks, but 6 copies for the container level
+        resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops", grouping="ALL")
+        self.assertItemsEqual(resp, ['T1_IT_CNAF_Disk', 'T1_RU_JINR_Disk', 'T1_UK_RAL_Disk', 'T1_US_FNAL_Disk',
+                                      'T2_IT_Bari', 'T2_US_Vanderbilt'])
+
+        # return the  6 copies for the container level, plus the tape one(s)
+        resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops",
+                                                   grouping="ALL", returnTape=True)
+        self.assertItemsEqual(resp, ['T1_IT_CNAF_Disk', 'T1_RU_JINR_Disk', 'T1_UK_RAL_Disk', 'T1_US_FNAL_Disk',
+                                      'T2_IT_Bari', 'T2_US_Vanderbilt', 'T1_IT_CNAF_Tape'])
+
+        # there are no rules for the blocks, but 6 copies for the container level
+        resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops", grouping="DATASET")
+        self.assertItemsEqual(resp, [])

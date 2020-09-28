@@ -907,30 +907,6 @@ class MSTransferor(MSCore):
             self.logger.info("Have whole PU dataset: %s (%s GB)", dsetName, gigaBytes(dsetSize))
             yield blockList, dsetSize, idx
 
-    def _getFinalPNNs(self, psns):
-        """
-        Given a list of sites/PSNs, get their associated PNN (dropping
-        PNNs invalid for data placement).
-        Lastly, filter out PNNs with no more space left for data placement.
-        :param psns: list of sites
-        :return: a flat list of PNNs
-        """
-        self.logger.info("  final list of PSNs to be use: %s", psns)
-        # TODO: how to evenly distribute data on sites with > 1 PNNs?
-        pnns = set()
-        for psn in psns:
-            for pnn in self.psn2pnnMap.get(psn, []):
-                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_"):
-                    pass
-                elif  pnn.endswith("_Tape") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
-                    pass
-                else:
-                    pnns.add(pnn)
-
-        self.logger.info("List of out-of-space RSEs dropped for this dataset: %s",
-                         pnns & self.rseQuotas.getOutOfSpaceRSEs())
-        return list(pnns & self.rseQuotas.getAvailableRSEs())
-
     def createTransferDoc(self, reqName, transferRecords):
         """
         Enrich the records returned from the data placement logic, wrap them up
@@ -953,7 +929,9 @@ class MSTransferor(MSCore):
         pnns = set()
         for psn in psnList:
             for pnn in self.psn2pnnMap.get(psn, []):
-                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+                if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_"):
+                    pass
+                elif pnn.endswith("_Tape") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
                     pass
                 else:
                     pnns.add(pnn)
@@ -968,7 +946,9 @@ class MSTransferor(MSCore):
         """
         diskPNNs = set()
         for pnn in pnnList:
-            if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
+            if pnn == "T2_CH_CERNBOX" or pnn.startswith("T3_"):
+                pass
+            elif pnn.endswith("_Tape") or pnn.endswith("_MSS") or pnn.endswith("_Export"):
                 pass
             else:
                 diskPNNs.add(pnn)

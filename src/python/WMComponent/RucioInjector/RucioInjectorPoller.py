@@ -370,7 +370,53 @@ class RucioInjectorPoller(BaseWorkerThread):
           If no => do nothing (check again next cycle)
         """
         # FIXME: figure out the proper logic for rule block deletion
+        # TODO: Update metadata after deleting block rules
         logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
+        logging.info("Starting deleteBlocks methods --> I'M ON IT...")
+
+        #Get list of blocks that can be deleted
+        blockDict = self.findDeletableBlocks.execute(transaction=False)
+
+        if not blockDict:
+            logging.info("No blocks were found")
+            return
+
+        deletableBlocks = []
+		# Obtain list of target RSE for each block
+        for blockName in blockDict:
+            rules = self.rucio.getParentContainerRules(name=blockName, scope=self.scope, account=self.rucioAcct)
+
+            #
+            requestedRSEs = []
+            requestedCopies = 0
+            for rule in rules:
+                if rule['account'] == self.rucioAcct:
+                    requestedCopies += rule['copies']
+                    requestedRSEs.extend(self.rucio.evaluateRSEExpression(rule['rse_expression'], useCache=True, returnTape=True))
+
+            #Get RSE in which the block is available
+            availableRSEs = self.rucio.getReplicaInfoForBlocks(block=blockName)
+
+            #Count how many of the copies were requested by this account
+            actualCopies = len([copie for copie in availableRSEs if copie in requestedRSEs])
+
+            #If enough requested copies are available, block can be deleted
+            if requestedCopies <= actualCopies:
+                deletableBlocks.append(blockName)
+
+
+
+        for block in deletableBlocks:
+            rules = self.rucio.listDataRules(block, self.scope)
+            for rule in rules:
+                if rule['account'] == self.rucioAcct:
+                    if self.rucio.deleteRule(rule['id']):
+                        logging.info("Successfully deleted block: %s.", block)
+                    else:
+                        logging.error("Failed to delete block: %s. Will retry again later.", block)
+
+
+        return
 
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isContainerTierAllowed(self, containerName, checkRulesList=True):

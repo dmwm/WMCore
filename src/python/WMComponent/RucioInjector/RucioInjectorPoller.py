@@ -24,20 +24,23 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 ### TODO: remove this function once PhEDExInjector is out of the game
-def filterDataByTier(rawData, allowedTiers):
+def filterDataByTier(rawData, listTiersToInject):
     """
     This function will receive data - in the same format as returned from
     the DAO - and it will pop out anything that the component is not meant
     to inject into Rucio.
     :param rawData: the large dict of location/container/block/files
-    :param allowedTiers: a list of datatiers that we want to inject
+    :param listTiersToInject: a list of datatiers that we want to inject
     :return: the same dictionary as in the input, but without dataset structs
              for datatiers that we do not want to be processed by this component.
     """
+    if not listTiersToInject:
+        # then we are actually allowed to insert anything into Rucio
+        return rawData
     for location in rawData:
         for container in list(rawData[location]):
             endTier = container.rsplit('/', 1)[1]
-            if endTier not in allowedTiers:
+            if endTier not in listTiersToInject:
                 logging.debug("Container %s not meant to be injected by RucioInjector", container)
                 rawData[location].pop(container)
     return rawData
@@ -107,8 +110,11 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.testRSEs = config.RucioInjector.RSEPostfix
         self.filesToRecover = []
 
-        logging.info("Component configured to only inject data for data tiers: %s",
-                     self.listTiersToInject)
+        if not self.listTiersToInject:
+            logging.info("Component configured to inject all the data tiers")
+        else:
+            logging.info("Component configured to only inject data for data tiers: %s",
+                         self.listTiersToInject)
         logging.info("Component configured to skip container rule creation for data tiers: %s",
                      self.skipRulesForTiers)
         logging.info("Component configured to create block rules: %s", self.createBlockRules)
@@ -246,6 +252,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         be handled by this component, thus block-level rule creation as well
         :return: True if the component can proceed with this block, False otherwise
         """
+        if not self.listTiersToInject:
+            return True
         endBlock = blockName.rsplit('/', 1)[1]
         endTier = endBlock.split('#')[0]
         if endTier not in self.listTiersToInject:
@@ -385,7 +393,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         :return: True if the component can proceed with this container, False otherwise
         """
         endTier = containerName.rsplit('/', 1)[1]
-        if endTier not in self.listTiersToInject:
+        if self.listTiersToInject and endTier not in self.listTiersToInject:
             return False
         if checkRulesList and endTier in self.skipRulesForTiers:
             return False

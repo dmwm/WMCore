@@ -101,6 +101,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+
+        self.enabled = getattr(config.PhEDExInjector, "enabled", True)
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.phedexGroup = config.PhEDExInjector.phedexGroup
 
@@ -191,6 +193,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Poll the database for uninjected files and attempt to inject them into
         PhEDEx.
         """
+        if not self.enabled:
+            logging.info("PhEDExInjector component is disabled in the configuration, exiting.")
+            return
+
         logging.info("Running PhEDEx injector poller algorithm...")
         self.pollCounter += 1
 

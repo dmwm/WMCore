@@ -165,7 +165,7 @@ class MSMonitor(MSCore):
                 doc['lastUpdate'] = tstamp
             except Exception as exc:
                 msg = "Unknown exception checking workflow %s. Error: %s"
-                self.logger.error(msg, doc['workflowName'], str(exc))
+                self.logger.exception(msg, doc['workflowName'], str(exc))
                 skippedWorkflows.append(doc['workflowName'])
         return skippedWorkflows
 
@@ -260,7 +260,11 @@ class MSMonitor(MSCore):
                 lockCompletion = 100.0
             else:
                 totalLocks = data['locks_ok_cnt'] + data['locks_replicating_cnt'] + data['locks_stuck_cnt']
-                lockCompletion = (data['locks_ok_cnt'] / totalLocks) * 100
+                try:
+                    lockCompletion = (data['locks_ok_cnt'] / totalLocks) * 100
+                except ZeroDivisionError:
+                    self.logger.warning("Rule does not have any lock counts yet. Rule data: %s", data)
+                    lockCompletion = 0
             completion.append(lockCompletion)
             self.logger.info("Rule ID: %s has a completion rate of: %s%%", ruleID, lockCompletion)
             self.logger.debug("Rule ID: %s, DID: %s, state: %s, grouping: %s, rse_expression: %s",

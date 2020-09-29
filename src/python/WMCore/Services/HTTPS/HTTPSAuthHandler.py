@@ -5,16 +5,13 @@ See usage example in:
 src/python/WMCore/WMSpec/Steps/Executors/DQMUpload.py
 """
 from __future__ import print_function, division
-from future import standard_library
-standard_library.install_aliases()
-
 import logging
-import urllib.request
-import http.client
+import urllib2
+import httplib
 import ssl
 
 
-class HTTPSAuthHandler(urllib.request.HTTPSHandler):
+class HTTPSAuthHandler(urllib2.HTTPSHandler):
     """
     HTTPS authentication class to provide a ssl context with the certificates.
     """
@@ -39,15 +36,15 @@ class HTTPSAuthHandler(urllib.request.HTTPSHandler):
             self.logger.info("  protocol : %s", self.ctx.protocol)  # default to 2 (PROTOCOL_SSLv23)
             self.logger.info("  verify_flags : %s", self.ctx.verify_flags)  # default to 0 (VERIFY_DEFAULT)
             self.logger.info("  verify_mode : %s", self.ctx.verify_mode)  # default to 2 (CERT_REQUIRED)
-            urllib.request.HTTPSHandler.__init__(self, debuglevel=level, context=self.ctx)
+            urllib2.HTTPSHandler.__init__(self, debuglevel=level, context=self.ctx)
         else:
             self.logger.info("Certificate not provided for HTTPSHandler")
-            urllib.request.HTTPSHandler.__init__(self, debuglevel=level)
+            urllib2.HTTPSHandler.__init__(self, debuglevel=level)
 
     def get_connection(self, host, **kwargs):
         if self.ctx:
-            return http.client.HTTPSConnection(host, context=self.ctx, **kwargs)
-        return http.client.HTTPSConnection(host)
+            return httplib.HTTPSConnection(host, context=self.ctx, **kwargs)
+        return httplib.HTTPSConnection(host)
 
     def https_open(self, req):
         """

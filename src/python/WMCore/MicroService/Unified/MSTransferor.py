@@ -634,6 +634,7 @@ class MSTransferor(MSCore):
                     # enforce a dataset level PhEDEx subscription / container-level Rucio rule
                     subLevel = "dataset"
                     dataBlocks = None
+                    blocks = None
                 elif blocks:
                     subLevel = "block"
                     dataBlocks = {dataIn['name']: blocks}
@@ -641,6 +642,7 @@ class MSTransferor(MSCore):
                     # then it's a dataset level subscription
                     subLevel = "dataset"
                     dataBlocks = None
+                    blocks = None
 
                 if self.msConfig['useRucio']:
                     success, transferId = self.makeTransferRucio(wflow, dataIn, subLevel,
@@ -692,7 +694,7 @@ class MSTransferor(MSCore):
         #   "block" level in PhEDEx --> "DATASET" in Rucio (whole block at same location)
         success, transferId = True, set()
         subLevel = "ALL" if subLevel == "dataset" else "DATASET"
-        dids = blocks if blocks else dataIn['name']
+        dids = blocks if blocks else [dataIn['name']]
 
         rule = {'copies': 1,
                 'activity': 'Production Input',
@@ -707,14 +709,15 @@ class MSTransferor(MSCore):
             msg = "Primary data placement with parent blocks, putting all in the same RSE: {}".format(rseExpr)
             self.logger.info(msg)
         elif rule['grouping'] == "ALL":
-            # then it means we are doing the secondary data placement.
+            # this means we are placing the whole container under the same RSE.
             # Ask Rucio which RSE we should use, provided a list of them
             rseExpr = "|".join(nodes)
             rseTuple = self.rucio.pickRSE(rseExpr)
             if not rseTuple:
                 self.logger.error("PickRSE did not return any valid RSE for expression: %s", rseExpr)
                 return False, transferId
-            self.logger.info("Secondary data placement, picked RSE: %s out of an RSE list: %s", rseTuple[0], rseExpr)
+            self.logger.info("Placing whole container, picked RSE: %s out of an RSE list: %s",
+                             rseTuple[0], rseExpr)
             rseExpr = rseTuple[0]
         else:
             # then grouping is by DATASET, and there is no parent dataset
@@ -731,13 +734,13 @@ class MSTransferor(MSCore):
                                     dataSize > self.msConfig.get('warningTransferThreshold')
 
             # Then make the data subscription, for real!!!
-            self.logger.info("Creating a Rucio rule for workflow %s, container %s, RSEs: %s, grouping: %s",
-                             wflow.getName(), dataIn['name'], rseExpr, subLevel)
+            self.logger.info("Creating rule for workflow %s with %d DIDs in container %s, RSEs: %s, grouping: %s",
+                             wflow.getName(), len(dids), dataIn['name'], rseExpr, subLevel)
             try:
                 res = self.rucio.createReplicationRule(dids, rseExpr, **rule)
-            except Exception:
-                msg = "Hit a bad exception while creating replication rules for DID: %s"
-                self.logger.error(msg, dids)
+            except Exception as exc:
+                msg = "Hit a bad exception while creating replication rules for DID: %s. Error: %s"
+                self.logger.error(msg, dids, str(exc))
                 success = False
             else:
                 if res:

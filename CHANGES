@@ -1,3 +1,11 @@
+1.4.1.pre2 to 1.4.1.pre3:
+  - Drop Tape RSEs from the MSTransferor input location (Alan Malta Rodrigues) #9944
+  - Different algorithm to run the block/container data location (Alan Malta Rodrigues) #9936
+  - Update python requirements (Erik Gough) #9941
+  - Fix Rucio data location method; support dropping Tape RSEs (Alan Malta Rodrigues) #9936
+  - Add listParentDIDs functionality to Rucio service (germanfgv) #9935
+
+
 1.4.1.pre1 to 1.4.1.pre2:
   - Drop Tape RSEs from the pileup location (Alan Malta Rodrigues) #9930
   - Construct the PU location via rucio considering MSTransferor locks (Alan Malta Rodrigues) #9930

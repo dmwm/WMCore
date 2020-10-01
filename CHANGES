@@ -1,3 +1,10 @@
+1.4.1.pre3 to 1.4.1.pre4:
+  - Avoid resolving container location with the dataset_locks, whenever possible (Alan Malta Rodrigues) #9955
+  - Flag to disable PhEDExInjector; setup to enable all datatiers in RucioInjector (Alan Malta Rodrigues) #9947
+  - MSMonitor: deal with ZeroDivision exception for large rules in INJECT state (Alan Malta Rodrigues) #9951
+  - Fix DQMHarvest input data placement in MSTransferor; print exception error (Alan Malta Rodrigues) #9949
+
+
 1.4.1.pre2 to 1.4.1.pre3:
   - Drop Tape RSEs from the MSTransferor input location (Alan Malta Rodrigues) #9944
   - Different algorithm to run the block/container data location (Alan Malta Rodrigues) #9936

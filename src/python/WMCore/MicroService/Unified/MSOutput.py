@@ -91,6 +91,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
+        self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
         self.msConfig.setdefault("sendNotification", False)
@@ -515,7 +516,9 @@ class MSOutput(MSCore):
         """
         if self.msConfig.get('useRucio'):
             # This API returns a tuple with the RSE name and whether it requires approval
-            return self.rucio.pickRSE(rseAttribute=self.msConfig["rucioRSEAttribute"], minNeeded=dataSize)
+            return self.rucio.pickRSE(rseExpression=self.msConfig["rucioTapeExpression"],
+                                      rseAttribute=self.msConfig["rucioRSEAttribute"],
+                                      minNeeded=dataSize)
 
         # well, then it's PhEDEx
         res = self.phedex.getGroupUsage(node=self.tapeStatus.keys(), group=self.msConfig['defaultGroup'])

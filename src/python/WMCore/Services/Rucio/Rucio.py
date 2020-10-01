@@ -14,6 +14,8 @@ from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
                                     UnsupportedOperation, FileAlreadyExists, RuleNotFound)
+
+from Utils.IteratorTools import grouper
 from Utils.MemoryCache import MemoryCache
 from WMCore.WMException import WMException
 
@@ -1071,11 +1073,25 @@ class Rucio(object):
         This method retrieves all the locations where a given container DID is
         currently available and locked (note that, by default, it will not
         return any Tape RSEs). The logic is as follows:
-          1. list the container-level replication rules
-          2. list all the blocks in the container
-          3. for each block, check where it's are locked and available (state=OK),
-             matching one of the replication rule ids discovered in the previous steps
-          4. the input `grouping` specified decides how the list of final RSEs are built
+          1. for each container-level replication rule, check
+            i. if the rule state = OK and if the number of copies is equals to
+             the number of RSEs. If so, that is one of the container locations
+            ii. elif the rule state = OK, then consider all the RSEs evaluated
+             from this rule as possible locations (to be matched with dataset_replicas)
+            iii. otherwise, don't use the container rule
+          2. if there were no rules with multiple RSEs, then return the RSEs from step 1
+          3. else, retrieve all the blocks in the container and convert them to Rucio DID input
+          4. then list dataset_replicas in bulk of 1000 blocks, checking
+            i. if a replica is AVAILABLE and matches one of the multiple RSEs rules
+             retrieved on step 1. If so, use/keep this block location
+            ii. else, do not consider that location (thus, a block might not have any location at all)
+          5. based on the input parameter `grouping`, execute a location logic of OR or AND between
+           the block-based and the container-based location. Such as
+            i. grouping=ALL triggers an intersection (AND) of all blocks location, which gets added
+             on top of the container-level location
+            ii. other grouping values (like DATASET) triggers an union of all blocks location (note
+             that blocks without location have no impact!), and a final union of this list with the
+             container-level location is made
         :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
           * name: string with the DID name (mandatory)
           * scope: string with the scope name (optional)
@@ -1107,38 +1123,69 @@ class Rucio(object):
         returnTape = kwargs.pop("returnTape", False)
 
         finalRSEs = set()
-        allRuleIds = []
-        locationByBlock = dict()
+        multiRSERules = []
         # first, find all the rules locking this container matching the kwargs
+        # and try to evaluate the location already from them
         for rule in self.cli.list_replication_rules(kwargs):
-            allRuleIds.append(rule['id'])
+            # now resolve the RSE expressions
+            rses = self.evaluateRSEExpression(rule['rse_expression'])
+            if rule['copies'] == len(rses) and rule['state'] == "OK":
+                # then we can guarantee that data is locked and available on these RSEs
+                finalRSEs.update(set(rses))
+            elif rule['state'] == "OK":
+                if returnTape:
+                    multiRSERules.extend(rses)
+                else:
+                    multiRSERules.extend(dropTapeRSEs(rses))
+            else:
+                self.logger.debug("Container rule: %s not satisfied yet. State: %s", rule['id'], rule['state'])
+        self.logger.info("Container: %s available in this initial list of RSEs: %s",
+                          kwargs['name'], finalRSEs)
+        if not multiRSERules:
+            return list(finalRSEs)
 
-        # second, find all the blocks in this container and loop over all of them,
-        # checking where they are locked and available
+        # then find all the blocks in this container, and convert them to the input
+        # required by the bulk API
+        inputBlocks = []
         for block in self.getBlocksInContainer(kwargs['name']):
-            locationByBlock.setdefault(block, set())
-            for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
-                if blockLock['state'] == 'OK' and blockLock['rule_id'] in allRuleIds:
-                    locationByBlock[block].add(blockLock['rse'])
+            inputBlocks.append({"scope": kwargs["scope"], "type": "DATASET", "name": block})
 
-        # lastly, the final list of RSEs will depend on data grouping requested
+        # make big slices of blocks and get their current availability
+        # 1000 blocks is the limit number of DIDs supported by Rucio
+        # FIXME: this is a sub-optimal algorithm because it is not very accurate (there is to hard
+        # coupling between the replica and the upstream rule)! It will speed up the process though
+        locationByBlock = {}
+        for blockSlice in grouper(inputBlocks, 1000):
+            for item in self.cli.list_dataset_replicas_bulk(blockSlice):
+                locationByBlock.setdefault(item['name'], [])
+                # if block is available and present in one of the multi RSE rules
+                if item['state'].upper() == 'AVAILABLE' and item['rse'] in multiRSERules:
+                    locationByBlock[item['name']].append(item['rse'])
+
+        # lastly, the final list of RSEs will depend on the data grouping requested
         # ALL --> container location is an intersection of each block location
         # DATASET --> container location is the union of each block location.
         #   Note that a block without any location will not affect the final result.
+        commonBlockRSEs = set()
         if kwargs.get('grouping') == 'A':
             firstRun = True
             for rses in locationByBlock.viewvalues():
                 if firstRun:
-                    finalRSEs = rses
+                    commonBlockRSEs = set(rses)
                     firstRun = False
                 else:
-                    finalRSEs = finalRSEs & rses
+                    commonBlockRSEs = commonBlockRSEs & set(rses)
+            # finally, append the block based location to the container rule location
+            finalRSEs.update(commonBlockRSEs)
         else:
             for rses in locationByBlock.viewvalues():
-                finalRSEs = finalRSEs | rses
+                commonBlockRSEs = commonBlockRSEs | set(rses)
+            finalRSEs = finalRSEs | commonBlockRSEs
 
         if not returnTape:
             finalRSEs = dropTapeRSEs(finalRSEs)
         else:
             finalRSEs = list(finalRSEs)
+        self.logger.info("Container: %s with block based location: %s, and final location: %s",
+                          kwargs['name'], commonBlockRSEs, finalRSEs)
         return finalRSEs

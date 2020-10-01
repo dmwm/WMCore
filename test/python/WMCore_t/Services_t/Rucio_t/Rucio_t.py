@@ -386,11 +386,16 @@ class RucioTest(EmulatedUnitTestCase):
         newParams = {"host": 'http://cms-rucio.cern.ch',
                      "auth_host": 'https://cms-rucio-auth.cern.ch',
                      "auth_type": "x509", "account": "wmcore_transferor",
-                     "ca_cert": False, "timeout": 5}
+                     "ca_cert": False, "timeout": 50}
         prodRucio = Rucio.Rucio(newParams['account'],
                                 hostUrl=newParams['host'],
                                 authUrl=newParams['auth_host'],
                                 configDict=newParams)
+
+        # This is a very heavy check, with ~25k blocks
+        PUDSET = "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW"
+        resp = prodRucio.getDataLockedAndAvailable(name=PUDSET)
+        self.assertItemsEqual(resp, ['T1_US_FNAL_Disk'])
 
         # matches rules for this container and transfer_ops account, returns an union of the blocks RSEs
         resp = prodRucio.getDataLockedAndAvailable(name=DSET2, account="transfer_ops")

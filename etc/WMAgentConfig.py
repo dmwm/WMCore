@@ -162,6 +162,7 @@ config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
 config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
+config.PhEDExInjector.enabled = True
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 # phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"

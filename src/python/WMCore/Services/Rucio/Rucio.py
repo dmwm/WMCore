@@ -1071,11 +1071,25 @@ class Rucio(object):
         This method retrieves all the locations where a given container DID is
         currently available and locked (note that, by default, it will not
         return any Tape RSEs). The logic is as follows:
-          1. list the container-level replication rules
-          2. list all the blocks in the container
-          3. for each block, check where it's are locked and available (state=OK),
-             matching one of the replication rule ids discovered in the previous steps
-          4. the input `grouping` specified decides how the list of final RSEs are built
+          1. for each container-level replication rule, check
+            i. if the rule state=OK and if the number of copies is equals to
+             the number of RSEs. If so, that is one of the container locations
+            ii. elif the rule state=OK, then consider that rule id (and its RSEs) to
+             be evaluated against the dataset locks
+            iii. otherwise, don't use the container rule
+          2. if there were no rules with multiple RSEs, then return the RSEs from step 1
+          3. else, retrieve all the blocks in the container and build a block-based dictionary
+            by listing all the dataset_locks for all the blocks:
+            i. if the lock state=OK and the rule_id belongs to one of those multiple RSE locks
+             from step-1, then use that block location
+            ii. else, the location can't be used
+          5. finally, build the final container location based on the input `grouping` parameter
+           specified, such as:
+            i. grouping=ALL triggers an intersection (AND) of all blocks location, which gets added
+             to the already discovered container-level location
+            ii. other grouping values (like DATASET) triggers an union of all blocks location (note
+             that it only takes one block location to consider it as a final location), and a final
+             union of this list with the container-level location is made
         :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
           * name: string with the DID name (mandatory)
           * scope: string with the scope name (optional)
@@ -1107,38 +1121,60 @@ class Rucio(object):
         returnTape = kwargs.pop("returnTape", False)
 
         finalRSEs = set()
-        allRuleIds = []
-        locationByBlock = dict()
+        multiRSERules = []
         # first, find all the rules locking this container matching the kwargs
         for rule in self.cli.list_replication_rules(kwargs):
-            allRuleIds.append(rule['id'])
+            # now resolve the RSE expressions
+            rses = self.evaluateRSEExpression(rule['rse_expression'])
+            if rule['copies'] == len(rses) and rule['state'] == "OK":
+                # then we can guarantee that data is locked and available on these RSEs
+                finalRSEs.update(set(rses))
+            elif rule['state'] == "OK":
+                if returnTape:
+                    multiRSERules.append(rule['id'])
+                elif dropTapeRSEs(rses):
+                    # if it's not a tape-only rule, use it
+                    multiRSERules.append(rule['id'])
+            else:
+                self.logger.debug("Container rule: %s not yet satisfied. State: %s", rule['id'], rule['state'])
+        self.logger.info("Container: %s with container-based location at: %s",
+                         kwargs['name'], finalRSEs)
+        if not multiRSERules:
+            return list(finalRSEs)
 
         # second, find all the blocks in this container and loop over all of them,
         # checking where they are locked and available
+        locationByBlock = dict()
         for block in self.getBlocksInContainer(kwargs['name']):
             locationByBlock.setdefault(block, set())
             for blockLock in self.cli.get_dataset_locks(kwargs['scope'], block):
-                if blockLock['state'] == 'OK' and blockLock['rule_id'] in allRuleIds:
+                if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
                     locationByBlock[block].add(blockLock['rse'])
 
         # lastly, the final list of RSEs will depend on data grouping requested
         # ALL --> container location is an intersection of each block location
         # DATASET --> container location is the union of each block location.
         #   Note that a block without any location will not affect the final result.
+        commonBlockRSEs = set()
         if kwargs.get('grouping') == 'A':
             firstRun = True
             for rses in locationByBlock.viewvalues():
                 if firstRun:
-                    finalRSEs = rses
+                    commonBlockRSEs = set(rses)
                     firstRun = False
                 else:
-                    finalRSEs = finalRSEs & rses
+                    commonBlockRSEs = commonBlockRSEs & set(rses)
+            # finally, append the block based location to the container rule location
+            finalRSEs.update(commonBlockRSEs)
         else:
             for rses in locationByBlock.viewvalues():
-                finalRSEs = finalRSEs | rses
+                commonBlockRSEs = commonBlockRSEs | set(rses)
+            finalRSEs = finalRSEs | commonBlockRSEs
 
         if not returnTape:
             finalRSEs = dropTapeRSEs(finalRSEs)
         else:
             finalRSEs = list(finalRSEs)
+        self.logger.info("Container: %s with block-based location at: %s, and final location: %s",
+                          kwargs['name'], commonBlockRSEs, finalRSEs)
         return finalRSEs

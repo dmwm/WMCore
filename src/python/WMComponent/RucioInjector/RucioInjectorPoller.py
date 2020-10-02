@@ -102,7 +102,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.rucio = Rucio(acct=self.rucioAcct,
                            hostUrl=config.RucioInjector.rucioUrl,
                            authUrl=config.RucioInjector.rucioAuthUrl,
-                           configDict={'logger': self.logger})
+                           configDict={'logger': self.logger,
+                                       'phedexCompatible': False})
 
         # metadata dictionary information to be added to block/container rules
         # cannot be a python dictionary, but a JSON string instead
@@ -379,15 +380,85 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         _deleteBlocks_
         Find deletable blocks, then decide if to delete based on:
-        Is there an active subscription for dataset or block ?
-          If yes => set deleted=2
-          If no => next check
         Has transfer to all destinations finished ?
-          If yes => request block deletion, approve request, set deleted=1
+          If yes => Delete rules associated with the block, set deleted=1
           If no => do nothing (check again next cycle)
         """
-        # FIXME: figure out the proper logic for rule block deletion
-        logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
+        logging.info("Checking if there are block rules to be deleted...")
+
+        # Get list of blocks that can be deleted
+        blockDict = self.findDeletableBlocks.execute(transaction=False)
+
+        if not blockDict:
+            logging.info("No candidate blocks found for rule deletion")
+            return
+
+        logging.info("Found %d candidate blocks for rule deletion", len(blockDict))
+
+        blocksToDelete = []
+        containerDict = {}
+        # Populate containerDict, assigning each block to its correspondant container
+        for blockName in blockDict:
+            container = blockDict[blockName]['dataset']
+            # If the container is not in the dictionary, create a new entry for it
+            if container not in containerDict:
+                # Set of sites to which the container needs to be transferred
+                sites = blockDict[blockName]['sites']
+                containerDict[container] = {'blocks': [], 'rse': sites}
+            containerDict[container]['blocks'].append(blockName)
+
+        for contName in containerDict:
+            cont = containerDict[contName]
+
+            # Checks if the container is not requested in any sites.
+            # This should never be triggered, but better safe than sorry
+            if not cont['rse']:
+                logging.warning("No rules for container: %s. Its blocks won't be deleted.", contName)
+                continue
+
+            try:
+                # Get RSE in which each block is available
+                availableRSEs = self.rucio.getReplicaInfoForBlocks(block=cont['blocks'])
+            except Exception as exc:
+                msg = "Failed to get replica info for blocks in container: %s.\n" % contName
+                msg += "Will retry again in the next cycle. Error: %s" % str(exc)
+                logging.error(msg)
+                continue
+
+            for blockRSEs in availableRSEs:
+                # If block is available at every RSE its container needs to be transferred, the block can be deleted
+                blockSites = set(blockRSEs['replica'])
+                if cont['rse'].issubset(blockSites):
+                    blocksToDelete.append(blockRSEs['name'])
+
+        # Delete agent created rules locking the block
+        binds = []
+        logging.info("Going to delete %d block rules", len(blocksToDelete))
+        for block in blocksToDelete:
+            try:
+                rules = self.rucio.listDataRules(block, scope=self.scope, account=self.rucioAcct)
+            except WMRucioException as exc:
+                logging.warning("Unable to retrieve replication rules for block: %s. Will retry in the next cycle.", block)
+            else:
+                if not rules:
+                    logging.info("Block rule for: %s has been deleted by previous cycles", block)
+                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                    continue
+                for rule in rules:
+                    deletedRules = 0
+                    if self.rucio.deleteRule(rule['id']):
+                        logging.info("Successfully deleted rule: %s, for block %s.", rule['id'], block)
+                        deletedRules += 1
+                    else:
+                        logging.warning("Failed to delete rule: %s, for block %s. Will retry in the next cycle.", rule['id'], block)
+                if deletedRules == len(rules):
+                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                    logging.info("Successfully deleted all rules for block %s.", block)
+
+
+        self.markBlocksDeleted.execute(binds)
+        logging.info("Marked %d blocks as deleted in the database", len(binds))
+        return
 
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isContainerTierAllowed(self, containerName, checkRulesList=True):

@@ -135,6 +135,7 @@ config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cer
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
+config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # TODO FIXME: apply manually!
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"

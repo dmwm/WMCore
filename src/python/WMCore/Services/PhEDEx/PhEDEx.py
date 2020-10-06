@@ -30,6 +30,9 @@ class PhEDEx(Service):
         httpDict.setdefault('cacheduration', 0)
 
         Service.__init__(self, httpDict)
+        # NOTE: it looks like PhEDEx returns these weird data locations since ever.
+        # Why don't we deal with it as close as possible to the PhEDEx service then...
+        self.nodeFilter = set(['UNKNOWN', None])
 
     def _getResult(self, callname, clearCache=False,
                    args=None, verb="POST"):
@@ -435,7 +438,6 @@ class PhEDEx(Service):
 
         Returns a dictionary with se names per block
         """
-
         callname = 'blockreplicas'
         response = self._getResult(callname, args=kwargs)
 
@@ -449,7 +451,7 @@ class PhEDEx(Service):
             nodes = set()
             for replica in blockInfo['replica']:
                 nodes.add(replica['node'])
-            blockNodes[blockInfo['name']] = list(nodes)
+            blockNodes[blockInfo['name']] = list(nodes - self.nodeFilter)
 
         return blockNodes
 

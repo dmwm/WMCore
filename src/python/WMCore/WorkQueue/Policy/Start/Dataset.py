@@ -166,11 +166,11 @@ class Dataset(StartPolicyInterface):
                 blockSummary['NumberOfRuns'] = runs
 
             validBlocks.append(blockSummary)
-
+            blockLocation = set(self.blockLocationRucioPhedex(blockName))
             if locations is None:
-                locations = set(dbs.listFileBlockLocation(blockName))
+                locations = blockLocation
             else:
-                locations = locations.intersection(dbs.listFileBlockLocation(blockName))
+                locations = locations.intersection(blockLocation)
 
         # all needed blocks present at these sites
         if task.getTrustSitelists().get('trustlists'):

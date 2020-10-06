@@ -183,14 +183,18 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError('Only blocks can be released on location')
 
-        self.params.setdefault('rucioAccount', "wma_prod")
+        self.params.setdefault('rucioAccount', "wmcore_transferor")
+        # FIXME remove these attributes initialized to None
         if usingRucio():
-            self.phedexService = Rucio(self.params['rucioAccount'])
+            self.phedexService = None
+            self.rucio = Rucio(self.params['rucioAccount'], configDict=dict(logger=self.logger))
         else:
+            self.rucio = None
             self.phedexService = PhEDEx()
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
+                                                              rucio=self.rucio,
                                                               cric=self.cric,
                                                               locationFrom=self.params['TrackLocationOrSubscription'],
                                                               incompleteBlocks=self.params['ReleaseIncompleteBlocks'],
@@ -378,6 +382,23 @@ class WorkQueue(WorkQueueBase):
             return self.dbses[dbsUrl]
         return DBSReader(dbsUrl)
 
+    def _blockLocationRucioPhedex(self, blockName):
+        """
+        Wrapper around Rucio and PhEDEx systems.
+        Fetch the current location of the block name (if Rucio,
+        also consider the locks made on that block)
+        :param blockName: string with the block name
+        :return: a list of RSEs
+        """
+        if self.rucio:
+            # then it's Rucio
+            location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                            account=self.params['rucioAccount'])
+        else:
+            location = self.phedexService.getReplicaPhEDExNodesForBlocks(block=[blockName],
+                                                                         complete='y')[blockName]
+        return location
+
     def _getDBSDataset(self, match):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
@@ -386,7 +407,9 @@ class WorkQueue(WorkQueueBase):
 
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
         for blockName in blocks:
-            tmpDsetDict.update(dbs.getFileBlock(blockName))
+            blockSummary = dbs.getFileBlock(blockName)
+            blockSummary['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
+            tmpDsetDict[blockName] = blockSummary
 
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
         dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
@@ -416,12 +439,15 @@ class WorkQueue(WorkQueueBase):
             dbs = self._getDbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
             elif wmspec.getRequestType() == 'StoreResults':
-                dbsBlockDict = dbs.getFileBlock(blockName, dbsOnly=True)
+                dbsBlockDict = dbs.getFileBlock(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = dbs.listFileBlockLocation(blockName)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
 
-        return blockName, dbsBlockDict[blockName]
+        return blockName, dbsBlockDict
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
         """Inject data into wmbs and create subscription. """

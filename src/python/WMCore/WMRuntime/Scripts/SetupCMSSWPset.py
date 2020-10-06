@@ -452,7 +452,7 @@ class SetupCMSSWPset(ScriptInterface):
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 # vstring does not support unicode
-                                inputTypeAttrib.fileNames.append(str(fileLFN['logical_file_name']))
+                                inputTypeAttrib.fileNames.append(str(fileLFN))
                     if requestedPileupType == 'data':
                         if getattr(self.jobBag, 'skipPileupEvents', None) is not None:
                             # For deterministic pileup, we want to shuffle the list the

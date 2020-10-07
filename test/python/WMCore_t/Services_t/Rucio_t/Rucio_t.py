@@ -258,10 +258,32 @@ class RucioTest(EmulatedUnitTestCase):
 
     def testListDataRules(self):
         """
-        Test `listContent` method
+        Test `listDataRules` method
         """
         res = self.myRucio.listDataRules(DSET)
         self.assertItemsEqual(res, [])
+
+    @attr('integration')
+    def testListDataRules2(self):
+        """
+        Test `listDataRules` method with data from production
+        """
+        newParams = {"host": 'http://cms-rucio.cern.ch',
+                     "auth_host": 'https://cms-rucio-auth.cern.ch',
+                     "auth_type": "x509", "account": "wmcore_transferor",
+                     "ca_cert": False, "timeout": 50}
+        prodRucio = Rucio.Rucio(newParams['account'],
+                                hostUrl=newParams['host'],
+                                authUrl=newParams['auth_host'],
+                                configDict=newParams)
+
+        resp = prodRucio.listDataRules(name=DSET2, account="transfer_ops")
+        self.assertEqual(len(resp), 5)
+        accts = set([rule['account'] for rule in resp])
+        self.assertItemsEqual(accts, ['transfer_ops'])
+
+        resp = prodRucio.listDataRules(name=DSET2, account="wmcore_transferor")
+        self.assertItemsEqual(resp, [])
 
     def testGetRule(self):
         """

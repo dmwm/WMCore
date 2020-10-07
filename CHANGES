@@ -1,3 +1,7 @@
+1.4.1 to 1.4.1.patch1:
+  - Revert stage2 fixers on DQMUpload module (Alan Malta Rodrigues) #9967
+
+
 1.4.1.pre5 to 1.4.1:
 
 

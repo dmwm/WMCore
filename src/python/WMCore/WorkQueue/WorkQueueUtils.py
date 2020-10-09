@@ -89,7 +89,6 @@ def queueConfigFromConfigObject(config):
         wqManager.queueParams = {}
     qConfig = wqManager.queueParams
 
-    qConfig['rucioAccount'] = getattr(config.General, "rucioAccount", "")
     if hasattr(wqManager, 'couchurl'):
         qConfig['CouchUrl'] = wqManager.couchurl
     if hasattr(wqManager, 'dbname'):

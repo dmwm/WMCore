@@ -17,7 +17,6 @@ from retry import retry
 
 from Utils.IteratorTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 
 ### Needed for the pycurl comment, leave it out for now
@@ -79,9 +78,6 @@ class DBS3Reader(object):
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-
-        # connection to PhEDEx (Use default endpoint url)
-        self.phedex = PhEDEx(responseType="json", dbsUrl=self.dbsURL)
 
     def _getLumiList(self, blockName=None, lfns=None, validFileOnly=1):
         """
@@ -383,35 +379,6 @@ class DBS3Reader(object):
         result['block'] = block if block else ''
         return result
 
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks=False,
-                          blockName=None, locations=True):
-        """
-        """
-        self.checkDatasetPath(dataset)
-        args = {'dataset': dataset, 'detail': True}
-        if blockName:
-            args['block_name'] = blockName
-        try:
-            blocks = self.dbs.listBlocks(**args)
-        except Exception as ex:
-            msg = "Error in DBSReader.getFileBlocksInfo(%s)\n" % dataset
-            msg += "%s\n" % formatEx3(ex)
-            raise DBSReaderError(msg)
-
-        blocks = [remapDBS3Keys(block, stringify=True, block_name='Name') for block in blocks]
-        # only raise if blockName not specified - mimic dbs2 error handling
-        if not blocks and not blockName:
-            msg = "DBSReader.getFileBlocksInfo(%s, %s): No matching data"
-            raise DBSReaderError(msg % (dataset, blockName))
-        if locations:
-            for block in blocks:
-                block['PhEDExNodeList'] = [{'Name': x} for x in self.listFileBlockLocation(block['Name'])]
-
-        if onlyClosedBlocks:
-            return [x for x in blocks if str(x['OpenForWriting']) != "1"]
-
-        return blocks
-
     def listFileBlocks(self, dataset, onlyClosedBlocks=False, blockName=None):
         """
         _listFileBlocks_
@@ -602,7 +569,7 @@ class DBS3Reader(object):
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
 
-    def listFileBlockLocation(self, fileBlockNames, dbsOnly=False):
+    def listFileBlockLocation(self, fileBlockNames):
         """
         _listFileBlockLocation_
 
@@ -621,25 +588,17 @@ class DBS3Reader(object):
         locations = {}
         node_filter = set(['UNKNOWN', None])
 
-        if dbsOnly:
-            blocksInfo = {}
-            try:
-                for block in fileBlockNames:
-                    blocksInfo.setdefault(block, [])
-                    # there should be only one element with a single origin site string ...
-                    for blockInfo in self.dbs.listBlockOrigin(block_name=block):
-                        blocksInfo[block].append(blockInfo['origin_site_name'])
-            except dbsClientException as ex:
-                msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
-                msg += "%s\n" % formatEx3(ex)
-                raise DBSReaderError(msg)
-        else:
-            try:
-                blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(block=fileBlockNames, complete='y')
-            except Exception as ex:
-                msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockNames
-                msg += "%s\n" % str(ex)
-                raise Exception(msg)
+        blocksInfo = {}
+        try:
+            for block in fileBlockNames:
+                blocksInfo.setdefault(block, [])
+                # there should be only one element with a single origin site string ...
+                for blockInfo in self.dbs.listBlockOrigin(block_name=block):
+                    blocksInfo[block].append(blockInfo['origin_site_name'])
+        except dbsClientException as ex:
+            msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)
 
         for block in fileBlockNames:
             valid_nodes = set(blocksInfo.get(block, [])) - node_filter
@@ -651,50 +610,32 @@ class DBS3Reader(object):
 
         return locations
 
-    def getFileBlock(self, fileBlockName, dbsOnly=False):
+    def getFileBlock(self, fileBlockName):
         """
-        _getFileBlock_
+        Retrieve a list of files in the block; a flag whether the
+        block is still open or not; and it used to resolve the block
+        location via PhEDEx.
 
-        dbsOnly flag is mostly meant for StoreResults, since there is no
-        data in TMDB.
-
-        return a dictionary:
-        { blockName: {
-             "PhEDExNodeNames" : [<pnn list>],
+        :return: a dictionary in the format of:
+            {"PhEDExNodeNames" : [],
              "Files" : { LFN : Events },
-             }
-        }
-
-
+             "IsOpen" : True|False}
         """
-        # Pointless code in python3
-        if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
-        if not self.blockExists(fileBlockName):
-            msg = "DBSReader.getFileBlock(%s): No matching data"
-            raise DBSReaderError(msg % fileBlockName)
-
-        result = {fileBlockName: {
-            "PhEDExNodeNames": self.listFileBlockLocation(fileBlockName, dbsOnly),
-            "Files": self.listFilesInBlock(fileBlockName),
-            "IsOpen": self.blockIsOpen(fileBlockName)
-        }
-        }
+        result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
+                  "Files": self.listFilesInBlock(fileBlockName),
+                  "IsOpen": self.blockIsOpen(fileBlockName)}
         return result
 
     def getFileBlockWithParents(self, fileBlockName):
         """
-        _getFileBlockWithParents_
+        Retrieve a list of parent files in the block; a flag whether the
+        block is still open or not; and it used to resolve the block
+        location via PhEDEx.
 
-        return a dictionary:
-        { blockName: {
-             "PhEDExNodeNames" : [<pnn list>],
-             "Files" : dictionaries representing each file
-             }
-        }
-
-        files
-
+        :return: a dictionary in the format of:
+            {"PhEDExNodeNames" : [],
+             "Files" : { LFN : Events },
+             "IsOpen" : True|False}
         """
         if isinstance(fileBlockName, str):
             fileBlockName = unicode(fileBlockName)
@@ -703,40 +644,20 @@ class DBS3Reader(object):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
 
-        result = {fileBlockName: {
-            "PhEDExNodeNames": self.listFileBlockLocation(fileBlockName),
-            "Files": self.listFilesInBlockWithParents(fileBlockName),
-            "IsOpen": self.blockIsOpen(fileBlockName)
-        }
-        }
-        return result
-
-    def getFiles(self, dataset, onlyClosedBlocks=False):
-        """
-        _getFiles_
-
-        Returns a dictionary of block names for the dataset where
-        each block constists of a dictionary containing the PhEDExNodeNames
-        for that block and the files in that block by LFN mapped to NEvents
-
-        """
-        result = {}
-        blocks = self.listFileBlocks(dataset, onlyClosedBlocks)
-
-        for x in blocks:
-            result.update(self.getFileBlock(x))
-
+        result = {"PhEDExNodeNames": [],  # FIXME: we better get rid of this line!
+                  "Files": self.listFilesInBlockWithParents(fileBlockName),
+                  "IsOpen": self.blockIsOpen(fileBlockName)}
         return result
 
     def listBlockParents(self, blockName):
-        """Get parent blocks for block"""
+        """
+        Return a list of parent blocks for a given child block name
+        """
+        # FIXME: note the different returned data structure
         result = []
         self.checkBlockName(blockName)
         blocks = self.dbs.listBlockParents(block_name=blockName)
-        for block in blocks:
-            toreturn = {'Name': block['parent_block_name']}
-            toreturn['PhEDExNodeList'] = self.listFileBlockLocation(toreturn['Name'])
-            result.append(toreturn)
+        result = [block['parent_block_name'] for block in blocks]
         return result
 
     def blockIsOpen(self, blockName):
@@ -782,7 +703,7 @@ class DBS3Reader(object):
         pathname = blocks[-1].get('dataset', None)
         return pathname
 
-    def listDatasetLocation(self, datasetName, dbsOnly=False):
+    def listDatasetLocation(self, datasetName):
         """
         _listDatasetLocation_
 
@@ -792,33 +713,20 @@ class DBS3Reader(object):
         self.checkDatasetPath(datasetName)
 
         locations = set()
+        try:
+            blocksInfo = self.dbs.listBlockOrigin(dataset=datasetName)
+        except dbsClientException as ex:
+            msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)
 
-        if dbsOnly:
-            try:
-                blocksInfo = self.dbs.listBlockOrigin(dataset=datasetName)
-            except dbsClientException as ex:
-                msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
-                msg += "%s\n" % formatEx3(ex)
-                raise DBSReaderError(msg)
+        if not blocksInfo:  # no data location from dbs
+            return list()
 
-            if not blocksInfo:  # no data location from dbs
-                return list()
+        for blockInfo in blocksInfo:
+            locations.update(blockInfo['origin_site_name'])
 
-            for blockInfo in blocksInfo:
-                locations.update(blockInfo['origin_site_name'])
-
-            locations.difference_update(['UNKNOWN', None])  # remove entry when SE name is 'UNKNOWN'
-        else:
-            try:
-                blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetName], complete='y')
-            except Exception as ex:
-                msg = "Error while getting block location from PhEDEx for dataset=%s)\n" % datasetName
-                msg += "%s\n" % str(ex)
-                raise Exception(msg)
-
-            if blocksInfo:
-                for blockSites in blocksInfo.values():
-                    locations.update(blockSites)
+        locations.difference_update(['UNKNOWN', None])  # remove entry when SE name is 'UNKNOWN'
 
         return list(locations)
 
@@ -965,7 +873,7 @@ class DBS3Reader(object):
                     mapChildParent.setdefault(childFileID, set())
                     mapChildParent[childFileID].add(parentId)
 
-        if insertFlag:
+        if insertFlag and mapChildParent:
             # convert dictionary to list of unique childID, parentID tuples
             listChildParent = []
             for childID in mapChildParent:

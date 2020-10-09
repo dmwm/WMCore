@@ -33,32 +33,24 @@ class PileupFetcher(FetcherInterface):
         """
         super(PileupFetcher, self).__init__()
         if usingRucio():
-            # Too much work to pass the rucio account name all the way to here
-            # just use the production rucio account for resolving pileup location
-            self.rucio = Rucio("wma_prod", configDict={'phedexCompatible': False})
+            # FIXME: find a way to pass the Rucio account name to this fetcher module
+            self.rucioAcct = "wmcore_transferor"
+            self.rucio = Rucio(self.rucioAcct)
         else:
             self.phedex = PhEDEx()  # this will go away eventually
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
         Method iterates over components of the pileup configuration input
-        and queries DBS. Then iterates over results from DBS.
+        and queries DBS for valid files in the dataset, plus some extra
+        information about each file.
 
-        There needs to be a list of files and their locations for each
-        dataset name.
-        Use dbsReader
-        the result data structure is a Python dict following dictionary:
-            FileList is a list of LFNs
+        Information is organized at block level, listing all its files,
+        number of events in the block, and its data location (to be resolved
+        by a different method using either PhEDEx or Rucio), such as:
 
-        {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
+        {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": [], "NumberOfEvents": 123},
                          "BlockB": {"FileList": [], "PhEDExNodeName": []}, ....}
-
-        this structure preserves knowledge of where particular files of dataset
-        are physically (list of PNNs) located. DBS only lists sites which
-        have all files belonging to blocks but e.g. BlockA of dataset DS1 may
-        be located at site1 and BlockB only at site2 - it's possible that only
-        a subset of the blocks in a dataset will be at a site.
-
         """
         resultDict = {}
         # iterate over input pileup types (e.g. "cosmics", "minbias")
@@ -69,14 +61,11 @@ class PileupFetcher(FetcherInterface):
             blockDict = {}
             for dataset in datasets:
 
-                blockFileInfo = dbsReader.getFileListByDataset(dataset=dataset, detail=True)
-
-                for fileInfo in blockFileInfo:
+                for fileInfo in dbsReader.getFileListByDataset(dataset=dataset, detail=True):
                     blockDict.setdefault(fileInfo['block_name'], {'FileList': [],
                                                                   'NumberOfEvents': 0,
                                                                   'PhEDExNodeNames': []})
-                    blockDict[fileInfo['block_name']]['FileList'].append(
-                        {'logical_file_name': fileInfo['logical_file_name']})
+                    blockDict[fileInfo['block_name']]['FileList'].append(fileInfo['logical_file_name'])
                     blockDict[fileInfo['block_name']]['NumberOfEvents'] += fileInfo['event_count']
 
                 self._getDatasetLocation(dataset, blockDict)
@@ -91,25 +80,18 @@ class PileupFetcher(FetcherInterface):
         :param blockDict: dictionary with DBS summary info
         :return: update blockDict in place
         """
-        node_filter = set(['UNKNOWN', None])
-
-        if hasattr(self, "rucio"):
-            # then it's Rucio!!
-            blockReplicasInfo = self.rucio.getReplicaInfoForBlocks(dataset=dset)
-            for item in blockReplicasInfo:
-                block = item['name']
+        if usingRucio():
+            blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
+            for blockName, blockLocation in blockReplicas.viewitems():
                 try:
-                    blockDict[block]['PhEDExNodeNames'] = item['replica']
-                    blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                    blockDict[blockName]['PhEDExNodeNames'] = list(blockLocation)
                 except KeyError:
-                    logging.warning("Block '%s' does not have any complete Rucio replica", block)
+                    logging.warning("Block '%s' present in Rucio but not in DBS", blockName)
         else:
             blockReplicasInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=dset, complete='y')
             for block in blockReplicasInfo:
-                nodes = set(blockReplicasInfo[block]) - node_filter
                 try:
-                    blockDict[block]['PhEDExNodeNames'] = list(nodes)
-                    blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                    blockDict[block]['PhEDExNodeNames'] = list(blockReplicasInfo[block])
                 except KeyError:
                     logging.warning("Block '%s' does not have any complete PhEDEx replica", block)
 

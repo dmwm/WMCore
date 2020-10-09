@@ -8,6 +8,7 @@ CMS Workload Management system (and migration from PhEDEx).
 from __future__ import division, print_function, absolute_import
 
 import logging
+import json
 from copy import deepcopy
 from pprint import pformat
 
@@ -257,7 +258,7 @@ class Rucio(object):
 
         return result
 
-    def getPFN(self, nodes=None, lfns=None, destination=None, protocol='srmv2', custodial='n'):
+    def getPFN(self, nodes=None, lfns=None, destination=None, protocol=None, custodial='n'):
         """
         Copy of the method from the PhEDEx service class
         Used by CRABServer
@@ -274,7 +275,10 @@ class Rucio(object):
             good_lfns = [x[1] for x  in zip(nodes, lfns) if x[0] == node]
 
             try:
-                pfns = self.cli.lfns2pfns(node, good_lfns, scheme=protocol)
+                if protocol:
+                    pfns = self.cli.lfns2pfns(node, good_lfns, scheme=protocol)
+                else:
+                    pfns = self.cli.lfns2pfns(node, good_lfns)
             except Exception as ex:
                 msg = "Exception retrievieng lfn for site %s: %s. Error: %s" % (node, good_lfns, str(ex))
                 raise WMRucioException(msg)
@@ -284,10 +288,11 @@ class Rucio(object):
             # the pfn as the value
             # {'node': [u'T2_IT_Pisa'], 'custodial': 'n', 'lfn': [u'/store/user/rucio/dciangot/NanoRucio/DYJetsToLL_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8/NanoTestPost-Direct2/200827_073811/0000'], 'protocol': 'srmv2'}
 
-            for lfn, pfn in zip(good_lfns, pfns):
-                key = (node, lfn, destinantion, protocol, custodial) 
-                value = pfn
-                response.update({key, value})
+            for lfn in good_lfns:
+                key = (node, lfn)
+                #, destination, protocol, custodial) 
+                value = pfns[lfn]
+                response.update({key: value})
 
         return response
 

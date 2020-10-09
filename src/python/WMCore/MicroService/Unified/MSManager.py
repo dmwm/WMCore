@@ -231,6 +231,8 @@ class MSManager(object):
                 transferDoc = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
             elif 'transferor' in self.services:
                 transferDoc = self.msTransferor.reqmgrAux.getTransferInfo(reqName)
+            elif 'output' in self.services:
+                transferDoc = self.msOutputProducer.getTransferInfo(reqName)
             if transferDoc:
                 # it's always a single document in Couch
                 data['transferDoc'] = transferDoc[0]

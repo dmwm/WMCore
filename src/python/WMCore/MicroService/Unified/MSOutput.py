@@ -1018,7 +1018,31 @@ class MSOutput(MSCore):
                 self.logger.exception(msg)
                 raise ex
         else:
-            self.logger.info("Query: '%s' did not return any records from MongoDB", mQueryDict)
+            self.logger.info("%s Query: '%s' did not return any records from MongoDB", dbColl.name, mQueryDict)
+
+    def getTransferInfo(self, reqName):
+        """
+        Searches and reads a document from MongoDB in all collections related to
+        the MSOutput service. It is supposed to be called only by MSManager e.g.:
+           transferDoc = self.msOutputProducer.getTransferInfo(reqName)
+        And the output to be served to the REST interface, so that all request
+        transfer records can be tracked.
+        :param reqName: The name of the request to be searched for
+        :return: a list of all msOutDocs with the record if it exists or None otherwise
+        """
+
+        mQueryDict = {'RequestName': reqName}
+        result = []
+        stripKeys = ['_id']
+
+        for dbColl in [self.msOutNonRelValColl, self.msOutRelValColl]:
+            doc = dbColl.find_one(mQueryDict)
+            if doc:
+                for key in stripKeys:
+                    doc.pop(key, None)
+                result.append(doc)
+                break
+        return result
 
     def docCleaner(self, doc):
         """

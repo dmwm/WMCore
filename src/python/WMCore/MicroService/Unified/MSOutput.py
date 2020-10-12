@@ -915,6 +915,9 @@ class MSOutput(MSCore):
         # it - for the moment - at least.
         if workflow['IsRelVal'] and not self.msConfig['enableRelValCustodial']:
             return False
+        if workflow['RequestType'] == "Resubmission":
+            # their parent/original workflow will take care of all the data placement
+            return False
 
         if dataItem['TapeRuleID']:
             msg = "Output dataset: {} from workflow: {} ".format(dataItem['Dataset'], workflow['RequestName'])

@@ -35,6 +35,7 @@ class WorkQueueManager(Harness):
         # Add event loop to worker manager
         myThread = threading.currentThread()
         pollInterval = self.config.WorkQueueManager.pollInterval
+        dataLocationInterval = getattr(self.config.WorkQueueManager, "dataLocationInterval", 1 * 60 * 60)
 
         ### Global queue special functions
         if self.config.WorkQueueManager.level == 'GlobalQueue':
@@ -69,7 +70,7 @@ class WorkQueueManager(Harness):
         myThread.workerThreadManager.addWorker(
                                     WorkQueueManagerLocationPoller(queueFromConfig(self.config),
                                                                    self.config),
-                                    pollInterval)
+                                    dataLocationInterval)
 
         # Clean finished work & apply end policies
         myThread.workerThreadManager.addWorker(

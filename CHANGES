@@ -1,3 +1,11 @@
+1.4.1 to 1.4.2.pre1:
+  - Skip Tape (too) data placement for Resubmission workflows (Alan Malta Rodrigues) #9983
+  - Increase polling cycle for WorkQueueManagerLocationPoller to 1h (Alan Malta Rodrigues) #9981
+  - Bump deployment example to 1.4.1.patch1 (Alan Malta Rodrigues) #9968
+  - Revert stage2 fixers on DQMUpload module (Alan Malta Rodrigues) #9945
+  - Use list_replication_rules Rucio API to list rules (Alan Malta Rodrigues) #9963
+
+
 1.4.1.pre5 to 1.4.1:
 
 

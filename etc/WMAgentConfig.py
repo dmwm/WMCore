@@ -162,7 +162,7 @@ config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
 config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
-config.PhEDExInjector.enabled = True
+config.PhEDExInjector.enabled = False
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 # phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
@@ -371,7 +371,7 @@ config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
-config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]  # []
+config.RucioInjector.listTiersToInject = []  # ["NANOAOD", "NANOAODSIM"]
 config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"

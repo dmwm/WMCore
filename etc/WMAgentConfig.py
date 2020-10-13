@@ -371,8 +371,10 @@ config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
-config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]  # []
-config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.listTiersToInject = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.skipRulesForTiers = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

@@ -88,7 +88,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("enableRelValCustodial", False)
-        self.msConfig.setdefault("excludeDataTier", ['NANOAOD', 'NANOAODSIM'])
+        self.msConfig.setdefault("excludeDataTier", [])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')

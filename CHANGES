@@ -1,3 +1,7 @@
+1.4.1.patch2 to 1.4.1.patch3:
+  - Disable PhEDExInjector; Enable all tiers to be injected in Rucio (Alan Malta Rodrigues) #9991
+
+
 1.4.1.patch1 to 1.4.1.patch2:
   - Skip Custodial and make generic Disk NonCustodial data placement in RucioInjector (Alan Malta Rodrigues) #9990
   - Treat NANOAOD/NANOAODSIM as any other datatier in the output data placement logic (Alan Malta Rodrigues) #9990

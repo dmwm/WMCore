@@ -1,3 +1,9 @@
+1.4.1.patch1 to 1.4.1.patch2:
+  - Skip Custodial and make generic Disk NonCustodial data placement in RucioInjector (Alan Malta Rodrigues) #9990
+  - Treat NANOAOD/NANOAODSIM as any other datatier in the output data placement logic (Alan Malta Rodrigues) #9990
+  - Increase polling cycle for WorkQueueManagerLocationPoller to 1h (Alan Malta Rodrigues) #9985
+
+
 1.4.1 to 1.4.1.patch1:
   - Revert stage2 fixers on DQMUpload module (Alan Malta Rodrigues) #9967
 

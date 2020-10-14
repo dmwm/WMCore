@@ -91,6 +91,7 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("excludeDataTier", [])
         self.msConfig.setdefault("rucioAccount", 'wmcore_transferor')
         self.msConfig.setdefault("rucioRSEAttribute", 'ddm_quota')
+        self.msConfig.setdefault("rucioDiskRuleWeight", 'ddm_quota')
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
@@ -333,6 +334,9 @@ class MSOutput(MSCore):
                          'account': self.msConfig['rucioAccount'],
                          'grouping': "ALL",
                          'comment': 'WMCore MSOutput output data placement'}
+            # add a configurable weight value
+            ruleAttrs["weight"] = self.msConfig['rucioDiskRuleWeight']
+
             # if anything fail along the way, set it back to "pending"
             transferStatus = "done"
             for dMap in workflow['OutputMap']:

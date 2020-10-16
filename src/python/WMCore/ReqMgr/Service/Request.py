@@ -22,7 +22,8 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
                                                      REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-                                            validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
+                                            validate_clone_create_args, validateOutputDatasets,
+                                            validate_request_priority, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -409,14 +410,16 @@ class Request(RESTEntity):
         if 'RequestPriority' in request_args:
             # Yes, we completely ignore any other arguments posted by the user (web UI case)
             request_args = {'RequestPriority': request_args['RequestPriority']}
+            validate_request_priority(request_args)
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-            cherrypy.log('Updated priority of "%s" to %s' % (workload.name(), request_args['RequestPriority']))
+            cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), request_args['RequestPriority']))
         elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+            cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), request_args))
         else:
             msg = "There are invalid arguments for no-status update: %s" % request_args
             raise InvalidSpecParameterValue(msg)
@@ -431,6 +434,7 @@ class Request(RESTEntity):
             msg = "There are invalid arguments for assignment-approved transition: %s" % request_args
             raise InvalidSpecParameterValue(msg)
 
+        validate_request_priority(request_args)
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
 

@@ -13,6 +13,7 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, ST
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
 from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
@@ -63,13 +64,25 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         elif request_args["RequestStatus"] == 'assigned':
             workload.validateArgumentForAssignment(request_args)
 
-    # TODO: fetch it from the assignment arg definition
-    if 'RequestPriority' in request_args:
-        request_args['RequestPriority'] = int(request_args['RequestPriority'])
-        if (lambda x: (x >= 0 and x < 1e6))(request_args['RequestPriority']) is False:
-            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
+    validate_request_priority(request_args)
 
     return workload, request_args
+
+
+def validate_request_priority(reqArgs):
+    """
+    Validate the RequestPriority argument against its definition
+    in StdBase
+    :param reqArgs: dictionary of user request arguments
+    :return: nothing, but raises an exception in case of an invalid value
+    """
+    if 'RequestPriority' in reqArgs:
+        reqPrioDefin = StdBase.getWorkloadCreateArgs()['RequestPriority']
+        if not isinstance(reqArgs['RequestPriority'], reqPrioDefin['type']):
+            msg = "RequestPriority must be of integer type, not: {}".format(type(reqArgs['RequestPriority']))
+            raise InvalidSpecParameterValue(msg)
+        if reqPrioDefin['validate'](reqArgs['RequestPriority']) is False:
+            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 999999")
 
 
 def validate_request_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):

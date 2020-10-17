@@ -1,3 +1,11 @@
+1.4.2.pre2 to 1.4.2.pre3:
+  - Properly validate RequestPriority parameter (Alan Malta Rodrigues) #9994
+  - MSOutput: create Disk rules with an weight attr, default to ddm_quota (Alan Malta Rodrigues) #9993
+  - Skip Custodial and make generic Disk NonCustodial data placement in RucioInjector (Alan Malta Rodrigues) #9989
+  - Treat NANOAOD/NANOAODSIM as any other datatier in the output data placement logic (Alan Malta Rodrigues) #9988
+  - Add getTransferInfo to MSOutput and info request to MSManager. (Todor Ivanov) #9978
+
+
 1.4.2.pre1 to 1.4.2.pre2:
   - Disable PhEDExInjector; Enable all tiers to be injected in Rucio (Alan Malta Rodrigues) #9980
   - [py2py3] WMCore/WMFactory - futurize (Dario Mapelli) #9971

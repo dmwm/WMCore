@@ -607,12 +607,13 @@ class Rucio(object):
         """
         kwargs["name"] = name
         kwargs.setdefault("scope", "cms")
-        res = []
         try:
             res = self.cli.list_replication_rules(kwargs)
-        except Exception as ex:
-            self.logger.error("Exception listing rules for data: %s and kwargs: %s. Error: %s",
-                              name, kwargs, str(ex))
+        except Exception as exc:
+            msg = "Exception listing rules for data: {} and kwargs: {}. Error: {}".format(name,
+                                                                                          kwargs,
+                                                                                          str(exc))
+            raise WMRucioException(msg)
         return list(res)
 
     def listDataRulesHistory(self, name, scope='cms'):

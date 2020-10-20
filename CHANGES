@@ -1,3 +1,8 @@
+1.4.2.pre3 to 1.4.2.pre4:
+  - Remove PhEDEx functionality from MSTransferor (Alan Malta Rodrigues) #10002
+  - If listDataRules API fail, raise a WMRucioException (Alan Malta Rodrigues) #9999
+
+
 1.4.2.pre2 to 1.4.2.pre3:
   - Properly validate RequestPriority parameter (Alan Malta Rodrigues) #9994
   - MSOutput: create Disk rules with an weight attr, default to ddm_quota (Alan Malta Rodrigues) #9993

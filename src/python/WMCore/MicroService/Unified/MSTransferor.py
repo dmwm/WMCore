@@ -14,7 +14,6 @@ from future import standard_library
 standard_library.install_aliases()
 
 # system modules
-from http.client import HTTPException
 from operator import itemgetter
 from pprint import pformat
 from retry import retry
@@ -30,7 +29,6 @@ from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
 from WMCore.MicroService.Unified.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from Utils.EmailAlert import EmailAlert
 
 def newTransferRec(dataIn):
@@ -72,9 +70,6 @@ class MSTransferor(MSCore):
         """
         super(MSTransferor, self).__init__(msConfig, logger=logger)
 
-        # url for fetching the storage quota
-        self.msConfig.setdefault("detoxUrl",
-                                 "http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt")
         # minimum percentage completion for dataset/blocks subscribed
         self.msConfig.setdefault("minPercentCompletion", 99)
         # minimum available storage to consider a resource good for receiving data
@@ -88,19 +83,10 @@ class MSTransferor(MSCore):
         self.msConfig.setdefault("toAddr", "cms-comp-ops-workflow-team@cern.ch")
         self.msConfig.setdefault("fromAddr", "noreply@cern.ch")
         self.msConfig.setdefault("smtpServer", "localhost")
-        # enable or not the PhEDEx requests auto-approval (!request_only)
-        if self.msConfig.setdefault("phedexRequestOnly", True):
-            self.msConfig["phedexRequestOnly"] = "y"
-        else:
-            self.msConfig["phedexRequestOnly"] = "n"
 
-        if self.msConfig.get('useRucio', False):
-            quotaAccount = self.msConfig["rucioAccount"]
-        else:
-            quotaAccount = self.msConfig["quotaAccount"]
+        quotaAccount = self.msConfig["rucioAccount"]
 
-        self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"], self.msConfig["useRucio"],
-                                   detoxUrl=self.msConfig['detoxUrl'],
+        self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"],
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
         self.reqInfo = RequestInfo(self.msConfig, self.logger)
@@ -120,18 +106,15 @@ class MSTransferor(MSCore):
     def updateCaches(self):
         """
         Fetch some data required for the transferor logic, e.g.:
-         * quota from detox (or Rucio)
-         * storage usage and available from Rucio (or PhEDEx)
+         * account limits from Rucio
+         * account usage from Rucio
          * unified configuration
          * all campaign configuration
          * PSN to PNN map from CRIC
         """
         self.logger.info("Updating RSE/PNN quota and usage")
         self.rseQuotas.fetchStorageQuota(self.rucio)
-        if self.msConfig["useRucio"]:
-            self.rseQuotas.fetchStorageUsage(self.rucio)
-        else:
-            self.rseQuotas.fetchStorageUsage(self.phedex)
+        self.rseQuotas.fetchStorageUsage(self.rucio)
         self.rseQuotas.evaluateQuotaExceeded()
         if not self.rseQuotas.getNodeUsage():
             raise RuntimeWarning("Failed to fetch storage usage stats")
@@ -575,7 +558,8 @@ class MSTransferor(MSCore):
 
     def makeTransferRequest(self, wflow):
         """
-        Send request to PhEDEx and return status of request subscription
+        Checks which input data has to be transferred, select the final destination if needed,
+        create the transfer record to be stored in Couch, and create the DM placement request.
         This method does the following:
           1. return if there is no workflow data to be transferred
           2. check if the data input campaign is in the database, skip if not
@@ -584,13 +568,13 @@ class MSTransferor(MSCore):
              it's also removed from this list
           4. create the transfer record dictionary
           5. for every final node
-             5.1. if it's a pileup dataset, pick a random node and subscribe the whole dataset
+             5.1. if it's a pileup dataset, pick a random node and subscribe the whole container
              5.2. else, retrieve chunks of blocks to be subscribed (evenly distributed)
              5.3. update node usage with the amount of data subscribed
           6. re-evaluate nodes with quota exceeded
           7. return the transfer record, with a list of transfer IDs
         :param wflow: workflow object
-        :return: boolean whether it succeeded or not, and a subscription dictionary {"dataset":transferIDs}
+        :return: boolean whether it succeeded or not, and a list of transfer records
         """
         response = []
         success = True
@@ -630,26 +614,16 @@ class MSTransferor(MSCore):
                 if not blocks and dataIn["type"] == "primary":
                     # no valid files in any blocks, it will likely fail in global workqueue
                     return success, response
-                if wflow.getReqType() == "DQMHarvest":
-                    # enforce a dataset level PhEDEx subscription / container-level Rucio rule
-                    subLevel = "dataset"
-                    dataBlocks = None
-                    blocks = None
-                elif blocks:
+                if blocks:
                     subLevel = "block"
-                    dataBlocks = {dataIn['name']: blocks}
                 else:
-                    # then it's a dataset level subscription
-                    subLevel = "dataset"
-                    dataBlocks = None
+                    # enforce a container-level Rucio rule
+                    subLevel = "container"
                     blocks = None
 
-                if self.msConfig['useRucio']:
-                    success, transferId = self.makeTransferRucio(wflow, dataIn, subLevel,
-                                                                 blocks, dataSize, nodes, idx)
-                else:
-                    success, transferId = self.makeTransferPhedex(wflow, dataBlocks, dataIn,
-                                                                  subLevel, dataSize, nodes, idx)
+                success, transferId = self.makeTransferRucio(wflow, dataIn, subLevel,
+                                                             blocks, dataSize, nodes, idx)
+
                 if not success:
                     # stop any other data placement for this workflow
                     msg = "There were failures transferring data for workflow: %s. Will retry again later."
@@ -663,7 +637,7 @@ class MSTransferor(MSCore):
                     self.rseQuotas.updateNodeUsage(nodes[idx], dataSize)
 
                 # and update some instance caches
-                if subLevel == 'dataset':
+                if subLevel == 'container':
                     self.dsetCounter += 1
                 else:
                     self.blockCounter += len(blocks)
@@ -688,12 +662,8 @@ class MSTransferor(MSCore):
         :param nodeIdx: index of the node/RSE to be used in the replication rule
         :return: a boolean flagging whether it succeeded or not, and the rule id
         """
-        # Here we need to map the PhEDEx subscription level to a Rucio grouping level
-        # where:
-        #   "dataset" level in PhEDEx --> "ALL" in Rucio (whole dataset at same location)
-        #   "block" level in PhEDEx --> "DATASET" in Rucio (whole block at same location)
         success, transferId = True, set()
-        subLevel = "ALL" if subLevel == "dataset" else "DATASET"
+        subLevel = "ALL" if subLevel == "container" else "DATASET"
         dids = blocks if blocks else [dataIn['name']]
 
         rule = {'copies': 1,
@@ -757,70 +727,6 @@ class MSTransferor(MSCore):
         else:
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
             self.logger.info(msg, wflow.getName(), dids, rseExpr, rule)
-        return success, transferId
-
-    def makeTransferPhedex(self, wflow, dataBlocks, dataIn, subLevel, dataSize, nodes, nodeIdx):
-        """
-        Creates a PhEDEx subscription object and make a data subscription in PhEDEx
-
-        :param wflow: the workflow object
-        :param dataIn: short summary of the data to be placed
-        :param subLevel: subscription level (dataset or block)
-        :param dataSize: amount of data being placed by this rule
-        :param nodes: list of nodes/RSE
-        :param nodeIdx: index of the node/RSE to be used in the replication rule
-        :return: a boolean flagging whether it succeeded or not, and the rule id
-        """
-        subscription = PhEDExSubscription(datasetPathList=dataIn['name'],
-                                          nodeList=nodes[nodeIdx],
-                                          group=self.msConfig['quotaAccount'],
-                                          level=subLevel,
-                                          priority="low",
-                                          request_only=self.msConfig["phedexRequestOnly"],
-                                          blocks=dataBlocks,
-                                          comments="WMCore MSTransferor input data placement")
-        msg = "Creating '{}' level subscription for {} dataset: {}".format(subLevel,
-                                                                           dataIn['type'],
-                                                                           dataIn['name'])
-        if wflow.getParentDataset():
-            msg += ", where parent blocks have also been added for dataset: %s" % wflow.getParentDataset()
-        self.logger.info(msg)
-
-        success, transferId = True, 0
-        if self.msConfig.get('enableDataTransfer', True):
-            # Force request-only subscription
-            # to any data transfer going above some threshold (do not auto-approve)
-            aboveWarningThreshold = self.msConfig.get('warningTransferThreshold') > 0. and \
-                                    dataSize > self.msConfig.get('warningTransferThreshold')
-
-            # Then make the data subscription, for real!!!
-            try:
-                res = self.phedex.subscribe(subscription)
-                self.logger.debug("Subscription done, result: %s", res)
-            except HTTPException as ex:
-                # It might be that the block has no more replicas (all files invalidated)
-                # let it go and fail at global workqueue level
-                msg = "Subscription failed for workflow: %s and dataset: %s " % (wflow.getName(), dataIn['name'])
-                if ex.status == 400 and "request matched no data in TMDB" in ex.reason:
-                    msg += "because data cannot be found in TMDB. Bypassing this/these blocks..."
-                    self.logger.warning(msg)
-                else:
-                    msg += "with status code: %s and result: %s. " % (ex.status, ex.result)
-                    msg += "It will be retried in the next cycle"
-                    self.logger.error(msg)
-                    success = False
-            except Exception as ex:
-                msg = "Unknown exception while subscribing data for workflow: %s " % wflow.getName()
-                msg += "and dataset: %s. Will retry again later. Error details: %s" % (dataIn['name'], str(ex))
-                self.logger.exception(msg)
-                success = False
-            else:
-                transferId = res['phedex']['request_created'][0]['id']
-                # send an email notification, if needed
-                self.notifyLargeData(aboveWarningThreshold, transferId, wflow.getName(), dataSize, dataIn)
-        else:
-            self.logger.info("DRY-RUN: making PhEDEx subscription for workflow: %s, data: %s",
-                             wflow.getName(), subscription)
         return success, transferId
 
     def notifyLargeData(self, aboveWarningThreshold, transferId, wflowName, dataSize, dataIn):
@@ -888,9 +794,9 @@ class MSTransferor(MSCore):
             # whole dataset within the same location
             if wflow.getReqType() == "DQMHarvest":
                 numNodes = 1
-            # if we are using Rucio and there is no parent dataset, just put all
-            # the data in a single rule for all RSEs and let Rucio decide where data will land
-            if self.msConfig['useRucio'] and not wflow.getParentBlocks():
+            # if there is no parent data, just make one big rule for all the primary data
+            # against all RSEs available for the workflow (intersection with PU data
+            if not wflow.getParentBlocks():
                 numNodes = 1
             listBlockSets, listSetsSize = wflow.getChunkBlocks(numNodes)
             if not listBlockSets:

@@ -24,7 +24,7 @@ from WMCore.MicroService.Unified.Common import \
     elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, getIO, \
     dbsInfo, phedexInfo, getComputingTime, getNCopies, teraBytes, \
     findBlockParents, findParent, getBlocksByDsetAndRun, getFileLumisInBlock, \
-    getBlockReplicasAndSize, getPileupDatasetSizes, getPileupSubscriptions, getRunsInBlock
+    getRunsInBlock
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
@@ -81,9 +81,6 @@ class RequestInfo(MSCore):
         """
         Check whether Rucio is enabled and create a new token, or renew it if needed
         """
-        if not self.msConfig['useRucio']:
-            return
-
         if not self.tokenValidity:
             # a brand new token needs to be created. To be done in the coming lines...
             pass
@@ -316,30 +313,17 @@ class RequestInfo(MSCore):
         for wflow in workflows:
             datasets = datasets | wflow.getPileupDatasets()
 
-        if self.rucioToken:
-            # now fetch valid blocks from PhEDEx and calculate the total dataset size
-            self.logger.info("Fetching pileup dataset sizes for %d datasets against Rucio: %s",
-                             len(datasets), self.msConfig['rucioUrl'])
-            sizesByDset = getPileupContainerSizesRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
+        # retrieve pileup container size and locations from Rucio
+        self.logger.info("Fetching pileup dataset sizes for %d datasets against Rucio: %s",
+                         len(datasets), self.msConfig['rucioUrl'])
+        sizesByDset = getPileupContainerSizesRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
 
-            # then fetch data location for subscribed data, under the group provided in the config
-            self.logger.info("Fetching pileup dataset location for %d datasets against Rucio: %s",
-                             len(datasets), self.msConfig['rucioUrl'])
-            locationsByDset = listReplicationRules(datasets, self.msConfig['rucioAccount'],
-                                                   grouping="A", rucioUrl=self.msConfig['rucioUrl'],
-                                                   rucioToken=self.rucioToken)
-        else:
-            # now fetch valid blocks from PhEDEx and calculate the total dataset size
-            self.logger.info("Fetching pileup dataset sizes for %d datasets against PhEDEx: %s",
-                             len(datasets), self.msConfig['phedexUrl'])
-            sizesByDset = getPileupDatasetSizes(datasets, self.msConfig['phedexUrl'])
-
-            # then fetch data location for subscribed data, under the group provided in the config
-            self.logger.info("Fetching pileup dataset location for %d datasets against PhEDEx: %s",
-                             len(datasets), self.msConfig['phedexUrl'])
-            locationsByDset = getPileupSubscriptions(datasets, self.msConfig['phedexUrl'],
-                                                     percentMin=self.msConfig['minPercentCompletion'])
-
+        # then fetch data location for locked data, under our own rucio account
+        self.logger.info("Fetching pileup container location for %d containers against Rucio: %s",
+                         len(datasets), self.msConfig['rucioUrl'])
+        locationsByDset = listReplicationRules(datasets, self.msConfig['rucioAccount'],
+                                               grouping="A", rucioUrl=self.msConfig['rucioUrl'],
+                                               rucioToken=self.rucioToken)
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
         for dset, value in sizesByDset.items():
@@ -382,16 +366,10 @@ class RequestInfo(MSCore):
                 if dataIn['type'] in ["primary", "parent"]:
                     datasets.add(dataIn['name'])
 
-        if self.rucioToken:
-            # now fetch valid blocks from PhEDEx and calculate the total dataset size
-            self.logger.info("Fetching parent/primary block info for %d datasets against Rucio: %s",
-                             len(datasets), self.msConfig['rucioUrl'])
-            blocksByDset = getBlocksAndSizeRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
-        else:
-            # now fetch block names from PhEDEx
-            self.logger.info("Fetching parent/primary block info for %d datasets against PhEDEx: %s",
-                             len(datasets), self.msConfig['phedexUrl'])
-            blocksByDset = getBlockReplicasAndSize(datasets, self.msConfig['phedexUrl'])
+        # fetch all block names and their sizes from Rucio
+        self.logger.info("Fetching parent/primary block info for %d containers against Rucio: %s",
+                         len(datasets), self.msConfig['rucioUrl'])
+        blocksByDset = getBlocksAndSizeRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
 
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
@@ -485,7 +463,8 @@ class RequestInfo(MSCore):
                     if block in blocksDict:
                         finalBlocks[block] = deepcopy(blocksDict[block])
                     else:
-                        self.logger.info("Dropping block with no replicas in PhEDEx: %s", block)
+                        # FIXME: I guess it won't ever happen in Rucio...
+                        self.logger.info("FIXME: Dropping block with no replicas in PhEDEx: %s", block)
         elif runBlack:
             # only run blacklist set
             self.logger.info("Fetching runs in blocks for RunBlacklist for %s", wflow.getName())

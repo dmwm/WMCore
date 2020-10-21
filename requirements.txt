@@ -30,6 +30,6 @@ retry==0.9.1                  # wmagent,reqmgr2
 setuptools==39.2.0            # wmagent
 stomp.py==4.1.15              # wmagent
 rucio-clients==1.23.0         # wmagent
-CMSMonitoring>=0.3.4          # wmagent
+CMSMonitoring>=0.3.4          # wmagent,reqmgr2
 pymongo==3.10.1               # reqmgr2ms
 

@@ -7,6 +7,8 @@ Simple mathematical tools and tricks that might prove to
 be useful.
 """
 from __future__ import print_function, division
+from builtins import str, range
+
 import math
 import decimal
 import logging

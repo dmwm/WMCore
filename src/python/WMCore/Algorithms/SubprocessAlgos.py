@@ -8,6 +8,7 @@ i.e., stand-ins for Linux command line functions
 
 """
 
+from builtins import str
 import os
 import re
 import signal
@@ -99,7 +100,7 @@ def runCommand(cmd, shell = True, timeout = None):
     """
 
     if timeout:
-        if type(timeout) != int:
+        if not isinstance(timeout, int):
             timeout = None
             logging.error("SubprocessAlgo.runCommand expected int timeout, got %s" % timeout)
         else:

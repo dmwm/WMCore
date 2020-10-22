@@ -13,7 +13,7 @@ class DASDocument(dict):
         """
         Make an empty dictionary representing a DAS document
         """
-        dict = {"request_timestamp": 0,
+        dasdoc = {"request_timestamp": 0,
                 "request_url": "",
                 "request_method": "GET",
                 "request_params": {},
@@ -22,8 +22,8 @@ class DASDocument(dict):
                 "response_checksum": "",
                 "request_api": "",
                 "call_time": 0}
-        self.keys = dict.keys()
-        self.setdefault(service, dict)
+        self.keys = list(dasdoc)
+        self.setdefault(service, dasdoc)
 
     def compare(self, dict):
         """

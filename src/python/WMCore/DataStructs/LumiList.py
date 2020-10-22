@@ -13,6 +13,10 @@ This code began life in COMP/CRAB/python/LumiList.py
 """
 
 
+from builtins import zip, range, next, str, object
+
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -77,12 +81,12 @@ class LumiList(object):
         if isinstance(runsAndLumis, list):
             queued = {}
             for runLumiList in runsAndLumis:
-                for run, lumis in runLumiList.items():
+                for run, lumis in viewitems(runLumiList):
                     queued.setdefault(run, []).extend(lumis)
             runsAndLumis = queued
 
         if runsAndLumis:
-            for run in runsAndLumis.keys():
+            for run in runsAndLumis:
                 runString = str(run)
                 lastLumi = -1000
                 lumiList = runsAndLumis[run]
@@ -104,7 +108,7 @@ class LumiList(object):
                 self.compactList[runString] = [[1, 0xFFFFFFF]]
 
         if compactList:
-            for run in compactList.keys():
+            for run in compactList:
                 runString = str(run)
                 if compactList[run]:
                     self.compactList[runString] = compactList[run]
@@ -124,9 +128,9 @@ class LumiList(object):
             if len(runs) <= 0 or len(lumis) != len(runs):
                 raise RuntimeError('Improper format for wmagentFormat. # of lumi lists must match # of runs')
 
-            for run, lumiString in itertools.izip(runs, lumis):
+            for run, lumiString in zip(runs, lumis):
                 runLumis = lumiString.split(',')
-                if not str(run) in self.compactList:
+                if str(run) not in self.compactList:
                     self.compactList[str(run)] = []
                 if len(runLumis) % 2:
                     raise RuntimeError('Improper format for wmagentFormat. Lumis must be in pairs')
@@ -139,7 +143,7 @@ class LumiList(object):
 
         # Compact each run and make it unique
 
-        for run in self.compactList.keys():
+        for run in self.compactList:
             newLumis = []
             for lumi in sorted(self.compactList[run]):
                 # If the next lumi starts inside or just after the last just change the endpoint of the first
@@ -210,8 +214,8 @@ class LumiList(object):
 
     def __or__(self, other):
         result = {}
-        aruns = self.compactList.keys()
-        bruns = other.compactList.keys()
+        aruns = list(self.compactList)
+        bruns = list(other.compactList)
         runs = set(aruns + bruns)
         for run in runs:
             overlap = sorted(self.compactList.get(run, []) + other.compactList.get(run, []))
@@ -274,7 +278,7 @@ class LumiList(object):
         Return the list of pairs representation
         """
         theList = []
-        runs = self.compactList.keys()
+        runs = list(self.compactList)
         runs.sort(key=int)
         for run in runs:
             lumis = self.compactList[run]
@@ -299,7 +303,7 @@ class LumiList(object):
         """
 
         parts = []
-        runs = self.compactList.keys()
+        runs = list(self.compactList)
         runs.sort(key=int)
         for run in runs:
             lumis = self.compactList[run]
@@ -361,7 +365,7 @@ class LumiList(object):
         Selects only runs from runList in collection
         '''
         runsToDelete = []
-        for run in self.compactList.keys():
+        for run in list(self.compactList):
             if int(run) not in runList and run not in runList:
                 runsToDelete.append(run)
 

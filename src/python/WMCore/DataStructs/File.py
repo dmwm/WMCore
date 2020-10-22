@@ -5,6 +5,7 @@ _File_
 Data object that contains details for a single file
 
 """
+from past.builtins import basestring
 __all__ = []
 
 from WMCore.DataStructs.Run import Run

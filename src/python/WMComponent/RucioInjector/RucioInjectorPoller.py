@@ -410,75 +410,21 @@ class RucioInjectorPoller(BaseWorkerThread):
 
     def insertContainerRules(self):
         """
-        _insertContainerRules_
-        Poll the database for datasets meant to be subscribed and create
-        a container level rule to replicate all files to a given RSE
+        Polls the database for containers meant to be subscribed and create
+        a container level rule to replicate all the files to a given RSE.
+        It deals with both Central Production and T0 data rules, which require
+        a different approach, such as:
+          * Production Tape/Custodial data placement is skipped and data is marked as transferred
+          * Production Disk/NonCutodial has a generic RSE expression and some rules override
+            from the agent configuration (like number of copies, grouping and weight)
+          * T0 Tape is created as defined, with a special rule activity for Tape
+          * T0 Disk is created as defined, with a special rule activity for Disk/Export
         """
-        if self.isT0agent:
-            return self._insertContainerRulesT0()
-
         logging.info("Starting insertContainerRules method")
 
-        # FIXME also adapt the format returned by this DAO
-        # Check for completely unsubscribed datasets
-        # in short, files in phedex, file status in "GLOBAL" or "InDBS", and subscribed=0
-        unsubscribedDatasets = self.getUnsubscribedDsets.execute()
-
-        # Keep a list of subscriptions to tick as subscribed in the database
-        subscriptionsMade = []
-
-        # Create the subscription objects and add them to the list
-        # The list takes care of the sorting internally
-        for subInfo in unsubscribedDatasets:
-            container = subInfo['path']
-            rseExpr = subInfo['site']
-            # we skip Custodial/MSS/Tape data placement
-            if subInfo['custodial'] in [1, 'y']:
-                logging.info("Bypassing custodial container rule for container: %s and RSE: %s",
-                             container, rseExpr)
-                subscriptionsMade.append(subInfo['id'])
-                continue
-
-            if not self._isContainerTierAllowed(container):
-                logging.info("Component configured to skip container rule for: %s", container)
-                subscriptionsMade.append(subInfo['id'])
-                continue
-
-            kwargs = dict(ask_approval=False, activity="Production Output",
-                          account=self.rucioAcct, grouping="ALL",
-                          comment="WMAgent automatic container rule", meta=self.metaData)
-            # top it up with component-level parameters
-            kwargs.update(self.containerDiskRuleParams)
-
-            rseExpr = self.containerDiskRuleRSEExpr
-            if self.testRSEs:
-                rseExpr = rseExpr.replace("cms_type=real", "cms_type=test")
-            logging.info("Creating container rule for %s against RSE %s", container, rseExpr)
-            try:
-                resp = self.rucio.createReplicationRule(container,
-                                                        rseExpression=rseExpr, **kwargs)
-            except Exception as exc:
-                msg = "Failed to create container rule for: %s" % container
-                msg += "\nWill retry again in the next cycle. Error: %s" % str(exc)
-                continue
-            if resp:
-                logging.info("Container rule created for %s under rule id: %s", container, resp)
-                subscriptionsMade.append(subInfo['id'])
-            else:
-                logging.error("Failed to create rule for container: %s", container)
-
-        # Register the result in DBSBuffer
-        if subscriptionsMade:
-            self.markSubscribed.execute(subscriptionsMade)
-
-        return
-
-    def _insertContainerRulesT0(self):
-        """
-        T0 specific method to deal with output container-level data placement, as
-        defined in the workflow spec file.
-        """
-        logging.info("Starting insertContainerRulesT0 method")
+        ruleComment = "WMAgent automatic container rule"
+        if self.isT0agent:
+            ruleComment = "T0 " + ruleComment
 
         # FIXME also adapt the format returned by this DAO
         # Check for completely unsubscribed datasets
@@ -491,30 +437,47 @@ class RucioInjectorPoller(BaseWorkerThread):
         # Create the subscription objects and add them to the list
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
-            kwargs = dict(ask_approval=False, activity="Production Output",
-                          account=self.rucioAcct, grouping="ALL",
-                          comment="WMAgent automatic container rule", meta=self.metaData)
-            rse = subInfo['site'].replace("_MSS", "_Tape")
+            rseName = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
-            if not self._isContainerTierAllowed(container):
-                logging.debug("Component configured to skip container rule for: %s", container)
+            # Skip central production Tape rules
+            if not self.isT0agent and rseName.endswith("_Tape"):
+                logging.info("Bypassing Production container Tape data placement for container: %s and RSE: %s",
+                             container, rseName)
+                subscriptionsMade.append(subInfo['id'])
                 continue
 
-            rseName = "%s_Test" % rse if self.testRSEs else rse
+            ruleKwargs = dict(ask_approval=False,
+                              activity=self._activityMap(rseName),
+                              account=self.rucioAcct,
+                              grouping="ALL",
+                              comment=ruleComment,
+                              meta=self.metaData)
+            if not rseName.endswith("_Tape"):
+                # add extra parameters to the Disk rule as defined in the component configuration
+                ruleKwargs.update(self.containerDiskRuleParams)
+
+            if not self.isT0agent:
+                # destination for production Disk rules are always overwritten
+                rseName = self.containerDiskRuleRSEExpr
+                if self.testRSEs:
+                    rseName = rseName.replace("cms_type=real", "cms_type=test")
+            elif self.testRSEs:
+                rseName = "%s_Test" % rseName
+
             logging.info("Creating container rule for %s against RSE %s", container, rseName)
+            logging.debug("Container rule will be created with keyword args: %s", ruleKwargs)
             try:
-                # ALL = replicates all files to the same RSE
                 resp = self.rucio.createReplicationRule(container,
-                                                        rseExpression=rseName, **kwargs)
-            except WMRucioException as exc:
+                                                        rseExpression=rseName, **ruleKwargs)
+            except Exception:
                 msg = "Failed to create container rule for (retrying with approval): %s" % container
                 logging.warning(msg)
-                kwargs["ask_approval"] = True
+                ruleKwargs["ask_approval"] = True
                 try:
                     resp = self.rucio.createReplicationRule(container,
-                                                            rseExpression=rseName, **kwargs)
+                                                            rseExpression=rseName, **ruleKwargs)
                 except Exception as exc:
-                    msg = "Failed once again to create container rule for: %s" % container
+                    msg = "Failed once again to create container rule for: %s " % container
                     msg += "\nWill retry again in the next cycle. Error: %s" % str(exc)
                     continue
             if resp:
@@ -526,5 +489,24 @@ class RucioInjectorPoller(BaseWorkerThread):
         # Register the result in DBSBuffer
         if subscriptionsMade:
             self.markSubscribed.execute(subscriptionsMade)
+            logging.info("%d containers successfully locked in Rucio and local database", len(subscriptionsMade))
 
         return
+
+    def _activityMap(self, rseName):
+        """
+        It maps the WMAgent type (Production vs T0) and the RSE name to
+        properly set the rule activity field
+        :param rseName: a string with the RSE name
+        :return: a string with the rule activity
+        """
+        if not self.isT0agent and not rseName.endswith("_Tape"):
+            return "Production Output"
+        elif self.isT0agent and rseName.endswith("_Tape"):
+            return "T0 Tape"
+        elif self.isT0agent:
+            return "T0 Export"
+        else:
+            msg = "This code should never be reached. Report it to the developers. "
+            msg += "Trying to create container rule for RSE name: {}".format(rseName)
+            raise WMRucioException(msg)

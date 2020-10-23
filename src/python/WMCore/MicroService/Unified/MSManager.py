@@ -34,6 +34,7 @@ from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.MicroService.Unified.MSTransferor import MSTransferor
 from WMCore.MicroService.Unified.MSMonitor import MSMonitor
 from WMCore.MicroService.Unified.MSOutput import MSOutput
+from WMCore.MicroService.Unified.MSRuleCleaner import MSRuleCleaner
 from WMCore.MicroService.Unified.TaskManager import start_new_thread
 
 
@@ -68,6 +69,7 @@ class MSManager(object):
         self.statusTrans = {}
         self.statusMon = {}
         self.statusOutput = {}
+        self.statusRuleCleaner = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -118,6 +120,18 @@ class MSManager(object):
                                                           self.msConfig['interval'],
                                                           self.logger))
             self.logger.info("=== Running %s thread %s", thname, self.outputProducerThread.running())
+
+        # initialize rule cleaner module
+        if 'ruleCleaner' in self.services:
+            reqStatus = ['announced', 'aborted-completed', 'rejected']
+            self.msRuleCleaner = MSRuleCleaner(self.msConfig, logger=self.logger)
+            thname = 'MSRuleCleaner'
+            self.ruleCleanerThread = start_new_thread(thname, daemon,
+                                                      (self.ruleCleaner,
+                                                       reqStatus,
+                                                       self.msConfig['interval'],
+                                                       self.logger))
+            self.logger.info("--- Running %s thread %s", thname, self.ruleCleanerThread.running())
 
     def _parseConfig(self, config):
         """
@@ -198,6 +212,23 @@ class MSManager(object):
         self.logger.info("Total outputProducer execution time: %d secs", res['execution_time'])
         self.statusOutput = res
 
+    def ruleCleaner(self, reqStatus):
+        """
+        MSManager ruleCleaner function.
+        It cleans the block level Rucio rules created by WMAgent and
+        performs request status transition from ['announced', 'aborted-completed', 'rejected'] to
+        '{normal, aborted, rejected}-archived' state of ReqMgr2.
+        For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-RuleCleaner
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the ruleCleaner thread...")
+        res = self.msRuleCleaner.execute(reqStatus)
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total ruleCleaner execution time: %d secs", res['execution_time'])
+        self.statusRuleCleaner = res
+
     def stop(self):
         "Stop MSManager"
         status = None
@@ -216,6 +247,10 @@ class MSManager(object):
         if 'output' in self.services and hasattr(self, 'outputProducerThread'):
             self.outputProducerThread.stop()
             status = self.outputProducerThread.running()
+        # stop MSRuleCleaner thread
+        if 'ruleCleaner' in self.services and hasattr(self, 'ruleCleanerThread'):
+            self.ruleCleanerThread.stop()
+            status = self.ruleCleanerThread.running()
         return status
 
     def info(self, reqName=None):
@@ -257,6 +292,8 @@ class MSManager(object):
             data.update(self.statusMon)
         elif detail and 'output' in self.services:
             data.update(self.statusOutput)
+        elif detail and 'ruleCleaner' in self.services:
+            data.update(self.statusRuleCleaner)
         return data
 
     def updateTimeUTC(self, reportDict, startT, endT):

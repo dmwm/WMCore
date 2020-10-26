@@ -1,3 +1,9 @@
+1.4.2.pre4 to 1.4.2.pre5:
+  - MSRulecleaner initial commit. (Todor Ivanov) #10003
+  - Bump deployment example to patch3 and a new cmsweb tag (Alan Malta Rodrigues) #10005
+  - Add CMSMonitoring dependency for ReqMgr2 (Erik Gough) #10004
+
+
 1.4.2.pre3 to 1.4.2.pre4:
   - Remove PhEDEx functionality from MSTransferor (Alan Malta Rodrigues) #10002
   - If listDataRules API fail, raise a WMRucioException (Alan Malta Rodrigues) #9999

@@ -414,8 +414,17 @@ class Rucio(object):
         try:
             # add_replicas(rse, files, ignore_availability=True)
             response = self.cli.add_replicas(rse, files, ignoreAvailability)
-        except Exception as ex:
-            self.logger.error("Failed to add replicas for: %s and block: %s. Error: %s", files, block, str(ex))
+        except DataIdentifierAlreadyExists as exc:
+            if len(files) == 1:
+                self.logger.debug("File replica already exists in Rucio: %s", files[0]['name'])
+                response = True
+            else:
+                # FIXME: I think we would have to iterate over every single file and add then one by one
+                errorMsg = "Failed to insert replicas for: {} and block: {}".format(files, block)
+                errorMsg += " Some/all DIDs already exist in Rucio. Error: {}".format(str(exc))
+                self.logger.error(errorMsg)
+        except Exception as exc:
+            self.logger.error("Failed to add replicas for: %s and block: %s. Error: %s", files, block, str(exc))
 
         if response:
             files = [item['name'] for item in files]
@@ -526,10 +535,9 @@ class Rucio(object):
                     self.logger.warning("Found duplicate rule for account: %s\n, rseExp: %s\ndids: %s",
                                         kwargs['account'], rseExpression, dids)
                     # Well, then let us find which rule_id is already in the system
-                    for rule in self.listDataRules(did['name'], did['scope']):
-                        if rule['account'] == kwargs['account'] and rule['rse_expression'] == rseExpression:
-                            # then this is the duplicate rule!
-                            ruleIds.append(rule['id'])
+                    for rule in self.listDataRules(did['name'], scope=did['scope'],
+                                                   account=kwargs['account'], rse_expression=rseExpression):
+                        ruleIds.append(rule['id'])
             return list(set(ruleIds))
         except Exception as ex:
             self.logger.error("Exception creating rule replica for data: %s. Error: %s", names, str(ex))
@@ -586,20 +594,35 @@ class Rucio(object):
             self.logger.error("Exception listing content of: %s. Error: %s", name, str(ex))
         return list(res)
 
-    def listDataRules(self, name, scope='cms'):
+    def listDataRules(self, name, **kwargs):
         """
         _listDataRules_
 
         List all rules associated to the data identifier provided.
         :param name: data identifier (either a block or a container name)
-        :param scope: string with the scope name
+        :param kwargs: key/value filters supported by list_replication_rules Rucio API, such as:
+          * scope: string with the scope name (optional)
+          * account: string with the rucio account name (optional)
+          * state: string with the state name (optional)
+          * grouping: string with the grouping name (optional)
+          * did_type: string with the DID type (optional)
+          * created_before: an RFC-1123 compliant date string (optional)
+          * created_after: an RFC-1123 compliant date string (optional)
+          * updated_before: an RFC-1123 compliant date string (optional)
+          * updated_after: an RFC-1123 compliant date string (optional)
+          * and any of the other supported query arguments from the ReplicationRule class, see:
+          https://github.com/rucio/rucio/blob/master/lib/rucio/db/sqla/models.py#L884
         :return: a list with dictionary items
         """
-        res = []
+        kwargs["name"] = name
+        kwargs.setdefault("scope", "cms")
         try:
-            res = self.cli.list_did_rules(scope, name)
-        except Exception as ex:
-            self.logger.error("Exception listing rules for data: %s. Error: %s", name, str(ex))
+            res = self.cli.list_replication_rules(kwargs)
+        except Exception as exc:
+            msg = "Exception listing rules for data: {} and kwargs: {}. Error: {}".format(name,
+                                                                                          kwargs,
+                                                                                          str(exc))
+            raise WMRucioException(msg)
         return list(res)
 
     def listDataRulesHistory(self, name, scope='cms'):

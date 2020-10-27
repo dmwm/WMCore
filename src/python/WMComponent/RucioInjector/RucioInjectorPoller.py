@@ -102,7 +102,8 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.rucio = Rucio(acct=self.rucioAcct,
                            hostUrl=config.RucioInjector.rucioUrl,
                            authUrl=config.RucioInjector.rucioAuthUrl,
-                           configDict={'logger': self.logger})
+                           configDict={'logger': self.logger,
+                                       'phedexCompatible': False})
 
         # metadata dictionary information to be added to block/container rules
         # cannot be a python dictionary, but a JSON string instead
@@ -317,6 +318,10 @@ class RucioInjectorPoller(BaseWorkerThread):
             rseName = "%s_Test" % location if self.testRSEs else location
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:
+                    if block not in self.blocksCache:
+                        logging.warning("Skipping %d file injection for block that failed to be added into Rucio: %s",
+                                        len(uninjectedData[location][container][block]['files']), block)
+                        continue
                     injectData = []
                     listLfns = []
                     for fileInfo in uninjectedData[location][container][block]['files']:
@@ -379,15 +384,85 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         _deleteBlocks_
         Find deletable blocks, then decide if to delete based on:
-        Is there an active subscription for dataset or block ?
-          If yes => set deleted=2
-          If no => next check
         Has transfer to all destinations finished ?
-          If yes => request block deletion, approve request, set deleted=1
+          If yes => Delete rules associated with the block, set deleted=1
           If no => do nothing (check again next cycle)
         """
-        # FIXME: figure out the proper logic for rule block deletion
-        logging.info("Starting deleteBlocks methods --> IMPLEMENT-ME!!!")
+        logging.info("Checking if there are block rules to be deleted...")
+
+        # Get list of blocks that can be deleted
+        blockDict = self.findDeletableBlocks.execute(transaction=False)
+
+        if not blockDict:
+            logging.info("No candidate blocks found for rule deletion")
+            return
+
+        logging.info("Found %d candidate blocks for rule deletion", len(blockDict))
+
+        blocksToDelete = []
+        containerDict = {}
+        # Populate containerDict, assigning each block to its correspondant container
+        for blockName in blockDict:
+            container = blockDict[blockName]['dataset']
+            # If the container is not in the dictionary, create a new entry for it
+            if container not in containerDict:
+                # Set of sites to which the container needs to be transferred
+                sites = blockDict[blockName]['sites']
+                containerDict[container] = {'blocks': [], 'rse': sites}
+            containerDict[container]['blocks'].append(blockName)
+
+        for contName in containerDict:
+            cont = containerDict[contName]
+
+            # Checks if the container is not requested in any sites.
+            # This should never be triggered, but better safe than sorry
+            if not cont['rse']:
+                logging.warning("No rules for container: %s. Its blocks won't be deleted.", contName)
+                continue
+
+            try:
+                # Get RSE in which each block is available
+                availableRSEs = self.rucio.getReplicaInfoForBlocks(block=cont['blocks'])
+            except Exception as exc:
+                msg = "Failed to get replica info for blocks in container: %s.\n" % contName
+                msg += "Will retry again in the next cycle. Error: %s" % str(exc)
+                logging.error(msg)
+                continue
+
+            for blockRSEs in availableRSEs:
+                # If block is available at every RSE its container needs to be transferred, the block can be deleted
+                blockSites = set(blockRSEs['replica'])
+                if cont['rse'].issubset(blockSites):
+                    blocksToDelete.append(blockRSEs['name'])
+
+        # Delete agent created rules locking the block
+        binds = []
+        logging.info("Going to delete %d block rules", len(blocksToDelete))
+        for block in blocksToDelete:
+            try:
+                rules = self.rucio.listDataRules(block, scope=self.scope, account=self.rucioAcct)
+            except WMRucioException as exc:
+                logging.warning("Unable to retrieve replication rules for block: %s. Will retry in the next cycle.", block)
+            else:
+                if not rules:
+                    logging.info("Block rule for: %s has been deleted by previous cycles", block)
+                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                    continue
+                for rule in rules:
+                    deletedRules = 0
+                    if self.rucio.deleteRule(rule['id']):
+                        logging.info("Successfully deleted rule: %s, for block %s.", rule['id'], block)
+                        deletedRules += 1
+                    else:
+                        logging.warning("Failed to delete rule: %s, for block %s. Will retry in the next cycle.", rule['id'], block)
+                if deletedRules == len(rules):
+                    binds.append({'DELETED': 1, 'BLOCKNAME': block})
+                    logging.info("Successfully deleted all rules for block %s.", block)
+
+
+        self.markBlocksDeleted.execute(binds)
+        logging.info("Marked %d blocks as deleted in the database", len(binds))
+        return
 
     # TODO: this will likely go away once the phedex to rucio migration is over
     def _isContainerTierAllowed(self, containerName, checkRulesList=True):
@@ -410,75 +485,21 @@ class RucioInjectorPoller(BaseWorkerThread):
 
     def insertContainerRules(self):
         """
-        _insertContainerRules_
-        Poll the database for datasets meant to be subscribed and create
-        a container level rule to replicate all files to a given RSE
+        Polls the database for containers meant to be subscribed and create
+        a container level rule to replicate all the files to a given RSE.
+        It deals with both Central Production and T0 data rules, which require
+        a different approach, such as:
+          * Production Tape/Custodial data placement is skipped and data is marked as transferred
+          * Production Disk/NonCutodial has a generic RSE expression and some rules override
+            from the agent configuration (like number of copies, grouping and weight)
+          * T0 Tape is created as defined, with a special rule activity for Tape
+          * T0 Disk is created as defined, with a special rule activity for Disk/Export
         """
-        if self.isT0agent:
-            return self._insertContainerRulesT0()
-
         logging.info("Starting insertContainerRules method")
 
-        # FIXME also adapt the format returned by this DAO
-        # Check for completely unsubscribed datasets
-        # in short, files in phedex, file status in "GLOBAL" or "InDBS", and subscribed=0
-        unsubscribedDatasets = self.getUnsubscribedDsets.execute()
-
-        # Keep a list of subscriptions to tick as subscribed in the database
-        subscriptionsMade = []
-
-        # Create the subscription objects and add them to the list
-        # The list takes care of the sorting internally
-        for subInfo in unsubscribedDatasets:
-            container = subInfo['path']
-            rseExpr = subInfo['site']
-            # we skip Custodial/MSS/Tape data placement
-            if subInfo['custodial'] in [1, 'y']:
-                logging.info("Bypassing custodial container rule for container: %s and RSE: %s",
-                             container, rseExpr)
-                subscriptionsMade.append(subInfo['id'])
-                continue
-
-            if not self._isContainerTierAllowed(container):
-                logging.info("Component configured to skip container rule for: %s", container)
-                subscriptionsMade.append(subInfo['id'])
-                continue
-
-            kwargs = dict(ask_approval=False, activity="Production Output",
-                          account=self.rucioAcct, grouping="ALL",
-                          comment="WMAgent automatic container rule", meta=self.metaData)
-            # top it up with component-level parameters
-            kwargs.update(self.containerDiskRuleParams)
-
-            rseExpr = self.containerDiskRuleRSEExpr
-            if self.testRSEs:
-                rseExpr = rseExpr.replace("cms_type=real", "cms_type=test")
-            logging.info("Creating container rule for %s against RSE %s", container, rseExpr)
-            try:
-                resp = self.rucio.createReplicationRule(container,
-                                                        rseExpression=rseExpr, **kwargs)
-            except Exception as exc:
-                msg = "Failed to create container rule for: %s" % container
-                msg += "\nWill retry again in the next cycle. Error: %s" % str(exc)
-                continue
-            if resp:
-                logging.info("Container rule created for %s under rule id: %s", container, resp)
-                subscriptionsMade.append(subInfo['id'])
-            else:
-                logging.error("Failed to create rule for container: %s", container)
-
-        # Register the result in DBSBuffer
-        if subscriptionsMade:
-            self.markSubscribed.execute(subscriptionsMade)
-
-        return
-
-    def _insertContainerRulesT0(self):
-        """
-        T0 specific method to deal with output container-level data placement, as
-        defined in the workflow spec file.
-        """
-        logging.info("Starting insertContainerRulesT0 method")
+        ruleComment = "WMAgent automatic container rule"
+        if self.isT0agent:
+            ruleComment = "T0 " + ruleComment
 
         # FIXME also adapt the format returned by this DAO
         # Check for completely unsubscribed datasets
@@ -491,30 +512,47 @@ class RucioInjectorPoller(BaseWorkerThread):
         # Create the subscription objects and add them to the list
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
-            kwargs = dict(ask_approval=False, activity="Production Output",
-                          account=self.rucioAcct, grouping="ALL",
-                          comment="WMAgent automatic container rule", meta=self.metaData)
-            rse = subInfo['site'].replace("_MSS", "_Tape")
+            rseName = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
-            if not self._isContainerTierAllowed(container):
-                logging.debug("Component configured to skip container rule for: %s", container)
+            # Skip central production Tape rules
+            if not self.isT0agent and rseName.endswith("_Tape"):
+                logging.info("Bypassing Production container Tape data placement for container: %s and RSE: %s",
+                             container, rseName)
+                subscriptionsMade.append(subInfo['id'])
                 continue
 
-            rseName = "%s_Test" % rse if self.testRSEs else rse
+            ruleKwargs = dict(ask_approval=False,
+                              activity=self._activityMap(rseName),
+                              account=self.rucioAcct,
+                              grouping="ALL",
+                              comment=ruleComment,
+                              meta=self.metaData)
+            if not rseName.endswith("_Tape"):
+                # add extra parameters to the Disk rule as defined in the component configuration
+                ruleKwargs.update(self.containerDiskRuleParams)
+
+            if not self.isT0agent:
+                # destination for production Disk rules are always overwritten
+                rseName = self.containerDiskRuleRSEExpr
+                if self.testRSEs:
+                    rseName = rseName.replace("cms_type=real", "cms_type=test")
+            elif self.testRSEs:
+                rseName = "%s_Test" % rseName
+
             logging.info("Creating container rule for %s against RSE %s", container, rseName)
+            logging.debug("Container rule will be created with keyword args: %s", ruleKwargs)
             try:
-                # ALL = replicates all files to the same RSE
                 resp = self.rucio.createReplicationRule(container,
-                                                        rseExpression=rseName, **kwargs)
-            except WMRucioException as exc:
+                                                        rseExpression=rseName, **ruleKwargs)
+            except Exception:
                 msg = "Failed to create container rule for (retrying with approval): %s" % container
                 logging.warning(msg)
-                kwargs["ask_approval"] = True
+                ruleKwargs["ask_approval"] = True
                 try:
                     resp = self.rucio.createReplicationRule(container,
-                                                            rseExpression=rseName, **kwargs)
+                                                            rseExpression=rseName, **ruleKwargs)
                 except Exception as exc:
-                    msg = "Failed once again to create container rule for: %s" % container
+                    msg = "Failed once again to create container rule for: %s " % container
                     msg += "\nWill retry again in the next cycle. Error: %s" % str(exc)
                     continue
             if resp:
@@ -526,5 +564,24 @@ class RucioInjectorPoller(BaseWorkerThread):
         # Register the result in DBSBuffer
         if subscriptionsMade:
             self.markSubscribed.execute(subscriptionsMade)
+            logging.info("%d containers successfully locked in Rucio and local database", len(subscriptionsMade))
 
         return
+
+    def _activityMap(self, rseName):
+        """
+        It maps the WMAgent type (Production vs T0) and the RSE name to
+        properly set the rule activity field
+        :param rseName: a string with the RSE name
+        :return: a string with the rule activity
+        """
+        if not self.isT0agent and not rseName.endswith("_Tape"):
+            return "Production Output"
+        elif self.isT0agent and rseName.endswith("_Tape"):
+            return "T0 Tape"
+        elif self.isT0agent:
+            return "T0 Export"
+        else:
+            msg = "This code should never be reached. Report it to the developers. "
+            msg += "Trying to create container rule for RSE name: {}".format(rseName)
+            raise WMRucioException(msg)

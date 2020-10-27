@@ -414,8 +414,17 @@ class Rucio(object):
         try:
             # add_replicas(rse, files, ignore_availability=True)
             response = self.cli.add_replicas(rse, files, ignoreAvailability)
-        except Exception as ex:
-            self.logger.error("Failed to add replicas for: %s and block: %s. Error: %s", files, block, str(ex))
+        except DataIdentifierAlreadyExists as exc:
+            if len(files) == 1:
+                self.logger.debug("File replica already exists in Rucio: %s", files[0]['name'])
+                response = True
+            else:
+                # FIXME: I think we would have to iterate over every single file and add then one by one
+                errorMsg = "Failed to insert replicas for: {} and block: {}".format(files, block)
+                errorMsg += " Some/all DIDs already exist in Rucio. Error: {}".format(str(exc))
+                self.logger.error(errorMsg)
+        except Exception as exc:
+            self.logger.error("Failed to add replicas for: %s and block: %s. Error: %s", files, block, str(exc))
 
         if response:
             files = [item['name'] for item in files]

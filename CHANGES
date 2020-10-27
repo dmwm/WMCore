@@ -1,3 +1,11 @@
+1.4.1.patch3 to 1.4.1.patch4:
+  - Only add replicas if parent block has been properly added/attached into Rucio (Alan Malta Rodrigues) #10025
+  - Deal with T0 output data subscription in RucioInjector (Alan Malta Rodrigues) #10025
+  - Delete blocks using container-block mapping. Improving logging. (germanfgv) #10025
+  - If listDataRules API fail, raise a WMRucioException (Alan Malta Rodrigues) #10025
+  - Use list_replication_rules Rucio API to list rules (Alan Malta Rodrigues) #10025
+
+
 1.4.1.patch2 to 1.4.1.patch3:
   - Disable PhEDExInjector; Enable all tiers to be injected in Rucio (Alan Malta Rodrigues) #9991
 

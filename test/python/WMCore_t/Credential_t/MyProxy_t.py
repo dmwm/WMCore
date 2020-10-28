@@ -11,10 +11,7 @@ import unittest
 import os
 import logging
 import logging.config
-import socket
 import time
-import tempfile
-import subprocess
 
 from nose.plugins.attrib import attr
 from WMCore.Credential.Proxy import Proxy, myProxyEnvironment

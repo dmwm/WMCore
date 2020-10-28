@@ -280,5 +280,5 @@ if __name__ == '__main__':
             import traceback
 
             traceback.print_exc()
-        logger.error("Error:" + str(e))
+        logger.error("Error: %s", str(e))
         sys.exit(1)

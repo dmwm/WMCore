@@ -13,9 +13,7 @@ import unittest
 import os
 import logging
 import logging.config
-import socket
 import time
-import tempfile
 import subprocess
 
 from nose.plugins.attrib import attr
@@ -68,7 +66,7 @@ class ProxyTest(unittest.TestCase):
         if vomsProxyInfoCall.wait() != 0:
             return None
 
-        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        stdout, _ = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
 
     def getUserAttributes(self):
@@ -82,7 +80,7 @@ class ProxyTest(unittest.TestCase):
         if vomsProxyInfoCall.wait() != 0:
             return None
 
-        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        stdout, _ = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
 
     @attr("integration")

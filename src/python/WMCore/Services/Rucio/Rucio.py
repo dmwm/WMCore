@@ -288,9 +288,8 @@ class Rucio(object):
         Note: same function implemented for PhEDEx accepted a list of sites, but semantic was obscure and actual need
               unknown. So take this chance to make things simple.
         :param site: a Rucio RSE, i.e. a site name in standard CMS format like 'T1_UK_RAL_Disk' or  'T2_CH_CERN'
-        :param lfns: a list of LFN's, does not need to correspond to actual files and could be a top level directory
-                      like ['/store/user/rucio/jdoe','/store',...] basically any string starting with '/' is
-                      accepted and LFN -> PFN translation is almost always a simple prefix
+        :param lfns: one LFN or a list of LFN's, does not need to correspond to actual files and could be a top level directory
+                      like ['/store/user/rucio/jdoe','/store/data',...] or the simple '/store/data' 
         :param protocol: If the RSE supports multiple access protocols, a preferred protocol can be selected via this,
                          otherwise the default one for the site will be selected. Example: 'gsiftp' or 'davs'
         :return: a dictionary having the LFN's as keys and the corresponding PFN's as values.

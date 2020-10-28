@@ -23,6 +23,7 @@ PUBLOCK = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano2
 DSET2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM"
 BLOCK2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM#50aecec1-d5a8-4756-9ee4-f93995c5b524"
 
+
 # integration containers with with 2 blocks
 # DSET3 = "/NoBPTX/Integ_Test-ReReco_LumiMask_HG1812_Validation_TEST_Alan_v13-v11/AOD"
 # DSET4 = "/NoBPTX/Integ_Test-ReReco_LumiMask_HG1812_Validation_TEST_Alan_v13-v11/DQMIO"
@@ -237,7 +238,89 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test `getPFN` method
         """
-        self.assertRaises(NotImplementedError, self.myRucio.getPFN)
+        ### FIXME: Integration server instance sometimes responds with an xrootd PFN instead of gsiftp...
+        cernTestDefaultPrefix = "gsiftp://eoscmsftp.cern.ch:2811/eos/cms/store/test/rucio/int/cms/"
+        cernTestDefaultPrefix2 = "root://eoscms.cern.ch:1094//eos/cms/store/test/rucio/int/cms/"
+
+        testLfn = "/store"
+        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=testLfn)
+        # self.assertEqual(resp[testLfn], cernTestDefaultPrefix + testLfn)
+        self.assertTrue(resp[testLfn] == cernTestDefaultPrefix + testLfn or
+                        resp[testLfn] == cernTestDefaultPrefix2 + testLfn)
+
+        # we do not rely on the following check with lfns=""
+        # but since it currently works, it will be nice that it keeps working when
+        # site TFCs will be replaced by prefixes and this may the only. Beware that currently
+        # it only works for a subset of sites, as it relies on the specifics of their TFC.
+        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns="")
+        # self.assertItemsEqual(resp, {u'': cernTestDefaultPrefix})
+        self.assertTrue(resp == {u'': cernTestDefaultPrefix} or
+                        resp == {u'': cernTestDefaultPrefix2})
+
+        # possible additional tests (from Stefano)
+        lfn1 = '/store/afile'
+        lfn2 = '/store/mc/afile'
+        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=lfn1)
+        # self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
+        self.assertTrue(resp[lfn1] == cernTestDefaultPrefix + lfn1 or
+                        resp[lfn1] == cernTestDefaultPrefix2 + lfn1)
+
+        # test with a list of LFN's
+        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=[lfn1, lfn2])
+        self.assertEqual(len(resp), 2)
+        # self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
+        self.assertTrue(resp[lfn1] == cernTestDefaultPrefix + lfn1 or
+                        resp[lfn1] == cernTestDefaultPrefix2 + lfn1)
+        # self.assertEqual(resp[lfn2], cernTestDefaultPrefix + lfn2)
+        self.assertTrue(resp[lfn2] == cernTestDefaultPrefix + lfn2 or
+                        resp[lfn2] == cernTestDefaultPrefix2 + lfn2)
+
+        # test different protocols
+        resp = self.myRucio.getPFN(site="T2_US_Nebraska_Test", lfns=lfn1, protocol='gsiftp')
+        self.assertEqual(resp[lfn1],
+                         "gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/test/rucio/int/cms/" + lfn1)
+        resp = self.myRucio.getPFN(site="T2_US_Nebraska_Test", lfns=lfn1, protocol='davs')
+        self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int/cms/" + lfn1)
+
+    @attr('integration')
+    def testProdGetPFN(self):
+        """
+        Test `getPFN` method using the production server, hence set
+        as an integration test not to be executed by jenkins
+        """
+        newParams = {"auth_type": "x509", "ca_cert": False, "timeout": 50}
+        prodRucio = Rucio.Rucio("wmcore_transferor",
+                                hostUrl='http://cms-rucio.cern.ch',
+                                authUrl='https://cms-rucio-auth.cern.ch',
+                                configDict=newParams)
+        # simplest call (from Alan)
+        cernTestDefaultPrefix = "gsiftp://eoscmsftp.cern.ch:2811/eos/cms"
+        testLfn = "/store"
+        resp = prodRucio.getPFN(site="T2_CH_CERN", lfns=testLfn)
+        self.assertEqual(resp[testLfn], cernTestDefaultPrefix + testLfn)
+
+        # see comment in testGetPFN() function above about testing with lfns=""
+        resp = prodRucio.getPFN(site="T2_CH_CERN", lfns="")
+        self.assertItemsEqual(resp, {u'': u'gsiftp://eoscmsftp.cern.ch:2811/'})
+
+        # possible additional tests (from Stefano)
+        lfn1 = '/store/afile'
+        lfn2 = '/store/mc/afile'
+        resp = prodRucio.getPFN(site="T2_CH_CERN", lfns=lfn1)
+        self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
+
+        # test with a list of LFN's
+        resp = prodRucio.getPFN(site="T2_CH_CERN", lfns=[lfn1, lfn2])
+        self.assertEqual(len(resp), 2)
+        self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
+        self.assertEqual(resp[lfn2], cernTestDefaultPrefix + lfn2)
+
+        # test different protocols
+        resp = prodRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='gsiftp')
+        self.assertEqual(resp[lfn1],
+                         "gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms" + lfn1)
+        resp = prodRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='davs')
+        self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094" + lfn1)
 
     def testListContent(self):
         """
@@ -435,14 +518,15 @@ class RucioTest(EmulatedUnitTestCase):
         # there are no rules for the blocks, but 6 copies for the container level
         resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops", grouping="ALL")
         self.assertItemsEqual(resp, ['T1_IT_CNAF_Disk', 'T1_RU_JINR_Disk', 'T1_UK_RAL_Disk', 'T1_US_FNAL_Disk',
-                                      'T2_IT_Bari', 'T2_US_Vanderbilt'])
+                                     'T2_IT_Bari', 'T2_US_Vanderbilt'])
 
         # return the  6 copies for the container level, plus the tape one(s)
         resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops",
                                                    grouping="ALL", returnTape=True)
         self.assertItemsEqual(resp, ['T1_IT_CNAF_Disk', 'T1_RU_JINR_Disk', 'T1_UK_RAL_Disk', 'T1_US_FNAL_Disk',
-                                      'T2_IT_Bari', 'T2_US_Vanderbilt', 'T1_IT_CNAF_Tape'])
+                                     'T2_IT_Bari', 'T2_US_Vanderbilt', 'T1_IT_CNAF_Tape'])
 
         # there are no rules for the blocks, but 6 copies for the container level
         resp = prodRucio.getDataLockedAndAvailable(name=BLOCK2, account="transfer_ops", grouping="DATASET")
         self.assertItemsEqual(resp, [])
+

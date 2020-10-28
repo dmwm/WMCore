@@ -318,6 +318,10 @@ class RucioInjectorPoller(BaseWorkerThread):
             rseName = "%s_Test" % location if self.testRSEs else location
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:
+                    if block not in self.blocksCache:
+                        logging.warning("Skipping %d file injection for block that failed to be added into Rucio: %s",
+                                        len(uninjectedData[location][container][block]['files']), block)
+                        continue
                     injectData = []
                     listLfns = []
                     for fileInfo in uninjectedData[location][container][block]['files']:

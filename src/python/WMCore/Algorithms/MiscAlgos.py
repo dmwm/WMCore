@@ -21,7 +21,7 @@ def sortListByKey(data, key):
         if value == None:
             # Empty dict value?
             # This is an error, but we can't handle it here
-            logging.error("Found entry with no key in sortListByKey: %s" % entry)
+            logging.error("Found entry with no key in sortListByKey: %s", entry)
             logging.error("Skipping")
             continue
         if isinstance(value, set):
@@ -32,7 +32,7 @@ def sortListByKey(data, key):
             except KeyError:
                 # Set was empty?
                 # This is peculiar, we can't handle this.
-                logging.error("Found list entry with empty key set in sortListByKey: %s" % entry)
+                logging.error("Found list entry with empty key set in sortListByKey: %s", entry)
                 logging.error("Skipping")
                 continue
         if value not in final:

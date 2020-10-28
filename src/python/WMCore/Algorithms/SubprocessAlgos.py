@@ -72,16 +72,16 @@ def killProcessByName(name, user = os.getpid(), sig = None):
     return pids
 
 
-def tailNLinesFromFile(file, n):
+def tailNLinesFromFile(file_, n):
     """
     Loads the last N lines from a file
 
     """
 
-    if not os.path.isfile(file):
+    if not os.path.isfile(file_):
         return None
 
-    command = ['tail', '-n', str(n), file]
+    command = ['tail', '-n', str(n), file_]
 
     output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
 
@@ -102,7 +102,7 @@ def runCommand(cmd, shell = True, timeout = None):
     if timeout:
         if not isinstance(timeout, int):
             timeout = None
-            logging.error("SubprocessAlgo.runCommand expected int timeout, got %s" % timeout)
+            logging.error("SubprocessAlgo.runCommand expected int timeout, got %s", timeout)
         else:
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(timeout)

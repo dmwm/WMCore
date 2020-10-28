@@ -53,7 +53,7 @@ def getAverageStdDev(numList):
             msg =  "Attempted to take average of non-numerical values.\n"
             msg += "Expected int or float, got %s: %s" % (value.__class__, value)
             logging.error(msg)
-            logging.debug("FullList: %s" % numList)
+            logging.debug("FullList: %s", numList)
             raise MathAlgoException(msg)
 
     length = len(numList) - skipped
@@ -138,15 +138,15 @@ def createHistogram(numList, nBins, limit):
                           'stdDev': 0.0,
                           'nEvents': 0})
 
-    for bin in histogram:
-        if bin['type'] != 'standard':
+    for bin_ in histogram:
+        if bin_['type'] != 'standard':
             continue
         binList = []
         for value in histEvents:
-            if value >= bin['lowerEdge'] and value <= bin['upperEdge']:
+            if value >= bin_['lowerEdge'] and value <= bin_['upperEdge']:
                 # Then we're in the bin
                 binList.append(value)
-            elif value > bin['upperEdge']:
+            elif value > bin_['upperEdge']:
                 # Because this is a sorted list we are now out of the bin range
                 # Calculate our values and break
                 break
@@ -160,9 +160,9 @@ def createHistogram(numList, nBins, limit):
             continue
 
         binAvg, binStdDev = getAverageStdDev(numList=binList)
-        bin['average'] = binAvg
-        bin['stdDev']  = binStdDev
-        bin['nEvents'] = len(binList)
+        bin_['average'] = binAvg
+        bin_['stdDev']  = binStdDev
+        bin_['nEvents'] = len(binList)
 
     return histogram
 

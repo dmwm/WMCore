@@ -11,13 +11,7 @@ Used for the expat xml parsers
 from builtins import next, str, object
 from future.utils import viewitems
 
-import os
-import re
 import xml.parsers.expat
-
-
-
-
 
 class Node(object):
     """

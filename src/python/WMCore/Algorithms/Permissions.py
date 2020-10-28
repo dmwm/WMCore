@@ -17,11 +17,11 @@ def check_permissions(filehandle, permission, pass_stronger = False):
     else:
         assert filepermission == permission, "file does not have the correct permissions"
 
-def owner_readonly(file):
-    check_permissions(file, oct(0o400))
+def owner_readonly(file_):
+    check_permissions(file_, oct(0o400))
 
-def owner_readwrite(file):
-    check_permissions(file, oct(0o600))
+def owner_readwrite(file_):
+    check_permissions(file_, oct(0o600))
 
-def owner_readwriteexec(file):
-    check_permissions(file, oct(0o700))
+def owner_readwriteexec(file_):
+    check_permissions(file_, oct(0o700))

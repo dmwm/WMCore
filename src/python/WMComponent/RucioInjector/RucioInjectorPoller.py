@@ -289,7 +289,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                 continue
             kwargs = dict(activity="Production Output", account=self.rucioAcct,
                           grouping="DATASET", comment="WMAgent automatic container rule",
-                          meta=self.metaData)
+                          ignore_availability=True, meta=self.metaData)
             rseName = "%s_Test" % item['pnn'] if self.testRSEs else item['pnn']
             # DATASET = replicates all files in the same block to the same RSE
             resp = self.rucio.createReplicationRule(item['blockname'],

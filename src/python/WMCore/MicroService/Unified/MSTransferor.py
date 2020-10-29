@@ -89,7 +89,7 @@ class MSTransferor(MSCore):
         self.rseQuotas = RSEQuotas(quotaAccount, self.msConfig["quotaUsage"],
                                    minimumThreshold=self.msConfig["minimumThreshold"],
                                    verbose=self.msConfig['verbose'], logger=logger)
-        self.reqInfo = RequestInfo(self.msConfig, self.logger)
+        self.reqInfo = RequestInfo(self.msConfig, self.rucio, self.logger)
 
         self.cric = CRIC(logger=self.logger)
         self.inputMap = {"InputDataset": "primary",

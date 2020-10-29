@@ -1,3 +1,13 @@
+1.4.2.pre5 to 1.4.2.pre6:
+  - List of json templates that can undergo input data placement (Alan Malta Rodrigues) #10034
+  - Ignore availability for block level rules against the origin site/RSE (Alan Malta Rodrigues) #10031
+  - Implementation for the Rucio getPFN method (belforte) #10029
+  - Only add replicas if parent block has been properly added/attached into Rucio (Alan Malta Rodrigues) #10024
+  - Deal with T0 output data subscription in RucioInjector (Alan Malta Rodrigues) #10006
+  - Introduce deploy-centralvm.sh (Todor Ivanov) #10014
+  - Delete blocks using container-block mapping. Improving logging. (germanfgv) #9959
+
+
 1.4.2.pre4 to 1.4.2.pre5:
   - MSRulecleaner initial commit. (Todor Ivanov) #10003
   - Bump deployment example to patch3 and a new cmsweb tag (Alan Malta Rodrigues) #10005

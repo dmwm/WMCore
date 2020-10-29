@@ -91,6 +91,8 @@ def parseArgs():
                         help='ProcessingVersion for assignment')
     parser.add_argument('-i', '--injectOnly', action='store_true', default=False,
                         help='Only injects requests but do not assign them')
+    parser.add_argument('-x', '--transfer', action='store_true', default=False,
+                        help='Filter only requests good to have input data transferred')
     parser.add_argument('--dryRun', action='store_true', default=False,
                         help='Simulation mode only')
     parser.add_argument('--debug', action='store_true', default=False,
@@ -177,6 +179,13 @@ def main():
 
     NOTE: it will inject and assign ALL templates under DMWM or Integration folder
     """
+    safeTransfer = {"DMWM": ["ReReco_RunBlockWhite.json", "DQMHarvesting_RunWhitelist.json",
+                             "DQMHarvest_RunWhitelist.json"],
+                    "Integration": ["SC_LumiMask_PhEDEx.json", "DQMHarvesting_LumiMask.json",
+                                    "DQMHarvesting_MultiRun.json", "DQMHarvesting.json",
+                                    "TaskChain_PUMCRecyc.json", "SC_ReDigi_Harvest.json",
+                                    "ReRecoSkim.json", "ReReco_LumiMask.json",
+                                    "TaskChain_LumiMask_multiRun.json"]}
     args = parseArgs()
     if args.debug:
         logger = loggerSetup(logging.DEBUG)
@@ -185,19 +194,26 @@ def main():
 
     cloneRepo(logger)
 
-    # Retrieve template names available and filter blacklisted
     os.chdir("WMCore/test/data/ReqMgr")
     wmcorePath = "requests/" + args.mode + "/"
-    if args.filename:
+    if args.transfer:
+        # then only specific DMWM/Integration templates will be injected
+        templates = safeTransfer.get(args.mode, [])
+    elif args.filename:
+        # then only specified template will be injected
         if os.path.isfile(wmcorePath + args.filename):
             templates = [args.filename]
         else:
             logger.info("File %s not found.", wmcorePath + args.filename)
-            sys.exit(3)
     else:
         templates = os.listdir(wmcorePath)
-    blacklist = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
-    templates = [item for item in templates if item not in blacklist]
+
+    # Filter out templates not allowed to be injected
+    disallowedList = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
+    templates = [item for item in templates if item not in disallowedList]
+    if not templates:
+        logging.info("There are no templates to be injected.")
+        sys.exit(3)
 
     startT = time()
     reqMgrCommand = "reqmgr2.py"

@@ -4,6 +4,9 @@ _Proxy_
 Wrap gLite proxy commands.
 """
 
+from __future__ import division
+from builtins import filter, str, range
+
 import contextlib
 import copy
 import os
@@ -64,7 +67,7 @@ def destroyListCred(credNameList=None, credTimeleftList=None, logger=None, timeo
     credTimeleftList = credTimeleftList or {}
     cleanCredCmdList = []
 
-    for credIdx in xrange(len(credNameList)):
+    for credIdx in range(len(credNameList)):
         hours, minutes, seconds = credTimeleftList[credIdx]
         timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         if timeleft == 0:
@@ -229,7 +232,7 @@ class Proxy(Credential):
         Uses openssl by default and fallback to voms-proxy-info in case of problems
         """
         timeleft = self.getUserCertTimeLeft(openSSL)
-        daystoexp = int(timeleft / (60. * 60 * 24))
+        daystoexp = int(timeleft // (60. * 60 * 24))
 
         return daystoexp
 
@@ -682,7 +685,7 @@ class Proxy(Credential):
 
         vomsValid = '00:00'
         if vomsTime > 0:
-            vomsValid = "%d:%02d" % (vomsTime / 3600, (vomsTime - (vomsTime / 3600) * 3600) / 60)
+            vomsValid = "%d:%02d" % (int(vomsTime // 3600), int((vomsTime % 3600) // 60))
         self.logger.debug('Requested voms validity: %s' % vomsValid)
 
         ## set environ and add voms extensions

@@ -1,3 +1,10 @@
+1.4.2.pre6 to 1.4.2.pre7:
+  - Fix pileup data location in global workqueue (Alan Malta Rodrigues) #10042
+  - MSTransferor: resolve RSE expression for pileup location (Alan Malta Rodrigues) #10041
+  - [py2py3] WMCore/Credential - Jenkins pylint: some changes (Dario Mapelli) #10008
+  - [py2py3] WMCore/Credential - src (Dario Mapelli) #10008
+
+
 1.4.2.pre5 to 1.4.2.pre6:
   - List of json templates that can undergo input data placement (Alan Malta Rodrigues) #10034
   - Ignore availability for block level rules against the origin site/RSE (Alan Malta Rodrigues) #10031

@@ -252,7 +252,7 @@ class StartPolicyInterface(PolicyInterface):
         for dbsUrl in datasets:
             for datasetPath in datasets[dbsUrl]:
                 if hasattr(self, "rucio"):
-                    locations = self.rucio.getDataLockedAndAvailable(name=datasetPath, grouping="DATASET",
+                    locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
                                                                      account=self.args['rucioAcct'])
                 else:
                     locations = set()

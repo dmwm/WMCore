@@ -147,7 +147,8 @@ def listReplicationRules(containers, rucioAccount, grouping,
     :param rucioUrl: string with the Rucio url
     :param rucioToken: string with the Rucio token
     :param scope: string with the data scope
-    :return: a flat dictionary key'ed by the container name, with a list of RSEs as value
+    :return: a flat dictionary key'ed by the container name, with a list of RSE
+      expressions that still need to be resolved
     NOTE: Value `None` is returned in case the data-service failed to serve a given request.
     """
     locationByContainer = {}
@@ -160,11 +161,10 @@ def listReplicationRules(containers, rucioAccount, grouping,
     urls = []
     for cont in containers:
         urls.append('{}/rules/?scope={}&account={}&grouping={}&name={}'.format(rucioUrl, scope, rucioAccount,
-                                                                              grouping, quote(cont, safe="")))
+                                                                               grouping, quote(cont, safe="")))
     logging.info("Executing %d requests against Rucio to list replication rules", len(urls))
     data = multi_getdata(urls, ckey(), cert(), headers=headers)
 
-    dateTimeNow = datetime.datetime.now()
     for row in data:
         container = unquote(row['url'].split("name=")[1])
         if "200 OK" not in row['headers']:
@@ -175,17 +175,21 @@ def listReplicationRules(containers, rucioAccount, grouping,
         try:
             locationByContainer.setdefault(container, [])
             for item in parseNewLineJson(row['data']):
-                if item['state'] != "OK":
-                    logging.debug("Container %s with rule not in OK state (checking further...): %s", container, item)
-                if item['state'] == "SUSPENDED":
+                if item['state'] in ["U", "SUSPENDED"]:
                     logging.warning("Container %s has a SUSPENDED rule. Skipping rule: %s", container, item)
                     continue
-                elif item['state'] == "STUCK":
-                    stuckAt = datetime.datetime.strptime(item['stuck_at'], "%a, %d %b %Y %H:%M:%S %Z")
-                    timeDiff = dateTimeNow - stuckAt
+                elif item['state'] in ["S", "STUCK"]:
+                    if item['error'] == 'NO_SOURCES:NO_SOURCES':
+                        msg = "Container {} has a STUCK rule with NO_SOURCES.".format(container)
+                        msg += " Data could be lost forever... Rule info is: {}".format(item)
+                        logging.warning(msg)
+                        continue
+
+                    timeDiff = item['stuck_at'] - item['created_at']
                     if int(timeDiff.days) > STUCK_LIMIT:
-                        msg = "Container {} has a STUCK rule for longer than {} days.".format(container,
-                                                                                              timeDiff.days)
+                        msg = "Container {} has a STUCK rule for {} days (limit set to: {}).".format(container,
+                                                                                                     timeDiff.days,
+                                                                                                     STUCK_LIMIT)
                         msg += " Not going to use it! Rule info: {}".format(item)
                         logging.warning(msg)
                         continue
@@ -193,8 +197,11 @@ def listReplicationRules(containers, rucioAccount, grouping,
                         msg = "Container {} has a STUCK rule for only {} days.".format(container, timeDiff.days)
                         msg += " Considering it for the pileup location"
                         logging.info(msg)
-                ### NOTE: if this is a real expression, we are screwed!!!
-                ### It should not be the case because MSTransferor does RSE specific pileup placement
+                else:
+                    logging.info("Container %s has rule ID %s in state %s, using it.",
+                                 container, item['id'], item['state'])
+
+                ### NOTE: this is not an RSE name, but an RSE expression that still needs to be resolved
                 locationByContainer[container].append(item['rse_expression'])
         except Exception as exc:
             msg = "listReplicationRules function did not return a valid response for container: %s."

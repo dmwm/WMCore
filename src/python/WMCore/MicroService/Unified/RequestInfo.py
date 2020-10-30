@@ -37,13 +37,14 @@ class RequestInfo(MSCore):
     manipulate requests.
     """
 
-    def __init__(self, msConfig, logger):
+    def __init__(self, msConfig, rucioObj, logger):
         """
         Basic setup for this RequestInfo module
         """
         extraArgs = {"skipReqMgr": True, "skipRucio": True}
         super(RequestInfo, self).__init__(msConfig, logger=logger, **extraArgs)
 
+        self.rucio = rucioObj
         self.rucioToken = None
         self.tokenValidity = None
 
@@ -114,6 +115,7 @@ class RequestInfo(MSCore):
         # then check the secondary dataset sizes and locations
         time0 = time.time()
         sizeByDset, locationByDset = self.getSecondaryDatasets(workflows)
+        locationByDset = self.resolveSecondaryRSEs(locationByDset)
         self.setSecondaryDatasets(workflows, sizeByDset, locationByDset)
         self.logger.debug(elapsedTime(time0, "### getSecondaryDatasets"))
 
@@ -340,6 +342,23 @@ class RequestInfo(MSCore):
             # remove workflows that failed one or more of the bulk queries to the data-service
             self._workflowRemoval(workflows, retryWorkflows)
         return sizesByDset, locationsByDset
+
+    def resolveSecondaryRSEs(self, rsesByContainer):
+        """
+        Given a dictionary with containers and their list of RSE
+        expressions, resolve the RSE expressions into RSE names,
+        dropping all the Tape RSEs.
+        :param rsesByContainer: dict key'ed by the container with a list of expressions
+        :return: a dictionary key'ed by the container name, with a flat list of unique
+            RSE names.
+        """
+        self.logger.info("Resolving Rucio RSE expressions for %d containers", len(rsesByContainer))
+        for contName in list(rsesByContainer):
+            rseNames = []
+            for rseExpr in rsesByContainer[contName]:
+                rseNames.extend(self.rucio.evaluateRSEExpression(rseExpr, returnTape=False))
+            rsesByContainer[contName] = list(set(rseNames))
+        return rsesByContainer
 
     def setSecondaryDatasets(self, workflows, sizesByDset, locationsByDset):
         """

@@ -336,6 +336,9 @@ class MSOutput(MSCore):
                          'comment': 'WMCore MSOutput output data placement'}
             # add a configurable weight value
             ruleAttrs["weight"] = self.msConfig['rucioDiskRuleWeight']
+            # and RelVals have a different lifetime setting
+            if workflow['IsRelVal']:
+                ruleAttrs["lifetime"] = self.msConfig['ruleLifetimeRelVal']
 
             # if anything fail along the way, set it back to "pending"
             transferStatus = "done"

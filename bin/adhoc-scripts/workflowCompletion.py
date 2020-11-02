@@ -5,28 +5,27 @@ completion, so the ration of input lumis vs output lumis.
 """
 from __future__ import print_function, division
 
-from future import standard_library
-standard_library.install_aliases()
 import argparse
-import http.client
+import httplib
 import json
 import os
 import pwd
 import sys
-import urllib.request, urllib.parse
-from urllib.error import HTTPError, URLError
+import urllib
+import urllib2
+from urllib2 import HTTPError, URLError
 
 # ID for the User-Agent
 CLIENT_ID = 'workflowCompletion::python/%s.%s' % sys.version_info[:2]
 
 
-class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
+class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
     """
     Basic HTTPS class
     """
 
     def __init__(self, key, cert):
-        urllib.request.HTTPSHandler.__init__(self)
+        urllib2.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
 
@@ -37,32 +36,38 @@ class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return http.client.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def getX509():
     "Helper function to get x509 from env or tmp file"
+    certFile = os.environ.get('X509_USER_CERT', '')
+    keyFile = os.environ.get('X509_USER_KEY', '')
+    if certFile and keyFile:
+        return certFile, keyFile
+
     proxy = os.environ.get('X509_USER_PROXY', '')
     if not proxy:
         proxy = '/tmp/x509up_u%s' % pwd.getpwuid(os.getuid()).pw_uid
         if not os.path.isfile(proxy):
-            return ''
-    return proxy
+            return '', ''
+    return proxy, proxy
 
 
 def getContent(url, params=None):
-    cert = getX509()
+    certFile, keyFile = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
-    handler = HTTPSClientAuthHandler(cert, cert)
-    opener = urllib.request.build_opener(handler)
+    handler = HTTPSClientAuthHandler(keyFile, certFile)
+    opener = urllib2.build_opener(handler)
     opener.addheaders = [("User-Agent", client),
                          ("Accept", "application/json")]
+
     try:
         response = opener.open(url, params)
         output = response.read()
     except HTTPError as e:
         print("The server couldn't fulfill the request at %s" % url)
-        print("Error code: ", e.code)
+        print("Error: {}".format(e))
         output = '{}'
         # sys.exit(1)
     except URLError as e:
@@ -108,7 +113,7 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
 
     dbsOutput = {}
     for dataset in reqmgrOutDsets:
-        fullUrl = dbsUrl + "filesummaries?" + urllib.parse.urlencode({'dataset': dataset})
+        fullUrl = dbsUrl + "filesummaries?" + urllib.urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         if data:
             dbsOutput[dataset] = data[0]['num_lumi']

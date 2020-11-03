@@ -407,7 +407,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             # If the container is not in the dictionary, create a new entry for it
             if container not in containerDict:
                 # Set of sites to which the container needs to be transferred
-                sites = blockDict[blockName]['sites']
+                sites = set(x.replace("_MSS", "_Tape") for x in blockDict[blockName]['sites'])
                 containerDict[container] = {'blocks': [], 'rse': sites}
             containerDict[container]['blocks'].append(blockName)
 
@@ -450,7 +450,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                     continue
                 for rule in rules:
                     deletedRules = 0
-                    if self.rucio.deleteRule(rule['id']):
+                    if self.rucio.deleteRule(rule['id'], purgeReplicas=True):
                         logging.info("Successfully deleted rule: %s, for block %s.", rule['id'], block)
                         deletedRules += 1
                     else:

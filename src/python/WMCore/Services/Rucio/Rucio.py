@@ -958,7 +958,6 @@ class Rucio(object):
         if not self.isContainer(container):
             raise WMRucioException("Pileup location needs to be resolved for a container DID type")
 
-        multiRSERules = []
         finalRSEs = set()
         kargs = dict(name=container, account=account, scope=scope)
 
@@ -968,27 +967,17 @@ class Rucio(object):
             if rses and rule['copies'] == len(rses) and rule['state'] == "OK":
                 # then we can guarantee that data is locked and available on these RSEs
                 finalRSEs.update(set(rses))
-            # it could be that the rule was made against Tape only, so check
-            elif rses:
-                multiRSERules.append(rule['id'])
         self.logger.info("Pileup container location for %s from single RSE locks at: %s",
                          kargs['name'], list(finalRSEs))
 
-        # Second, find all the blocks in this pileup container and assign the container
-        # level locations to them
-        for blockName in self.getBlocksInContainer(kargs['name']):
-            result.update({blockName: finalRSEs})
-        if not multiRSERules:
-            # then that is it, we can return the current RSEs holding and locking this data
-            return result
-
         # if we got here, then there is a third step to be done.
         # List every single block lock and check if the rule belongs to the WMCore system
-        for blockName in result:
+        for blockName in self.getBlocksInContainer(kargs['name']):
+            result.update({blockName: finalRSEs})
             for blockLock in self.cli.get_dataset_locks(scope, blockName):
                 if isTapeRSE(blockLock['rse']):
                     continue
-                if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
+                if blockLock['state'] == 'OK':
                     result[blockName].add(blockLock['rse'])
         return result
 

@@ -444,7 +444,7 @@ class SetupCMSSWPset(ScriptInterface):
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
                     eventsAvailable = 0
-                    useAAA = True if getattr(self.jobBag, 'trustPUSitelists', False) else False
+                    useAAA = False
                     self.logger.info("Pileup set to read data remotely: %s", useAAA)
                     for blockName in sorted(pileupDict[pileupType].keys()):
                         blockDict = pileupDict[pileupType][blockName]

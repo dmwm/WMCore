@@ -1,3 +1,6 @@
+from builtins import map, str, bytes
+from future.utils import viewitems
+
 import cherrypy
 import hashlib
 import hmac
@@ -42,7 +45,7 @@ def user_info_from_headers(key, verbose=False):
             if hk.startswith("cms-authn"):
                 val = headers[hk]
                 if hk in ("cms-authn-name", "cms-authn-dn"):
-                    val = unicode(val, "utf-8")
+                    val = str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
                 user['roles'][hkname] = {'site': set(), 'group': set()}
@@ -76,9 +79,9 @@ def authz_match(role=None, group=None, site=None, verbose=False):
     log = cherrypy.log
 
     # If role, group or site are strings, convert to list first.
-    role = (role and isinstance(role, str) and [role]) or role
-    group = (group and isinstance(group, str) and [group]) or group
-    site = (site and isinstance(site, str) and [site]) or site
+    role = (role and isinstance(role, bytes) and [role]) or role
+    group = (group and isinstance(group, bytes) and [group]) or group
+    site = (site and isinstance(site, bytes) and [site]) or site
 
     # Reformat all items into canonical format.
     role = role and list(map(authz_canonical, role))
@@ -92,7 +95,7 @@ def authz_match(role=None, group=None, site=None, verbose=False):
         return
 
     # Otherwise determine set intersection of requirements.
-    for r, authz in ((user and user['roles']) or {}).iteritems():
+    for r, authz in viewitems((user and user['roles']) or {}):
         if (not role) or (r in role):
             if not (group or site):
                 if verbose:

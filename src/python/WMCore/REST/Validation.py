@@ -1,5 +1,9 @@
+from builtins import str, bytes
+from past.builtins import basestring
+
 from WMCore.REST.Error import *
-import math, re
+import math
+import re
 import numbers
 
 def return_message(main_err, custom_err):
@@ -26,22 +30,22 @@ def _check_rx(argname, val, custom_err = None):
 
 def _check_str(argname, val, rx, custom_err = None):
     """
-    convert unicode to str first to support cherrypy 3.2.2
+    convert unicode to str (bytes) first to support cherrypy 3.2.2
     This is not really check val is ASCII.
     """
-    if isinstance(val, unicode):
+    if isinstance(val, str):
         try:
-            val = str(val)
+            val = bytes(val, "utf-8")
         except:
-            raise InvalidParameter(return_message("Invalid '%s' parameter" % argname, custom_err))
+            raise InvalidParameter(return_message("Invalid '%s' parameter %s %s" % (argname, val, type(val)), custom_err))
     if not isinstance(val, basestring) or not rx.match(val):
         raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     return val
 
 def _check_ustr(argname, val, rx, custom_err = None):
-    if isinstance(val, str):
+    if isinstance(val, bytes):
         try:
-            val = unicode(val, "utf-8")
+            val = str(val, "utf-8")
         except:
             raise InvalidParameter(return_message("Incorrect '%s' parameter" % argname, custom_err))
     if not isinstance(val, basestring) or not rx.match(val):

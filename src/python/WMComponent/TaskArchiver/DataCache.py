@@ -1,4 +1,5 @@
 from __future__ import (print_function, division)
+from builtins import object
 
 class DataCache(object):
     _finishedWFs = {} # Global cache holding workflow lists

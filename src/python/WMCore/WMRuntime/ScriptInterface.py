@@ -7,9 +7,10 @@ API definition for RuntimeScripts that will be called in the job area.
 
 
 """
+from builtins import object
 
 
-class ScriptInterface:
+class ScriptInterface(object):
     """
     _ScriptInterface_
 

@@ -6,6 +6,7 @@ WMFactory for instantiating runtime implementations of the ScriptInterface
 
 """
 
+from builtins import str
 from WMCore.WMFactory import WMFactory
 from WMCore.WMException import WMException
 

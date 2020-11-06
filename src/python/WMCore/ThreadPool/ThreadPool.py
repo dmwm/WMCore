@@ -11,6 +11,8 @@ To use this you need to use the ThreadSlave class
 
 
 
+from builtins import str
+
 import base64
 import logging
 import random

@@ -12,13 +12,12 @@ from __future__ import print_function
 
 
 
+from builtins import str, range
 import unittest
 import threading
 import time
-import os
 
 from WMCore.ThreadPool.ThreadPool import ThreadPool
-from WMCore.WMFactory             import WMFactory
 
 from WMQuality.TestInit import TestInit
 
@@ -72,7 +71,7 @@ class ThreadPoolTest(unittest.TestCase):
         component.config = config
 
         threadPools = []
-        for i in xrange(0, ThreadPoolTest._nrOfPools):
+        for i in range(0, ThreadPoolTest._nrOfPools):
             threadPool = ThreadPool("WMCore.ThreadPool.ThreadSlave", \
                 component, 'MyPool_'+str(i), ThreadPoolTest._nrOfThreads)
             threadPools.append(threadPool)
@@ -82,14 +81,14 @@ class ThreadPoolTest(unittest.TestCase):
         # it is dispatched, otherwise it is stored in the trheadpool.
         # make the number of tasks bigger than number of threads to tesT
         # the persistent queue.
-        for i in xrange(0, ThreadPoolTest._nrOfThreads*10):
+        for i in range(0, ThreadPoolTest._nrOfThreads*10):
             event = 'eventNr_'+str(i)
             payload = 'payloadNr_'+str(i)
             # normally you would have different events per threadpool and
             # even different objects per pool. the payload part will be
             # pickled into the database enabling flexibility in passing
             # information.
-            for j in xrange(0, ThreadPoolTest._nrOfPools):
+            for j in range(0, ThreadPoolTest._nrOfPools):
                 threadPools[j].enqueue(event, \
                     {'event' : event, 'payload' : payload})
 
@@ -102,24 +101,24 @@ class ThreadPoolTest(unittest.TestCase):
         currenttime = 0
         while not finished:
             print('waiting for threads to finishs. Work left:')
-            for j in xrange(0, ThreadPoolTest._nrOfPools):
+            for j in range(0, ThreadPoolTest._nrOfPools):
                 print('pool_'+str(j)+ ':' + str(threadPools[j].callQueue))
             time.sleep(1)
             finished = True
             currenttime += 1
             if (timeout == currenttime):
                 raise RuntimeError
-            for j in xrange(0, ThreadPoolTest._nrOfPools):
+            for j in range(0, ThreadPoolTest._nrOfPools):
                 if (len(threadPools[j].resultsQueue) < ThreadPoolTest._nrOfThreads*10):
                     finished = False
                     break
         # check if the tables are really empty and all messages
         # have been processed.
-        for j in xrange(0, ThreadPoolTest._nrOfPools):
+        for j in range(0, ThreadPoolTest._nrOfPools):
             assert len(threadPools[j].resultsQueue) == \
                 ThreadPoolTest._nrOfThreads*10
         myThread.transaction.begin()
-        for j in xrange(0, ThreadPoolTest._nrOfPools):
+        for j in range(0, ThreadPoolTest._nrOfPools):
             self.assertEqual( threadPools[j].countMessages() ,  0 )
         myThread.transaction.commit()
 

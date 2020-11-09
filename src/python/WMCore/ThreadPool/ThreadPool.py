@@ -218,7 +218,7 @@ class ThreadPool(Queue):
                 self.callQueue -= 1
                 exceptCount = 0
             except Exception as ex:
-                logging.error("Problem with retrieving work : "+str(ex))
+                logging.error("Problem with retrieving work : %s", str(ex))
                 logging.error("Trying to salvage it")
                 slaveServer.sane = False
                 exceptCount += 1

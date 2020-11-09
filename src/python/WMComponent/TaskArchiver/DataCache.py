@@ -6,8 +6,8 @@ class DataCache(object):
 
     @staticmethod
     def getFinishedWorkflows():
-        return DataCache._finishedWFs;
+        return DataCache._finishedWFs
 
     @staticmethod
     def setFinishedWorkflows(workflowLists):
-        DataCache._finishedWFs = workflowLists;
+        DataCache._finishedWFs = workflowLists

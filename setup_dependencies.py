@@ -92,7 +92,7 @@ dependencies = {
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],
     },
-    'workqueue': {
+    'global-workqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
                      'WMCore.Wrappers+', 'WMCore.Services+',
                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
@@ -115,7 +115,7 @@ dependencies = {
                      'WMCore.JobSplitting+', 'WMCore.ProcessPool',
                      'WMCore.Services+', 'WMCore.WMSpec+',
                      'WMCore.WMBS+', 'WMCore.ResourceControl+'],
-        'systems': ['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
+        'systems': ['wmc-web', 'wmc-database', 'global-workqueue', 'wmc-runtime'],
         'statics': ['src/javascript/WMCore/WebTools/Agent',
                     'src/javascript/WMCore/WebTools/WMBS',
                     'src/javascript/external/graphael',
@@ -207,7 +207,7 @@ dependencies = {
                     'WMCore.WMException',
                     'WMCore.Lexicon',
                     'WMCore.WMBS.File'],
-        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'workqueue'],
+        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'global-workqueue'],
         'statics': ['src/javascript/external/graphael',
                     'src/couchapps/FWJRDump+',
                     'src/couchapps/T0Request+',

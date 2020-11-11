@@ -26,6 +26,7 @@ from WMCore.MicroService.DataStructs.MSRuleCleanerWflow import MSRuleCleanerWflo
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.Common import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
+from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
@@ -390,9 +391,13 @@ class MSRuleCleaner(MSCore):
             if gran == 'container':
                 wflow['RulesToClean'][currPline].extend(self.rucio.listDataRules(dataCont, account=rucioAcct))
             elif gran == 'block':
-                blocks = self.rucio.getBlocksInContainer(dataCont)
-                for block in blocks:
-                    wflow['RulesToClean'][currPline].extend(self.rucio.listDataRules(block, account=rucioAcct))
+                try:
+                    blocks = self.rucio.getBlocksInContainer(dataCont)
+                    for block in blocks:
+                        wflow['RulesToClean'][currPline].extend(self.rucio.listDataRules(block, account=rucioAcct))
+                except WMRucioDIDNotFoundException:
+                    msg = "Container: %s not found in Rucio for workflow: %s."
+                    self.logger.info(msg, dataCont, wflow['RequestName'])
         return wflow
 
     def cleanRucioRules(self, wflow):

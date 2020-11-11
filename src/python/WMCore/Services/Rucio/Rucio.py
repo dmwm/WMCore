@@ -28,6 +28,14 @@ class WMRucioException(WMException):
     pass
 
 
+class WMRucioDIDNotFoundException(WMException):
+    """
+    _WMRucioDIDNotFoundException_
+    Generic WMCore exception for Rucio
+    """
+    pass
+
+
 def validateMetaData(did, metaDict, logger):
     """
     This function can be extended in the future, for now it will only
@@ -648,7 +656,6 @@ class Rucio(object):
             self.logger.error("Exception listing parent DIDs for data: %s. Error: %s", name, str(ex))
         return list(res)
 
-
     def getRule(self, ruleId, estimatedTtc=False):
         """
         _getRule_
@@ -756,7 +763,7 @@ class Rucio(object):
             response = self.cli.get_did(scope=scope, name=didName)
         except DataIdentifierNotFound as exc:
             msg = "Data identifier not found in Rucio: {}. Error: {}".format(didName, str(exc))
-            raise WMRucioException(msg)
+            raise WMRucioDIDNotFoundException(msg)
         return response['type'].upper() == 'CONTAINER'
 
     def getDID(self, didName, dynamic=True, scope='cms'):

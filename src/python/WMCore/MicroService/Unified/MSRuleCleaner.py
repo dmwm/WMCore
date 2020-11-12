@@ -76,13 +76,11 @@ class MSRuleCleaner(MSCore):
         pName = 'plineAgentCont'
         self.plineAgentCont = Pipeline(name=pName,
                                        funcLine=[Functor(self.setPlineMarker, pName),
-                                                 Functor(self.getMSOutputTransferInfo),
                                                  Functor(self.getRucioRules, 'container', self.msConfig['rucioWmaAccount']),
                                                  Functor(self.cleanRucioRules)])
         pName = 'plineAgentBlock'
         self.plineAgentBlock = Pipeline(name=pName,
                                         funcLine=[Functor(self.setPlineMarker, pName),
-                                                  Functor(self.getMSOutputTransferInfo),
                                                   Functor(self.getRucioRules, 'block', self.msConfig['rucioWmaAccount']),
                                                   Functor(self.cleanRucioRules)])
         pName = 'plineArchive'
@@ -201,17 +199,22 @@ class MSRuleCleaner(MSCore):
         complicated logic involved in the order we execute them but not just
         a sequentially
         """
-        # msg = "Called with wflow: %s"
-        # self.logger.debug(msg, pformat(wflow))
+        self.logger.debug("Dispatching workflow: %s", wflow['RequestName'])
         # NOTE: The following dispatch logic is a subject to be changed at any time
 
+        # Resolve:
+        # NOTE: First resolve any preliminary flags that will be needed further
+        #       in the logic of the _dispatcher() itself
+        if wflow['RequestStatus'] == 'announced':
+            self.getMSOutputTransferInfo(wflow)
+
+        # Clean:
         # Do not clean any Resubmission, but still let them be archived
         if wflow['RequestType'] == 'Resubmission':
             wflow['ForceArchive'] = True
             msg = "Skipping cleanup step for workflow: %s - RequestType is %s."
             msg += " Will try to archive it directly."
             self.logger.info(msg, wflow['RequestName'], wflow['RequestType'])
-        # Clean:
         elif wflow['RequestStatus'] in ['rejected', 'aborted-completed']:
             # NOTE: We do not check the ParentageResolved flag for these
             #       workflows, but we do need to clean output data placement
@@ -238,7 +241,7 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping workflow: %s - 'TransferStatus' is 'pending' or 'TransferInfo' is missing in MSOutput."
             msg += " Will retry again in the next cycle."
             self.logger.info(msg, wflow['RequestName'])
-        elif wflow['RequestStatus'] == 'announced' and wflow['ParentageResolved'] and wflow['TransferDone']:
+        elif wflow['RequestStatus'] == 'announced':
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)
@@ -368,11 +371,15 @@ class MSRuleCleaner(MSCore):
         params = {}
         url = '%s/data/info?request=%s' % (self.msConfig['msOutputUrl'],
                                            wflow['RequestName'])
-        # mgr = RequestHandler()
-        res = self.curlMgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
-        data = json.loads(res)['result'][0]
-        transferInfo = data['transferDoc']
-        if transferInfo is not None and TransferInfo['TransferStatus'] == 'done':
+        try:
+            res = self.curlMgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
+            data = json.loads(res)['result'][0]
+            transferInfo = data['transferDoc']
+        except Exception as ex:
+            msg = "General exception while fetching TransferInfo from MSOutput for %s. "
+            msg += "Error: %s"
+            self.logger.exception(msg, wflow['RequestName'], str(ex))
+        if transferInfo is not None and transferInfo['TransferStatus'] == 'done':
             wflow['TransferDone'] = True
         return wflow
 

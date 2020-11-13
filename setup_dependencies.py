@@ -64,7 +64,6 @@ dependencies = {
     },
     'reqmgr2': {
         'packages': ['WMCore.ReqMgr+',
-                     'WMCore.WMDataMining+',
                      'WMCore.Services+',
                      'WMCore.ACDC',
                      'Utils'],
@@ -76,7 +75,6 @@ dependencies = {
                     'src/couchapps/ReqMgrAux+',
                     'src/couchapps/ConfigCache+',
                     'src/couchapps/WMStats+',
-                    'src/couchapps/WMDataMining+',
                     'src/html/ReqMgr+'
                     ],
     },
@@ -160,8 +158,7 @@ dependencies = {
         'systems': ['wmc-runtime', 'wmc-database']
     },
     'reqmon': {
-        'packages': ['WMCore.WMStats+', 'WMCore.WMDataMining+',
-                     'WMCore.Services+', 'WMCore.Wrappers+',
+        'packages': ['WMCore.WMStats+', 'WMCore.Services+', 'WMCore.Wrappers+',
                      'WMCore.ReqMgr.DataStructs+'
                      ],
         'modules': ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',

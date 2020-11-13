@@ -181,7 +181,7 @@ class RucioTest(EmulatedUnitTestCase):
         inside a container.
         """
         # test a CMS dataset that does not exist
-        with self.assertRaises(Rucio.WMRucioException):
+        with self.assertRaises(Rucio.WMRucioDIDNotFoundException):
             self.myRucio.getBlocksInContainer("Alan")
 
         # provide a CMS block instead of a dataset

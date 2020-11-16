@@ -1,3 +1,11 @@
+1.4.2 to 1.4.3.pre1:
+  - Remove WMDataMining thread/code (Alan Malta Rodrigues) #10065
+  - Add WMRucioDIDNotFoundException. (Todor Ivanov) #10023
+  - MSRuleClener basic logic. (Todor Ivanov) #10023
+  - Script to parse recursively cms-sw/cmsdist spec files (Dario Mapelli) #10036
+  - Switch validation script to Rucio; rollback py3 changes (Alan Malta Rodrigues) #10045
+
+
 1.4.2.pre8 to 1.4.2:
 
 

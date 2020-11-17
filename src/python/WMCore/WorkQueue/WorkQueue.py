@@ -35,6 +35,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.Policy.Start import startPolicy
+from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WorkQueueExceptions import (TERMINAL_EXCEPTIONS, WorkQueueError, WorkQueueNoMatchingElements,
@@ -316,8 +317,8 @@ class WorkQueue(WorkQueueBase):
             self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
 
-        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts,
-                                                   excludeWorkflows=excludeWorkflows, numElems=numElems)
+        matches, _ = self.backend.availableWork(jobSlots, siteJobCounts,
+                                                excludeWorkflows=excludeWorkflows, numElems=numElems)
 
         self.logger.info('Got %i elements matching the constraints', len(matches))
         if not matches:
@@ -799,45 +800,47 @@ class WorkQueue(WorkQueueBase):
 
         return True
 
-    def freeResouceCheck(self, resources=None, printFlag=False):
-
-        jobCounts = {}
-        if not resources:
-            # find out available resources from wmbs
-            from WMCore.WorkQueue.WMBSHelper import freeSlots
-            thresholds, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
-            # resources for new work are free wmbs resources minus what we already have queued
-            _, resources, jobCounts = self.backend.availableWork(thresholds, jobCounts)
-
-        if not resources:
-            msg = 'Not pulling more work. No free slots.'
-            self._printLog(msg, printFlag, "warning")
-            return (False, False)
+    def freeResouceCheck(self):
+        """
+        This method looks into the WMBS and BossAir tables and collect
+        two types of information:
+         1) sites and the total slots available for job creation
+         2) sites and the number of pending jobs grouped by priority
+        With that information in hands, it looks at the local workqueue elements
+        sitting in Available status and update the 2nd data structure (thus it
+        updates number of jobs pending by priority according to the LQEs), which
+        is then used to know which work can be acquired from the parent queue or not.
+        :return: a tuple of dictionaries (or empty lists)
+        """
+        resources, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
+        # now update jobCounts with work that is already available in the local queue
+        _, jobCounts = self.backend.calculateAvailableWork(resources, jobCounts)
 
         return (resources, jobCounts)
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
         numElems = self.params['WorkPerCycle']
         self.logger.info("Going to fetch work from the parent queue: %s", self.parent_queue.queueUrl)
-        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
-
+        work, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
         if not work:
-            msg = 'No available work in parent queue.'
-            self._printLog(msg, printFlag, "warning")
+            self._printLog('No available work in parent queue.', printFlag, "warning")
         return work
 
     def pullWork(self, resources=None):
         """
-        Pull work from another WorkQueue to be processed
-
-        If resources passed in get work for them, if not available resources
-        from get from wmbs.
+        Pull work from another WorkQueue to be processed:
+        :param resources: optional dictionary with sites and the amount
+        of slots free
         """
+        jobCounts = {}
         if self.pullWorkConditionCheck() is False:
             return 0
 
-        (resources, jobCounts) = self.freeResouceCheck(resources)
-        if (resources, jobCounts) == (False, False):
+        # NOTE: resources parameter is only used by unit tests, which do
+        # not use WMBS and BossAir tables
+        if not resources:
+            (resources, jobCounts) = self.freeResouceCheck()
+        if not resources and not jobCounts:
             return 0
 
         work = self.getAvailableWorkfromParent(resources, jobCounts)

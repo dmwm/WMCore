@@ -120,7 +120,7 @@ def checkLQPullStatusFromGQ(localQ, request, possibleSites):
         print("Error: Failed to pull elements from GQ")
         return
 
-    resources, jobCounts = localQ.freeResouceCheck(printFlag=True)
+    resources, jobCounts = localQ.freeResouceCheck()
     jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="LQ")
     return
 

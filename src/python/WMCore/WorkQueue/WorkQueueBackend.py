@@ -321,112 +321,127 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, team=None, wfs=None,
+    def availableWork(self, thresholds, siteJobCounts, team=None,
                       excludeWorkflows=None, numElems=9999999):
         """
-        Get work which is available to be run
+        Get work - either from local or global queue - which is available to be run.
 
-        Assume thresholds is a dictionary; keys are the site name, values are
-        the maximum number of running jobs at that site.
-
-        Assumes site_job_counts is a dictionary-of-dictionaries; keys are the site
-        name and task priorities.  The value is the number of jobs running at that
-        priority.
-
-        It will pull work until it reaches the number of elements configured (numElems).
-        Since it's also used for calculating free resources, default it to "infinity"
-
-        Note: this method will be called with no limit of work elements when it's simply
-        calculating the resources available (based on what is in LQ), before it gets work
-        from GQ
+        :param thresholds: a dictionary key'ed by the site name, values representing the
+            maximum number of jobs allowed at that site.
+        :param siteJobCounts: a dictionary-of-dictionaries key'ed by the site name; value
+            is a dictionary with the number of jobs running at a given priority.
+        :param team: a string with the team name we want to pull work for
+        :param excludeWorkflows: list of (aborted) workflows that should not be accepted
+        :param numElems: integer with the maximum number of elements to be accepted (default
+            to a very large number when pulling work from local queue, read unlimited)
+        :return: a tuple with the elements accepted and an overview of job counts per site
         """
-        self.logger.info("Getting up to %d available work from %s", numElems, self.queueUrl)
-        self.logger.info("  for team name: %s", team)
-        self.logger.info("  for wfs: %s", wfs)
-        self.logger.info("  with excludeWorkflows: %s", excludeWorkflows)
-        self.logger.info("  for thresholds: %s", thresholds)
-
         excludeWorkflows = excludeWorkflows or []
         elements = []
-        sortedElements = []
-
-        # We used to pre-filter sites, looking to see if there are idle job slots
-        # We don't do this anymore, as we may over-allocate
-        # jobs to sites if the new jobs have a higher priority.
-
         # If there are no sites, punt early.
         if not thresholds:
             self.logger.error("No thresholds is set: Please check")
-            return elements, thresholds, siteJobCounts
+            return elements, siteJobCounts
 
-        options = {}
-        options['include_docs'] = True
-        options['descending'] = True
-        options['num_elem'] = numElems
-        options['resources'] = thresholds
-        if team:
-            options['team'] = team
-        if wfs:
-            result = []
-            for i in xrange(0, len(wfs), 20):
-                options['wfs'] = wfs[i:i + 20]
-                data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
-                result.extend(json.loads(data))
-        else:
-            result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
-            result = json.loads(result)
-            if not result:
-                self.logger.info("No available work or it did not pass work/data restrictions for: %s ",
-                                 self.queueUrl)
-            else:
-                self.logger.info("Retrieved %d elements from workRestrictions list for: %s",
-                                 len(result), self.queueUrl)
+        self.logger.info("Getting up to %d available work from %s", numElems, self.queueUrl)
+        self.logger.info("  for team name: %s", team)
+        self.logger.info("  with excludeWorkflows: %s", excludeWorkflows)
+        self.logger.info("  for thresholds: %s", thresholds)
 
-        # Iterate through the results; apply whitelist / blacklist / data
-        # locality restrictions.  Only assign jobs if they are high enough
-        # priority.
-        for i in result:
-            element = CouchWorkQueueElement.fromDocument(self.db, i)
-            # make sure not to acquire work for aborted or force-completed workflows
-            if element['RequestName'] in excludeWorkflows:
-                msg = "Skipping aborted/force-completed workflow: %s, work id: %s"
-                self.logger.info(msg, element['RequestName'], element._id)
-            else:
-                sortedElements.append(element)
-        # sort elements to get them in priority first and timestamp order
-        sortedElements.sort(key=lambda element: element['CreationTime'])
-        sortedElements.sort(key=lambda x: x['Priority'], reverse=True)
-
-        sites = thresholds.keys()
         self.logger.info("Current siteJobCounts:")
         for site, jobsByPrio in siteJobCounts.items():
             self.logger.info("    %s : %s", site, jobsByPrio)
 
-        for element in sortedElements:
-            commonSites = possibleSites(element)
-            prio = element['Priority']
-            possibleSite = None
-            random.shuffle(sites)
-            for site in sites:
-                if site in commonSites:
-                    # Count the number of jobs currently running of greater priority
-                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
-                    self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
-                    if curJobCount < thresholds[site]:
-                        possibleSite = site
-                        break
+        # FIXME: magic numbers
+        docsSliceSize = 1000
+        options = {}
+        options['include_docs'] = True
+        options['descending'] = True
+        options['resources'] = thresholds
+        options['limit'] = docsSliceSize
+        # FIXME: num_elem option can likely be deprecated, but it needs synchronization
+        # between agents and global workqueue... for now, make sure it can return the slice size
+        options['num_elem'] = docsSliceSize
+        if team:
+            options['team'] = team
 
-            if possibleSite:
-                elements.append(element)
-                siteJobCounts.setdefault(possibleSite, {})
-                siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
-                                                    element['Jobs'] * element.get('blowupFactor', 1.0)
+        # Fetch workqueue elements in slices, using the CouchDB "limit" and "skip"
+        # options for couch views. Conditions to stop this loop are:
+        #  a) have a hard stop at 50k+1 (we might have to make this configurable)
+        #  b) stop as soon as an empty slice is returned by Couch (thus all docs have
+        #     already been retrieve)
+        #  c) or, once "numElems" elements have been accepted
+        numSkip = 0
+        breakOut = False
+        while True:
+            if breakOut:
+                # then we have reached the maximum number of elements to be accepted
+                break
+            self.logger.info("  with limit docs: %s, and skip first %s docs", docsSliceSize, numSkip)
+            options['skip'] = numSkip
+
+            result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
+            result = json.loads(result)
+            if result:
+                self.logger.info("Retrieved %d elements from workRestrictions list for: %s",
+                                 len(result), self.queueUrl)
             else:
-                self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
+                self.logger.info("All the workqueue elements have been exhausted for: %s ", self.queueUrl)
+                break
+            # update number of documents to skip in the next cycle
+            numSkip += docsSliceSize
+
+            # Convert python dictionary into Couch WQE objects, skipping aborted workflows
+            # And sort them by creation time and priority, such that highest priority and
+            # oldest elements come first in the list
+            sortedElements = []
+            for i in result:
+                element = CouchWorkQueueElement.fromDocument(self.db, i)
+                # make sure not to acquire work for aborted or force-completed workflows
+                if element['RequestName'] in excludeWorkflows:
+                    msg = "Skipping aborted/force-completed workflow: %s, work id: %s"
+                    self.logger.info(msg, element['RequestName'], element._id)
+                else:
+                    sortedElements.append(element)
+            sortedElements.sort(key=lambda element: element['CreationTime'])
+            sortedElements.sort(key=lambda element: element['Priority'], reverse=True)
+
+            for element in sortedElements:
+                if numElems <= 0:
+                    msg = "Reached maximum number of elements to be accepted, "
+                    msg += "configured to: {}, from queue: {}".format(len(elements), self.queueUrl)
+                    self.logger.info(msg)
+                    breakOut = True  # get out of the outer loop as well
+                    break
+                commonSites = possibleSites(element)
+                prio = element['Priority']
+                # shuffle list of common sites all the time to give everyone the same chance
+                random.shuffle(commonSites)
+                possibleSite = None
+                for site in commonSites:
+                    if site in thresholds:
+                        # Count the number of jobs currently running of greater priority, if they
+                        # are less than the site thresholds, then accept this element
+                        curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
+                        self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
+                        if curJobCount < thresholds[site]:
+                            possibleSite = site
+                            break
+
+                if possibleSite:
+                    self.logger.info("Accepting workflow: %s, with prio: %s, element id: %s, for site: %s",
+                                     element['RequestName'], prio, element.id, possibleSite)
+                    numElems -= 1
+                    elements.append(element)
+                    siteJobCounts.setdefault(possibleSite, {})
+                    siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
+                                                        element['Jobs'] * element.get('blowupFactor', 1.0)
+                else:
+                    self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
         self.logger.info("And %d elements passed location and siteJobCounts restrictions for: %s",
                          len(elements), self.queueUrl)
-        return elements, thresholds, siteJobCounts
+        return elements, siteJobCounts
 
     def getActiveData(self):
         """Get data items we have work in the queue for"""

@@ -316,8 +316,8 @@ class WorkQueue(WorkQueueBase):
             self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
 
-        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts,
-                                                   excludeWorkflows=excludeWorkflows, numElems=numElems)
+        matches, _ = self.backend.availableWork(jobSlots, siteJobCounts,
+                                                excludeWorkflows=excludeWorkflows, numElems=numElems)
 
         self.logger.info('Got %i elements matching the constraints', len(matches))
         if not matches:
@@ -805,21 +805,20 @@ class WorkQueue(WorkQueueBase):
         if not resources:
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
-            thresholds, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
+            resources, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
+            if not resources:
+                msg = 'Not pulling more work. No free slots.'
+                self._printLog(msg, printFlag, "warning")
+                return (False, False)
             # resources for new work are free wmbs resources minus what we already have queued
-            _, resources, jobCounts = self.backend.availableWork(thresholds, jobCounts)
-
-        if not resources:
-            msg = 'Not pulling more work. No free slots.'
-            self._printLog(msg, printFlag, "warning")
-            return (False, False)
+            _, jobCounts = self.backend.availableWork(resources, jobCounts)
 
         return (resources, jobCounts)
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
         numElems = self.params['WorkPerCycle']
         self.logger.info("Going to fetch work from the parent queue: %s", self.parent_queue.queueUrl)
-        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
+        work, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
 
         if not work:
             msg = 'No available work in parent queue.'

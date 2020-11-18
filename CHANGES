@@ -1,3 +1,9 @@
+1.4.3.pre1 to 1.4.3.pre2:
+  - Add zeroCounters() function. (Todor Ivanov) #10080
+  - Keep only ruleID instead of the full Rucio rule. (Todor Ivanov) #10079
+  - [py2py3] WMCore/Algorithms - futurize (Dario Mapelli) 10012
+
+
 1.4.2 to 1.4.3.pre1:
   - Remove WMDataMining thread/code (Alan Malta Rodrigues) #10065
   - Add WMRucioDIDNotFoundException. (Todor Ivanov) #10023

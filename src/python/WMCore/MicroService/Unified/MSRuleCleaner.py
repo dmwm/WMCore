@@ -396,12 +396,14 @@ class MSRuleCleaner(MSCore):
         # Find all the output placement rules created by the agents
         for dataCont in wflow['OutputDatasets']:
             if gran == 'container':
-                wflow['RulesToClean'][currPline].extend(self.rucio.listDataRules(dataCont, account=rucioAcct))
+                for rule in self.rucio.listDataRules(dataCont, account=rucioAcct):
+                    wflow['RulesToClean'][currPline].append(rule['id'])
             elif gran == 'block':
                 try:
                     blocks = self.rucio.getBlocksInContainer(dataCont)
                     for block in blocks:
-                        wflow['RulesToClean'][currPline].extend(self.rucio.listDataRules(block, account=rucioAcct))
+                        for rule in self.rucio.listDataRules(block, account=rucioAcct):
+                            wflow['RulesToClean'][currPline].append(rule['id'])
                 except WMRucioDIDNotFoundException:
                     msg = "Container: %s not found in Rucio for workflow: %s."
                     self.logger.info(msg, dataCont, wflow['RequestName'])
@@ -422,21 +424,15 @@ class MSRuleCleaner(MSCore):
         delResults = []
         if self.msConfig['enableRealMode']:
             for rule in wflow['RulesToClean'][currPline]:
-                msg = "%s: Deleting rule['id']: %s "
-                msg += "For did: %s"
-                self.logger.info(msg, currPline, rule['id'], rule['name'])
-                delResult = self.rucio.deleteRule(rule['id'])
+                self.logger.info("%s: Deleting ruleId: %s ", currPline, rule)
+                delResult = self.rucio.deleteRule(rule)
                 delResults.append(delResult)
                 if not delResult:
-                    msg = "%s: Failed to delete rule['id']: %s "
-                    msg += "For did: %s"
-                    self.logger.warning(msg, currPline, rule['id'], rule['name'])
+                    self.logger.warning("%s: Failed to delete ruleId: %s ", currPline, rule)
         else:
             for rule in wflow['RulesToClean'][currPline]:
                 delResults.append(True)
-                msg = "%s: Is about to delete rule['id']: %s "
-                msg += "For did: %s"
-                self.logger.debug(msg, currPline, rule['id'], rule['name'])
+                self.logger.info("%s: DRY-RUN: Is about to delete ruleId: %s ", currPline, rule)
 
         # Set the cleanup flag:
         wflow['CleanupStatus'][currPline] = all(delResults)

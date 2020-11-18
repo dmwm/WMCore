@@ -58,6 +58,7 @@ class MSRuleCleanerTest(unittest.TestCase):
 
         self.reqStatus = ['announced', 'aborted-completed', 'rejected']
         self.msRuleCleaner = MSRuleCleaner(self.msConfig)
+        self.msRuleCleaner.resetCounters()
         self.msRuleCleaner.rucio = Rucio.Rucio(self.msConfig['rucioAccount'],
                                                hostUrl=self.rucioConfigDict['rucio_host'],
                                                authUrl=self.rucioConfigDict['auth_host'],

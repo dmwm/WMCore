@@ -108,8 +108,14 @@ class MSRuleCleaner(MSCore):
         # Initialization of the 'cleaned' and 'archived' counters:
         self.wfCounters = {'cleaned': {},
                            'archived': 0}
+
+    def resetCounters(self):
+        """
+        A simple function for zeroing the cleaned and archived counters.
+        """
         for pline in self.cleanuplines:
             self.wfCounters['cleaned'][pline.name] = 0
+        self.wfCounters['archived'] = 0
 
     def execute(self, reqStatus):
         """
@@ -122,6 +128,7 @@ class MSRuleCleaner(MSCore):
         self.currThread = current_thread()
         self.currThreadIdent = self.currThread.name
         self.updateReportDict(summary, "thread_id", self.currThreadIdent)
+        self.resetCounters()
 
         self.logger.info("MSRuleCleaner is running in mode: %s.", self.mode)
 

@@ -1,55 +1,58 @@
-{ 
-"createRequest":
-{         
-    "Comments": {"WorkFlowDesc": ["ReReco with IncludeParents True, 3 runs whitelisted, 8h opened"],
-                 "CheckList": ["ReReco with IncludeParents"]},
-    "AcquisitionEra": "Integ_Test",
-    "ProcessingString": "Integ_ProcStr_TEST",
-    "Campaign": "Campaign-OVERRIDE-ME",        
-    "RequestString": "RequestString-OVERRIDE-ME",
-    "CMSSWVersion": "CMSSW_7_3_2",
-    "GlobalTag": "GR_P_V49",
-    "RequestPriority": 150000,
-    "ScramArch": "slc6_amd64_gcc491",
-    "RequestType": "ReReco",
-    "RunWhitelist": [234297, 234321, 234332],
-    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-    "ConfigCacheID": "029a0b63329659025f308af53c7e092b",
-    "IncludeParents": true,
-    "Group": "DATAOPS",
-    "PrepID": "IncludeParents-Prep-Alan",
-    "TimePerEvent": 2,
-    "Memory": 2300,
-    "SizePerEvent": 512,
-    "InputDataset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
-    "OpenRunningTimeout" : 28800
-},
-"assignRequest":
 {
-    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
-    "Team": "Team-OVERRIDE-ME",
-    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
-    "ProcessingString": "ProcessingString-OVERRIDE-ME",
-    "Dashboard": "Dashboard-OVERRIDE-ME",
-    "SiteBlacklist": [],
-    "MergedLFNBase": "/store/backfill/1",
-    "UnmergedLFNBase": "/store/unmerged",
-    "MinMergeSize": 2147483648,
-    "MaxMergeSize": 4294967296,
-    "MaxMergeEvents": 50000,
-    "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
-    "ProcessingVersion": 1,
-    "SoftTimeout": 129600,
-    "GracePeriod": 300,
-    "CustodialSites": [],
-    "NonCustodialSites": [],
-    "AutoApproveSubscriptionSites": [],
-    "SubscriptionPriority": "Low",
-    "CustodialSubType" : "Move",
-    "BlockCloseMaxWaitTime" : 72000,
-    "BlockCloseMaxFiles" : 500,
-    "BlockCloseMaxEvents" : 200000000,
-    "BlockCloseMaxSize" : 5000000000000
-}
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2018D", 
+        "CMSSWVersion": "CMSSW_10_6_12", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {
+            "CheckList": "ReReco with IncludeParents; ReReco with Run white list;", 
+            "WorkFlowDesc": "ReReco NanoAOD with 6 runs whitelisted and include parents; bringing 2 parent blocks and 13 small MiniAOD blocks; 2cores and 2GB"
+        }, 
+        "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "GlobalTag": "106X_dataRun2_v28", 
+        "IncludeParents": true, 
+        "InputDataset": "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD", 
+        "Memory": 2000, 
+        "Multicore": 2, 
+        "PrepID": "TEST-ReReco-Run2018D-NoBPTX-Nano02Dec2019-00001", 
+        "ProcessingString": "Nano02Dec2019_12Nov2019_UL2018", 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "ReReco", 
+        "RunWhitelist": [
+            320809, 
+            320810, 
+            320830, 
+            324900,
+            324940, 
+            324941 
+        ], 
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ], 
+        "SizePerEvent": 1, 
+        "SplittingAlgo": "EventAwareLumiBased", 
+        "TimePerEvent": 0.02
+    }
 }

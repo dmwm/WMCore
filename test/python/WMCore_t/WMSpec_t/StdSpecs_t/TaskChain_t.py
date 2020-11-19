@@ -439,7 +439,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.configDatabase = couchServer.connectDatabase("taskchain_t")
         self.testInit.generateWorkDir()
 
-        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_RelVal_Multicore.json')
+        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
@@ -933,56 +933,48 @@ class TaskChainTests(EmulatedUnitTestCase):
         Test multi-task TaskChain with default and multicore settings
         """
         arguments = self.buildMultithreadedTaskChain(self.differentNCores)
-        arguments.pop('Multicore', None)
-        arguments.pop('Memory', None)
-        arguments.pop('EventStreams', None)
-        arguments['Task1'].pop('Multicore', None)
-        arguments['Task1'].pop('Memory', None)
-        arguments['Task2'].pop('Multicore', None)
-        arguments['Task2'].pop('Memory', None)
-        arguments['Task2'].pop('EventStreams', None)
-        arguments['Task3'].pop('Multicore', None)
-        arguments['Task3'].pop('Memory', None)
-        arguments['Task3'].pop('EventStreams', None)
+        for keyName in ("Multicore", "Memory", "EventStreams"):
+            arguments.pop(keyName, None)
+            arguments['Task1'].pop(keyName, None)
+            arguments['Task2'].pop(keyName, None)
+            arguments['Task3'].pop(keyName, None)
 
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("MultiChain", arguments)
 
-        hlt = testWorkload.getTaskByPath('/MultiChain/HLTD')
-        reco = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = testWorkload.getTaskByPath(
-            '/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        task1 = testWorkload.getTaskByPath('/MultiChain/myTask1')
+        task2 = testWorkload.getTaskByPath('/MultiChain/myTask1/myTask1MergewriteRAWDIGI/myTask2')
+        task3 = testWorkload.getTaskByPath('/MultiChain/myTask1/myTask1MergewriteRAWDIGI/myTask2/myTask3')
 
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), 1)
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), 1)
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), 1)
-        self.assertEqual(hlt.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
-        self.assertEqual(reco.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
-        self.assertEqual(miniAOD.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(task1.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
+        self.assertEqual(task2.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
+        self.assertEqual(task3.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
 
-        # now all with 16 cores, 16 event streams and 8GB of memory inherited from the top level
+        # now all with 16 cores, 8 event streams and 8GB of memory inherited from the top level
         arguments['Multicore'] = 16
+        arguments['EventStreams'] = 8
         arguments['Memory'] = 8000
-        arguments['EventStreams'] = 16
         testWorkload = factory.factoryWorkloadConstruction("MultiChain", arguments)
 
-        hlt = testWorkload.getTaskByPath('/MultiChain/HLTD')
-        reco = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = testWorkload.getTaskByPath(
-            '/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        task1 = testWorkload.getTaskByPath('/MultiChain/myTask1')
+        task2 = testWorkload.getTaskByPath('/MultiChain/myTask1/myTask1MergewriteRAWDIGI/myTask2')
+        task3 = testWorkload.getTaskByPath('/MultiChain/myTask1/myTask1MergewriteRAWDIGI/myTask2/myTask3')
 
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
-        self.assertEqual(hlt.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
-        self.assertEqual(reco.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
-        self.assertEqual(miniAOD.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(task1.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
+        self.assertEqual(task2.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
+        self.assertEqual(task3.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
 
         return
 
@@ -991,26 +983,27 @@ class TaskChainTests(EmulatedUnitTestCase):
         Test for multithreaded task chains where each step
         may run with a different number of cores
         """
-
         arguments = self.buildMultithreadedTaskChain(self.differentNCores)
+        # first we test with Task1 inheriting top level parameters
+        for keyName in ("Multicore", "Memory", "EventStreams"):
+            arguments['Task1'].pop(keyName, None)
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
 
-        hlt = testWorkload.getTaskByPath('/MultiChain2/HLTD')
-        reco = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = testWorkload.getTaskByPath(
-            '/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        task1 = testWorkload.getTaskByPath('/MultiChain2/myTask1')
+        task2 = testWorkload.getTaskByPath('/MultiChain2/myTask1/myTask1MergewriteRAWDIGI/myTask2')
+        task3 = testWorkload.getTaskByPath('/MultiChain2/myTask1/myTask1MergewriteRAWDIGI/myTask2/myTask3')
 
-        hltMemory = hlt.jobSplittingParameters()['performance']['memoryRequirement']
-        recoMemory = reco.jobSplittingParameters()['performance']['memoryRequirement']
-        aodMemory = miniAOD.jobSplittingParameters()['performance']['memoryRequirement']
+        hltMemory = task1.jobSplittingParameters()['performance']['memoryRequirement']
+        recoMemory = task2.jobSplittingParameters()['performance']['memoryRequirement']
+        aodMemory = task3.jobSplittingParameters()['performance']['memoryRequirement']
 
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task2']['Multicore'])
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task2']['EventStreams'])
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task3']['EventStreams'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task2']['Multicore'])
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task2']['EventStreams'])
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task3']['EventStreams'])
 
         self.assertEqual(hltMemory, arguments['Memory'])
         self.assertEqual(recoMemory, arguments['Task2']['Memory'])
@@ -1027,21 +1020,20 @@ class TaskChainTests(EmulatedUnitTestCase):
         arguments['Task3']['EventStreams'] = 0
         testWorkload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
 
-        hlt = testWorkload.getTaskByPath('/MultiChain2/HLTD')
-        reco = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = testWorkload.getTaskByPath(
-            '/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        task1 = testWorkload.getTaskByPath('/MultiChain2/myTask1')
+        task2 = testWorkload.getTaskByPath('/MultiChain2/myTask1/myTask1MergewriteRAWDIGI/myTask2')
+        task3 = testWorkload.getTaskByPath('/MultiChain2/myTask1/myTask1MergewriteRAWDIGI/myTask2/myTask3')
 
-        hltMemory = hlt.jobSplittingParameters()['performance']['memoryRequirement']
-        recoMemory = reco.jobSplittingParameters()['performance']['memoryRequirement']
-        aodMemory = miniAOD.jobSplittingParameters()['performance']['memoryRequirement']
+        hltMemory = task1.jobSplittingParameters()['performance']['memoryRequirement']
+        recoMemory = task2.jobSplittingParameters()['performance']['memoryRequirement']
+        aodMemory = task3.jobSplittingParameters()['performance']['memoryRequirement']
 
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task1']['Multicore'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), 1)
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task2']['EventStreams'])
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task3']['EventStreams'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task1']['Multicore'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
+        self.assertEqual(task1.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(task2.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task2']['EventStreams'])
+        self.assertEqual(task3.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task3']['EventStreams'])
 
         self.assertEqual(hltMemory, arguments['Task1']['Memory'])
         self.assertEqual(recoMemory, 2300.0)
@@ -1125,8 +1117,10 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # ... continuing with the request
         for key in ['GlobalTag', 'ProcessingVersion', 'Multicore', 'Memory', 'EventStreams',
-                    'TaskChain', 'Task1', 'Task2', 'Task3']:
+                    'Task1', 'Task2', 'Task3']:
             arguments.update({key: request['createRequest'][key]})
+        arguments['TaskChain'] = 3
+        arguments['Task3']['KeepOutput'] = True
 
         # ... then some local overrides
         arguments['CMSSWVersion'] = 'CMSSW_8_0_17'

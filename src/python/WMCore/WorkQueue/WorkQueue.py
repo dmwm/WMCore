@@ -16,17 +16,18 @@ import os
 import threading
 import time
 from collections import defaultdict
+
 from Utils.Utilities import usingRucio
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
@@ -415,7 +416,7 @@ class WorkQueue(WorkQueueBase):
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
         dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
         dbsDatasetDict['PhEDExNodeNames'].extend(
-            [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
+                [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         return datasetName, dbsDatasetDict
@@ -986,7 +987,8 @@ class WorkQueue(WorkQueueBase):
                 self.logger.debug("Queue %s status follows:", self.backend.queueUrl)
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
-                    self.logger.debug("Request %s, Status %s, Full info: %s", result['RequestName'], result['Status'], result)
+                    self.logger.debug("Request %s, Status %s, Full info: %s",
+                                      result['RequestName'], result['Status'], result)
 
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
@@ -1004,8 +1006,8 @@ class WorkQueue(WorkQueueBase):
 
                     if result.inEndState():
                         if elements:
-                            self.logger.debug(
-                                "Request %s finished (%s)", result['RequestName'], parent.statusMetrics())
+                            self.logger.debug("Request %s finished (%s)",
+                                              result['RequestName'], parent.statusMetrics())
                             finished_elements.extend(result['Elements'])
                         else:
                             parentQueueDeleted = False
@@ -1070,7 +1072,7 @@ class WorkQueue(WorkQueueBase):
                 raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
             policy = startPolicy(policyName, self.params['SplittingMapping'],
-                                 rucioAcct= self.params['rucioAccount'], logger=self.logger)
+                                 rucioAcct=self.params['rucioAccount'], logger=self.logger)
             if not policy.supportsWorkAddition() and continuous:
                 # Can't split further with a policy that doesn't allow it
                 continue

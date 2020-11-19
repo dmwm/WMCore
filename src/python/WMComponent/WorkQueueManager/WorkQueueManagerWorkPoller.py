@@ -5,22 +5,23 @@ _WorkQueueManagerPoller_
 Pull work out of the work queue.
 """
 import logging
-import time
 import random
-import traceback
 import threading
+import time
+
 from Utils.Timers import timeFunction
+from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
-from WMComponent.JobSubmitter.JobSubmitAPI import availableScheddSlots
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
 class WorkQueueManagerWorkPoller(BaseWorkerThread):
     """
     Polls for Work
     """
+
     def __init__(self, queue, config):
         """
         Initialise class members
@@ -35,14 +36,13 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package="WMCore.WMBS", logger=logging, dbinterface=myThread.dbi)
         self.listSubsWithoutJobs = self.daoFactory(classname="Subscriptions.GetSubsWithoutJobGroup")
 
-
     def setup(self, parameters):
         """
         Called at startup - introduce random delay
              to avoid workers all starting at once
         """
         t = random.randrange(self.idleTime)
-        self.logger.info('Sleeping for %d seconds before 1st loop' % t)
+        self.logger.info('Sleeping for %d seconds before 1st loop', t)
         time.sleep(t)
 
     @timeFunction
@@ -54,13 +54,13 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             self.pullWork()
         except Exception as ex:
-            self.queue.logger.error("Error in work pull loop: %s" % str(ex))
+            self.queue.logger.error("Error in work pull loop: %s", str(ex))
         try:
             # process if we get work or not - we may have to split old work
             # i.e. if transient errors were seen during splitting
             self.processWork()
         except Exception as ex:
-            self.queue.logger.error("Error in new work split loop: %s" % str(ex))
+            self.queue.logger.error("Error in new work split loop: %s", str(ex))
         return
 
     def passRetrieveCondition(self):
@@ -89,7 +89,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
 
     def pullWork(self):
         """Get work from parent"""
-        self.queue.logger.info("Pulling work from %s" % self.queue.parent_queue.queueUrl)
+        self.queue.logger.info("Pulling work from %s", self.queue.parent_queue.queueUrl)
 
         myThread = threading.currentThread()
 
@@ -103,11 +103,9 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
                 self.queue.logger.warning("No work will be pulled, reason: %s", cond)
                 myThread.logdbClient.post("LocalWorkQueue_pullWork", cond, "warning")
         except IOError as ex:
-            self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
-                                    (str(ex), traceback.format_exc()))
+            self.queue.logger.exception("Error opening connection to work queue: %s", str(ex))
         except Exception as ex:
-            self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"
-                                    % (str(ex), traceback.format_exc()))
+            self.queue.logger.exception("Unable to pull work from parent Error: %s", str(ex))
 
     def processWork(self):
         """Process new work"""
@@ -115,6 +113,6 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         try:
             self.queue.processInboundWork()
         except Exception as ex:
-            self.queue.logger.exception('Error during split: %s' % str(ex))
+            self.queue.logger.exception('Error during split: %s', str(ex))
         self.logger.info('Splitting finished')
         return

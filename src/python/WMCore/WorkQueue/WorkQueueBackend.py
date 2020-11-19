@@ -194,8 +194,8 @@ class WorkQueueBackend(object):
 
         if elementIDs:
             if elementFilters or status or returnIdOnly:
-                raise ValueError(
-                    "Can't specify extra filters (or return id's) when using element id's with getElements()")
+                msg = "Can't specify extra filters (or return id's) when using element id's with getElements()"
+                raise ValueError(msg)
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
             options = {'include_docs': True, 'filter': elementFilters, 'idOnly': returnIdOnly, 'reduce': False}
@@ -371,7 +371,7 @@ class WorkQueueBackend(object):
                     # Count the number of jobs currently running of greater priority, if they
                     # are less than the site thresholds, then accept this element
                     curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
-                    self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
+                    self.logger.debug("Job Count: %s, site: %s thresholds: %s", curJobCount, site, thresholds[site])
                     if curJobCount < thresholds[site]:
                         possibleSite = site
                         break
@@ -493,7 +493,8 @@ class WorkQueueBackend(object):
                         # Count the number of jobs currently running of greater priority, if they
                         # are less than the site thresholds, then accept this element
                         curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
-                        self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
+                        self.logger.debug(
+                            "Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                         if curJobCount < thresholds[site]:
                             possibleSite = site
                             break
@@ -507,7 +508,8 @@ class WorkQueueBackend(object):
                     siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
                                                         element['Jobs'] * element.get('blowupFactor', 1.0)
                 else:
-                    self.logger.debug("No available resources for %s with doc id %s", element['RequestName'], element.id)
+                    self.logger.debug("No available resources for %s with doc id %s",
+                                      element['RequestName'], element.id)
 
         self.logger.info("And %d elements passed location and siteJobCounts restrictions for: %s",
                          len(elements), self.queueUrl)
@@ -569,7 +571,7 @@ class WorkQueueBackend(object):
         result = set([x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group': True})['rows']])
         if includeInbox:
             result = result | set(
-                [x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group': True})['rows']])
+                    [x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group': True})['rows']])
         if includeSpecs:
             result = result | set([x['key'] for x in self.db.loadView('WorkQueue', 'specsByWorkflow')['rows']])
         return list(result)

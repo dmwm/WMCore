@@ -4,12 +4,16 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-
+import os
+from Utils.Utilities import usingRucio
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
+from WMCore.Services.CRIC.CRIC import CRIC
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
@@ -31,6 +35,11 @@ class StartPolicyInterface(PolicyInterface):
         self.rejectedWork = []  # List of inputs that were rejected
         self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
+        self.cric = CRIC()
+        if usingRucio():
+            self.rucio = Rucio(self.args['rucioAcct'], configDict={'logger': self.logger})
+        else:
+            self.phedex = PhEDEx()  # this will go away eventually
 
     def split(self):
         """Apply policy to spec"""
@@ -232,11 +241,39 @@ class StartPolicyInterface(PolicyInterface):
         raise NotImplementedError("This can't be called on a base StartPolicyInterface object")
 
     def getDatasetLocations(self, datasets):
-        """Returns a dictionary with the location of the datasets according to DBS"""
+        """
+        Returns a dictionary with the location of the datasets according to Rucio
+        The definition of "location" here is a union of all sites holding at least
+        part of the dataset (defined by the DATASET grouping).
+        :param datasets: dictionary with a list of dataset names (key'ed by the DBS URL)
+        :return: a dictionary of dataset locations, key'ed by the dataset name
+        """
         result = {}
         for dbsUrl in datasets:
-            dbs = self.dbs(dbsUrl)
             for datasetPath in datasets[dbsUrl]:
-                locations = dbs.listDatasetLocation(datasetPath)
-                result[datasetPath] = locations
+                if hasattr(self, "rucio"):
+                    locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
+                                                                     account=self.args['rucioAcct'])
+                else:
+                    locations = set()
+                    resp = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetPath], complete='y')
+                    for blockSites in resp.values():
+                        locations.update(blockSites)
+                result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
+
+    def blockLocationRucioPhedex(self, blockName):
+        """
+        Wrapper around Rucio and PhEDEx systems.
+        Fetch the current location of the block name (if Rucio,
+        also consider the locks made on that block)
+        :param blockName: string with the block name
+        :return: a list of RSEs
+        """
+        if hasattr(self, "rucio"):
+            location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                            account=self.args['rucioAcct'])
+        else:
+            location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName],
+                                                                  complete='y')[blockName]
+        return location

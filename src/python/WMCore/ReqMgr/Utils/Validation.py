@@ -3,7 +3,7 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
-
+from hashlib import md5
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.Auth import getWritePermission
@@ -11,11 +11,12 @@ from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initializ
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
+from WMCore.Services.DBS.DBS3Reader import getDataTiers
 from WMCore.WMFactory import WMFactory
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
-
+from WMCore.Cache.GenericDataCache import GenericDataCache, MemoryCacheStruct
 
 def workqueue_stat_validation(request_args):
     stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
@@ -63,13 +64,25 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         elif request_args["RequestStatus"] == 'assigned':
             workload.validateArgumentForAssignment(request_args)
 
-    # TODO: fetch it from the assignment arg definition
-    if 'RequestPriority' in request_args:
-        request_args['RequestPriority'] = int(request_args['RequestPriority'])
-        if (lambda x: (x >= 0 and x < 1e6))(request_args['RequestPriority']) is False:
-            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
+    validate_request_priority(request_args)
 
     return workload, request_args
+
+
+def validate_request_priority(reqArgs):
+    """
+    Validate the RequestPriority argument against its definition
+    in StdBase
+    :param reqArgs: dictionary of user request arguments
+    :return: nothing, but raises an exception in case of an invalid value
+    """
+    if 'RequestPriority' in reqArgs:
+        reqPrioDefin = StdBase.getWorkloadCreateArgs()['RequestPriority']
+        if not isinstance(reqArgs['RequestPriority'], reqPrioDefin['type']):
+            msg = "RequestPriority must be of integer type, not: {}".format(type(reqArgs['RequestPriority']))
+            raise InvalidSpecParameterValue(msg)
+        if reqPrioDefin['validate'](reqArgs['RequestPriority']) is False:
+            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 999999")
 
 
 def validate_request_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
@@ -250,14 +263,20 @@ def validateOutputDatasets(outDsets, dbsUrl):
     _validateDatatier(datatier, dbsUrl)
 
 
-def _validateDatatier(datatier, dbsUrl):
+def _validateDatatier(datatier, dbsUrl, expiration=3600):
     """
     _validateDatatier_
 
     Provided a list of datatiers extracted from the outputDatasets, checks
     whether they all exist in DBS.
     """
-    dbsTiers = DBSReader.listDatatiers(dbsUrl)
+    cacheName = "dataTierList_" + md5(dbsUrl).hexdigest()
+    if not GenericDataCache.cacheExists(cacheName):
+        mc = MemoryCacheStruct(expiration, getDataTiers, kwargs={'dbsUrl': dbsUrl})
+        GenericDataCache.registerCache(cacheName, mc)
+
+    cacheData = GenericDataCache.getCacheData(cacheName)
+    dbsTiers = cacheData.getData()
     badTiers = list(set(datatier) - set(dbsTiers))
     if badTiers:
         raise InvalidSpecParameterValue("Bad datatier(s): %s not available in DBS." % badTiers)

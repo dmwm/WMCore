@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# pylint: disable=W0212
+# W0212 (protected-access): Access to protected names of a client class.
 """
 _WMTask_
 
@@ -1245,7 +1247,7 @@ class WMTaskHelper(TreeHelper):
         versions = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
+            if stepHelper.stepType() in ["CMSSW", "LogCollect"]:
                 if not allSteps:
                     return stepHelper.getCMSSWVersion()
                 else:
@@ -1262,7 +1264,7 @@ class WMTaskHelper(TreeHelper):
         scrams = []
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
-            if stepHelper.stepType() == "CMSSW":
+            if stepHelper.stepType() in ["CMSSW", "LogCollect"]:
                 if not allSteps:
                     return stepHelper.getScramArch()
                 else:
@@ -1306,14 +1308,15 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
-    def setProcessingVersion(self, procVer, parentProcessingVersion=0, stepChain=False):
+    def setProcessingVersion(self, procVer, parentProcessingVersion=0, stepChainMap=False):
         """
         _setProcessingVersion_
 
         Set the task processing version
         """
-        if isinstance(procVer, dict) and stepChain:
+        if isinstance(procVer, dict) and stepChainMap:
             taskProcVer = self._getStepValue(procVer, parentProcessingVersion)
+            self._setStepProperty("ProcessingVersion", procVer, stepChainMap)
         elif isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
             if taskProcVer is None:
@@ -1325,7 +1328,7 @@ class WMTaskHelper(TreeHelper):
 
         self.data.parameters.processingVersion = int(taskProcVer)
         for task in self.childTaskIterator():
-            task.setProcessingVersion(procVer, taskProcVer, stepChain)
+            task.setProcessingVersion(procVer, taskProcVer, stepChainMap)
         return
 
     def getProcessingVersion(self):
@@ -1336,14 +1339,15 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingVersion', 0)
 
-    def setProcessingString(self, procString, parentProcessingString=None, stepChain=False):
+    def setProcessingString(self, procString, parentProcessingString=None, stepChainMap=False):
         """
         _setProcessingString_
 
         Set the task processing string
         """
-        if isinstance(procString, dict) and stepChain:
+        if isinstance(procString, dict) and stepChainMap:
             taskProcString = self._getStepValue(procString, parentProcessingString)
+            self._setStepProperty("ProcessingString", procString, stepChainMap)
         elif isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
             if taskProcString is None:
@@ -1356,7 +1360,7 @@ class WMTaskHelper(TreeHelper):
         self.data.parameters.processingString = taskProcString
 
         for task in self.childTaskIterator():
-            task.setProcessingString(procString, taskProcString, stepChain)
+            task.setProcessingString(procString, taskProcString, stepChainMap)
         return
 
     def getProcessingString(self):
@@ -1446,15 +1450,40 @@ class WMTaskHelper(TreeHelper):
 
         return value
 
-    def setAcquisitionEra(self, era, parentAcquisitionEra=None, stepChain=False):
+    def _setStepProperty(self, propertyName, propertyDict, stepMap):
+        """
+        For StepChain workloads, we also need to set AcqEra/ProcStr/ProcVer
+        at the WMStep level, such that we can properly map different cmsRun
+        steps - within the same task - to different meta data information.
+        :param propertyName: the name of the property to set at step level
+        :param propertyDict: a dictionary mapping StepName to its value
+        :param stepMap: map between step name, step number and cmsRun number,
+                        same as returned from the workload getStepMapping
+        """
+        propMethodMap = {"AcquisitionEra": "setAcqEra",
+                         "ProcessingString": "setProcStr",
+                         "ProcessingVersion": "setProcStr"}
+
+        if self.taskType() not in ["Production", "Processing"]:
+            # then there is no need to set anything, single cmsRun step at most
+            return
+
+        for stepName, stepValues in stepMap.items():
+            cmsRunNum = stepValues[1]
+            stepHelper = self.getStepHelper(cmsRunNum)
+            callableMethod = getattr(stepHelper, propMethodMap[propertyName])
+            callableMethod(propertyDict[stepName])
+
+    def setAcquisitionEra(self, era, parentAcquisitionEra=None, stepChainMap=False):
         """
         _setAcquistionEra_
 
         Set the task acquisition era
         """
 
-        if isinstance(era, dict) and stepChain:
+        if isinstance(era, dict) and stepChainMap:
             taskEra = self._getStepValue(era, parentAcquisitionEra)
+            self._setStepProperty("AcquisitionEra", era, stepChainMap)
         elif isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
             if taskEra is None:
@@ -1470,14 +1499,14 @@ class WMTaskHelper(TreeHelper):
         self.data.parameters.acquisitionEra = taskEra
 
         for task in self.childTaskIterator():
-            task.setAcquisitionEra(era, taskEra, stepChain)
+            task.setAcquisitionEra(era, taskEra, stepChainMap)
         return
 
     def getAcquisitionEra(self):
         """
         _getAcquisitionEra_
 
-        Get the task acquisition era
+        Get the task acquisition era.
         """
         return getattr(self.data.parameters, 'acquisitionEra', None)
 

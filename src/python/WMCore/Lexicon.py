@@ -8,15 +8,17 @@ handled appropriately by the client methods, on success returns True.
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from future.utils import viewvalues
+
 import io
 import logging
 import mmap
 import re
-try:
-    from urlparse import urlparse, urlunparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse, urlunparse
+
+from urllib.parse import urlparse, urlunparse
 
 from WMCore.WMException import WMException, WMEXCEPTION_START_STR, WMEXCEPTION_END_STR
 
@@ -258,7 +260,7 @@ def physicsgroup(candidate):
 def procversion(candidate):
     """ Integers """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'^[0-9]+$', str(candi))
         return True
     else:
@@ -270,7 +272,7 @@ def procstring(candidate):
     if not candidate:
         raise AssertionError("ProcStr cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -282,7 +284,7 @@ def procstringT0(candidate):
     ProcessingString validation function for T0 specs
     """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'^$|[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -297,7 +299,7 @@ def acqname(candidate):
     if not candidate:
         raise AssertionError("AcqEra cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in viewvalues(candidate):
             check(r'[a-zA-Z][a-zA-Z0-9_]*$', candi)
         return True
     else:
@@ -323,6 +325,14 @@ def primdataset(candidate):
         return candidate
     return check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength'])
 
+
+TASK_STEP_NAME = {'re': '^[a-zA-Z][a-zA-Z0-9\-_]*$', 'maxLength': 50}
+def taskStepName(candidate):
+    """
+    Validate the TaskName and/or StepName field.
+    Letters, numbers, dashes and underscores are allowed.
+    """
+    return check(r"%s" % TASK_STEP_NAME['re'], candidate, TASK_STEP_NAME['maxLength'])
 
 def hnName(candidate):
     """
@@ -511,7 +521,7 @@ def validateUrl(candidate):
 def check(regexp, candidate, maxLength=None):
     if maxLength is not None:
         assert len(candidate) <= maxLength, \
-            "%s is longer then max length (%s) allowed" % (candidate, maxLength)
+            "%s is longer than max length (%s) allowed" % (candidate, maxLength)
     assert re.compile(regexp).match(candidate) is not None, \
         "'%s' does not match regular expression %s" % (candidate, regexp)
     return True

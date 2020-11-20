@@ -7,19 +7,20 @@ Data object that contains details for a single file
 """
 __all__ = []
 
-
-import datetime
-from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.WMObject import WMObject
+
 
 class File(WMObject, dict):
     """
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn = "", size = 0, events = 0, checksums = {},
-                 parents = None, locations = None, merged = False):
+
+    def __init__(self, lfn="", size=0, events=0, checksums=None,
+                 parents=None, locations=None, merged=False):
         dict.__init__(self)
+        checksums = checksums or {}
         self.setdefault("lfn", lfn)
         self.setdefault("size", size)
         self.setdefault("events", events)
@@ -28,13 +29,12 @@ class File(WMObject, dict):
         self.setdefault('merged', merged)
         self.setdefault('last_event', 0)
         self.setdefault('first_event', 0)
-
-        if locations == None:
+        if locations is None:
             self.setdefault("locations", set())
         else:
             self.setdefault("locations", locations)
 
-        if parents == None:
+        if parents is None:
             self.setdefault("parents", set())
         else:
             self.setdefault("parents", parents)
@@ -57,7 +57,7 @@ class File(WMObject, dict):
 
         addFlag = False
         for runMember in self['runs']:
-            if runMember.run ==  run.run:
+            if runMember.run == run.run:
                 # this rely on Run object overwrite __add__ to update self
                 runMember + run
                 addFlag = True
@@ -82,13 +82,15 @@ class File(WMObject, dict):
         pass
 
     def setLocation(self, pnn):
-        self['locations'] = self['locations'] | set(self.makelist(pnn))
+        # Make sure we don't add None, [], "" as file location
+        if pnn:
+            self['locations'] = self['locations'] | set(self.makelist(pnn))
 
     def __cmp__(self, rhs):
         """
         Sort files in run number and lumi section order
         """
-        #if self['run'] == rhs['run']:
+        # if self['run'] == rhs['run']:
         #    return cmp(self['lumi'], rhs['lumi'])
 
         return self.__eq__(rhs)
@@ -98,9 +100,9 @@ class File(WMObject, dict):
         File is equal if it has the same name
         """
         eq = False
-        if type(rhs) == type(self):
+        if isinstance(rhs, type(self)):
             eq = self['lfn'] == rhs['lfn']
-        elif type(rhs) == type('string'):
+        elif isinstance(rhs, basestring):
             eq = self['lfn'] == rhs
         return eq
 
@@ -108,10 +110,10 @@ class File(WMObject, dict):
         return not self.__eq__(rhs)
 
     def __hash__(self):
-        hash = self['lfn'].__hash__()
-        return hash
+        thisHash = self['lfn'].__hash__()
+        return thisHash
 
-    def json(self, thunker = None):
+    def json(self, thunker=None):
         """
         _json_
 
@@ -131,11 +133,11 @@ class File(WMObject, dict):
                     "parents": []}
 
         for parent in self["parents"]:
-            if type(parent) == str:
+            if isinstance(parent, basestring):
                 # Then for some reason, we're passing strings
                 # Done specifically for ErrorHandler
                 fileDict['parents'].append(parent)
-            elif thunker == None:
+            elif thunker is None:
                 continue
             else:
                 fileDict["parents"].append(thunker._thunk(parent))
@@ -147,7 +149,7 @@ class File(WMObject, dict):
 
         return fileDict
 
-    def __to_json__(self, thunker = None):
+    def __to_json__(self, thunker=None):
         """
         __to_json__
 

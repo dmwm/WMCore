@@ -21,7 +21,7 @@ class BossAirPluginException(WMException):
 
 
 
-class BasePlugin:
+class BasePlugin(object):
     """
     Base class for BossAir Plugins
 
@@ -30,10 +30,13 @@ class BasePlugin:
 
 
     # the common states which needs to be mapped from each plugIn states
-    globalState = ['Pending', 'Running', 'Complete','Error']
+    globalState = ['Pending', 'Running', 'Complete', 'Error']
 
     @staticmethod
     def verifyState(stateMap):
+        """
+        Verify state of map values
+        """
         for state in stateMap.values():
             if state not in BasePlugin.globalState:
                 raise BossAirPluginException("not valid state %s" % state)
@@ -58,14 +61,14 @@ class BasePlugin:
 
 
 
-    def submit(self, jobs, info = None):
+    def submit(self, jobs, info=None):
         """
         _submit_
 
         Submits jobs
         """
 
-        return
+        pass
 
 
     def track(self, jobs):
@@ -90,18 +93,17 @@ class BasePlugin:
         """
 
 
-        return
+        pass
 
 
-    def kill(self, jobs):
+    def kill(self, jobs, raiseEx):
         """
         _kill_
 
         Kill any and all jobs
         """
 
-
-        return
+        pass
 
     def updateJobInformation(self, workflow, task, **kwargs):
         """
@@ -113,7 +115,7 @@ class BasePlugin:
         """
         pass
 
-    def updateSiteInformation(self, jobs, siteName, excludeSite) :
+    def updateSiteInformation(self, jobs, siteName, excludeSite):
         """
         _updateSiteInformation_
 

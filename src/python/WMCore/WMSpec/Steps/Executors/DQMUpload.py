@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 import urllib2
-from cStringIO import StringIO
+from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
 from hashlib import md5
@@ -42,7 +42,7 @@ class DQMUpload(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.DQMUpload.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -53,6 +53,8 @@ class DQMUpload(Executor):
         # Are we using emulators again?
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         if self.step.upload.proxy:
             try:
@@ -110,7 +112,7 @@ class DQMUpload(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        logging.info("Steps.Executors.DQMUpload.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None
 
     #
@@ -200,7 +202,7 @@ class DQMUpload(Executor):
                      % (key, os.path.basename(filename))) + crlf
             body += ('Content-Type: %s' % self.filetype(filename)) + crlf
             body += ('Content-Length: %d' % os.path.getsize(filename)) + crlf
-            with open(filename, "r").read() as fd:
+            with open(filename, "r") as fd:
                 body += crlf + fd.read() + crlf
             body += '--' + boundary + '--' + crlf + crlf
         return ('multipart/form-data; boundary=' + boundary, body)
@@ -253,6 +255,6 @@ class DQMUpload(Executor):
 
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
-            data = GzipFile(fileobj=StringIO(data)).read()
+            data = GzipFile(fileobj=BytesIO(data)).read()
 
         return (result.headers, data)

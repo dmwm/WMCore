@@ -2,33 +2,31 @@
 from __future__ import division, print_function
 
 import os
-import time
+import sys
+import json
 from pprint import pformat
 
 from WMCore.Agent.DefaultConfig import DEFAULT_AGENT_CONFIG
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 
-
-def insertWMAgentConfig(reqMgrAux, agentName, agentConfig):
-    print("\nUploading new agent configuration to ReqMgrAux. Data is\n%s" % pformat(agentConfig))
-    res = reqMgrAux.postWMAgentConfig(agentName, agentConfig)
-    print(res)
-
-def removeWMAgentConfig(reqMgrAux, agentName):
-    print("Deleting previous config...")
-    reqMgrAux.deleteWMAgentConfig(agentName)
-    time.sleep(2)
-
 if __name__ == "__main__":
+    if len(sys.argv) > 2:
+        print("Too many arguments provided: %s" % sys.argv)
+        print("Usage: python wmagent-upload-config [optional override]")
+        print("Example: python wmagent-upload-config '{\"MaxRetries\":2}'")
+        sys.exit(0)
+    elif len(sys.argv) == 2:
+        override = json.loads(sys.argv[1])
+    else:
+        override = {}
+
     wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])
     reqMgrAux = ReqMgrAux(wmConfig.General.ReqMgr2ServiceURL)
 
-    removeWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName)
-    insertWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
-
-    # check whether the document was properly inserted (for some reason,
-    # it doesn't get from time to time
-    if not reqMgrAux.getWMAgentConfig(wmConfig.Agent.hostName):
-        print("Agent config not found, trying to insert it again...")
-        insertWMAgentConfig(reqMgrAux, wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
+    DEFAULT_AGENT_CONFIG.update(override)
+    print("Pushing the following agent configuration:\n%s" % pformat(DEFAULT_AGENT_CONFIG))
+    if not reqMgrAux.updateWMAgentConfig(wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG):
+        # then the document does not exist, create it
+        res = reqMgrAux.postWMAgentConfig(wmConfig.Agent.hostName, DEFAULT_AGENT_CONFIG)
+        print("Agent config successfully created: %s" % res.get("ok", False))

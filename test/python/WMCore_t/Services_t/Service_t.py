@@ -1,6 +1,9 @@
 """
 """
-import StringIO
+from future import standard_library
+standard_library.install_aliases()
+
+from io import BytesIO
 import logging
 import logging.config
 import os
@@ -9,8 +12,7 @@ import socket
 import tempfile
 import time
 import unittest
-from httplib import BadStatusLine, IncompleteRead
-from httplib import HTTPException
+from http.client import BadStatusLine, IncompleteRead, HTTPException
 
 import cherrypy
 from nose.plugins.attrib import attr
@@ -104,7 +106,7 @@ class ServiceTest(unittest.TestCase):
         f.close()
         self.assertTrue(isfile(f))
 
-        strio = StringIO.StringIO()
+        strio = BytesIO()
         self.assertTrue(isfile(strio))
         strio.close()
         self.assertTrue(isfile(strio))
@@ -247,7 +249,7 @@ class ServiceTest(unittest.TestCase):
 
     def testUsingStaleCache(self):
         myConfig = {'logger': self.logger,
-                'endpoint': 'http://cmssw.cvs.cern.ch',
+                'endpoint': 'https://cmssdt.cern.ch/SDT/',
                 'cacheduration': 0.0005,  # cache file lasts 1.8 secs
                 'timeout': 10,
                 'usestalecache': True,

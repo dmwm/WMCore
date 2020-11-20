@@ -390,11 +390,19 @@ class ChangeState(WMObject, WMConnectionBase):
                     for singlestep in job["fwjr"].listSteps():
                         for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep):
                             if singlefile:
-                                outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None),
+                                if len(singlefile.get('locations', set())) > 1:
+                                    locations = list(singlefile.get('locations'))
+                                elif singlefile.get('locations'):
+                                    locations = singlefile['locations'].pop()
+                                else:
+                                    locations = set()
+                                if CMSSTEP.match(singlestep):
+                                    outType = 'output'
+                                else:
+                                    outType = singlefile.get('module_label', None)
+                                outputs.append({'type': outType,
                                                 'lfn': singlefile.get('lfn', None),
-                                                'location': list(singlefile.get('locations', set([]))) if len(
-                                                    singlefile.get('locations', set([]))) > 1
-                                                else singlefile['locations'].pop(),
+                                                'location': locations,
                                                 'checksums': singlefile.get('checksums', {}),
                                                 'size': singlefile.get('size', None)})
                                 # it should have one output dataset for all the files

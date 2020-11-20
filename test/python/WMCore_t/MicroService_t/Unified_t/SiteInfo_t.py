@@ -15,9 +15,10 @@ from WMCore.MicroService.Unified.SiteInfo import getNodes, SiteInfo
 
 class SiteInfoTest(unittest.TestCase):
     "Unit test for SiteInfo module"
+
     def setUp(self):
         self.mode = 'test'
-        self.siteInfo = SiteInfo(mode=self.mode)
+        self.siteInfo = SiteInfo(uConfig={}, mode=self.mode)
 
     def testGetNodes(self):
         "Test function for getNodes()"
@@ -33,8 +34,10 @@ class SiteInfoTest(unittest.TestCase):
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_MSS'))
         self.assertEqual('T1_US_FNAL', self.siteInfo.se2CE('T1_US_FNAL_Disk'))
 
-    # VK, I don't know yet what unit test should do in test mode
-#     def testSiteCache(self):
+        # VK, I don't know yet what unit test should do in test mode
+
+
+# def testSiteCache(self):
 #         "Test function for siteCache"
 #         keys = ['gwmsmon_prod_site_summary', 'gwmsmon_site_summary', 
 #                 'gwmsmon_totals', 'gwmsmon_prod_maxused',

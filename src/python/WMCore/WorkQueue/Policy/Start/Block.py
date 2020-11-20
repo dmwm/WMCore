@@ -7,8 +7,8 @@ from __future__ import print_function, division
 
 import logging
 from math import ceil
+
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore import Lexicon
@@ -28,8 +28,6 @@ class Block(StartPolicyInterface):
 
         # Initialize modifiers of the policy
         self.blockBlackListModifier = []
-        self.cric = CRIC()
-
 
     def split(self):
         """Apply policy to spec"""
@@ -41,11 +39,13 @@ class Block(StartPolicyInterface):
             # TODO this is slow process needs to change in DBS3
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
-                for dbsBlock in dbs.listBlockParents(block["block"]):
+                parentBlocks = dbs.listBlockParents(block["block"])
+                for blockName in parentBlocks:
                     if self.initialTask.getTrustSitelists().get('trustlists'):
-                        parentList[dbsBlock["Name"]] = self.sites
+                        parentList[blockName] = self.sites
                     else:
-                        parentList[dbsBlock["Name"]] = self.cric.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
+                        blockLocations = self.blockLocationRucioPhedex(blockName)
+                        parentList[blockName] = self.cric.PNNstoPSNs(blockLocations)
 
             # there could be 0 event files in that case we can't estimate the number of jobs created.
             # We set Jobs to 1 for that case.
@@ -192,7 +192,8 @@ class Block(StartPolicyInterface):
             if task.getTrustSitelists().get('trustlists'):
                 self.data[block['block']] = self.sites
             else:
-                self.data[block['block']] = self.cric.PNNstoPSNs(dbs.listFileBlockLocation(block['block']))
+                blockLocations = self.blockLocationRucioPhedex(block['block'])
+                self.data[block['block']] = self.cric.PNNstoPSNs(blockLocations)
 
             # TODO: need to decide what to do when location is no find.
             # There could be case for network problem (no connection to dbs, phedex)

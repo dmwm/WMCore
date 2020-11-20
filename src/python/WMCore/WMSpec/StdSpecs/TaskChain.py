@@ -85,9 +85,10 @@ Example initial processing task
 """
 from __future__ import division
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import primdataset
+from WMCore.Lexicon import primdataset, taskStepName
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, parsePileupConfig
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 #
 # simple utils for data mining the request dictionary
@@ -282,7 +283,6 @@ class TaskChainWorkloadFactory(StdBase):
         self.workload.setTaskParentageMapping(self.taskOutputMapping)
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
         # and push the parentage map to the reqmgr2 workload cache doc
         arguments['ChainParentageMap'] = self.workload.getChainParentageSimpleMapping()
 
@@ -634,7 +634,7 @@ class TaskChainWorkloadFactory(StdBase):
         """
         baseArgs = StdBase.getChainCreateArgs(firstTask, generator)
         arguments = {
-            "TaskName": {"optional": False, "null": False},
+            "TaskName": {"optional": False, "null": False, 'validate': taskStepName},
             "InputTask": {"default": None, "optional": firstTask, "null": False},
             "TransientOutputModules": {"default": [], "type": makeList, "optional": True, "null": False},
             "DeterministicPileup": {"default": False, "type": strToBool, "optional": True, "null": False},
@@ -663,21 +663,37 @@ class TaskChainWorkloadFactory(StdBase):
         _validateSchema_
 
         Go over each task and make sure it matches validation
-        parameters derived from Dave's requirements.
+        parameters derived from Dave's requirements. They are:
+         * cannot have more than 10 tasks
+         * output from the last task *must* be saved
+         * task must be described as a python dictionary type
+         * transient output modules must be an input for further task(s)
+         * and the usual Task arguments validation, as defined in the spec
         """
         numTasks = schema['TaskChain']
+        if numTasks > 10:
+            msg = "Workflow exceeds the maximum allowed number of tasks. "
+            msg += "Limited to up to 10 tasks, found %s tasks." % numTasks
+            self.raiseValidationException(msg)
+
+        lastTask = "Task%s" % schema['TaskChain']
+        if not strToBool(schema[lastTask].get('KeepOutput', True)):
+            msg = "Dropping the output (KeepOutput=False) of the last task is prohibited.\n"
+            msg += "You probably want to remove that task completely and try again."
+            self.raiseValidationException(msg=msg)
+
         transientMapping = {}
         for i in xrange(1, numTasks + 1):
             taskNumber = "Task%s" % i
             if taskNumber not in schema:
-                msg = "No Task%s entry present in request" % i
+                msg = "Task '%s' not present in the request schema." % taskNumber
                 self.raiseValidationException(msg=msg)
 
             task = schema[taskNumber]
             # We can't handle non-dictionary tasks
             if not isinstance(task, dict):
-                msg = "Non-dictionary input for task in TaskChain.\n"
-                msg += "Could be an indicator of JSON error.\n"
+                msg = "Task '%s' not defined as a dictionary. " % taskNumber
+                msg += "It could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)
 
             # Generic task parameter validation
@@ -713,6 +729,9 @@ class TaskChainWorkloadFactory(StdBase):
         """
         try:
             validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
+        except WMSpecFactoryException:
+            # just re-raise it to keep the error message clear
+            raise
         except Exception as ex:
             self.raiseValidationException(str(ex))
 

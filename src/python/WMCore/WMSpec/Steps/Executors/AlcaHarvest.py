@@ -6,17 +6,17 @@ Implementation of an Executor for a AlcaHarvest step
 
 """
 from __future__ import print_function
-import os
-import stat
-import shutil
+
 import logging
+import os
+import shutil
+import stat
 import subprocess
 
 from Utils.Utilities import rootUrlJoin
-from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.UUIDLib import makeUUID
-
+from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
@@ -27,40 +27,42 @@ class AlcaHarvest(Executor):
     Execute a AlcaHarvest Step
 
     """
-    def pre(self, emulator = None):
+
+    def pre(self, emulator=None):
         """
         _pre_
 
         Pre execution checks
 
         """
-        #Are we using an emulator?
+        # Are we using an emulator?
         if emulator != None:
             return emulator.emulatePre(self.step)
 
-        print("Steps.Executors.AlcaHarvest.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
-    def execute(self, emulator = None):
+    def execute(self, emulator=None):
         """
         _execute_
 
         """
-        #Are we using emulators again?
+        # Are we using emulators again?
         if emulator != None:
             return emulator.emulate(self.step, self.job)
+
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
 
         # Search through steps for analysis files
         for step in self.stepSpace.taskSpace.stepSpaces():
             if step == self.stepName:
-                #Don't try to parse your own report; it's not there yet
+                # Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-            logging.info("Beginning report processing for step %s" % step)
+            logging.info("Beginning report processing for step %s", step)
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if not os.path.isfile(reportLocation):
-                logging.error("Cannot find report for step %s in space %s" \
-                              % (step, stepLocation))
+                logging.error("Cannot find report for step %s in space %s", step, stepLocation)
                 continue
 
             # First, get everything from a file and 'unpersist' it
@@ -101,8 +103,10 @@ class AlcaHarvest(Executor):
                     with open(filenameTXT, "w") as fout:
                         fout.write(textoutput)
 
-                    os.chmod(filenameDB, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
-                    os.chmod(filenameTXT, stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+                    os.chmod(filenameDB,
+                             stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
+                    os.chmod(filenameTXT,
+                             stat.S_IREAD | stat.S_IWRITE | stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 
                     condFiles2copy.append(filenameDB)
                     condFiles2copy.append(filenameTXT)
@@ -116,17 +120,17 @@ class AlcaHarvest(Executor):
             # copy conditions files out and fake the job report
             addedOutputFJR = False
             if self.step.condition.lfnbase:
-                logging.info("Copy out conditions files to %s" % self.step.condition.lfnbase)
+                logging.info("Copy out conditions files to %s", self.step.condition.lfnbase)
                 for file2copy in condFiles2copy:
 
-                    logging.info("==> copy %s" % file2copy)
+                    logging.info("==> copy %s", file2copy)
 
                     targetLFN = os.path.join(self.step.condition.lfnbase, file2copy)
                     targetPFN = "root://eoscms//eos/cms%s" % targetLFN
 
                     command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
 
-                    p = subprocess.Popen(command, shell = True,
+                    p = subprocess.Popen(command, shell=True,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.STDOUT)
                     output = p.communicate()[0]
@@ -139,16 +143,16 @@ class AlcaHarvest(Executor):
                     # add fake output file to job report
                     addedOutputFJR = True
                     stepReport.addOutputFile(self.step.condition.outLabel,
-                                             aFile= {'lfn' : targetLFN,
-                                                     'pfn' : targetPFN,
-                                                     'module_label' : self.step.condition.outLabel})
+                                             aFile={'lfn': targetLFN,
+                                                    'pfn': targetPFN,
+                                                    'module_label': self.step.condition.outLabel})
 
             # copy luminosity files out
             if self.step.luminosity.url:
-                logging.info("Copy out luminosity files to %s" % self.step.luminosity.url)
+                logging.info("Copy out luminosity files to %s", self.step.luminosity.url)
                 for file2copy in lumiFiles2copy:
 
-                    logging.info("==> copy %s" % file2copy)
+                    logging.info("==> copy %s", file2copy)
 
                     targetPFN = rootUrlJoin(self.step.luminosity.url, file2copy)
                     if not targetPFN:
@@ -159,7 +163,7 @@ class AlcaHarvest(Executor):
 
                     command = "env XRD_WRITERECOVERY=0 xrdcp -s -f %s %s" % (file2copy, targetPFN)
 
-                    p = subprocess.Popen(command, shell = True,
+                    p = subprocess.Popen(command, shell=True,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.STDOUT)
                     output = p.communicate()[0]
@@ -177,9 +181,9 @@ class AlcaHarvest(Executor):
                 # add fake placeholder output file to job report
                 logging.info("==> no sqlite files from AlcaHarvest job, creating placeholder file record")
                 stepReport.addOutputFile(self.step.condition.outLabel,
-                                         aFile= {'lfn' : "/no/output",
-                                                 'pfn' : "/no/output",
-                                                 'module_label' : self.step.condition.outLabel})
+                                         aFile={'lfn': "/no/output",
+                                                'pfn': "/no/output",
+                                                'module_label': self.step.condition.outLabel})
 
             # Am DONE with report
             # Persist it
@@ -187,7 +191,7 @@ class AlcaHarvest(Executor):
 
         return
 
-    def post(self, emulator = None):
+    def post(self, emulator=None):
         """
         _post_
 
@@ -198,5 +202,5 @@ class AlcaHarvest(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print("Steps.Executors.AlcaHarvest.post called")
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
         return None

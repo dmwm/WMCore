@@ -1,20 +1,19 @@
 from __future__ import print_function
-import unittest
-import cherrypy
-import cherrypy.process.wspbus as cherrybus
+
 import logging
 import threading
-import sys
 import traceback
-import time
+import unittest
 
-#decorator import for RESTServer setup
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+import cherrypy
+import cherrypy.process.wspbus as cherrybus
+
+# decorator import for RESTServer setup
 from WMCore.WebTools.Root import Root
 
-class RESTBaseUnitTest(unittest.TestCase):
 
-    def setUp(self, initRoot = True):
+class RESTBaseUnitTest(unittest.TestCase):
+    def setUp(self, initRoot=True):
         # default set
         self.schemaModules = []
 
@@ -24,10 +23,10 @@ class RESTBaseUnitTest(unittest.TestCase):
             warnings.warn("use RESTAndCouchUnitTest instead", DeprecationWarning)
             from WMQuality.TestInitCouchApp import TestInitCouchApp
             self.testInit = TestInitCouchApp(__file__)
-            self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-            self.testInit.setDatabaseConnection( destroyAllDatabase = True )
-            self.testInit.setSchema(customModules = self.schemaModules,
-                                    useDefault = False)
+            self.testInit.setLogging()  # logLevel = logging.SQLDEBUG
+            self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+            self.testInit.setSchema(customModules=self.schemaModules,
+                                    useDefault=False)
             # Now pull the dbURL from the factory
             # I prefer this method because the factory has better error handling
             # Also because then you know everything is the same
@@ -66,8 +65,9 @@ class RESTBaseUnitTest(unittest.TestCase):
 
             cherrybus.bus = cherrybus.Bus()
             cherrypy.engine = cherrybus.bus
-            cherrypy.engine.timeout_monitor = cherrypy._TimeoutMonitor(cherrypy.engine)
-            cherrypy.engine.timeout_monitor.subscribe()
+            # This class has apparently been deprecated in the newer versions
+            # cherrypy.engine.timeout_monitor = cherrypy._TimeoutMonitor(cherrypy.engine)
+            # cherrypy.engine.timeout_monitor.subscribe()
 
             cherrypy.engine.autoreload = cherrypy.process.plugins.Autoreloader(cherrypy.engine)
             cherrypy.engine.autoreload.subscribe()

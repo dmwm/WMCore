@@ -1,14 +1,15 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain data with 126 lumis in a LumiList (from 2 blocks and 2 runs); Transient output RAW at task1. Harvesting enabled in multiRun mode",
+    "Comments": {"WorkFlowDesc": ["TaskChain data with 126 lumis in a LumiList (from 2 blocks and 2 runs); Transient output RAW at task1. Harvesting enabled in multiRun mode"],
+		         "CheckList": ["TaskChain with lumiMask input", "TaskChain with transient output modules", "TaskChain: data automatic harvesting"]},
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev;https://cmsweb.cern.ch/dqm/relval-test",
     "EnableHarvesting": true,
     "DQMConfigCacheID": "cf0f08f510b46c89e73b3c1c3624d5d4",

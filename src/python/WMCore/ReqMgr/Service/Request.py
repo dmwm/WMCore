@@ -22,7 +22,8 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
                                                      REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-                                            validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
+                                            validate_clone_create_args, validateOutputDatasets,
+                                            validate_request_priority, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -34,7 +35,6 @@ class Request(RESTEntity):
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp="ReqMgr")
         # this need for the post validtiaon
-        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
         self.gq_service = WorkQueue(config.couch_host, config.couch_workqueue_db)
 
     def _validateGET(self, param, safe):
@@ -272,9 +272,14 @@ class Request(RESTEntity):
             _rev: 4-c6ceb2737793aaeac3f1cdf591593da4
 
         """
-        # list of status
+        ### pop arguments unrelated to the user query
+        mask = kwargs.pop("mask", [])
+        detail = kwargs.pop("detail", True)
+        common_dict = int(kwargs.pop("common_dict", 0))  # modifies the response format
+        nostale = kwargs.pop("_nostale", False)
+
+        ### these are the query strings supported by this API
         status = kwargs.get("status", [])
-        # list of request names
         name = kwargs.get("name", [])
         request_type = kwargs.get("request_type", [])
         prep_id = kwargs.get("prep_id", [])
@@ -282,73 +287,92 @@ class Request(RESTEntity):
         outputdataset = kwargs.get("outputdataset", [])
         date_range = kwargs.get("date_range", False)
         campaign = kwargs.get("campaign", [])
-        workqueue = kwargs.get("workqueue", [])
         team = kwargs.get("team", [])
         mc_pileup = kwargs.get("mc_pileup", [])
         data_pileup = kwargs.get("data_pileup", [])
         requestor = kwargs.get("requestor", [])
-        mask = kwargs.get("mask", [])
-        detail = kwargs.get("detail", True)
-        # set the return format. default format has requset name as a key
-        # if is set to one it returns list of dictionary with RequestName field.
-        common_dict = int(kwargs.get("common_dict", 0))
+
+        # further tweaks to the couch queries
+        if len(status) == 1 and status[0] == "ACTIVE":
+            status = ACTIVE_STATUS
         if detail in (False, "false", "False", "FALSE"):
             option = {"include_docs": False}
         else:
             option = {"include_docs": True}
-        # eventhing should be stale view. this only needs for test
-        _nostale = kwargs.get("_nostale", False)
-        if _nostale:
+        # everything should be stale view. this only needs for test
+        if nostale:
             self.reqmgr_db_service._setNoStale()
 
         request_info = []
+        queryMatched = False  # flag to avoid calling the same view twice
+        if len(kwargs) == 2:
+            if status and team:
+                query_keys = [[t, s] for t in team for s in status]
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus",
+                                                                                 option, query_keys))
+                queryMatched = True
+            elif status and request_type:
+                query_keys = [[s, rt] for rt in request_type for s in status]
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype",
+                                                                                 option, query_keys))
+                queryMatched = True
+            elif status and requestor:
+                query_keys = [[s, r] for r in requestor for s in status]
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatusandrequestor",
+                                                                                 option, query_keys))
+                queryMatched = True
+        elif len(kwargs) == 3:
+            if status and request_type and requestor:
+                query_keys = [[s, rt, req] for s in status for rt in request_type for req in requestor]
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatusandtypeandrequestor",
+                                                                                 option, query_keys))
+                queryMatched = True
 
-        if len(status) == 1 and status[0] == "ACTIVE":
-            status = ACTIVE_STATUS
-        if status and not team and not request_type and not requestor:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, status))
-        if status and team:
-            query_keys = [[t, s] for t in team for s in status]
-            request_info.append(
-                self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, query_keys))
-        if status and request_type:
-            query_keys = [[s, rt] for rt in request_type for s in status]
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype",
-                                                                             option, query_keys))
-        if status and requestor:
-            query_keys = [[s, r] for r in requestor for s in status]
-            request_info.append(
-                self.reqmgr_db_service.getRequestByCouchView("bystatusandrequestor", option, query_keys))
+        # anything else that hasn't matched the query combination above
+        if not queryMatched:
+            if status:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus",
+                                                                                 option, status))
+            if name:
+                request_info.append(self.reqmgr_db_service.getRequestByNames(name))
+            if request_type:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bytype",
+                                                                                 option, request_type))
+            if prep_id:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("byprepid",
+                                                                                 option, prep_id))
+            if inputdataset:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("byinputdataset",
+                                                                                 option, inputdataset))
+            if outputdataset:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("byoutputdataset",
+                                                                                 option, outputdataset))
+            if date_range:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydate",
+                                                                                 option, date_range))
+            if campaign:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bycampaign",
+                                                                                 option, campaign))
+            if mc_pileup:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bymcpileup",
+                                                                                 option, mc_pileup))
+            if data_pileup:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydatapileup",
+                                                                                 option, data_pileup))
 
-        if name:
-            request_info.append(self.reqmgr_db_service.getRequestByNames(name))
-        if prep_id:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byprepid", option, prep_id))
-        if inputdataset:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byinputdataset", option, inputdataset))
-        if outputdataset:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byoutputdataset", option, outputdataset))
-        if date_range:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydate", option, date_range))
-        if campaign:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bycampaign", option, campaign))
-        if workqueue:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byworkqueue", option, workqueue))
-        if mc_pileup:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bymcpileup", option, mc_pileup))
-        if data_pileup:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydatapileup", option, data_pileup))
-        # get interaction of the request
+        # get the intersection of the request data
         result = self._intersection_of_request_info(request_info)
 
-        if len(result) == 0:
+        if not result:
             return []
 
         result = self._mask_result(mask, result)
-        # If detail is set to False return just list of request name
+
         if not option["include_docs"]:
             return result.keys()
 
+        # set the return format. default format has request name as a key
+        # if is set to one it returns list of dictionary with RequestName field.
         if common_dict == 1:
             response_list = result.values()
         else:
@@ -386,14 +410,16 @@ class Request(RESTEntity):
         if 'RequestPriority' in request_args:
             # Yes, we completely ignore any other arguments posted by the user (web UI case)
             request_args = {'RequestPriority': request_args['RequestPriority']}
+            validate_request_priority(request_args)
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-            cherrypy.log('Updated priority of "%s" to %s' % (workload.name(), request_args['RequestPriority']))
+            cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), request_args['RequestPriority']))
         elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+            cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), request_args))
         else:
             msg = "There are invalid arguments for no-status update: %s" % request_args
             raise InvalidSpecParameterValue(msg)
@@ -408,6 +434,7 @@ class Request(RESTEntity):
             msg = "There are invalid arguments for assignment-approved transition: %s" % request_args
             raise InvalidSpecParameterValue(msg)
 
+        validate_request_priority(request_args)
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
 
@@ -483,8 +510,7 @@ class Request(RESTEntity):
 
         if report == 'OK':
             return {workload.name(): "OK"}
-        else:
-            return {workload.name(): "ERROR"}
+        return {workload.name(): "ERROR"}
 
     @restcall(formats=[('application/json', JSONFormat())])
     def put(self, workload_pair_list):
@@ -591,8 +617,7 @@ class RequestStatus(RESTEntity):
         """
         if transition == "true":
             return rows([REQUEST_STATE_TRANSITION])
-        else:
-            return rows(REQUEST_STATE_LIST)
+        return rows(REQUEST_STATE_LIST)
 
 
 class RequestType(RESTEntity):

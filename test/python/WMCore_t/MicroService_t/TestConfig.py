@@ -17,7 +17,7 @@ srv = main.section_("server")
 srv.thread_pool = 30
 main.application = "microservice"
 main.port = 8833  # main application port it listens on
-main.index = 'data' # Configuration requires index attribute
+main.index = 'ui' # Configuration requires index attribute
 # Security configuration
 #main.authz_defaults = {"role": None, "group": None, "site": None}
 #sec = main.section_("tools").section_("cms_auth")
@@ -33,11 +33,11 @@ app.title = "CMS MicroService"
 # define different views for our application
 views = config.section_("views")
 # web UI interface
-ui = views.section_('web') # was section 'ui'
+ui = views.section_('ui')
 ui.object = 'WMCore.MicroService.WebGui.FrontPage.FrontPage'
 ui.static = ROOTDIR
 
 # REST interface
 data = views.section_('data')
-data.object = 'WMCore.MicroService.RestApiHub.RestApiHub'
-data.manager = 'WMCore.MicroService.Unified.Transferor.UnifiedTransferorManager'
+data.object = 'WMCore.MicroService.Service.RestApiHub.RestApiHub'
+data.manager = 'WMCore.MicroService.Unified.MSManager.MSManager'

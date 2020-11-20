@@ -30,6 +30,9 @@ class PhEDEx(Service):
         httpDict.setdefault('cacheduration', 0)
 
         Service.__init__(self, httpDict)
+        # NOTE: it looks like PhEDEx returns these weird data locations since ever.
+        # Why don't we deal with it as close as possible to the PhEDEx service then...
+        self.nodeFilter = set(['UNKNOWN', None])
 
     def _getResult(self, callname, clearCache=False,
                    args=None, verb="POST"):
@@ -93,8 +96,7 @@ class PhEDEx(Service):
         for node in subscription.nodes:
             args['node'].append(node)
 
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
-        args['data'] = xmlData
+        args['comments'] = subscription.comments
         args['level'] = subscription.level
         args['priority'] = subscription.priority
         args['move'] = subscription.move
@@ -102,6 +104,11 @@ class PhEDEx(Service):
         args['custodial'] = subscription.custodial
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
+        if args['level'] == 'dataset':
+            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, list(subscription.datasetPaths))
+        else:  # block
+            xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl, subscription.getDatasetsAndBlocks())
+        args['data'] = xmlData
 
         return self._getResult(callname, args=args, verb="POST")
 
@@ -431,7 +438,6 @@ class PhEDEx(Service):
 
         Returns a dictionary with se names per block
         """
-
         callname = 'blockreplicas'
         response = self._getResult(callname, args=kwargs)
 
@@ -445,6 +451,21 @@ class PhEDEx(Service):
             nodes = set()
             for replica in blockInfo['replica']:
                 nodes.add(replica['node'])
-            blockNodes[blockInfo['name']] = list(nodes)
+            blockNodes[blockInfo['name']] = list(nodes - self.nodeFilter)
 
         return blockNodes
+
+    def getGroupUsage(self, **kwargs):
+        """
+        _getGroupUsage_
+
+        Get storage statistics node per group, like data already
+        stored and data subscribed
+        :param kwargs: accepts the optional parameters, as defined by PhEDEx:
+            node    node name, could be multiple
+            se      storage element name, could be multiple
+            group   group name, could be multiple
+        :return: a dictionary if `json` response type is defined, otherwise it's XML
+        """
+        callname = 'groupusage'
+        return self._getResult(callname, clearCache=True, args=kwargs, verb="GET")

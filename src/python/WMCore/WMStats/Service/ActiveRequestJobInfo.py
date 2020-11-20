@@ -5,9 +5,10 @@ Just wait for the server cache to be updated
 from __future__ import (division, print_function)
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
+from WMCore.REST.Error import DataCacheEmpty
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_NO_CLOSEOUT_FILTER, ACTIVE_STATUS_FILTER
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS_FILTER
 
 
 class ActiveRequestJobInfo(RESTEntity):
@@ -56,6 +57,7 @@ class FilteredActiveRequestJobInfo(RESTEntity):
         # If data is not updated, need to check, dataCacheUpdate log
         return rows(DataCache.filterDataByRequest(input_condition, mask))
 
+
 class ProtectedLFNList(RESTEntity):
     """
     API which provides a list of ALL possible unmerged LFN bases (including
@@ -74,7 +76,10 @@ class ProtectedLFNList(RESTEntity):
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
+        if DataCache.isEmpty():
+            raise DataCacheEmpty()
+        else:
+            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
 
 
 class ProtectedLFNListOnlyFinalOutput(RESTEntity):
@@ -111,5 +116,8 @@ class GlobalLockList(RESTEntity):
     def get(self):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
-        return rows(DataCache.filterData(ACTIVE_NO_CLOSEOUT_FILTER,
-                                         ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))
+        if DataCache.isEmpty():
+            raise DataCacheEmpty()
+        else:
+            return rows(DataCache.filterData(ACTIVE_STATUS_FILTER,
+                                             ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))

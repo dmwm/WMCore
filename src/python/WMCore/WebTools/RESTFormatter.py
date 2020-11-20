@@ -29,15 +29,15 @@ class RESTFormatter(TemplatedPage):
         TemplatedPage.__init__(self, config)
 
     def genstreamer(self, data):
-        yield "["
+        yield "[\n"
         firstItem  = True
         for item in data:
             if not firstItem:
-                yield ","
+                yield "\n,\n"
             else:
                 firstItem = False
             yield json.dumps(item)
-        yield "]"
+        yield "\n]"
 
     def json(self, data):
         if isinstance(data, GeneratorType):

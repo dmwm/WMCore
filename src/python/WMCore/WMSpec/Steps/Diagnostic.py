@@ -8,7 +8,7 @@ Interface and base class for step specific diagnostic handlers
 
 """
 
-
+from WMCore.FwkJobReport.Report import FwkJobReportException
 
 
 class DiagnosticHandler(object):
@@ -33,6 +33,19 @@ class DiagnosticHandler(object):
         msg = "DiagnosticHandler.__call__ not "
         msg += "implemented for class %s" % self.__class__.__name__
         raise NotImplementedError(msg)
+
+    def parse(self, executorInstance, jobRepXml):
+        """
+        Add an error to report if parsing the xml fails.
+        """
+        try:
+            executorInstance.report.parse(jobRepXml, executorInstance.stepName)
+        except FwkJobReportException as ex:
+            # Job report is bad, the parse already puts a 50115 in the file
+            msg = "Error reading XML job report file, possibly corrupt XML File:\n"
+            msg += "Details: %s" % str(ex)
+            executorInstance.report.addError(executorInstance.stepName, 50115, "BadFWJRXML", msg)
+            raise
 
 
 class DefaultDiagnosticHandler(DiagnosticHandler):

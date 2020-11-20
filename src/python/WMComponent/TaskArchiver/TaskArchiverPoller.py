@@ -193,7 +193,8 @@ class TaskArchiverPoller(BaseWorkerThread):
             statusList = [statusList]
         reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
         logging.info("There are %d requests in %s status in central couch.", len(reqNames), statusList)
-        self.workQueue.killWMBSWorkflows(reqNames)
+        if self.workQueue is not None:
+            self.workQueue.killWMBSWorkflows(reqNames)
         return reqNames
 
     def completeTasks(self, finishedwfs):

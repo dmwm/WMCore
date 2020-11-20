@@ -13,11 +13,14 @@ This code began life in COMP/CRAB/python/LumiList.py
 """
 
 
+from future import standard_library
+standard_library.install_aliases()
+
 import copy
 import itertools
 import json
 import re
-import urllib2
+import urllib.request
 from contextlib import closing
 
 class LumiList(object):
@@ -61,7 +64,7 @@ class LumiList(object):
                 self.compactList = json.load(jsonFile)
         elif url:
             self.url = url
-            with closing(urllib2.urlopen(url)) as jsonFile:
+            with closing(urllib.request.urlopen(url)) as jsonFile:
                 self.compactList = json.load(jsonFile)
         elif lumis:
             runsAndLumis = {}

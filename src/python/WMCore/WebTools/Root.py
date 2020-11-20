@@ -15,6 +15,7 @@ import socket
 import sys
 import time
 from argparse import ArgumentParser
+from pprint import pformat
 
 # CherryPy
 import cherrypy
@@ -90,14 +91,18 @@ class WTLogger(LogManager):
         # identify size of body from HTTP Content-Length header
         rbytes = int(cherrypy.request.headers.get('Content-Length', 0))
         if not rbytes:
-            # this will work only when body is read from request
-            rbytes = cherrypy.request.body.fp.bytes_read
-        if not rbytes:
-            # request.rfile.rfile.bytes_read is a custom CMS web
-            #  cherrypy patch not always available, hence the test
-            rbytes = (getattr(request.rfile, 'rfile', None)
-                      and getattr(request.rfile.rfile, "bytes_read", None)
-                      and request.rfile.rfile.bytes_read) or "-"
+            try:
+                # request.rfile.rfile.bytes_read is a custom CMS web
+                #  cherrypy patch not always available, hence the test
+                rbytes = (getattr(request.rfile, 'rfile', None)
+                        and getattr(request.rfile.rfile, "bytes_read", None)
+                        and request.rfile.rfile.bytes_read) or "-"
+            except:
+                try:
+                    # this will work only when body is read from request
+                    rbytes = cherrypy.request.body.fp.bytes_read
+                except:
+                    rbytes = "-"        
         msg = ('%(t)s %(H)s %(h)s "%(r)s" %(s)s'
                + ' [data: %(i)s in %(b)s out %(T).0f us ]'
                + ' [auth: %(AS)s "%(AU)s" "%(AC)s" ]'
@@ -242,6 +247,8 @@ class Root(Harness):
         if "server.socket_port" in cherrypy.config.keys():
             default_port = cherrypy.config["server.socket_port"]
         cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
+        cherrypy.config["server.accepted_queue_size"] = configDict.get("accepted_queue_size", -1)
+        cherrypy.config["server.accepted_queue_timeout"] = configDict.get("accepted_queue_timeout", 10)
         cherrypy.config["server.socket_port"] = configDict.get("port", default_port)
         cherrypy.config["server.socket_host"] = configDict.get("host", "0.0.0.0")
         # A little hacky way to pass the expire second to config
@@ -261,7 +268,10 @@ class Root(Harness):
                                         'tools.secmodv2.role': self.secconfig.default.role,
                                         'tools.secmodv2.group': self.secconfig.default.group,
                                         'tools.secmodv2.site': self.secconfig.default.site})
+        cherrypy.config.update({'tools.cpstats.on': configDict.get('cpstats', False)})
+        cherrypy.config.update({'server.statistics': configDict.get('cpstats', False)})
         cherrypy.log.error_log.debug('Application %s initialised in %s mode', self.app, self.mode)
+        cherrypy.log.access_log.info("Final CherryPy configuration: %s" % pformat(cherrypy.config))
 
     def _loadPages(self):
         """

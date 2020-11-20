@@ -58,20 +58,22 @@ class ExecuteMaster(object):
             self.toTaskDirectory()
             raise WMExecutionFailure(msg)
 
-        skipToStep = None
+        failureUpstream = False
         for step in task.steps().nodeIterator():
             try:
                 helper = WMStepHelper(step)
                 stepType = helper.stepType()
                 stepName = helper.name()
-                if skipToStep and skipToStep != stepName:
-                    # Then we continue until we get to the required step
-                    continue
-                skipToStep = None  # Reset this when we get to the right step
+                if failureUpstream:
+                    # for chained steps, don't execute further steps if a
+                    # failure has already happened
+                    helper.addOverride("previousCmsRunFailure", True)
+
                 executor = StepFactory.getStepExecutor(stepType)
                 result = self.doExecution(executor, step, wmbsJob)
-                if result is not None:
-                    skipToStep = result
+                logging.info("StepName: %s, StepType: %s, with result: %r", stepName, stepType, result)
+                if result:  # can be either None, or the step exit code
+                    failureUpstream = True
             except WMException as ex:
                 msg = "Encountered error while running ExecuteMaster:\n"
                 msg += str(ex) + "\n"
@@ -164,7 +166,8 @@ class ExecuteMaster(object):
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
-        if not error and executor.report.getStepErrors(stepName=executor.stepName) == {}:
+        stepExitCode = executor.report.getExitCode()  # 0 is successful
+        if not error and not stepExitCode:
             executor.report.setStepStatus(stepName=executor.stepName,
                                           status=0)
         executor.saveReport()
@@ -174,7 +177,7 @@ class ExecuteMaster(object):
                                                stepReport=executor.report)
         executor.saveReport()
 
-        return None
+        return stepExitCode
 
     def toStepDirectory(self, step):
         """

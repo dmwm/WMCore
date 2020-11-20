@@ -20,28 +20,33 @@ import pwd
 import shlex
 import json
 import argparse
+import logging
 from subprocess import call
-from time import sleep
+from time import sleep, time
 
 
-def singleSite(jsonName):
+def makeSiteWhitelist(jsonName, siteList):
     """
-    Return True if json template name match a specific constraint,
-    meaning the workflow created has to be assigned to a single site
-    in the SiteWhitelist
+    Provided a template json file name and the site white list from
+    the command line options; return the correct site white list based
+    on some silly rules
     """
-    if 'LHE' in jsonName or 'DQMHarvest' in jsonName:
-        return True
-    return False
+    if 'LHE_PFN' in jsonName:
+        siteList = ["T1_US_FNAL"]
+        print("Overwritting SiteWhitelist to: %s" % siteList)
+    elif 'LHE' in jsonName or 'DQMHarvest' in jsonName:
+        siteList = ["T2_CH_CERN"]
+        print("Overwritting SiteWhitelist to: %s" % siteList)
+    return siteList
 
 
-def cloneRepo():
+def cloneRepo(logger):
     """
     Clone the WMCore repository, if needed
     """
     if os.path.isdir('WMCore'):
-        print("WMCore directory found. I'm not going to clone it again.")
-        print("You have 5 secs to abort this operation or live with that forever...\n")
+        logger.info("WMCore directory found. I'm not going to clone it again.")
+        logger.info("You have 5 secs to abort this operation or live with that forever...\n")
         sleep(5)
     else:
         # Cloning WMCore repo
@@ -49,12 +54,12 @@ def cloneRepo():
         try:
             retcode = call(command)
             if retcode == 0:
-                print("WMCore repository successfully cloned!")
+                logger.info("WMCore repository successfully cloned!")
             else:
-                print("Failed to clone WMCore ", -retcode)
+                logger.error("Failed to clone WMCore. Error: %s ", retcode)
                 sys.exit(1)
         except OSError as e:
-            print("Execution failed:", e)
+            logger.error("Exception while cloning WMCore. Details: %s", str(e))
             sys.exit(2)
 
 
@@ -86,8 +91,10 @@ def parseArgs():
                         help='ProcessingVersion for assignment')
     parser.add_argument('-i', '--injectOnly', action='store_true', default=False,
                         help='Only injects requests but do not assign them')
-    parser.add_argument('-d', '--dryRun', action='store_true', default=False,
+    parser.add_argument('--dryRun', action='store_true', default=False,
                         help='Simulation mode only')
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help='Set logging to debug mode.')
     args = parser.parse_args()
 
     # sites argument could be "T1_US_FNAL,T2_CH_CERN" ...
@@ -106,7 +113,7 @@ def handleAssignment(args, fname, jsonData):
     assignRequest = {}
     assignRequest.setdefault('Team', args.team)
     assignRequest.setdefault('Dashboard', "integration")
-    assignRequest.setdefault('SiteWhitelist', "T2_CH_CERN" if singleSite(fname) else args.site)
+    assignRequest.setdefault('SiteWhitelist', makeSiteWhitelist(fname, args.site))
     # merge template name and current procStr, to avoid dups
     tmpProcStr = fname.replace('.json', '_') + args.procStr
     if 'AcquisitionEra' in jsonData['assignRequest']:
@@ -151,6 +158,17 @@ def handleAssignment(args, fname, jsonData):
     jsonData['assignRequest'].update(assignRequest)
     return
 
+def loggerSetup(logLevel=logging.INFO):
+    """
+    Return a logger which writes everything to stdout.
+    """
+    logger = logging.getLogger(__name__)
+    outHandler = logging.StreamHandler(sys.stdout)
+    outHandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(module)s: %(message)s"))
+    outHandler.setLevel(logLevel)
+    logger.addHandler(outHandler)
+    logger.setLevel(logLevel)
+    return logger
 
 def main():
     """
@@ -160,23 +178,35 @@ def main():
     NOTE: it will inject and assign ALL templates under DMWM or Integration folder
     """
     args = parseArgs()
+    if args.debug:
+        logger = loggerSetup(logging.DEBUG)
+    else:
+        logger = loggerSetup()
 
-    cloneRepo()
+    cloneRepo(logger)
 
-    # Retrieve template names available and filter blacklisted
     os.chdir("WMCore/test/data/ReqMgr")
     wmcorePath = "requests/" + args.mode + "/"
     if args.filename:
+        # then only specified template will be injected
         if os.path.isfile(wmcorePath + args.filename):
             templates = [args.filename]
         else:
-            print("File %s not found." % (wmcorePath + args.filename))
-            sys.exit(3)
+            logger.info("File %s not found.", wmcorePath + args.filename)
     else:
         templates = os.listdir(wmcorePath)
-    blacklist = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
-    templates = [item for item in templates if item not in blacklist]
 
+    # Filter out templates not allowed to be injected
+    disallowedList = ['ReReco_badBlocks.json', 'TaskChain_InclParents.json',
+                      'StepChain_InclParents.json', 'SC_Straight.json',
+                      'StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
+    logger.info("Skipping injection for these templates: %s\n", disallowedList)
+    templates = [item for item in templates if item not in disallowedList]
+    if not templates:
+        logging.info("There are no templates to be injected.")
+        sys.exit(3)
+
+    startT = time()
     reqMgrCommand = "reqmgr2.py"
 
     # Temporary place to write the tweaked templates
@@ -184,7 +214,7 @@ def main():
     wfCounter = 0
 
     for fname in templates:
-        print("Processing template ", fname)
+        logger.info("Processing template: %s", fname)
         strComand = "python %s -u %s -f %s -i " % (reqMgrCommand, args.url, tmpFile)
 
         # read the original json template
@@ -208,19 +238,22 @@ def main():
             json.dump(jsonData, outfile)
 
         if args.dryRun:
-            print(strComand)
+            logger.info("dry-run command: %s", strComand)
             continue
 
         # Inject and/or assign the request, for real
         injectComand = shlex.split(strComand)
         retcode = call(injectComand)
         if retcode == 0:
-            print("%s request successfully created!" % fname)
+            logger.info("%s request successfully created!", fname)
             wfCounter += 1
         else:
-            print("%s request FAILED injection!" % fname)
+            logger.info("%s request FAILED injection!", fname)
 
-    print("\nInjected %d workflows out of %d templates. Good job!" % (wfCounter, len(templates)))
+    totalT = time() - startT
+
+    logger.info("\nInjected %d workflows out of %d templates in %.2f secs. Good job!",
+                 wfCounter, len(templates), totalT)
 
 
 if __name__ == '__main__':

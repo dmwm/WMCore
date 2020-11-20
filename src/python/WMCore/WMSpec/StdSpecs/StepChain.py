@@ -15,9 +15,10 @@ made available.
 """
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-from WMCore.Lexicon import primdataset
+from WMCore.Lexicon import primdataset, taskStepName
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, parsePileupConfig
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 # simple utils for data mining the request dictionary
 isGenerator = lambda args: not args["Step1"].get("InputDataset", None)
@@ -106,7 +107,6 @@ class StepChainWorkloadFactory(StdBase):
 
         self.workload.setStepMapping(self.stepMapping)
         self.workload.setStepParentageMapping(self.stepParentageMapping)
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
         # and push the parentage map to the reqmgr2 workload cache doc
         arguments['ChainParentageMap'] = self.workload.getChainParentageSimpleMapping()
 
@@ -180,12 +180,12 @@ class StepChainWorkloadFactory(StdBase):
                 self.stepParentageMapping[stepName]['ParentStepCmsRun'] = parentStepCmsRun
 
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                parentDset = self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                parentDset = self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
                 self.stepParentageMapping[stepName]['ParentDataset'] = parentDset
 
-    def findParentStepWithOuputDataset(self, origArgs, stepNumber, stepName, outModName):
+    def findParentStepWithOutputDataset(self, origArgs, stepNumber, stepName, outModName):
         """
-        _findParentStepWithOuputDataset_
+        _findParentStepWithOutputDataset_
         Given the parent step name and output module name, finds the parent dataset 
         :param origArgs: request arguments
         :param stepNumber: step number of the parent step
@@ -201,7 +201,7 @@ class StepChainWorkloadFactory(StdBase):
             parentStepName = self.stepParentageMapping[stepName]['ParentStepName']
             if parentStepNumber:
                 parentOutputModName = origArgs[stepNumber]["InputFromOutputModule"]
-                return self.findParentStepWithOuputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
+                return self.findParentStepWithOutputDataset(origArgs, parentStepNumber, parentStepName, parentOutputModName)
             else:
                 # this is Step1, return the InputDataset if any
                 return origArgs[stepNumber].get("InputDataset")
@@ -298,6 +298,7 @@ class StepChainWorkloadFactory(StdBase):
             globalTag = self.getStepValue('GlobalTag', taskConf, self.globalTag)
             frameworkVersion = self.getStepValue('CMSSWVersion', taskConf, self.frameworkVersion)
             scramArch = self.getStepValue('ScramArch', taskConf, self.scramArch)
+            prepId = self.getStepValue('PrepID', taskConf, self.prepID)
 
             currentCmssw = parentCmsswStep.addTopStep(currentCmsRun)
             currentCmssw.setStepType("CMSSW")
@@ -305,6 +306,7 @@ class StepChainWorkloadFactory(StdBase):
             template(currentCmssw.data)
 
             currentCmsswStepHelper = currentCmssw.getTypeHelper()
+            currentCmsswStepHelper.setPrepId(prepId)
             currentCmsswStepHelper.setGlobalTag(globalTag)
             currentCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
             currentCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
@@ -495,8 +497,8 @@ class StepChainWorkloadFactory(StdBase):
         """
         baseArgs = StdBase.getChainCreateArgs(firstTask, generator)
         arguments = {
-            'InputStep': {'default': None, 'null': False, 'optional': firstTask, 'type': str},
-            'StepName': {'null': False, 'optional': False},
+            'InputStep': {'default': None, 'null': False, 'optional': firstTask},
+            'StepName': {'null': False, 'optional': False, 'validate': taskStepName},
             'PrimaryDataset': {'default': None, 'optional': True,
                                'validate': primdataset, 'null': False}
             }
@@ -521,31 +523,38 @@ class StepChainWorkloadFactory(StdBase):
         _validateSchema_
 
         Settings that are not supported and will cause workflow injection to fail, are:
+         * workflow with more than 10 steps
          * output from the last step *must* be saved
          * each step configuration must be a dictionary
          * StepChain argument must reflect the number of Steps in the request
-         * usual Step arguments validation, as defined in the spec
-         * usual ConfigCacheID validation
          * trident configuration, where 2 steps have the same output module AND datatier
+         * usual ConfigCacheID validation
+         * and the usual Step arguments validation, as defined in the spec
         """
-        outputModTier = []
+        numSteps = schema['StepChain']
+        if numSteps > 10:
+            msg = "Workflow exceeds the maximum allowed number of steps. "
+            msg += "Limited to up to 10 steps, found %s steps." % numSteps
+            self.raiseValidationException(msg)
+
         lastStep = "Step%s" % schema['StepChain']
         if not strToBool(schema[lastStep].get('KeepOutput', True)):
-            msg = "Dropping the output of the last step is prohibited.\n"
-            msg += "Set the 'KeepOutput' value to True and try again."
+            msg = "Dropping the output (KeepOutput=False) of the last step is prohibited.\n"
+            msg += "You probably want to remove that step completely and try again."
             self.raiseValidationException(msg=msg)
 
-        for i in range(1, schema['StepChain'] + 1):
+        outputModTier = []
+        for i in range(1, numSteps + 1):
             stepNumber = "Step%s" % i
             if stepNumber not in schema:
-                msg = "No Step%s entry present in the request" % i
+                msg = "Step '%s' not present in the request schema." % stepNumber
                 self.raiseValidationException(msg=msg)
 
             step = schema[stepNumber]
             # We can't handle non-dictionary steps
             if not isinstance(step, dict):
-                msg = "Non-dictionary input for step in StepChain.\n"
-                msg += "Could be an indicator of JSON error.\n"
+                msg = "Step '%s' not defined as a dictionary. " % stepNumber
+                msg += "It could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)
 
             # Generic step parameter validation
@@ -583,6 +592,9 @@ class StepChainWorkloadFactory(StdBase):
         """
         try:
             validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
+        except WMSpecFactoryException:
+            # just re-raise it to keep the error message clear
+            raise
         except Exception as ex:
             self.raiseValidationException(str(ex))
 

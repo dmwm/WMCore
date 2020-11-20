@@ -76,7 +76,6 @@ def fileHandler(targets):
         moduleNode = [x for x in node.children if x.name == "ModuleLabel"][0]
         moduleName = moduleNode.text
 
-        moduleRef = report.addOutputModule(moduleName)
         fileRef = report.addOutputFile(moduleName)
         fileAttrs = {}
         for subnode in node.children:
@@ -93,11 +92,9 @@ def fileHandler(targets):
                                    pfn=fileAttrs["PFN"], catalog=fileAttrs["Catalog"],
                                    module_label=fileAttrs["ModuleLabel"],
                                    guid=fileAttrs["GUID"],
-                                   ouput_module_class=fileAttrs["OutputModuleClass"],
+                                   output_module_class=fileAttrs["OutputModuleClass"],
                                    events=int(fileAttrs["TotalEvents"]),
                                    branch_hash=fileAttrs["BranchHash"])
-
-        [fileRef]
 
 
 @coroutine
@@ -115,7 +112,6 @@ def inputFileHandler(targets):
         moduleNode = [x for x in node.children if x.name == "ModuleLabel"][0]
         moduleName = moduleNode.text
 
-        moduleRef = report.addInputSource(moduleName)
         fileRef = report.addInputFile(moduleName)
         fileAttrs = {}
         for subnode in node.children:
@@ -132,8 +128,6 @@ def inputFileHandler(targets):
                                    guid=fileAttrs["GUID"], input_type=fileAttrs["InputType"],
                                    input_source_class=fileAttrs["InputSourceClass"],
                                    events=int(fileAttrs["EventsRead"]))
-
-        [fileRef]
 
 
 @coroutine
@@ -200,8 +194,10 @@ def skippedEventHandler():
         report, node = (yield)
         run = node.attrs.get("Run", None)
         event = node.attrs.get("Event", None)
-        if run == None: continue
-        if event == None: continue
+        if run is None:
+            continue
+        if event is None:
+            continue
         report.addSkippedEvent(run, event)
 
 
@@ -250,7 +246,6 @@ def runHandler():
 
                 Report.addRunInfoToFile(fileSection, runInfo)
 
-
 @coroutine
 def branchHandler():
     """
@@ -295,8 +290,8 @@ def inputAssocHandler():
         fileSection, node = (yield)
         for inputnode in node.children:
             data = {}
-            [data.__setitem__(subnode.name, subnode.text)
-             for subnode in inputnode.children]
+            for subnode in inputnode.children:
+                data.__setitem__(subnode.name, subnode.text)
             Report.addInputToFile(fileSection, data["LFN"], data['PFN'])
 
 
@@ -339,7 +334,8 @@ def perfSummaryHandler():
     while True:
         report, node = (yield)
         summary = node.attrs.get('Metric', None)
-        if summary == None: continue
+        if summary is None:
+            continue
         # Add performance section if it doesn't exist
         if not hasattr(report, summary):
             report.section_(summary)
@@ -444,8 +440,8 @@ def perfStoreHandler():
 
         # Then assemble the information
         # Calculate the values
-        logging.debug("ReadMethod: %s" % readMethod)
-        logging.debug("WriteMethod: %s" % writeMethod)
+        logging.debug("ReadMethod: %s", readMethod)
+        logging.debug("WriteMethod: %s", writeMethod)
         try:
             readTotalMB = storageValues.get("Timing-%s-read-totalMegabytes" % readMethod, 0) \
                           + storageValues.get("Timing-%s-readv-totalMegabytes" % readMethod, 0)

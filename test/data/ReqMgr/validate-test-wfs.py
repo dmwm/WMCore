@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import argparse
+import getpass
 import httplib
 import json
 import os
@@ -9,8 +10,12 @@ import pwd
 import sys
 import urllib
 import urllib2
-from pprint import pprint
+from collections import OrderedDict
+from textwrap import TextWrapper
+from urllib import quote_plus
 from urllib2 import HTTPError, URLError
+
+from future.utils import viewitems
 
 # table parameters
 SEPARATELINE = "|" + "-" * 51 + "|"
@@ -45,27 +50,39 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
 
 def getX509():
     "Helper function to get x509 from env or tmp file"
+    certFile = os.environ.get('X509_USER_CERT', '')
+    keyFile = os.environ.get('X509_USER_KEY', '')
+    if certFile and keyFile:
+        return certFile, keyFile
+
     proxy = os.environ.get('X509_USER_PROXY', '')
     if not proxy:
         proxy = '/tmp/x509up_u%s' % pwd.getpwuid(os.getuid()).pw_uid
         if not os.path.isfile(proxy):
-            return ''
-    return proxy
+            return '', ''
+    return proxy, proxy
 
 
-def getContent(url, params=None):
-    cert = getX509()
+def getContent(url, params=None, headers=None):
+    certFile, keyFile = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
-    handler = HTTPSClientAuthHandler(cert, cert)
+    handler = HTTPSClientAuthHandler(keyFile, certFile)
     opener = urllib2.build_opener(handler)
-    opener.addheaders = [("User-Agent", client),
-                         ("Accept", "application/json")]
+    if headers:
+        opener.addheaders = headers
+    else:
+        opener.addheaders = [("User-Agent", client),
+                             ("Accept", "application/json")]
+
     try:
         response = opener.open(url, params)
-        output = response.read()
+        if "auth/x509" in url:
+            output = response.headers.getheader('X-Rucio-Auth-Token')
+        else:
+            output = response.read()
     except HTTPError as e:
         print("The server couldn't fulfill the request at %s" % url)
-        print("Error code: ", e.code)
+        print("Error: {}".format(e))
         output = '{}'
         # sys.exit(1)
     except URLError as e:
@@ -73,6 +90,109 @@ def getContent(url, params=None):
         print('Reason: ', e.reason)
         sys.exit(2)
     return output
+
+
+def getRucioToken(rucioUrl):
+    """
+    Get a Rucio token for this account
+    """
+    mapHosts = {"http://cmsrucio-int.cern.ch": "https://cmsrucio-auth-int.cern.ch",
+                "http://cms-rucio.cern.ch": "https://cms-rucio-auth.cern.ch"}
+
+    rucioAuth = None
+    for hostUrl, authUrl in viewitems(mapHosts):
+        if hostUrl == rucioUrl:
+            rucioAuth = authUrl
+            rucioAcct = getpass.getuser()
+    if not rucioAuth:
+        print("Failed to parse Rucio URL.")
+        sys.exit(10)
+
+    rucioAuth = '%s/auth/x509' % rucioAuth
+    token = getContent(rucioAuth, headers=[("X-Rucio-Account", rucioAcct)])
+    print("Retrieved token for account: {}, token is: {}".format(rucioAcct, token))
+    return token
+
+
+def getDID(rucioUrl, token, dataId):
+    """
+    Retrieve basic information for a given data identifier (likely a container)
+    """
+    headers = [("X-Rucio-Auth-Token", token),
+               ("Content-type", "application/json"),
+               ("Accept", "application/json")]
+
+    rucioUrl = '{}/dids/cms/{}?dynamic=anything'.format(rucioUrl, dataId)
+    data = json.loads(getContent(rucioUrl, headers=headers))
+    # DEBUG print("Container data retrieved:\n%s" % data)
+    return data
+
+
+def getBlocks(rucioUrl, token, dataId):
+    """
+    Retrieve information for a CMS block identifier
+    """
+    headers = [("X-Rucio-Auth-Token", token)]
+    # Server doesn't accept these headers below ..
+    #           ("Content-type", "application/json"),
+    #           ("Accept", "application/json")]
+    rucioUrl = '{}/dids/cms/{}/dids'.format(rucioUrl, dataId)
+    data = getContent(rucioUrl, headers=headers)
+    # DEBUG print("Block data retrieved:\n%s" % data)
+    return data
+
+
+def getBlockMeta(rucioUrl, token, dataId):
+    """
+    Retrieve the CMS block metadata (like whether the block is opened or not, etc).
+    """
+    headers = [("X-Rucio-Auth-Token", token),
+               ("Content-type", "application/json"),
+               ("Accept", "application/json")]
+
+    rucioUrl = '{}/dids/cms/{}/meta'.format(rucioUrl, quote_plus(dataId))
+    data = json.loads(getContent(rucioUrl, headers=headers))
+    # DEBUG print("Block meta data retrieved:\n%s" % data)
+    return data
+
+
+def getReplicas(rucioUrl, token, dataId):
+    """
+    Retrieve all the replicas in a given CMS block identifier
+    """
+    headers = [("X-Rucio-Auth-Token", token)]
+    # Here it accepts, but then it returns the wrong response!!!
+    #           ("Content-type", "application/json"),
+    #           ("Accept", "application/json")]
+
+    rucioUrl = '{}/replicas/cms/{}/datasets'.format(rucioUrl, quote_plus(dataId))
+    data = getContent(rucioUrl, headers=headers)
+    # DEBUG print("Replicas data retrieved:\n%s" % data)
+    return data
+
+
+def getDIDRules(rucioUrl, token, dataId):
+    """
+    Retrieve all the rules for a given data identifier
+    """
+    headers = [("X-Rucio-Auth-Token", token)]
+    # Server doesn't accept these headers below ..
+    #           ("Content-type", "application/json"),
+    #           ("Accept", "application/json")]
+
+    rucioUrl = '{}/dids/cms/{}/rules'.format(rucioUrl, dataId)
+    data = getContent(rucioUrl, headers=headers)
+    # DEBUG print("getDIDRules data retrieved:\n%s" % data)
+    return data
+
+
+def reader(stream):
+    """
+    Home-made function to consume newline delimited json streaming data
+    """
+    for line in stream.split("\n"):
+        if line:
+            yield json.loads(line)
 
 
 def getCouchSummary(reqName, baseUrl):
@@ -96,17 +216,6 @@ def getReqMgrCache(reqName, baseUrl):
     # reqmgr2 returns a different format
     reqmgrOutput = json.loads(getContent(urn))['result'][0][reqName]
     return reqmgrOutput
-
-
-def getPhedexInfo(dataset, baseUrl):
-    """
-    Queries blockreplicas PhEDEx API to retrieve general information needed
-    """
-    phedexOutput = {}
-    queryParams = urllib.urlencode({'dataset': dataset})
-    phedexUrl = baseUrl + "/phedex/datasvc/json/prod/" + "blockreplicas"
-    phedexOutput = json.loads(getContent(phedexUrl, queryParams))
-    return phedexOutput["phedex"]["block"]
 
 
 def getDbsInfo(dataset, baseUrl):
@@ -239,6 +348,65 @@ def compareSpecial(d1, d2, key=None):
     return 'ok'
 
 
+def twClosure(replace_whitespace=False,
+              break_long_words=False,
+              width=120,
+              initial_indent=''):
+    """
+    Deals with indentation of dictionaries with very long key, value pairs.
+    replace_whitespace: Replace each whitespace character with a single space.
+    break_long_words: If True words longer than width will be broken.
+    width: The maximum length of wrapped lines.
+    initial_indent: String that will be prepended to the first line of the output
+
+    Wraps all strings for both keys and values to 120 chars.
+    Uses 4 spaces indentation for both keys and values.
+    Nested dictionaries and lists go to next line.
+    """
+    twr = TextWrapper(replace_whitespace=replace_whitespace,
+                      break_long_words=break_long_words,
+                      width=width,
+                      initial_indent=initial_indent)
+
+    def twEnclosed(obj, ind='', reCall=False):
+        """
+        The inner function of the closure
+        ind: Initial indentation for the single output string
+        reCall: Flag to indicate a recursive call (should not be used outside)
+        """
+        output = ''
+        if isinstance(obj, dict):
+            obj = OrderedDict(sorted(obj.items(),
+                                     key=lambda t: t[0],
+                                     reverse=False))
+            if reCall:
+                output += '\n'
+            ind += '    '
+            for key, value in obj.iteritems():
+                output += "%s%s: %s" % (ind,
+                                        ''.join(twr.wrap(key)),
+                                        twEnclosed(value, ind, reCall=True))
+        elif isinstance(obj, list):
+            if reCall:
+                output += '\n'
+            ind += '    '
+            for value in obj:
+                output += "%s%s" % (ind, twEnclosed(value, ind, reCall=True))
+        else:
+            output += "%s\n" % str(obj)  # join(twr.wrap(str(obj)))
+        return output
+
+    return twEnclosed
+
+
+def twPrint(obj):
+    """
+    A simple caller of twClosure (see docstring for twClosure)
+    """
+    twPrinter = twClosure()
+    print(twPrinter(obj))
+
+
 def handleReqMgr(reqName, reqmgrUrl):
     """
     Query ReqMgr and performs all the processing and dirty keys
@@ -291,7 +459,7 @@ def handleReqMgr(reqName, reqmgrUrl):
 
     reqmgrOutDsets = reqmgrOut['OutputDatasets']
 
-    ### Handle new StepChain/TaskChain output parentage map
+    # Handle new StepChain/TaskChain output parentage map
     if reqmgrOut['RequestType'] in ('StepChain', 'TaskChain'):
         chainMap = reqmgrOut.get('ChainParentageMap', {})
         if chainMap:
@@ -301,8 +469,12 @@ def handleReqMgr(reqName, reqmgrUrl):
         else:
             print("WARNING: StepChain/TaskChain workflow without a 'ChainParentageMap' argument!")
 
-    ### Handle harvesting case
-    print(" - Comments: %s" % reqmgrOut.get('Comments', ''))
+    # Handle harvesting case
+
+    print("----------------------------------------------------\nComments:")
+    twPrint(reqmgrOut.get('Comments', ''))
+    print("----------------------------------------------------\n")
+
     harvesting(reqmgrOut, reqmgrOutDsets)
     if reqmgrOut['RequestType'] == 'DQMHarvest':
         print("There is nothing else that we can validate here...\n")
@@ -333,33 +505,46 @@ def handleCouch(reqName, reqmgrUrl, reqmgrOutDsets):
     return couchOutDsets
 
 
-def handlePhedex(reqmgrOutDsets, cmswebUrl):
+def handleRucio(rucioToken, reqmgrOutDsets, rucioUrl):
     """
-    Query PhEDEx and performs all the processing and dirty keys
+    Query Rucio and performs all the processing and dirty keys
     manipulation.
     """
-    phedexInfo = {}
+    rucioInfo = {}
+    if not rucioToken:
+        return rucioInfo
 
     for dset in reqmgrOutDsets:
-        # Get general phedex info, number of files and size of dataset
-        phedexOutput = getPhedexInfo(dset, cmswebUrl)
-        phedexInfo.setdefault(dset, {})
-        phedexInfo[dset].setdefault('numFiles', 0)
-        phedexInfo[dset].setdefault('dsetSize', 0)
-        phedexInfo[dset].setdefault('numBlocks', 0)
-        for item in phedexOutput:
-            phedexInfo[dset]['numFiles'] += item['files']
-            phedexInfo[dset]['dsetSize'] += item['bytes']
-            phedexInfo[dset]['numBlocks'] += 1
-            phedexInfo[dset].setdefault(item['name'], {})
-            phedexInfo[dset][item['name']] = {'numFiles': item['files'],
-                                              'isOpen': item['is_open'],
-                                              'PNN': item['replica'][0]['node'],
-                                              'SE': item['replica'][0]['se'],
-                                              'custodial': item['replica'][0]['custodial'],
-                                              'complete': item['replica'][0]['complete'],
-                                              'subscribed': item['replica'][0]['subscribed']}
-    return phedexInfo
+        rucioInfo.setdefault(dset, {})
+        rucioInfo[dset].setdefault('dsetSize', 0)
+        rucioInfo[dset].setdefault('numBlocks', 0)
+        rucioInfo[dset].setdefault('numFiles', 0)
+        containerData = getDID(rucioUrl, rucioToken, dset)
+        if not containerData:
+            continue
+        rucioInfo[dset]['dsetSize'] = containerData['bytes']
+        # FIXME should length be the number of blocks?!?
+        # rucioInfo[dset]['numBlocks'] = containerData['length']
+
+        rucioInfo[dset].setdefault('rules', [])
+        for rule in reader(getDIDRules(rucioUrl, rucioToken, dset)):
+            rucioInfo[dset]['rules'].append(rule['id'])
+
+        for block in reader(getBlocks(rucioUrl, rucioToken, containerData['name'])):
+            rucioInfo[dset]['numBlocks'] += 1
+            blockMeta = getBlockMeta(rucioUrl, rucioToken, block['name'])
+            rucioInfo[dset]['numFiles'] += blockMeta['length']
+
+            rucioInfo[dset].setdefault(block['name'], {})
+            rucioInfo[dset][block['name']]['numFiles'] = blockMeta['length']
+            rucioInfo[dset][block['name']]['is_open'] = blockMeta['is_open']
+            rucioInfo[dset][block['name']]['project'] = blockMeta['project']
+            for replica in reader(getReplicas(rucioUrl, rucioToken, block['name'])):
+                # Look only at the first replica
+                rucioInfo[dset][block['name']]['state'] = replica['state']
+                rucioInfo[dset][block['name']]['PNN'] = replica['rse'].replace("_Test", "")
+
+    return rucioInfo
 
 
 def handleDBS(reqmgrOutDsets, cmswebUrl):
@@ -390,33 +575,33 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
     return dbsInfo
 
 
-def validateAll(reqmgrInputDset, couchInfo, phedexInfo, dbsInfo):
+def validateAll(reqmgrInputDset, couchInfo, rucioInfo, dbsInfo):
     """
     Now that we have all the necessary information, we can start performing some
     x-checks. Test cases are:
-      1. output dataset name in workload_cache, workloadSummary, phedex and dbs
-      2. output dataset size in workloadSummary, phedex and dbs
-      3. output number of blocks in phedex and dbs
-      4. output number of files in workloadSummary, phedex and dbs
+      1. output dataset name in workload_cache, workloadSummary, rucio and dbs
+      2. output dataset size in workloadSummary, rucio and dbs
+      3. output number of blocks in rucio and dbs
+      4. output number of files in workloadSummary, rucio and dbs
       5. output number of events in workloadSummary and dbs
       6. output number of lumis in the workload_cache and dbs
-      7. output PNN in phedex and dbs
+      7. output PNN in rucio and dbs
       8. whether blocks are closed
     """
     print('' + SPLITLINE)
-    print('|' + ' ' * 25 + '| CouchDB | PhEDEx | DBS  |')
+    print('|' + ' ' * 25 + '| CouchDB | Rucio  | DBS  |')
     print(SEPARATELINE)
 
-    compRes = compareLists(couchInfo.keys(), phedexInfo.keys(), dbsInfo.keys())
+    compRes = compareLists(couchInfo.keys(), rucioInfo.keys(), dbsInfo.keys())
     print('| Same dataset name       | {compRes:7s} | {compRes:6s} | {compRes:4s} |'.format(compRes=compRes))
 
-    compRes = compareLists(couchInfo, phedexInfo, dbsInfo, key='dsetSize')
+    compRes = compareLists(couchInfo, rucioInfo, dbsInfo, key='dsetSize')
     print('| Same dataset size       | {compRes:7s} | {compRes:6s} | {compRes:4s} | '.format(compRes=compRes))
 
-    compRes = compareLists(phedexInfo, dbsInfo, key='numBlocks')
+    compRes = compareLists(rucioInfo, dbsInfo, key='numBlocks')
     print('| Same number of blocks   | %-7s | %-6s | %-4s |' % ('--', compRes, compRes))
 
-    compRes = compareLists(couchInfo, phedexInfo, dbsInfo, key='numFiles')
+    compRes = compareLists(couchInfo, rucioInfo, dbsInfo, key='numFiles')
     print('| Same number of files    | {compRes:7s} | {compRes:6s} | {compRes:4s} | '.format(compRes=compRes))
 
     compRes = compareLists(couchInfo, dbsInfo, key='events')
@@ -425,8 +610,8 @@ def validateAll(reqmgrInputDset, couchInfo, phedexInfo, dbsInfo):
     compRes = compareSpecial(reqmgrInputDset, dbsInfo, key='lumis')
     print('| Same number of lumis    | %-7s | %-6s | %-4s |' % (compRes, '--', compRes))
 
-    compRes = compareSpecial(phedexInfo, dbsInfo, key='PNN')
-    print('| Same PhEDEx Node Name   | %-7s | %-6s | %-4s |' % ('--', compRes, compRes))
+    compRes = compareSpecial(rucioInfo, dbsInfo, key='PNN')
+    print('| Same RSE                | %-7s | %-6s | %-4s |' % ('--', compRes, compRes))
 
     print(SPLITLINE)
 
@@ -438,16 +623,17 @@ def main():
 
     Receive a workflow name in order to fetch the following information:
      - from couchdb: gets the output datasets and spec file
-     - from phedex: gets dataset, block, files information
+     - from rucio: gets dataset, block, files information
      - from dbs: gets dataset, block and files information
     """
     parser = argparse.ArgumentParser(description="Validate workflow input, output and config")
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-w', '--workflow', help='A single workflow name')
     group.add_argument('-i', '--inputFile', help='Plain text file containing request names (one per line)')
-    parser.add_argument('-c', '--cms', help='CMSWEB url to talk to DBS/PhEDEx. E.g: cmsweb.cern.ch')
+    parser.add_argument('-c', '--cms', help='CMSWEB url to talk to DBS. E.g: cmsweb.cern.ch')
     parser.add_argument('-r', '--reqmgr', help='Request Manager URL. Example: couch-dev1.cern.ch')
     parser.add_argument('-v', '--verbose', help='Increase output verbosity', action="store_true")
+    parser.add_argument('-x', '--rucio', help='Rucio url', default='cmsrucio-int.cern.ch')
     args = parser.parse_args()
 
     if args.workflow:
@@ -462,39 +648,43 @@ def main():
     verbose = True if args.verbose else False
     cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb-testbed.cern.ch"
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb-testbed.cern.ch"
+    rucioUrl = "http://" + args.rucio if args.rucio else "http://cmsrucio-int.cern.ch"
+
+    rucioToken = getRucioToken(rucioUrl)
 
     for reqName in listRequests:
+        print("\n----------------------------------------------------")
         print("==> %s" % reqName)
-        ### Retrieve and process ReqMgr information
+        # Retrieve and process ReqMgr information
         reqmgrInputDset, reqmgrOutDsets = handleReqMgr(reqName, reqmgrUrl)
         if reqmgrInputDset is None:
             continue
 
-        ### Retrieve and process CouchDB information
+        # Retrieve and process CouchDB information
         couchInfo = handleCouch(reqName, reqmgrUrl, reqmgrOutDsets)
 
-        ### Retrieve and process PhEDEx information
-        phedexInfo = handlePhedex(reqmgrOutDsets, cmswebUrl)
+        # Retrieve and process Rucio information
+        rucioInfo = handleRucio(rucioToken, reqmgrOutDsets, rucioUrl)
 
-        ### Retrieve and process DBS information
+        # Retrieve and process DBS information
         dbsInfo = handleDBS(reqmgrOutDsets, cmswebUrl)
 
         # Perform all the possible common validations
-        validateAll(reqmgrInputDset, couchInfo, phedexInfo, dbsInfo)
+        validateAll(reqmgrInputDset, couchInfo, rucioInfo, dbsInfo)
 
-        ### Starts VERBOSE mode for the information retrieved so far
+        # Starts VERBOSE mode for the information retrieved so far
         if verbose:
             print("\n======> Request information from reqmgr2 db: ")
-            pprint(reqmgrInputDset)
+            twPrint(reqmgrInputDset)
             print("\n======> ReqMgr2 output dataset info: ")
-            pprint(reqmgrOutDsets)
+            twPrint(reqmgrOutDsets)
             print("\n======> Couch output dataset info: ")
-            pprint(couchInfo)
+            twPrint(couchInfo)
             print("\n======> DBS info: ")
-            pprint(dbsInfo)
-            print("\n======> PhEDEx info: ")
-            pprint(phedexInfo)
-        print("\n")
+            twPrint(dbsInfo)
+            print("\n======> Rucio info: ")
+            twPrint(rucioInfo)
+        print("\n----------------------------------------------------")
 
     sys.exit(0)
 

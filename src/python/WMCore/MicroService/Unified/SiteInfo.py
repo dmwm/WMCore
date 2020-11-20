@@ -6,16 +6,15 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division
 
 # syste modules
 import json
 import tempfile
-import traceback
 from collections import defaultdict
 try:
     from future.utils import with_metaclass
-except:
+except Exception as _:
     # copy from Python 2.7.14 future/utils/__init__.py
     def with_metaclass(meta, *bases):
         "Helper function to provide metaclass for singleton definition"
@@ -34,16 +33,14 @@ except:
 from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.MicroService.Unified.Common import agentInfoUrl, \
-        phedexUrl, cert, ckey, uConfig, stucktransferUrl, monitoringUrl, \
-        dashboardUrl
+from WMCore.MicroService.Unified.Common import cert, ckey, getMSLogger
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"
     headers = {'Accept': 'application/json'}
     params = {}
     mgr = RequestHandler()
-    url = '%s/nodeusagehistory' % phedexUrl()
+    url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod/nodeusagehistory'
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
     ret = defaultdict(int)
@@ -55,7 +52,8 @@ def getNodeQueues():
 
 class SiteCache(with_metaclass(Singleton, object)):
     "Return site info from various CMS data-sources"
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, logger=None):
+        self.logger = getMSLogger(verbose=True, logger=logger)
         if mode == 'test':
             self.siteInfo = {}
         else:
@@ -64,30 +62,27 @@ class SiteCache(with_metaclass(Singleton, object)):
     def fetch(self):
         "Fetch information about sites from various CMS data-services"
         tfile = tempfile.NamedTemporaryFile()
+        dashboardUrl = "http://dashb-ssb.cern.ch/dashboard/request.py"
         urls = [
-            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl(),
-            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl(),
-            'https://cms-gwmsmon.cern.ch/totalview/json/site_summary',
-            'https://cms-gwmsmon.cern.ch/prodview/json/site_summary',
-            'https://cms-gwmsmon.cern.ch/poolview/json/totals',
-            'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
+            '%s/getplotdata?columnid=106&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=107&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=108&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=109&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=136&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=158&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=159&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=160&batch=1&lastdata=1' % dashboardUrl,
+            '%s/getplotdata?columnid=237&batch=1&lastdata=1' % dashboardUrl,
+            ### FIXME: these calls to gwmsmon are failing pretty badly with
+            ### "302 Found" and failing to decode, causing a huge error dump
+            ### to the logs
+            # 'https://cms-gwmsmon.cern.ch/totalview/json/site_summary',
+            # 'https://cms-gwmsmon.cern.ch/prodview/json/site_summary',
+            # 'https://cms-gwmsmon.cern.ch/poolview/json/totals',
+            # 'https://cms-gwmsmon.cern.ch/prodview/json/maxusedcpus',
             'http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json',
             'http://t3serv001.mit.edu/~cmsprod/IntelROCCS/Detox/SitesInfo.txt',
-            '%s/storageoverview/latest/StorageOverview.json' % monitoringUrl(),
-            '%s/stuck_1.json' % stucktransferUrl(),
-            '%s/stuck_2.json' % stucktransferUrl(),
-            '%s/stuck_m1.json' % stucktransferUrl(),
-            '%s/stuck_m3.json' % stucktransferUrl(),
-            '%s/stuck_m4.json' % stucktransferUrl(),
-            '%s/stuck_m5.json' % stucktransferUrl(),
-            '%s/stuck_m6.json' % stucktransferUrl(),
+            'http://cmsmonitoring.web.cern.ch/cmsmonitoring/storageoverview/latest/StorageOverview.json',
         ]
         cookie = {}
         ssbids = ['106', '107', '108', '109', '136', '158', '159', '160', '237']
@@ -104,9 +99,8 @@ class SiteCache(with_metaclass(Singleton, object)):
             else:
                 try:
                     data = json.loads(row['data'])
-                except Exception:
-                    traceback.print_exc()
-                    print(row)
+                except Exception as exc:
+                    self.logger.exception('error %s for row %s', str(exc), row)
                     data = {}
             if 'ssb' in row['url']:
                 for ssbid in ssbids:
@@ -131,7 +125,6 @@ class SiteCache(with_metaclass(Singleton, object)):
                     if sid in row['url']:
                         siteInfo['stuck_%s' % sid] = data
             siteInfo['site_queues'] = getNodeQueues()
-        siteInfo['ready_in_agent'] = agentsSites(agentInfoUrl())
         return siteInfo
 
     def get(self, resource, default=None):
@@ -165,7 +158,7 @@ def getNodes(kind):
     "Get list of PhEDEx nodes"
     params = {}
     headers = {'Accept': 'application/json'}
-    url = '%s/nodes' % phedexUrl()
+    url = 'https://cmsweb.cern.ch/phedex/datasvc/json/prod/nodes'
     mgr = RequestHandler()
     data = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     nodes = json.loads(data)['phedex']['node']
@@ -174,8 +167,9 @@ def getNodes(kind):
 
 class SiteInfo(with_metaclass(Singleton, object)):
     "SiteInfo class provides info about sites"
-    def __init__(self, mode=None):
-        self.siteCache = SiteCache(mode)
+    def __init__(self, uConfig, mode=None, logger=None):
+        self.logger = getMSLogger(verbose=True, logger=logger)
+        self.siteCache = SiteCache(mode, logger)
         self.config = uConfig
 
         self.sites_ready_in_agent = self.siteCache.get('ready_in_agent', [])
@@ -300,7 +294,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
     def sitesByMemory(self, maxMem, maxCore=1):
         "Provides allowed list of sites for given memory thresholds"
         if not self.sites_memory:
-            print("no memory information from glidein mon")
+            self.logger.debug("no memory information from glidein mon")
             return None
         allowed = set()
         for site, slots in self.sites_memory.items():
@@ -370,7 +364,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
         if len(info) < 15:
             info = self.siteCache.get('detox_sites')
             if len(info) < 15:
-                print("detox info is gone")
+                self.logger.debug("detox info is gone")
                 return
         read = False
         for line in info:
@@ -420,11 +414,11 @@ class SiteInfo(with_metaclass(Singleton, object)):
                 if ssb_data:
                     all_data = ssb_data['csvdata']
 #                 all_data = self.siteCache.get('ssb_%d' % column)['csvdata']
-            except Exception:
-                traceback.print_exc()
+            except Exception as exc:
+                self.logger.exception('error %s', str(exc))
                 continue
             if not all_data:
-                print("cannot get info from ssb for", name)
+                self.logger.debug("cannot get info from ssb for %s", name)
             for item in all_data:
                 site = item['VOName']
                 if site.startswith('T3'):
@@ -435,48 +429,44 @@ class SiteInfo(with_metaclass(Singleton, object)):
                 _info_by_site[site][name] = value
 
         if talk:
-            print(json.dumps(_info_by_site, indent=2))
+            self.logger.debug('document %s', json.dumps(_info_by_site, indent=2))
 
         if talk:
-            print(self.disk.keys())
+            self.logger.debug('disk keys: %s', self.disk.keys())
         for site, info in _info_by_site.items():
             if talk:
-                print("\n\tSite:", site)
+                self.logger.debug("Site: %s", site)
             ssite = self.ce2SE(site)
             key_for_cpu = 'CPUbound'
             if key_for_cpu in info and site in self.cpu_pledges and info[key_for_cpu]:
                 if self.cpu_pledges[site] < info[key_for_cpu]:
                     if talk:
-                        print(site, "could use", info[key_for_cpu],\
-                                "instead of", self.cpu_pledges[site], "for CPU")
+                        self.logger.debug('site %s could use %s instead of %s for CPU', site, info[key_for_cpu], self.cpu_pledges[site])
                     self.cpu_pledges[site] = int(info[key_for_cpu])
                 elif self.cpu_pledges[site] > 1.5* info[key_for_cpu]:
                     if talk:
-                        print(site, "could correct", info[key_for_cpu],\
-                                "instead of", self.cpu_pledges[site], "for CPU")
+                        self.logger.debug('site %s could correct %s instead of %s for CPU', site, info[key_for_cpu], self.cpu_pledges[site])
                     self.cpu_pledges[site] = int(info[key_for_cpu])
 
             if 'FreeDisk' in info and info['FreeDisk']:
                 if site in self.disk:
                     if self.disk[site] < info['FreeDisk']:
                         if talk:
-                            print(site, "could use", info['FreeDisk'],\
-                                    "instead of", self.disk[site], "for disk")
+                            self.logger.debug('site %s could use %s instead of %s for disk', site, info['FreeDisk'], self.disk[site])
                         self.disk[site] = int(info['FreeDisk'])
                 else:
                     if not ssite in self.disk:
                         if talk:
-                            print("setting", info['FreeDisk'], " disk for", ssite)
+                            self.logger.debug("setting freeDisk=%s for site=%s", info['FreeDisk'], ssite)
                         self.disk[ssite] = int(info['FreeDisk'])
 
             if 'FreeDisk' in info and site != ssite and info['FreeDisk']:
                 if ssite in self.disk:
                     if self.disk[ssite] < info['FreeDisk']:
                         if talk:
-                            print(ssite, "could use", info['FreeDisk'],\
-                                    "instead of", self.disk[ssite], "for disk")
+                            self.logger.debug('site %s could use %s instead of %s for disk', ssite, info['FreeDisk'], self.disk[ssite])
                         self.disk[ssite] = int(info['FreeDisk'])
                 else:
                     if talk:
-                        print("setting", info['FreeDisk'], " disk for", ssite)
+                        self.logger.debug("setting %s disk for site %s", info['FreeDisk'], ssite)
                     self.disk[ssite] = int(info['FreeDisk'])

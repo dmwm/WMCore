@@ -6,8 +6,11 @@ Fetch configfiles and PSet TWeaks for CMSSW Steps in a WMTask
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
 import os
-import urllib
+import urllib.request
 
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 from WMCore.Cache.WMConfigCache import ConfigCache
@@ -39,7 +42,7 @@ class CMSSWFetcher(FetcherInterface):
                 fileTarget = "%s/%s" % (
                     stepPath,
                     t.data.application.command.configuration)
-                #urllib.urlretrieve(
+                #urllib.request.urlretrieve(
                 #    t.data.application.configuration.retrieveConfigUrl,
                 #    fileTarget)
                 # PSet Tweak

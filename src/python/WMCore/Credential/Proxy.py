@@ -4,6 +4,9 @@ _Proxy_
 Wrap gLite proxy commands.
 """
 
+from __future__ import division
+from builtins import filter, str, range
+
 import contextlib
 import copy
 import os
@@ -64,7 +67,7 @@ def destroyListCred(credNameList=None, credTimeleftList=None, logger=None, timeo
     credTimeleftList = credTimeleftList or {}
     cleanCredCmdList = []
 
-    for credIdx in xrange(len(credNameList)):
+    for credIdx in range(len(credNameList)):
         hours, minutes, seconds = credTimeleftList[credIdx]
         timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         if timeleft == 0:
@@ -229,7 +232,7 @@ class Proxy(Credential):
         Uses openssl by default and fallback to voms-proxy-info in case of problems
         """
         timeleft = self.getUserCertTimeLeft(openSSL)
-        daystoexp = int(timeleft / (60. * 60 * 24))
+        daystoexp = int(timeleft // (60. * 60 * 24))
 
         return daystoexp
 
@@ -309,6 +312,51 @@ class Proxy(Credential):
 
         return uName
 
+    def getMyproxyUsernameForCRAB(self):
+        """
+        :return: username (a string) to be used when myproxy-* command is called with the option
+               -l | --username        <username> Username for the delegated proxy
+
+        CRAB (and only CRAB as of March 2020) needs to obtain from myproxy a proxy from a credential
+        uploaded by another user. So that it can submit jobs and data transfers authenticated
+        with the user proxy. For this a special credential is uploaded in myproxy server by
+        CRAB Client which is connected to a username associated to the user and has a
+        list of authorized retrievers as a list of DN's of CRAB TaskWorkers maintained in
+        central CRAB configuration.
+        The username is passed to myproxy-* command via the "-l" option
+        Three different algorithms for defining this username have been used in CRAB:
+        1. the hash of the user DN + the fqdn of the CRAB REST host
+        2. the user CERN primary account username + the _CRAB string
+        3. the hash of the user DN
+        During spring 2020 CRAB migrates from 1. to 2. For a smooth migration the
+        new client needs to upload both credentials and the TW will try 2. and fall back to 1.
+        Only after all tasks submited with old client are gone from the system, can we change
+        to support only 2.
+        The reasons to change from 1. to 2. are to make the username readable (helps support) and
+        to allow using different REST hosts (helps in K8s world). The reasons for the complicated
+        recipe in 1. are unknown, aside some security by obscurity attempt.
+        The caller decides if the call to myproxy-* done by this module will use 1. or 2. via
+        the userName key in the dictionary passed as argument to Proxy() at __init__ time
+           - if the dictionary contains the key 'userName', algorithm 2 is used
+           - if the dictionary does not have it, algorithm 1. is used
+        But at times user change their DN and can't act on credentials stored in myproxy
+        with old DN. They need to switch to a new credential name, for this 3. neede3d to be put back
+        in Summer 2020.
+        """
+        if self.userName:
+            self.logger.debug("using %s as credential login name", self.userName)
+            username = self.userName
+        else:
+            if self.myproxyAccount:
+                self.logger.debug(
+                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
+                username = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+            else:
+                self.logger.debug(
+                    "Calculating hash of %s for credential name" % (self.userDN))
+                username = sha1(self.userDN).hexdigest()
+        return username
+
     def checkAttribute(self, proxy=None):
         """
         Check attributes from a proxy file.
@@ -372,12 +420,10 @@ class Proxy(Credential):
                 'rfc' if self.rfcCompliant else 'old', self.myproxyServer)
 
             if nokey is True:
-                self.logger.debug(
-                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-                credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
+                myproxyUsername = self.getMyproxyUsernameForCRAB()
                 myproxyDelegCmd = 'export GT_PROXY_MODE=%s ; myproxy-init -d -n -s %s -x -R \'%s\' -x -Z \'%s\' -l \'%s\' -t 168:00 -c %s' \
                                   % ('rfc' if self.rfcCompliant else 'old', self.myproxyServer, self.serverDN, \
-                                     self.serverDN, credname, self.myproxyValidity)
+                                     self.serverDN, myproxyUsername, self.myproxyValidity)
             elif serverRenewer and len(self.serverDN.strip()) > 0:
                 serverCredName = sha1(self.serverDN).hexdigest()
                 myproxyDelegCmd += ' -x -R \'%s\' -Z \'%s\' -k %s -t 168:00 -c %s ' \
@@ -399,10 +445,8 @@ class Proxy(Credential):
         proxyTimeleft = -1
         if self.myproxyServer:
             if nokey is True and serverRenewer is True:
-                self.logger.debug(
-                    "Calculating hash of %s for credential name" % (self.userDN + "_" + self.myproxyAccount))
-                credname = sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()
-                checkMyProxyCmd = 'myproxy-info -l %s -s %s' % (credname, self.myproxyServer)
+                myproxyUsername = self.getMyproxyUsernameForCRAB()
+                checkMyProxyCmd = 'myproxy-info -l %s -s %s' % (myproxyUsername, self.myproxyServer)
                 output, _, retcode = execute_command(self.setEnv(checkMyProxyCmd), self.logger, self.commandTimeout)
                 if retcode > 0 or not output:
                     return proxyTimeleft
@@ -578,16 +622,17 @@ class Proxy(Credential):
         # Note that this is saved in a temporary file with the pid appended to the filename. This way we will avoid adding many
         # signatures later on with vomsExtensionRenewal in case of multiple processing running at the same time
         tmpProxyFilename = proxyFilename + '.' + str(os.getpid())
+
+        myproxyUsername = self.getMyproxyUsernameForCRAB()
+
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
-                       % (
-                           self.myproxyServer, tmpProxyFilename,
-                           sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()))
+                       % (self.myproxyServer, tmpProxyFilename, myproxyUsername) )
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setEnv(logonCmd), self.logger, self.commandTimeout)
 
         if retcode > 0:
-            self.logger.error("Unable to retrieve delegated proxy for user DN %s! Exit code:%s output:%s" \
-                              % (self.userDN, retcode, msg))
+            self.logger.error("Unable to retrieve delegated proxy using login %s for user DN %s! Exit code:%s output:%s",
+                              myproxyUsername, self.userDN, retcode, msg)
             return proxyFilename
 
         self.vomsExtensionRenewal(tmpProxyFilename, voAttribute)
@@ -612,7 +657,15 @@ class Proxy(Credential):
         """
         Renew voms extension of the proxy
         """
-        ## get validity time for retrieved flat proxy
+        # get RFC/noRFC type for retrieved flat proxy
+        msg, _, retcode = execute_command(self.setEnv('voms-proxy-info -type -file %s' % proxy), self.logger,
+                                          self.commandTimeout)
+        if retcode > 0:
+            self.logger.error('Cannot get proxy type %s' % msg)
+            return
+        isRFC = msg.startswith('RFC')  # can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
+
+        # get validity time for retrieved flat proxy
         cmd = 'grid-proxy-info -file ' + proxy + ' -timeleft'
         timeLeft, _, retcode = execute_command(self.setEnv(cmd), self.logger, self.commandTimeout)
 
@@ -620,20 +673,21 @@ class Proxy(Credential):
             self.logger.error("Error while checking retrieved proxy timeleft for %s" % proxy)
             return
 
+
+        # timeLeft indicates how many seconds the proxy is still valid for.
+        # We will add a VOMS extension via voms-proxy-init -noregen but if we
+        # ask for an exactly matching validity time, we often end with
+        #  Warning: your certificate and proxy will expire Tue Mar 31 23:46:06 2020
+        #  which is within the requested lifetime of the proxy
+        # which causes a non zero exit status and hence a false error logging.
+        # Therefore let's take 10 minutes off
+        vomsTime = int(timeLeft.strip()) - 600
+
         vomsValid = '00:00'
-        timeLeft = int(timeLeft.strip())
-
-        if timeLeft > 0:
-            vomsValid = "%d:%02d" % (timeLeft / 3600, (timeLeft - (timeLeft / 3600) * 3600) / 60)
-
+        if vomsTime > 0:
+            vomsValid = "%d:%02d" % (int(vomsTime // 3600), int((vomsTime % 3600) // 60))
         self.logger.debug('Requested voms validity: %s' % vomsValid)
 
-        msg, _, retcode = execute_command(self.setEnv('voms-proxy-info -type -file %s' % proxy), self.logger,
-                                          self.commandTimeout)
-        if retcode > 0:
-            self.logger.error('Cannot get proxy type %s' % msg)
-            return
-        isRFC = msg.startswith('RFC')  # can be 'RFC3820 compliant impersonation proxy' or 'RFC compliant proxy'
         ## set environ and add voms extensions
         cmdList = []
         cmdList.append('env')

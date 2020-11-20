@@ -1,12 +1,9 @@
 from __future__ import print_function
 import unittest
 import cherrypy
-import cherrypy.process.wspbus as cherrybus
 import logging
 import threading
 import os
-import traceback
-import time
 
 #decorator import for RESTServer setup
 from WMQuality.REST.ServerSetup import RESTMainTestServer
@@ -56,7 +53,7 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
                         self.testInit.setupCouch(dbName)
 
 
-        logging.info("This is our config: %s" % self.config)
+        logging.info("RESTBaseUnitTestWithDBBackend configuration: %s" % self.config)
 
         self.initRoot = initRoot
         if initRoot:
@@ -68,6 +65,7 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             print("init root")
 
     def tearDown(self):
+        logging.info("RESTBaseUnitTestWithDBBackend executing tearDown")
         if self.initRoot:
             CherrypyTestInit.stop(self.server)
             self.test_authz_key = None

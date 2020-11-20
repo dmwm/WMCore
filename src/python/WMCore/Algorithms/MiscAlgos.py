@@ -21,7 +21,7 @@ def sortListByKey(data, key):
         if value == None:
             # Empty dict value?
             # This is an error, but we can't handle it here
-            logging.error("Found entry with no key in sortListByKey: %s" % entry)
+            logging.error("Found entry with no key in sortListByKey: %s", entry)
             logging.error("Skipping")
             continue
         if isinstance(value, set):
@@ -32,10 +32,10 @@ def sortListByKey(data, key):
             except KeyError:
                 # Set was empty?
                 # This is peculiar, we can't handle this.
-                logging.error("Found list entry with empty key set in sortListByKey: %s" % entry)
+                logging.error("Found list entry with empty key set in sortListByKey: %s", entry)
                 logging.error("Skipping")
                 continue
-        if not value in final.keys():
+        if value not in final:
             final[value] = []
         final[value].append(entry)
 
@@ -54,13 +54,13 @@ def dict_diff(first, second):
     KEYNOTFOUND = '<KEYNOTFOUND>'
     diff = {}
     # Check all keys in first dict
-    for key in first.keys():
+    for key in first:
         if (key not in second):
             diff[key] = (first[key], KEYNOTFOUND)
         elif (first[key] != second[key]):
             diff[key] = (first[key], second[key])
     # Check all keys in second dict to find missing
-    for key in second.keys():
+    for key in second:
         if (key not in first):
             diff[key] = (KEYNOTFOUND, second[key])
     return diff

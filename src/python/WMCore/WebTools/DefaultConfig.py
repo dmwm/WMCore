@@ -21,7 +21,7 @@ config.component_('Webtools')
 config.Webtools.autoreload = True
 config.Webtools.environment = 'development'
 config.Webtools.log_screen = True
-config.Webtools.error_log_level = logging.DEBUG
+config.Webtools.error_log_level = logging.INFO
 #config.Webtools.thread_pool = 10
 # etc. Check Root.py for all configurables
 # The above short-hand can be replaced with explicit namespaced configuration

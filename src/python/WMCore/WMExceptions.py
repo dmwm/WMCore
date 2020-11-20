@@ -131,6 +131,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       8026: "NotFound (something other than a product or dictionary not found).",
                       8027: "FormatIncompatibility.",
                       8028: "FileOpenError with fallback.",
+                      8029: "The job configuration has no input files specified for secondary input source.",
                       8030: "Exceeded maximum allowed VSize (ExceededResourceVSize).",
                       8031: "Exceeded maximum allowed RSS (ExceededResourceRSS).",
                       8032: "Exceeded maximum allowed time (ExceededResourceTime).",
@@ -162,6 +163,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       60307: "General failure during files stage out.",  # (WMA, CRAB3)
                       60311: "Local Stage Out Failure using site specific plugin.",  # (WMA, CRAB3)
                       60312: "Failure in staging in log files during log collection (WMAgent).",  # (WMA)
+                      60313: "Failed to clean up any files that were no longer needed (WMAgent).",  # (WMA)
                       60315: "StageOut initialisation error (Due to TFC, SITECONF etc).",  # (WMA)
                       60317: "Forced timeout for stuck stage out.",  # (To be used in CRAB3/ASO)
                       60318: "Internal error in Crab cmscp.py stageout script.",  # (CRAB3)
@@ -184,8 +186,9 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       70452: "No run/lumi information in file (WMAgent).",
                       71101: "No sites are available to submit the job because the location of its input(s) do not pass the site whitelist/blacklist restrictions (WMAgent).",
                       71102: "The job can only run at a site that is currently in Aborted state (WMAgent).",
-                      71103: "The JobSubmitter component could not load the job pickle (WMAgent).",
-                      71104: "The job can run only at a site that is currently in Draining state (WMAgent).",
+                      71103: "The job can run only at a site that is currently in Draining state (WMAgent).",
+                      71104: "JobSubmitter component could not find a job pickle object.",
+                      71105: "JobSubmitter component loaded an empty job pickle object.",
                       71300: "The job was killed by the WMAgent, reason is unknown (WMAgent).",
                       71301: "The job was killed by the WMAgent because the site it was running at was set to Aborted (WMAgent).",
                       71302: "The job was killed by the WMAgent because the site it was running at was set to Draining (WMAgent).",
@@ -198,9 +201,11 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       80001: "No exit code set by job wrapper.",  # CRAB3
                       80453: "Unable to determine pset hash from output file (CRAB3).",
                       90000: "Error in CRAB3 post-processing step (includes basically errors in stage out and file metadata upload).",  # CRAB3 TODO: Need to separate. new stageout errors are 60321-60324 and other needed for file metadata.
+                      99108: "Skipping this step due to a failure in a previous one.",  # WMA
                       99109: "Uncaught exception in WMAgent step executor.",  # WMA TODO: Maybe move to 7****?
                       99303: "Job failed and the original job report got lost",
                       99304: "Could not find jobCache directory. Job will be failed",
+                      99305: "Found single input file with too many events to be processed in a pilot lifetime",
                       99400: "Job is killed by condor_rm or SYSTEM_PERIODIC_REMOVE",
                       99401: "Job is killed by unknown reason ",
                       99996: "Failed to find a step report in the worker node",

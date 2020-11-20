@@ -8,8 +8,8 @@ import traceback
 
 from Utils.Timers import timeFunction
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Services.Dashboard.Dashboard import Dashboard
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode
+from WMCore.Services.MonIT.Grafana import Grafana
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -26,17 +26,21 @@ class ResourceControlUpdater(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
 
+        self.ssb2AgentStatus = {'enabled': 'Normal',
+                                'drain': 'Draining',
+                                'disabled': 'Down',
+                                'test': 'Draining',
+                                'unknown': None}
         self.tasksCPU = ['Processing', 'Production']
         self.tasksIO = ['Merge', 'Cleanup', 'Harvesting', 'LogCollect', 'Skim']
         self.minCPUSlots = 50
         self.minIOSlots = 25
 
         # get dashboard url, set metric columns from config
-        self.dashboard = config.AgentStatusWatcher.dashboard
-        self.siteStatusMetric = config.AgentStatusWatcher.siteStatusMetric
-        self.cpuBoundMetric = config.AgentStatusWatcher.cpuBoundMetric
-        self.ioBoundMetric = config.AgentStatusWatcher.ioBoundMetric
-        self.ssb = Dashboard(self.dashboard)
+        _token = config.AgentStatusWatcher.grafanaToken
+        self.grafanaURL = config.AgentStatusWatcher.grafanaURL
+        self.grafanaAPIName = config.AgentStatusWatcher.grafanaSSB
+        self.grafana = Grafana(_token, configDict={"endpoint": self.grafanaURL})
 
         # set pending percentages from config
         self.pendingSlotsSitePercent = config.AgentStatusWatcher.pendingSlotsSitePercent
@@ -143,8 +147,8 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Returns a dict of dicts where the first key is the site name.
         """
-        ssbCpuSlots = self.ssb.getMetric(self.cpuBoundMetric)
-        ssbIoSlots = self.ssb.getMetric(self.ioBoundMetric)
+        ssbCpuSlots = self.grafana.getSSBData("scap15min", "core_cpu_intensive", apiName=self.grafanaAPIName)
+        ssbIoSlots = self.grafana.getSSBData("scap15min", "core_io_intensive", apiName=self.grafanaAPIName)
 
         ssbSiteSlots = self.thresholdsByVOName(ssbCpuSlots, ssbIoSlots)
 
@@ -228,21 +232,21 @@ class ResourceControlUpdater(BaseWorkerThread):
         site thresholds is skipped.
         """
         ssbSiteSlots = {}
-        for entry in infoCpu:
-            if entry['Value'] is None:
-                logging.warn('Site %s has invalid CPU thresholds in SSB. Taking no action', entry['VOName'])
+        for site in infoCpu:
+            if infoCpu[site]['core_cpu_intensive'] is None:
+                logging.warn('Site %s has invalid CPU thresholds in SSB. Taking no action', site)
             else:
-                ssbSiteSlots[entry['VOName']] = {'slotsCPU': int(entry['Value'])}
+                ssbSiteSlots[site] = {'slotsCPU': int(infoCpu[site]['core_cpu_intensive'])}
 
         # then iterate over the IO slots
-        for entry in infoIo:
-            if entry['Value'] is None:
-                logging.warn('Site %s has invalid IO thresholds in SSB. Taking no action', entry['VOName'])
+        for site in infoIo:
+            if infoIo[site]['core_io_intensive'] is None:
+                logging.warn('Site %s has invalid IO thresholds in SSB. Taking no action', site)
             else:
-                ssbSiteSlots[entry['VOName']]['slotsIO'] = int(entry['Value'])
+                ssbSiteSlots[site]['slotsIO'] = int(infoIo[site]['core_io_intensive'])
 
         # Before proceeding, remove sites without both metrics
-        for site in ssbSiteSlots.keys():
+        for site in list(ssbSiteSlots):
             if len(ssbSiteSlots[site]) != 2:
                 logging.warn("Site: %s has incomplete SSB metrics, see %s", site, ssbSiteSlots[site])
                 ssbSiteSlots.pop(site)
@@ -255,22 +259,18 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Fetch site state from SSB and map it to agent state
         """
-        ssbState = self.ssb.getMetric(self.siteStatusMetric)
+        ssbState = self.grafana.getSSBData("sts15min", "prod_status", apiName=self.grafanaAPIName)
 
-        ssbSiteState = {}
-        for site in ssbState:
-            voname = site['VOName']
-            status = site['Status']
-            if voname not in ssbSiteState:
-                statusAgent = self.getState(str(status))
-                if not statusAgent:
-                    logging.error("Unknown status '%s' for site %s, please check SSB", status, voname)
-                else:
-                    ssbSiteState[voname] = {'state': statusAgent}
+        for site in list(ssbState):
+            ssbStatus = ssbState[site]['prod_status']
+            wmcoreStatus = self.getState(str(ssbStatus))
+            if not wmcoreStatus:
+                logging.warning("Site %s has an unknown SSB status '%s'. Skipping it!", site, ssbStatus)
+                ssbState.pop(site, None)
             else:
-                logging.warning('I have a duplicated status entry in SSB for %s', voname)
+                ssbState[site] = {'state': wmcoreStatus}
 
-        return ssbSiteState
+        return ssbState
 
     def getState(self, stateSSB):
         """
@@ -278,14 +278,10 @@ class ResourceControlUpdater(BaseWorkerThread):
 
         Translates SSB states into resource control state
         """
-        ssb2agent = {'enabled': 'Normal',
-                     'drain': 'Draining',
-                     'disabled': 'Down',
-                     'test': 'Draining'}
-        # 'test' state behaviour varies between production and tier0 agents
-        ssb2agent['test'] = 'Normal' if self.tier0Mode else "Draining"
-
-        return ssb2agent.get(stateSSB)
+        if self.tier0Mode and stateSSB == "test":
+            # a test site for T0 has a different meaning than for production
+            return "Normal"
+        return self.ssb2AgentStatus.get(stateSSB)
 
     def updateSiteState(self, siteName, state):
         """

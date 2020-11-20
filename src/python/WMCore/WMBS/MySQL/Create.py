@@ -27,7 +27,7 @@ class Create(CreateWMBSBase):
         self.create["01wmbs_fileset"] = \
             """CREATE TABLE wmbs_fileset (
                id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
-               name        VARCHAR(700) NOT NULL,
+               name        VARCHAR(1250) NOT NULL,
                open        INT(1)       NOT NULL DEFAULT 0,
                last_update INT(11)      NOT NULL,
                UNIQUE (name))"""
@@ -66,7 +66,6 @@ class Create(CreateWMBSBase):
 
     def execute(self, conn=None, transaction=None):
         for i in self.create.keys():
-            self.create[i] += " ENGINE=InnoDB"
-            self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
+            self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"
 
         return CreateWMBSBase.execute(self, conn, transaction)

@@ -16,13 +16,16 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
 import json
 import logging
 import os
 import sys
-import urllib
+import urllib.parse
 from argparse import ArgumentParser
-from httplib import HTTPSConnection, HTTPConnection
+from http.client import HTTPSConnection, HTTPConnection
 
 
 class RESTClient(object):
@@ -31,10 +34,11 @@ class RESTClient(object):
     HTTPS client based on the provided URL (http:// or https://)
     """
 
-    def __init__(self, url, cert=None, key=None):
-        logging.info("RESTClient URL: %s" % url)
+    def __init__(self, url, cert=None, key=None, logger=None):
+        self.logger = logger
+        self.logger.info("RESTClient URL: %s", url)
         if url.startswith("https://"):
-            logging.info("Using HTTPS protocol, getting user identity files ...")
+            self.logger.debug("Using HTTPS protocol, getting user identity files ...")
             proxy_file = "/tmp/x509up_u%s" % os.getuid()
             if not os.path.exists(proxy_file):
                 proxy_file = "UNDEFINED"
@@ -42,26 +46,26 @@ class RESTClient(object):
                                           os.getenv("X509_USER_PROXY", proxy_file))
             key_file = key or os.getenv("X509_USER_KEY",
                                         os.getenv("X509_USER_PROXY", proxy_file))
-            logging.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' " %
-                         (cert_file, key_file))
+            self.logger.info("Identity files:\n\tcert file: '%s'\n\tkey file:  '%s' ",
+                             cert_file, key_file)
             url = url.replace("https://", '')
-            logging.info("Creating connection HTTPS ...")
+            self.logger.debug("Creating connection HTTPS ...")
             self.conn = HTTPSConnection(url, key_file=key_file, cert_file=cert_file)
         if url.startswith("http://"):
-            logging.info("Using HTTP protocol, creating HTTP connection ...")
+            self.logger.info("Using HTTP protocol, creating HTTP connection ...")
             url = url.replace("http://", '')
             self.conn = HTTPConnection(url)
 
     def http_request(self, verb, uri, data=None, headers=None):
-        logging.debug("Request: %s %s %s ..." % (verb, uri, data))
+        self.logger.debug("Request: %s %s %s ..." % (verb, uri, data))
         self.conn.request(verb, uri, body=data, headers=headers or self.headers)
         resp = self.conn.getresponse()
         data = resp.read()
-        logging.debug("Status: %s" % resp.status)
-        logging.debug("Reason: %s" % resp.reason)
+        self.logger.debug("Status: %s", resp.status)
+        self.logger.debug("Reason: %s", resp.reason)
         if resp.status != 200:
             if hasattr(resp.msg, "x-error-detail"):
-                logging.warn("Message: %s" % resp.msg["x-error-detail"])
+                self.logger.warning("Message: %s", resp.msg["x-error-detail"])
         return resp.status, data
 
 
@@ -86,8 +90,9 @@ class ReqMgrClient(RESTClient):
 
     """
 
-    def __init__(self, url, config):
-        logging.info("ReqMgr url: %s" % url)
+    def __init__(self, url, config, logger=None):
+        self.logger = logging.getLogger() if not logger else logger
+        self.logger.info("ReqMgr url: %s", url)
         # ReqMgr based on WMCore.REST API requires accept types defined
         self.headersUrl = {"Content-type": "application/x-www-form-urlencoded",
                            "Accept": "application/json"}
@@ -95,15 +100,14 @@ class ReqMgrClient(RESTClient):
                             "Accept": "application/json"}
         self.headers = self.headersUrl
         self.urn_prefix = "/reqmgr2/data"
-        RESTClient.__init__(self, url, cert=config.cert, key=config.key)
+        RESTClient.__init__(self, url, cert=config.cert, key=config.key, logger=logger)
 
     def _caller_checker(self, urn, verb, input_data=None, exp_data=None):
         urn = self.urn_prefix + urn
-        logging.info("Call %s %s %s" % (urn, verb, input_data))
+        self.logger.info("Call %s %s %s", urn, verb, input_data)
         status, data = self.http_request(verb, urn, data=input_data)
         if status != 200:
-            print(status)
-            print(data)
+            self.logger.error("HTTP request failed with status: %s, data: %s", status, data)
             return
         data = json.loads(data)["result"]
         if exp_data:
@@ -111,40 +115,38 @@ class ReqMgrClient(RESTClient):
             assert data[0] == exp_data, "'%s' != '%s' mismatch." % (data[0], exp_data)
         else:
             assert status == 200, "Call status is: %s" % status
-            print("status: %s\n%s" % (status, data))
+            self.logger.info("status: %s\n%s", status, data)
         return data
 
     def delete_requests(self, config):
         urn = self.urn_prefix + "/request"
         for request_name in config.request_names:
-            logging.info("Deleting '%s' request ..." % request_name)
-            args = urllib.urlencode({"request_name": request_name})
+            self.logger.info("Deleting '%s' request ...", request_name)
+            args = urllib.parse.urlencode({"request_name": request_name})
             status, data = self.http_request("DELETE", urn, data=args)
             if status != 200:
-                print(data)
+                self.logger.error("Failed to delete request with status: %s, data: %s", status, data)
                 sys.exit(1)
-            logging.info("Done.")
+            self.logger.info("Done.")
 
     def create_request(self, config):
         """
         config.request_args - arguments for both creation and assignment
 
         """
-        logging.info("Injecting request args:\n%s ..." %
-                     config.request_args["createRequest"])
+        self.logger.info("Injecting request args:\n%s ...", config.request_args["createRequest"])
         json_args = json.dumps(config.request_args["createRequest"])
         urn = self.urn_prefix + "/request"
         status, data = self.http_request("POST", urn, data=json_args,
                                          headers=self.headersBody)
         if status > 216:
-            logging.error("Error occurred, exit.")
-            print(data)
+            self.logger.error("Failed to create request with status: %s, data: %s", status, data)
             sys.exit(1)
         data = json.loads(data)
-        print(data)
+        self.logger.info(data)
         request_name = data["result"][0]["request"]
         self.approve_request(request_name)
-        logging.info("Create request '%s' succeeded." % request_name)
+        self.logger.info("Create request '%s' succeeded.", request_name)
 
         config.request_names = request_name
 
@@ -157,7 +159,7 @@ class ReqMgrClient(RESTClient):
         a single method setStates shall handle all request status changes.
 
         """
-        logging.info("Approving request '%s' ..." % request_name)
+        self.logger.info("Approving request '%s' ...", request_name)
 
         json_args = json.dumps({"RequestStatus": "assignment-approved"})
         urn = self.urn_prefix + "/request/%s" % request_name
@@ -165,10 +167,9 @@ class ReqMgrClient(RESTClient):
                                          headers=self.headersBody)
 
         if status != 200:
-            logging.error("Approve did not succeed.")
-            print(data)
+            self.logger.error("Failed to approve request with status: %s, data: %s", status, data)
             sys.exit(1)
-        logging.info("Approve succeeded.")
+        self.logger.info("Approve succeeded.")
 
     def assign_request(self, config):
         """
@@ -181,18 +182,17 @@ class ReqMgrClient(RESTClient):
         if isinstance(config.request_names, basestring):
             config.request_names = [config.request_names]
         for request_name in config.request_names:
-            logging.info("Assigning %s with request args:\n%s ..." % (request_name,
-                                                                      config.request_args["assignRequest"]))
+            self.logger.info("Assigning %s with request args: %s ...",
+                             request_name, config.request_args["assignRequest"])
             urn = self.urn_prefix + "/request/%s" % request_name
             status, data = self.http_request("PUT", urn, data=json_args,
                                              headers=self.headersBody)
             if status > 216:
-                logging.error("Error occurred, exit.")
-                print(data)
+                self.logger.error("Failed to assign request with status: %s, data: %s", status, data)
                 sys.exit(1)
             data = json.loads(data)
-            print(data)
-            logging.info("Assign succeeded.")
+            self.logger.info(data)
+            self.logger.info("Assign succeeded.")
 
     def query_requests(self, config, to_query=None):
         """
@@ -212,33 +212,18 @@ class ReqMgrClient(RESTClient):
         requests_data = []
         if requests_to_query:
             for request_name in requests_to_query:
-                logging.info("Querying '%s' request ..." % request_name)
+                self.logger.info("Querying '%s' request ...", request_name)
                 urn = self.urn_prefix + "/request?name=%s" % request_name
                 status, data = self.http_request("GET", urn)
                 if status != 200:
-                    print(data)
+                    self.logger.error("Failed to get request with status: %s, data: %s", status, data)
                     sys.exit(1)
                 request = json.loads(data)["result"][0]
                 for k, v in sorted(request.items()):
-                    print("\t%s: %s" % (k, v))
+                    self.logger.info("\t%s: %s", k, v)
                 requests_data.append(request)
             # returns data on requests in the same order as in the config.request_names
             return requests_data
-        else:
-            raise RuntimeError("Implementation not completed, work on GET method underway.")
-            logging.info("Querying all requests ...")
-            urn = self.urn_prefix + "/request?all=true"
-            status, data = self.http_request("GET", urn)
-            if status != 200:
-                print(data)
-                sys.exit(1)
-            requests = json.loads(data)
-            requests = requests["result"][0]["rows"]
-            keys = ("RequestName", "RequestType", "RequestType", "RequestStatus")
-            for r in requests:
-                print(" ".join(["%s: '%s'" % (k, r["value"][k]) for k in keys]))
-            logging.info("%s requests in the system." % len(requests))
-            return requests
 
     def all_tests(self, config):
         self._caller_checker("/hello", "GET", exp_data="Hello world")
@@ -246,7 +231,7 @@ class ReqMgrClient(RESTClient):
         self._caller_checker("/about", "GET")
         self._caller_checker("/info", "GET")
         group = "mygroup"
-        args = urllib.urlencode({"group_name": group})
+        args = urllib.parse.urlencode({"group_name": group})
         self._caller_checker("/group", "PUT", input_data=args)
         data = self._caller_checker("/group", "GET")
         assert group in data, "%s should be in %s" % (group, data)
@@ -254,7 +239,7 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/group", "GET")
         assert group not in data, "%s should be deleted from %s" % (group, data)
         team = "myteam"
-        args = urllib.urlencode({"team_name": team})
+        args = urllib.parse.urlencode({"team_name": team})
         self._caller_checker("/team", "PUT", input_data=args)
         data = self._caller_checker("/team", "GET")
         assert team in data, "%s should be in %s" % (team, data)
@@ -290,7 +275,7 @@ class ReqMgrClient(RESTClient):
         assert request["RequestName"] == new_request_name
         assert request["RequestStatus"] == "new"
 
-        print("\nall_tests succeeded.")
+        self.logger.info("\nall_tests succeeded.")
 
     def __del__(self):
         self.conn.close()
@@ -307,7 +292,7 @@ def process_cli_args():
         print("\n\n%s" % msg)
         sys.exit(1)
 
-    parser = ArgumentParser( usage='%(prog)s [options]', add_help=False)
+    parser = ArgumentParser(usage='%(prog)s [options]', add_help=False)
     actions = define_cli_options(parser)
     # opts - new processed options
     # args - remainder of the input array
@@ -410,27 +395,26 @@ def define_cli_options(parser):
     return actions
 
 
-def process_request_args(intput_config_file, command_line_json):
+def process_request_args(input_config_file, command_line_json, logger):
     """
     Load request arguments from a file, blend with JSON from command line.
 
     """
-    logging.info("Loading file '%s' ..." % intput_config_file)
+    logger.info("Loading file '%s' ...", input_config_file)
     try:
-        request_args = json.load(open(intput_config_file, 'r'))
+        request_args = json.load(open(input_config_file, 'r'))
     except IOError as ex:
-        logging.fatal("Reading request arguments file '%s' failed, "
-                      "reason: %s." % (intput_config_file, ex))
+        logger.fatal("Reading request arguments file '%s' failed, reason: %s.", input_config_file, ex)
         sys.exit(1)
     if command_line_json:
-        logging.info("Parsing request arguments on the command line ...")
+        logger.info("Parsing request arguments on the command line ...")
         cli_json = json.loads(command_line_json)
         # if a key exists in cli_json, update values in the main request_args dict
         for k in request_args.keys():
             if k in cli_json:
                 request_args[k].update(cli_json[k])
     else:
-        logging.warn("No request arguments to override (--json)? Some values will be wrong.")
+        logger.warn("No request arguments to override (--json)? Some values will be wrong.")
 
     # iterate over all items recursively and warn about those ending with
     # OVERRIDE-ME, hence not overridden
@@ -439,34 +423,50 @@ def process_request_args(intput_config_file, command_line_json):
             if isinstance(v, dict):
                 check(v.items())
             if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
-                logging.warn("Not properly set: %s: %s" % (k, v))
+                logger.warning("Not properly set: %s: %s", k, v)
 
     check(request_args.items())
     return request_args
 
 
 def initialization():
-    print("Processing command line arguments: '%s' ..." % sys.argv)
     config, actions = process_cli_args()
-    logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
-    logging.debug("Set verbose console output.")
-    reqmgr_client = ReqMgrClient(config.reqmgrurl, config)
+    if config.verbose:
+        logger = loggerSetup(logging.INFO)
+    else:
+        logger = loggerSetup()
+    logger.info("Command line arguments: %s ...", sys.argv)
+
+    reqmgr_client = ReqMgrClient(config.reqmgrurl, config, logger)
     if config.create_request or config.assign_request or config.all_tests:
         # process request arguments and store them
-        config.request_args = process_request_args(config.config_file, config.json)
-    return reqmgr_client, config, actions
+        config.request_args = process_request_args(config.config_file, config.json, logger)
+    return reqmgr_client, config, actions, logger
+
+
+def loggerSetup(logLevel=logging.INFO):
+    """
+    Return a logger which writes everything to stdout.
+    """
+    logger = logging.getLogger(__name__)
+    outHandler = logging.StreamHandler(sys.stdout)
+    outHandler.setFormatter(logging.Formatter("%(asctime)s:%(levelname)s:%(module)s: %(message)s"))
+    outHandler.setLevel(logLevel)
+    logger.addHandler(outHandler)
+    logger.setLevel(logLevel)
+    return logger
 
 
 def main():
-    reqmgr_client, config, defined_actions = initialization()
+    reqmgr_client, config, defined_actions, logger = initialization()
     # definedAction are all actions as defined for CLI
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None
     # config is all options for this script but also request creation parameters
     actions = [name for name in defined_actions if getattr(config, name)]
-    logging.info("Actions to perform: %s" % actions)
+    logger.debug("Actions to perform: %s", actions)
     for action in actions:
-        logging.info("Performing '%s' ..." % action)
+        logger.info("Performing '%s' ...", action)
         # some methods need to modify config (e.g. add a request name),
         # pass them entire configuration
         reqmgr_client.__getattribute__(action)(config)

@@ -7,8 +7,8 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.ReqMgr.Utils.Validation import validateOutputDatasets
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
+from WMCore.ReqMgr.Utils.Validation import validateOutputDatasets, validate_request_priority
 
 
 class ValidationTests(unittest.TestCase):
@@ -47,6 +47,30 @@ class ValidationTests(unittest.TestCase):
         outputDsets.append('/PD1/AcqEra1-ProcStr1-v1/ALAN')
         with self.assertRaises(InvalidSpecParameterValue):
             validateOutputDatasets(outputDsets, dbsUrl)
+
+    def testRequestPriorityValidation(self):
+        """
+        Test the `validate_request_priority` function, which validates the
+        RequestPriority parameter
+        :return: nothing, raises an exception if there are problems
+        """
+        # test valid cases, integer in the range of [0, 1e6]
+        for goodPrio in [0, 100, int(1e6 - 1)]:
+            reqArgs = {'RequestPriority': goodPrio}
+            print(reqArgs)
+            validate_request_priority(reqArgs)
+
+        # test invalid ranges
+        for badPrio in [-10, 1e6, 1e7]:
+            reqArgs = {'RequestPriority': badPrio}
+            with self.assertRaises(InvalidSpecParameterValue):
+                validate_request_priority(reqArgs)
+
+        # test invalid data types
+        for badPrio in ["1234", 1234.35, 1e6, [123]]:
+            reqArgs = {'RequestPriority': badPrio}
+            with self.assertRaises(InvalidSpecParameterValue):
+                validate_request_priority(reqArgs)
 
 
 if __name__ == '__main__':

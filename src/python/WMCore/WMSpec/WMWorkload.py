@@ -104,14 +104,13 @@ class WMWorkloadHelper(PersistencyHelper):
         Used for properly setting AcqEra/ProcStr/ProcVer for each step in a StepChain request
         during assignment. Only used if one of those parameters is a dictionary.
         """
-        mustSet = False
         if "AcquisitionEra" in assignArgs and isinstance(assignArgs["AcquisitionEra"], dict):
-            mustSet = True
+            pass
         elif "ProcessingString" in assignArgs and isinstance(assignArgs["ProcessingString"], dict):
-            mustSet = True
+            pass
         elif "ProcessingVersion" in assignArgs and isinstance(assignArgs["ProcessingVersion"], dict):
-            mustSet = True
-        if mustSet is False:
+            pass
+        else:
             return
 
         stepNameMapping = self.getStepMapping()
@@ -412,7 +411,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def priority(self):
         """
         _priority_
-        return priorty of workload
+        return priority of workload
         """
         return self.data.request.priority
 
@@ -886,7 +885,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         stepNameMapping = self.getStepMapping()
         for task in self.taskIterator():
-            task.setAcquisitionEra(acquisitionEras, stepChain=stepNameMapping)
+            task.setAcquisitionEra(acquisitionEras, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         # set acquistionEra for workload (need to refactor)
@@ -903,7 +902,7 @@ class WMWorkloadHelper(PersistencyHelper):
         stepNameMapping = self.getStepMapping()
 
         for task in self.taskIterator():
-            task.setProcessingVersion(processingVersions, stepChain=stepNameMapping)
+            task.setProcessingVersion(processingVersions, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingVersion = processingVersions
@@ -919,7 +918,7 @@ class WMWorkloadHelper(PersistencyHelper):
         stepNameMapping = self.getStepMapping()
 
         for task in self.taskIterator():
-            task.setProcessingString(processingStrings, stepChain=stepNameMapping)
+            task.setProcessingString(processingStrings, stepChainMap=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingString = processingStrings
@@ -1862,15 +1861,27 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setTrustLocationFlag(self, inputFlag=False, pileupFlag=False):
         """
-        _setTrustLocationFlag_
-
         Set the input and the pileup flags in the top level tasks
         indicating that site lists should be used as location data
 
         The input data flag has to be set only for top level tasks, otherwise
         it affects where secondary jobs are meant to run.
         The pileup flag has to be set for all the tasks in the workload.
+
+        Validate these parameters to make sure they are only set for workflows
+        that require those type of input datasets (ACDCs are not validated)
         """
+        isACDCWorkflow = False
+        for task in self.taskIterator():
+            if task.getInputACDC():
+                isACDCWorkflow = True
+
+        if inputFlag is True and isACDCWorkflow is False and not self.listInputDatasets():
+            msg = "Setting TrustSitelists=True for workflows without input dataset is forbidden!"
+            raise RuntimeError(msg)
+        if pileupFlag is True and isACDCWorkflow is False and not self.listPileupDatasets():
+            msg = "Setting TrustPUSitelists=True for workflows without pileup dataset is forbidden!"
+            raise RuntimeError(msg)
         for task in self.getAllTasks(cpuOnly=True):
             if task.isTopOfTree():
                 task.setTrustSitelists(inputFlag, pileupFlag)
@@ -1909,6 +1920,12 @@ class WMWorkloadHelper(PersistencyHelper):
         specClass = loadSpecClassByType(self.getRequestType())
         argumentDefinition = specClass.getWorkloadAssignArgs()
         setAssignArgumentsWithDefault(kwargs, argumentDefinition)
+
+        if kwargs.get('RequestPriority') is not None and kwargs['RequestPriority'] != self.priority():
+            self.setPriority(kwargs['RequestPriority'])
+        else:
+            # if it's the same, pop it out to avoid priority transition update
+            kwargs.pop("RequestPriority", None)
 
         self.setWorkloadOverrides(kwargs["Override"])
         self.setSiteWhitelist(kwargs["SiteWhitelist"])

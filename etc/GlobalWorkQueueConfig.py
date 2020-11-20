@@ -36,7 +36,7 @@ workqueueInboxDbName = 'workqueue_inbox'
 wmstatDBName = "wmstats"
 
 # Agent name and team name.
-agentName = "WMAgentCommissioning"
+agentName = "WMAgent"
 teamName = "cmsdataops"
 contactName = "cmsdataops@cern.ch"
 

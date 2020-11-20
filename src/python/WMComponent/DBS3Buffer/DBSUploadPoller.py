@@ -24,7 +24,10 @@ that is not in DBS, decide whether its components are in DBS,
 add them, and then add the files.  This is why everything is
 so convoluted.
 """
-import Queue
+from future import standard_library
+standard_library.install_aliases()
+
+import queue
 import json
 import logging
 import multiprocessing
@@ -224,7 +227,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Set up the processing pool for work
         """
-        if len(self.pool) > 0:
+        if self.pool:
             # Then something already exists.  Continue
             return
 
@@ -285,13 +288,13 @@ class DBSUploadPoller(BaseWorkerThread):
         self.workResult = None
         return
 
-    def terminate(self, params):
+    def terminate(self, parameters):
         """
         Do one more pass, then terminate
 
         """
         logging.debug("terminating. doing one more pass before we die")
-        self.algorithm(params)
+        self.algorithm(parameters)
 
     @timeFunction
     def algorithm(self, parameters=None):
@@ -331,6 +334,8 @@ class DBSUploadPoller(BaseWorkerThread):
         Return True to indicate it successfully fetched the parentage
         map. If there was an exception, return False
         """
+        myThread = threading.currentThread()
+
         success = True
         if not self.wmstatsServerSvc:
             self.datasetParentageCache = {}
@@ -340,18 +345,21 @@ class DBSUploadPoller(BaseWorkerThread):
             self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
         except Exception as ex:
             reason = getattr(ex, 'reason', '')
-            msg = 'Failed to fetch parentage map from WMStats, skipping this cycle.'
-            if 'Service Unavailable' in reason or 'Proxy Error' in reason or\
+            msg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
+            msg += 'Exception: %s. Reason: %s. ' % (type(ex).__name__, reason)
+            if 'Service Unavailable' in reason or 'Proxy Error' in reason or \
                             'Error reading from remote server' in reason:
-                msg += 'Error: %s' % reason
-            elif 'Connection refused' in str(ex):
+                pass
+            elif 'Connection refused' in str(ex) or 'timed out' in str(ex) or 'Could not resolve' in str(ex):
                 msg += 'Error: %s' % str(ex)
             else:
                 msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)
                 raise DBSUploadException(msg)
-
             logging.warning(msg)
+            myThread.logdbClient.post("DBS3Upload_parentMap", msg, "warning")
             success = False
+        else:
+            myThread.logdbClient.delete("DBS3Upload_parentMap", "warning", this_thread=True)
 
         return success
 
@@ -452,8 +460,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
                 files = fileDict.get(location)
 
-                if len(files) > 0:
-
+                if files:
                     currentBlock = self.getBlock(files[0], location, True)
                     currentBlock.setAcquisitionEra(era=dspInfo['AcquisitionEra'])
                     currentBlock.setProcessingVer(procVer=dspInfo['ProcessingVer'])
@@ -611,14 +618,14 @@ class DBSUploadPoller(BaseWorkerThread):
                 createInDBSBuffer.append(block)
 
         # First handle new and updated blocks
-        if len(createInDBSBuffer) > 0 or len(updateInDBSBuffer) > 0:
+        if createInDBSBuffer or updateInDBSBuffer:
             try:
                 myThread.transaction.begin()
-                if len(createInDBSBuffer) > 0:
+                if createInDBSBuffer:
                     self.createBlocksDAO.execute(blocks=createInDBSBuffer,
                                                  conn=myThread.transaction.conn,
                                                  transaction=True)
-                if len(updateInDBSBuffer) > 0:
+                if updateInDBSBuffer:
                     self.updateBlocksDAO.execute(blocks=updateInDBSBuffer,
                                                  conn=myThread.transaction.conn,
                                                  transaction=True)
@@ -642,7 +649,7 @@ class DBSUploadPoller(BaseWorkerThread):
             self.blockCache.get(block.getName()).inBuff = True
 
         # Record new file/block associations in DBSBuffer.
-        if len(self.filesToUpdate) > 0:
+        if self.filesToUpdate:
             try:
                 myThread.transaction.begin()
                 self.setBlockFilesDAO.execute(binds=self.filesToUpdate,
@@ -667,12 +674,12 @@ class DBSUploadPoller(BaseWorkerThread):
             return
 
         # Build the pool if it was closed
-        if len(self.pool) == 0:
+        if not self.pool:
             self.setupPool()
 
         # Finally upload blocks to DBS.
         for block in createInDBS:
-            if len(block.files) < 1:
+            if not block.files:
                 # What are we doing?
                 logging.debug("Skipping empty block")
                 continue
@@ -738,7 +745,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 blocksToClose.append(blockresult)
                 self.blockCount -= 1
                 logging.debug("Got a block to close")
-            except Queue.Empty:
+            except queue.Empty:
                 # This means the queue has no current results
                 time.sleep(2)
                 emptyCount += 1
@@ -761,7 +768,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # Continue to the next block
                 # Block will remain in pending status until it is transferred
 
-        if len(loadedBlocks) > 0:
+        if loadedBlocks:
             try:
                 myThread.transaction.begin()
                 self.updateFilesDAO.execute(blocks=loadedBlocks, status="InDBS",
@@ -802,7 +809,7 @@ class DBSUploadPoller(BaseWorkerThread):
             del self.blockCache[name]
 
         # Clean up the pool so we don't have stuff waiting around
-        if len(self.pool) > 0:
+        if self.pool:
             self.close()
 
         # And we're done
@@ -835,7 +842,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 logging.exception(msg)
 
         # Update the status of those blocks that were truly inserted
-        if len(blocksUploaded) > 0:
+        if blocksUploaded:
             try:
                 myThread.transaction.begin()
                 self.updateBlocksDAO.execute(blocks=blocksUploaded,

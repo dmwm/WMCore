@@ -6,100 +6,372 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 """
 
 # futures
-from __future__ import print_function, division
+from __future__ import division, print_function, absolute_import
+
+from future import standard_library
+standard_library.install_aliases()
 
 # system modules
-import os
-import re
 import json
-import time
+import logging
 import math
-import urllib
-
-# py2/py3 modules
-# from future import standard_library
-# standard_library.install_aliases()
+import re
+import time
+from urllib.parse import quote, unquote
 
 # WMCore modules
+from Utils.IteratorTools import grouper
 from Utils.CertTools import getKeyCertFromEnv
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata
+
 
 # static variables
 STEP_PAT = re.compile(r'Step[0-9]')
 TASK_PAT = re.compile(r'Task[0-9]')
 
 
-class UnifiedConfiguration(object):
-    "UnifiedConfiguration class provides access to Unified configuration parameters"
-    def __init__(self):
-        fname = '/'.join(__file__.split('/')[:-1] + ['config.json'])
-        fname = os.getenv('UNIFIED_CONFIG_JSON', fname)
-        self.configs = json.loads(open(fname).read())
+def getMSLogger(verbose, logger=None):
+    """
+    _getMSLogger_
 
-    def get(self, parameter, default=None):
-        "Return parameter from unified configuration"
-        if parameter in self.configs:
-            return self.configs[parameter]
-        return default
+    Return a logger object using the standard WMCore formatter
+    :param verbose: boolean setting debug or not
+    :return: a logger object
+    """
+    if logger:
+        return logger
 
-# static variables used in Unified modules
-uConfig = UnifiedConfiguration()
+    verbose = logging.DEBUG if verbose else logging.INFO
+    logger = logging.getLogger()
+    logging.basicConfig(format="%(asctime)s:%(levelname)s:%(module)s: %(message)s",
+                        level=verbose)
+    return logger
 
-def dbsInfo(datasets):
+
+def dbsInfo(datasets, dbsUrl):
     "Provides DBS info about dataset blocks"
-    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl(), d) for d in datasets]
-    data = multi_getdata(urls, ckey(), cert())
     datasetBlocks = {}
     datasetSizes = {}
-#     nblocks = 0
+    datasetTransfers = {}
+    if not datasets:
+        return datasetBlocks, datasetSizes, datasetTransfers
+
+    urls = ['%s/blocks?detail=True&dataset=%s' % (dbsUrl, d) for d in datasets]
+    logging.info("Executing %d requests against DBS 'blocks' API, with details", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
     for row in data:
         dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: dbsInfo for %s. Error: %s %s" % (dataset, row.get('code'), row.get('error')))
+            continue
         rows = json.loads(row['data'])
         blocks = []
         size = 0
+        datasetTransfers.setdefault(dataset, {})  # flat dict in the format of blockName: blockSize
         for item in rows:
             blocks.append(item['block_name'])
             size += item['block_size']
+            datasetTransfers[dataset].update({item['block_name']: item['block_size']})
         datasetBlocks[dataset] = blocks
         datasetSizes[dataset] = size
-#         nblocks += len(blocks)
-#     tot_size = 0
-#     for dataset, blocks in datasetBlocks.iteritems():
-#         tot_size += datasetSizes[dataset]
-    return datasetBlocks, datasetSizes
 
-def phedexInfo(datasets):
+    return datasetBlocks, datasetSizes, datasetTransfers
+
+
+def getPileupDatasetSizes(datasets, phedexUrl):
+    """
+    Given a list of datasets, find all their blocks with replicas
+    available, i.e., blocks that have valid files to be processed,
+    and calculate the total dataset size
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :return: a dictionary of datasets and their respective sizes
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    sizeByDset = {}
+    if not datasets:
+        return sizeByDset
+
+    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s %s" % (dataset,
+                                                                                     row.get('code'),
+                                                                                     row.get('error')))
+            sizeByDset.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        sizeByDset.setdefault(dataset, 0)
+        try:
+            for item in rows['phedex']['block']:
+                sizeByDset[dataset] += item['bytes']
+        except Exception as exc:
+            print("Failure in getPileupDatasetSizes for dataset %s. Error: %s" % (dataset, str(exc)))
+            sizeByDset[dataset] = None
+    return sizeByDset
+
+
+def getBlockReplicasAndSize(datasets, phedexUrl, group=None):
+    """
+    Given a list of datasets, find all their blocks with replicas
+    available (thus blocks with at least 1 valid file), completed
+    and subscribed.
+    If PhEDEx group is provided, make sure it's subscribed under that
+    same group.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: optional PhEDEx group name
+    :return: a dictionary in the form of:
+    {"dataset":
+        {"block":
+            {"blockSize": 111, "locations": ["x", "y"]}
+        }
+    }
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    dsetBlockSize = {}
+    if not datasets:
+        return dsetBlockSize
+
+    urls = ['%s/blockreplicas?dataset=%s' % (phedexUrl, dset) for dset in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicas' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s %s" % (dataset,
+                                                                                       row.get('code'),
+                                                                                       row.get('error')))
+            dsetBlockSize.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        dsetBlockSize.setdefault(dataset, {})
+        try:
+            for item in rows['phedex']['block']:
+                block = {item['name']: {'blockSize': item['bytes'], 'locations': []}}
+                for repli in item['replica']:
+                    if repli['complete'] == 'y' and repli['subscribed'] == 'y':
+                        if not group:
+                            block[item['name']]['locations'].append(repli['node'])
+                        elif repli['group'] == group:
+                            block[item['name']]['locations'].append(repli['node'])
+                dsetBlockSize[dataset].update(block)
+        except Exception as exc:
+            print("Failure in getBlockReplicasAndSize for dataset %s. Error: %s" % (dataset, str(exc)))
+            dsetBlockSize[dataset] = None
+    return dsetBlockSize
+
+
+def getPileupSubscriptions(datasets, phedexUrl, group=None, percentMin=99):
+    """
+    Provided a list of datasets, find dataset level subscriptions where it's
+    as complete as `percent_min`.
+    :param datasets: list of dataset names
+    :param phedexUrl: a string with the PhEDEx URL
+    :param group: optional string with the PhEDEx group
+    :param percent_min: only return subscriptions that are this complete
+    :return: a dictionary of datasets and a list of their location.
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    locationByDset = {}
+    if not datasets:
+        return locationByDset
+
+    if group:
+        url = "%s/subscriptions?group=%s" % (phedexUrl, group)
+        url += "&percent_min=%s&dataset=%s"
+    else:
+        url = "%s/subscriptions?" % phedexUrl
+        url += "percent_min=%s&dataset=%s"
+    urls = [url % (percentMin, dset) for dset in datasets]
+
+    logging.info("Executing %d requests against PhEDEx 'subscriptions' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s %s" % (dataset,
+                                                                                      row.get('code'),
+                                                                                      row.get('error')))
+            locationByDset.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        locationByDset.setdefault(dataset, [])
+        try:
+            for item in rows['phedex']['dataset']:
+                for subs in item['subscription']:
+                    locationByDset[dataset].append(subs['node'])
+        except Exception as exc:
+            print("Failure in getPileupSubscriptions for dataset %s. Error: %s" % (dataset, str(exc)))
+            locationByDset[dataset] = None
+    return locationByDset
+
+
+def getBlocksByDsetAndRun(datasetName, runList, dbsUrl):
+    """
+    Given a dataset name and a list of runs, find all the blocks
+    :return: flat list of blocks
+    """
+    blocks = set()
+    if isinstance(runList, set):
+        runList = list(runList)
+
+    urls = []
+    for runSlice in grouper(runList, 50):
+        urls.append('%s/blocks?run_num=%s&dataset=%s' % (dbsUrl, str(runSlice).replace(" ", ""), datasetName))
+    logging.info("Executing %d requests against DBS 'blocks' API, with run_num list", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            msg = "Failure in getBlocksByDsetAndRun for %s. Error: %s %s" % (dataset,
+                                                                             row.get('code'),
+                                                                             row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        for item in rows:
+            blocks.add(item['block_name'])
+
+    return list(blocks)
+
+
+def getFileLumisInBlock(blocks, dbsUrl, validFileOnly=1):
+    """
+    Given a list of blocks, find their file run lumi information
+    in DBS for up to 10 blocks concurrently
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :param validFileOnly: integer flag for valid files only or not
+    :return: a dict of blocks with list of file/run/lumi info
+    """
+    runLumisByBlock = {}
+    urls = ['%s/filelumis?validFileOnly=%d&block_name=%s' % (dbsUrl, validFileOnly, quote(b)) for b in blocks]
+    # limit it to 10 concurrent calls not to overload DBS
+    logging.info("Executing %d requests against DBS 'filelumis' API, concurrency limited to 10", len(urls))
+    data = multi_getdata(urls, ckey(), cert(), num_conn=10)
+
+    for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            msg = "Failure in getFileLumisInBlock for block %s. Error: %s %s" % (blockName,
+                                                                                 row.get('code'),
+                                                                                 row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runLumisByBlock.setdefault(blockName, [])
+        for item in rows:
+            runLumisByBlock[blockName].append(item)
+    return runLumisByBlock
+
+
+def findBlockParents(blocks, dbsUrl):
+    """
+    Helper function to find block parents given a list of block names.
+    Return a dictionary in the format of:
+    {"child dataset name": {"child block": ["parent blocks"],
+                            "child block": ["parent blocks"], ...}}
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    parentsByBlock = {}
+    urls = ['%s/blockparents?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    logging.info("Executing %d requests against DBS 'blockparents' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+    for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        dataset = blockName.split("#")[0]
+        if row['data'] is None:
+            print("Failure in findBlockParents for block %s. Error: %s %s" % (blockName,
+                                                                              row.get('code'),
+                                                                              row.get('error')))
+            parentsByBlock.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        try:
+            if dataset in parentsByBlock and parentsByBlock[dataset] is None:
+                # then one of the block calls has failed, keep it failed!
+                continue
+            parentsByBlock.setdefault(dataset, {})
+            for item in rows:
+                parentsByBlock[dataset].setdefault(item['this_block_name'], set())
+                parentsByBlock[dataset][item['this_block_name']].add(item['parent_block_name'])
+        except Exception as exc:
+            print("Failure in findBlockParents for block %s. Error: %s" % (blockName, str(exc)))
+            parentsByBlock[dataset] = None
+    return parentsByBlock
+
+
+def getRunsInBlock(blocks, dbsUrl):
+    """
+    Provided a list of block names, find their run numbers
+    :param blocks: list of block names
+    :param dbsUrl: string with the DBS URL
+    :return: a dictionary of block names and a list of run numbers
+    """
+    runsByBlock = {}
+    urls = ['%s/runs?block_name=%s' % (dbsUrl, quote(b)) for b in blocks]
+    logging.info("Executing %d requests against DBS 'runs' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+    for row in data:
+        blockName = unquote(row['url'].rsplit('=')[-1])
+        if row['data'] is None:
+            msg = "Failure in getRunsInBlock for block %s. Error: %s %s" % (blockName,
+                                                                            row.get('code'),
+                                                                            row.get('error'))
+            raise RuntimeError(msg)
+        rows = json.loads(row['data'])
+        runsByBlock[blockName] = rows[0]['run_num']
+    return runsByBlock
+
+
+def phedexInfo(datasets, phedexUrl):
     "Fetch PhEDEx info about nodes for all datasets"
-    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl(), d) for d in datasets]
+    urls = ['%s/blockreplicasummary?dataset=%s' % (phedexUrl, d) for d in datasets]
+    logging.info("Executing %d requests against PhEDEx 'blockreplicasummary' API", len(urls))
     data = multi_getdata(urls, ckey(), cert())
     blockNodes = {}
     for row in data:
+        dataset = row['url'].rsplit('=')[-1]
+        if row['data'] is None:
+            print("FAILURE: phedexInfo for %s. Error: %s %s" % (dataset,
+                                                                row.get('code'),
+                                                                row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows['phedex']['block']:
             nodes = [r['node'] for r in item['replica'] if r['complete'] == 'y']
             blockNodes[item['name']] = nodes
     return blockNodes
 
-def getWorkflow(requestName):
+
+def getWorkflow(requestName, reqMgrUrl):
     "Get list of workflow info from ReqMgr2 data-service for given request name"
     headers = {'Accept': 'application/json'}
     params = {}
-    url = '%s/data/request/%s' % (reqmgrUrl(), requestName)
+    url = '%s/data/request/%s' % (reqMgrUrl, requestName)
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
     data = json.loads(res)
     return data.get('result', [])
 
-def getWorkflows(state):
-    "Get list of workflows from ReqMgr2 data-service"
-    url = '%s/data/request' % reqmgrUrl()
-    headers = {'Accept': 'application/json'}
-    params = {'status': state}
+
+def getDetoxQuota(url):
+    "Get list of workflow info from ReqMgr2 data-service for given request name"
+    headers = {}
+    params = {}
     mgr = RequestHandler()
     res = mgr.getdata(url, params=params, headers=headers, ckey=ckey(), cert=cert())
-    data = json.loads(res)
-    return data.get('result', [])
+    res = res.split('\n')
+    return res
+
 
 def workflowsInfo(workflows):
     "Return minimum info about workflows in flat format"
@@ -130,38 +402,42 @@ def workflowsInfo(workflows):
                 if kkk == 'MCPileup':
                     pileups.add(vvv)
             winfo[key] = \
-                    dict(datasets=list(datasets), pileups=list(pileups),\
-                         priority=priority, selist=selist, campaign=campaign)
+                dict(datasets=list(datasets), pileups=list(pileups),
+                     priority=priority, selist=selist, campaign=campaign)
     return winfo
 
-def eventsLumisInfo(inputs, validFileOnly=0, sumOverLumi=0):
+
+def eventsLumisInfo(inputs, dbsUrl, validFileOnly=0, sumOverLumi=0):
     "Get information about events and lumis for given set of inputs: blocks or datasets"
     what = 'dataset'
     eventsLumis = {}
     if not inputs:
         return eventsLumis
-    if '#' in inputs[0]: # inputs are list of blocks
+    if '#' in inputs[0]:  # inputs are list of blocks
         what = 'block_name'
-    urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s' \
-            % (dbsUrl(), validFileOnly, sumOverLumi, what, urllib.quote(i)) \
-            for i in inputs]
+    urls = ['%s/filesummaries?validFileOnly=%s&sumOverLumi=%s&%s=%s'
+            % (dbsUrl, validFileOnly, sumOverLumi, what, quote(i)) for i in inputs]
     data = multi_getdata(urls, ckey(), cert())
     for row in data:
-        key = row['url'].split('=')[-1]
-        if what == 'block_name':
-            key = urllib.unquote(key)
+        data = unquote(row['url'].split('=')[-1])
+        if row['data'] is None:
+            print("FAILURE: eventsLumisInfo for %s. Error: %s %s" % (data,
+                                                                    row.get('code'),
+                                                                    row.get('error')))
+            continue
         rows = json.loads(row['data'])
         for item in rows:
-            eventsLumis[key] = item
+            eventsLumis[data] = item
     return eventsLumis
 
-def getEventsLumis(dataset, blocks=None, eventsLumis=None):
+
+def getEventsLumis(dataset, dbsUrl, blocks=None, eventsLumis=None):
     "Helper function to return number of events/lumis for given dataset or blocks"
     nevts = nlumis = 0
     if blocks:
         missingBlocks = [b for b in blocks if b not in eventsLumis]
         if missingBlocks:
-            eLumis = eventsLumisInfo(missingBlocks)
+            eLumis = eventsLumisInfo(missingBlocks, dbsUrl)
             eventsLumis.update(eLumis)
         for block in blocks:
             data = eventsLumis[block]
@@ -171,20 +447,22 @@ def getEventsLumis(dataset, blocks=None, eventsLumis=None):
     if eventsLumis and dataset in eventsLumis:
         data = eventsLumis[dataset]
         return data['num_event'], data['num_lumi']
-    eLumis = eventsLumisInfo([dataset])
-    data = eLumis.get(dataset, {'num_event':0, 'num_lumi':0})
+    eLumis = eventsLumisInfo([dataset], dbsUrl)
+    data = eLumis.get(dataset, {'num_event': 0, 'num_lumi': 0})
     return data['num_event'], data['num_lumi']
 
-def getComputingTime(workflow, eventsLumis=None, unit='h'):
+
+def getComputingTime(workflow, eventsLumis=None, unit='h', dbsUrl=None, logger=None):
     "Return computing time per give workflow"
+    logger = getMSLogger(verbose=True, logger=logger)
     cput = None
 
     if 'InputDataset' in workflow:
         dataset = workflow['InputDataset']
         if 'BlockWhitelist' in workflow and workflow['BlockWhitelist']:
-            nevts, _ = getEventsLumis(dataset, workflow['BlockWhitelist'], eventsLumis)
+            nevts, _ = getEventsLumis(dataset, dbsUrl, workflow['BlockWhitelist'], eventsLumis)
         else:
-            nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
+            nevts, _ = getEventsLumis(dataset, dbsUrl, eventsLumis=eventsLumis)
         tpe = workflow['TimePerEvent']
         cput = nevts * tpe
     elif 'Chain' in workflow['RequestType']:
@@ -200,15 +478,15 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
                 if 'InputDataset' in task:
                     dataset = task['InputDataset']
                     if 'BlockWhitelist' in task and task['BlockWhitelist']:
-                        nevts, _ = getEventsLumis(dataset, task['BlockWhitelist'], eventsLumis)
+                        nevts, _ = getEventsLumis(dataset, dbsUrl, task['BlockWhitelist'], eventsLumis)
                     else:
-                        nevts, _ = getEventsLumis(dataset, eventsLumis=eventsLumis)
+                        nevts, _ = getEventsLumis(dataset, dbsUrl, eventsLumis=eventsLumis)
                 elif 'Input%s' % base in task:
                     nevts = carryOn[task['Input%s' % base]]
                 elif 'RequestNumEvents' in task:
                     nevts = float(task['RequestNumEvents'])
                 else:
-                    print("this is not supported, making it zero cput")
+                    logger.debug("this is not supported, making it zero cput")
                     nevts = 0
                 tpe = task.get('TimePerEvent', 1)
                 carryOn[task['%sName' % base]] = nevts
@@ -221,7 +499,7 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
         nevts = float(workflow.get('RequestNumEvents', 0))
         feff = float(workflow.get('FilterEfficiency', 1))
         tpe = workflow.get('TimePerEvent', 1)
-        cput = nevts/feff * tpe
+        cput = nevts / feff * tpe
 
     if cput is None:
         return 0
@@ -229,146 +507,52 @@ def getComputingTime(workflow, eventsLumis=None, unit='h'):
     if unit == 'm':
         cput = cput / (60.)
     if unit == 'h':
-        cput = cput / (60.*60.)
+        cput = cput / (60. * 60.)
     if unit == 'd':
-        cput = cput / (60.*60.*24.)
+        cput = cput / (60. * 60. * 24.)
     return cput
+
 
 def sigmoid(x):
     "Sigmoid function"
-    return 1./(1 + math.exp(-x))
+    return 1. / (1 + math.exp(-x))
+
 
 def getNCopies(cpuHours, minN=2, maxN=3, weight=50000, constant=100000):
     "Calculate number of copies for given workflow"
-    func = sigmoid(-constant/weight)
-    fact = (maxN - minN) / (1-func)
-    base = (func*maxN - minN)/(func-1)
-    return int(base + fact * sigmoid((cpuHours - constant)/weight))
+    func = sigmoid(-constant / weight)
+    fact = (maxN - minN) / (1 - func)
+    base = (func * maxN - minN) / (func - 1)
+    return int(base + fact * sigmoid((cpuHours - constant) / weight))
+
 
 def teraBytes(size):
-    "Return size in TB"
-    return float(size)/float(1024**4)
+    "Return size in TB (Terabytes)"
+    return size / (1000 ** 4)
+
+
+def gigaBytes(size):
+    "Return size in GB (Gigabytes), rounded to 2 digits"
+    return round(size / (1000 ** 3), 2)
+
 
 def ckey():
     "Return user CA key either from proxy or userkey.pem"
     pair = getKeyCertFromEnv()
     return pair[0]
 
+
 def cert():
     "Return user CA cert either from proxy or usercert.pem"
     pair = getKeyCertFromEnv()
     return pair[1]
 
-def stucktransferUrl():
-    "Return stucktransfer url"
-    default = 'https://cms-stucktransfers.web.cern.ch/cms-stucktransfers'
-    return uConfig.get('stucktransferUrl', default)
-
-def dashboardUrl():
-    "Return dashboard url"
-    default = 'http://dashb-ssb.cern.ch/dashboard/request.py'
-    return uConfig.get('dashboardUrl', default)
-
-def monitoringUrl():
-    "Return monitoring url"
-    default = 'http://cmsmonitoring.web.cern.ch/cmsmonitoring'
-    return uConfig.get('monitoringUrl', default)
-
-def dbsUrl():
-    "Return DBS URL"
-    default = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-    return uConfig.get('dbsUrl', default)
-
-def reqmgrUrl():
-    "Return ReqMgr2 url"
-    default = 'https://cmsweb.cern.ch/reqmgr2'
-    return uConfig.get('reqmgrUrl', default)
-
-def reqmgrCacheUrl():
-    "Return ReqMgr cache url"
-    default = 'https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache'
-    return uConfig.get('reqmgrCacheUrl', default)
-
-def phedexUrl():
-    "Return PhEDEx url"
-    default = "https://cmsweb.cern.ch/phedex/datasvc/json/prod"
-    return uConfig.get('phedexUrl', default)
-
-def ssbUrl():
-    "Return Dashboard SSB url"
-    default = "http://dashb-ssb.cern.ch/dashboard/request.py"
-    return uConfig.get('ssbUrl', default)
-
-def agentInfoUrl():
-    "Return agent info url"
-    default = 'https://cmsweb.cern.ch/couchdb/wmstats/_design/WMStats/_view/agentInfo?stale=update_after'
-    return uConfig.get('agentInfoUrl', default)
-
-def mcoreUrl():
-    "Return mcore url"
-    default = "http://cmsgwms-frontend-global.cern.ch/vofrontend/stage/mcore_siteinfo.json"
-    return uConfig.get('mcoreUrl', default)
-
-def workqueueUrl():
-    "Return WorkQueue url "
-    default = 'https://cmsweb.cern.ch/couchdb/workqueue'
-    return uConfig.get('workqueueUrl', default)
-
-def workqueueView(view, kwds=None):
-    "Return WorkQueue view url"
-    if not kwds:
-        kwds = {'group': True, 'reduce': True}
-    keys = sorted(kwds.keys())
-    args = '&'.join(['%s=%s' % (k, json.dumps(kwds[k])) for k in keys])
-    url = '%s/_design/WorkQueue/_view/%s?%s' % (workqueueUrl(), view, args)
-    return url
 
 def elapsedTime(time0, msg='Elapsed time', ndigits=1):
-    "Helper function to print elapsed time"
-    print("%s: %s sec" % (msg, round(time.time()-time0, ndigits)))
+    "Helper function to return elapsed time message"
+    msg = "%s: %s sec" % (msg, round(time.time() - time0, ndigits))
+    return msg
 
-def getNodesForId(phedexid):
-    "Helper function to get nodes for given phedex id"
-    url = '%s/requestlist' % phedexUrl()
-    params = {'request': str(phedexid)}
-    headers = {'Accept': 'application/json'}
-    mgr = RequestHandler()
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert())
-    items = json.loads(data)['phedex']['request']
-    nodes = [n['name'] for i in items for n in i['node']]
-    return list(set(nodes))
-
-def alterSubscription(phedexid, decision, comments, nodes=None):
-    "Helper function to alter subscriptions for given phedex id and nodes"
-    mgr = RequestHandler()
-    headers = {'Accept': 'application/json'}
-    nodes = nodes if nodes else getNodesForId(phedexid)
-    params = {
-        'decision': decision,
-        'request': phedexid,
-        'node': ','.join(nodes),
-        'comments': comments
-        }
-    url = '%s/updaterequest'
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verb='POST')
-    result = json.loads(data)
-    if not result:
-        return False
-    if 'already' in result:
-        return True
-    return result
-
-def approveSubscription(phedexid, nodes=None, comments=''):
-    "Helper function to alter subscriptions for given phedex id and nodes"
-    if not comments:
-        comments = 'auto-approve subscription phedexid=%s' % phedexid
-    return alterSubscription(phedexid, 'approve', comments, nodes)
-
-def disapproveSubscription(phedexid, nodes=None, comments=''):
-    "Helper function to disapprove subscription for given phedex id and nodes"
-    if not comments:
-        comments = 'auto-disapprove subscription phedexid=%s' % phedexid
-    return alterSubscription(phedexid, 'disapprove', comments, nodes)
 
 def getRequest(url, params):
     "Helper function to GET data from given URL"
@@ -381,6 +565,7 @@ def getRequest(url, params):
     data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), verbose=verbose)
     return data
 
+
 def postRequest(url, params):
     "Helper function to POST request to given URL"
     mgr = RequestHandler()
@@ -389,6 +574,82 @@ def postRequest(url, params):
     if 'verbose' in params:
         verbose = params['verbose']
         del params['verbose']
-    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(), \
-            verb='POST', verbose=verbose)
+    data = mgr.getdata(url, params, headers, ckey=ckey(), cert=cert(),
+                       verb='POST', verbose=verbose)
     return data
+
+
+def getIO(request, dbsUrl):
+    "Get input/output info about given request"
+    lhe = False
+    primary = set()
+    parent = set()
+    secondary = set()
+    if 'Chain' in request['RequestType']:
+        base = request['RequestType'].replace('Chain', '')
+        item = 1
+        while '%s%d' % (base, item) in request:
+            alhe, aprimary, aparent, asecondary = \
+                ioForTask(request['%s%d' % (base, item)], dbsUrl)
+            if alhe:
+                lhe = True
+            primary.update(aprimary)
+            parent.update(aparent)
+            secondary.update(asecondary)
+            item += 1
+    else:
+        lhe, primary, parent, secondary = ioForTask(request, dbsUrl)
+    return lhe, primary, parent, secondary
+
+
+def ioForTask(request, dbsUrl):
+    "Return lfn, primary, parent and secondary datasets for given request"
+    lhe = False
+    primary = set()
+    parent = set()
+    secondary = set()
+    if 'InputDataset' in request:
+        datasets = request['InputDataset']
+        datasets = datasets if isinstance(datasets, list) else [datasets]
+        primary = set([r for r in datasets if r])
+    if primary and 'IncludeParent' in request and request['IncludeParent']:
+        parent = findParent(primary, dbsUrl)
+    if 'MCPileup' in request:
+        pileups = request['MCPileup']
+        pileups = pileups if isinstance(pileups, list) else [pileups]
+        secondary = set([r for r in pileups if r])
+    if 'LheInputFiles' in request and request['LheInputFiles'] in ['True', True]:
+        lhe = True
+    return lhe, primary, parent, secondary
+
+
+def findParent(datasets, dbsUrl):
+    """
+    Helper function to find the parent dataset.
+    It returns a dictionary key'ed by the child dataset
+    NOTE: Value `None` is returned in case the data-service failed to serve a given request.
+    """
+    parentByDset = {}
+    if not datasets:
+        return parentByDset
+
+    urls = ['%s/datasetparents?dataset=%s' % (dbsUrl, d) for d in datasets]
+    logging.info("Executing %d requests against DBS 'datasetparents' API", len(urls))
+    data = multi_getdata(urls, ckey(), cert())
+
+    for row in data:
+        dataset = row['url'].split('=')[-1]
+        if row['data'] is None:
+            print("Failure in findParent for dataset %s. Error: %s %s" % (dataset,
+                                                                          row.get('code'),
+                                                                          row.get('error')))
+            parentByDset.setdefault(dataset, None)
+            continue
+        rows = json.loads(row['data'])
+        try:
+            for item in rows:
+                parentByDset[item['this_dataset']] = item['parent_dataset']
+        except Exception as exc:
+            print("Failure in findParent for dataset %s. Error: %s" % (dataset, str(exc)))
+            parentByDset[dataset] = None
+    return parentByDset

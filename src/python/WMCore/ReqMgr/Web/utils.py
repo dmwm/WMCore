@@ -7,6 +7,8 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description:
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 # system modules
 import cgi
@@ -14,7 +16,7 @@ import json
 import time
 import hashlib
 import cherrypy
-from urllib2 import URLError
+from urllib.error import URLError
 
 def tstamp():
     "Generic time stamp"

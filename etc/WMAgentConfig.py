@@ -64,18 +64,23 @@ workflowArchiveTimeout = 3600
 # For setting the general log level of the components
 globalLogLevel = 'INFO'
 
+# Contact information
+# Used for email alerting
+contactName = "cms-service-production-admins@cern.ch"
+
 # Nothing beyond this point should need to be changed.
 config = Configuration()
 
 config.section_("Agent")
 config.Agent.hostName = serverHostName
-config.Agent.contact = "cms-comp-ops-workflow-team@cern.ch"
+config.Agent.contact = contactName
 config.Agent.teamName = "REPLACE_TEAM_NAME"
-config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.agentName = "WMAgent"
 config.Agent.agentNumber = 0
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
 config.Agent.useHeartbeat = True
+config.Agent.isDocker = False
 
 config.section_("General")
 config.General.workDir = workDirectory
@@ -83,7 +88,6 @@ config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.General.centralWMStatsURL = "Central WMStats URL"
-config.General.rucioAccount = "OVERWRITE_BY_SECRETS"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -128,8 +132,10 @@ config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
-config.WorkQueueManager.queueParams["WorkPerCycle"] = 100  # don't pull more than this number of elements per cycle
+config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
+config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
+
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
@@ -156,13 +162,15 @@ config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
 config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
 config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
+config.PhEDExInjector.enabled = False
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 # phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
-config.PhEDExInjector.pollInterval = 100
-config.PhEDExInjector.subscribeInterval = 43200
+config.PhEDExInjector.pollInterval = 300
+config.PhEDExInjector.subscribeInterval = 6 * 60 * 60  # 6h
 config.PhEDExInjector.diskSites = diskSites
+config.PhEDExInjector.phedexGroup = "DataOps"
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -297,6 +305,12 @@ config.Alert.controlAddr = "tcp://127.0.0.1:6559"
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
 
+# Email alert configuration
+config.section_("EmailAlert")
+config.EmailAlert.toAddr = [contactName] # additional emails can be appended to the list
+config.EmailAlert.fromAddr = "noreply@cern.ch"
+config.EmailAlert.smtpServer = "localhost"
+
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
 config.AnalyticsDataCollector.componentDir = config.General.workDir + "/AnalyticsDataCollector"
@@ -327,10 +341,9 @@ config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatu
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
 config.AgentStatusWatcher.logLevel = globalLogLevel
 config.AgentStatusWatcher.resourceUpdaterPollInterval = 900  # [second]
-config.AgentStatusWatcher.siteStatusMetric = 237  # [column number in SSB] The source of the information in SSB for Site status
-config.AgentStatusWatcher.cpuBoundMetric = 160  # [column number in SSB] The source of the information in SSB for CPUBound
-config.AgentStatusWatcher.ioBoundMetric = 161  # [column number in SSB] The source of the information in SSB for IOBound
-config.AgentStatusWatcher.dashboard = "Dashboard URL"
+config.AgentStatusWatcher.grafanaURL = "https://monit-grafana.cern.ch"
+config.AgentStatusWatcher.grafanaToken = "OVERWRITE_BY_SECRETS"
+config.AgentStatusWatcher.grafanaSSB = 9475  # monit-grafana API number for Site Status Board
 config.AgentStatusWatcher.pendingSlotsSitePercent = 75  # [percent] Pending slots percent over site max running for a site
 config.AgentStatusWatcher.pendingSlotsTaskPercent = 70  # [percent] Pending slots percent over task max running for tasks
 config.AgentStatusWatcher.runningExpressPercent = 30  # [percent] Only used for tier0 agent
@@ -346,3 +359,22 @@ config.AgentStatusWatcher.enableAMQ = False
 config.AgentStatusWatcher.userAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.passAMQ = "OVERWRITE_BY_SECRETS"
 config.AgentStatusWatcher.topicAMQ = "OVERWRITE_BY_SECRETS"
+
+config.component_("RucioInjector")
+config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
+config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
+config.RucioInjector.logLevel = globalLogLevel
+config.RucioInjector.enabled = True
+config.RucioInjector.pollInterval = 300
+config.RucioInjector.pollIntervalRules = 43200
+config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
+config.RucioInjector.createBlockRules = True
+config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
+config.RucioInjector.metaDIDProject = "Production"
+config.RucioInjector.listTiersToInject = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.skipRulesForTiers = []  # ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
+config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

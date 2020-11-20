@@ -5,17 +5,16 @@ _FNALImpl_
 Implementation of StageOutImpl interface for FNAL
 
 """
+from future import standard_library
+
+standard_library.install_aliases()
+
 import logging
 import os
 
 from WMCore.Storage.Plugins.LCGImpl import LCGImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
-
-try:
-    from commands import getoutput
-except ImportError:
-    # python3
-    from subprocess import getoutput
+from subprocess import getoutput
 
 _CheckExitCodeOption = True
 checkPathsCount = 5
@@ -175,9 +174,7 @@ class FNALImpl(StageOutImplV2):
         elif method == 'dccp':
             logging.info("Translating PFN for dcache: %s", pfn)
             pfn = pfn.split("/store/")[1]
-            dcacheDoor = getoutput(
-                ". " + envScript + "\n" + \
-                "/opt/d-cache/dcap/bin/select_RdCapDoor.sh")
+            dcacheDoor = getoutput(". " + envScript + "\n" + "/opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = "%s%s" % (dcacheDoor, pfn)
             logging.info("  Translated PFN: %s", pfn)
         elif method == 'lustre':

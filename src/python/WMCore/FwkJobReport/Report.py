@@ -152,7 +152,6 @@ class Report(object):
             for stackFrame in stackTrace:
                 crashMessage += stackFrame
 
-            self.addError(stepName, 50115, "BadFWJRXML", msg)
             logging.debug(crashMessage)
             raise FwkJobReportException(msg)
 
@@ -314,6 +313,9 @@ class Report(object):
             reportError = getattr(reportStep.errors, "error%i" % i)
             if getattr(reportError, 'exitCode', None):
                 returnCodes.add(int(reportError.exitCode))
+            else:
+                # exitCode is likely set to None(?!?)
+                returnCodes.add(99999)
 
         return returnCodes
 
@@ -429,7 +431,7 @@ class Report(object):
 
         Add an output file to the outputModule provided.
         """
-
+        logging.info("addOutputFile method called with outputModule: %s, aFile: %s", outputModule, aFile)
         aFile = aFile or {}
 
         # Now load the output module and create the file object
@@ -440,6 +442,7 @@ class Report(object):
         fileSection = "file%s" % count
         outMod.files.section_(fileSection)
         fileRef = getattr(outMod.files, fileSection)
+        logging.info("addOutputFile method fileRef: %s, whole tree: %s", fileRef, fileRef.dictionary_whole_tree_())
         outMod.files.fileCount += 1
 
         # Now we need to eliminate the optional and non-primitives:
@@ -579,6 +582,14 @@ class Report(object):
             # Assumption: Adding an error fails a step
             self.addStep(stepName, status=1)
 
+        if exitCode is not None:
+            exitCode = int(exitCode)
+
+        setExitCodes = self.getStepExitCodes(stepName)
+        if exitCode in setExitCodes:
+            logging.warning("Exit code: %s has been already added to the job report", exitCode)
+            return
+
         stepSection = self.retrieveStep(stepName)
         errorCount = getattr(stepSection.errors, "errorCount", 0)
         errEntry = "error%s" % errorCount
@@ -587,14 +598,21 @@ class Report(object):
         errDetails.exitCode = exitCode
         errDetails.type = str(errorType)
 
-        if hasattr(errorDetails, "decode"):
-            # Fix for the unicode encoding issue, #8043
-            # interprets this string using utf-8 codec and ignoring any errors
-            errDetails.details = errorDetails.decode('utf-8', 'ignore')
-        else:
-            # Then cast it to string and decode it
-            errorDetails = str(errorDetails)
-            errDetails.details = errorDetails.decode('utf-8', 'ignore')
+        try:
+            if hasattr(errorDetails, "decode"):
+                # Fix for the unicode encoding issue, #8043
+                # interprets this string using utf-8 codec and ignoring any errors
+                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+            else:
+                # Then cast it to string and decode it
+                errorDetails = str(errorDetails)
+                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+        except UnicodeEncodeError as ex:
+            msg = "Failed to decode the job error details for job ID: %s." % self.getJobID()
+            msg += "\nException message: %s\nOriginal error details: %s" % (str(ex), errorDetails)
+            logging.error(msg)
+            msg = "DEFAULT ERROR MESSAGE, because it failed to UTF-8 decode the original message."
+            errDetails.details = msg
 
         setattr(stepSection.errors, "errorCount", errorCount + 1)
         self.setStepStatus(stepName=stepName, status=exitCode)
@@ -697,7 +715,7 @@ class Report(object):
         _setStep_
 
         """
-        if stepName not in self.data.steps:
+        if stepName not in self.listSteps():
             self.data.steps.append(stepName)
         else:
             logging.info("Step %s is now being overridden by a new step report", stepName)
@@ -830,7 +848,7 @@ class Report(object):
         """
         listOfFiles = []
 
-        for step in self.data.steps:
+        for step in self.listSteps():
             listOfFiles.extend(self.getAllFilesFromStep(step=step))
 
         return listOfFiles
@@ -843,7 +861,7 @@ class Report(object):
         """
 
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getInputFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -932,7 +950,7 @@ class Report(object):
         listed as skipped on the report.
         """
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getSkippedFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -947,7 +965,7 @@ class Report(object):
         listed as fallback attempt on the report
         """
         listOfFiles = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmp = self.getFallbackFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
@@ -1043,13 +1061,13 @@ class Report(object):
         """
         value = True
 
-        if len(self.data.steps) == 0:
+        if len(self.listSteps()) == 0:
             # Mark jobs as failed if they have no steps
             msg = "Could not find any steps"
             logging.error(msg)
             return False
 
-        for stepName in self.data.steps:
+        for stepName in self.listSteps():
             # Ignore specified steps
             # i.e., logArch steps can fail without causing
             # the task to fail
@@ -1125,7 +1143,7 @@ class Report(object):
         fileInfo = FileInfo()
 
         if not stepReport:
-            return None
+            return
 
         listOfModules = getattr(stepReport, 'outputModules', None)
 
@@ -1136,7 +1154,7 @@ class Report(object):
                 if not aFile:
                     msg = "Could not find file%i in module" % n
                     logging.error(msg)
-                    return None
+                    return
                 fileInfo(fileReport=aFile, step=step, outputModule=module)
 
         return
@@ -1268,7 +1286,7 @@ class Report(object):
         """
 
         fileRefs = []
-        for step in self.data.steps:
+        for step in self.listSteps():
             tmpRefs = self.getAllFileRefsFromStep(step=step)
             if len(tmpRefs) > 0:
                 fileRefs.extend(tmpRefs)
@@ -1543,7 +1561,7 @@ class Report(object):
         trim the number of input files.
         """
 
-        for stepName in self.data.steps:
+        for stepName in self.listSteps():
             step = self.retrieveStep(stepName)
             inputSources = step.input.listSections_()
             for inputSource in inputSources:

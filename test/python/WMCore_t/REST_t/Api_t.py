@@ -6,7 +6,7 @@ from multiprocessing import Process
 
 import cherrypy
 from cherrypy import response
-from cherrypy.test import webtest
+from cheroot.test import webtest
 
 # WMCore modules
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
@@ -22,7 +22,7 @@ gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
              '\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x02\x03\x02\x08\t\x00;')
 
 FAKE_FILE = fake_authz_key_file()
-PORT = 8888
+PORT = 8887
 
 class Simple(RESTEntity):
     def validate(self, *args): pass

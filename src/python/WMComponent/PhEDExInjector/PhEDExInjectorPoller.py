@@ -41,11 +41,14 @@ deleted from the site it was originally injected at.
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+
 import logging
 import threading
 import time
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 
 from Utils.Timers import timeFunction
 from WMCore.DAOFactory import DAOFactory
@@ -55,6 +58,25 @@ from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscripti
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
+
+def filterDataByTier(rawData, forbiddenTiers):
+    """
+    This function will receive data - in the same format as returned from
+    the DAO - and it will pop out anything that the component is not meant
+    to inject into PhEDEx.
+    :param rawData: the large dict of location/dataset/block/files
+    :param forbiddenTiers: a list of datatiers that we DO NOT want to inject
+    :return: the same dictionary as in the input, but without dataset structs
+             for datatiers that we do not want to be processed by this component.
+    """
+    for location in rawData:
+        for dataset in list(rawData[location]):
+            endTier = dataset.rsplit('/', 1)[1]
+            if endTier in forbiddenTiers:
+                logging.debug("Dataset %s not meant to be injected by PhEDExInjector", dataset)
+                rawData[location].pop(dataset)
+    return rawData
 
 
 class PhEDExInjectorException(WMException):
@@ -79,7 +101,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
+
+        self.enabled = getattr(config.PhEDExInjector, "enabled", True)
         self.dbsUrl = config.DBSInterface.globalDBSUrl
+        self.phedexGroup = config.PhEDExInjector.phedexGroup
 
         self.pollCounter = 0
         self.subFrequency = None
@@ -124,6 +149,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.blocksToRecover = []
 
+        # X-component configuration is BAD! But it will only be here during the
+        # Rucio commissioning within WM
+        self.listTiersToSkip = config.RucioInjector.listTiersToInject
+        logging.info("Component configured to skip data injection for data tiers: %s",
+                     self.listTiersToSkip)
+
         return
 
     def setup(self, parameters):
@@ -133,11 +164,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Create DAO Factory and setup some DAO.
         """
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package="WMComponent.PhEDExInjector.Database",
+        daofactory = DAOFactory(package="WMComponent.RucioInjector.Database",
                                 logger=self.logger, dbinterface=myThread.dbi)
 
         self.getUninjected = daofactory(classname="GetUninjectedFiles")
         self.getMigrated = daofactory(classname="GetMigratedBlocks")
+
+        self.getUnsubscribedBlocks = daofactory(classname="GetUnsubscribedBlocks")
+        self.setBlockRules = daofactory(classname="SetBlocksRule")
 
         self.findDeletableBlocks = daofactory(classname="GetDeletableBlocks")
         self.markBlocksDeleted = daofactory(classname="MarkBlocksDeleted")
@@ -159,6 +193,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Poll the database for uninjected files and attempt to inject them into
         PhEDEx.
         """
+        if not self.enabled:
+            logging.info("PhEDExInjector component is disabled in the configuration, exiting.")
+            return
+
         logging.info("Running PhEDEx injector poller algorithm...")
         self.pollCounter += 1
 
@@ -176,6 +214,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.pollCounter = 0
                 self.deleteBlocks()
                 self.subscribeDatasets()
+                self.subscribeBlocks()
         except HTTPException as ex:
             if hasattr(ex, "status") and ex.status in [502, 503]:
                 # then either proxy error or service is unavailable
@@ -265,6 +304,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         uninjectedFiles = self.getUninjected.execute()
 
+        # filter out datatiers to be processed by RucioInjector
+        uninjectedFiles = filterDataByTier(uninjectedFiles, self.listTiersToSkip)
+
         for siteName in uninjectedFiles.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
@@ -351,7 +393,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         migratedBlocks = self.getMigrated.execute()
 
-        for siteName in migratedBlocks.keys():
+        # filter out datatiers to be processed by RucioInjector
+        migratedBlocks = filterDataByTier(migratedBlocks, self.listTiersToSkip)
+
+        for siteName in migratedBlocks:
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -372,25 +417,25 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.error(msg)
                 continue
 
-            xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            logging.debug("closeBlocks XMLData: %s", xmlData)
+            for dset, blocks in migratedBlocks[siteName].items():
+                xmlData = self.createInjectionSpec({dset: blocks})
+                logging.debug("closeBlocks XMLData: %s", xmlData)
 
-            try:
-                injectRes = self.phedex.injectBlocks(location, xmlData)
-            except HTTPException as ex:
-                logging.error("PhEDEx block close failed with HTTPException: %s %s", ex.status, ex.result)
-            except Exception as ex:
-                msg = "PhEDEx block close failed with Exception: %s" % str(ex)
-                logging.exception(msg)
-            else:
-                logging.debug("Block closing result: %s", injectRes)
-
-                if "error" in injectRes:
-                    msg = "Error closing blocks with data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
-                    logging.error(msg)
+                try:
+                    injectRes = self.phedex.injectBlocks(location, xmlData)
+                except HTTPException as ex:
+                    logging.error("PhEDEx block close failed with HTTPException: %s %s", ex.status, ex.result)
+                except Exception as ex:
+                    msg = "PhEDEx block close failed with Exception: %s" % str(ex)
+                    logging.exception(msg)
                 else:
-                    for datasetName in migratedBlocks[siteName]:
-                        for blockName in migratedBlocks[siteName][datasetName]:
+                    logging.debug("Block closing result: %s", injectRes)
+
+                    if "error" in injectRes:
+                        logging.error("Failed to close blocks due to: %s, for data: %s",
+                                      injectRes["error"], migratedBlocks[siteName][dset])
+                    else:
+                        for blockName in blocks:
                             logging.info("Block closed in PhEDEx: %s", blockName)
                             self.setBlockClosed.execute(blockName)
 
@@ -437,6 +482,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         if not blockDict:
             return
+
+        ### logic to stop doing things to be done by RucioInjector or by DM team
+        for block in list(blockDict):
+            if not self._isDataTierAllowed(block):
+                blockDict.pop(block)
 
         try:
             subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
@@ -541,6 +591,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
+    def _isDataTierAllowed(self, dataName):
+        """
+        Check whether data belongs to an allowed datatier to
+        be handled by this component (either to inject or to
+        subscribe into PhEDEx)
+        :param dataName: string with the block or the dataset name
+        :return: boolean, True if the tier is allowed, False otherwise
+        """
+        endTier = dataName.rsplit('/', 1)[1]
+        endTier = endTier.split('#')[0] if '#' in endTier else endTier
+        if endTier in self.listTiersToSkip:
+            logging.debug("Skipping data: %s because it's listed in the tiers to skip", dataName)
+            return False
+        return True
+
     def subscribeDatasets(self):
         """
         _subscribeDatasets_
@@ -560,6 +625,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # Create the subscription objects and add them to the list
         # The list takes care of the sorting internally
         for subInfo in unsubscribedDatasets:
+            ### logic to stop doing things to be done by RucioInjector or by DM team
+            if not self._isDataTierAllowed(subInfo['path']):
+                continue
+
             site = subInfo['site']
 
             if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:
@@ -618,3 +687,80 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.markSubscribed.execute(subscriptionsMade)
 
         return
+
+    def subscribeBlocks(self):
+        """
+        _subscribeBlocks_
+        Poll the database and subscribe blocks not yet subscribed.
+        """
+        logging.info("Starting subscribeBlocks method")
+
+        unsubBlocks = self.getUnsubscribedBlocks.execute()
+        # now organize those by location in order to minimize phedex requests
+        # also remove blocks that this component is meant to skip
+        unsubBlocks = self.organizeBlocksByLocation(unsubBlocks)
+
+        for location, blockDict in unsubBlocks.items():
+            phedexSub = PhEDExSubscription(blockDict.keys(), location, self.phedexGroup,
+                                           blocks=blockDict,
+                                           level="block",
+                                           priority="normal",
+                                           move="n",
+                                           custodial="n",
+                                           request_only="n",
+                                           comments="WMAgent production site")
+            try:
+                res = self.phedex.subscribe(phedexSub)
+                transferId = res['phedex']['request_created'][0]['id']
+                logging.info("Subscribed %d blocks for %d datasets, to location: %s, under request ID: %s",
+                             len(phedexSub.getBlocks()),
+                             len(phedexSub.getDatasetPaths()),
+                             phedexSub.getNodes(),
+                             transferId)
+            except HTTPException as ex:
+                logging.error("PhEDEx block subscription failed with HTTPException: %s %s", ex.status, ex.result)
+                logging.error("The subscription object was: %s", str(phedexSub))
+            except Exception as ex:
+                logging.exception("PhEDEx block subscription failed with Exception: %s", str(ex))
+            else:
+                binds = []
+                for blockname in phedexSub.getBlocks():
+                    binds.append({'RULE_ID': str(transferId), 'BLOCKNAME': blockname})
+                self.setBlockRules.execute(binds)
+
+        return
+
+    def organizeBlocksByLocation(self, blocksLocation):
+        """
+        Given a list of dictionaries (with block name and location). Organize
+        those blocks per location to make phedex subscription calls more
+        efficient.
+        Also drops blocks that we cannot subscribe, and check for valid
+        phedex node names.
+        :param blocksLocation: list of dictionaries
+        :return: a dict of dictionaries, such as:
+          {"locationA": {"datasetA": ["blockA", "blockB", ...],
+                         "datasetB": ["blockA", "blockB", ...]
+                        },
+           "locationB": {"datasetA": ["blockA"],
+                         ...
+        """
+        dictByLocation = {}
+        for item in blocksLocation:
+            ### logic to stop doing things to be done by RucioInjector or by DM team
+            if not self._isDataTierAllowed(item['blockname']):
+                continue
+
+            site = item['pnn']
+            if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:
+                msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
+                msg += "skipping block subscription for: %s" % item['blockname']
+                logging.error(msg)
+                continue
+
+            dictByLocation.setdefault(site, {})
+
+            dsetName = item['blockname'].split("#")[0]
+            dictByLocation[site].setdefault(dsetName, [])
+            dictByLocation[site][dsetName].append(item['blockname'])
+        return dictByLocation

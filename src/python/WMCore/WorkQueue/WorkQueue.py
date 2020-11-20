@@ -16,19 +16,22 @@ import os
 import threading
 import time
 from collections import defaultdict
-
+from Utils.Utilities import usingRucio
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.Policy.Start import startPolicy
@@ -36,7 +39,7 @@ from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WorkQueueExceptions import (TERMINAL_EXCEPTIONS, WorkQueueError, WorkQueueNoMatchingElements,
                                                   WorkQueueWMSpecError)
-from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames, get_dbs
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 
 
 # Convenience constructor functions
@@ -46,10 +49,6 @@ def globalQueue(logger=None, dbi=None, **kwargs):
     """
     defaults = {'PopulateFilesets': False,
                 'LocalQueueFlag': False,
-                'SplittingMapping': {'DatasetBlock':
-                                         {'name': 'Block',
-                                          'args': {}}
-                                     },
                 'TrackLocationOrSubscription': 'location'
                 }
     defaults.update(kwargs)
@@ -112,8 +111,10 @@ class WorkQueue(WorkQueueBase):
                 raise WorkQueueError(msg)
             self.params['ParentQueueCouchUrl'] = self.parent_queue.queueUrl
 
-        self.params.setdefault("GlobalDBS",
-                               "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+        # save each DBSReader instance in the class object, such that
+        # the same object is not shared amongst multiple threads
+        self.dbses = {}
+
         self.params.setdefault('QueueDepth', 1)  # when less than this locally
         self.params.setdefault('WorkPerCycle', 100)
         self.params.setdefault('LocationRefreshInterval', 600)
@@ -121,7 +122,6 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('TrackLocationOrSubscription', 'location')
         self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)
-        self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
         self.params.setdefault('LocalQueueFlag', True)
         self.params.setdefault('QueueRetryTime', 86400)
@@ -183,16 +183,18 @@ class WorkQueue(WorkQueueBase):
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
                 raise RuntimeError('Only blocks can be released on location')
 
-        if self.params.get('PhEDEx'):
-            self.phedexService = self.params['PhEDEx']
+        self.params.setdefault('rucioAccount', "wmcore_transferor")
+        # FIXME remove these attributes initialized to None
+        if usingRucio():
+            self.phedexService = None
+            self.rucio = Rucio(self.params['rucioAccount'], configDict=dict(logger=self.logger))
         else:
-            phedexArgs = {}
-            if self.params.get('PhEDExEndpoint'):
-                phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
-            self.phedexService = PhEDEx(phedexArgs)
+            self.rucio = None
+            self.phedexService = PhEDEx()
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,
+                                                              rucio=self.rucio,
                                                               cric=self.cric,
                                                               locationFrom=self.params['TrackLocationOrSubscription'],
                                                               incompleteBlocks=self.params['ReleaseIncompleteBlocks'],
@@ -368,15 +370,46 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('Injected %s out of %s units into WMBS', len(results), len(matches))
         return results
 
+    def _getDbs(self, dbsUrl):
+        """
+        If we have already construct a DBSReader object pointing to
+        the DBS URL provided, return it. Otherwise, create and return
+        a new instance.
+        :param dbsUrl: string with the DBS url
+        :return: an instance of DBSReader
+        """
+        if dbsUrl in self.dbses:
+            return self.dbses[dbsUrl]
+        return DBSReader(dbsUrl)
+
+    def _blockLocationRucioPhedex(self, blockName):
+        """
+        Wrapper around Rucio and PhEDEx systems.
+        Fetch the current location of the block name (if Rucio,
+        also consider the locks made on that block)
+        :param blockName: string with the block name
+        :return: a list of RSEs
+        """
+        if self.rucio:
+            # then it's Rucio
+            location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                            account=self.params['rucioAccount'])
+        else:
+            location = self.phedexService.getReplicaPhEDExNodesForBlocks(block=[blockName],
+                                                                         complete='y')[blockName]
+        return location
+
     def _getDBSDataset(self, match):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
-        dbs = get_dbs(match['Dbs'])
+        dbs = self._getDbs(match['Dbs'])
         datasetName = match['Inputs'].keys()[0]
 
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
         for blockName in blocks:
-            tmpDsetDict.update(dbs.getFileBlock(blockName))
+            blockSummary = dbs.getFileBlock(blockName)
+            blockSummary['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
+            tmpDsetDict[blockName] = blockSummary
 
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
         dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
@@ -403,26 +436,34 @@ class WorkQueue(WorkQueueBase):
             block["Files"] = fileLists
             return blockName, block
         else:
-            dbs = get_dbs(match['Dbs'])
+            dbs = self._getDbs(match['Dbs'])
             if wmspec.getTask(match['TaskName']).parentProcessingFlag():
                 dbsBlockDict = dbs.getFileBlockWithParents(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
             elif wmspec.getRequestType() == 'StoreResults':
-                dbsBlockDict = dbs.getFileBlock(blockName, dbsOnly=True)
+                dbsBlockDict = dbs.getFileBlock(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = dbs.listFileBlockLocation(blockName)
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
+                dbsBlockDict['PhEDExNodeNames'] = self._blockLocationRucioPhedex(blockName)
 
-        return blockName, dbsBlockDict[blockName]
+        return blockName, dbsBlockDict
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
         """Inject data into wmbs and create subscription. """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         # the parent element (from local couch) can be fetch via:
         # curl -ks -X GET 'http://localhost:5984/workqueue/<ParentQueueId>'
-        msg = "Running WMBS preparation for %s with ParentQueueId %s"
-        self.logger.info(msg, match['RequestName'], match['ParentQueueId'])
+
+        # Keep in mind that WQE contains sites, wmbs location contains pnns
+        commonSites = possibleSites(match)
+        commonLocation = self.cric.PSNstoPNNs(commonSites, allowPNNLess=True)
+        msg = "Running WMBS preparation for %s with ParentQueueId %s,\n  with common location %s"
+        self.logger.info(msg, match['RequestName'], match['ParentQueueId'], commonLocation)
 
         mask = match['Mask']
-        wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
+        wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask,
+                                self.params['CacheDir'], commonLocation)
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)
         self.logger.info("Created top level subscription %s for %s with %s files",
@@ -467,14 +508,18 @@ class WorkQueue(WorkQueueBase):
 
     def _assignToChildQueue(self, queue, *elements):
         """Assign work from parent to queue"""
+        workByRequest = {}
         for ele in elements:
             ele['Status'] = 'Negotiating'
             ele['ChildQueueUrl'] = queue
             ele['ParentQueueUrl'] = self.params['ParentQueueCouchUrl']
             ele['WMBSUrl'] = self.params["WMBSUrl"]
+            workByRequest.setdefault(ele['RequestName'], 0)
+            workByRequest[ele['RequestName']] += 1
         work = self.parent_queue.saveElements(*elements)
-        requests = ', '.join(list(set(['"%s"' % x['RequestName'] for x in work])))
-        self.logger.info('Acquired work for request(s): %s', requests)
+        self.logger.info("Assigned work to the child queue for:")
+        for reqName, numElem in workByRequest.items():
+            self.logger.info("    %d elements for: %s", numElem, reqName)
         return work
 
     def doneWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None):
@@ -714,8 +759,9 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations info for elements.
         """
+        self.logger.info('Executing data location update...')
         if not self.backend.isAvailable():
-            self.logger.info('Backend busy or down: skipping location update')
+            self.logger.warning('Backend busy or down: skipping location update')
             return 0
         result = self.dataLocationMapper()
         self.backend.recordTaskActivity('location_refresh')
@@ -772,6 +818,7 @@ class WorkQueue(WorkQueueBase):
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
         numElems = self.params['WorkPerCycle']
+        self.logger.info("Going to fetch work from the parent queue: %s", self.parent_queue.queueUrl)
         work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Team'], numElems=numElems)
 
         if not work:
@@ -793,7 +840,6 @@ class WorkQueue(WorkQueueBase):
         if (resources, jobCounts) == (False, False):
             return 0
 
-        self.logger.info("Pull work for sites %s: ", str(resources))
         work = self.getAvailableWorkfromParent(resources, jobCounts)
         if not work:
             return 0
@@ -844,7 +890,8 @@ class WorkQueue(WorkQueueBase):
                     if not policyName:
                         raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
-                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'])
+                    policyInstance = startPolicy(policyName, self.params['SplittingMapping'],
+                                                 rucioAcct=self.params['rucioAccount'], logger=self.logger)
                     if not policyInstance.supportsWorkAddition():
                         continue
                     if policyInstance.newDataAvailable(topLevelTask, element):
@@ -900,12 +947,14 @@ class WorkQueue(WorkQueueBase):
 
         # fetch workflows known to workqueue + workqueue_inbox and with spec attachments
         reqNames = self.backend.getWorkflows(includeInbox=True, includeSpecs=True)
+        self.logger.info("Retrieved %d workflows known by WorkQueue", len(reqNames))
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
         for key, value in requestsInfo.items():
             if (value["RequestStatus"] is None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
-
+        self.logger.info("Found %d out of %d workflows in a deletable state",
+                         len(deleteRequests), len(reqNames))
         return self.backend.deleteWQElementsByWorkflow(deleteRequests)
 
     def performSyncAndCancelAction(self, skipWMBS):
@@ -931,7 +980,7 @@ class WorkQueue(WorkQueueBase):
                 elements = self.status(RequestName=wf, syncWithWMBS=useWMBS)
                 parents = self.backend.getInboxElements(RequestName=wf)
 
-                self.logger.debug("Queue status follows:")
+                self.logger.debug("Queue %s status follows:", self.backend.queueUrl)
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
                     self.logger.debug("Request %s, Status %s, Full info: %s", result['RequestName'], result['Status'], result)
@@ -976,6 +1025,8 @@ class WorkQueue(WorkQueueBase):
         msg = 'Finished elements: %s\nCanceled workflows: %s' % (', '.join(["%s (%s)" % (x.id, x['RequestName']) \
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
+
+        self.logger.debug(msg)
         self.backend.recordTaskActivity('housekeeping', msg)
 
     def performQueueCleanupActions(self, skipWMBS=False):
@@ -985,13 +1036,13 @@ class WorkQueue(WorkQueueBase):
             res = self.deleteCompletedWFElements()
             self.logger.info("Deleted %d elements from workqueue/inbox database", res)
         except Exception as ex:
-            self.logger.exception('Error deleting WQ elements: %s', str(ex))
+            self.logger.exception('Error deleting WQ elements. Details: %s', str(ex))
 
         try:
             self.logger.info("Syncing and cancelling work ...")
             self.performSyncAndCancelAction(skipWMBS)
         except Exception as ex:
-            self.logger.error('Error syncing and canceling WQ elements: %s', str(ex))
+            self.logger.error('Error syncing and canceling WQ elements. Details: %s', str(ex))
 
     def _splitWork(self, wmspec, data=None, mask=None, inbound=None, continuous=False):
         """
@@ -1015,7 +1066,8 @@ class WorkQueue(WorkQueueBase):
             if not policyName:
                 raise RuntimeError("WMSpec doesn't define policyName, current value: '%s'" % policyName)
 
-            policy = startPolicy(policyName, self.params['SplittingMapping'])
+            policy = startPolicy(policyName, self.params['SplittingMapping'],
+                                 rucioAcct= self.params['rucioAccount'], logger=self.logger)
             if not policy.supportsWorkAddition() and continuous:
                 # Can't split further with a policy that doesn't allow it
                 continue
@@ -1024,6 +1076,8 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Splitting %s with policy %s params = %s', topLevelTask.getPathName(),
                              policyName, self.params['SplittingMapping'])
             units, rejectedWork, badWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
+            self.logger.info('Work splitting completed with %d units, %d rejectedWork and %d badWork',
+                             len(units), len(rejectedWork), len(badWork))
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                                                   unit['Task'].getPathName(),
@@ -1068,6 +1122,8 @@ class WorkQueue(WorkQueueBase):
             return result
         if not inbound_work:
             inbound_work = self.backend.getElementsForSplitting()
+            self.logger.info('Retrieved %d elements for splitting with continuous flag: %s',
+                             len(inbound_work), continuous)
         for inbound in inbound_work:
             try:
                 # Check we haven't already split the work, unless it's continuous processing
@@ -1118,7 +1174,7 @@ class WorkQueue(WorkQueueBase):
                 if continuous:
                     continue
                 msg = 'Exception splitting wqe %s for %s: %s' % (inbound.id, inbound['RequestName'], str(ex))
-                self.logger.error(msg)
+                self.logger.exception(msg)
                 self.logdb.post(inbound['RequestName'], msg, 'error')
 
                 if throw:

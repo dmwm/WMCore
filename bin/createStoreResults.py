@@ -21,7 +21,10 @@ Expected input json file like:
 
 from __future__ import print_function, division
 
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+
+import http.client
 import json
 import os
 import sys
@@ -109,12 +112,17 @@ def buildRequest(userDict):
     # Truncate the ProcessingString, otherwise it can be larger than allowed
     primDset, procDset, _tier = newSchema['InputDataset'].split("/")[1:]
     acqEra, procStr = procDset.split("-", 1)
-    newSchema["AcquisitionEra"] = acqEra  # should we worry about lenght limits?
+    newSchema["AcquisitionEra"] = acqEra  # should we worry about length limits?
     procStr, procVer = procStr.rsplit("-", 1)
     newSchema["ProcessingString"] = "StoreResults_" + procStr[:67]  # limit to 80 chars
-    newSchema["ProcessingVersion"] = int(procVer[1:])
+    # ProcessingString cannot have a dash char
+    newSchema["ProcessingString"] = newSchema["ProcessingString"].replace("-", "_")
+    try:
+        newSchema["ProcessingVersion"] = int(procVer[1:])
+    except ValueError:
+        newSchema["ProcessingVersion"] = 1
     # Use PrimaryDataset and ProcessedDataset in the RequestString
-    newSchema["RequestString"] = primDset[:50] + "-" + procDset[:50]
+    newSchema["RequestString"] = primDset[:35] + "-" + procDset[:35]
     return newSchema
 
 
@@ -122,7 +130,7 @@ def submitWorkflow(schema):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
     encodedParams = json.dumps(schema)
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("POST", "/reqmgr2/data/request", encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()
@@ -145,7 +153,7 @@ def approveRequest(workflow):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
 
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("PUT", "/reqmgr2/data/request/%s" % workflow, encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()

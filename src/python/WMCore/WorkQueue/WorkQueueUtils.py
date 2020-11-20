@@ -1,30 +1,9 @@
 #!/usr/bin/env python
 """Various helper functions for workqueue"""
 
-__all__ = ['get_remote_queue', 'get_dbs',
-           'queueConfigFromConfigObject', 'queueFromConfig']
-
 import logging
 import os
 from WMCore.Services.CRIC.CRIC import CRIC
-
-__queues = {}
-
-
-def get_remote_queue(queue, logger):
-    """
-    Get an object to talk to a remote queue
-    """
-    from WMCore.WorkQueue.WorkQueue import WorkQueue
-    # tests generally get the queue object passed in direct
-    if isinstance(queue, WorkQueue):
-        return queue
-    try:
-        return __queues[queue]
-    except KeyError:
-        from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-        __queues[queue] = WorkQueueDS({'endpoint': queue, 'logger': logger})
-        return __queues[queue]
 
 
 __dbses = {}
@@ -94,6 +73,7 @@ def queueConfigFromConfigObject(config):
     """From a config object create a config dict suitable for a queue object"""
     from os import path
     wqManager = config.section_('WorkQueueManager')
+
     if not hasattr(wqManager, 'componentDir'):
         wqManager.componentDir = path.join(config.General.WorkDir,
                                            'WorkQueueManager')
@@ -110,11 +90,11 @@ def queueConfigFromConfigObject(config):
     qConfig = wqManager.queueParams
 
     if hasattr(wqManager, 'couchurl'):
-        wqManager.queueParams['CouchUrl'] = wqManager.couchurl
+        qConfig['CouchUrl'] = wqManager.couchurl
     if hasattr(wqManager, 'dbname'):
-        wqManager.queueParams['DbName'] = wqManager.dbname
+        qConfig['DbName'] = wqManager.dbname
     if hasattr(wqManager, 'inboxDatabase'):
-        wqManager.queueParams['InboxDbName'] = wqManager.inboxDatabase
+        qConfig['InboxDbName'] = wqManager.inboxDatabase
 
     # pull some info we need from other areas of the config
     if "BossAirConfig" not in qConfig and hasattr(config, 'BossAir'):

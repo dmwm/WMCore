@@ -25,8 +25,8 @@
 ### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.2.2.patch2 -d HG1905e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.2.2.patch1 -d HG1905e -t testbed-vocms001 -p "9174 9183 9184" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.1.patch3 -d HG2011a -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.1.patch3 -d HG2011a -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
 ### Usage:
 
 IAM=`whoami`
@@ -211,7 +211,7 @@ fi
 
 if [[ "$HOSTNAME" == *cern.ch ]]; then
   MYPROXY_CREDNAME="amaltaroCERN"
-  FORCEDOWN="'T3_US_NERSC'"
+  FORCEDOWN="'T3_US_NERSC', 'T3_US_SDSC', 'T3_US_ANL', 'T3_US_TACC', 'T3_US_PSC'"
 elif [[ "$HOSTNAME" == *fnal.gov ]]; then
   MYPROXY_CREDNAME="amaltaroFNAL"
   FORCEDOWN=""
@@ -281,11 +281,6 @@ cd $CURRENT_DIR
 cd -
 echo "Done!" && echo
 
-echo -e "\n*** Activating the agent ***"
-cd $MANAGE_DIR
-./manage activate-agent
-echo "Done!" && echo
-
 # By default, it will only work for official WMCore patches in the general path
 echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
@@ -295,6 +290,11 @@ if [ "x$PATCHES" != "x" ]; then
   done
 cd -
 fi
+echo "Done!" && echo
+
+echo -e "\n*** Activating the agent ***"
+cd $MANAGE_DIR
+./manage activate-agent
 echo "Done!" && echo
 
 ### Enabling couch watchdog; couchdb fix for file descriptors
@@ -339,10 +339,13 @@ sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE_DIR/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE_DIR/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE_DIR/config.py
+  sed -i "s+config.PhEDExInjector.phedexGroup = 'DataOps'+config.PhEDExInjector.phedexGroup = 'RelVal'+" $MANAGE_DIR/config.py
+  sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'RelVal'+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
+  sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'Test'+" $MANAGE_DIR/config.py
 fi
 
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
@@ -365,24 +368,24 @@ else
 fi
 echo "Done!" && echo
 
-### Upload WMAgentConfig to AuxDB
-echo "*** Upload WMAgentConfig to AuxDB ***"
-cd $MANAGE_DIR
-./manage execute-agent wmagent-upload-config
-echo "Done!" && echo
-
 echo "*** Tweaking central agent configuration ***"
 CENTRAL_SERVICES="https://$CENTRAL_SERVICES/reqmgr2/data/wmagentconfig"
 if [[ "$TEAMNAME" == production ]]; then
   echo "Agent connected to the production team, setting it to drain mode"
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"UserDrainMode":true}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"UserDrainMode":true}'
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   echo "Testbed agent, setting MaxRetries to 0..."
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"MaxRetries":0}'
 elif [[ "$TEAMNAME" == *devvm* ]]; then
   echo "Dev agent, setting MaxRetries to 0..."
-  curl --cert /data/certs/servicecert.pem --key /data/certs/servicekey.pem -k -X PUT -H "Content-type: application/json" -d '{"MaxRetries":0}' $CENTRAL_SERVICES/$HOSTNAME
+  agentExtraConfig='{"MaxRetries":0}'
 fi
+echo "Done!" && echo
+
+### Upload WMAgentConfig to AuxDB
+echo "*** Upload WMAgentConfig to AuxDB ***"
+cd $MANAGE_DIR
+./manage execute-agent wmagent-upload-config $agentExtraConfig
 echo "Done!" && echo
 
 ###
@@ -390,22 +393,25 @@ echo "Done!" && echo
 ###
 echo "*** Downloading utilitarian scripts ***"
 cd /data/admin/wmagent
-wget -nv https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py -O checkProxy.py
+wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/checkProxy.py -O checkProxy.py
 wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/restartComponent.sh -O restartComponent.sh
+wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/renew_proxy.sh -O renew_proxy.sh
+chmod +x renew_proxy.sh restartComponent.sh
+sed -i "s+CREDNAME+$MYPROXY_CREDNAME+" /data/admin/wmagent/renew_proxy.sh
 echo "Done!" && echo
 
 ### Populating cronjob with utilitarian scripts
 echo "*** Creating cronjobs for them ***"
 if [[ "$TEAMNAME" == *testbed* || "$TEAMNAME" == *dev* ]]; then
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
+  echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
   ) | crontab -
 else
   ( crontab -l 2>/dev/null | grep -Fv ntpdate
-  echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
-  echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 120 --send-mail True --mail alan.malta@cern.ch"
+  echo "55 */6 * * * /data/admin/wmagent/renew_proxy.sh"
+  echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 150 --send-mail True --mail alan.malta@cern.ch"
   echo "#workaround for the ErrorHandler silence issue"
-  echo "*/15 * * * *  source /data/admin/wmagent/restartComponent.sh > /dev/null"
+  echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
   ) | crontab -
 fi
 echo "Done!" && echo

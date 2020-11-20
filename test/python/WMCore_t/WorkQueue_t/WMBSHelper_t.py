@@ -15,6 +15,8 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSReader import DBSReader
+### FIXME mock PhEDEx (or Rucio?)
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -22,8 +24,8 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
-from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
@@ -75,6 +77,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = DBSReader(self.inputDataset.dbsurl)
+        self.phedex = PhEDEx()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger=threading.currentThread().logger,
                                      dbinterface=threading.currentThread().dbi)
@@ -529,17 +532,23 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
 
-    def createWMBSHelperWithTopTask(self, wmspec, block, mask=None,
-                                    parentFlag=False, detail=False):
+    def createWMBSHelperWithTopTask(self, wmspec, block, mask=None, parentFlag=False,
+                                    detail=False, commonLocation=None):
 
         topLevelTask = getFirstTask(wmspec)
 
-        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir)
+        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir,
+                          commonLocation=commonLocation)
         if block:
+            blockName = block
             if parentFlag:
-                block = self.dbs.getFileBlockWithParents(block)[block]
+                block = self.dbs.getFileBlockWithParents(blockName)
+                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
+                block['PhEDExNodeNames'] = location[blockName]
             else:
-                block = self.dbs.getFileBlock(block)[block]
+                block = self.dbs.getFileBlock(blockName)
+                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
+                block['PhEDExNodeNames'] = location[blockName]
         sub, files = wmbs.createSubscriptionAndAddFiles(block=block)
         if detail:
             return wmbs, sub, files
@@ -822,8 +831,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # create workflow
         block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block))
-        self.assertEqual(len(files), 1)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
+        self.assertEqual(len(files), 5)
 
     def testReRecoBlackRunRestriction(self):
         """ReReco workflow with Run restrictions"""
@@ -831,14 +840,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.topLevelTask.setInputRunBlacklist([181183])  # Set run blacklist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
 
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 0)
 
     def testReRecoWhiteRunRestriction(self):
         block = self.dataset + "#" + BLOCK2
         self.topLevelTask.setInputRunWhitelist([181183])  # Set run whitelist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsOK(self):
@@ -846,7 +855,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['181367']
         self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['57,80']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsKO(self):
@@ -854,7 +863,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['123454321']
         self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['123,123']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 0)
 
     def testDuplicateFileInsert(self):
@@ -864,7 +873,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
         # check initially inserted files.
-        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        dbsFiles = self.dbs.getFileBlock(block)['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
         firstFileset = wmbs.topLevelFileset
         wmbsDao = wmbs.daofactory(classname="Files.InFileset")
@@ -878,19 +887,22 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         dbs = self.getDBS(wmspec)
         wmbs = self.createWMBSHelperWithTopTask(wmspec, block)
         # check duplicate insert
-        dbsFiles = dbs.getFileBlock(block)[block]['Files']
-        numOfFiles = wmbs.addFiles(dbs.getFileBlock(block)[block])
+        dbsFiles = dbs.getFileBlock(block)
+        location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[block], complete='y')
+        dbsFiles['PhEDExNodeNames'] = location[block]
+        numOfFiles = wmbs.addFiles(dbsFiles)
         self.assertEqual(numOfFiles, 0)
         secondFileset = wmbs.topLevelFileset
 
         wmbsDao = wmbs.daofactory(classname="Files.InFileset")
         numOfFiles = len(wmbsDao.execute(secondFileset.id))
-        self.assertEqual(numOfFiles, len(dbsFiles))
+        self.assertEqual(numOfFiles, len(dbsFiles['Files']))
 
         self.assertNotEqual(firstFileset.id, secondFileset.id)
 
     def testDuplicateSubscription(self):
         """Can't duplicate subscriptions"""
+        siteWhitelist = ["T2_XX_SiteA", "T2_XX_SiteB"]
         # using default wmspec
         block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
@@ -900,7 +912,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         subId = wmbs.topLevelSubscription['id']
 
         # check initially inserted files.
-        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        dbsFiles = self.dbs.getFileBlock(block)['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
 
         # Not clear what's supposed to happen here, 2nd test is completely redundant
@@ -918,7 +930,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.setupMCWMSpec()
         mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
                     LastEvent=999995, LastLumi=12345, LastRun=12)
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
         filesetId = wmbs.topLevelFileset.id
@@ -932,7 +945,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(numOfFiles, numDbsFiles)
 
         # reinsert subscription - shouldn't create anything new
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         wmbs.topLevelFileset.loadData()
         self.assertEqual(numOfFiles, len(wmbs.topLevelFileset.files))
         self.assertEqual(filesetId, wmbs.topLevelFileset.id)
@@ -977,13 +991,15 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # in BasicProductionWorkload.getProdArgs() but changing it to
         # "reqmgr_config_cache_t" from StdBase test arguments does not fix the
         # situation. testDuplicateSubscription probably has the same issue
+        siteWhitelist = ["T2_XX_SiteA", "T2_XX_SiteB"]
 
         self.setupMCWMSpec()
 
         mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
                     LastEvent=999995, LastLumi=12345, LastRun=12)
 
-        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
+        wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask,
+                                                commonLocation=siteWhitelist)
         subscription = wmbs.topLevelSubscription
         self.assertEqual(1, subscription.exists())
         fileset = subscription['fileset']

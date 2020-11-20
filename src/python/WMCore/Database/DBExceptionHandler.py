@@ -11,9 +11,12 @@ import threading
 # ORA-12545: Connect failed because target host or object does not exist
 # ORA-00060: deadlock detected while waiting for resource
 # ORA-01033: ORACLE initialization or shutdown in progress
+# (cx_Oracle.InterfaceError) not connected  # same as ORA-03114, in the new SQLAlchemy
+# (cx_Oracle.DatabaseError) ORA-25408: can not safely replay call
 # and those two MySQL exceptions
 DB_CONNECTION_ERROR_STR = ["ORA-03113", "ORA-03114", "ORA-03135", "ORA-12545", "ORA-00060", "ORA-01033",
-                           "MySQL server has gone away", "Lock wait timeout exceeded"]
+                           "MySQL server has gone away", "Lock wait timeout exceeded",
+                           "(cx_Oracle.InterfaceError) not connected", "ORA-25408"]
 
 
 def db_exception_handler(f):

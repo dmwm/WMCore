@@ -65,6 +65,7 @@ class RunJob(dict):
         self.setdefault('inputDatasetLocations', None)
         self.setdefault('inputPileup', None)
         self.setdefault('allowOpportunistic', False)
+        self.setdefault('activity', None)
 
         return
 

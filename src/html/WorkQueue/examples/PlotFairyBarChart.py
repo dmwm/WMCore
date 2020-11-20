@@ -10,9 +10,12 @@ from __future__ import print_function
 #     -> this prints out html file, normally resulting html snippet will be used ...
 
 
+from future import standard_library
+standard_library.install_aliases()
+
 import json
 import random
-import urllib
+import urllib.parse
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 
@@ -54,7 +57,7 @@ plotDefinition = \
     "legend": "right"
 }
 plotDefinition["title"] = "Element status - hard-coded"
-hardCodedPlotData = urllib.quote(json.dumps(plotDefinition, ensure_ascii = True))
+hardCodedPlotData = urllib.parse.quote(json.dumps(plotDefinition, ensure_ascii = True))
 
 
 

@@ -3,8 +3,10 @@
         "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
         "Dashboard": "Dashboard-OVERRIDE-ME", 
         "GracePeriod": 300, 
-        "MergedLFNBase": "/store/backfill/1",
-        "Override": {"eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"},
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": ""
+        }, 
         "ProcessingString": "ProcessingString-OVERRIDE-ME", 
         "ProcessingVersion": 19, 
         "SiteBlacklist": [], 
@@ -12,38 +14,37 @@
             "SiteWhitelist-OVERRIDE-ME"
         ], 
         "SoftTimeout": 129600, 
-        "Team": "Team-OVERRIDE-ME",
-        "TrustSitelists": true,
+        "Team": "Team-OVERRIDE-ME", 
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Run2016D", 
-        "CMSSWVersion": "CMSSW_8_0_20", 
+        "AcquisitionEra": "Run2018D", 
+        "CMSSWVersion": "CMSSW_10_6_12", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": "ReReco with 151 LumiList (3 runs in the same block); TrustSitelists enabled; Multicore 4; EventAware splitting", 
-        "ConfigCacheID": "745f7b1f06133e372cf13afcac015981", 
+        "Comments": {
+            "CheckList": "ReReco with LumiList", 
+            "WorkFlowDesc": "ReReco NanoAOD with LumiList, 3 runs and 46 lumis, bringing in 2 blocks; 2cores and 2GB; do not write logs to EOS"
+        }, 
+        "ConfigCacheID": "6d0b906879c210bde4baecd2e78ded41", 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
-        "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135", 
-        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
-        "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
-        "Group": "DATAOPS",
-        "InputDataset": "/NoBPTX/Run2016D-v2/RAW", 
-        "LumiList": {"276315": [[1, 15], [86, 160], [161, 180]], "276352": [[1, 1], [11, 40]], "276327": [[51, 60]]},
-        "Memory": 4500, 
-        "Multicore": 4, 
-        "PrepID": "TEST-ReReco-Run2016D-v2-NoBPTX-23Sep2016-0001", 
-        "ProcessingString": "23Sep2016", 
-        "ProcessingVersion": 20, 
-        "RequestPriority": 190000, 
+        "GlobalTag": "106X_dataRun2_v28", 
+        "InputDataset": "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD",
+        "LumiList": {"320836": [[1, 10], [16, 20]], "322605": [[264, 275]], "324841": [[560, 565], [855, 860], [920, 926]]},
+        "Memory": 2000, 
+        "Multicore": 2, 
+        "PrepID": "TEST-ReReco-Run2018D-NoBPTX-Nano02Dec2019-00001", 
+        "ProcessingString": "Nano02Dec2019_12Nov2019_UL2018", 
+        "ProcessingVersion": 2, 
+        "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "ReReco", 
-        "Requestor": "amaltaro", 
-        "Scenario": "pp", 
-        "ScramArch": "slc6_amd64_gcc530", 
-        "SizePerEvent": 1600, 
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ], 
+        "SizePerEvent": 1, 
         "SplittingAlgo": "EventAwareLumiBased", 
-        "TimePerEvent": 4
+        "TimePerEvent": 0.2
     }
 }

@@ -10,6 +10,7 @@ from functools import wraps
 from threading import Thread, Condition
 
 from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
+from cherrypy.lib import cpstats
 
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
@@ -354,6 +355,12 @@ class RESTFrontPage:
         URL arguments; they are not used here."""
         return self._serve([self._frontpage])
 
+    @expose
+    def stats(self):
+        "Return CherryPy stats dict about underlying service activities"
+        return cpstats.StatsPage().data()
+
+
 
 ######################################################################
 ######################################################################
@@ -690,6 +697,11 @@ class MiniRESTApi:
         self.methods[method][api] = apiobj
 
     @expose
+    def stats(self):
+        "Return CherryPy stats dict about underlying service activities"
+        return cpstats.StatsPage().data()
+
+    @expose
     def default(self, *args, **kwargs):
         """The HTTP request handler.
 
@@ -755,9 +767,14 @@ class MiniRESTApi:
             raise APINotSpecified()
         api = param.args.pop(0)
         if api not in self.methods[request.method]:
-            response.headers['Allow'] = \
-                " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
-            raise APIMethodMismatch()
+            methods = " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
+            response.headers['Allow'] = methods
+            if not methods:
+                msg = 'Api "%s" not found. This method supports these Apis: %s' % (api, self.methods[request.method].keys())
+                raise APINotSupported(msg)
+            else:
+                msg = 'Api "%s" only supported in method(s): "%s"' % (api, methods)
+                raise APIMethodMismatch(msg)
         apiobj = self.methods[request.method][api]
 
         # Check what format the caller requested. At least one is required; HTTP

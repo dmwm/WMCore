@@ -1,11 +1,13 @@
 from __future__ import (division, print_function)
+from future import standard_library
+standard_library.install_aliases()
 
 import logging
+from urllib.parse import urlparse
 
 from collections import defaultdict
 from WMCore.Services.Service import Service
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
-
 
 class TagCollector(Service):
     """
@@ -13,23 +15,26 @@ class TagCollector(Service):
     Provides non-deprecated CMSSW releases in all their ScramArchs (not only prod)
     """
 
-    def __init__(self, url=None, logger=None, **kwargs):
+    def __init__(self, url=None, logger=None, configDict=None, **kwargs):
         """
         responseType will be either xml or json
         """
         defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"
+        url = url or defaultURL
+        parsedUrl = urlparse(url)
+        self.cFileUrlPath = parsedUrl.path.replace("/", "_")
         # all releases types and all their archs
         self.tcArgs = kwargs
         self.tcArgs.setdefault("anytype", 1)
         self.tcArgs.setdefault("anyarch", 1)
 
-        params = {}
-        params["timeout"] = 300
-        params['endpoint'] = url or defaultURL
-        params.setdefault('cacheduration', 1)
-        params['logger'] = logger if logger else logging.getLogger()
-
-        Service.__init__(self, params)
+        configDict = configDict or {}
+        configDict.setdefault('endpoint', url)
+        configDict.setdefault("timeout", 300)
+        configDict.setdefault('cacheduration', 1)
+        configDict['logger'] = logger if logger else logging.getLogger()
+        super(TagCollector, self).__init__(configDict)
+        self['logger'].debug("Initializing TagCollector with url: %s", self['endpoint'])
 
     def _getResult(self, callname="", clearCache=False,
                    args=None, verb="GET", encoder=None, decoder=None,
@@ -45,11 +50,17 @@ class TagCollector(Service):
         if not args:
             args = self.tcArgs
 
-        cfile = callname.replace("/", "_")
-        if clearCache:
-            self.clearCache(cfile, args, verb)
+        cFile = '%s_%s'% (self.cFileUrlPath, callname.replace("/", "_"))
+        # If no callname or url path, the base host is getting queried
+        if cFile == '_':
+            cFile = 'baseRequest'
 
-        f = self.refreshCache(cfile, callname, args, encoder=encoder,
+        if clearCache:
+            self.clearCache(cFile, args, verb)
+
+        # Note cFile is just the base name pattern, args 
+        # are also considered for the end filename in the method below
+        f = self.refreshCache(cFile, callname, args, encoder=encoder,
                               verb=verb, contentType=contentType)
         result = f.read()
         f.close()

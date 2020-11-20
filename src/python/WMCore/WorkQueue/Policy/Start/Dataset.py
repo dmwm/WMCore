@@ -11,7 +11,6 @@ make it generic enough that could be used by other spec types.
 import logging
 from math import ceil
 from WMCore import Lexicon
-from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
@@ -26,7 +25,6 @@ class Dataset(StartPolicyInterface):
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
         self.sites = []
-        self.cric = CRIC()
 
     def split(self):
         """Apply policy to spec"""
@@ -168,11 +166,11 @@ class Dataset(StartPolicyInterface):
                 blockSummary['NumberOfRuns'] = runs
 
             validBlocks.append(blockSummary)
-
+            blockLocation = set(self.blockLocationRucioPhedex(blockName))
             if locations is None:
-                locations = set(dbs.listFileBlockLocation(blockName))
+                locations = blockLocation
             else:
-                locations = locations.intersection(dbs.listFileBlockLocation(blockName))
+                locations = locations.intersection(blockLocation)
 
         # all needed blocks present at these sites
         if task.getTrustSitelists().get('trustlists'):

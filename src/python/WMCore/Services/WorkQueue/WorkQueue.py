@@ -6,7 +6,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 
 
 def convertWQElementsStatusToWFStatus(elementsStatusSet):
-    '''
+    """
     Defined Workflow status from its WorkQeuueElement status.
     :param: elementsStatusSet - dictionary of {request_name: set of all WQE status of this request, ...}
     :returns: request status
@@ -22,7 +22,7 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
                in Failed status, then just follow the usual request status.
 
     CancelRequest status treated as transient status.
-    '''
+    """
     if len(elementsStatusSet) == 0:
         return None
 

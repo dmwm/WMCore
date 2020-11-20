@@ -235,16 +235,14 @@ class StdBase(object):
 
         monitoring = task.data.section_("watchdog")
         monitoring.interval = 300
-        monitoring.monitors = ["DashboardMonitor", "PerformanceMonitor"]
-        monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.destinationHost = self.dashboardHost
-        monitoring.DashboardMonitor.destinationPort = self.dashboardPort
+        monitoring.monitors = ["PerformanceMonitor"]
         monitoring.section_("PerformanceMonitor")
         monitoring.PerformanceMonitor.maxPSS = maxpss
         monitoring.PerformanceMonitor.softTimeout = softTimeout
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
+    # FIXME: this function is getting deprecated. Will be removed in March 2020
     def reportWorkflowToDashboard(self, dashboardActivity):
         """
         _reportWorkflowToDashboard_
@@ -392,6 +390,7 @@ class StdBase(object):
         acqEra = taskConf.get("AcquisitionEra") or self.acquisitionEra
         procStr = taskConf.get("ProcessingString") or self.processingString
         procVer = taskConf.get("ProcessingVersion") or self.processingVersion
+        prepID = taskConf.get("PrepID") or self.prepID
         procTask.setAcquisitionEra(acqEra)
         procTask.setProcessingString(procStr)
         procTask.setProcessingVersion(procVer)
@@ -431,6 +430,7 @@ class StdBase(object):
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(globalTag)
+        procTaskCmsswHelper.setPrepId(prepID)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName=procTaskLogArch.name())
 
@@ -479,7 +479,6 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         # only in the very end, in order to get it in for the children tasks as well
-        prepID = taskConf.get("PrepID") or self.prepID
         procTask.setPrepID(prepID)
 
         # has to be done in the very end such that child tasks are set too
@@ -716,7 +715,8 @@ class StdBase(object):
                                    uploadProxy=self.dqmUploadProxy,
                                    periodic_harvest_interval=self.periodicHarvestInterval,
                                    doLogCollect=doLogCollect,
-                                   dqmHarvestUnit=self.dqmHarvestUnit)
+                                   dqmHarvestUnit=self.dqmHarvestUnit,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         # only in the very end, in order to get it in for the children tasks as well
         prepID = taskConf.get("PrepID") or parentTask.getPrepID()
@@ -841,7 +841,8 @@ class StdBase(object):
                                    uploadProxy=uploadProxy,
                                    periodic_harvest_interval=0, periodic_harvest_sibling=True,
                                    parentStepName=parentStepName, doLogCollect=doLogCollect,
-                                   dqmHarvestUnit=dqmHarvestUnit)
+                                   dqmHarvestUnit=dqmHarvestUnit,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         return
 

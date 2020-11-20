@@ -153,7 +153,8 @@ class WMBSHelper(WMConnectionBase):
     Interface between the WorkQueue and WMBS.
     """
 
-    def __init__(self, wmSpec, taskName, blockName=None, mask=None, cachepath='.'):
+    def __init__(self, wmSpec, taskName, blockName=None, mask=None,
+                 cachepath='.', commonLocation=None):
         """
         _init_
 
@@ -169,6 +170,7 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset = None
         self.topLevelSubscription = None
         self.topLevelTaskDBSBufferId = None
+        self.commonLocation = commonLocation or []
 
         self.mergeOutputMapping = {}
 
@@ -185,7 +187,6 @@ class WMBSHelper(WMConnectionBase):
         self.setFileAddChecksum = self.daofactory(classname="Files.AddChecksumByLFN")
         self.addFileAction = self.daofactory(classname="Files.Add")
         self.addToFileset = self.daofactory(classname="Files.AddDupsToFileset")
-        self.getLocations = self.daofactory(classname="Locations.ListSites")
         self.getLocationInfo = self.daofactory(classname="Locations.GetSiteInfo")
 
         # DAOs from DBSBuffer
@@ -348,18 +349,14 @@ class WMBSHelper(WMConnectionBase):
             if self.mask and self.mask.get(key) is None:
                 msg = 'Invalid value "%s" for %s' % (self.mask.get(key), key)
                 raise WorkQueueWMBSException(msg)
+
         locations = set()
-        for site in self.getLocations.execute(conn=self.getDBConn(),
-                                              transaction=self.existingTransaction()):
-            try:
-                siteInfo = self.getLocationInfo.execute(site, conn=self.getDBConn(),
-                                                        transaction=self.existingTransaction())
-                if not siteInfo:
-                    self.logger.info('Skipping MonteCarlo injection to site "%s" as unknown to wmbs' % site)
-                    continue
-                locations.add(siteInfo[0]['pnn'])
-            except Exception as ex:
-                self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
+        siteInfo = self.getLocationInfo.execute(conn=self.getDBConn(),
+                                                transaction=self.existingTransaction())
+        for site in siteInfo:
+            if site['pnn'] in self.commonLocation:
+                locations.add(site['pnn'])
+
         if not locations:
             msg = 'No locations to inject Monte Carlo work to, unable to proceed'
             raise WorkQueueWMBSException(msg)

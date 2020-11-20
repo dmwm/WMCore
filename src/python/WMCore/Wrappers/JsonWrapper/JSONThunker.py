@@ -1,19 +1,10 @@
 from __future__ import print_function
 
+from builtins import str, bytes, int
+from future.utils import viewitems
+
 import sys
 import types
-
-# PY3 compatibility
-# Not clear this function will work under python3 either.
-# nosetests Requests_t.py:testJSONRequests.testSet2 is a minimal test that fails on python2
-# The problem is that isinstance checks on this object in python2 fail if included
-if sys.version.startswith('3.'):
-    from builtins import object
-
-    # Make types compatible, can also be removed once transition is over
-    long = int
-    basestring = str
-
 
 class _EmptyClass(object):
     pass
@@ -41,12 +32,9 @@ class JSONThunker(object):
                                  bool,
                                  int,
                                  float,
-                                 long,
                                  complex,
                                  str,
                                  bytes,
-                                 unicode,
-                                 basestring
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -145,7 +133,7 @@ class JSONThunker(object):
         toThunk = self.checkRecursion(toThunk)
         special = False
         tmpdict = {}
-        for k, v in toThunk.iteritems():
+        for k, v in viewitems(toThunk):
             if type(k) == type(int):
                 special = True
                 tmpdict['_i:%s' % k] = self._thunk(v)
@@ -167,7 +155,7 @@ class JSONThunker(object):
         toThunk = self.checkRecursion(toThunk)
         toThunk = self.checkBlackListed(toThunk)
 
-        if isinstance(toThunk, basestring):
+        if isinstance(toThunk, (str, bytes)):
             # things that got blacklisted
             return toThunk
         if hasattr(toThunk, '__to_json__'):
@@ -205,9 +193,9 @@ class JSONThunker(object):
                     'type': thunktype,
                     thunktype: {}}
 
-        for k, v in data.__dict__.iteritems():
+        for k, v in viewitems(data.__dict__):
             tempDict[k] = self._thunk(v)
-        for k, v in data.iteritems():
+        for k, v in viewitems(data):
             tempDict[thunktype][k] = self._thunk(v)
 
         return tempDict
@@ -217,9 +205,9 @@ class JSONThunker(object):
         data.pop('is_dict', False)
         thunktype = data.pop('type', False)
 
-        for k, v in data.iteritems():
+        for k, v in viewitems(data):
             if k == thunktype:
-                for k2, v2 in data[thunktype].iteritems():
+                for k2, v2 in viewitems(data[thunktype]):
                     value[k2] = self._unthunk(v2)
             else:
                 value.__dict__[k] = self._unthunk(v)
@@ -234,7 +222,7 @@ class JSONThunker(object):
                     thunktype: []}
         for k, v in enumerate(data):
             tempDict['thunktype'].append(self._thunk(v))
-        for k, v in data.__dict__.iteritems():
+        for k, v in viewitems(data.__dict__):
             tempDict[k] = self._thunk(v)
         return tempDict
 
@@ -242,10 +230,10 @@ class JSONThunker(object):
         data.pop('thunker_encoded_json', False)
         data.pop('is_list', False)
         thunktype = data.pop('type')
-        for k, v in data[thunktype].iteritems():
+        for k, v in viewitems(data[thunktype]):
             setattr(value, k, self._unthunk(v))
 
-        for k, v in data.iteritems():
+        for k, v in viewitems(data):
             if k == thunktype:
                 continue
             value.__dict__ = self._unthunk(v)
@@ -276,8 +264,8 @@ class JSONThunker(object):
         """
         _unthunk - does the actual work for unthunk
         """
-        if type(jsondata) is unicode:
-            return str(jsondata)
+        if type(jsondata) is str:
+            return jsondata.encode("utf-8")
         if type(jsondata) is dict:
             if 'thunker_encoded_json' in jsondata:
                 # we've got a live one...
@@ -289,7 +277,7 @@ class JSONThunker(object):
                 if jsondata['type'] == 'dict':
                     # We have a "special" dict
                     data = {}
-                    for k, v in jsondata['dict'].iteritems():
+                    for k, v in viewitems(jsondata['dict']):
                         tmp = self._unthunk(v)
                         if k.startswith('_i:'):
                             data[int(k.lstrip('_i:'))] = tmp
@@ -329,7 +317,7 @@ class JSONThunker(object):
                 return value
             else:
                 data = {}
-                for k, v in jsondata.iteritems():
+                for k, v in viewitems(jsondata):
                     data[k] = self._unthunk(v)
                 return data
 

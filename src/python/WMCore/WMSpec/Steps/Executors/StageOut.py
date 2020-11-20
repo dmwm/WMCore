@@ -42,7 +42,7 @@ class StageOut(Executor):
         if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        logging.info("Steps.Executors.StageOut.pre called")
+        logging.info("Steps.Executors.%s.pre called", self.__class__.__name__)
         return None
 
     def execute(self, emulator=None):
@@ -55,9 +55,14 @@ class StageOut(Executor):
         if emulator is not None:
             return emulator.emulate(self.step, self.job)
 
+        logging.info("Steps.Executors.%s.execute called", self.__class__.__name__)
+
         overrides = {}
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
+        # propagete upstream cmsRun outcome such that we can decide whether to
+        # stage files out or not
+        self.failedPreviousStep = overrides.get('previousCmsRunFailure', False)
 
         # Set wait to two hours per retry
         # this alarm leaves a subprocess behing that may cause trouble, see #6273
@@ -117,8 +122,14 @@ class StageOut(Executor):
             stepReport = Report()
             stepReport.unpersist(reportLocation, step)
 
-            # Don't stage out files from bad steps.
-            if not stepReport.stepSuccessful(step):
+            # Don't stage out files from bad steps. Each step has its own Report.pkl file
+            # We need to check all steps executed so far, otherwise it might stage out
+            # files for chained steps when the overall job has already failed to process
+            # one of them
+            if not stepReport.stepSuccessful(step) or self.failedPreviousStep:
+                msg = "Either the step did not succeed or an upstream step failed. "
+                msg += "Skipping stage out of any root output files in this job."
+                logging.warning(msg)
                 continue
 
             # Okay, time to start using stuff
@@ -224,6 +235,8 @@ class StageOut(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
+        logging.info("Steps.Executors.%s.post called", self.__class__.__name__)
+
         for step in self.stepSpace.taskSpace.stepSpaces():
 
             if step == self.stepName:
@@ -256,7 +269,6 @@ class StageOut(Executor):
 
             stepReport.persist(reportLocation)
 
-        logging.info("Steps.Executors.StageOut.post called")
         return None
 
     # Accessory methods

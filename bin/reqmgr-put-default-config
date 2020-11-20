@@ -8,8 +8,10 @@ It's supposed to be called at every ReqMgr2 deployment, such that the splitting,
 permissions, etc are always up-to-date
 """
 from __future__ import print_function, division
+from future import standard_library
+standard_library.install_aliases()
 
-import httplib
+import http.client
 import json
 import os
 import sys
@@ -23,7 +25,7 @@ print("\nPushing DEFAULT configuration into %s ReqMgr Aux DB..." % hostName)
 encodedParams = json.dumps({})
 headers = {"Content-type": "application/json", "Accept": "application/json"}
 
-conn = httplib.HTTPSConnection(hostName,
+conn = http.client.HTTPSConnection(hostName,
                                cert_file=os.getenv('X509_USER_CERT'),
                                key_file=os.getenv('X509_USER_KEY'))
 conn.request("PUT", "/reqmgr2/data/app_config/DEFAULT", encodedParams, headers)

@@ -1,10 +1,12 @@
 from __future__ import division, print_function
 
-from Utils.IteratorTools import nestedDictUpdate
+import logging
+from Utils.IteratorTools import nestedDictUpdate, grouper
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
+from WMCore.ReqMgr.DataStructs.RequestStatus import T0_ACTIVE_STATUS, WMSTATS_JOB_INFO, WMSTATS_NO_JOB_INFO
 
 REQUEST_PROPERTY_MAP = {
     "_id": "_id",
@@ -54,32 +56,9 @@ def convertToLegacyFormat(requestDoc):
 
 
 class WMStatsReader(object):
-    # TODO need to get this from reqmgr api
-    ACTIVE_STATUS = ["new",
-                     "assignment-approved",
-                     "assigned",
-                     "acquired",
-                     "running",
-                     "running-open",
-                     "running-closed",
-                     "failed",
-                     "force-complete",
-                     "completed",
-                     "closed-out",
-                     "announced",
-                     "aborted",
-                     "aborted-completed",
-                     "rejected"]
 
-    T0_ACTIVE_STATUS = ["new",
-                        "Closed",
-                        "Merge",
-                        "Harvesting",
-                        "Processing Done",
-                        "AlcaSkim",
-                        "completed"]
-
-    def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
+    def __init__(self, couchURL, appName="WMStats", reqdbURL=None,
+                 reqdbCouchApp="ReqMgr", logger=None):
         self._sanitizeURL(couchURL)
         # set the connection for local couchDB call
         self._commonInit(couchURL, appName)
@@ -87,6 +66,7 @@ class WMStatsReader(object):
             self.reqDB = RequestDBReader(reqdbURL, reqdbCouchApp)
         else:
             self.reqDB = None
+        self.logger = logger if logger else logging.getLogger()
 
     def _sanitizeURL(self, couchURL):
         return sanitizeURL(couchURL)['url']
@@ -119,7 +99,7 @@ class WMStatsReader(object):
         return jobInfoByRequestAndAgent
 
     def _updateRequestInfoWithJobInfo(self, requestInfo):
-        if len(requestInfo.keys()) != 0:
+        if requestInfo:
             jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(requestInfo.keys())
             self._combineRequestAndJobData(requestInfo, jobInfoByRequestAndAgent)
 
@@ -152,7 +132,7 @@ class WMStatsReader(object):
         "timestamp":1394738860,"sites":{"T2_CH_CERN_AI":{"submitted":{"retry":1,"pending":1}},
         "T2_CH_CERN":{"success":6,"submitted":{"retry":1,"pending":1}},
         "T2_DE_DESY":{"failure":{"exception":3},"success":375}},
-        "agent":"WMAgentCommissioning",
+        "agent":"WMAgent",
         "tasks":
            {"/amaltaro_OracleUpgrade_TEST_HG1401_140220_090116_6731/Production":
             {"status":{"failure":{"exception":3},"success":331},
@@ -215,15 +195,33 @@ class WMStatsReader(object):
 
     def _getLatestJobInfo(self, keys):
         """
-        keys is [['request_name', 'agent_url'], ....]
-        returns ids
+        Given a list of lists as keys, in the format of:
+            [['request_name', 'agent_url'], ['request_name2', 'agent_url2'], ....]
+        The result format from the latestRequest view is:
+            {u'offset': 527,
+             u'rows': [{u'doc': {u'_rev': u'32-6027014210',
+             ...
+                        u'id': u'cmsgwms-submit6.fnal.gov-cmsunified_ACDC0_task_BTV-RunIISummer19UL18wmLHEGEN-00004__v1_T_200507_162125_3670',
+                        u'key': [u'cmsunified_ACDC0_task_BTV-RunIISummer19UL18wmLHEGEN-00004__v1_T_200507_162125_3670',
+                                 u'cmsgwms-submit6.fnal.gov'],
+                        u'value': None}],
+             u'total_rows': 49606}
         """
-        if len(keys) == 0:
+        if not keys:
             return []
-        options = {"include_docs": True}
+        options = {}
+        options["include_docs"] = True
         options["reduce"] = False
-        result = self._getCouchView("latestRequest", options, keys)
-        return result
+        finalResults = {}
+        # magic number: 5000 keys (need to check which number is optimal)
+        for sliceKeys in grouper(keys, 5000):
+            self.logger.info("Querying latestRequest with %d keys", len(sliceKeys))
+            result = self._getCouchView("latestRequest", options, sliceKeys)
+            if not finalResults and result:
+                finalResults = result
+            elif result.get('rows'):
+                finalResults['rows'].extend(result['rows'])
+        return finalResults
 
     def _getAllDocsByIDs(self, ids, include_docs=True):
         """
@@ -296,13 +294,12 @@ class WMStatsReader(object):
             self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
 
-    def getActiveData(self, jobInfoFlag=False):
-
-        return self.getRequestByStatus(WMStatsReader.ACTIVE_STATUS, jobInfoFlag)
+    def getActiveData(self, listStatuses, jobInfoFlag=False):
+        return self.getRequestByStatus(listStatuses, jobInfoFlag)
 
     def getT0ActiveData(self, jobInfoFlag=False):
 
-        return self.getRequestByStatus(WMStatsReader.T0_ACTIVE_STATUS, jobInfoFlag)
+        return self.getRequestByStatus(T0_ACTIVE_STATUS, jobInfoFlag)
 
     def getRequestByStatus(self, statusList, jobInfoFlag=False, limit=None, skip=None,
                            legacyFormat=False):
@@ -313,18 +310,24 @@ class WMStatsReader(object):
         If legacyFormat is True convert data to old wmstats format from current reqmgr format.
         Shouldn't be set to True unless existing code breaks
         """
+        results = dict()
+        for status in statusList:
+            self.logger.info("Fetching workflows by status from ReqMgr2, status: %s", status)
+            requestInfo = self.reqDB.getRequestByStatus(status, True, limit, skip)
+            self.logger.info("Found %d workflows in status: %s", len(requestInfo), status)
 
-        requestInfo = self.reqDB.getRequestByStatus(statusList, True, limit, skip)
+            if legacyFormat:
+                # convert the format to wmstats old format
+                for requestName, doc in requestInfo.items():
+                    requestInfo[requestName] = convertToLegacyFormat(doc)
+            results.update(requestInfo)
 
-        if legacyFormat:
-            # convert the format to wmstas old format
-            for requestName, doc in requestInfo.items():
-                requestInfo[requestName] = convertToLegacyFormat(doc)
+        # now update these requests with agent information too
+        if results and jobInfoFlag:
+            self.logger.info("Now updating these requests with job info...")
+            self._updateRequestInfoWithJobInfo(results)
 
-        if jobInfoFlag:
-            # get request and agent info
-            self._updateRequestInfoWithJobInfo(requestInfo)
-        return requestInfo
+        return results
 
     def getRequestSummaryWithJobInfo(self, requestName):
         """
@@ -341,7 +344,7 @@ class WMStatsReader(object):
 
         options = {"group_level": 1, "reduce": True}
 
-        results = self.couchDB.loadView(self.couchapp, "allWorkflows", options=options)['rows']
+        results = self._getCouchView("allWorkflows", options)['rows']
         requestNames = [x['key'] for x in results]
 
         workflowDict = self.reqDB.getStatusAndTypeByRequest(requestNames)
@@ -368,7 +371,7 @@ class WMStatsReader(object):
 
         options = {'reduce': True, 'group_level': 5, 'startkey': [requestName],
                    'endkey': [requestName, {}]}
-        results = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)
+        results = self._getCouchView("jobsByStatusWorkflow", options)
         jobDetails = {}
         for row in results['rows']:
             # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']
@@ -390,7 +393,7 @@ class WMStatsReader(object):
         options = {'include_docs': True, 'reduce': False,
                    'startkey': startKey, 'endkey': endKey,
                    'limit': limit}
-        result = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)
+        result = self._getCouchView("jobsByStatusWorkflow", options)
         jobInfoDoc = {}
         for row in result['rows']:
             keys = row['key']
@@ -414,7 +417,7 @@ class WMStatsReader(object):
 
     def getAllAgentRequestRevByID(self, agentURL):
         options = {"reduce": False}
-        results = self.couchDB.loadView(self.couchapp, "byAgentURL", options=options, keys=[agentURL])
+        results = self._getCouchView("byAgentURL", options, keys=[agentURL])
         idRevMap = {}
         for row in results['rows']:
             idRevMap[row['id']] = row['value']['rev']

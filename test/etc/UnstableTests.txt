@@ -20,3 +20,10 @@ WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testPrioritiesWorkPolling
 WMCore_t.Services_t.pycurlFileUpload_t.PyCurlRESTServer:testFailingFileUpload
 WMCore_t.Services_t.LogDB_t.LogDB_t.LogDBTest:test_heartbeat
 WMCore_t.WorkerThreads_t.WorkerThreads_t.WorkerThreadsTest:testWorkerError
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testConfig
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testGetAccount
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testWhoAmI
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testPing
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testGetBlocksInContainer
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testGetReplicaInfoForBlocks
+WMCore_t.Services_t.Rucio_t.Rucio_t.RucioTest:testGetReplicaInfoForBlocksRucio

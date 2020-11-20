@@ -19,10 +19,11 @@ from WMCore.Lexicon import sanitizeURL
 from WMCore.Services.ReqMgrAux.ReqMgrAux import isDrainMode, listDiskUsageOverThreshold
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-from WMCore.Services.StompAMQ.StompAMQ import StompAMQ
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
+# CMSMonitoring modules
+from CMSMonitoring.StompAMQ import StompAMQ
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -41,7 +42,7 @@ class AgentStatusPoller(BaseWorkerThread):
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
 
-        proxyArgs = {'logger': logging.getLogger()}
+        proxyArgs = {'logger': logging.getLogger(), 'cleanEnvironment': True}
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
         self.userCertFile = self.proxy.getUserCertFilename()  # X509_USER_CERT
@@ -554,20 +555,27 @@ class AgentStatusPoller(BaseWorkerThread):
             doc['agent_url'] = agentUrl
 
         docType = "cms_%s_info" % self.producer
+        notifications = []
+
         logging.debug("Sending the following data to AMQ %s", pformat(docs))
         try:
             stompSvc = StompAMQ(username=self.userAMQ,
                                 password=self.passAMQ,
                                 producer=self.producer,
                                 topic=self.topicAMQ,
+                                validation_schema=None,
                                 host_and_ports=self.hostPortAMQ,
                                 logger=logging)
 
-            notifications = [stompSvc.make_notification(payload=doc, docType=docType, ts=timeS,
-                                                        dataSubfield="payload") for doc in docs]
+            for doc in docs:
+                singleNotif, _, _ = stompSvc.make_notification(payload=doc, docType=docType,
+                                                               ts=timeS, dataSubfield="payload")
+                notifications.append(singleNotif)
 
             failures = stompSvc.send(notifications)
-            logging.info("%i docs successfully sent to AMQ", len(notifications) - len(failures))
+            msg = "%i out of %i documents successfully sent to AMQ" % (len(notifications) - len(failures),
+                                                                       len(notifications))
+            logging.info(msg)
         except Exception as ex:
             logging.exception("Failed to send data to StompAMQ. Error %s", str(ex))
 

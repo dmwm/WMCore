@@ -6,6 +6,7 @@ A sane default welcome page
 import time
 from cherrypy import expose
 from cherrypy import __version__ as cherrypy_version
+from cherrypy.lib import cpstats
 from Cheetah import Version as cheetah_version
 from WMCore.WebTools.Page import Page
 
@@ -49,3 +50,8 @@ class Welcome(Page):
         Return the index.
         """
         return self.index()
+
+    @expose
+    def stats(self):
+        "Return CherryPy stats dict about underlying service activities"
+        return cpstats.StatsPage().data()

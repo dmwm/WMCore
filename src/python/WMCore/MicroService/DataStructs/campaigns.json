@@ -1,0 +1,2837 @@
+[
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_US_Nebraska", 
+      "T1_DE_KIT", 
+      "T1_RU_JINR"
+    ], 
+    "SiteBlackList": [
+      "T2_CH_CERN_HLT"
+    ], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIIAutumn18FSPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIIFall17FSPrePremix-PUMoriond18_102X_upgrade2018_realistic_v15-v2/GEN-SIM-DIGI-RAW": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 2, 
+    "SiteWhiteList": [
+      "T1_US_FNAL", 
+      "T2_US_Nebraska"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16DR80", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIISummer15GS-MCRUN2_71_V1_ext1-v1/GEN-SIM": [
+        "T1_US_FNAL", 
+        "T2_US_Nebraska"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer16DR80Premix", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL", 
+      "T1_IT_CNAF", 
+      "T1_UK_RAL", 
+      "T1_DE_KIT", 
+      "T2_US_Caltech", 
+      "T2_US_Nebraska", 
+      "T2_US_MIT"
+    ], 
+    "SecondaryLocation": [
+      "T2_US_Purdue", 
+      "T1_DE_KIT"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer16FSPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer16FSPremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v4-v1/GEN-SIM-DIGI-RAW": [
+        "T2_US_Purdue", 
+        "T1_DE_KIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter15pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "UltraLegacy2018", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "NANOAODRun2DataProd", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
+        "T1_UK_RAL", 
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T2_FR_GRIF_IRFU"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRSummer20ReRECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_US_MIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCUETP8M1_2017_5p02TeV-pythia8/RunIIpp5Spring18GS-94X_mc2017_realistic_v10For2017G_v3-v2/GEN-SIM": [
+        "T2_US_MIT", 
+        "T2_DE_DESY"
+      ], 
+      "/MinBias_TuneCUETP8M1_5p02TeV-pythia8/HINppWinter17GS-92X_upgrade2017_realistic_v11-v1/GEN-SIM": [
+        "T2_US_MIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16MiniAODv3", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIIFall17DRPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-MCv2_correctPU_94X_mc2017_realistic_v9-v1/GEN-SIM-DIGI-RAW": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer15GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer15wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIIAutumn18DRPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PUAutumn18_102X_upgrade2018_realistic_v15-v1/GEN-SIM-DIGI-RAW": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall18pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIIFall17FSPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIIFall17FSPrePremix-PUMoriond17_94X_mc2017_realistic_v15-v1/GEN-SIM-DIGI-RAW": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_DE_KIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17DRStdmix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIIFall17GS-93X_mc2017_realistic_v3-v1/GEN-SIM": [
+        "T1_DE_KIT", 
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8_Fall17/RunIIFall17GS-93X_mc2017_realistic_v3-v1/GEN-SIM": [
+        "T1_IT_CNAF", 
+        "T1_DE_KIT"
+      ], 
+      "/MinBias_TuneCP5_inelasticON_13TeV-pythia8/RunIIFall17GS-93X_mc2017_realistic_v3-v1/GEN-SIM": [
+        "T1_DE_KIT", 
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall18wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_FR_CCIN2P3", 
+      "T1_RU_JINR"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN", 
+      "T2_CH_CERN_HLT"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_Hydjet_Drum5F_2018_5p02TeV/HINPbPbAutumn18GS-103X_upgrade2018_realistic_HI_v11-v1/GEN-SIM": [
+        "T1_RU_JINR", 
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_FR_CCIN2P3", 
+      "T1_RU_JINR"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18GSHIMix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_Hydjet_Drum5F_2018_5p02TeV/HINPbPbAutumn18GS-103X_upgrade2018_realistic_HI_v11-v1/GEN-SIM": [
+        "T1_RU_JINR", 
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_DE_KIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIIFall18GS-102X_upgrade2018_realistic_v11-v1/GEN-SIM": [], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIFall18GS-IdealGeometry_102X_upgrade2018_design_v9-v1/GEN-SIM": [
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV_NeutronHP-pythia8/RunIIFall18GS-SNB_102X_upgrade2018_realistic_v17-v1/GEN-SIM": [
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8_Fall18/RunIIFall18GS-102X_upgrade2018_realistic_v11-v1/GEN-SIM": [
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIFall18GS-newECALCrystalGeometryFor2016_102X_mcRun2_asymptotic_v5-v1/GEN-SIM": [
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIFall18GS-102X_upgrade2018_realistic_v9-v1/GEN-SIM": [
+        "T2_US_MIT", 
+        "T2_DE_DESY"
+      ], 
+      "/MinBias_TuneCP5_13TeV_NeutronXS-pythia8/RunIIFall18GS-SNB_102X_upgrade2018_realistic_v17-v1/GEN-SIM": [
+        "T1_ES_PIC"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIFall18GS-newECALCrystalGeometryFor2017_102X_mc2017_realistic_v5-v1/GEN-SIM": [
+        "T1_DE_KIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib17GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib16GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalibMiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalibNanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib16wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_FR_CCIN2P3", 
+      "T2_IT_Legnaro"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalibDR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib18GS-105X_upgrade2018_realistic_v4-v1/GEN-SIM": [
+        "T2_US_Florida"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib17GS-105X_mc2017_realistic_v5_ext1-v1/GEN-SIM": [
+        "T1_FR_CCIN2P3", 
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib16GS-105X_mcRun2_asymptotic_v2-v1/GEN-SIM": [
+        "T1_FR_CCIN2P3", 
+        "T2_IT_Legnaro"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_IT_CNAF", 
+      "T2_US_MIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer17PrePremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/Run3Winter20GS-110X_mcRun3_2021_realistic_v6-v1/GEN-SIM": [
+        "T1_ES_PIC", 
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib17GS-105X_mc2017_realistic_v5_ext1-v1/GEN-SIM": [
+        "T1_FR_CCIN2P3", 
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM": [
+        "T2_US_Florida"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISpring18GS-100X_upgrade2018_realistic_v9-v1/GEN-SIM": [
+        "T2_DE_RWTH"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib16GS-105X_mcRun2_asymptotic_v2-v1/GEN-SIM": [
+        "T1_FR_CCIN2P3", 
+        "T2_IT_Legnaro"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIWinter19PFCalib18GS-105X_upgrade2018_realistic_v4-v1/GEN-SIM": [
+        "T2_US_Florida"
+      ], 
+      "/MinBias_TuneCP2_13TeV-pythia8/RunIIFall17FSPremix-PUMoriond17_94X_mc2017_realistic_v11-v1/GEN-SIM-RECO": [
+        "T2_US_MIT", 
+        "T2_DE_DESY"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIIFall18GS-102X_upgrade2018_realistic_v9-v1/GEN-SIM": [
+        "T2_US_MIT", 
+        "T2_DE_DESY"
+      ], 
+      "/MinBias_TuneCP5_inelasticON_13TeV-pythia8/RunIIFall17GS-93X_mc2017_realistic_v3-v1/GEN-SIM": [
+        "T1_FR_CCIN2P3", 
+        "T1_DE_KIT"
+      ], 
+      "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIISummer17GS-92X_upgrade2017_realistic_v2-v1/GEN-SIM": [
+        "T1_IT_CNAF", 
+        "T2_US_MIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": true
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": true
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": true
+  }, 
+  {
+    "TiersToDM": [
+      "GEN"
+    ], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer19GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "PhaseIITDRSpring19MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18NanoAODv5", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17NanoAODv5", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16NanoAODv5", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v3-v2/SIM": [
+        "T1_UK_RAL", 
+        "T2_BE_IIHE", 
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v6-v2/GEN-SIM": [
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer19MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer19NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib18wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib17wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer19wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "PhaseIITDRSpring19GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "PhaseIITDRSpring19wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "LowPU2010", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "LowPU2010DR42", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer19UL17DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL17_106X_mc2017_realistic_v6-v1/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer19UL18DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "Run3Summer19DRPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PURun3_106X_mcRun3_2023_realistic_v3-v2/PREMIX": [], 
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PURun3_106X_mcRun3_2024_realistic_v4-v2/PREMIX": [], 
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PURun3_106X_mcRun3_2021_realistic_v3-v4/PREMIX": [], 
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PURun3_106X_mcRun3_2021_realistic_v1-v1/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib16pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib17pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIWinter19PFCalib18pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_US_MIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbWinter16DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Hydjet_Quenched_Cymbal5Ev8_PbPbMinBias_5020GeV/HiFall15-75X_mcRun2_HeavyIon_v14_75X_mcRun2_HeavyIon_v14-v1/GEN-SIM": [
+        "T2_US_MIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HiFall15", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16MiniAODAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16NanoAODAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_UK_RAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19ULPrePremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM": [
+        "T2_US_Florida"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/SIM": [
+        "T1_UK_RAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
+        "T1_UK_RAL", 
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
+        "T1_UK_RAL", 
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v3-v2/SIM": [
+        "T1_UK_RAL"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "UltraLegacy2017", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "pp502Fall15", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18RECOBParking", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_IT_Pisa", 
+      "T2_US_MIT"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "pPb816Summer16DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/ReggeGribovPartonMC_EposLHC_PbP_4080_4080_DataBS/pPb816Spring16GS-MB_80X_mcRun2_pA_v4-v2/GEN-SIM": [
+        "T2_IT_Pisa", 
+        "T2_US_MIT"
+      ], 
+      "/ReggeGribovPartonMC_EposLHC_pPb_4080_4080_DataBS/pPb816Spring16GS-MB_80X_mcRun2_pA_v4-v2/GEN-SIM": [
+        "T2_IT_Pisa", 
+        "T2_US_MIT"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16NanoAODv6", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17NanoAODv6", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18NanoAODv6", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run2016F", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "UltraLegacy2016", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19CosmicDR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T3_US_NERSC"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19CosmicGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "NANOAODULDataProd", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16RECOAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer16NanoAODv7", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRWinter20wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRWinter20DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16pLHEGENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16SIMAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16NanoAODAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16MiniAODAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16wmLHEGENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16HLTAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRWinter20GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer19UL16DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_ES_PIC", 
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20DRMiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/Run3Winter20GS-110X_mcRun3_2021_realistic_v6-v1/GEN-SIM": [
+        "T1_ES_PIC", 
+        "T1_US_FNAL"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "Run3Winter20DRPremixMiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer17PrePremix-PURun3Winter20_110X_mcRun3_2021_realistic_v6-v2/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": "T2_US_MIT", 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T3_US_NERSC"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "pPb816Spring16GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/ReggeGribovPartonMC_EposLHC_pPb_4080_4080/pPb816Spring16GS-80X_mcRun2_asymptotic_v17-v1/GEN-SIM": "T2_US_MIT"
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20CosmicDR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Winter20CosmicGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer19UL16DIGIPremixAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": [
+        "T1_US_FNAL", 
+        "T2_CH_CERN"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16GENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall17NanoAODv7", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIAutumn18NanoAODv7", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16DIGIAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
+        "T1_UK_RAL", 
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v10-v2/GEN-SIM": [
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
+        "T1_UK_RAL", 
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v10-v2/GEN-SIM": [
+        "T1_FR_CCIN2P3_Disk"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRSummer20MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRSummer20ReRECOMiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRSummer20L1T", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MultiValidationUL17GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MultiValidationUL17wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Commissioning2020", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer19DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/Run3Summer19GS-106X_upgrade2021_realistic_v5-v1/GEN-SIM": [
+        "T1_RU_JINR"
+      ], 
+      "/MinBias_TuneCP5_14TeV-pythia8/Run3Summer19GS-2018Scenario_106X_upgrade2021_realistic_v5-v1/GEN-SIM": [
+        "T1_ES_PIC"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer20GSHCAL", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_ES_PIC", 
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Run3Summer20DRMiniAODHCAL", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/Run3Winter20GS-110X_mcRun3_2021_realistic_v6-v1/GEN-SIM": [
+        "T1_ES_PIC", 
+        "T1_US_FNAL"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T3_US_NERSC"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINppWinter17GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T3_US_NERSC"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINppWinter17wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINppWinter17DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16wmLHEGENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16SIMAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16GENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16HLTAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16DIGIAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
+        "T1_UK_RAL", 
+        "T1_US_FNAL"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16RECOAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer20UL16DIGIPremixAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": [
+        "T1_US_FNAL", 
+        "T2_CH_CERN"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16pLHEGENAPV", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_RU_JINR", 
+      "T1_FR_CCIN2P3"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbAutumn18wmLHEGSHIMix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_Hydjet_Drum5F_2018_5p02TeV/HINPbPbAutumn18GS-103X_upgrade2018_realistic_HI_v11-v1/GEN-SIM": [
+        "T1_RU_JINR", 
+        "T1_FR_CCIN2P3"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINppWinter17FixBSGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRWinter20RECOMiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16GEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17HLT", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17NanoAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17pLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17RECO", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17SIM", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_DE_KIT", 
+      "T2_US_Florida"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "Phase2HLTTDRWinter20DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_14TeV-pythia8/Phase2HLTTDRWinter20GS-110X_mcRun4_realistic_v3_ext1-v1/GEN-SIM": [
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_14TeV-pythia8/Phase2HLTTDRWinter20GS-110X_mcRun4_realistic_v3-v1/GEN-SIM": [
+        "T1_DE_KIT", 
+        "T2_US_Florida"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_UK_RAL", 
+      "T2_BE_IIHE", 
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v3-v2/SIM": [
+        "T1_UK_RAL", 
+        "T2_BE_IIHE", 
+        "T1_US_FNAL"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer20UL17DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL17_106X_mc2017_realistic_v6-v1/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
+        "T1_UK_RAL", 
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T2_FR_GRIF_IRFU"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
+        "T1_UK_RAL", 
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T2_FR_GRIF_IRFU"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16DIGI", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
+        "T1_UK_RAL", 
+        "T2_US_Nebraska"
+      ], 
+      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T2_FR_GRIF_IRFU"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T1_US_FNAL", 
+      "T2_CH_CERN"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer20UL18DIGIPremix", 
+    "PartialCopy": 1, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }
+]

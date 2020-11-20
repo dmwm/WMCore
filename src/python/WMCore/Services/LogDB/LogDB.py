@@ -3,16 +3,19 @@
 LogDB provides functionality to post/search messages into LogDB.
 https://github.com/dmwm/WMCore/issues/5705
 """
+# futures
+from future import standard_library
+standard_library.install_aliases()
 
-import logging
 # standard modules
+import logging
 import re
 import threading
 from collections import defaultdict
-from httplib import HTTPException
+from http.client import HTTPException
 
-from WMCore.Lexicon import splitCouchServiceURL
 # project modules
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 
 
@@ -59,6 +62,7 @@ class LogDB(object):
 
     def post(self, request=None, msg="", mtype="comment"):
         """Post new entry into LogDB for given request"""
+        res = 'post-error'
         try:
             if request is None:
                 request = self.default_user
@@ -66,9 +70,11 @@ class LogDB(object):
                 res = self.backend.user_update(request, msg, mtype)
             else:
                 res = self.backend.agent_update(request, msg, mtype)
+        except HTTPException as ex:
+            msg = "Failed to post doc to LogDB. Reason: %s, status: %s" % (ex.reason, ex.status)
+            self.logger.error(msg)
         except Exception as exc:
             self.logger.error("LogDBBackend post API failed, error=%s", str(exc))
-            res = 'post-error'
         self.logger.debug("LogDB post request, res=%s", res)
         return res
 
@@ -90,6 +96,10 @@ class LogDB(object):
                 for rec in row['doc']['messages']:
                     rec.update({'request': request, 'identifier': identifier, 'thr': thr, 'type': mtype})
                     res.append(rec)
+        except HTTPException as ex:
+            msg = "Failed to get doc from LogDB. Reason: %s, status: %s" % (ex.reason, ex.status)
+            self.logger.error(msg)
+            res = 'get-error'
         except Exception as exc:
             self.logger.error("LogDBBackend get API failed, error=%s", str(exc))
             res = 'get-error'

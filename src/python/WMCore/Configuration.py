@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# pylint: disable=C0321,C0103
+# pylint: disable=C0321,C0103,W0622
+# W0622: redefined-builtin
 """
 _Configuration_
 
@@ -13,9 +14,13 @@ import os
 import sys
 import traceback
 
-# Python3 compatibility
-if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
+PY3 = sys.version_info[0] == 3
+
+# PY3 compatibility (can be removed once python2 gets dropped)
+if PY3:
     basestring = str
+    unicode = str
+    long = int
 
 _SimpleTypes = [
     bool,
@@ -65,8 +70,7 @@ def formatNative(value):
         return value
     if isinstance(value, dict):
         return dict
-    else:
-        return formatAsString(value)
+    return formatAsString(value)
 
 
 class ConfigSection(object):
@@ -99,8 +103,7 @@ class ConfigSection(object):
                 (self._internal_docstrings == other._internal_docstrings) and
                 (self._internal_children == other._internal_children) and
                 (self._internal_parent_ref == other._internal_parent_ref))
-        else:
-            return id(self) == id(other)
+        return id(self) == id(other)
 
     def _complexTypeCheck(self, name, value):
 
@@ -228,13 +231,13 @@ class ConfigSection(object):
         if comment:
             result.append("# %s: %s" % (
                 myName, self._internal_documentation.replace(
-                    "\n", "\n# "),
+                        "\n", "\n# "),
             ))
         for attr in self._internal_settings:
             if attr in self._internal_children:
                 result.append("%s.section_(\'%s\')" % (myName, attr))
                 result.extend(getattr(self, attr).pythonise_(
-                    document=document, comment=comment, prefix=myName))
+                        document=document, comment=comment, prefix=myName))
                 continue
             if attr in self._internal_docstrings:
                 if comment:
@@ -250,9 +253,9 @@ class ConfigSection(object):
             if attr in self._internal_docstrings:
                 if document:
                     result.append(
-                        "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
-                            myName,
-                            self._internal_docstrings[attr], attr))
+                            "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
+                                myName,
+                                self._internal_docstrings[attr], attr))
         return result
 
     def dictionary_(self):

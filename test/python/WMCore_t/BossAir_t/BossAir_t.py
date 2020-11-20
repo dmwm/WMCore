@@ -160,6 +160,7 @@ class BossAirTest(unittest.TestCase):
         config.Agent.agentName = 'testAgent'
         config.Agent.componentName = 'test'
         config.Agent.useHeartbeat = False
+        config.Agent.isDocker = False
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")

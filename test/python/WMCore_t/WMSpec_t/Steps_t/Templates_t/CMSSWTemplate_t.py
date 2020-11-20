@@ -11,6 +11,7 @@ import unittest
 
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
 from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMStep import makeWMStep
 
 
 class CMSSWTemplateTest(unittest.TestCase):
@@ -120,6 +121,39 @@ class CMSSWTemplateTest(unittest.TestCase):
         self.assertEqual(helper.data.input.chainedProcessing, True)
         self.assertEqual(helper.data.input.inputStepName, "some_inputStepName")
         self.assertEqual(helper.data.input.inputOutputModule, "some_inputOutputModule")
+
+    def testFileProperties(self):
+        """
+        _testFileProperties_
+
+        Test some CMSSW step output file properties
+        """
+        step = makeWMStep("cmsRun1")
+        step.setStepType("CMSSW")
+        template = CMSSWTemplate()
+        template(step.data)
+        helper = step.getTypeHelper()
+
+        # default values
+        self.assertIsNone(helper.getAcqEra(), None)
+        self.assertIsNone(helper.getProcStr(), None)
+        self.assertIsNone(helper.getProcVer(), None)
+        self.assertIsNone(helper.getPrepId(), None)
+        self.assertEqual(helper.listOutputModules(), [])
+
+        # now write something to the step object
+        helper.setAcqEra("TestAcqEra")
+        helper.setProcStr("TestProcStr")
+        helper.setProcVer(111)
+        helper.setPrepId("TestPrepId")
+        helper.addOutputModule("Merged", primaryDataset="Primary",
+                               processedDataset="Processed", dataTier="RECO")
+
+        self.assertEqual(helper.getAcqEra(), "TestAcqEra")
+        self.assertEqual(helper.getProcStr(), "TestProcStr")
+        self.assertEqual(helper.getProcVer(), 111)
+        self.assertEqual(helper.getPrepId(), "TestPrepId")
+        self.assertItemsEqual(helper.listOutputModules(), ["Merged"])
 
 
 if __name__ == '__main__':

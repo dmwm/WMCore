@@ -5,6 +5,9 @@ wmagent-couchapp-init
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
+
 import argparse
 import os
 import shutil
@@ -12,11 +15,7 @@ import sys
 import tempfile
 import urllib
 
-try:
-    from urlparse import urlsplit
-except ImportError:
-    # PY3
-    from urllib.parse import urlsplit
+from urllib.parse import urlsplit
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -114,15 +113,9 @@ def setupCron(couchUrl, couchDBName):
     indexFwjrUrl = "'%s/%s/_design/FWJRDump/_view/outputByJobID?limit=1'" % (couchUrl, fwjrDumpName)
     indexCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -m 1 > /dev/null"
 
-    compactViewUrl = "'%s/%s/_compact/JobDump'" % (couchUrl, jobDumpName)
-    compactDBUrl = "'%s/%s/_compact'" % (couchUrl, jobDumpName)
-    compactCmd = "echo %s | sed -e 's|\\\\||g' | xargs curl -s -H 'Content-Type: application/json' -X POST > /dev/null"
-
     crontabLines = []
     crontabLines.append("* * * * * %s" % (indexCmd % indexJobsUrl))
     crontabLines.append("* * * * * %s" % (indexCmd % indexFwjrUrl))
-    crontabLines.append("0 0 * * * %s" % (compactCmd % compactViewUrl))
-    crontabLines.append("0 0 * * * %s" % (compactCmd % compactDBUrl))
     createCronEntries(crontabLines)
 
 
@@ -302,11 +295,6 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.summaryStatsDBName, "SummaryStats")
         if options.cron:
             setupCron(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.couchDBName)
-            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName)
-            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.summaryStatsDBName)
-            # should we set the compaction (maybe this too much workfor litte gain)
-            #setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName)
-            #setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, jobDumpName)
 
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "configCacheDBName"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl,
@@ -317,9 +305,6 @@ if __name__ == "__main__":
     if hasattr(wmagentConfig, "WorkQueueManager"):
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
         installWorkQueueCouchApp(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
-        if options.cron:
-            setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.dbname)
-            setupCronCompaction(wmagentConfig.WorkQueueManager.couchurl, wmagentConfig.WorkQueueManager.inboxDatabase)
 
     if hasattr(wmagentConfig, "AsyncTransfer"):
         basePath = "%s/couchapp" % os.environ['ASYNC_ROOT']
@@ -351,8 +336,6 @@ if __name__ == "__main__":
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
         # which needs to be changed in wmagent for prompt skiming deployment script
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
-        if options.cron:
-            setupCronCompaction(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName)
         # this means test mode  in wmagent it won't depoly reqmgr with it in production
         # set up  workload summary for test
         if hasattr(wmagentConfig, "WorkloadSummary"):
@@ -380,14 +363,10 @@ if __name__ == "__main__":
         if "localhost:" in centralWMStatsURL:
             couchURL, wmstatsDBName = splitCouchServiceURL(centralWMStatsURL)
             installCouchApp(couchURL, wmstatsDBName, "WMStats")
-        if options.cron:
-            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName)
 
     if hasattr(wmagentConfig, "General") and hasattr(wmagentConfig.General, "central_logdb_url") and \
             "localhost" in wmagentConfig.General.central_logdb_url:
         couchURL, logDBName = splitCouchServiceURL(wmagentConfig.General.central_logdb_url)
         installCouchApp(couchURL, logDBName, "LogDB")
-        if options.cron:
-            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, logDBName)
 
     sys.exit(0)

@@ -11,12 +11,6 @@ dependencies = {
         'modules': ['WMCore.Configuration'],
         'systems': ['wmc-base']
     },
-    'wmc-wmarchive': {
-        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch', 'wmc-httpd'],
-        'packages': ['WMCore.REST', 'WMCore.Services.StompAMQ'],
-        'modules': ['WMCore.Configuration'],
-        'systems': ['wmc-base']
-    },
     'wmc-base': {
         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
         'packages': ['Utils', 'WMCore.DataStructs', 'WMCore.Cache'],
@@ -52,9 +46,24 @@ dependencies = {
                     'src/templates/WMCore/WebTools',
                     'src/templates/WMCore/WebTools/Masthead', ]
     },
+    'wmcore': {
+        'packages': ['WMCore+',
+                     'WMComponent+',
+                     'WMQuality+',
+                     'PSetTweaks+',
+                     'Utils+'],
+        'modules': [],
+        'systems': [],
+        'statics': ['src/couchapps+',
+                    'src/css+',
+                    'src/html+',
+                    'src/javascript+',
+                    'src/templates+',
+                    'etc+'
+                    ],
+    },
     'reqmgr2': {
         'packages': ['WMCore.ReqMgr+',
-                     'WMCore.WMDataMining+',
                      'WMCore.Services+',
                      'WMCore.ACDC',
                      'Utils'],
@@ -66,7 +75,6 @@ dependencies = {
                     'src/couchapps/ReqMgrAux+',
                     'src/couchapps/ConfigCache+',
                     'src/couchapps/WMStats+',
-                    'src/couchapps/WMDataMining+',
                     'src/html/ReqMgr+'
                     ],
     },
@@ -75,8 +83,11 @@ dependencies = {
         'modules': ['WMCore.Wrappers.__init__',
                     'WMCore.Wrappers.JsonWrapper.__init__',
                     'WMCore.Wrappers.JsonWrapper.JSONThunker',
+                    'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
+                    'WMCore.ReqMgr.DataStructs.RequestStatus',
+                    'WMCore.ReqMgr.DataStructs.RequestType'
                     ],
-        'systems': ['wmc-rest', 'wmc-runtime'],
+        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],
     },
     'workqueue': {
@@ -147,8 +158,7 @@ dependencies = {
         'systems': ['wmc-runtime', 'wmc-database']
     },
     'reqmon': {
-        'packages': ['WMCore.WMStats+', 'WMCore.WMDataMining+',
-                     'WMCore.Services+', 'WMCore.Wrappers+',
+        'packages': ['WMCore.WMStats+', 'WMCore.Services+', 'WMCore.Wrappers+',
                      'WMCore.ReqMgr.DataStructs+'
                      ],
         'modules': ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
@@ -156,6 +166,13 @@ dependencies = {
         'systems': ['wmc-base', 'wmc-rest'],
         'statics': ['src/couchapps/WMStats+',
                     'src/couchapps/WMStatsErl+',
+                    'src/couchapps/WMStatsErl1+',
+                    'src/couchapps/WMStatsErl2+',
+                    'src/couchapps/WMStatsErl3+',
+                    'src/couchapps/WMStatsErl4+',
+                    'src/couchapps/WMStatsErl5+',
+                    'src/couchapps/WMStatsErl6+',
+                    'src/couchapps/WMStatsErl7+',
                     'src/couchapps/WorkloadSummary+',
                     'src/couchapps/T0Request+',
                     'src/couchapps/LogDB+',
@@ -170,5 +187,33 @@ dependencies = {
                     'WMCore.Services.pycurl_manager'],
         'statics': ['src/couchapps/ACDC+',
                     'src/couchapps/GroupUser+']
+    },
+    't0': {
+        'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
+                     'WMCore.JobStateMachine', 'WMComponent+',
+                     'WMCore.ThreadPool', 'WMCore.WorkerThreads',
+                     'WMCore.BossAir+', 'WMCore.Credential',
+                     'WMCore.JobSplitting+', 'WMCore.ProcessPool',
+                     'WMCore.Services+', 'WMCore.WMSpec+',
+                     'WMCore.WMBS+', 'WMCore.ResourceControl+',
+                     'WMCore.DataStructs+', 'WMCore.ReqMgr+',
+                     'Controllers+', 'WMQuality.Emulators+',
+                     'Utils'],
+        'modules': ['WMCore.Configuration',
+                    'WMCore.DAOFactory',
+                    'WMCore.WMException',
+                    'WMCore.Lexicon',
+                    'WMCore.WMBS.File'],
+        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'workqueue'],
+        'statics': ['src/javascript/external/graphael',
+                    'src/couchapps/FWJRDump+',
+                    'src/couchapps/T0Request+',
+                    'src/couchapps/WMStats+',
+                    'src/couchapps/LogDB+',
+                    'src/couchapps/UserMonitoring+',
+                    'src/couchapps/JobDump+',
+                    'src/couchapps/WMStatsAgent+',
+                    'src/couchapps/SummaryStats+'
+                    ]
     }
 }

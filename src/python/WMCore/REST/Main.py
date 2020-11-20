@@ -8,6 +8,9 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+
 import errno
 import logging
 import os
@@ -16,13 +19,14 @@ import re
 import signal
 import socket
 import sys
-import thread
+import _thread
 import time
 import traceback
 from argparse import ArgumentParser
-from cStringIO import StringIO
+from io import BytesIO, StringIO
 from glob import glob
 from subprocess import Popen, PIPE
+from pprint import pformat
 
 import cherrypy
 from cherrypy import Application
@@ -209,7 +213,7 @@ class RESTMain(object):
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
+        _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 
@@ -238,6 +242,7 @@ class RESTMain(object):
 
         if hasattr(self.srvconfig, 'authz_policy'):
             cpconfig.update({'tools.cms_auth.policy': self.srvconfig.authz_policy})
+        cherrypy.log("INFO: final CherryPy configuration: %s" % pformat(cpconfig))
 
     def install_application(self):
         """Install application and its components from the configuration."""
@@ -298,7 +303,7 @@ class RESTDaemon(RESTMain):
         :arg config: server configuration
         :arg str statedir: server state directory."""
         RESTMain.__init__(self, config, statedir)
-        self.pidfile = "%s/pid" % self.statedir
+        self.pidfile = "%s/%s.pid" % (self.statedir, self.appname)
         self.logfile = ["rotatelogs", "%s/%s-%%Y%%m%%d.log" % (self.statedir, self.appname), "86400"]
 
     def daemon_pid(self):
@@ -382,7 +387,7 @@ class RESTDaemon(RESTMain):
         """Start the deamon."""
 
         # Redirect all output to the logging daemon.
-        devnull = file("/dev/null", "w")
+        devnull = open(os.devnull, "w")
         if isinstance(self.logfile, list):
             subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
                             bufsize=0, close_fds=True, shell=False)
@@ -412,18 +417,20 @@ class RESTDaemon(RESTMain):
             os._exit(0)
 
         # Save process group id to pid file, then run real worker.
-        file(self.pidfile, "w").write("%d\n" % os.getpgid(0))
+        with open(self.pidfile, "w") as pidObj:
+            pidObj.write("%d\n" % os.getpgid(0))
 
         error = False
         try:
             self.run()
         except Exception as e:
             error = True
-            trace = StringIO()
+            if sys.version_info[0] == 2:
+                trace = BytesIO()
+            else:
+                trace = StringIO()
             traceback.print_exc(file=trace)
-            cherrypy.log("ERROR: terminating due to error, error trace follows")
-            for line in trace.getvalue().rstrip().split("\n"):
-                cherrypy.log("ERROR:   %s" % line)
+            cherrypy.log("ERROR: terminating due to error: %s" % trace.getvalue())
 
         # Remove pid file once we are done.
         try:
@@ -458,7 +465,7 @@ class RESTDaemon(RESTMain):
             if not restart:
                 sys.exit((exitsigno and 1) or exitcode)
 
-            for pidfile in glob("%s/*/pid" % self.statedir):
+            for pidfile in glob("%s/*/*pid" % self.statedir):
                 if os.path.exists(pidfile):
                     with open(pidfile) as fd:
                         pid = int(fd.readline())

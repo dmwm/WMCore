@@ -5,9 +5,6 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-import logging
-import os
-import random
 import threading
 import unittest
 
@@ -19,7 +16,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 
@@ -63,7 +59,7 @@ class FilesetTest(unittest.TestCase):
         """
         testFileset = Fileset(name="TestFileset")
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists before it was created"
 
         testFileset.create()
@@ -73,8 +69,35 @@ class FilesetTest(unittest.TestCase):
 
         testFileset.delete()
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists after it was deleted"
+
+        return
+
+    def testCreateDeleteLongChar(self):
+        """
+        _testCreateDeleteLongChar_
+
+        Create and delete a fileset name with 750 characters, InnoDB tables
+        are limited to 767 chars
+        """
+        # fileset name with 1000 chars
+        fsetName = "test_Fileset_with_50_character_and_anything_else_" * 20
+        testFileset = Fileset(name=fsetName)
+
+        self.assertFalse(testFileset.exists())
+        testFileset.create()
+        self.assertTrue(testFileset.exists() >= 0)
+        testFileset.delete()
+        self.assertFalse(testFileset.exists())
+
+        # fileset name with 1500 chars
+        fsetName = "test_Fileset_with_50_character_and_anything_else_" * 30
+        testFileset = Fileset(name=fsetName)
+
+        self.assertFalse(testFileset.exists())
+        with self.assertRaises(Exception):
+            testFileset.create()
 
         return
 
@@ -93,7 +116,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileset = Fileset(name="TestFileset")
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists before it was created"
 
         testFileset.create()
@@ -103,7 +126,7 @@ class FilesetTest(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists after transaction was rolled back."
 
         return
@@ -119,7 +142,7 @@ class FilesetTest(unittest.TestCase):
         """
         testFileset = Fileset(name="TestFileset")
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists before it was created"
 
         testFileset.create()
@@ -132,7 +155,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileset.delete()
 
-        assert testFileset.exists() == False, \
+        assert testFileset.exists() is False, \
             "ERROR: Fileset exists after it was deleted"
 
         myThread.transaction.rollback()
@@ -157,11 +180,8 @@ class FilesetTest(unittest.TestCase):
         testFilesetC = Fileset(id=testFilesetA.id)
         testFilesetC.load()
 
-        assert type(testFilesetB.id) == int, \
-            "ERROR: Fileset id is not an int."
-
-        assert type(testFilesetC.id) == int, \
-            "ERROR: Fileset id is not an int."
+        self.assertTrue(isinstance(testFilesetB.id, int), "Fileset id is not an int.")
+        self.assertTrue(isinstance(testFilesetC.id, int), "Fileset id is not an int.")
 
         assert testFilesetB.id == testFilesetA.id, \
             "ERROR: Load from name didn't load id"
@@ -490,10 +510,10 @@ class FilesetTest(unittest.TestCase):
         testFilesetD = Fileset(name=testFilesetB.name)
         testFilesetD.load()
 
-        assert testFilesetC.open == False, \
+        assert testFilesetC.open is False, \
             "ERROR: FilesetC should be closed."
 
-        assert testFilesetD.open == True, \
+        assert testFilesetD.open is True, \
             "ERROR: FilesetD should be open."
 
         testFilesetA.markOpen(True)
@@ -504,10 +524,10 @@ class FilesetTest(unittest.TestCase):
         testFilesetF = Fileset(name=testFilesetB.name)
         testFilesetF.load()
 
-        assert testFilesetE.open == True, \
+        assert testFilesetE.open is True, \
             "ERROR: FilesetE should be open."
 
-        assert testFilesetF.open == False, \
+        assert testFilesetF.open is False, \
             "ERROR: FilesetF should be closed."
 
         myThread = threading.currentThread()

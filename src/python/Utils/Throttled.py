@@ -35,6 +35,7 @@ from __future__ import division
 
 # standard modules
 import time
+from builtins import object
 import logging
 import threading
 
@@ -186,9 +187,17 @@ class UserThrottle(object):
         return _ThrottleCounter(self, user, debug)
 
     def make_throttled(self, debug=False):
-        "decorator for throttled context"
+        """
+        decorator for throttled context
+        """
         def throttled_decorator(fn):
+            """
+            A decorator
+            """
             def throttled_wrapped_function(*args, **kw):
+                """
+                A wrapped function.
+                """
                 username = cherrypy.request.user.get('login', 'Unknown') \
                         if hasattr(cherrypy.request, 'user') else 'Unknown'
                 with self.throttleContext(username, debug):

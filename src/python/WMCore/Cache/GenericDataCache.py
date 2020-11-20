@@ -1,6 +1,7 @@
 from __future__ import print_function, division
+from builtins import str
+from builtins import object
 import time
-import traceback
 import logging
 
 
@@ -10,19 +11,20 @@ class MemoryCacheStruct(object):
     But this cache is not thread safe.
     """
 
-    def __init__(self, expire, func, initCacheValue=None, kwargs=None):
+    def __init__(self, expire, func, initCacheValue=None, logger=None, kwargs=None):
         """
         expire is the seconds which cache will be refreshed when cache is older than the expire.
         func is the fuction which cache data is retrieved
         kwargs are func arguments for cache data
         """
+        kwargs = kwargs or {}
         self.data = initCacheValue
         self.expire = expire
         self.func = func
-        if kwargs == None:
-            kwargs = {}
+
         self.kwargs = kwargs
         self.lastUpdated = -1
+        self.logger = logger if logger else logging.getLogger()
 
     def isDataExpired(self):
         if self.lastUpdated == -1:
@@ -36,9 +38,10 @@ class MemoryCacheStruct(object):
             try:
                 self.data = self.func(**self.kwargs)
                 self.lastUpdated = int(time.time())
-            except Exception:
+            except Exception as exc:
                 if noFail:
-                    logging.error(traceback.format_exc())
+                    msg = "Passive failure while looking data up in the memory cache. Error: %s" % str(exc)
+                    self.logger.warning(msg)
                 else:
                     raise
         return self.data
@@ -82,4 +85,14 @@ class GenericDataCache(object):
         elif not isinstance(memoryCache, MemoryCacheStruct):
             raise CacheWithWrongStructException(cacheName)
         else:
+            logging.info("Creating generic cache named: %s", cacheName)
             GenericDataCache._dataCache[cacheName] = memoryCache
+
+    @staticmethod
+    def cacheExists(cacheName):
+        """
+        Return True if provided cache name is already cached, else False.
+        :param cacheName: cache name string
+        :return: boolean
+        """
+        return cacheName in GenericDataCache._dataCache

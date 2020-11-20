@@ -122,7 +122,6 @@ dependencies = {
     'asyncstageout': {
         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
                      'WMCore.Credential', 'WMCore.WorkerThreads',
-                     'WMCore.ACDC',
                      'WMCore.Services+'],
         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
                     'WMCore.Services.pycurl_manager', 'WMComponent.__init__'],
@@ -136,22 +135,20 @@ dependencies = {
                     'WMCore.Services.pycurl_manager', ],
     },
     'crabserver': {
-        'packages': ['WMCore.Credential', 'WMCore.Services+',
-                     'WMCore.WMSpec+', 'WMCore.ACDC'],
+        'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.WMSpec+'],
         'modules': ['WMCore.DataStructs.LumiList'],
         'systems': ['wmc-rest', 'wmc-database'],
     },
     'crabclient': {
-        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+',
-                     'WMCore.Services.PhEDEx+', 'WMCore.Services.DBS+'],
+        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks',
+                     'WMCore.Services.UserFileCache+', 'WMCore.Services.DBS+'],
         'systems': ['wmc-base'],
         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', ],
     },
     'crabtaskworker': {
-        'packages': ['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
+        'packages': ['WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                      'WMCore.JobSplitting', 'WMCore.Services+', 'Utils+'],
-        'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
         'systems': ['wmc-database', 'wmc-runtime'],
     },
     'wmclient': {

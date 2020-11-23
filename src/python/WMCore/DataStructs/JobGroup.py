@@ -128,9 +128,7 @@ class JobGroup(WMObject):
         """
         This just gets a length for either dict or list objects
         """
-        if isinstance(obj, dict):
-            return len(obj.keys())
-        elif isinstance(obj, list):
+        if isinstance(obj, (dict, list)):
             return len(obj)
         else:
             return 0

@@ -4,15 +4,12 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-import os
-from Utils.Utilities import usingRucio
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
@@ -22,6 +19,9 @@ class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
 
     def __init__(self, **args):
+        # We need to pop this object instance from args because otherwise
+        # the super class blows up when doing a deepcopy(args)
+        self.rucio = args.pop("rucioObject", None)
         PolicyInterface.__init__(self, **args)
         self.workQueueElements = []
         self.wmspec = None
@@ -36,10 +36,10 @@ class StartPolicyInterface(PolicyInterface):
         self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
         self.cric = CRIC()
-        if usingRucio():
-            self.rucio = Rucio(self.args['rucioAcct'], configDict={'logger': self.logger})
-        else:
-            self.phedex = PhEDEx()  # this will go away eventually
+        # FIXME: for the moment, it will always use the default value
+        self.rucioAcct = self.args.get("rucioAcct", "wmcore_transferor")
+        if not self.rucio:
+            self.rucio = Rucio(self.rucioAcct, configDict={'logger': self.logger})
 
     def split(self):
         """Apply policy to spec"""
@@ -140,7 +140,7 @@ class StartPolicyInterface(PolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))
         self.workQueueElements.append(ele)
 
-    def __call__(self, wmspec, task, data=None, mask=None, team=None, continuous=False):
+    def __call__(self, wmspec, task, data=None, mask=None, team=None, continuous=False, rucioObj=None):
         self.wmspec = wmspec
         # bring in spec specific settings
         self.args.update(self.wmspec.startPolicyParameters())
@@ -251,14 +251,8 @@ class StartPolicyInterface(PolicyInterface):
         result = {}
         for dbsUrl in datasets:
             for datasetPath in datasets[dbsUrl]:
-                if hasattr(self, "rucio"):
-                    locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
-                                                                     account=self.args['rucioAcct'])
-                else:
-                    locations = set()
-                    resp = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetPath], complete='y')
-                    for blockSites in resp.values():
-                        locations.update(blockSites)
+                locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
+                                                                 account=self.rucioAcct)
                 result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
 
@@ -270,10 +264,6 @@ class StartPolicyInterface(PolicyInterface):
         :param blockName: string with the block name
         :return: a list of RSEs
         """
-        if hasattr(self, "rucio"):
-            location = self.rucio.getDataLockedAndAvailable(name=blockName,
-                                                            account=self.args['rucioAcct'])
-        else:
-            location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName],
-                                                                  complete='y')[blockName]
+        location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                        account=self.rucioAcct)
         return location

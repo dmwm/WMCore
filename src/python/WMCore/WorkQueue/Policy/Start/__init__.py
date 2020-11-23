@@ -9,7 +9,7 @@ from WMCore.WMFactory import WMFactory
 startFac = WMFactory(__name__, __name__)
 
 
-def startPolicy(name, startMap, rucioAcct, logger=None):
+def startPolicy(name, startMap, rucioObj, logger=None):
     """Load a start policy"""
     # Take splitting policy from workload & load specific policy for this queue
     # Workload may also directly specify specific splitter implementation
@@ -23,7 +23,7 @@ def startPolicy(name, startMap, rucioAcct, logger=None):
         args = deepcopy(startMap[name]['args'])
     except IndexError:
         args = {}
-    args['rucioAcct'] = rucioAcct
+    args['rucioObject'] = rucioObj
     args['logger'] = logger
     return startFac.loadObject(policyName,
                                args,

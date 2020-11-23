@@ -128,6 +128,8 @@ config.WorkQueueManager.pollInterval = 180  # 3 min
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
+config.WorkQueueManager.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.WorkQueueManager.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder

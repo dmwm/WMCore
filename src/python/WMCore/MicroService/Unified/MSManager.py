@@ -144,7 +144,6 @@ class MSManager(object):
 
         self.msConfig = {}
         self.msConfig.update(config.dictionary_())
-        self.msConfig.setdefault("useRucio", False)
 
         self.msConfig['reqmgrCacheUrl'] = self.msConfig['reqmgr2Url'].replace('reqmgr2',
                                                                               'couchdb/reqmgr_workload_cache')

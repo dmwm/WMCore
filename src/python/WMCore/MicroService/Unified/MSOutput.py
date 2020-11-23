@@ -18,12 +18,9 @@ from retry import retry
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.Common import teraBytes, gigaBytes
-from WMCore.Services.DDM.DDM import DDM, DDMReqTemplate
+from WMCore.MicroService.Unified.Common import gigaBytes
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.Rucio.Rucio import weightedChoice
 from Utils.EmailAlert import EmailAlert
-from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
@@ -85,7 +82,6 @@ class MSOutput(MSCore):
 
         self.mode = mode
         self.msConfig.setdefault("limitRequestsPerCycle", 500)
-        self.msConfig.setdefault("defaultGroup", "DataOps")
         self.msConfig.setdefault("enableDataPlacement", False)
         self.msConfig.setdefault("enableRelValCustodial", False)
         self.msConfig.setdefault("excludeDataTier", [])
@@ -124,10 +120,6 @@ class MSOutput(MSCore):
         self.msOutDB = MongoDB(**msOutDBConfig).msOutDB
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
-        if not self.msConfig.get('useRucio', False):
-            self.ddm = DDM(url=self.msConfig['ddmUrl'],
-                           logger=self.logger,
-                           enableDataPlacement=self.msConfig['enableDataPlacement'])
 
 
     @retry(tries=3, delay=2, jitter=2)
@@ -256,9 +248,8 @@ class MSOutput(MSCore):
 
     def makeSubscriptions(self, workflow):
         """
-        The common function to make the final subscriptions. It depends on the
-        default Data Management System configured through msConfig. Based on that
-        The relevant service wrapper is called.
+        The common function to make the final subscriptions
+        :param workflow: a MSOutputTemplate object workflow
         :return: the MSOutputTemplate object itself (with the necessary updates in place)
         """
         if not isinstance(workflow, MSOutputTemplate):
@@ -270,114 +261,55 @@ class MSOutput(MSCore):
         #    Here is just an example construction of the function. None of the
         #    data structures used to visualise it is correct. To Be Updated
 
+        ruleAttrs = {'activity': 'Production Output',
+                     'lifetime': self.msConfig['rulesLifetime'],
+                     'account': self.msConfig['rucioAccount'],
+                     'grouping': "ALL",
+                     'comment': 'WMCore MSOutput output data placement'}
+        # add a configurable weight value
+        ruleAttrs["weight"] = self.msConfig['rucioDiskRuleWeight']
+        # and RelVals have a different lifetime setting
+        if workflow['IsRelVal']:
+            ruleAttrs["lifetime"] = self.msConfig['ruleLifetimeRelVal']
+
         # if anything fail along the way, set it back to "pending"
         transferStatus = "done"
-        if not self.msConfig.get('useRucio', False):
-            # NOTE:
-            #    Once we move to working in strides of multiple workflows at a time
-            #    then the workflow sent to that function should not be a single one
-            #    but an iterator of length 'stride' and then we should be doing:
-            #    for workflow in workflows:
-            if workflow['IsRelVal']:
-                group = 'RelVal'
-            else:
-                group = 'DataOps'
+        for dMap in workflow['OutputMap']:
+            if dMap['Copies'] == 0:
+                msg = "Output dataset configured to 0 copies, so skipping it. Details:"
+                msg += "\n\tWorkflow name: {}".format(workflow['RequestName'])
+                msg += "\n\tDataset name: {}".format(dMap['Dataset'])
+                msg += "\n\tCampaign name: {}".format(dMap['Campaign'])
+                self.logger.warning(msg)
+                continue
+            if dMap['DiskRuleID']:
+                msg = "Output dataset: {} from workflow: {} ".format(dMap['Dataset'], workflow['RequestName'])
+                msg += " has been already locked by rule id: {}".format(dMap['DiskRuleID'])
+                self.logger.info(msg)
+                continue
 
-            for dMap in workflow['OutputMap']:
-                if dMap['Copies'] == 0:
-                    msg = "Output dataset configured to 0 copies, so skipping it. Details:"
-                    msg += "\n\tWorkflow name: {}".format(workflow['RequestName'])
-                    msg += "\n\tDataset name: {}".format(dMap['Dataset'])
-                    msg += "\n\tCampaign name: {}".format(dMap['Campaign'])
-                    self.logger.warning(msg)
-                    continue
-                if dMap['DiskRuleID']:
-                    msg = "Output dataset: {} from workflow: {} ".format(dMap['Dataset'], workflow['RequestName'])
-                    msg += " has been already subscribed under request id: {}".format(dMap['DiskRuleID'])
-                    self.logger.info(msg)
-                    continue
+            self.logger.info("Performing rucio rule creation for workflow: %s, dataset: %s",
+                             workflow['RequestName'], dMap['Dataset'])
 
-                # overwrite the current DiskDestination by something that will work for DDM
-                if workflow['IsRelVal']:
-                    # destination is currently expressed as an RSE expression, convert it to a list
-                    destination = dMap['DiskDestination'].split("|")
-                else:
-                    destination = ['T1_*_Disk', 'T2_*']
-
-                # NOTE: both "site" and "item" are meant to be lists here
-                ddmRequest = DDMReqTemplate('copy',
-                                            item=[dMap['Dataset']],
-                                            n=dMap['Copies'],
-                                            site=destination,
-                                            group=group)
-
-                self.logger.info("Performing DDM subscription for workflow: %s, dataset: %s",
-                                 workflow['RequestName'], dMap['Dataset'])
-                resp = self.ddm.makeRequest(ddmRequest)
+            ruleAttrs.update({'copies': dMap['Copies']})
+            if self.msConfig['enableDataPlacement']:
+                resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['DiskDestination'], **ruleAttrs)
                 if not resp:
                     # then the call failed
                     transferStatus = "pending"
-                elif resp is ddmRequest:
-                    msg = "DRY-RUN DDM: skipping subscription for: {}".format(ddmRequest)
-                    self.logger.info(msg)
-                elif 'data' in resp:
-                    self.logger.debug("DDM response: %s", resp)
-                    transferId = resp['data'][0]['request_id']
-                    dMap['DiskRuleID'] = str(transferId)
-                else:
-                    self.logger.error("Something seriously BAD happened with the DDM request!")
+                elif len(resp) == 1:
+                    dMap['DiskRuleID'] = resp[0]
+                elif len(resp) > 1:
+                    msg = "Rule creation returned multiple rule IDs and it needs to be investigated!!! "
+                    msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
+                                                                                   dMap['DiskDestination'],
+                                                                                   ruleAttrs['account'])
+                    self.logger.critical(msg)
                     return workflow
-
-        elif self.msConfig.get('useRucio', False):
-            ruleAttrs = {'activity': 'Production Output',
-                         'lifetime': self.msConfig['rulesLifetime'],
-                         'account': self.msConfig['rucioAccount'],
-                         'grouping': "ALL",
-                         'comment': 'WMCore MSOutput output data placement'}
-            # add a configurable weight value
-            ruleAttrs["weight"] = self.msConfig['rucioDiskRuleWeight']
-            # and RelVals have a different lifetime setting
-            if workflow['IsRelVal']:
-                ruleAttrs["lifetime"] = self.msConfig['ruleLifetimeRelVal']
-
-            # if anything fail along the way, set it back to "pending"
-            transferStatus = "done"
-            for dMap in workflow['OutputMap']:
-                if dMap['Copies'] == 0:
-                    msg = "Output dataset configured to 0 copies, so skipping it. Details:"
-                    msg += "\n\tWorkflow name: {}".format(workflow['RequestName'])
-                    msg += "\n\tDataset name: {}".format(dMap['Dataset'])
-                    msg += "\n\tCampaign name: {}".format(dMap['Campaign'])
-                    self.logger.warning(msg)
-                    continue
-                if dMap['DiskRuleID']:
-                    msg = "Output dataset: {} from workflow: {} ".format(dMap['Dataset'], workflow['RequestName'])
-                    msg += " has been already locked by rule id: {}".format(dMap['DiskRuleID'])
-                    self.logger.info(msg)
-                    continue
-
-                self.logger.info("Performing rucio rule creation for workflow: %s, dataset: %s",
-                                 workflow['RequestName'], dMap['Dataset'])
-
-                ruleAttrs.update({'copies': dMap['Copies']})
-                if self.msConfig['enableDataPlacement']:
-                    resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['DiskDestination'], **ruleAttrs)
-                    if not resp:
-                        # then the call failed
-                        transferStatus = "pending"
-                    elif len(resp) == 1:
-                        dMap['DiskRuleID'] = resp[0]
-                    elif len(resp) > 1:
-                        msg = "Rule creation returned multiple rule IDs and it needs to be investigated!!! "
-                        msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
-                                                                                       dMap['DiskDestination'],
-                                                                                       ruleAttrs['account'])
-                        self.logger.critical(msg)
-                        return workflow
-                else:
-                    msg = "DRY-RUN RUCIO: skipping rule creation for DID: {}, ".format(dMap['Dataset'])
-                    msg += "rseExpr: {} and standard parameters: {}".format(dMap['DiskDestination'], ruleAttrs)
-                    self.logger.info(msg)
+            else:
+                msg = "DRY-RUN RUCIO: skipping rule creation for DID: {}, ".format(dMap['Dataset'])
+                msg += "rseExpr: {} and standard parameters: {}".format(dMap['DiskDestination'], ruleAttrs)
+                self.logger.info(msg)
 
         # Finally, update the MSOutput template document with either partial or
         # complete transfer ids
@@ -422,74 +354,34 @@ class MSOutput(MSCore):
             # this RSE name will be used for all output datasets to be subscribed
             # within this workflow
             dMap['TapeDestination'] = tapeRSE
-            requestOnly = "y" if requiresApproval else "n"
-            if not self.msConfig.get('useRucio', False):
-                phedexGroup = "RelVal" if workflow['IsRelVal'] else "DataOps"
-                subscription = PhEDExSubscription(datasetPathList=dMap['Dataset'],
-                                                  nodeList=dMap['TapeDestination'],
-                                                  group=phedexGroup,
-                                                  level="dataset",
-                                                  custodial="y",
-                                                  priority="low",
-                                                  request_only=requestOnly,
-                                                  comments="WMCore MSOutput output data placement")
-                msg = "Creating PhEDEx TAPE subscription for dataset: {}, ".format(dMap['Dataset'])
-                msg += "group: {} and RSE: {}".format(phedexGroup, dMap['TapeDestination'])
-                self.logger.info(msg)
-                if self.msConfig['enableDataPlacement']:
-                    try:
-                        resp = self.phedex.subscribe(subscription)
-                    except HTTPException as ex:
-                        msg = "Subscription failed for workflow: {} and dataset: {}".format(workflow["RequestName"],
-                                                                                            dMap['Dataset'])
-                        if ex.status == 400 and "request matched no data in TMDB" in ex.reason:
-                            msg += " because data cannot be found in TMDB. Bypassing this dataset..."
-                            self.logger.warning(msg)
-                        else:
-                            msg += " with status code: {} and result: {}. ".format(ex.status, ex.result)
-                            msg += "It will be retried in the next cycle"
-                            self.logger.error(msg)
-                            transferStatus = "pending"
-                    except Exception as ex:
-                        msg = "Unknown exception while subscribing data for workflow: {} ".format(workflow["RequestName"])
-                        msg += "and dataset: {}. Will retry again later. Error details: {}".format(dMap['Dataset'], str(ex))
-                        self.logger.exception(msg)
-                        transferStatus = "pending"
-                    else:
-                        dMap['TapeRuleID'] = resp['phedex']['request_created'][0]['id']
-                else:
-                    msg = "DRY-RUN PHEDEX: skipping tape subscription for: {}".format(subscription)
-                    self.logger.info(msg)
-            ####### then it's Rucio
-            else:
-                ruleAttrs = {'activity': 'Production Output',
-                             'account': self.msConfig['rucioAccount'],
-                             'copies': 1,
-                             'grouping': "ALL",
-                             'ask_approval': requiresApproval,
-                             'comment': 'WMCore MSOutput output data placement'}
-                msg = "Creating Rucio TAPE rule for container: {} and RSE: {}".format(dMap['Dataset'],
-                                                                                      dMap['TapeDestination'])
-                self.logger.info(msg)
+            ruleAttrs = {'activity': 'Production Output',
+                         'account': self.msConfig['rucioAccount'],
+                         'copies': 1,
+                         'grouping': "ALL",
+                         'ask_approval': requiresApproval,
+                         'comment': 'WMCore MSOutput output data placement'}
+            msg = "Creating Rucio TAPE rule for container: {} and RSE: {}".format(dMap['Dataset'],
+                                                                                  dMap['TapeDestination'])
+            self.logger.info(msg)
 
-                if self.msConfig['enableDataPlacement']:
-                    resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['TapeDestination'], **ruleAttrs)
-                    if not resp:
-                        # then the call failed
-                        transferStatus = "pending"
-                    elif len(resp) == 1:
-                        dMap['TapeRuleID'] = resp[0]
-                    elif len(resp) > 1:
-                        msg = "Tape rule creation returned multiple rule IDs and it needs to be investigated!!! "
-                        msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
-                                                                                       dMap['TapeDestination'],
-                                                                                       ruleAttrs['account'])
-                        self.logger.critical(msg)
-                        return workflow
-                else:
-                    msg = "DRY-RUN RUCIO: skipping tape rule creation for DID: {}, ".format(dMap['Dataset'])
-                    msg += "rseExpr: {} and standard parameters: {}".format(dMap['TapeDestination'], ruleAttrs)
-                    self.logger.info(msg)
+            if self.msConfig['enableDataPlacement']:
+                resp = self.rucio.createReplicationRule(dMap['Dataset'], dMap['TapeDestination'], **ruleAttrs)
+                if not resp:
+                    # then the call failed
+                    transferStatus = "pending"
+                elif len(resp) == 1:
+                    dMap['TapeRuleID'] = resp[0]
+                elif len(resp) > 1:
+                    msg = "Tape rule creation returned multiple rule IDs and it needs to be investigated!!! "
+                    msg += "For DID: {}, rseExpr: {} and rucio account: {}".format(dMap['Dataset'],
+                                                                                   dMap['TapeDestination'],
+                                                                                   ruleAttrs['account'])
+                    self.logger.critical(msg)
+                    return workflow
+            else:
+                msg = "DRY-RUN RUCIO: skipping tape rule creation for DID: {}, ".format(dMap['Dataset'])
+                msg += "rseExpr: {} and standard parameters: {}".format(dMap['TapeDestination'], ruleAttrs)
+                self.logger.info(msg)
 
         # Finally, update the MSOutput template document with either partial or
         # complete transfer ids
@@ -521,30 +413,10 @@ class MSOutput(MSCore):
         :param dataSize: integer with the total amount of data to be transferred, in bytes
         :return: a string with the RSE name
         """
-        if self.msConfig.get('useRucio'):
-            # This API returns a tuple with the RSE name and whether it requires approval
-            return self.rucio.pickRSE(rseExpression=self.msConfig["rucioTapeExpression"],
-                                      rseAttribute=self.msConfig["rucioRSEAttribute"],
-                                      minNeeded=dataSize)
-
-        # well, then it's PhEDEx
-        res = self.phedex.getGroupUsage(node=self.tapeStatus.keys(), group=self.msConfig['defaultGroup'])
-        if not res['phedex']['node']:
-            raise MSOutputException("Failed to fetch node/group usage from PhEDEx")
-
-        pnnsWithWeights = []
-        self.logger.info("Summary of the current MSS situation (in Terabytes):")
-        for item in res['phedex']['node']:
-            self.tapeStatus[item['name']]['usage'] = teraBytes(item['group'][0]['dest_bytes'])
-            self.tapeStatus[item['name']]['remaining'] = self.tapeStatus[item['name']]['quota'] - \
-                                                         self.tapeStatus[item['name']]['usage']
-            self.logger.info("\tPNN: %s\t\t%s", item['name'], self.tapeStatus[item['name']])
-            # drop Tape endpoints that cannot host all that data
-            if self.tapeStatus[item['name']]['remaining'] > teraBytes(dataSize):
-                pnnsWithWeights.append((item['name'], self.tapeStatus[item['name']]['remaining']))
-        winnerPnn = weightedChoice(pnnsWithWeights)
-        requiresApproval = True if winnerPnn not in self.uConfig['sites_auto_approve']['value'] else False
-        return winnerPnn, requiresApproval
+        # This API returns a tuple with the RSE name and whether it requires approval
+        return self.rucio.pickRSE(rseExpression=self.msConfig["rucioTapeExpression"],
+                                  rseAttribute=self.msConfig["rucioRSEAttribute"],
+                                  minNeeded=dataSize)
 
     def getRequestRecords(self, reqStatus):
         """
@@ -818,17 +690,9 @@ class MSOutput(MSCore):
         :param datasetName: string with the dataset name
         :return: an integer with the total dataset size, in bytes
         """
-        if self.msConfig.get('useRucio'):
-            didInfo = self.rucio.getDID(datasetName)
-            # let the exception be raised if we failed to calculate the dataset size
-            return didInfo["bytes"]
-
-        # then it's PhEDEx
-        didInfo = self.phedex.getReplicaInfoForBlocks(dataset=datasetName)
-        bytesSize = 0
-        for item in didInfo['phedex']['block']:
-            bytesSize += item['bytes']
-        return bytesSize
+        didInfo = self.rucio.getDID(datasetName)
+        # let the exception be raised if we failed to calculate the dataset size
+        return didInfo["bytes"]
 
     def canDatasetGoToDisk(self, dataItem, isRelVal=False):
         """

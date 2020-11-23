@@ -1,3 +1,11 @@
+1.4.3.pre2 to 1.4.3.pre3:
+  - Update setup dependencies for CRAB services (Alan Malta Rodrigues) #10084
+  - Only inject templates that can have MSTransferor making data placement (Alan Malta Rodrigues) #9784
+  - Update workflow json templates (Alan Malta Rodrigues) #9784
+  - Removing file status condition from GetUnsubscribedDatasets query (germanfgv) #10067
+  - Code re-factoring and add timerange for user activities under throttling (Valentin Kuznetsov) #9211
+
+
 1.4.3.pre1 to 1.4.3.pre2:
   - Add zeroCounters() function. (Todor Ivanov) #10080
   - Keep only ruleID instead of the full Rucio rule. (Todor Ivanov) #10079

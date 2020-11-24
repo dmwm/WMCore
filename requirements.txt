@@ -4,32 +4,29 @@
 # Format:
 # PackageName==X.Y.Z          # <comma separated list of WMCore software needing the package>
 
-Cheetah==2.4.0                # wmagent,reqmgr2
-CherryPy==17.4.0              # wmagent,reqmgr2
-Markdown==3.0.1               # wmagent
-MySQL-python==1.2.5           # wmagent
-SQLAlchemy==1.3.3             # wmagent
-Sphinx==1.3.5                 # wmagent,reqmgr2
-cx-Oracle==5.2.1              # wmagent
-dbs-client==3.13.1            # wmagent,reqmgr2
-decorator==3.4.2              # wmagent
-future==0.18.2                # wmagent,reqmgr2
-nose2==0.9.2                  # wmagent
-mock==2.0.0                   # wmagent
+Cheetah==2.4.0                # wmagent,reqmgr2,reqmon
+CherryPy==17.4.0              # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
+CMSMonitoring>=0.3.4          # wmagent,reqmgr2,reqmon,reqmgr2ms
 coverage==4.5.4               # wmagent
+cx-Oracle==5.2.1              # wmagent
+dbs-client==3.13.1            # wmagent,reqmgr2,reqmon,global-workqueue
+decorator==3.4.2              # wmagent
 funcsigs==1.0.2               # wmagent
-httplib2==0.18.0              # wmagent,reqmgr2
-psutil==5.6.6                 # wmagent,reqmgr2
+future==0.18.2                # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
+httplib2==0.18.0              # wmagent,reqmgr2,reqmon,acdcserver,global-workqueue,reqmgr2ms
+Markdown==3.0.1               # wmagent
+mock==2.0.0                   # wmagent
+MySQL-python==1.2.5           # wmagent
+nose2==0.9.2                  # wmagent
+psutil==5.6.6                 # wmagent,reqmgr2,reqmon,global-workqueue
 py==1.7.0                     # wmagent
-pyOpenSSL==18.0.0             # wmagent
-pycurl-client==3.13.1         # wmagent
-pycurl==7.43.0.3              # wmagent,reqmgr2
-python-cjson==1.2.1           # wmagent
-pyzmq==17.1.2                 # wmagent
-retry==0.9.1                  # wmagent,reqmgr2
-setuptools==39.2.0            # wmagent
-stomp.py==4.1.15              # wmagent
-rucio-clients==1.23.0         # wmagent
-CMSMonitoring>=0.3.4          # wmagent,reqmgr2
+pycurl==7.43.0.3              # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
 pymongo==3.10.1               # reqmgr2ms
-
+pyOpenSSL==18.0.0             # wmagent
+pyzmq==17.1.2                 # wmagent
+retry==0.9.1                  # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
+rucio-clients==1.23.0         # wmagent,global-workqueue,reqmgr2ms
+setuptools==39.2.0            # wmagent
+Sphinx==1.3.5                 # wmagent,reqmgr2,acdcserver,global-workqueue,reqmgr2ms
+SQLAlchemy==1.3.3             # wmagent
+stomp.py==4.1.15              # wmagent

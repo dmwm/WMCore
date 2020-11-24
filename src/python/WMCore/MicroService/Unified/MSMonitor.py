@@ -143,7 +143,7 @@ class MSMonitor(MSCore):
         :return skippedWorkflows: a list of workflow names which a call to the data
         management system did not succeed
         """
-        # FIXME: create concurrent phedex/rucio calls using multi_getdata
+        # FIXME: create concurrent rucio calls using multi_getdata
         skippedWorkflows = []
         tstamp = int(time.time())
         for doc in transferRecords:
@@ -156,11 +156,7 @@ class MSMonitor(MSCore):
             try:
                 for rec in doc['transfers']:
                     # obtain new transfer ids and completion for given dataset
-                    # FIXME: dirty way to know which data management tool to be used
-                    if len(rec['transferIDs'][0]) > 10:
-                        completion = self._getRucioTransferstatus(rec['transferIDs'])
-                    else:
-                        completion = self._getPhEDExTransferstatus(rec['dataset'], rec['transferIDs'])
+                    completion = self._getRucioTransferstatus(rec['transferIDs'])
                     rec['completion'].append(round(completion, 3))
                 doc['lastUpdate'] = tstamp
             except Exception as exc:
@@ -168,64 +164,6 @@ class MSMonitor(MSCore):
                 self.logger.exception(msg, doc['workflowName'], str(exc))
                 skippedWorkflows.append(doc['workflowName'])
         return skippedWorkflows
-
-    def _getPhEDExTransferstatus(self, dataset, requestList):
-        """
-        Fetch the transfer request status from PhEDEx
-        :param dataset: dataset name string
-        :param requestList: list of request IDs
-        :return: the overall transfers percent completion
-
-        The subscription API response structure is something like:
-        {u'phedex': {u'call_time': 0.09359,
-                     u'dataset': [{u'block': [{u'bytes': 2827742840,
-                                               u'files': 3,
-                                               u'id': u'7702606',
-                                               u'is_open': u'n',
-                                               u'name': u'/HLTPhysicsIsolatedBunch/Run2016H-v1/RAW#92049f6e-92f9-11e6-b150-001e67abf228',
-                                               u'subscription': [{u'custodial': u'n',
-                                                                  u'group': u'DataOps',
-                                                                  u'percent_files': 100,
-                                                                  ...
-        """
-        transferCompletion = []
-        for reqId in requestList:
-            reqCompletion = []
-            # if we query by dataset and the subscription was at block level,
-            # we get an empty response. So always wildcard the block parameter
-            data = self.phedex.subscriptions(block=dataset + '#*', request=reqId)
-            if not data or not data['phedex']['dataset']:
-                msg = "PhEDEx subscriptions API returned an invalid data: {} ".format(data)
-                msg += "for dataset: {} and request ID: {}".format(dataset, reqId)
-                raise RuntimeError(msg)
-
-            # very much nested, especially for a block level subscription
-            for dsetRow in data['phedex']['dataset']:
-                # TODO: check what happens when we subscribe both the primary and parent in the same request
-                for blockRow in dsetRow.get('block', []):
-                    for subs in blockRow['subscription']:
-                        if subs['percent_files'] is None:
-                            reqCompletion.append(0)
-                        else:
-                            reqCompletion.append(int(subs['percent_files']))
-            # check which level subscription was made
-            for dsetRow in data['phedex']['dataset']:
-                if 'block' in dsetRow:
-                    # already handled by the block above
-                    break
-                for subs in dsetRow['subscription']:
-                    if subs['percent_files'] is None:
-                        reqCompletion.append(0)
-                    else:
-                        reqCompletion.append(int(subs['percent_files']))
-            if not reqCompletion:
-                transferCompletion.append(0)
-            else:
-                transferCompletion.append(sum(reqCompletion) / len(reqCompletion))
-            self.logger.info("PhEDEx request ID: %s has a completion rate of: %s", reqId, transferCompletion[-1])
-        if not transferCompletion:
-            return 0
-        return sum(transferCompletion) / len(transferCompletion)
 
     def _getRucioTransferstatus(self, rulesList):
         """

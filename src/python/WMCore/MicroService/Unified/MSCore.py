@@ -9,7 +9,6 @@ from __future__ import division, print_function
 from WMCore.MicroService.Unified.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.Rucio.Rucio import Rucio
 
 
@@ -29,7 +28,6 @@ class MSCore(object):
             skipReqMgr: boolean to skip ReqMgr initialization
             skipReqMgrAux: boolean to skip ReqMgrAux initialization
             skipRucio: boolean to skip Rucio initialization
-            skipPhEDEx: boolean to skip PhEDEx initialization
         """
         self.logger = getMSLogger(getattr(msConfig, 'verbose', False), kwargs.get("logger"))
         self.msConfig = msConfig
@@ -43,15 +41,11 @@ class MSCore(object):
 
         self.phedex = None
         self.rucio = None
-        if self.msConfig.get('useRucio', False) and not kwargs.get("skipRucio", False):
+        if not kwargs.get("skipRucio", False):
             self.rucio = Rucio(acct=self.msConfig['rucioAccount'],
                                hostUrl=self.msConfig['rucioUrl'],
                                authUrl=self.msConfig['rucioAuthUrl'],
                                configDict={"logger": self.logger, "user_agent": "wmcore-microservices"})
-        elif not kwargs.get("skipPhEDEx", False):
-            # hard code it to production DBS otherwise PhEDEx subscribe API fails to match TMDB data
-            dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-            self.phedex = PhEDEx(httpDict={'cacheduration': 0.5}, dbsUrl=dbsUrl, logger=self.logger)
 
     def unifiedConfig(self):
         """

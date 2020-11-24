@@ -439,6 +439,15 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertTrue(len(resp) == 2)
         self.assertTrue(resp[1] is True or resp[1] is False)
 
+    def testRequiresApproval(self):
+        """
+        Test the `pickRSE` method
+        """
+        resp = self.myRucio.requiresApproval("T1_UK_RAL_Tape_Test")
+        self.assertTrue(resp)
+        resp = self.myRucio.requiresApproval("T1_FR_CCIN2P3_Tape_Test")
+        self.assertFalse(resp)
+
     def testIsTapeRSE(self):
         """
         Test the `isTapeRSE` utilitarian function

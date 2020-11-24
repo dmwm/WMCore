@@ -16,6 +16,10 @@ attribute.
 
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str, object
+
 import base64
 import logging
 import threading
@@ -28,7 +32,7 @@ except ImportError:
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
-class ThreadSlave:
+class ThreadSlave(object):
     """
     __ThreadSlave__
 

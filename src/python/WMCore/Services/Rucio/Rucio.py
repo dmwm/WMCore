@@ -7,6 +7,9 @@ CMS Workload Management system (and migration from PhEDEx).
 """
 from __future__ import division, print_function, absolute_import
 
+from builtins import str, object
+from future.utils import viewitems, viewvalues
+
 import logging
 import random
 from copy import deepcopy
@@ -277,7 +280,7 @@ class Rucio(object):
             # {"phedex": {"block": [{"name": "block_A", "replica": [{"node": "nodeA"}, {"node": "nodeB"}]},
             #                        etc etc
             #                        }}
-            for blockName, rses in resultDict.viewitems():
+            for blockName, rses in viewitems(resultDict):
                 replicas = [{"node": rse} for rse in rses]
                 result.append({"name": blockName, "replica": replicas})
             result = {'phedex': {'block': result}}
@@ -285,7 +288,7 @@ class Rucio(object):
             # then a list of dictionaries sounds right, e.g.:
             # [{"name": "block_A", "replica": ["nodeA", "nodeB"]},
             #  {"name": "block_B", etc etc}]
-            for blockName, rses in resultDict.viewitems():
+            for blockName, rses in viewitems(resultDict):
                 result.append({"name": blockName, "replica": list(set(rses))})
 
         return result
@@ -976,14 +979,14 @@ class Rucio(object):
         ###   2. or we want all locations holding at least one block of the container (grouping=D)
         if kwargs.get('grouping') == 'A':
             firstRun = True
-            for _block, rses in rsesByBlocks.viewitems():
+            for _block, rses in viewitems(rsesByBlocks):
                 if firstRun:
                     finalRSEs = rses
                     firstRun = False
                 else:
                     finalRSEs = finalRSEs & rses
         else:
-            for _block, rses in rsesByBlocks.viewitems():
+            for _block, rses in viewitems(rsesByBlocks):
                 finalRSEs = finalRSEs | rses
         return finalRSEs
 
@@ -1237,7 +1240,7 @@ class Rucio(object):
         commonBlockRSEs = set()
         if kwargs.get('grouping') == 'A':
             firstRun = True
-            for rses in locationByBlock.viewvalues():
+            for rses in viewvalues(locationByBlock):
                 if firstRun:
                     commonBlockRSEs = set(rses)
                     firstRun = False
@@ -1246,7 +1249,7 @@ class Rucio(object):
             # finally, append the block based location to the container rule location
             finalRSEs.update(commonBlockRSEs)
         else:
-            for rses in locationByBlock.viewvalues():
+            for rses in viewvalues(locationByBlock):
                 commonBlockRSEs = commonBlockRSEs | set(rses)
             finalRSEs = finalRSEs | commonBlockRSEs
 

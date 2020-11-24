@@ -6,6 +6,8 @@ Query WMBS and ResourceControl to determine how many jobs are still running so
 that we can schedule jobs that have just been created.
 """
 
+from future.utils import viewitems
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -139,11 +141,11 @@ class ListThresholdsForSubmit(DBFormatter):
         queries into a single datastructure.
         """
         results = []
-        for k, v in formattedResults.items():
+        for k, v in viewitems(formattedResults):
             item = {}
             item['site'] = k
             item['data'] = []
-            for ck, cv in v.items():
+            for ck, cv in viewitems(v):
                 childItem = {}
                 childItem['type'] = ck
                 childItem.update(cv)

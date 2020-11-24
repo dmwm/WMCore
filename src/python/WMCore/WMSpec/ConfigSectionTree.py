@@ -10,6 +10,8 @@ of ConfigSections
 
 
 
+from builtins import str, object
+
 import types
 
 from WMCore.Configuration import ConfigSection
@@ -249,7 +251,7 @@ def formatNative(value):
     else:
         return format(value)
 
-class TreeHelper:
+class TreeHelper(object):
     """
     _TreeHelper_
 
@@ -401,7 +403,7 @@ class TreeHelper:
         if not type(value) == dict:
             raise Exception("TreeHelper.addValue passed a value that was not a dictionary")
 
-        for key in value.keys():
+        for key in value:
             splitList = key.split('.')
             setResult = value[key]
             if len(splitList) == 1:

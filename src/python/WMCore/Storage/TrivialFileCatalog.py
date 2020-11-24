@@ -25,6 +25,9 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 """
 
+from builtins import next, str, range
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -140,7 +143,7 @@ class TrivialFileCatalog(dict):
 
         def _getElementForMappingEntry(entry, mappingStyle):
             e = Element(mappingStyle)
-            for k, v in entry.items():
+            for k, v in viewitems(entry):
                 # ignore empty, None or compiled regexp items into output
                 if not v or (k == "path-match-expr"):
                     continue
@@ -148,7 +151,7 @@ class TrivialFileCatalog(dict):
             return e
 
         root = Element("storage-mapping")  # root element name
-        for mappingStyle, mappings in self.items():
+        for mappingStyle, mappings in viewitems(self):
             for mapping in mappings:
                 mapElem = _getElementForMappingEntry(mapping, mappingStyle)
                 root.appendChild(mapElem)

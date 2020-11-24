@@ -159,7 +159,7 @@ class MSRuleCleanerTest(unittest.TestCase):
 
     def testRunning(self):
         result = self.msRuleCleaner._execute(self.reqRecords)
-        self.assertEqual(result, (3, 2, 2))
+        self.assertEqual(result, (3, 2, 2, 0))
 
     def testCheckClean(self):
         # NOTE: All of the bellow checks are well visualized at:

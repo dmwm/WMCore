@@ -1,3 +1,11 @@
+1.4.3.pre3 to 1.4.3.pre4:
+  - Evaluate all WQEs when local resources are available (Alan Malta Rodrigues) #10072
+  - Deprecate useRucio parameter within MicroServices; remove PhEDEx logic from MSOutput/MSMonitor (Alan Malta Rodrigues) #10094
+  - Add PyPI support for reqmon, reqmgr2ms, global-workqueue, acdcserver (Erik Gough) #10059
+  - Removed DataStructs/DASDocument module (Alan Malta Rodrigues) #10096
+  - [py2py3] WMCore/DataStructs - futurize (Dario Mapelli) #10012
+
+
 1.4.3.pre2 to 1.4.3.pre3:
   - Update setup dependencies for CRAB services (Alan Malta Rodrigues) #10084
   - Only inject templates that can have MSTransferor making data placement (Alan Malta Rodrigues) #9784

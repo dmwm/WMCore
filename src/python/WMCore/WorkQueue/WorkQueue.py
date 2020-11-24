@@ -36,7 +36,6 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkQueue.Policy.End import endPolicy
 from WMCore.WorkQueue.Policy.Start import startPolicy
-from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WorkQueueExceptions import (TERMINAL_EXCEPTIONS, WorkQueueError, WorkQueueNoMatchingElements,
@@ -813,6 +812,7 @@ class WorkQueue(WorkQueueBase):
         is then used to know which work can be acquired from the parent queue or not.
         :return: a tuple of dictionaries (or empty lists)
         """
+        from WMCore.WorkQueue.WMBSHelper import freeSlots
         resources, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
         # now update jobCounts with work that is already available in the local queue
         _, jobCounts = self.backend.calculateAvailableWork(resources, jobCounts)

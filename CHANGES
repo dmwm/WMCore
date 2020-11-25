@@ -1,3 +1,7 @@
+1.4.3.pre4 to 1.4.3.pre5:
+  - Import freeSlots only inside the freeResouceCheck method (Alan Malta Rodrigues) #10102
+
+
 1.4.3.pre3 to 1.4.3.pre4:
   - Evaluate all WQEs when local resources are available (Alan Malta Rodrigues) #10072
   - Deprecate useRucio parameter within MicroServices; remove PhEDEx logic from MSOutput/MSMonitor (Alan Malta Rodrigues) #10094

@@ -229,7 +229,7 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping cleanup step for workflow: %s - RequestType is %s."
             msg += " Will try to archive it directly."
             self.logger.info(msg, wflow['RequestName'], wflow['RequestType'])
-        elif wflow['RequestStatus'] in ['rejected', 'aborted-completed']:
+        elif wflow['RequestStatus'] in ['rejected', 'aborted-completed', 'rejected-archived', 'aborted-archived']:
             # NOTE: We do not check the ParentageResolved flag for these
             #       workflows, but we do need to clean output data placement
             #       rules from the agents for them
@@ -243,19 +243,19 @@ class MSRuleCleaner(MSCore):
                     continue
                 if wflow['CleanupStatus'][pline.name]:
                     self.wfCounters['cleaned'][pline.name] += 1
-        elif wflow['RequestStatus'] == 'announced' and not wflow['ParentageResolved']:
+        elif wflow['RequestStatus'] in ['announced', 'normal-archived'] and not wflow['ParentageResolved']:
             # NOTE: We skip workflows which are not having 'ParentageResolved'
             #       flag, but we still need some proper logging for them.
             msg = "Skipping workflow: %s - 'ParentageResolved' flag set to false."
             msg += " Will retry again in the next cycle."
             self.logger.info(msg, wflow['RequestName'])
-        elif wflow['RequestStatus'] == 'announced' and not wflow['TransferDone']:
+        elif wflow['RequestStatus'] in ['announced', 'normal-archived'] and not wflow['TransferDone']:
             # NOTE: We skip workflows which have not yet finalised their TransferStatus
             #       in MSOutput, but we still need some proper logging for them.
             msg = "Skipping workflow: %s - 'TransferStatus' is 'pending' or 'TransferInfo' is missing in MSOutput."
             msg += " Will retry again in the next cycle."
             self.logger.info(msg, wflow['RequestName'])
-        elif wflow['RequestStatus'] == 'announced':
+        elif wflow['RequestStatus'] in ['announced', 'normal-archived']:
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)

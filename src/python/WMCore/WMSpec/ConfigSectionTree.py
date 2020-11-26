@@ -12,8 +12,6 @@ of ConfigSections
 
 from builtins import str, object
 
-import types
-
 from WMCore.Configuration import ConfigSection
 
 

@@ -4,6 +4,9 @@ Test case for Rucio WMCore Service class
 """
 from __future__ import print_function, division, absolute_import
 
+from builtins import range
+from future.utils import viewitems
+
 import os
 
 from nose.plugins.attrib import attr
@@ -91,7 +94,7 @@ class RucioTest(EmulatedUnitTestCase):
                      "auth_host": 'https://cmsrucio-auth-int.cern.ch',
                      "auth_type": "x509", "account": self.acct,
                      "ca_cert": False, "timeout": 5, "phedexCompatible": False}
-        newKeys = newParams.keys()
+        newKeys = list(newParams)
         newKeys.remove("phedexCompatible")
 
         rucio = Rucio.Rucio(newParams['account'], hostUrl=newParams['host'],
@@ -488,7 +491,7 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertEqual(len(resp), 10)
         self.assertTrue(PUBLOCK in resp)
         # with more than 10 block replicas in the grid
-        for block, rses in resp.viewitems():
+        for block, rses in viewitems(resp):
             self.assertTrue(len(rses) > 5)
 
     @attr('integration')  # jenkins cannot access this rucio account

@@ -199,4 +199,4 @@ class ThreadSlave(object):
         this method. They inherit from this class and make sure
         its constructor is called, and overload this call method.
         """
-        logging.error("I am a placeholder please overload me to handle parameters : "+str(parameters))
+        logging.error("I am a placeholder please overload me to handle parameters : %s", str(parameters))

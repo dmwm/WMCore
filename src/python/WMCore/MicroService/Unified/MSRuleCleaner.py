@@ -107,7 +107,8 @@ class MSRuleCleaner(MSCore):
 
         # Initialization of the 'cleaned' and 'archived' counters:
         self.wfCounters = {'cleaned': {},
-                           'archived': 0}
+                           'archived': {'normalArchived': 0,
+                                        'forceArchived': 0}}
 
     def resetCounters(self):
         """
@@ -115,7 +116,8 @@ class MSRuleCleaner(MSCore):
         """
         for pline in self.cleanuplines:
             self.wfCounters['cleaned'][pline.name] = 0
-        self.wfCounters['archived'] = 0
+        self.wfCounters['archived']['normalArchived'] = 0
+        self.wfCounters['archived']['forceArchived'] = 0
 
     def execute(self, reqStatus):
         """
@@ -144,17 +146,20 @@ class MSRuleCleaner(MSCore):
 
         # Call _execute() and feed the relevant pipeline with the objects popped from requestRecords
         try:
-            totalNumRequests, cleanNumRequests, archivedNumRequests = self._execute(requestRecords)
+            totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests = self._execute(requestRecords)
             msg = "\nNumber of processed workflows: %s."
             msg += "\nNumber of properly cleaned workflows: %s."
-            msg += "\nNumber of archived workflows: %s."
+            msg += "\nNumber of normally archived workflows: %s."
+            msg += "\nNumber of force archived workflows: %s."
             self.logger.info(msg,
                              totalNumRequests,
                              cleanNumRequests,
-                             archivedNumRequests)
+                             normalArchivedNumRequests,
+                             forceArchivedNumRequests)
             self.updateReportDict(summary, "total_num_requests", totalNumRequests)
             self.updateReportDict(summary, "clean_num_requests", cleanNumRequests)
-            self.updateReportDict(summary, "archived_num_requests", archivedNumRequests)
+            self.updateReportDict(summary, "normal_archived_num_requests", normalArchivedNumRequests)
+            self.updateReportDict(summary, "force_archived_num_requests", forceArchivedNumRequests)
         except Exception as ex:
             msg = "Unknown exception while running MSRuleCleaner thread Error: %s"
             self.logger.exception(msg, str(ex))
@@ -195,9 +200,11 @@ class MSRuleCleaner(MSCore):
         for pline in self.cleanuplines:
             msg = "Workflows cleaned by pipeline: %s: %d"
             self.logger.info(msg, pline.name, self.wfCounters['cleaned'][pline.name])
-        archivedNumRequests = self.wfCounters['archived']
-        self.logger.info("Workflows archived: %d", self.wfCounters['archived'])
-        return totalNumRequests, cleanNumRequests, archivedNumRequests
+        normalArchivedNumRequests = self.wfCounters['archived']['normalArchived']
+        forceArchivedNumRequests = self.wfCounters['archived']['forceArchived']
+        self.logger.info("Workflows normally archived: %d", self.wfCounters['archived']['normalArchived'])
+        self.logger.info("Workflows force archived: %d", self.wfCounters['archived']['forceArchived'])
+        return totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests
 
     def _dispatchWflow(self, wflow):
         """
@@ -268,7 +275,10 @@ class MSRuleCleaner(MSCore):
         # Archive:
         try:
             self.plineArchive.run(wflow)
-            self.wfCounters['archived'] += 1
+            if wflow['ForceArchive']:
+                self.wfCounters['archived']['forceArchived'] += 1
+            else:
+                self.wfCounters['archived']['normalArchived'] += 1
         except MSRuleCleanerArchival as ex:
             msg = "%s: Archival Error: %s. "
             msg += " Will retry again in the next cycle."

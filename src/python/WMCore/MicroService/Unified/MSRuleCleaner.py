@@ -182,9 +182,14 @@ class MSRuleCleaner(MSCore):
         #       that have accomplished the needed cleanup
 
         cleanNumRequests = 0
+        unCleanNumRequests = 0
         totalNumRequests = 0
+        resubNumRequests = 0
 
         # Call the workflow dispatcher:
+        cleanReqList = []
+        unCleanReqList = []
+        resubReqList = []
         for _, req in reqRecords.items():
             wflow = MSRuleCleanerWflow(req)
             self._dispatchWflow(wflow)
@@ -195,13 +200,29 @@ class MSRuleCleaner(MSCore):
             totalNumRequests += 1
             if self._checkClean(wflow):
                 cleanNumRequests += 1
+                cleanReqList.append(wflow['RequestName'])
+            elif not wflow['ForceArchive']:
+                unCleanNumRequests += 1
+                unCleanReqList.append(wflow['RequestName'])
+            elif wflow['RequestType'] == 'Resubmission':
+                resubNumRequests += 1
+                resubReqList.append(wflow['RequestName'])
+
+        # Report the full list of cleaned and failed to be cleaned workflows:
+        self.logger.debug("Full list of properly cleaned workflows: \n%s", pformat(cleanReqList))
+        self.logger.debug("Full list of Resubmission workflows: \n%s", pformat(resubReqList))
+        self.logger.debug("Full list of failed to be cleaned workflows: \n%s", pformat(unCleanReqList))
 
         # Report the counters:
+        self.logger.info("Workflows processed: %s", totalNumRequests)
         for pline in self.cleanuplines:
             msg = "Workflows cleaned by pipeline: %s: %d"
             self.logger.info(msg, pline.name, self.wfCounters['cleaned'][pline.name])
         normalArchivedNumRequests = self.wfCounters['archived']['normalArchived']
         forceArchivedNumRequests = self.wfCounters['archived']['forceArchived']
+        self.logger.info("Workflows properly cleaned: %s", cleanNumRequests)
+        self.logger.info("Workflows counted as Resubmission: %s", resubNumRequests)
+        self.logger.info("Workflows failed to be cleaned: %s", unCleanNumRequests)
         self.logger.info("Workflows normally archived: %d", self.wfCounters['archived']['normalArchived'])
         self.logger.info("Workflows force archived: %d", self.wfCounters['archived']['forceArchived'])
         return totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests

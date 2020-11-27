@@ -39,8 +39,8 @@ couchDB = CouchDB(dbname='reqmgr_workload_cache',
                   ckey=os.getenv("X509_USER_KEY", "Unknown"),
                   cert=os.getenv("X509_USER_CERT", "Unknown"))
 timeFormat = "%b %d %H:%M:%S %Y"
-startTimeStr = "May 1 15:00:00 2020"
-endTimeStr = "Nov 24 14:30:31 2020"
+startTimeStr = "Jun 9 00:00:00 2020"
+endTimeStr = "Nov 25 00:00:00 2020"
 startTime = time.strptime(startTimeStr, timeFormat)
 endTime = time.strptime(endTimeStr, timeFormat)
 startTimeSec = int(time.mktime(startTime))
@@ -61,9 +61,12 @@ try:
         view += '&startkey=["%s",%s]' % (status, startTimeSec)
         view += '&endkey=["%s",%s]' % (status, endTimeSec)
         view += '&include_docs=true'
-        reqList.extend([req['doc'] for req in couchDB.loadView(design, view)['rows']])
-        reqNames.extend([req['RequestName'] for req in reqList])
+        viewList = couchDB.loadView(design, view)['rows']
+        reqList.extend([req['doc'] for req in viewList])
+        reqNames.extend([req['id'] for req in viewList])
+        logger.info('  retrieved %s requests in status: %s', len(viewList), status)
     logger.info("Building the final list of request records.")
+    logger.info("Requests retrieved in total: %s", len(reqNames))
     reqRecords.update(dict(izip(reqNames, reqList)))
     # logger.debug("reqRecords: %s", pformat(reqRecords))
 except Exception as err:  # general error

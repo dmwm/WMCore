@@ -26,11 +26,11 @@
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {
-        "AcquisitionEra": "Integ_Test", 
+        "AcquisitionEra": "CMSSW_11_2_0_pre8",
         "CMSSWVersion": "CMSSW_11_2_0_pre8", 
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
-            "WorkFlowDesc": ["3 Steps with input data and same PU in Step1 and Step2; 2 LpJ; Harvesting enabled; ",
+            "WorkFlowDesc": ["3 Steps with input data and same PU in Step1 and Step2; ~221EpJ / 2LpJ; Harvesting enabled; ",
                              "Drop output of Step1 - GEN-SIM-DIGI-RAW; Assigned with diff AcqEra/ProcStr;"],
 	    "CheckList": ["SC ReDigi; SC with different AcqEra/ProcStr/ProcVer; SC harvesting"]
         },
@@ -57,23 +57,23 @@
         "SizePerEvent": 1, 
         "SubRequestType": "RelVal", 
         "Step1": {
-            "AcquisitionEra": "Integ_TestStep1", 
+            "AcquisitionEra": "CMSSW_11_2_0_pre1",
             "CMSSWVersion": "CMSSW_11_2_0_pre8", 
             "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
             "ConfigCacheID": "bd52899bf308f6846f06edfe4d82bb6f", 
             "GlobalTag": "112X_mcRun3_2024_realistic_v10", 
             "InputDataset": "/RelValTTbar_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
             "KeepOutput": false, 
-            "LumisPerJob": 2, 
             "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM", 
             "ProcessingString": "StepChain_MC_Step1_TEST_WMCore", 
             "ScramArch": [
                 "slc7_amd64_gcc820"
-            ], 
+            ],
+            "SplittingAlgo": "EventAwareLumiBased",
             "StepName": "DigiPU_2024PU"
         }, 
         "Step2": {
-            "AcquisitionEra": "Integ_TestStep2", 
+            "AcquisitionEra": "CMSSW_11_2_0_pre2",
             "CMSSWVersion": "CMSSW_11_2_0_pre8", 
             "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
             "ConfigCacheID": "bd52899bf308f6846f06edfe4d837b58", 
@@ -90,7 +90,7 @@
             "StepName": "RecoPU_2024PU"
         }, 
         "Step3": {
-            "AcquisitionEra": "Integ_TestStep3", 
+            "AcquisitionEra": "CMSSW_11_2_0_pre3",
             "CMSSWVersion": "CMSSW_11_2_0_pre8", 
             "Campaign": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
             "ConfigCacheID": "bd52899bf308f6846f06edfe4d83d7a6", 
@@ -106,6 +106,6 @@
             "StepName": "Nano_2024PU"
         }, 
         "StepChain": 3, 
-        "TimePerEvent": 5
+        "TimePerEvent": 130
     }
 }

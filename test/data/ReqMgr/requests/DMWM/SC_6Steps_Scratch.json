@@ -21,7 +21,7 @@
         "Campaign": "RunIISummer19UL16GEN", 
         "Comments": {"WorkFlowDesc": ["SC from scratch with 6 steps and PU on step3; drop output of step2/GEN-SIM and step4/GEN-SIM-RAW; Step1 with 6 cores, others with 8 cores and 16GB",
                                       "Step1 and Step3 with the same output module, GEN vs GEN-SIM-DIGI; Step3 under 10_6_13, others with 10_6_12; PrepID override at step level"],
-                     "CheckList": "StepChain from scratch; StepChain KeepOutput=False"}, 
+                     "CheckList": "StepChain from scratch; StepChain KeepOutput=False; StepChain with dup outputModule; StepChain multicore; StepChain with different CMSSW/ScramArch and PrepID"}, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 

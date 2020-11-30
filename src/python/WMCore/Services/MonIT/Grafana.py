@@ -5,6 +5,7 @@ Wrapper class, based on the PyCuRL module, providing an interface
 to CERN MonIT Grafana APIs
 """
 from __future__ import division, print_function, absolute_import
+from builtins import str, object
 from future import standard_library
 standard_library.install_aliases()
 

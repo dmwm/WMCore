@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+from builtins import str, bytes, object
+from future.utils import viewitems
+
 import hashlib
 import json
 import types
@@ -46,9 +49,14 @@ class RESTFormat(object):
         # to a single string. Convert files to 1MB chunks.
         if stream is None:
             stream = ['']
-        elif isinstance(stream, basestring):
+        elif isinstance(stream, (str, bytes)):
             stream = [stream]
-        elif isinstance(stream, types.FileType):
+        elif hasattr(stream, "read"):
+            # types.FileType is not available anymore in python3,
+            # using it raises pylint W1624.
+            # Since cherrypy.lib.file_generator only uses the .read() attribute
+            # of a file, we simply check if stream.read() is present instead.
+            # https://github.com/cherrypy/cherrypy/blob/2a8aaccd649eb1011382c39f5cd93f76f980c0b1/cherrypy/lib/__init__.py#L64
             stream = cherrypy.lib.file_generator(stream, 512 * 1024)
 
         return self.stream_chunked(stream, etag, *self.chunk_args(stream))
@@ -118,13 +126,15 @@ class XMLFormat(RESTFormat):
         """Render an object `obj` into XML."""
         if isinstance(obj, type(None)):
             result = ""
-        elif isinstance(obj, (unicode, str)):
+        elif isinstance(obj, str):
             result = xml.sax.saxutils.escape(obj).encode("utf-8")
+        elif isinstance(obj, bytes):
+            result = xml.sax.saxutils.escape(obj)
         elif isinstance(obj, (int, float, bool)):
             result = xml.sax.saxutils.escape(str(obj)).encode("utf-8")
         elif isinstance(obj, dict):
             result = "<dict>"
-            for k, v in obj.iteritems():
+            for k, v in viewitems(obj):
                 result += "<key>%s</key><value>%s</value>" % \
                   (xml.sax.saxutils.escape(k).encode("utf-8"),
                    XMLFormat.format_obj(v))
@@ -316,14 +326,17 @@ class PrettyJSONHTMLFormat(PrettyJSONFormat):
         """Render an object `obj` into HTML."""
         if isinstance(obj, type(None)):
             result = ""
-        elif isinstance(obj, (unicode, str)):
+        elif isinstance(obj, str):
             obj = xml.sax.saxutils.quoteattr(obj)
+            result = "<pre>%s</pre>" % obj if '\n' in obj else obj
+        elif isinstance(obj, bytes):
+            obj = xml.sax.saxutils.quoteattr(str(obj, "utf-8"))
             result = "<pre>%s</pre>" % obj if '\n' in obj else obj
         elif isinstance(obj, (int, float, bool)):
             result = "%s" % obj
         elif isinstance(obj, dict):
             result = "<ul>"
-            for k, v in obj.iteritems():
+            for k, v in viewitems(obj):
                 result += "<li><b>%s</b>: %s</li>" % (k, PrettyJSONHTMLFormat.format_obj(v))
             result += "</ul>"
         elif is_iterable(obj):
@@ -411,7 +424,7 @@ class RawFormat(RESTFormat):
             etag.invalidate()
             raise
 
-class DigestETag:
+class DigestETag(object):
     """Compute hash digest over contents for ETag header."""
     algorithm = None
 

@@ -13,6 +13,9 @@ from __future__ import print_function
 
 
 
+from builtins import str, object
+from future.utils import viewvalues
+
 import os
 import sys
 try:
@@ -23,7 +26,7 @@ except ImportError:
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 
-class Generate:
+class Generate(object):
     """
     Generate
 
@@ -125,7 +128,7 @@ class %sTest(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 """
-        for componentName in self.components.keys():
+        for componentName in self.components:
             print('Creating test dir for:'+componentName)
             self.currentDir = os.path.join(self.config.General.testDir, \
                 componentName+'_t')
@@ -155,7 +158,7 @@ if __name__ == '__main__':
         with open(os.path.join(self.currentDir,'defaultTest.py'), 'w') as stfile:
             stfile.write("#!/usr/bin/env python\n")
             stfile.write("from WMQuality.Test import Test\n\n\n")
-            for componentName in self.components.keys():
+            for componentName in self.components:
                 msg = "from "+self.config.General.pythonTestPrefix+"."+componentName+'_t.'+componentName+'_t import '+componentName+'Test'
                 stfile.write(msg+'\n')
             stfile.write('\n\n\n')
@@ -190,7 +193,7 @@ test = Test(tests,'failures3.log')
 test.run()
 test.summaryText()
 """
-        for componentName in self.components.keys():
+        for componentName in self.components:
             stfile.write(msg1 % (componentName, componentName))
             stfile.write(msg2)
 
@@ -199,7 +202,7 @@ test.summaryText()
         Generates the component stubs.
         """
 
-        for componentName in self.components.keys():
+        for componentName in self.components:
             print('Creating component dir for:'+componentName)
             self.currentDir = os.path.join(self.config.General.srcDir, \
                 componentName)
@@ -216,7 +219,7 @@ test.summaryText()
             stfile.write("from WMCore.Agent.Harness import Harness\n\n")
             importFact = False
             try:
-                for handlerName in self.components[componentName].keys():
+                for handlerName in self.components[componentName]:
                     handler = self.components[componentName][handlerName]
                     if 'configurable' in handler and handler['configurable'] == 'yes':
                         if not importFact:
@@ -248,7 +251,7 @@ class %s(Harness):
                 stfile.write('        # use a factory to dynamically load handlers.\n')
                 stfile.write("        factory = WMFactory('generic')\n")
             try:
-                for handlerName in self.components[componentName].keys():
+                for handlerName in self.components[componentName]:
                     handler = self.components[componentName][handlerName]
                     if 'configurable' in handler and \
                         handler['configurable'] == 'yes':
@@ -293,14 +296,14 @@ config.%s.logLevel = "INFO"
         stfile.write(msg)
         # check if we need a thread parameter
         threadParam = False
-        for handler in self.components[componentName].values():
+        for handler in viewvalues(self.components[componentName]):
             if 'threading' in handler and handler['threading'] == 'yes':
                 threadParam = True
         if threadParam:
             stfile.write('# maximum number of threads we want to deal\n')
             stfile.write('# with messages per pool.\n')
             stfile.write('config.'+componentName+'.maxThreads = 30\n')
-        for handlerName in self.components[componentName].keys():
+        for handlerName in self.components[componentName]:
             handler = self.components[componentName][handlerName]
             if 'configurable' in handler and handler['configurable'] == 'yes':
                 stfile.write('config.'+componentName+'.'+self.convert(handlerName)+'Handler =\\\n')
@@ -322,7 +325,7 @@ config.%s.logLevel = "INFO"
             pass
         with open(os.path.join(handlerDir, '__init__.py'), 'w') as stfile:
             stfile.write('#!/usr/bin/env python\n')
-        for handlerName in self.components[componentName].keys():
+        for handlerName in self.components[componentName]:
             # check if we need to create a threaded version
             handler = self.components[componentName][handlerName]
             threaded = False

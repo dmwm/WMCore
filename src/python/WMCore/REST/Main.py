@@ -6,8 +6,10 @@
 Manages a web server application. Loads configuration and all views, starting
 up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
-from __future__ import print_function
 
+from __future__ import print_function
+from builtins import object
+from future.utils import viewitems
 from future import standard_library
 standard_library.install_aliases()
 
@@ -222,9 +224,9 @@ class RESTMain(object):
                         'server', 'tools', 'wsgi', 'checker'):
             if not hasattr(self.srvconfig, section):
                 continue
-            for opt, value in getattr(self.srvconfig, section).dictionary_().iteritems():
+            for opt, value in viewitems(getattr(self.srvconfig, section).dictionary_()):
                 if isinstance(value, ConfigSection):
-                    for xopt, xvalue in value.dictionary_().iteritems():
+                    for xopt, xvalue in viewitems(value.dictionary_()):
                         cpconfig.update({"%s.%s.%s" % (section, opt, xopt): xvalue})
                 elif isinstance(value, str) or isinstance(value, int):
                     cpconfig.update({"%s.%s" % (section, opt): value})

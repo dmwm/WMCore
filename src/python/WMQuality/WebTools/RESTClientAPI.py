@@ -1,6 +1,8 @@
 from future import standard_library
 standard_library.install_aliases()
 
+from future.utils import viewitems
+
 import hashlib
 import hmac
 import urllib.parse
@@ -70,7 +72,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType=None
                                                      secure, secureParam)
 
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
-    for key, value in output.items():
+    for key, value in viewitems(output):
         msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
               % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
         assert keyMap[key] == value, msg

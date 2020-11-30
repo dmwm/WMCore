@@ -282,7 +282,7 @@ class Rucio(object):
 
         return result
 
-    def getPFN(self, site, lfns, protocol=None, protocol_domain='All', operation=None):
+    def getPFN(self, site, lfns, protocol=None, protocol_domain='ALL', operation=None):
         """
         returns a list of PFN(s) for a list of LFN(s) and one site
         Note: same function implemented for PhEDEx accepted a list of sites, but semantic was obscure and actual need

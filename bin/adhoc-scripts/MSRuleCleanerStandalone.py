@@ -89,7 +89,7 @@ argParser.add_argument('-st', '--reqStatus',
                        default=[])
 
 argParser.add_argument('-erm', '--enableRealMode',
-                       type=bool,
+                       action='store_true',
                        required=False,
                        help="Enable RealRun mode",
                        dest='enableRealMode',

@@ -242,6 +242,8 @@ class MSRuleCleaner(MSCore):
         #       in the logic of the _dispatcher() itself
         if wflow['RequestStatus'] == 'announced':
             self.getMSOutputTransferInfo(wflow)
+        elif wflow['RequestStatus'] == 'normal-archived':
+            wflow['TransferDone'] = True
 
         # Clean:
         # Do not clean any Resubmission, but still let them be archived

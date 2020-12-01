@@ -17,8 +17,8 @@ logging.basicConfig(stream=sys.stdout, format=FORMAT, level=logging.DEBUG)
 logger = logging.getLogger()
 
 # Default values:
-defaults = {'StartTimeStr': "Jun 9 00:00:00 2020",
-            'EndTimeStr': "Nov 25 00:00:00 2020",
+defaults = {'StartTimeStr': "Jun-9-00:00:00-2020",
+            'EndTimeStr': "Nov-25-00:00:00-2020",
             'CentServices': "https://cmsweb-testbed.cern.ch",
             'RucioMStrAccount': "wmcore_transferor",
             'RucioWmaAccount': "wma_test",
@@ -129,7 +129,7 @@ def main():
                       size=100000,
                       ckey=os.getenv("X509_USER_KEY", "Unknown"),
                       cert=os.getenv("X509_USER_CERT", "Unknown"))
-    timeFormat = "%b %d %H:%M:%S %Y"
+    timeFormat = "%b-%d-%H:%M:%S-%Y"
     startTime = time.strptime(args.startTimeStr, timeFormat)
     endTime = time.strptime(args.endTimeStr, timeFormat)
     startTimeSec = int(time.mktime(startTime))

@@ -257,17 +257,22 @@ class Rucio(object):
 
         return result
 
-    def getPFN(self, site, lfns, protocol=None):
+    def getPFN(self, site, lfns, protocol=None, protocolDomain='ALL', operation=None):
         """
         returns a list of PFN(s) for a list of LFN(s) and one site
         Note: same function implemented for PhEDEx accepted a list of sites, but semantic was obscure and actual need
               unknown. So take this chance to make things simple.
+        See here for documentation of the upstream Rucio API: https://rucio.readthedocs.io/en/latest/api/rse.html
         :param site: a Rucio RSE, i.e. a site name in standard CMS format like 'T1_UK_RAL_Disk' or  'T2_CH_CERN'
         :param lfns: a list of LFN's, does not need to correspond to actual files and could be a top level directory
                       like ['/store/user/rucio/jdoe','/store',...] basically any string starting with '/' is
                       accepted and LFN -> PFN translation is almost always a simple prefix
         :param protocol: If the RSE supports multiple access protocols, a preferred protocol can be selected via this,
                          otherwise the default one for the site will be selected. Example: 'gsiftp' or 'davs'
+                         this is what is called "scheme" in the RUCIO API (we think protocol is more clear)
+        :param protocolDomain: The scope of the protocol. Supported are "LAN", "WAN", and "ALL" (as default)
+                                this is what is called protocol_domain in RUCIO API, changed for CMS camelCase convention
+        :param operation: The name of the requested operation (read, write, or delete). If None, all operations are queried
         :return: a dictionary having the LFN's as keys and the corresponding PFN's as values.
 
         Will raise a Rucio exception if input is wrong.
@@ -283,7 +288,7 @@ class Rucio(object):
 
         # Rucio's lfns2pfns returns a dictionary with did as key and pfn as value:
         # {u'cms:/store/user/rucio': u'gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/user/rucio'}
-        didDict = self.cli.lfns2pfns(site, dids, scheme=protocol)
+        didDict = self.cli.lfns2pfns(site, dids, scheme=protocol, protocol_domain=protocolDomain, operation=operation)
 
         # convert to a more useful format for us with LFN's as keys
         pfnDict = {}

@@ -1,3 +1,10 @@
+1.4.3 to 1.4.4.pre1:
+  - Remove badly encoded single quotes from Rucio module (Alan Malta Rodrigues) #10124
+  - add all Rucio lfns2pfns args. to getPFN. Fix #10056 (belforte) #10122
+  - Add requiresApproval method to Rucio class. Manage RSE rule approval requirements in insertContainerRules (germanfgv) #10105
+  - Minor updates to some json test templates (Alan Malta Rodrigues) #10113
+
+
 1.4.3.pre6 to 1.4.3:
 
 

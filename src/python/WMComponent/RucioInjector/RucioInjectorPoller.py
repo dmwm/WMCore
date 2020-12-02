@@ -539,6 +539,16 @@ class RucioInjectorPoller(BaseWorkerThread):
             elif self.testRSEs:
                 rseName = "%s_Test" % rseName
 
+            #Checking whether we need to ask for rule approval
+            try:
+                if self.rucio.requiresApproval(rseName):
+                    ruleKwargs['ask_approval'] = True
+            except WMRucioException as exc:
+                msg = str(exc)
+                msg += "\nUnable to check approval requirements. Will retry again in the next cycle."
+                logging.error(msg)
+                continue
+
             logging.info("Creating container rule for %s against RSE %s", container, rseName)
             logging.debug("Container rule will be created with keyword args: %s", ruleKwargs)
             try:

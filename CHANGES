@@ -1,3 +1,7 @@
+1.4.3 to 1.4.3.patch1:
+  - Add requiresApproval method to Rucio class. Manage RSE rule approval requirements in insertContainerRules (germanfgv) #10125
+
+
 1.4.3.pre6 to 1.4.3:
 
 

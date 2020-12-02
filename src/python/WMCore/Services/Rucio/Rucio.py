@@ -270,7 +270,7 @@ class Rucio(object):
         :param protocol: If the RSE supports multiple access protocols, a preferred protocol can be selected via this,
                          otherwise the default one for the site will be selected. Example: 'gsiftp' or 'davs'
                          this is what is called "scheme" in the RUCIO API (we think protocol is more clear)
-        :param protocolDomain: The scope of the protocol. Supported are ‘LAN’, ‘WAN’, and ‘ALL’ (as default)
+        :param protocolDomain: The scope of the protocol. Supported are "LAN", "WAN", and "ALL" (as default)
                                 this is what is called protocol_domain in RUCIO API, changed for CMS camelCase convention
         :param operation: The name of the requested operation (read, write, or delete). If None, all operations are queried
         :return: a dictionary having the LFN's as keys and the corresponding PFN's as values.

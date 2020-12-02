@@ -13,7 +13,7 @@ from copy import deepcopy
 from rucio.client import Client
 from rucio.common.exception import (AccountNotFound, DataIdentifierNotFound, AccessDenied, DuplicateRule,
                                     DataIdentifierAlreadyExists, DuplicateContent, InvalidRSEExpression,
-                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound)
+                                    UnsupportedOperation, FileAlreadyExists, RuleNotFound, RSENotFound)
 from Utils.MemoryCache import MemoryCache
 from WMCore.WMException import WMException
 
@@ -788,6 +788,22 @@ class Rucio(object):
 
         choice = weightedChoice(rsesWithWeights)
         return choice
+
+    def requiresApproval(self, rse):
+        """
+        _requiresApproval_
+
+        Returns wether or not the specified RSE requires rule approval.
+        :param res: string containing the Rucio RSE name
+        :returns: True if the RSE requires approval to write (rule property)
+        """
+        try:
+            attrs = self.cli.list_rse_attributes(rse)
+        except RSENotFound as exc:
+            msg = "Error retrieving attributes for RSE: {}. Error: {}".format(rse, str(exc))
+            raise WMRucioException(msg)
+        return attrs.get('requires_approval', False)
+
 
     def isContainer(self, didName, scope='cms'):
         """

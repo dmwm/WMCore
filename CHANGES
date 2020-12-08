@@ -1,3 +1,11 @@
+1.4.3.patch1 to 1.4.3.patch2:
+  - Catch UnicodeDecodeError in JobAccountant (Alan Malta Rodrigues) #10162
+  - Add only merged parents to the ACDC docs (Alan Malta Rodrigues) #10162
+  - Fix JobAccountant missing parent dbsbuffer file (Alan Malta Rodrigues) #10162
+  - Only resolve RSE requires_approval for T0 data placement (Alan Malta Rodrigues) #10162
+  - Temporarily stop staging out log tarball to CASTOR (Alan Malta Rodrigues) #10128
+
+
 1.4.3 to 1.4.3.patch1:
   - Add requiresApproval method to Rucio class. Manage RSE rule approval requirements in insertContainerRules (germanfgv) #10125
 

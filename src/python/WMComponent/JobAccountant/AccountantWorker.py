@@ -176,9 +176,11 @@ class AccountantWorker(WMConnectionBase):
 
         try:
             jobReport.load(jobReportPath)
+        except UnicodeDecodeError:
+            logging.error("Hit UnicodeDecodeError exception while loading jobReport: %s", jobReportPath)
+            return self.createMissingFWKJR(99997, 'Found undecodable data in jobReport: {}'.format(jobReportPath))
         except Exception as ex:
-            msg = "Error loading jobReport %s\n" % jobReportPath
-            msg += str(ex)
+            msg = "Error loading jobReport: {}\nDetails: {}".format(jobReportPath, str(ex))
             logging.error(msg)
             return self.createMissingFWKJR(99997, 'Cannot load jobReport')
 

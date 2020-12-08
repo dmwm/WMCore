@@ -2,11 +2,6 @@
 Use this for only unit test
 """
 from builtins import object
-import os
-import sys
-import logging
-
-from WMCore.Configuration import Configuration, saveConfigurationFile
 
 class EmulatorHelper(object):
     """

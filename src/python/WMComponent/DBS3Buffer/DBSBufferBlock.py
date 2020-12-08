@@ -103,9 +103,9 @@ class DBSBufferBlock(object):
             msg =  "Duplicate file inserted into DBSBufferBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
-            logging.debug("Block length: %i" % len(self.files))
+            logging.debug("Block length: %i", len(self.files))
             l = sorted([x['id'] for x in self.files])
-            logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
+            logging.debug("First file: %s    Last file: %s", l[0], l[-1])
             return
 
         for setting in self.data['close_settings']:
@@ -299,7 +299,7 @@ class DBSBufferBlock(object):
 
         try:
             if datasetName[0] == '/':
-                junk, primary, processed, tier = datasetName.split('/')
+                _, primary, processed, tier = datasetName.split('/')
             else:
                 primary, processed, tier = datasetName.split('/')
         except Exception:

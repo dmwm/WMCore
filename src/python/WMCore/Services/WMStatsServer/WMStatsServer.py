@@ -1,3 +1,6 @@
+from builtins import str, bytes
+from future.utils import viewitems
+
 import json
 import logging
 
@@ -57,8 +60,8 @@ class WMStatsServer(Service):
         :returns: url query string
         """
         args = ""
-        for name, values in queryDict.items():
-            if isinstance(values, (basestring, int)):
+        for name, values in viewitems(queryDict):
+            if isinstance(values, (str, bytes, int)):
                 values = [values]
             for val in values:
                 args += '%s=%s&' % (name, val)

@@ -1,3 +1,6 @@
+
+from future.utils import viewitems, viewvalues, listitems
+
 import os, hmac, hashlib, cherrypy
 from tempfile import NamedTemporaryFile
 from WMCore.REST.Main import RESTMain
@@ -30,7 +33,7 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
     if dn:
         headers['cms-authn-dn'] = dn
 
-    for name, role in roles.items():
+    for name, role in viewitems(roles):
         name = 'cms-authz-' + authz_canonical(name)
         headers[name] = []
         for r in 'site', 'group':
@@ -39,7 +42,7 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
         headers[name] = " ".join(headers[name])
 
     prefix = suffix = ""
-    hkeys = headers.keys()
+    hkeys = list(headers)
     for hk in sorted(hkeys):
         if hk != 'cms-auth-status':
             prefix += "h%xv%x" % (len(hk), len(headers[hk]))
@@ -48,7 +51,7 @@ def fake_authz_headers(hmac_key, method = 'HNLogin',
     cksum = hmac.new(hmac_key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
     headers['cms-authn-hmac'] = cksum
     if format == "list":
-        return headers.items()
+        return listitems(headers)
     else:
         return headers
 
@@ -102,7 +105,7 @@ def setup_dummy_server(module_name, class_name, app_name = None, authz_key_file=
     cherrypy.config.update({'server.socket_host': '127.0.0.1'})
     cherrypy.config.update({'request.show_tracebacks': True})
     cherrypy.config.update({'environment': 'test_suite'})
-    for app in cherrypy.tree.apps.values():
+    for app in viewvalues(cherrypy.tree.apps): 
         if '/' in app.config:
             app.config["/"]["request.show_tracebacks"] = True
 

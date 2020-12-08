@@ -1,3 +1,6 @@
+from builtins import object
+from future.utils import viewitems, viewvalues
+
 import os
 import cherrypy
 import logging
@@ -44,7 +47,7 @@ class RESTMainTestServer(object):
         cherrypy.config.update({'server.thread_pool': 10})
         cherrypy.config.update({'server.accepted_queue_size': -1})
         cherrypy.config.update({'server.accepted_queue_timeout': 10})
-        for app in cherrypy.tree.apps.values():
+        for app in viewvalues(cherrypy.tree.apps):
             if '/' in app.config:
                 app.config["/"]["request.show_tracebacks"] = True
 
@@ -62,7 +65,7 @@ class RESTMainTestServer(object):
         cherrypy.engine.stop()
 
         # Ensure the next server that's started gets fresh objects
-        for name, server in getattr(cherrypy, 'servers', {}).items():
+        for name, server in viewitems(getattr(cherrypy, 'servers', {})):
             server.unsubscribe()
             del cherrypy.servers[name]
 

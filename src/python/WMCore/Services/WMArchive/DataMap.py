@@ -1,4 +1,7 @@
 from __future__ import (division, print_function)
+from builtins import str
+from past.builtins import basestring
+from future.utils import viewitems, listvalues, listitems
 
 import copy
 import socket
@@ -147,7 +150,7 @@ def _changeToFloat(value):
 
 def _validateTypeAndSetDefault(sourceDict, stepDefault):
     # check primitive time and remvoe if the values is composite type.
-    for key, value in sourceDict.items():
+    for key, value in listitems(sourceDict):  # ACHTUNG! dict size changes while iterating
         if key not in stepDefault and value in [[], {}, None, "None"]:
             del sourceDict[key]
 
@@ -158,11 +161,11 @@ def _validateTypeAndSetDefault(sourceDict, stepDefault):
 
 
 def changePerformanceStruct(perfDict):
-    return [{"pName": prop, "value": _changeToFloat(value)} for prop, value in perfDict.items()]
+    return [{"pName": prop, "value": _changeToFloat(value)} for prop, value in viewitems(perfDict)]
 
 
 def changeToList(aDict):
-    return [{"prop": prop, "value": value} for prop, value in aDict.items()]
+    return [{"prop": prop, "value": value} for prop, value in viewitems(aDict)]
 
 
 def convertInput(inputList):
@@ -219,10 +222,10 @@ def convertOutput(outputList):
                 del outDict[field]
 
         for field in WMARCHIVE_CONVERT_TO_LIST:
-            if field in outDict and isinstance(outDict[field], basestring):
+            if field in outDict and isinstance(outDict[field], (str, bytes)):
                 outDict[field] = [outDict[field]]
 
-        for oldKey, newKey in WMARCHIVE_DATA_MAP.items():
+        for oldKey, newKey in viewitems(WMARCHIVE_DATA_MAP):
             if oldKey in outDict:
                 outDict[newKey] = outDict[oldKey]
                 del outDict[oldKey]
@@ -270,17 +273,17 @@ def convertStepValue(stepValue):
 
         elif len(stepValue['input']) > 1:
             # assume only one input value
-            raise Exception("more than one input value %s" % stepValue['input'].keys())
+            raise Exception("more than one input value %s" % list(stepValue['input']))
 
-        elif stepValue['input'].keys()[0] in input_keys:
-            stepValue['input'] = convertInput(stepValue['input'][stepValue['input'].keys()[0]])
+        elif list(stepValue['input'].keys())[0] in input_keys:
+            stepValue['input'] = convertInput(stepValue['input'][list(stepValue['input'])[0]])
 
         else:
-            raise Exception("Unknow iput key %s" % stepValue['input'].keys())
+            raise Exception("Unknow iput key %s" % list(stepValue['input']))
 
     if "output" in stepValue:
         # remove output module name layer
-        stepValue['output'] = convertOutput(stepValue['output'].values())
+        stepValue['output'] = convertOutput(listvalues(stepValue['output']))
 
     if "performance" in stepValue:
         stepValue["performance"] = typeCastPerformance(stepValue["performance"])
@@ -300,7 +303,7 @@ def convertStepValue(stepValue):
 
 def convertSteps(steps):
     stepList = []
-    for key, value in steps.items():
+    for key, value in viewitems(steps):
         stepItem = {}
         stepItem['name'] = key
         stepItem.update(convertStepValue(value))
@@ -324,10 +327,10 @@ def createFileArrayRef(fwjr, fArrayRef):
         for item in fwjr:
             createFileArrayRef(item, fArrayRef)
     elif isinstance(fwjr, dict):
-        for key, value in fwjr.items():
+        for key, value in viewitems(fwjr):
             addKeyFlag = False
 
-            for fileType, keyList in WMARCHIVE_FILE_REF_KEY.items():
+            for fileType, keyList in viewitems(WMARCHIVE_FILE_REF_KEY):
                 for kw in keyList:
                     if kw in key.lower():
                         fArrayRef[fileType].add(key)
@@ -341,7 +344,7 @@ def createFileArrayRef(fwjr, fArrayRef):
 
 def createFileArray(fwjr, fArray, fArrayRef):
     if isinstance(fwjr, dict):
-        for key, value in fwjr.items():
+        for key, value in viewitems(fwjr):
             for fileType in WMARCHIVE_FILE_REF_KEY:
                 if key in fArrayRef[fileType]:
                     if isinstance(value, list):
@@ -359,7 +362,7 @@ def createFileArray(fwjr, fArray, fArrayRef):
 
 def changeToFileRef(fwjr, fArray, fArrayRef):
     if isinstance(fwjr, dict):
-        for key, value in fwjr.items():
+        for key, value in listitems(fwjr):  # ACHTUNG! dict values change while iterating
             for fileType in WMARCHIVE_FILE_REF_KEY:
                 if key in fArrayRef[fileType]:
                     if isinstance(value, list):

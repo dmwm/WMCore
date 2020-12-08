@@ -186,8 +186,8 @@ enableCherrypy()
     read x && [[ $x =~ (n|N) ]] && exit 1
     echo  "..."
 
-    sed -i "s/or HOST.startswith(\"vocms0127\"):/or HOST.startswith(\"vocms0127\") or HOST.startswith(\"$vmName\"):/g" cfg/{reqmgr2,reqmon,workqueue}/config.py
-    grep 'HOST.startswith("vocms0127").*'  cfg/{reqmgr2,reqmon,workqueue}/config.py
+    sed -i "s/or HOST.startswith(\"vocms0117\"):/or HOST.startswith(\"vocms0117\") or HOST.startswith(\"$vmName\"):/g" cfg/{reqmgr2,reqmon,workqueue}/config.py
+    grep 'HOST.startswith("vocms0117").*'  cfg/{reqmgr2,reqmon,workqueue}/config.py
 }
 
 patchDep()
@@ -249,6 +249,9 @@ updateCert()
     sudo cp /data/auth/dmwm-service-key.pem /data/srv/current/auth/t0_reqmon/dmwm-service-key.pem
     sudo cp /data/auth/dmwm-service-key.pem /data/srv/current/auth/reqmgr2ms/dmwm-service-key.pem
     sudo chmod 440 /data/srv/current/auth/{reqmgr2,workqueue,acdcserver,reqmon,t0_reqmon,reqmgr2ms}/dmwm-service-{cert,key}.pem
+    sudo chmod 400 /data/srv/current/auth/{workqueue,reqmgr2ms}/dmwm-service-key.pem
+    sudo chown _reqmgr2ms:_config /data/srv/current/auth/reqmgr2ms/dmwm-service-key.pem
+    sudo chown _workqueue:_config /data/srv/current/auth/workqueue/dmwm-service-key.pem
 }
 
 patchService()

@@ -669,22 +669,20 @@ class WMBSHelper(WMConnectionBase):
         adds the ACDC files into WMBS database
         """
         wmbsParents = []
-        # TODO:  this check can be removed when ErrorHandler filters parents file for unmerged data
-        if acdcFile["parents"]:
-            firstParent = next(iter(acdcFile["parents"]))
-            # If files is merged and has unmerged parents skip the wmbs population
-            if acdcFile.get("merged", 0) and ("/store/unmerged/" in firstParent or "MCFakeFile" in firstParent):
-                # don't set the parents
-                pass
-            else:
-                # set the parentage for all the unmerged parents
-                for parent in acdcFile["parents"]:
-                    logging.debug("WMBS ACDC Parent File: %s", parent)
-                    parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
-                                                                        locations=acdcFile["locations"],
-                                                                        merged=True),
-                                                         inFileset=False)
-                    wmbsParents.append(parent)
+        # If file is merged, then it will be the parent of whatever output that
+        # process this job (it twists my mind!). Meaning, block below can be skipped
+        if int(acdcFile.get("merged", 0)) == 0 and acdcFile["parents"]:
+            # set the parentage for all the unmerged parents
+            for parent in acdcFile["parents"]:
+                if parent.startswith("/store/unmerged/") or parent.startswith("MCFakeFile"):
+                    logging.warning("WMBS ACDC skipped parent invalid file: %s", parent)
+                    continue
+                logging.debug("WMBS ACDC Parent File: %s", parent)
+                parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
+                                                                    locations=acdcFile["locations"],
+                                                                    merged=True),
+                                                     inFileset=False)
+                wmbsParents.append(parent)
 
         # pass empty check sum since it won't be updated to dbs anyway
         checksums = {}

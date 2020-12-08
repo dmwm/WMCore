@@ -176,9 +176,11 @@ class AccountantWorker(WMConnectionBase):
 
         try:
             jobReport.load(jobReportPath)
+        except UnicodeDecodeError:
+            logging.error("Hit UnicodeDecodeError exception while loading jobReport: %s", jobReportPath)
+            return self.createMissingFWKJR(99997, 'Found undecodable data in jobReport: {}'.format(jobReportPath))
         except Exception as ex:
-            msg = "Error loading jobReport %s\n" % jobReportPath
-            msg += str(ex)
+            msg = "Error loading jobReport: {}\nDetails: {}".format(jobReportPath, str(ex))
             logging.error(msg)
             return self.createMissingFWKJR(99997, 'Cannot load jobReport')
 
@@ -379,11 +381,12 @@ class AccountantWorker(WMConnectionBase):
                                                        conn=self.getDBConn(),
                                                        transaction=self.existingTransaction())
         newParents = set()
+        logging.debug("Found %d potential parents for lfn: %s", len(parentsInfo), lfn)
         for parentInfo in parentsInfo:
             # This will catch straight to merge files that do not have redneck
             # parents.  We will mark the straight to merge file from the job
             # as a child of the merged parent.
-            if int(parentInfo["merged"]) == 1:
+            if int(parentInfo["merged"]) == 1 and not parentInfo["lfn"].startswith("/store/unmerged/"):
                 newParents.add(parentInfo["lfn"])
 
             elif parentInfo['gpmerged'] is None:
@@ -393,7 +396,7 @@ class AccountantWorker(WMConnectionBase):
             # children.  We have to setup parentage and then check on whether or
             # not this file has any redneck children and update their parentage
             # information.
-            elif int(parentInfo["gpmerged"]) == 1:
+            elif int(parentInfo["gpmerged"]) == 1 and not parentInfo["gplfn"].startswith("/store/unmerged/"):
                 newParents.add(parentInfo["gplfn"])
 
             # If that didn't work, we've reached the great-grandparents
@@ -906,8 +909,7 @@ class AccountantWorker(WMConnectionBase):
 
         # Now all the parents should exist
         # Commit them to DBSBuffer
-        logging.info("About to commit all DBSBuffer Heritage information")
-        logging.info(len(bindList))
+        logging.info("About to commit DBSBuffer heritage information for: %d binds", len(bindList))
 
         if bindList:
             try:

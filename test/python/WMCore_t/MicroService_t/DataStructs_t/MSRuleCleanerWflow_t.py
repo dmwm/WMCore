@@ -52,14 +52,19 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
         self.assertEqual(wflow["ParentageResolved"], True)
         self.assertEqual(wflow["PlineMarkers"], None)
         self.assertEqual(wflow["IsClean"], False)
+        self.assertEqual(wflow["IsLogDBClean"], False)
+        self.assertEqual(wflow["IsArchivalDelayExpired"], False)
         self.assertEqual(wflow["ForceArchive"], False)
+        self.assertEqual(wflow["RequestTransition"], [])
 
     def testTaskChain(self):
         # Test Taskchain:
         wflow = MSRuleCleanerWflow(self.taskChainReq)
         expectedWflow = {'CleanupStatus': {},
                          'ForceArchive': False,
+                         'IsArchivalDelayExpired': False,
                          'IsClean': False,
+                         'IsLogDBClean': False,
                          'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
                                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
@@ -69,6 +74,39 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'PlineMarkers': None,
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
+                         'RequestTransition': [{"Status": "new",
+                                                "DN": "",
+                                                "UpdateTime": 1606723304},
+                                               {"DN": "",
+                                                "Status": "assignment-approved",
+                                                "UpdateTime": 1606723305},
+                                               {"DN": "",
+                                                "Status": "assigned",
+                                                "UpdateTime": 1606723306},
+                                               {"DN": "",
+                                                "Status": "staging",
+                                                "UpdateTime": 1606723461},
+                                               {"DN": "",
+                                                "Status": "staged",
+                                                "UpdateTime": 1606723590},
+                                               {"DN": "",
+                                                "Status": "acquired",
+                                                "UpdateTime": 1606723968},
+                                               {"DN": "",
+                                                "Status": "running-open",
+                                                "UpdateTime": 1606724572},
+                                               {"DN": "",
+                                                "Status": "running-closed",
+                                                "UpdateTime": 1606724573},
+                                               {"DN": "",
+                                                "Status": "completed",
+                                                "UpdateTime": 1607018413},
+                                               {"DN": "",
+                                                "Status": "closed-out",
+                                                "UpdateTime": 1607347706},
+                                               {"DN": "",
+                                                "Status": "announced",
+                                                "UpdateTime": 1607359514}],
                          'RequestType': u'TaskChain',
                          'RulesToClean': {},
                          'TargetStatus': None,

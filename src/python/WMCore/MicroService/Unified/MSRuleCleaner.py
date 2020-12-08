@@ -33,7 +33,6 @@ from WMCore.ReqMgr.DataStructs import RequestStatus
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
-from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.Services.LogDB.LogDB import LogDB
 
 

@@ -38,7 +38,7 @@ class LoadForErrorHandler(DBFormatter):
     parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
                      FROM wmbs_file_parent wfp
                      INNER JOIN wmbs_file_details parent ON parent.id = wfp.parent
-                     WHERE wfp.child = :fileid """
+                     WHERE wfp.child = :fileid AND parent.merged = 1"""
 
     runLumiSQL = """SELECT fileid, run, lumi, num_events FROM wmbs_file_runlumi_map
                      WHERE fileid = :fileid"""
@@ -52,6 +52,9 @@ class LoadForErrorHandler(DBFormatter):
         Fetch run/lumi/events information for each file and append Run objects
         to the files information.
         """
+        if not fileBinds:
+            return
+
         lumiResult = self.dbi.processData(self.runLumiSQL, fileBinds, conn=conn,
                                           transaction=transaction)
         lumiList = self.formatDict(lumiResult)
@@ -80,8 +83,7 @@ class LoadForErrorHandler(DBFormatter):
                 f['newRuns'].append(newRun)
         return
 
-    def execute(self, jobID, fileSelection=None,
-                conn=None, transaction=False):
+    def execute(self, jobID, fileSelection=None, conn=None, transaction=False):
         """
         _execute_
 
@@ -101,31 +103,31 @@ class LoadForErrorHandler(DBFormatter):
         result = self.dbi.processData(self.sql, binds, conn=conn,
                                       transaction=transaction)
         jobList = self.formatDict(result)
-        for entry in jobList:
-            entry.setdefault('input_files', [])
 
         filesResult = self.dbi.processData(self.fileSQL, binds, conn=conn,
                                            transaction=transaction)
         fileList = self.formatDict(filesResult)
 
-        noDuplicateFiles = {}
-        fileBinds = []
+        # special case for skipped files
         if fileSelection:
             fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
+
+        noDuplicateFiles = {}
+        fileBinds = []
         for x in fileList:
             # Assemble unique list of binds
             if {'fileid': x['id']} not in fileBinds:
                 fileBinds.append({'fileid': x['id']})
                 noDuplicateFiles[x['id']] = x
 
+        # only upload to not duplicate files to prevent excessive memory
+        self.getRunLumis(fileBinds, noDuplicateFiles.values(), conn, transaction)
+
         parentList = []
-        if len(fileBinds) > 0:
+        if fileBinds:
             parentResult = self.dbi.processData(self.parentSQL, fileBinds, conn=conn,
                                                 transaction=transaction)
             parentList = self.formatDict(parentResult)
-
-            # only upload to not duplicate files to prevent excessive memory
-            self.getRunLumis(fileBinds, noDuplicateFiles.values(), conn, transaction)
 
         filesForJobs = {}
         for f in fileList:
@@ -145,12 +147,14 @@ class LoadForErrorHandler(DBFormatter):
                     if entry['id'] == f['id']:
                         wmbsFile['parents'].add(entry['lfn'])
                 wmbsFile.pop('pnn', None)  # not needed for anything, just remove it
+                wmbsFile.pop('newlocations', None)  # not needed for anything, just remove it
                 filesForJobs[jobid][f['id']] = wmbsFile
             elif f['pnn']:
                 # If the file is there and it has a location, just add it
                 filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 
         for j in jobList:
+            j.setdefault('input_files', [])
             if j['id'] in filesForJobs.keys():
                 j['input_files'] = filesForJobs[j['id']].values()
 

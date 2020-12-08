@@ -502,8 +502,7 @@ class RucioInjectorPoller(BaseWorkerThread):
             ruleComment = "T0 " + ruleComment
 
         # FIXME also adapt the format returned by this DAO
-        # Check for completely unsubscribed datasets
-        # in short, files in phedex, file status in "GLOBAL" or "InDBS", and subscribed=0
+        # Check for completely unsubscribed datasets that are already marked as in_phedex = 1
         unsubscribedDatasets = self.getUnsubscribedDsets.execute()
 
         # Keep a list of subscriptions to tick as subscribed in the database
@@ -536,18 +535,19 @@ class RucioInjectorPoller(BaseWorkerThread):
                 rseName = self.containerDiskRuleRSEExpr
                 if self.testRSEs:
                     rseName = rseName.replace("cms_type=real", "cms_type=test")
-            elif self.testRSEs:
-                rseName = "%s_Test" % rseName
-
-            #Checking whether we need to ask for rule approval
-            try:
-                if self.rucio.requiresApproval(rseName):
-                    ruleKwargs['ask_approval'] = True
-            except WMRucioException as exc:
-                msg = str(exc)
-                msg += "\nUnable to check approval requirements. Will retry again in the next cycle."
-                logging.error(msg)
-                continue
+            else:
+                # then it's a T0 container placement
+                if self.testRSEs:
+                    rseName = "%s_Test" % rseName
+                #Checking whether we need to ask for rule approval
+                try:
+                    if self.rucio.requiresApproval(rseName):
+                        ruleKwargs['ask_approval'] = True
+                except WMRucioException as exc:
+                    msg = str(exc)
+                    msg += "\nUnable to check approval requirements. Will retry again in the next cycle."
+                    logging.error(msg)
+                    continue
 
             logging.info("Creating container rule for %s against RSE %s", container, rseName)
             logging.debug("Container rule will be created with keyword args: %s", ruleKwargs)

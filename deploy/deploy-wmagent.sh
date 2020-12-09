@@ -22,11 +22,10 @@
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
-### Usage:               -c <central_services> Url to central services hosting central couchdb (e.g. alancc7-cloud1.cern.ch)
 ### Usage:
-### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>] [-c <central_services_url>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.1.patch3 -d HG2011a -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.1.patch3 -d HG2011a -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro -c cmsweb-testbed.cern.ch
+### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.3.patch2 -d HG2012f -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.3.patch2 -d HG2012f -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
@@ -48,7 +47,6 @@ WMA_ARCH=slc7_amd64_gcc630
 REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
-CENTRAL_SERVICES="cmsweb.cern.ch"
 
 ### Usage function: print the usage of the script
 usage()
@@ -107,9 +105,11 @@ basic_checks()
 
 download_secrets_file(){
   cd $ADMIN_DIR
-  if [[ "$CENTRAL_SERVICES" == cmsweb.cern.ch ]]; then
+  if [[ "$TEAMNAME" == production ]]; then
+    echo "  Dowloading a prodution agent secrets template..."
     wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/WMAgent.production -O $ADMIN_DIR/WMAgent.secrets
   else
+    echo "  Dowloading a testbed agent secrets template..."
     wget -nv https://raw.githubusercontent.com/dmwm/WMCore/master/deploy/WMAgent.testbed -O $ADMIN_DIR/WMAgent.secrets
   fi
   cd -
@@ -136,9 +136,11 @@ check_certs()
       scp cmsdataops@cmsgwms-submit3:/data/certs/* /data/certs/
     fi
     set +e
-    chmod 600 $CERTS_DIR/*
+    chmod 600 $CERTS_DIR/servicecert.pem
+    chmod 400 $CERTS_DIR/servicekey.pem
   else
-    chmod 600 $CERTS_DIR/*
+    chmod 600 $CERTS_DIR/servicecert.pem
+    chmod 400 $CERTS_DIR/servicekey.pem
   fi
   echo -e "  OK!\n"
 }
@@ -165,7 +167,7 @@ check_oracle()
   wget -nv https://raw.githubusercontent.com/dmwm/deployment/master/wmagent/manage -O manage
   chmod +x manage
   echo -e "SELECT COUNT(*) from USER_TABLES;" > check_db_status.sql
-  ### FIXME: new nodes don't have sqlplus ... what to do now?
+  ### FIXME: new nodes do not have sqlplus ... what to do now?
   ./manage db-prompt < check_db_status.sql > db_check_output
   tables=`cat db_check_output | grep -A1 '\-\-\-\-' | tail -n 1`
   if [ "$tables" -gt 0 ]; then
@@ -188,7 +190,6 @@ for arg; do
     -r) REPO=$2; shift; shift ;;
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
-    -c) CENTRAL_SERVICES=$2; shift; shift ;;
     -*) usage ;;
   esac
 done
@@ -204,6 +205,8 @@ source $ENV_FILE;
 
 ### Are we using Oracle or MySQL
 MATCH_ORACLE_USER=`cat $WMAGENT_SECRETS_LOCATION | grep ORACLE_USER | sed s/ORACLE_USER=//`
+MATCH_REQMGR2_URL=`cat $WMAGENT_SECRETS_LOCATION | grep REQMGR2_URL | sed s/REQMGR2_URL=//`
+
 if [ "x$MATCH_ORACLE_USER" != "x" ]; then
   FLAVOR=oracle
   check_oracle
@@ -245,7 +248,7 @@ echo " - WMAgent Arch    : $WMA_ARCH"
 echo " - Repository      : $REPO"
 echo " - Agent number    : $AG_NUM"
 echo " - DB Flavor       : $FLAVOR"
-echo " - Central Services: $CENTRAL_SERVICES"
+echo " - ReqMgr2 URL     : $MATCH_REQMGR2_URL"
 echo " - Use /data1      : $DATA1" && echo
 
 mkdir -p $DEPLOY_DIR || true
@@ -257,10 +260,6 @@ wget -nv -O deployment.zip --no-check-certificate https://github.com/dmwm/deploy
 unzip -q deployment.zip
 cd deployment-$DEPLOY_TAG
 set +e 
-
-echo -e "\n*** Applying (for couchdb1.6, etc) cert file permission ***"
-chmod 600 /data/certs/service{cert,key}.pem
-echo "Done!"
 
 echo -e "\n*** Removing the current crontab ***"
 /usr/bin/crontab -r;
@@ -369,7 +368,6 @@ fi
 echo "Done!" && echo
 
 echo "*** Tweaking central agent configuration ***"
-CENTRAL_SERVICES="https://$CENTRAL_SERVICES/reqmgr2/data/wmagentconfig"
 if [[ "$TEAMNAME" == production ]]; then
   echo "Agent connected to the production team, setting it to drain mode"
   agentExtraConfig='{"UserDrainMode":true}'

@@ -9,6 +9,7 @@ class CleanUpTask(CherryPyPeriodicTask):
     def __init__(self, rest, config):
 
         super(CleanUpTask, self).__init__(config)
+        self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
 
     def setConcurrentTasks(self, config):
         """
@@ -18,14 +19,11 @@ class CleanUpTask(CherryPyPeriodicTask):
 
     def cleanUpAndSyncCanceledElements(self, config):
         """
-
         1. deleted the wqe in end states
         2. synchronize cancelled elements.
         We can also make this in the separate thread
         """
-        start = int(time())
-        globalQ = globalQueue(**config.queueParams)
-        globalQ.performQueueCleanupActions(skipWMBS=True)
-        end = int(time())
-        self.logger.info("%s executed in %d secs.", self.__class__.__name__, end - start)
+        tStart = time()
+        self.globalQ.performQueueCleanupActions(skipWMBS=True)
+        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
         return

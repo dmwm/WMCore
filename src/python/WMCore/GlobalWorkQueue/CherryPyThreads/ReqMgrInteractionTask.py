@@ -30,5 +30,6 @@ class ReqMgrInteractionTask(CherryPyPeriodicTask):
         tStart = time()
         self.logger.info("Executing WorkQueue/ReqMgr thread thread")
         self.reqMgrInt(self.globalQ)
-        self.logger.info("ReqMgrInteractionTask took %.3f secs to run.", time() - tStart)
+        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
+
         return

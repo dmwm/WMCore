@@ -1,3 +1,8 @@
+1.4.4.pre2 to 1.4.4.pre3:
+  - [py2py3] src/python/A/B/C slice 2 - issue 10098 - src (Dario Mapelli) #10103
+  - Fix servicekey permission in the agent deployment; remove central services url option (Alan Malta Rodrigues) #10163
+
+
 1.4.4.pre1 to 1.4.4.pre2:
   - Fix regexp for enable cherrypy threads && Fix file permissions for dmwm-service-key.pem (Todor Ivanov) #10155
   - Catch UnicodeDecodeError in JobAccountant (Alan Malta Rodrigues) #10152

@@ -6,6 +6,8 @@ Query the database to determine how many jobs are pending so that we can
 determine whether or not to task for more work.
 """
 
+from future.utils import viewitems
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -144,7 +146,7 @@ class ListThresholdsForCreate(DBFormatter):
         _formatTable_
         """
         results = []
-        for k, v in formattedResults.items():
+        for k, v in viewitems(formattedResults):
             item = {}
             item['site'] = k
             item.update(v)

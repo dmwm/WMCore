@@ -3,6 +3,7 @@ MockReqMgrAux class provides mocking methods of ReqMgrAux class
 """
 # futures
 from __future__ import (division, print_function)
+from builtins import object
 
 # system modules
 import time

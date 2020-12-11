@@ -7,6 +7,9 @@ pycurl concurrency.
 """
 from __future__ import print_function, division, absolute_import
 
+from builtins import str
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -233,7 +236,7 @@ def getPileupSubscriptionsRucio(datasets, rucioUrl, rucioToken, scope="cms"):
     # first, resolve the dataset into blocks
     blocksByDset = getContainerBlocksRucio(datasets, rucioUrl, rucioToken, scope)
     urls = []
-    for _dset, blocks in blocksByDset.items():
+    for _dset, blocks in viewitems(blocksByDset):
         if blocks:
             for block in blocks:
                 urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote(block)))
@@ -372,7 +375,7 @@ def getBlockReplicasAndSizeRucio(datasets, rucioUrl, rucioToken, scope="cms"):
     # first, figure out their block names
     blocksByDset = getContainerBlocksRucio(datasets, rucioUrl, rucioToken, scope=scope)
     urls = []
-    for _dset, blocks in blocksByDset.items():
+    for _dset, blocks in viewitems(blocksByDset):
         for block in blocks:
             urls.append('{}/replicas/{}/{}/datasets'.format(rucioUrl, scope, quote(block)))
 

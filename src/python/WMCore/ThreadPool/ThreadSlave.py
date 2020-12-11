@@ -16,6 +16,10 @@ attribute.
 
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str, object
+
 import base64
 import logging
 import threading
@@ -28,7 +32,7 @@ except ImportError:
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
-class ThreadSlave:
+class ThreadSlave(object):
     """
     __ThreadSlave__
 
@@ -195,4 +199,4 @@ class ThreadSlave:
         this method. They inherit from this class and make sure
         its constructor is called, and overload this call method.
         """
-        logging.error("I am a placeholder please overload me to handle parameters : "+str(parameters))
+        logging.error("I am a placeholder please overload me to handle parameters : %s", str(parameters))

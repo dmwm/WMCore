@@ -3,6 +3,7 @@
 Unittests for the Rucio wrapper PyCurl-based module
 """
 from __future__ import division, print_function
+from builtins import str
 
 import unittest
 
@@ -91,7 +92,7 @@ class PycurlRucioTests(unittest.TestCase):
         self.assertTrue(len(resp) == 3)
         self.assertTrue(CONT2 in resp)
         self.assertTrue(len(resp[CONT4]) > 3)
-        self.assertItemsEqual(resp[CONT4][BLOCK].viewkeys(), ["blockSize", "locations"])
+        self.assertItemsEqual(list(resp[CONT4][BLOCK]), ["blockSize", "locations"])
         self.assertIsNone(resp[self.badDID])
 
 

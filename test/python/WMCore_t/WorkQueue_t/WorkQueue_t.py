@@ -1264,7 +1264,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          False)
 
         # close the global inbox elements, they won't be split anymore
-        self.globalQueue.closeWork('testProcessing', 'testProduction')
+        self.globalQueue.closeWork(['testProcessing', 'testProduction'])
         self.localQueue.getWMBSInjectionStatus()
         time.sleep(1)
         # There are too many jobs to pull down for testProcessing still has element not in WMBS

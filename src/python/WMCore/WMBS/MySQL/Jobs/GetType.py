@@ -27,7 +27,7 @@ class GetType(DBFormatter):
              WHERE wmbs_job.id = :jobid"""
 
     def execute(self, jobID, conn = None, transaction = False):
-        isList = type(jobID) == type([])
+        isList = isinstance(jobID, list)
         if isList:
             binds = []
             for job in jobID:

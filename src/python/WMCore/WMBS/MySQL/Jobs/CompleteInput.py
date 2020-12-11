@@ -55,7 +55,7 @@ class CompleteInput(DBFormatter):
                """
 
     def execute(self, id, lfnsToSkip = None, conn = None, transaction = False):
-        if type(id) == list:
+        if isinstance(id, list):
             binds = []
             for singleID in id:
                 binds.append({"jobid": singleID})

@@ -14,7 +14,7 @@ class SetStatus(DBFormatter):
     sql = "UPDATE dbsbuffer_file SET status = :status WHERE lfn = :lfn"
 
     def execute(self, lfns, status, conn = None, transaction = None):
-        if type(lfns) != list:
+        if not isinstance(lfns, list):
             lfns = [lfns]
 
         bindVars = []

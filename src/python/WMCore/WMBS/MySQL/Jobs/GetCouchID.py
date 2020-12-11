@@ -40,7 +40,7 @@ class GetCouchID(DBFormatter):
         Execute the SQL for the given job ID and then format and return
         the result.
         """
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             if len(jobID) == 0:
                 return {}
             binds = []

@@ -21,7 +21,7 @@ class Save(DBFormatter):
     """
 
     def execute(self, jobid, mask, conn = None, transaction = False):
-        if type(mask) == list:
+        if isinstance(mask, list):
             # Bulk commit
             # Hope you didn't send us a list of empty masks
             binds = []

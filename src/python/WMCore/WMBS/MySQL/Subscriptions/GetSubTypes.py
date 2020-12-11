@@ -34,7 +34,7 @@ class GetSubTypes(DBFormatter):
         final = []
 
         for item in res:
-            if type(item) == list:
+            if isinstance(item, list):
                 final.extend(item)
 
 

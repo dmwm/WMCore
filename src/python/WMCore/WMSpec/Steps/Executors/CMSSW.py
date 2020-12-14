@@ -83,7 +83,7 @@ class CMSSW(Executor):
             self.stepSpace.getFromSandbox("pileupconf.json")
 
         # add in ths scram env PSet manip script whatever happens
-        self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
+        self.step.runtime.preScripts.append("SetupCMSSWPset")
         return None
 
     def execute(self, emulator=None):
@@ -255,6 +255,9 @@ class CMSSW(Executor):
 
         # possibly needed environment overrides for CMSSW call go here
         envOverride = {}
+        # Do not pass WM PYTHONPATH to CMSSW environment
+        pythonPath = os.environ.get('PYTHONPATH', '')
+        envOverride['PYTHONPATH'] = ""
         # work around problem with GSI authentication plugin and EOS at CERN
         if socket.getfqdn().endswith("cern.ch"):
             envOverride['XRD_LOADBALANCERTTL'] = "86400"
@@ -266,6 +269,12 @@ class CMSSW(Executor):
 
         returnCode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
         returnMessage = None
+
+        # Return PYTHONPATH to its original value, as this
+        # is needed for stepChain workflows, so other prescripts
+        # are able to find WMCore modules
+        envOverride['PYTHONPATH'] = pythonPath
+        os.environ.update(envOverride)
 
         if returnCode != 0:
             argsDump = {'arguments': args}

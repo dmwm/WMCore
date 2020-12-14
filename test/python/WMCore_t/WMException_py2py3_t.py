@@ -72,7 +72,9 @@ class WMExceptionTest(unittest.TestCase):
         data['key1'] = 'value1'
         data['key2'] = 3.14159
         exception.addInfo(**data)
+        exception.addInfo(Protocol="myprotocol", LFN="lfn", TargetPFN="pfn")
         self.logger.debug("String version of exception: %s", str(exception))
+        self.logger.debug("XML version of exception: %s", exception.xml())
 
     def testExceptionUnicode0(self):
         """

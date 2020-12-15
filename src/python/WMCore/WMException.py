@@ -6,7 +6,7 @@ General Exception class for WM modules
 
 """
 
-from builtins import bytes
+from builtins import str, bytes
 from future.utils import viewitems
 
 import inspect
@@ -29,9 +29,11 @@ class WMException(Exception):
 
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
-        if type(message) == bytes:
+        if isinstance(message, bytes):
             # Fix for the unicode encoding issue, see #8056 and #8403
             # interprets this string using utf-8 codec and ignoring any errors
+            # unicode sandwich: convert sequence of bytes strings to
+            # unicode codepoints strings as soon as possible
             message = message.decode('utf-8', 'ignore')
 
         Exception.__init__(self, self.name, message)
@@ -52,7 +54,7 @@ class WMException(Exception):
             self.data.setdefault("ErrorNr", errorNo)
 
         self._message = message
-        self.data.update(data)
+        self.addInfo(**data)
 
         #  //
         # // Automatically determine the module name
@@ -62,7 +64,7 @@ class WMException(Exception):
                 frame = inspect.currentframe()
                 lastframe = inspect.getouterframes(frame)[1][0]
                 excepModule = inspect.getmodule(lastframe)
-                if excepModule != None:
+                if excepModule is not None:
                     modName = excepModule.__name__
                     self.data['ModuleName'] = modName
             finally:
@@ -83,7 +85,7 @@ class WMException(Exception):
         # // ClassName if ClassInstance is passed
         # //
         try:
-            if self.data['ClassInstance'] != None:
+            if self.data['ClassInstance'] is not None:
                 self.data['ClassName'] = self.data['ClassInstance'].__class__.__name__
         except Exception:
             pass
@@ -104,6 +106,12 @@ class WMException(Exception):
         """
         make exception look like a dictionary
         """
+        # unicode sandwich: convert sequence of bytes strings to
+        # unicode codepoints strings as soon as possible
+        if isinstance(key, bytes):
+            key = key.decode("utf-8", "ignore")
+        if isinstance(value, bytes):
+            value = value.decode("utf-8", "ignore")
         self.data[key] = value
 
     def addInfo(self, **data):
@@ -114,6 +122,13 @@ class WMException(Exception):
         exception instance
         """
         for key, value in viewitems(data):
+            # unicode sandwich: convert sequence of bytes strings to
+            # unicode codepoints strings as soon as possible
+            # assumption: value is not iterable (list, dict, tuple, ...)
+            if isinstance(key, bytes):
+                key = key.decode("utf-8", "ignore")
+            if isinstance(value, bytes):
+                value = value.decode("utf-8", "ignore")
             self[key] = value
         return
 
@@ -153,7 +168,7 @@ class WMException(Exception):
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
-        if type(strg) == bytes:
+        if isinstance(strg, bytes):
             # Fix for the unicode encoding issue, #8043
             strg = strg.decode('utf-8', 'ignore')
         return strg

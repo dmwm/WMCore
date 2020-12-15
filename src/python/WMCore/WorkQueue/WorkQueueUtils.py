@@ -89,6 +89,12 @@ def queueConfigFromConfigObject(config):
         wqManager.queueParams = {}
     qConfig = wqManager.queueParams
 
+    # Rucio-related config
+    if hasattr(wqManager, 'rucioUrl'):
+        qConfig['rucioUrl'] = wqManager.rucioUrl
+    if hasattr(wqManager, 'rucioAuthUrl'):
+        qConfig['rucioAuthUrl'] = wqManager.rucioAuthUrl
+
     if hasattr(wqManager, 'couchurl'):
         qConfig['CouchUrl'] = wqManager.couchurl
     if hasattr(wqManager, 'dbname'):

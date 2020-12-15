@@ -243,6 +243,8 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
+        config.WorkQueueManager.rucioUrl = args["rucio_host"]
+        config.WorkQueueManager.rucioAuthUrl = args["rucio_auth"]
 
     # custom AnalyticsDataCollector
     if hasattr(config, "AnalyticsDataCollector"):

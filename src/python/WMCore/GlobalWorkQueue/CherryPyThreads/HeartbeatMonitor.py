@@ -1,5 +1,6 @@
 from __future__ import (division, print_function)
 
+from time import time
 from WMCore.REST.HeartbeatMonitorBase import HeartbeatMonitorBase
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
@@ -10,21 +11,23 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         self.initialStatus = ['Available', 'Negotiating', 'Acquired']
         self.producer = "global_workqueue"
         self.docTypeAMQ = "cms_%s_info" % self.producer
+        self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
 
     def addAdditionalMonitorReport(self, config):
         """
         Collect some statistics for Global Workqueue and upload it to WMStats and
         MonIT.
         """
+        tStart = time()
         self.logger.info("Collecting GlobalWorkqueue statistics...")
 
         # retrieve whole docs for these status in order to create site metrics
-        globalQ = globalQueue(**config.queueParams)
-        results = globalQ.monitorWorkQueue(self.initialStatus)
+        results = self.globalQ.monitorWorkQueue(self.initialStatus)
 
         if self.postToAMQ:
             allDocs = self.buildMonITDocs(results)
             self.uploadToAMQ(allDocs)
+        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
 
         return results
 

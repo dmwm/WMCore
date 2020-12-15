@@ -1,3 +1,11 @@
+1.4.4.pre3 to 1.4.4.pre4:
+  - [py2py3] WMCore/WMException.py - issue 10173 - src (Dario Mapelli) #10174
+  - Add archival logic to MSRuleCleaner. (Todor Ivanov) #10153
+  - Mock Rucio APIs (Alan Malta Rodrigues) #10099
+  - Fix GlobalWorkQueue CherryPy threads initialization and logger (Alan Malta Rodrigues) #10099
+  - Reuse Rucio object in WorkQueue start policy modules (Alan Malta Rodrigues) #10099
+
+
 1.4.4.pre2 to 1.4.4.pre3:
   - [py2py3] src/python/A/B/C slice 2 - issue 10098 - src (Dario Mapelli) #10103
   - Fix servicekey permission in the agent deployment; remove central services url option (Alan Malta Rodrigues) #10163

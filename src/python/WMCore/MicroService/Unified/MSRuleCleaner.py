@@ -15,6 +15,8 @@ workflows remain.
 # futures
 from __future__ import division, print_function
 import json
+import re
+import time
 
 # system modules
 from threading import current_thread
@@ -31,14 +33,25 @@ from WMCore.ReqMgr.DataStructs import RequestStatus
 from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
+from WMCore.Services.LogDB.LogDB import LogDB
 
 
-class MSRuleCleanerArchival(WMException):
+class MSRuleCleanerArchivalError(WMException):
     """
     Archival Exception Class for MSRuleCleaner Module in WMCore MicroServices
+    used to signal an abnormal condition if occurred during the archival step.
     """
     def __init__(self, message):
-        super(MSRuleCleanerArchival, self).__init__(message)
+        super(MSRuleCleanerArchivalError, self).__init__(message)
+
+
+class MSRuleCleanerArchivalSkip(WMException):
+    """
+    Archival Exception Class for MSRuleCleaner Module in WMCore MicroServices
+    used to signal an expected condition which should interrupt the archival process
+    """
+    def __init__(self, message):
+        super(MSRuleCleanerArchivalSkip, self).__init__(message)
 
 
 class MSRuleCleaner(MSCore):
@@ -60,9 +73,14 @@ class MSRuleCleaner(MSCore):
         self.msConfig.setdefault("rucioWmaAccount", "wma_test")
         self.msConfig.setdefault("rucioMStrAccount", "wmcore_transferor")
         self.msConfig.setdefault('enableRealMode', False)
+
         self.mode = "RealMode" if self.msConfig['enableRealMode'] else "DryRunMode"
         self.emailAlert = EmailAlert(self.msConfig)
         self.curlMgr = RequestHandler()
+        self.targetStatusRegex = re.compile(r'.*archived')
+        self.logDB = LogDB(self.msConfig["logDBUrl"],
+                           self.msConfig["logDBReporter"],
+                           logger=self.logger)
 
         # Building all the Pipelines:
         pName = 'plineMSTrCont'
@@ -86,7 +104,10 @@ class MSRuleCleaner(MSCore):
         pName = 'plineArchive'
         self.plineArchive = Pipeline(name=pName,
                                      funcLine=[Functor(self.setPlineMarker, pName),
+                                               Functor(self.findTargetStatus),
                                                Functor(self.setClean),
+                                               Functor(self.setArchivalDelayExpired),
+                                               Functor(self.setLogDBClean),
                                                Functor(self.archive)])
 
         # Building the different set of plines we will need later:
@@ -279,9 +300,13 @@ class MSRuleCleaner(MSCore):
                 self.wfCounters['archived']['forceArchived'] += 1
             else:
                 self.wfCounters['archived']['normalArchived'] += 1
-        except MSRuleCleanerArchival as ex:
+        except MSRuleCleanerArchivalSkip as ex:
+            msg = "%s: Proper conditions not met: %s. "
+            msg += "Skipping archival in the current cycle."
+            self.logger.info(msg, wflow['PlineMarkers'][-1], ex.message())
+        except MSRuleCleanerArchivalError as ex:
             msg = "%s: Archival Error: %s. "
-            msg += " Will retry again in the next cycle."
+            msg += "Will retry again in the next cycle."
             self.logger.error(msg, wflow['PlineMarkers'][-1], ex.message())
         except Exception as ex:
             msg = "%s General error from pipeline. Workflow: %s. Error: \n%s. "
@@ -295,7 +320,7 @@ class MSRuleCleaner(MSCore):
         in the pipeline.
         :param  wflow:   A MSRuleCleaner workflow representation
         :param  pName:   The name of the functional pipeline
-        :return wflow:
+        :return:         The workflow object
         """
         # NOTE: The current functional pipeline MUST always be appended at the
         #       end of the 'PlineMarkers' list
@@ -353,9 +378,98 @@ class MSRuleCleaner(MSCore):
         pipelines which have worked on the workflow (and have put their markers
         in the 'PlineMarkers' list)
         :param  wflow:      A MSRuleCleaner workflow representation
-        :return wflow:
+        :return:            The workflow object
         """
         wflow['IsClean'] = self._checkClean(wflow)
+        return wflow
+
+    def _checkLogDBClean(self, wflow):
+        """
+        An auxiliary function used to only check the LogDB cleanup status.
+        It makes a query to LogDB in order to verify there are no any records for
+        the current workflow
+        :param wflow:       A MSRuleCleaner workflow representation
+        :return:            True if no records were found in LogDB about wflow
+        """
+        cleanStatus = False
+        logDBRecords = self.logDB.get(wflow['RequestName'])
+        self.logger.debug("logDBRecords: %s", pformat(logDBRecords))
+        if not logDBRecords:
+            cleanStatus = True
+        return cleanStatus
+
+    def setLogDBClean(self, wflow):
+        """
+        A function to set the 'IsLogDBClean' flag based on the presence of any
+        records in LogDB for the current workflow.
+        :param  wflow:      A MSRuleCleaner workflow representation
+        :return:            The workflow object
+        """
+        wflow['IsLogDBClean'] = self._checkLogDBClean(wflow)
+        if not wflow['IsLogDBClean'] and wflow['IsArchivalDelayExpired']:
+            wflow['IsLogDBClean'] = self._cleanLogDB(wflow)
+        return wflow
+
+    def _cleanLogDB(self, wflow):
+        """
+        A function to be used for cleaning all the records related to a workflow in logDB.
+        :param wflow:       A MSRuleCleaner workflow representation
+        :return:            True if NO errors were encountered while deleting
+                            records from LogDB
+        """
+        cleanStatus = False
+        try:
+            if self.msConfig['enableRealMode']:
+                self.logger.info("Deleting %s records from LogDB WMStats...", wflow['RequestName'])
+                res = self.logDB.delete(wflow['RequestName'], agent=False)
+                if res == 'delete-error':
+                    msg = "Failed to delete logDB docs for wflow: %s" % wflow['RequestName']
+                    raise MSRuleCleanerArchivalError(msg)
+                cleanStatus = True
+            else:
+                self.logger.info("DRY-RUN: NOT Deleting %s records from LogDB WMStats...", wflow['RequestName'])
+        except Exception as ex:
+            msg = "General Exception while cleaning LogDB records for wflow: %s : %s"
+            self.logger.exception(msg, wflow['RequestName'], str(ex))
+        return cleanStatus
+
+    def findTargetStatus(self, wflow):
+        """
+        Find the proper targeted archival status
+        :param  wflow:      A MSRuleCleaner workflow representation
+        :return:            The workflow object
+        """
+        # Check the available status transitions before we decide the final status
+        targetStatusList = RequestStatus.REQUEST_STATE_TRANSITION.get(wflow['RequestStatus'], [])
+        for status in targetStatusList:
+            if self.targetStatusRegex.match(status):
+                wflow['TargetStatus'] = status
+        self.logger.debug("TargetStatus: %s", wflow['TargetStatus'])
+        return wflow
+
+    def _checkArchDelayExpired(self, wflow):
+        """
+        A function to check Archival Expiration Delay based on the information
+        returned by WMStatsServer regarding the time of the last request status transition
+        :param wflow:      MSRuleCleaner workflow representation
+        :return:           True if the archival delay have been expired
+        """
+        archDelayExpired = False
+        currentTime = int(time.time())
+        threshold = self.msConfig['archiveDelayHours'] * 3600
+        try:
+            lastTransitionTime = wflow['RequestTransition'][-1]['UpdateTime']
+            if lastTransitionTime and (currentTime - lastTransitionTime) > threshold:
+                archDelayExpired = True
+        except KeyError:
+            self.logger.debug("Could not find status transition history for %s", wflow['RequestName'])
+        return archDelayExpired
+
+    def setArchivalDelayExpired(self, wflow):
+        """
+        A function to set the 'IsArchivalDelayExpired' flag
+        """
+        wflow['IsArchivalDelayExpired'] = self._checkArchDelayExpired(wflow)
         return wflow
 
     def archive(self, wflow):
@@ -363,18 +477,32 @@ class MSRuleCleaner(MSCore):
         Move the workflow to the proper archived status after checking
         the full cleanup status
         :param  wflow:      A MSRuleCleaner workflow representation
-        :param  archStatus: Target status to transition after archival
-        :return wflow:
+        :return:            The workflow object
         """
-        # NOTE: check allowed status transitions with:
-        #       https://github.com/dmwm/WMCore/blob/5961d2229b1e548e58259c06af154f33bce36c68/src/python/WMCore/ReqMgr/DataStructs/RequestStatus.py#L171
+        # Make all the needed checks before trying to archive
         if not (wflow['IsClean'] or wflow['ForceArchive']):
             msg = "Not properly cleaned workflow: %s" % wflow['RequestName']
-            raise MSRuleCleanerArchival(msg)
+            raise MSRuleCleanerArchivalSkip(msg)
+        if not wflow['TargetStatus']:
+            msg = "Could not determine which archival status to target for: %s" % wflow['RequestName']
+            raise MSRuleCleanerArchivalError(msg)
+        if not wflow['IsLogDBClean']:
+            msg = "LogDB records have not been cleaned for: %s" % wflow['RequestName']
+            raise MSRuleCleanerArchivalSkip(msg)
+        if not wflow['IsArchivalDelayExpired']:
+            msg = "Archival delay period has not yet expired for: %s." % wflow['RequestName']
+            raise MSRuleCleanerArchivalSkip(msg)
+        if not self.msConfig['enableRealMode']:
+            msg = "Real Run Mode not enabled."
+            raise MSRuleCleanerArchivalSkip(msg)
 
-        # Check the available status transitions before we decide the final status
-        targetStatusList = RequestStatus.REQUEST_STATE_TRANSITION.get(wflow['RequestStatus'], [])
-        self.logger.info("targetStatusList: %s", targetStatusList)
+        # Proceed with the actual archival:
+        try:
+            self.reqmgr2.updateRequestStatus(wflow['RequestName'], wflow['TargetStatus'])
+        except Exception as ex:
+            msg = "General Exception while trying status transition to: %s " % wflow['TargetStatus']
+            msg += "for wflow: %s : %s" % (wflow['RequestName'], str(ex))
+            raise MSRuleCleanerArchivalError(msg)
         return wflow
 
     def getMSOutputTransferInfo(self, wflow):
@@ -382,7 +510,7 @@ class MSRuleCleaner(MSCore):
         Fetches the transfer information from the MSOutput REST interface for
         the given workflow.
         :param  wflow:   A MSRuleCleaner workflow representation
-        :return wflow:
+        :return:         The workflow object
         """
         headers = {'Accept': 'application/json'}
         params = {}
@@ -407,7 +535,7 @@ class MSRuleCleaner(MSCore):
         :param  wflow:   A MSRuleCleaner workflow representation
         :param  gran:    Data granularity to search for Rucio rules. Possible values:
                         'block' || 'container'
-        :return:        wflow
+        :return:         The workflow object
         """
         currPline = wflow['PlineMarkers'][-1]
         # Find all the output placement rules created by the agents
@@ -431,7 +559,7 @@ class MSRuleCleaner(MSCore):
         Cleans all the Rules present in the field 'RulesToClean' in the MSRuleCleaner
         workflow representation. And fills the relevant Cleanup Status.
         :param wflow:   A MSRuleCleaner workflow representation
-        :return:        wflow
+        :return:        The workflow object
         """
         # NOTE: The function should be called independently and sequentially from
         #       The Input and the respective BlockLevel pipelines.

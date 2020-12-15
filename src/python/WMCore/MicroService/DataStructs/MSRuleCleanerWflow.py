@@ -70,7 +70,10 @@ class MSRuleCleanerWflow(dict):
             ('ParentageResolved', True, bool),
             ('PlineMarkers', None, list),
             ('IsClean', False, bool),
-            ('ForceArchive', False, bool)]
+            ('IsLogDBClean', False, bool),
+            ('IsArchivalDelayExpired', False, bool),
+            ('ForceArchive', False, bool),
+            ('RequestTransition', [], list)]
 
         # NOTE: ParentageResolved is set by default to True it will be False only if:
         #       - RequestType is StepChain

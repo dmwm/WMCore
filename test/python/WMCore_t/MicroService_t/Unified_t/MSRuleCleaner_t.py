@@ -11,7 +11,7 @@ import unittest
 
 
 # WMCore modules
-from WMCore.MicroService.Unified.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchival
+from WMCore.MicroService.Unified.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalError, MSRuleCleanerArchivalSkip
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.Services.Rucio import Rucio
 from WMCore.MicroService.DataStructs.MSRuleCleanerWflow import MSRuleCleanerWflow
@@ -43,7 +43,12 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
                          'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader',
                          'rucioUrl': 'http://cmsrucio-int.cern.ch',
-                         'rucioAuthUrl': 'https://cmsrucio-auth-int.cern.ch'}
+                         'rucioAuthUrl': 'https://cmsrucio-auth-int.cern.ch',
+                         "wmstatsUrl": "https://cmsweb-testbed.cern.ch/wmstatsserver",
+                         "logDBUrl": "https://cmsweb-testbed.cern.ch/couchdb/wmstats_logdb",
+                         'logDBReporter': 'reqmgr2ms_ruleCleaner',
+                         'archiveDelayHours': 8,
+                         'enableRealMode': False}
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
@@ -81,7 +86,9 @@ class MSRuleCleanerTest(unittest.TestCase):
         self.msRuleCleaner.plineAgentBlock.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentBlock': True},
                          'ForceArchive': False,
+                         'IsArchivalDelayExpired': False,
                          'IsClean': False,
+                         'IsLogDBClean': False,
                          'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
                                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
@@ -91,6 +98,39 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'PlineMarkers': ['plineAgentBlock'],
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
+                         "RequestTransition": [{"Status": "new",
+                                                "DN": "",
+                                                "UpdateTime": 1606723304},
+                                               {"DN": "",
+                                                "Status": "assignment-approved",
+                                                "UpdateTime": 1606723305},
+                                               {"DN": "",
+                                                "Status": "assigned",
+                                                "UpdateTime": 1606723306},
+                                               {"DN": "",
+                                                "Status": "staging",
+                                                "UpdateTime": 1606723461},
+                                               {"DN": "",
+                                                "Status": "staged",
+                                                "UpdateTime": 1606723590},
+                                               {"DN": "",
+                                                "Status": "acquired",
+                                                "UpdateTime": 1606723968},
+                                               {"DN": "",
+                                                "Status": "running-open",
+                                                "UpdateTime": 1606724572},
+                                               {"DN": "",
+                                                "Status": "running-closed",
+                                                "UpdateTime": 1606724573},
+                                               {"DN": "",
+                                                "Status": "completed",
+                                                "UpdateTime": 1607018413},
+                                               {"DN": "",
+                                                "Status": "closed-out",
+                                                "UpdateTime": 1607347706},
+                                               {"DN": "",
+                                                "Status": "announced",
+                                                "UpdateTime": 1607359514}],
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentBlock': []},
                          'TargetStatus': None,
@@ -103,7 +143,9 @@ class MSRuleCleanerTest(unittest.TestCase):
         self.msRuleCleaner.plineAgentCont.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentCont': True},
                          'ForceArchive': False,
+                         'IsArchivalDelayExpired': False,
                          'IsClean': False,
+                         'IsLogDBClean': False,
                          'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
                                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
@@ -113,6 +155,39 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'PlineMarkers': ['plineAgentCont'],
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
+                         "RequestTransition": [{"Status": "new",
+                                                "DN": "",
+                                                "UpdateTime": 1606723304},
+                                               {"DN": "",
+                                                "Status": "assignment-approved",
+                                                "UpdateTime": 1606723305},
+                                               {"DN": "",
+                                                "Status": "assigned",
+                                                "UpdateTime": 1606723306},
+                                               {"DN": "",
+                                                "Status": "staging",
+                                                "UpdateTime": 1606723461},
+                                               {"DN": "",
+                                                "Status": "staged",
+                                                "UpdateTime": 1606723590},
+                                               {"DN": "",
+                                                "Status": "acquired",
+                                                "UpdateTime": 1606723968},
+                                               {"DN": "",
+                                                "Status": "running-open",
+                                                "UpdateTime": 1606724572},
+                                               {"DN": "",
+                                                "Status": "running-closed",
+                                                "UpdateTime": 1606724573},
+                                               {"DN": "",
+                                                "Status": "completed",
+                                                "UpdateTime": 1607018413},
+                                               {"DN": "",
+                                                "Status": "closed-out",
+                                                "UpdateTime": 1607347706},
+                                               {"DN": "",
+                                                "Status": "announced",
+                                                "UpdateTime": 1607359514}],
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentCont': []},
                          'TargetStatus': None,
@@ -124,16 +199,21 @@ class MSRuleCleanerTest(unittest.TestCase):
         wflow = MSRuleCleanerWflow(self.taskChainReq)
 
         # Try archival of a skipped workflow:
-        with self.assertRaises(MSRuleCleanerArchival):
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
             self.msRuleCleaner.plineArchive.run(wflow)
         self.msRuleCleaner.plineAgentBlock.run(wflow)
         self.msRuleCleaner.plineAgentCont.run(wflow)
 
         # Try archival of a cleaned workflow:
-        self.msRuleCleaner.plineArchive.run(wflow)
+        # NOTE: We should always expect an MSRuleCleanerArchivalSkip exception
+        #       here because the 'enableRealRunMode' flag is set to False
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
+            self.msRuleCleaner.plineArchive.run(wflow)
         expectedWflow = {'CleanupStatus': {'plineAgentBlock': True, 'plineAgentCont': True},
                          'ForceArchive': False,
+                         'IsArchivalDelayExpired': True,
                          'IsClean': True,
+                         'IsLogDBClean': True,
                          'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
                                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
                                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
@@ -146,20 +226,53 @@ class MSRuleCleanerTest(unittest.TestCase):
                                           'plineArchive'],
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
+                         "RequestTransition": [{"Status": "new",
+                                                "DN": "",
+                                                "UpdateTime": 1606723304},
+                                               {"DN": "",
+                                                "Status": "assignment-approved",
+                                                "UpdateTime": 1606723305},
+                                               {"DN": "",
+                                                "Status": "assigned",
+                                                "UpdateTime": 1606723306},
+                                               {"DN": "",
+                                                "Status": "staging",
+                                                "UpdateTime": 1606723461},
+                                               {"DN": "",
+                                                "Status": "staged",
+                                                "UpdateTime": 1606723590},
+                                               {"DN": "",
+                                                "Status": "acquired",
+                                                "UpdateTime": 1606723968},
+                                               {"DN": "",
+                                                "Status": "running-open",
+                                                "UpdateTime": 1606724572},
+                                               {"DN": "",
+                                                "Status": "running-closed",
+                                                "UpdateTime": 1606724573},
+                                               {"DN": "",
+                                                "Status": "completed",
+                                                "UpdateTime": 1607018413},
+                                               {"DN": "",
+                                                "Status": "closed-out",
+                                                "UpdateTime": 1607347706},
+                                               {"DN": "",
+                                                "Status": "announced",
+                                                "UpdateTime": 1607359514}],
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
-                         'TargetStatus': None,
+                         'TargetStatus': 'normal-archived',
                          'TransferDone': False}
         self.assertDictEqual(wflow, expectedWflow)
 
         # Try archival of an uncleaned workflow
         wflow['CleanupStatus']['plineAgentBlock'] = False
-        with self.assertRaises(MSRuleCleanerArchival):
+        with self.assertRaises(MSRuleCleanerArchivalSkip):
             self.msRuleCleaner.plineArchive.run(wflow)
 
     def testRunning(self):
         result = self.msRuleCleaner._execute(self.reqRecords)
-        self.assertEqual(result, (3, 2, 2, 0))
+        self.assertEqual(result, (3, 2, 0, 0))
 
     def testCheckClean(self):
         # NOTE: All of the bellow checks are well visualized at:

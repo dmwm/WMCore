@@ -10,6 +10,8 @@ Diagnostic implementation for a CMSSW job
 """
 from __future__ import print_function
 
+from builtins import str
+
 import logging
 import os.path
 import socket

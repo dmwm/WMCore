@@ -156,7 +156,7 @@ class WMException(Exception):
         logging.error(strg)
         return strg
 
-    def __str__(self):
+    def __unicode__(self):
         """create a string rep of this exception"""
         # WARNING: Do not change this string - it is used to extract error from log
         strg = WMEXCEPTION_START_STR

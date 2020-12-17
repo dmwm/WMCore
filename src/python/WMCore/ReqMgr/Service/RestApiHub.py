@@ -5,6 +5,7 @@ Implementation of handles is in corresponding modules, not here.
 """
 from __future__ import print_function, division
 
+from builtins import object
 import cherrypy
 
 from WMCore.Configuration import Configuration

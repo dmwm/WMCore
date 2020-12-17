@@ -6,6 +6,8 @@ Author: Valentin Kuznetsov <vkuznet {AT} gmail [DOT] com>
 from __future__ import print_function
 
 # system modules
+from builtins import str
+from builtins import object
 import json
 import logging
 import os
@@ -36,7 +38,7 @@ def quote(data):
     """
     Sanitize the data using cgi.escape.
     """
-    if isinstance(data, (int, float, long, dict, list)):
+    if isinstance(data, (int, float, dict, list)):
         res = data
     else:
         try:
@@ -97,7 +99,7 @@ class TemplatedPage(Page):
         self.templatedir = config.get('tmpldir', tmpldir)
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
-        self.jinja = True if 'jinja2' in sys.modules.keys() else False
+        self.jinja = True if 'jinja2' in list(sys.modules.keys()) else False
         if  self.jinja:
             templates = 'JINJA'
         else:

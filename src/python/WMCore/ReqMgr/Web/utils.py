@@ -7,6 +7,8 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description:
 """
 from __future__ import print_function
+from builtins import str
+from past.builtins import basestring
 from future import standard_library
 standard_library.install_aliases()
 
@@ -39,7 +41,7 @@ def quote(data):
         res = data
     elif  isinstance(data, list):
         res = data
-    elif  isinstance(data, long) or isinstance(data, int) or\
+    elif  isinstance(data, int) or isinstance(data, int) or\
           isinstance(data, float):
         res = data
     else:
@@ -56,7 +58,7 @@ def quote(data):
 def json2form(jsondata, indent=2, keep_first_value=True):
     "Convert input json dict into one used by HTML form"
     if  keep_first_value:
-        for key, val in jsondata.items():
+        for key, val in list(jsondata.items()):
             if  isinstance(val, list):
                 if len(val) == 0:
                     jsondata[key] = ""
@@ -143,7 +145,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                 kname = key
             val = val.replace('width-100', 'width-100 visible_input')
             table += "<tr><td>%s</td><td class=\"visible\">%s</td></tr>\n" % (kname, val)
-    for key, pair in cells.items():
+    for key, pair in list(cells.items()):
         kname, val = pair
         if  not visible_attrs:
             val = val.replace('<input', '<input readonly')
@@ -168,7 +170,7 @@ def genid(kwds):
 def checkarg(kwds, arg):
     """Check arg in a dict that it has str/unicode type"""
     data = kwds.get(arg, None)
-    cond = data and (isinstance(data, str) or isinstance(data, unicode))
+    cond = data and (isinstance(data, str) or isinstance(data, str))
     return cond
 
 def checkargs(supported):
@@ -180,7 +182,7 @@ def checkargs(supported):
 
         def require_string(val):
             """Check that provided input is a string"""
-            if not (isinstance(val, str) or isinstance(val, unicode)):
+            if not (isinstance(val, str) or isinstance(val, str)):
                 code = web_code('Invalid input')
                 raise URLError('code=%s' % code)
 
@@ -201,7 +203,7 @@ def checkargs(supported):
                     jsondict = json.loads(body, encoding='latin-1')
                 else:
                     jsondict = kwds
-                for key, val in jsondict.iteritems():
+                for key, val in jsondict.items():
                     kwds[str(key)] = str(val)
 
             if  not kwds:
@@ -212,7 +214,7 @@ def checkargs(supported):
                 code  = web_code('Unsupported kwds')
                 raise URLError('code=%s' % code)
             if  kwds:
-                keys = [i for i in kwds.keys() if i not in supported]
+                keys = [i for i in list(kwds.keys()) if i not in supported]
             if  keys:
                 code  = web_code('Unsupported key')
                 raise URLError('code=%s' % code)

@@ -106,7 +106,7 @@ class ExpressWorkloadFactory(StdBase):
                                                          forceUnmerged=True)
 
             # there is only one
-            conversionOutLabel = conversionOutMods.keys()[0]
+            conversionOutLabel = list(conversionOutMods.keys())[0]
 
             # everything coming after should use the reco CMSSW version and Scram Arch
             self.frameworkVersion = self.recoFrameworkVersion
@@ -145,7 +145,7 @@ class ExpressWorkloadFactory(StdBase):
             configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs)
 
             expressOutMods = {}
-            for outputModuleName in configOutput.keys():
+            for outputModuleName in list(configOutput.keys()):
                 outputModule = self.addOutputModule(expressTask,
                                                     outputModuleName,
                                                     configOutput[outputModuleName]['primaryDataset'],
@@ -169,7 +169,7 @@ class ExpressWorkloadFactory(StdBase):
 
         self.addLogCollectTask(expressTask, taskName="ExpressLogCollect")
 
-        for expressOutLabel, expressOutInfo in expressOutMods.items():
+        for expressOutLabel, expressOutInfo in list(expressOutMods.items()):
 
             if expressOutInfo['dataTier'] == "ALCARECO":
 
@@ -209,7 +209,7 @@ class ExpressWorkloadFactory(StdBase):
                 self.addLogCollectTask(alcaSkimTask, taskName="AlcaSkimLogCollect")
                 self.addCleanupTask(expressTask, expressOutLabel, dataTier=expressOutInfo['dataTier'])
 
-                for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
+                for alcaSkimOutLabel, alcaSkimOutInfo in list(alcaSkimOutMods.items()):
 
                     if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and \
                             (self.alcaHarvestCondLFNBase is not None or self.alcaHarvestLumiURL is not None):

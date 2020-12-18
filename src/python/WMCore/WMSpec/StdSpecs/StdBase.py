@@ -5,6 +5,9 @@ _StdBase_
 Base class with helper functions for standard WMSpec files.
 """
 from __future__ import division
+from builtins import str
+from builtins import range
+from builtins import object
 import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
@@ -362,7 +365,7 @@ class StdBase(object):
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         newSplitArgs = {}
-        for argName in splitArgs.keys():
+        for argName in list(splitArgs.keys()):
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
@@ -455,7 +458,7 @@ class StdBase(object):
                                                    configDoc, couchDBName,
                                                    configCacheUrl, cmsswVersion)
         outputModules = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(procTask,
                                                 outputModuleName,
                                                 configOutput[outputModuleName].get('primaryDataset',
@@ -856,7 +859,7 @@ class StdBase(object):
         pileupConfig has the following data structure:
             {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
         """
-        for puType, puList in pileupConfig.items():
+        for puType, puList in list(pileupConfig.items()):
             task.setInputPileupDatasets(puList)
 
         if stepName:

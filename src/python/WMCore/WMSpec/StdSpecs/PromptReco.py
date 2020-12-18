@@ -4,7 +4,9 @@ _PromptReco_
 
 Standard PromptReco workflow.
 """
+from __future__ import division
 
+from past.utils import old_div
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import procstringT0
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
@@ -76,7 +78,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
             self.addLogCollectTask(recoTask)
 
         recoMergeTasks = {}
-        for recoOutLabel, recoOutInfo in recoOutMods.items():
+        for recoOutLabel, recoOutInfo in list(recoOutMods.items()):
             if recoOutInfo['dataTier'] != "ALCARECO":
                 mergeTask = self.addMergeTask(recoTask, self.procJobSplitAlgo, recoOutLabel,
                                               doLogCollect=self.doLogCollect)
@@ -135,7 +137,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
         self.procJobSplitArgs = {}
         if self.procJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
-                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+                self.eventsPerJob = int(old_div((8.0 * 3600.0), self.timePerEvent))
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
             if self.procJobSplitAlgo == "EventAwareLumiBased":
                 self.procJobSplitArgs["job_time_limit"] = 96 * 3600  # 4 days in seconds
@@ -148,7 +150,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
         self.skimJobSplitArgs = {}
         if self.skimJobSplitAlgo in ["EventBased", "EventAwareLumiBased"]:
             if self.eventsPerJob is None:
-                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+                self.eventsPerJob = int(old_div((8.0 * 3600.0), self.timePerEvent))
             if self.skimJobSplitAlgo == "EventAwareLumiBased":
                 self.skimJobSplitArgs["job_time_limit"] = 48 * 3600  # 2 days
                 self.skimJobSplitArgs["allowCreationFailure"] = False

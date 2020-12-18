@@ -13,6 +13,10 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import primdataset, taskStepName
@@ -69,7 +73,7 @@ class StepChainWorkloadFactory(StdBase):
 
         # Update the task configuration
         taskConf = {}
-        for k, v in arguments["Step1"].iteritems():
+        for k, v in arguments["Step1"].items():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
 
@@ -285,7 +289,7 @@ class StepChainWorkloadFactory(StdBase):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
             taskConf = {}
-            for k, v in origArgs[currentStepNumber].items():
+            for k, v in list(origArgs[currentStepNumber].items()):
                 taskConf[k] = v
 
             parentStepNumber = self.stepMapping.get(taskConf['InputStep'])[0]
@@ -364,7 +368,7 @@ class StepChainWorkloadFactory(StdBase):
         configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
                                                    configCacheUrl=self.configCacheUrl,
                                                    couchDBName=self.couchDBName)
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(task, outputModuleName,
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
@@ -389,7 +393,7 @@ class StepChainWorkloadFactory(StdBase):
         if not taskConf.get('PrepID'):
             taskConf['PrepID'] = self.prepID
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,
                                           cmsswVersion=frameworkVersion, scramArch=scramArch,
                                           forceTaskName=taskConf.get('StepName'), taskConf=taskConf)
@@ -434,7 +438,7 @@ class StepChainWorkloadFactory(StdBase):
             filterEff = taskConf.get("FilterEfficiency")
             # Adjust totalEvents according to the filter efficiency
             taskConf["SplittingAlgo"] = "EventBased"
-            taskConf["RequestNumEvents"] = int(requestNumEvts / filterEff)
+            taskConf["RequestNumEvents"] = int(old_div(requestNumEvts, filterEff))
             taskConf["SizePerEvent"] = self.sizePerEvent * filterEff
 
         taskConf["SplittingArguments"] = {}
@@ -571,7 +575,7 @@ class StepChainWorkloadFactory(StdBase):
                 configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
                                                            configCacheUrl=schema['ConfigCacheUrl'],
                                                            couchDBName=schema["CouchDBName"])
-                for modName, values in configOutput.items():
+                for modName, values in list(configOutput.items()):
                     thisOutput = (modName, values['dataTier'])
                     if thisOutput in outputModTier:
                         msg = "StepChain cannot save output of different steps using "

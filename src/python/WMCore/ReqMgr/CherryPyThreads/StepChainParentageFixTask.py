@@ -36,7 +36,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         super(StepChainParentageFixTask, self).__init__(config)
         self.reqmgrDB = RequestDBWriter(config.reqmgrdb_url)
         self.dbsSvc = DBS3Reader(config.dbs_url, logger=self.logger)
-        self.statusToCheck = ["closed-out", "announced", "normal-archived"]
+        self.statusToCheck = ["closed-out", "announced"]
 
     def setConcurrentTasks(self, config):
         """

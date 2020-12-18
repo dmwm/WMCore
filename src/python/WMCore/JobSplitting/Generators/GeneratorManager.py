@@ -7,12 +7,15 @@ and then apply them to job groups
 
 """
 
+from builtins import map
+from builtins import object
+
 from WMCore.JobSplitting.Generators.GeneratorFactory import GeneratorFactory
 
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.ConfigSectionTree import *
 
-class GeneratorManager:
+class GeneratorManager(object):
     """
     _GeneratorManager_
 
@@ -67,7 +70,7 @@ class GeneratorManager:
         job group provided
 
         """
-        [ list(map(generator, jobGroup.jobs)) for generator in self.generators.values()]
+        [ list(map(generator, jobGroup.jobs)) for generator in list(self.generators.values())]
         return
 
 
@@ -79,7 +82,7 @@ class GeneratorManager:
         """
         generatorList = []
 
-        for name in self.generators.keys():
+        for name in list(self.generators.keys()):
             generatorList.append(self.generators[name])
 
         return generatorList

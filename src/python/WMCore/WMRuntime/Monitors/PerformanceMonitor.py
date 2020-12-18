@@ -9,6 +9,8 @@ if it exceeds them.
 """
 from __future__ import division
 
+from builtins import str
+
 import logging
 import os
 import os.path

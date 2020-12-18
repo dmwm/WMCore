@@ -5,6 +5,9 @@ _BasePlugin_
 Base class for BossAir plugins
 """
 
+from past.builtins import basestring
+from builtins import object
+
 from WMCore.WMException import WMException
 from WMCore.WMRuntime.Tools.Scram import ARCH_TO_OS
 
@@ -37,7 +40,7 @@ class BasePlugin(object):
         """
         Verify state of map values
         """
-        for state in stateMap.values():
+        for state in list(stateMap.values()):
             if state not in BasePlugin.globalState:
                 raise BossAirPluginException("not valid state %s" % state)
         return stateMap
@@ -57,7 +60,7 @@ class BasePlugin(object):
 
         # NOTE: Don't overwrite this.
         # However stateMap should be implemented in child class.
-        self.states = self.stateMap().keys()
+        self.states = list(self.stateMap().keys())
 
 
 
@@ -137,12 +140,12 @@ class BasePlugin(object):
         if scramArch is None:
             requiredOSes.add('any')
         elif isinstance(scramArch, basestring):
-            for arch, validOSes in ARCH_TO_OS.iteritems():
+            for arch, validOSes in ARCH_TO_OS.items():
                 if arch in scramArch:
                     requiredOSes.update(validOSes)
         elif isinstance(scramArch, list):
             for validArch in scramArch:
-                for arch, validOSes in ARCH_TO_OS.iteritems():
+                for arch, validOSes in ARCH_TO_OS.items():
                     if arch in validArch:
                         requiredOSes.update(validOSes)
         else:

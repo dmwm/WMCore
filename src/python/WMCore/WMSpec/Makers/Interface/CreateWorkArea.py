@@ -2,6 +2,10 @@
 
 
 
+from __future__ import division
+from past.utils import old_div
+from builtins import object
+
 import os
 import os.path
 import threading
@@ -23,7 +27,7 @@ from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
 #I'm wondering if it's better to multithread in a different way
 
 
-class CreateScript:
+class CreateScript(object):
     """
     Simple class for creating file objects
 
@@ -100,7 +104,7 @@ class CreateScript:
             fd.write(self.script)
         return
 
-class CreateWorkArea:
+class CreateWorkArea(object):
     """
     Basic class for doing the JobMaker dirty work
 
@@ -285,7 +289,7 @@ class CreateWorkArea:
         Create a sub-directory to allow storage of large jobs
         """
 
-        value = jobCounter/1000
+        value = old_div(jobCounter,1000)
         jobCollDir = '%s/JobCollection_%i_%i' %(taskDir, self.jobGroup.id, value)
         #Set this to a global variable
         self.collectionDir = jobCollDir

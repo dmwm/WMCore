@@ -9,6 +9,7 @@ This is the base class for monitors
 
 
 
+from builtins import object
 import threading
 import os
 
@@ -27,7 +28,7 @@ class WMRuntimeMonitorException(WMException):
     """
     pass
 
-class WMRuntimeMonitor:
+class WMRuntimeMonitor(object):
 
 
     def __init__(self):

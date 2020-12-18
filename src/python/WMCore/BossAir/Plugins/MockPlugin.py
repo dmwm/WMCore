@@ -4,6 +4,12 @@ _BossAirPlugin_
 
 Base class for BossAir plugins
 """
+from __future__ import division
+
+
+from builtins import str
+from builtins import range
+from past.utils import old_div
 
 import os
 import logging
@@ -218,7 +224,7 @@ class MockPlugin(BasePlugin):
         else:
             nowt = datetime.now()
         #Compute some random (between 0 and 20% of the total running time)
-        randlen = randint(0, self.jobRunTime*20/100)
+        randlen = randint(0, old_div(self.jobRunTime*20,100))
         totlen = randlen + self.jobRunTime
         self.jobsScheduledEnd[job['id']] = nowt + timedelta(minutes = totlen)
         logging.debug('Scheduled end time of job %s to %s' % (job['id'], self.jobsScheduledEnd[job['id']]))

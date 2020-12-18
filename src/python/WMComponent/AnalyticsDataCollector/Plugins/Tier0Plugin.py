@@ -10,6 +10,8 @@ Created on Nov 2, 2012
 @author: dballest
 """
 
+from builtins import str
+from builtins import filter
 import re
 import threading
 import traceback
@@ -225,7 +227,7 @@ class Tier0Plugin(PluginInterface):
         clean unused task lists
         """
         self.logger.debug('Cleaning up task cache')
-        for workflow in self.taskCache.keys():
+        for workflow in list(self.taskCache.keys()):
             if workflow not in reportedWorkflows:
                 self.taskCache.pop(workflow)
         return

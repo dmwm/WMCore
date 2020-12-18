@@ -2,6 +2,8 @@
 """
 _PauseAlgo_
 """
+from builtins import str
+
 import os.path
 import logging
 from WMComponent.RetryManager.PlugIns.RetryAlgoBase import RetryAlgoBase

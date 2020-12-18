@@ -3,6 +3,7 @@
 Default function for Job Maker
 """
 from __future__ import print_function
+from builtins import str
 __all__ = []
 
 

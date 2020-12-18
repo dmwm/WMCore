@@ -1,8 +1,8 @@
 '''
 
 '''
-from builtins import str
 from __future__ import (division, print_function)
+from builtins import str
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMStats.DataStructs.DataCache import DataCache

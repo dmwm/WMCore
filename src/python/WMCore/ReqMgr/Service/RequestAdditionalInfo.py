@@ -1,5 +1,5 @@
-from builtins import str
 from __future__ import (print_function, division)
+from builtins import str
 
 import json
 import traceback

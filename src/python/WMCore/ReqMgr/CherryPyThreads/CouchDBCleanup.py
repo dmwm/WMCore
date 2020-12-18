@@ -4,6 +4,7 @@ Created on Aug 13, 2014
 @author: sryu
 """
 from __future__ import (division, print_function)
+from builtins import str
 
 from WMCore.ACDC.CouchService import CouchService
 from WMCore.Lexicon import splitCouchServiceURL

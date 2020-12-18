@@ -3,6 +3,8 @@ Created on May 19, 2015
 """
 
 from __future__ import (division, print_function)
+from builtins import str
+
 import json
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux

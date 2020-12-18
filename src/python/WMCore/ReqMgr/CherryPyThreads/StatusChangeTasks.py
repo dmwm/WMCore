@@ -2,6 +2,7 @@
 Created on May 19, 2015
 """
 from __future__ import (division, print_function)
+from builtins import range
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
@@ -35,7 +36,7 @@ def moveTransferorStatus(reqmgrSvc, logger):
 
 def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
 
-    for status, nextStatus in AUTO_TRANSITION.iteritems():
+    for status, nextStatus in AUTO_TRANSITION.items():
         count = 0
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
         for wf in requests:
@@ -81,7 +82,7 @@ def moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, logger):
 
     statusTransition = {"aborted": ["aborted-completed"]}
 
-    for status, nextStatusList in statusTransition.items():
+    for status, nextStatusList in list(statusTransition.items()):
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
         count = 0
         for wf in requests:

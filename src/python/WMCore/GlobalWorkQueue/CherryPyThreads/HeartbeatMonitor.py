@@ -43,7 +43,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         commonInfo = {"agent_url": "global_workqueue"}
 
         docs = []
-        for status, data in stats['workByStatus'].items():
+        for status, data in list(stats['workByStatus'].items()):
             doc = dict()
             doc["type"] = "work_info"
             doc["status"] = status
@@ -52,7 +52,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
             doc["max_jobs_elem"] = data.get('max_jobs_elem', 0)  # largest # of jobs found in a WQE
             docs.append(doc)
 
-        for status, data in stats['workByStatusAndPriority'].items():
+        for status, data in list(stats['workByStatusAndPriority'].items()):
             for item in data:
                 doc = dict()
                 doc["type"] = "work_prio_status"
@@ -81,8 +81,8 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
             docs.append(doc)
 
         # let's remap Jobs --> sum_jobs , and NumElems --> num_elem
-        for metric in mapMetricToType.keys():
-            for status, sites in stats[metric].iteritems():
+        for metric in list(mapMetricToType.keys()):
+            for status, sites in stats[metric].items():
                 if not sites:
                     # no work in this status available for any sites, skip!
                     continue

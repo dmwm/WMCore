@@ -5,6 +5,7 @@ and run the DBS parentage lookup.
 """
 from __future__ import division, print_function
 
+from builtins import str
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.DBS.DBSReader import DBS3Reader
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader

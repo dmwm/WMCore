@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import (division, print_function)
+from builtins import str
 
 import time
 from collections import defaultdict
@@ -18,9 +19,9 @@ def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
 
     requestsByChildDataset = defaultdict(set)
 
-    for reqName, info in results.items():
+    for reqName, info in list(results.items()):
 
-        for dsInfo in info.values():
+        for dsInfo in list(info.values()):
             for childDS in dsInfo["ChildDsets"]:
                 requestsByChildDataset[childDS].add(reqName)
     return requestsByChildDataset
@@ -61,7 +62,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
             # We need to just get one of the StepChain workflow if multiple workflow contains the same datasets. (i.e. ACDC)
             requestsByChildDataset.update(reqByChildDS)
 
-            for wfs in reqByChildDS.values():
+            for wfs in list(reqByChildDS.values()):
                 requests = requests.union(wfs)
 
         failedRequests = set()

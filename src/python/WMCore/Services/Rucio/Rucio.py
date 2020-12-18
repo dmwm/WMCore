@@ -1036,11 +1036,13 @@ class Rucio(object):
         # if we got here, then there is a third step to be done.
         # List every single block lock and check if the rule belongs to the WMCore system
         for blockName in result:
+            blockRSEs = set()
             for blockLock in self.cli.get_dataset_locks(scope, blockName):
                 if isTapeRSE(blockLock['rse']):
                     continue
                 if blockLock['state'] == 'OK' and blockLock['rule_id'] in multiRSERules:
-                    result[blockName].add(blockLock['rse'])
+                    blockRSEs.add(blockLock['rse'])
+            result[blockName] = finalRSEs | blockRSEs
         return result
 
     def getParentContainerRules(self, **kwargs):

@@ -1,3 +1,10 @@
+1.4.4.pre4 to 1.4.4.pre5:
+  - MSTransferor: do not consider Rucio blocks with 0 or None size (Alan Malta Rodrigues) #10205
+  - Stop trying to resolve StepChain parentage for workflows in normal-archived (Alan Malta Rodrigues) #10201
+  - Fix pileup location with multi-RSE rules (Alan Malta Rodrigues) #10194
+  - Remove DDM service wrapper module (Alan Malta Rodrigues) #10190
+
+
 1.4.4.pre3 to 1.4.4.pre4:
   - [py2py3] WMCore/WMException.py - issue 10173 - src (Dario Mapelli) #10174
   - Add archival logic to MSRuleCleaner. (Todor Ivanov) #10153

@@ -386,15 +386,15 @@ class RequestInfo(MSCore):
                     datasets.add(dataIn['name'])
 
         # fetch all block names and their sizes from Rucio
-        self.logger.info("Fetching parent/primary block info for %d containers against Rucio: %s",
+        self.logger.info("Fetching parent/primary block sizes for %d containers against Rucio: %s",
                          len(datasets), self.msConfig['rucioUrl'])
         blocksByDset = getBlocksAndSizeRucio(datasets, self.msConfig['rucioUrl'], self.rucioToken)
 
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
-        for dset, value in blocksByDset.items():
-            if value is None:
-                retryDatasets.append(dset)
+        for dsetName in blocksByDset:
+            if blocksByDset[dsetName] is None:
+                retryDatasets.append(dsetName)
         if retryDatasets:
             for wflow in workflows:
                 if wflow.getInputDataset() in retryDatasets or wflow.getParentDataset() in retryDatasets:
@@ -423,7 +423,6 @@ class RequestInfo(MSCore):
             except Exception:
                 self.logger.error("Workflow: %s will be retried in the next cycle", wflow.getName())
                 retryWorkflows.append(wflow)
-
         # remove workflows that failed one or more of the bulk queries to the data-service
         self._workflowRemoval(workflows, retryWorkflows)
 
@@ -482,8 +481,7 @@ class RequestInfo(MSCore):
                     if block in blocksDict:
                         finalBlocks[block] = deepcopy(blocksDict[block])
                     else:
-                        # FIXME: I guess it won't ever happen in Rucio...
-                        self.logger.info("FIXME: Dropping block with no replicas in PhEDEx: %s", block)
+                        self.logger.warning("Dropping block existent in DBS but not in Rucio: %s", block)
         elif runBlack:
             # only run blacklist set
             self.logger.info("Fetching runs in blocks for RunBlacklist for %s", wflow.getName())
@@ -530,6 +528,22 @@ class RequestInfo(MSCore):
 
         if not finalBlocks:
             finalBlocks = blocksDict
+        return self._removeZeroSizeBlocks(finalBlocks)
+
+    def _removeZeroSizeBlocks(self, blocksDict):
+        """
+        Given a dictionary of blocks and their block size and location information,
+        return only blocks with >0 bytes of block size (Rucio blocks with no replicas/
+        files result in blocks with None size).
+        :return: dictionary of block names and block size
+        """
+        finalBlocks = {}
+        for blockName in blocksDict:
+            if blocksDict[blockName]['blockSize']:
+                finalBlocks[blockName] = blocksDict[blockName]
+            else:
+                self.logger.info("Dropping block: %s with no files and size: %s",
+                                 blockName, blocksDict[blockName]['blockSize'])
         return finalBlocks
 
     def getParentChildBlocks(self, workflows):

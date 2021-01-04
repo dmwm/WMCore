@@ -17,7 +17,6 @@ except ImportError:
 
 class PyCondorAPI(object):
     def __init__(self):
-        self.schedd = htcondor.Schedd()
         self.coll = htcondor.Collector()
 
     def getCondorJobs(self, constraint, attr_list):
@@ -27,15 +26,17 @@ class PyCondorAPI(object):
         Given a job/schedd constraint, return a list of jobs attributes
         or None if the query to condor fails.
         """
+        schedd = htcondor.Schedd()
         try:
-            jobs = self.schedd.query(constraint, attr_list)
+            jobs = schedd.query(constraint, attr_list)
             return jobs
         except Exception:
             # if there is an error, try to recreate the schedd instance
-            logging.info("Recreating Schedd instance due to query error...")
-            self.schedd = htcondor.Schedd()
+            logging.warning("Recreating Schedd instance due to query error...")
+            schedd = htcondor.Schedd()
+
         try:
-            jobs = self.schedd.query(constraint, attr_list)
+            jobs = schedd.query(constraint, attr_list)
         except Exception as ex:
             jobs = None  # return None to signalize the query failed
             msg = "Condor failed to fetch schedd constraints for: %s" % constraint
@@ -51,9 +52,10 @@ class PyCondorAPI(object):
         Edit a set of condor jobs given an attribute and value
         job_spec can be a list of job IDs or a string specifying a constraint
         """
+        schedd = htcondor.Schedd()
         success = False
         try:
-            self.schedd.edit(job_spec, attr, value)
+            schedd.edit(job_spec, attr, value)
             success = True
         except Exception as ex:
             # edit doesn't distinguish between an error and not matching any jobs
@@ -109,9 +111,10 @@ def getScheddParamValue(param):
     Given a schedd parameter, retrieve it's value with htcondor, e.g.:
     MAX_JOBS_RUNNING, MAX_JOBS_PER_OWNER, etc
     """
+    paramResult = None
     if not isinstance(param, basestring):
         logging.error("Parameter %s must be string type", param)
-        return
+        return paramResult
 
     try:
         paramResult = htcondor.param[param]
@@ -120,6 +123,5 @@ def getScheddParamValue(param):
         msg += "Error message: %s" % str(ex)
         logging.exception(msg)
         # since it has failed, just return None (not sure it's good?!?)
-        paramResult = None
 
     return paramResult

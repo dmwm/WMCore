@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from builtins import object
 from future import standard_library
+
 standard_library.install_aliases()
 
 import unittest
@@ -9,13 +9,13 @@ import logging
 import urllib.request
 from WMCore.WebTools.Root import Root
 from WMCore.Configuration import Configuration
-from cherrypy import engine, tree
 from cherrypy import config as cpconfig
 from tempfile import NamedTemporaryFile
 
+
 # DISABLING because this doesn't properly shut down the cherrypy
 # server or clean up the state
-class RootTest(object):
+class RootTest(unittest.TestCase):
 
     def getBaseConfiguration(self):
         config = Configuration()
@@ -252,6 +252,24 @@ class RootTest(object):
             self.assertEqual(html, security_instances.section_(instance).sec_params)
         server.stop()
 
+    def testLogAccess(self):
+        config = self.getBaseConfiguration()
+        config.SecurityModule.dangerously_insecure = True
+        server = Root(config)
+        # Add our test page
+        config.UnitTests.instances = ['foo']
+        active = config.UnitTests.views.section_('active')
+        active.section_('test')
+        active.test.object = 'WMCore_t.WebTools_t.InstanceTestPage'
+        server.start(blocking=False)
+
+        for instance in config.UnitTests.instances:
+            url = 'http://127.0.0.1:%s/unittests/%s/test' % (cpconfig['server.socket_port'], instance)
+            html = urllib.request.urlopen(url).read()
+            self.assertEqual(html, instance)
+
+        server.stop()
+
     def testUsingFilterTool(self):
         """
         Use the filter tool to prevent unexpected accesses from
@@ -259,6 +277,7 @@ class RootTest(object):
         TODO
         """
         pass
+
 
 if __name__ == '__main__':
     unittest.main()

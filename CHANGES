@@ -1,3 +1,7 @@
+1.4.4.pre5 to 1.4.4:
+  - Add 2021 validation campaigns. (Todor Ivanov) #10210
+
+
 1.4.4.pre4 to 1.4.4.pre5:
   - MSTransferor: do not consider Rucio blocks with 0 or None size (Alan Malta Rodrigues) #10205
   - Stop trying to resolve StepChain parentage for workflows in normal-archived (Alan Malta Rodrigues) #10201

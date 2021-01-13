@@ -10,7 +10,7 @@ of ConfigSections
 
 
 
-from builtins import str, object
+from builtins import str, bytes, object
 
 from WMCore.Configuration import ConfigSection
 
@@ -227,7 +227,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if isinstance(value, str):
+    if isinstance(value, (str, bytes)):
         value = "\'%s\'" % value
     return str(value)
 

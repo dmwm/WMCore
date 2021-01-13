@@ -57,7 +57,7 @@ class New(DBFormatter):
     def execute(self, jobgroup = None, name = None, couch_record = None, location = None, cache_dir = None,
                 outcome = None, fwjr = None, conn = None, transaction = False, jobList = None):
 
-        if outcome == None or type(outcome) != str:
+        if outcome == None or not isinstance(outcome, str):
             outcome = 'failure'
         elif outcome.lower() == 'success':
             boolOutcome = 1

@@ -28,7 +28,7 @@ class NewState(DBFormatter):
         """
 
         binds = []
-        if type(states) == str:
+        if isinstance(states, str):
             binds = {'name': states}
         for state in states:
             binds.append({'name': state})

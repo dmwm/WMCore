@@ -48,6 +48,7 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
+from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 
@@ -113,7 +114,7 @@ class Service(dict):
         cfg_dict = cfg_dict or {}
         # The following should read the configuration class
         for a in ['endpoint']:
-            assert a in cfg_dict.keys(), "Can't have a service without a %s" % a
+            assert a in list(cfg_dict), "Can't have a service without a %s" % a
 
         # if end point ends without '/', add that
         if not cfg_dict['endpoint'].endswith('/'):
@@ -293,14 +294,14 @@ class Service(dict):
                 # Don't need to prepend the cachepath, the methods calling
                 # getData have done that for us
                 if isfile(cachefile):
-                    cachefile.write(str(data))
+                    cachefile.write(data)
                     cachefile.seek(0, 0)  # return to beginning of file
                 else:
                     with open(cachefile, 'w') as f:
                         if isinstance(data, dict) or isinstance(data, list):
                             f.write(json.dumps(data))
                         else:
-                            f.write(str(data))
+                            f.write(data)
 
 
         except (IOError, HttpLib2Error, HTTPException) as he:

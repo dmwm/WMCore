@@ -1,3 +1,9 @@
+1.4.4 to 1.4.5.pre1:
+  - [py2py3] WMCore/WMSpec/ConfigSectionTree.py - issue #10218 - src (Dario Mapelli) #10221
+  - [py2py3] src/python/A/B/C slice 4 - issue 10115 - src (Dario Mapelli) #10165
+  - [py2py3] fix pre-py2.6: `type() ==` -> `isinstance` (Dario Mapelli) #10172
+
+
 1.4.4.pre5 to 1.4.4:
   - Add 2021 validation campaigns. (Todor Ivanov) #10210
 

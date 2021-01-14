@@ -1,11 +1,7 @@
 """
 Use this for only unit test
 """
-import os
-import sys
-import logging
-
-from WMCore.Configuration import Configuration, saveConfigurationFile
+from builtins import object
 
 class EmulatorHelper(object):
     """
@@ -78,7 +74,7 @@ def emulatorHook(cls):
     This is used as decorator to switch between Emulator and real Class
     on instance creation.
     """
-    class EmulatorWrapper:
+    class EmulatorWrapper(object):
         def __init__(self, *args, **kwargs):
             aClass = EmulatorHelper.getClass(cls)
             self.wrapped = aClass(*args, **kwargs)

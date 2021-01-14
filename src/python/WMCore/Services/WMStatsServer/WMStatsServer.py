@@ -65,6 +65,16 @@ class WMStatsServer(Service):
 
         return args.rstrip('&')
 
+    def getGlobalLocks(self):
+        """
+        _getGlobalLocks_
+
+        A public method to return the global locks from WMStatServer.
+        :returns: A list of datasets
+        """
+        callname = 'globallocks'
+        return self._getResult(callname, clearCache=True, verb="GET")
+
     def getActiveData(self):
 
         """

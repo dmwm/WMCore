@@ -47,8 +47,7 @@ class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)
 
-        fileIDs  = [x['id'] for x in fileInfo]
-        binds    = self.getBinds(fileIDs)
+        binds    = self.getBinds(fileInfo)
 
         if len(fileInfo) == 0:
             # Then we have no files for this DAS

@@ -87,30 +87,14 @@ class LoadDBSFilesByDAS(DBFormatter):
         resultList = self.formatDict(result)
 
         for resultDict in resultList:
-            resultDict["appName"] = resultDict["app_name"]
-            del resultDict["app_name"]
-
-            resultDict["appVer"] = resultDict["app_ver"]
-            del resultDict["app_ver"]
-
-            resultDict["appFam"] = resultDict["app_fam"]
-            del resultDict["app_fam"]
-
-            resultDict["psetHash"] = resultDict["pset_hash"]
-            del resultDict["pset_hash"]
-
-            resultDict["configContent"] = resultDict["config_content"]
-            del resultDict["config_content"]
-
-            resultDict["datasetPath"] = resultDict["dataset_path"]
-            del resultDict["dataset_path"]
-
-            resultDict["size"] = resultDict["filesize"]
-            del resultDict["filesize"]
-
-            resultDict["globalTag"] = resultDict['global_tag']
-            del resultDict['global_tag']
-
+            resultDict["appName"] = resultDict.pop("app_name")
+            resultDict["appVer"] = resultDict.pop("app_ver")
+            resultDict["appFam"] = resultDict.pop("app_fam")
+            resultDict["psetHash"] = resultDict.pop("pset_hash")
+            resultDict["configContent"] = resultDict.pop("config_content")
+            resultDict["datasetPath"] = resultDict.pop("dataset_path")
+            resultDict["size"] = resultDict.pop("filesize")
+            resultDict["globalTag"] = resultDict.pop("global_tag")
         return resultList
 
 
@@ -220,9 +204,8 @@ class LoadDBSFilesByDAS(DBFormatter):
 
     def getBinds(self, files):
         binds = []
-        files = self.dbi.makelist(files)
-        for f in files:
-            binds.append({'fileid': f})
+        for item in files:
+            binds.append({'fileid': item['id']})
         return binds
 
     def execute(self, datasetpath, conn = None, transaction = False):
@@ -237,8 +220,7 @@ class LoadDBSFilesByDAS(DBFormatter):
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)
 
-        fileIDs  = [x['id'] for x in fileInfo]
-        binds    = self.getBinds(fileIDs)
+        binds    = self.getBinds(fileInfo)
 
         if len(fileInfo) == 0:
             # Then we have no files for this DAS

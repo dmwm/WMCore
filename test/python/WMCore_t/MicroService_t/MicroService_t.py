@@ -7,8 +7,8 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 from __future__ import division, print_function
 
 import unittest
-
 import time
+import random
 import cherrypy
 import gzip
 import json
@@ -66,7 +66,7 @@ class MicroServiceTest(unittest.TestCase):
         config.manager = manager
         mount = '/microservice/data'
         self.mgr = RequestHandler()
-        self.port = config.main.port
+        self.port = config.main.port + random.randint(5000, 6000)
         self.url = 'http://localhost:%s%s' % (self.port, mount)
         cherrypy.config["server.socket_port"] = self.port
         self.app = ServiceManager(config)
@@ -83,7 +83,6 @@ class MicroServiceTest(unittest.TestCase):
 
     def tearDown(self):
         "Tear down MicroService"
-        time.sleep(5)
         print("AMR: going to stop cherrypy engine")
         cherrypy.engine.stop()
         print("AMR: going to exit cherrypy engine")

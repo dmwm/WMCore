@@ -14,8 +14,11 @@ import logging
 import sys
 import traceback
 
-WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
-WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
+from Utils.Utilities import decodeBytesToUnicode
+from WMCore.Configuration import PY3
+
+WMEXCEPTION_START_STR = str("<@========== WMException Start ==========@>")
+WMEXCEPTION_END_STR = str("<@---------- WMException End ----------@>")
 
 
 class WMException(Exception):
@@ -29,12 +32,11 @@ class WMException(Exception):
 
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
-        if isinstance(message, bytes):
-            # Fix for the unicode encoding issue, see #8056 and #8403
-            # interprets this string using utf-8 codec and ignoring any errors
-            # unicode sandwich: convert sequence of bytes strings to
-            # unicode codepoints strings as soon as possible
-            message = message.decode('utf-8', 'ignore')
+
+        # Fix for the unicode encoding issue, see #8056 and #8403
+        # interprets this string using utf-8 codec and ignoring any errors.
+        # using unicode sandwich pattern
+        message = decodeBytesToUnicode(message, "ignore")
 
         Exception.__init__(self, self.name, message)
 
@@ -95,6 +97,8 @@ class WMException(Exception):
             self.traceback = "\n".join(traceback.format_tb(sys.exc_info()[2]))
         except Exception:
             self.traceback = "WMException error: Couldn't get traceback\n"
+        # using unicode sandwich pattern
+        self.traceback = decodeBytesToUnicode(self.traceback, "ignore")
 
     def __getitem__(self, key):
         """
@@ -106,12 +110,9 @@ class WMException(Exception):
         """
         make exception look like a dictionary
         """
-        # unicode sandwich: convert sequence of bytes strings to
-        # unicode codepoints strings as soon as possible
-        if isinstance(key, bytes):
-            key = key.decode("utf-8", "ignore")
-        if isinstance(value, bytes):
-            value = value.decode("utf-8", "ignore")
+        # using unicode sandwich pattern
+        key = decodeBytesToUnicode(key, "ignore")
+        value = decodeBytesToUnicode(value, "ignore")
         self.data[key] = value
 
     def addInfo(self, **data):
@@ -122,14 +123,11 @@ class WMException(Exception):
         exception instance
         """
         for key, value in viewitems(data):
-            # unicode sandwich: convert sequence of bytes strings to
-            # unicode codepoints strings as soon as possible
             # assumption: value is not iterable (list, dict, tuple, ...)
-            if isinstance(key, bytes):
-                key = key.decode("utf-8", "ignore")
-            if isinstance(value, bytes):
-                value = value.decode("utf-8", "ignore")
-            self[key] = value
+            # using unicode sandwich pattern
+            key = decodeBytesToUnicode(key, "ignore")
+            value = decodeBytesToUnicode(value, "ignore")
+            self.data[key] = value
         return
 
     def xml(self):
@@ -156,7 +154,7 @@ class WMException(Exception):
         logging.error(strg)
         return strg
 
-    def __str__(self):
+    def __as_unicode(self):
         """create a string rep of this exception"""
         # WARNING: Do not change this string - it is used to extract error from log
         strg = WMEXCEPTION_START_STR
@@ -168,10 +166,18 @@ class WMException(Exception):
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
-        if isinstance(strg, bytes):
-            # Fix for the unicode encoding issue, #8043
-            strg = strg.decode('utf-8', 'ignore')
         return strg
+
+    def __as_bytes(self):
+        return self.__as_unicode().encode("utf-8")
+    
+    if PY3:
+        __str__ = __as_unicode
+    else:
+        __str__ = __as_bytes
+    __unicode__ = __as_unicode
+    __repr__ = __str__
+
 
     def message(self):
         return self._message

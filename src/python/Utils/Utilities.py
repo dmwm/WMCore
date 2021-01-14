@@ -3,8 +3,9 @@
 from __future__ import division, print_function
 from future.utils import viewitems
 
-from builtins import str
+from builtins import str, bytes
 from past.builtins import basestring
+
 import subprocess
 import os
 import re
@@ -189,6 +190,38 @@ def getSize(obj):
                 need_referents.append(obj)
         objects = get_referents(*need_referents)
     return size
+
+
+def decodeBytesToUnicode(value, errors="strict"):
+    """
+    Accepts an input "value" of generic type.
+
+    If "value" is a string of type sequence of bytes (i.e. in py2 `str` or
+    `future.types.newbytes.newbytes`, in py3 `bytes`), then it is converted to
+    a sequence of unicode codepoints.
+
+    This function is useful for cleaning input data when using the
+    "unicode sandwich" approach, which involves converting bytes (i.e. strings
+    of type sequence of bytes) to unicode (i.e. strings of type sequence of
+    unicode codepoints, in py2 `unicode` or `future.types.newstr.newstr`,
+    in py3 `str` ) as soon as possible when recieving input data, and
+    converting unicode back to bytes as late as possible.
+    achtung!:
+    - converting unicode back to bytes is not covered by this function
+    - converting unicode back to bytes is not always necessary. when in doubt,
+      do not do it.
+    Reference: https://nedbatchelder.com/text/unipain.html
+
+    py2:
+    - "errors" can be: "strict", "ignore", "replace",
+    - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
+    py3:
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace"
+    - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
+    """
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors)
+    return value
 
 
 # TODO: remove this function once we have completely migrated to Rucio

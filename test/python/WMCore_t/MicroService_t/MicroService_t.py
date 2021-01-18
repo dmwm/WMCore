@@ -5,6 +5,7 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 
 from __future__ import division, print_function
+from future.utils import viewitems
 
 import unittest
 import time
@@ -66,9 +67,10 @@ class MicroServiceTest(unittest.TestCase):
         config.manager = manager
         mount = '/microservice/data'
         self.mgr = RequestHandler()
-        self.port = config.main.port + random.randint(0, 5)
+        self.port = config.main.port # + random.randint(0, 5)
         self.url = 'http://localhost:%s%s' % (self.port, mount)
         cherrypy.config["server.socket_port"] = self.port
+        cherrypy.config["engine.autoreload.on"] = False
         self.app = ServiceManager(config)
         self.server = RestApiHub(self.app, config, mount)
         cherrypy.tree.mount(self.server, mount)
@@ -87,6 +89,10 @@ class MicroServiceTest(unittest.TestCase):
         cherrypy.engine.stop()
         print("AMR: going to exit cherrypy engine")
         cherrypy.engine.exit()
+        # Ensure the next server that's started gets fresh objects
+        for name, server in viewitems(getattr(cherrypy, 'servers', {})):
+            server.unsubscribe()
+            del cherrypy.servers[name]
 
     def testGetStatus(self):
         "Test function for getting status of the MicroService"

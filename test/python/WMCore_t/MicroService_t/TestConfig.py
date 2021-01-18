@@ -16,7 +16,7 @@ main = config.section_("main")
 srv = main.section_("server")
 srv.thread_pool = 30
 main.application = "microservice"
-main.port = 9100  # main application port it listens on
+main.port = 8080 # 9100  # main application port it listens on
 main.index = 'ui' # Configuration requires index attribute
 # Security configuration
 #main.authz_defaults = {"role": None, "group": None, "site": None}

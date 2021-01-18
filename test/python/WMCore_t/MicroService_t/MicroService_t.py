@@ -66,13 +66,13 @@ class MicroServiceTest(unittest.TestCase):
         config.manager = manager
         mount = '/microservice/data'
         self.mgr = RequestHandler()
-        self.port = config.main.port + random.randint(5000, 6000)
+        self.port = config.main.port + random.randint(0, 5)
         self.url = 'http://localhost:%s%s' % (self.port, mount)
         cherrypy.config["server.socket_port"] = self.port
         self.app = ServiceManager(config)
         self.server = RestApiHub(self.app, config, mount)
         cherrypy.tree.mount(self.server, mount)
-        print("AMR: going to start cherrypy engine")
+        print("AMR: going to start cherrypy engine on url: %s", self.url)
         cherrypy.engine.start()
         # implicitly request data compressed with gzip (default in RequestHandler class)
         self.noEncHeader = {'Accept': 'application/json'}

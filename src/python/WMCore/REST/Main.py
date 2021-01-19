@@ -20,7 +20,7 @@ import thread
 import time
 import traceback
 from argparse import ArgumentParser
-from io import StringIO
+from io import BytesIO, StringIO
 from glob import glob
 from subprocess import Popen, PIPE
 from pprint import pformat
@@ -422,7 +422,7 @@ class RESTDaemon(RESTMain):
             self.run()
         except Exception as e:
             error = True
-            trace = StringIO()
+            trace = BytesIO()
             traceback.print_exc(file=trace)
             cherrypy.log("ERROR: terminating due to error: %s" % trace.getvalue())
 

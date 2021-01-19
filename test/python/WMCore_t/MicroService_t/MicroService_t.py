@@ -123,6 +123,8 @@ class MicroServiceTest(unittest.TestCase):
         data = self.mgr.getdata(url, params=params, headers=self.identityEncHeader, encode=True, decode=True)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
 
     def testGetInfo(self):
         "Test function for getting state of the MicroService"
@@ -157,6 +159,8 @@ class MicroServiceTest(unittest.TestCase):
         # data = gzipDecompress(data)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
 
     def testPostCall(self):
         "Test function for getting status of a request from the MicroService"
@@ -177,6 +181,8 @@ class MicroServiceTest(unittest.TestCase):
         data = self.mgr.getdata(url, params=params, headers=headers, verb='POST',
                                 cert=cert(), ckey=ckey(), encode=True, decode=True)
         self.assertDictEqual(data['result'][0], {'status': 'OK', 'api': 'info'})
+        cherrypy.engine.exit()
+        cherrypy.engine.stop()
 
 
 if __name__ == '__main__':

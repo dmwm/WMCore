@@ -6,6 +6,8 @@ Class used to interact with Condor daemons on the agent
 
 from __future__ import print_function, division
 
+from builtins import str, object
+from past.builtins import basestring
 import logging
 
 try:

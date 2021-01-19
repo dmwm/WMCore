@@ -21,6 +21,7 @@
 """
 from __future__ import print_function
 
+from builtins import str
 import logging
 import os
 import sys
@@ -74,14 +75,14 @@ def daemonize(stdout='/dev/null', stderr=None, stdin='/dev/null',
     # Open file descriptors and print start message
     if not stderr:
         stderr = stdout
-    si = file(stdin, 'r')
-    so = file(stdout, 'a+')
-    se = file(stderr, 'a+', 0)
+    si = open(stdin, 'r')
+    so = open(stdout, 'a+')
+    se = open(stderr, 'a+', 0)
     pid = str(os.getpid())
     sys.stderr.write("\n%s\n" % startmsg % pid)
     sys.stderr.flush()
     if workdir:
-        # file(pidfile,'w+').write("%s\n" % pid)
+        # open(pidfile,'w+').write("%s\n" % pid)
         # Since the current working directory may be a mounted filesystem, we
         # avoid the issue of not being able to unmount the filesystem at
         # shutdown time by changing it to the root directory.
@@ -149,7 +150,7 @@ def test():
     c = 0
     while True:
         sys.stdout.write('%d: %s\n' % (c, time.ctime(time.time())))
-        logging.info('%d: %s\n' % (c, time.ctime(time.time())))
+        logging.info('%d: %s\n', c, time.ctime(time.time()))
         sys.stdout.flush()
         c = c + 1
         time.sleep(1)
@@ -165,7 +166,7 @@ def createDaemon(workdir, keepParent=False):
     pidfile = os.path.join(workdir, 'Daemon.xml')
     startmsg = 'started with pid %s'
     try:
-        pf = file(pidfile, 'r')
+        pf = open(pidfile, 'r')
         pid = (pf.read().strip())
         pf.close()
     except IOError:

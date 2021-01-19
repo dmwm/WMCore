@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #pylint: disable=E1101,C0103,R0902
 
+from builtins import str, range, object
+
 import unittest
 import os
 import tempfile
@@ -107,7 +109,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(config.Section2.Tuple,
                          ("string", 123, 123.456, False))
 
-        class DummyObject:
+        class DummyObject(object):
             pass
         # unsupported parameter type
         self.assertRaises(

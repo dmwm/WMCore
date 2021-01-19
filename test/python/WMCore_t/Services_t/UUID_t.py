@@ -5,10 +5,9 @@
 
 
 from __future__ import print_function
+from builtins import str
+
 import unittest
-import os
-import logging
-import socket
 import time
 
 from WMCore.Services.UUIDLib import makeUUID

@@ -1,3 +1,7 @@
+1.3.6 to 1.3.6.crab6:
+  - fix traceback for REST/Main (belforte) #10232
+
+
 1.3.6.crab4 to 1.3.6.crab5:
   - fix single quotes wrongly encoded (Alan Malta Rodrigues) #10123
   - add all Rucio lfns2pfns args. to getPFN. Fix #10056 (belforte) #10123

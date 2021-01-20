@@ -1,3 +1,7 @@
+1.4.5.pre2 to 1.4.5.pre3:
+  - [py2py3] src/python/A/B/C slice 1 - issue 10055 - src (Dario Mapelli) #10057
+
+
 1.4.5.pre1 to 1.4.5.pre2:
   - [py2py3] src/python/A/B/C slice 3 - issue 10114 - src (Dario Mapelli) #10117
   - [py2py3] issue #10173, PR #10187 - src (Dario Mapelli) #10187

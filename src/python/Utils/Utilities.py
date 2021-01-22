@@ -15,6 +15,9 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 
+### Flag reporting whether we are running under a python3 interpreter or not
+PY3 = sys.version_info[0] == 3
+
 
 def lowerCmsHeaders(headers):
     """
@@ -221,6 +224,27 @@ def decodeBytesToUnicode(value, errors="strict"):
     """
     if isinstance(value, bytes):
         return value.decode("utf-8", errors)
+    return value
+
+
+def encodeToString(value, errors="strict"):
+    """
+    This function encodes a sequence of unicode code points, or a sequence
+    of bytes (bytes type) to a sequence of byte strings under the str type.
+
+    py2:
+    - "errors" can be: "strict", "ignore", "replace",
+    - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
+    py3:
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace"
+    - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
+    """
+    if PY3:
+        if isinstance(value, bytes):
+            return str(value, 'utf-8', errors)
+    else:
+        # then encode either bytes / str / unicode to string
+        return value.encode('utf-8', errors)
     return value
 
 

@@ -6,12 +6,12 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-from builtins import str, bytes, zip, range
+from builtins import str, zip, range
 
 import datetime
 import time
 import types
-
+from Utils.Utilities import encodeToString
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -78,7 +78,7 @@ class DBFormatter(WMObject):
                 for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
                     if isinstance(i[index], str):
-                        entry[str(descriptions[index].lower())] = bytes(i[index], "utf-8")
+                        entry[str(descriptions[index].lower())] = encodeToString(i[index])
                     else:
                         entry[str(descriptions[index].lower())] = i[index]
 
@@ -99,7 +99,7 @@ class DBFormatter(WMObject):
             for i in r.fetchall():
                 for index in range(0, len(descriptions)):
                     if isinstance(i[index], str):
-                        listOut.append(bytes(i[index], "utf-8"))
+                        listOut.append(encodeToString(i[index]))
                     else:
                         listOut.append(i[index])
             r.close()

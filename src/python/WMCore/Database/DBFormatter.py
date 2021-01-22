@@ -78,7 +78,7 @@ class DBFormatter(WMObject):
                 for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
                     if isinstance(i[index], str):
-                        entry[str(descriptions[index].lower())] = bytes(i[index])
+                        entry[str(descriptions[index].lower())] = i[index].encode("utf-8")
                     else:
                         entry[str(descriptions[index].lower())] = i[index]
 
@@ -99,7 +99,7 @@ class DBFormatter(WMObject):
             for i in r.fetchall():
                 for index in range(0, len(descriptions)):
                     if isinstance(i[index], str):
-                        listOut.append(bytes(i[index]))
+                        listOut.append(i[index].encode("utf-8"))
                     else:
                         listOut.append(i[index])
             r.close()

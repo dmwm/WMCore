@@ -24,7 +24,7 @@
         "Campaign": "Campaign-OVERRIDE-ME", 
         "Comments": {
             "WorkFlowDesc": ["Two steps without input data, but with 2 different PU datasets in each step (not used in cmsRun though);",
-                             "Job splitting fully automated, 1440EpJ and EpL; Keep only step2 output GEN-SiM-RAW"],
+                             "Job splitting fully automated, 1440EpJ and EpL; Keep only step2 output GEN-SIM-DIGI-RAW"],
             "CheckList": ["StepChain: with multiple PU datasets", "StepChain with TrustPUSitelists enabled"]
         }, 
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 

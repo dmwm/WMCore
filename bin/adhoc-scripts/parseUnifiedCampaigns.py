@@ -285,8 +285,8 @@ def insertTestCampaigns(mgr):
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
     testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_10_6_1_patch1_Step1",  "CMSSW_10_6_1_patch1_Step2",
-                "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
-                "Agent140_Val", "Agent142_Val", "Agent144_Val",
+                "CMSSW_7_3_2__test2inwf-1510737328", "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628",
+                "RelVal_Generic_Campaign", "Agent145_Val", "Agent147_Val", "Agent149_Val",
                 "Jan2021_Val", "Feb2021_Val", "Mar2021_Val", "Apr2021_Val",
                 "May2021_Val", "Jun2021_Val", "Jul2021_Val", "Aug2021_Val",
                 "Sept2021_Val", "Oct2021_Val", "Nov2021_Val", "Dec2021_Val",

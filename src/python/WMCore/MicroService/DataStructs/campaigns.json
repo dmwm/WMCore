@@ -84,7 +84,9 @@
       "T1_US_FNAL", 
       "T2_CH_CERN"
     ], 
-    "SiteBlackList": [], 
+    "SiteBlackList": [
+      "T2_CH_CERN_HLT"
+    ], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer16DR80Premix", 
     "PartialCopy": 0.95, 
@@ -97,18 +99,10 @@
     "TiersToDM": [], 
     "MaxCopies": 1, 
     "SiteWhiteList": [
-      "T1_US_FNAL", 
-      "T1_IT_CNAF", 
-      "T1_UK_RAL", 
-      "T1_DE_KIT", 
-      "T2_US_Caltech", 
-      "T2_US_Nebraska", 
-      "T2_US_MIT"
-    ], 
-    "SecondaryLocation": [
       "T2_US_Purdue", 
       "T1_DE_KIT"
     ], 
+    "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer16FSPremix", 
@@ -126,7 +120,9 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [], 
-    "SiteBlackList": [], 
+    "SiteBlackList": [
+      "T2_US_Caltech"
+    ], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIIFall17GS", 
     "PartialCopy": 1, 
@@ -220,20 +216,8 @@
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
-    "CampaignName": "RunIIFall18GS", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
     "CampaignName": "RunIISummer19UL18DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
         "T1_UK_RAL", 
@@ -260,6 +244,18 @@
   {
     "TiersToDM": [], 
     "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MiniAODUL17Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
     "SiteWhiteList": [
       "T2_US_MIT"
     ], 
@@ -278,8 +274,7 @@
     "PartialCopy": 1, 
     "Secondaries": {
       "/MinBias_TuneCUETP8M1_2017_5p02TeV-pythia8/RunIIpp5Spring18GS-94X_mc2017_realistic_v10For2017G_v3-v2/GEN-SIM": [
-        "T2_US_MIT", 
-        "T2_DE_DESY"
+        "T2_US_MIT"
       ], 
       "/MinBias_TuneCUETP8M1_5p02TeV-pythia8/HINppWinter17GS-92X_upgrade2017_realistic_v11-v1/GEN-SIM": [
         "T2_US_MIT"
@@ -324,28 +319,17 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
-      "T1_US_FNAL", 
-      "T2_CH_CERN"
+      "T1_US_FNAL"
     ], 
-    "SiteBlackList": [], 
+    "SiteBlackList": [
+      "T2_CH_CERN_HLT"
+    ], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIIFall17DRPremix", 
     "PartialCopy": 1, 
     "Secondaries": {
       "/Neutrino_E-10_gun/RunIISummer17PrePremix-MCv2_correctPU_94X_mc2017_realistic_v9-v1/GEN-SIM-DIGI-RAW": []
     }, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
-    "CampaignName": "RunIISummer15GS", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
     "PrimaryAAA": false
   }, 
   {
@@ -365,8 +349,7 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
-      "T1_US_FNAL", 
-      "T2_CH_CERN"
+      "T1_US_FNAL"
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
@@ -513,8 +496,8 @@
     "TiersToDM": [], 
     "MaxCopies": 1, 
     "SiteWhiteList": [
-      "T1_FR_CCIN2P3", 
-      "T1_RU_JINR"
+      "T1_RU_JINR", 
+      "T1_FR_CCIN2P3"
     ], 
     "SecondaryLocation": [], 
     "SiteBlackList": [
@@ -543,8 +526,8 @@
     "TiersToDM": [], 
     "MaxCopies": 1, 
     "SiteWhiteList": [
-      "T1_FR_CCIN2P3", 
-      "T1_RU_JINR"
+      "T1_RU_JINR", 
+      "T1_FR_CCIN2P3"
     ], 
     "SecondaryLocation": [], 
     "SiteBlackList": [
@@ -716,7 +699,7 @@
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer17PrePremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_14TeV-pythia8/Run3Winter20GS-110X_mcRun3_2021_realistic_v6-v1/GEN-SIM": [
         "T1_ES_PIC", 
@@ -1102,11 +1085,11 @@
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer19UL17DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v3-v2/SIM": [
         "T1_UK_RAL", 
-        "T2_BE_IIHE", 
+        "T2_US_Nebraska", 
         "T1_US_FNAL"
       ], 
       "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v6-v2/GEN-SIM": [
@@ -1228,13 +1211,12 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
-      "T1_US_FNAL", 
-      "T2_CH_CERN"
+      "T1_US_FNAL"
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer19UL17DIGIPremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL17_106X_mc2017_realistic_v6-v1/PREMIX": []
     }, 
@@ -1248,10 +1230,12 @@
       "T1_US_FNAL", 
       "T2_CH_CERN"
     ], 
-    "SiteBlackList": [], 
+    "SiteBlackList": [
+      "T2_CH_CERN_HLT"
+    ], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer19UL18DIGIPremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX": []
     }, 
@@ -1454,6 +1438,56 @@
   {
     "TiersToDM": [], 
     "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T2_US_Caltech"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIFall18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MiniAODUL16Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MiniAODUL18Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
     "SiteWhiteList": [
       "T1_UK_RAL"
     ], 
@@ -1461,7 +1495,7 @@
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer19ULPrePremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.049, 
     "Secondaries": {
       "/MinBias_TuneCP5_14TeV-pythia8/PhaseIITDRSpring19GS-106X_upgrade2023_realistic_v2_ext1-v1/GEN-SIM": [
         "T2_US_Florida"
@@ -1855,13 +1889,12 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
-      "T1_US_FNAL", 
-      "T2_CH_CERN"
+      "T1_US_FNAL"
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer19UL16DIGIPremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": []
     }, 
@@ -1956,17 +1989,17 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
-      "T1_US_FNAL", 
-      "T2_CH_CERN"
+      "T2_CH_CERN", 
+      "T1_US_FNAL"
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer19UL16DIGIPremixAPV", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": [
-        "T1_US_FNAL", 
-        "T2_CH_CERN"
+        "T2_CH_CERN", 
+        "T1_US_FNAL"
       ]
     }, 
     "PrimaryAAA": false
@@ -2015,7 +2048,7 @@
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer19UL16DIGIAPV", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
         "T1_UK_RAL", 
@@ -2035,7 +2068,7 @@
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer19UL16DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
         "T1_UK_RAL", 
@@ -2175,68 +2208,6 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [], 
-    "SiteBlackList": [
-      "T1_US_FNAL", 
-      "T2_US_Purdue", 
-      "T2_US_Caltech", 
-      "T2_US_Florida", 
-      "T2_US_Nebraska", 
-      "T2_US_UCSD", 
-      "T2_US_Wisconsin", 
-      "T3_US_NERSC"
-    ], 
-    "SecondaryAAA": false, 
-    "CampaignName": "HINppWinter17GS", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [
-      "T1_US_FNAL", 
-      "T2_US_Purdue", 
-      "T2_US_Caltech", 
-      "T2_US_Florida", 
-      "T2_US_Nebraska", 
-      "T2_US_UCSD", 
-      "T2_US_Wisconsin", 
-      "T3_US_NERSC"
-    ], 
-    "SecondaryAAA": false, 
-    "CampaignName": "HINppWinter17wmLHEGS", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [
-      "T1_US_FNAL", 
-      "T2_US_Purdue", 
-      "T2_US_Caltech", 
-      "T2_US_Florida", 
-      "T2_US_Nebraska", 
-      "T2_US_UCSD", 
-      "T2_US_Wisconsin"
-    ], 
-    "SecondaryAAA": false, 
-    "CampaignName": "HINppWinter17DR", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer20UL16wmLHEGENAPV", 
@@ -2283,25 +2254,6 @@
   {
     "TiersToDM": [], 
     "MaxCopies": 1, 
-    "SiteWhiteList": [
-      "T1_US_FNAL"
-    ], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
-    "CampaignName": "RunIISummer20UL16DIGIAPV", 
-    "PartialCopy": 1, 
-    "Secondaries": {
-      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL16SIM-106X_mcRun2_asymptotic_v3-v1/GEN-SIM": [
-        "T1_UK_RAL", 
-        "T1_US_FNAL"
-      ]
-    }, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
@@ -2322,9 +2274,9 @@
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer20UL16DIGIPremixAPV", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
-      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL16_106X_mcRun2_asymptotic_v10-v2/PREMIX": [
+      "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX": [
         "T1_US_FNAL", 
         "T2_CH_CERN"
       ]
@@ -2370,27 +2322,6 @@
         "T1_FR_CCIN2P3"
       ]
     }, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [
-      "T1_US_FNAL", 
-      "T2_US_Purdue", 
-      "T2_US_Caltech", 
-      "T2_US_Florida", 
-      "T2_US_Nebraska", 
-      "T2_US_UCSD", 
-      "T2_US_Wisconsin", 
-      "T2_CH_CERN"
-    ], 
-    "SecondaryAAA": false, 
-    "CampaignName": "HINppWinter17FixBSGS", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
     "PrimaryAAA": false
   }, 
   {
@@ -2676,28 +2607,13 @@
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
-    "CampaignName": "RunIISummer20UL17wmLHEGEN", 
-    "PartialCopy": 1, 
-    "Secondaries": {}, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [
-      "T1_DE_KIT", 
-      "T2_US_Florida"
-    ], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
     "CampaignName": "Phase2HLTTDRWinter20DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
       "/MinBias_TuneCP5_14TeV-pythia8/Phase2HLTTDRWinter20GS-110X_mcRun4_realistic_v3_ext1-v1/GEN-SIM": [
-        "T1_IT_CNAF"
+        "T1_RU_JINR"
       ], 
-      "/MinBias_TuneCP5_14TeV-pythia8/Phase2HLTTDRWinter20GS-110X_mcRun4_realistic_v3-v1/GEN-SIM": [
+      "/RelValMinBias_14TeV/CMSSW_11_1_2_patch3-110X_mcRun4_realistic_v3_2026D49noPU_BSzpz35-v1/GEN-SIM": [
         "T1_DE_KIT", 
         "T2_US_Florida"
       ]
@@ -2708,20 +2624,51 @@
     "TiersToDM": [], 
     "MaxCopies": 1, 
     "SiteWhiteList": [
-      "T1_UK_RAL", 
-      "T2_BE_IIHE", 
-      "T1_US_FNAL"
+      "T1_IT_CNAF_Disk"
     ], 
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer20UL17DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
-      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL17SIM-106X_mc2017_realistic_v3-v2/SIM": [
-        "T1_UK_RAL", 
-        "T2_BE_IIHE", 
-        "T1_US_FNAL"
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL17SIM-106X_mc2017_realistic_v6-v2/GEN-SIM": [
+        "T1_IT_CNAF_Disk"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [
+      "T2_CH_CERN", 
+      "T1_US_FNAL"
+    ], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": true, 
+    "CampaignName": "RunIISummer20UL17DIGIPremix", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL17_106X_mc2017_realistic_v6-v3/PREMIX": []
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_IT_CNAF"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18DIGI", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T1_IT_CNAF"
       ]
     }, 
     "PrimaryAAA": false
@@ -2736,49 +2683,12 @@
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
-    "CampaignName": "RunIISummer20UL17DIGIPremix", 
-    "PartialCopy": 1, 
-    "Secondaries": {
-      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL17_106X_mc2017_realistic_v6-v1/PREMIX": []
-    }, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
-    "CampaignName": "RunIISummer20UL18DIGI", 
-    "PartialCopy": 1, 
-    "Secondaries": {
-      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
-        "T1_UK_RAL", 
-        "T2_US_Nebraska"
-      ], 
-      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
-        "T2_FR_GRIF_IRFU"
-      ]
-    }, 
-    "PrimaryAAA": false
-  }, 
-  {
-    "TiersToDM": [], 
-    "MaxCopies": 1, 
-    "SiteWhiteList": [], 
-    "SecondaryLocation": [], 
-    "SiteBlackList": [], 
-    "SecondaryAAA": false, 
     "CampaignName": "RunIISummer20UL16DIGIPremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
-      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
-        "T1_UK_RAL", 
-        "T2_US_Nebraska"
-      ], 
-      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
-        "T2_FR_GRIF_IRFU"
+      "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX": [
+        "T1_US_FNAL", 
+        "T2_CH_CERN"
       ]
     }, 
     "PrimaryAAA": false
@@ -2786,19 +2696,17 @@
   {
     "TiersToDM": [], 
     "MaxCopies": 1, 
-    "SiteWhiteList": [], 
+    "SiteWhiteList": [
+      "T2_US_Nebraska"
+    ], 
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
     "CampaignName": "RunIISummer20UL16DIGI", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
-      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v4-v1/SIM": [
-        "T1_UK_RAL", 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL16SIM-106X_mcRun2_asymptotic_v13-v2/GEN-SIM": [
         "T2_US_Nebraska"
-      ], 
-      "/MinBias_TuneCP1_13TeV-pythia8/RunIISummer19UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
-        "T2_FR_GRIF_IRFU"
       ]
     }, 
     "PrimaryAAA": false
@@ -2808,16 +2716,425 @@
     "MaxCopies": 1, 
     "SiteWhiteList": [], 
     "SecondaryLocation": [
+      "T1_IT_CNAF", 
       "T1_US_FNAL", 
       "T2_CH_CERN"
     ], 
     "SiteBlackList": [], 
     "SecondaryAAA": true, 
     "CampaignName": "RunIISummer20UL18DIGIPremix", 
-    "PartialCopy": 1, 
+    "PartialCopy": 0.95, 
     "Secondaries": {
-      "/Neutrino_E-10_gun/RunIISummer19ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX": []
+      "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL18_106X_upgrade2018_realistic_v11_L1v1-v2/PREMIX": []
     }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbWinter16wmLHEGS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin", 
+      "T2_CH_CERN"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "HINPbPbWinter16pLHE", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T2_US_Caltech"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer15GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_US_Nebraska"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20ULPrePremix", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL17SIM-106X_mc2017_realistic_v6-v2/GEN-SIM": [
+        "T1_US_FNAL"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL18SIM-106X_upgrade2018_realistic_v11_L1v1-v2/GEN-SIM": [
+        "T1_IT_CNAF"
+      ], 
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL16SIM-106X_mcRun2_asymptotic_v13-v2/GEN-SIM": [
+        "T2_US_Nebraska"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T1_US_FNAL", 
+      "T2_US_Purdue", 
+      "T2_US_Caltech", 
+      "T2_US_Florida", 
+      "T2_US_Nebraska", 
+      "T2_US_UCSD", 
+      "T2_US_Wisconsin"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIIpp5Spring18GSFixBeamspot", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "NanoAODUL16Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "NanoAODUL17Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "NanoAODUL18Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16NanoAODAPVv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16wmLHENanoGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16NanoAODAPVv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIILowPUAutumn18MiniAOD", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [
+      "T3_US_NERSC"
+    ], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIILowPUAutumn18GS", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIILowPUAutumn18DR", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17NanoAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL18MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16MiniAODAPVv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL17MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16MiniAODAPVv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL18MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer19UL16MiniAODv2", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_US_Nebraska"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL16DIGIAPV", 
+    "PartialCopy": 0.95, 
+    "Secondaries": {
+      "/MinBias_TuneCP5_13TeV-pythia8/RunIISummer20UL16SIM-106X_mcRun2_asymptotic_v13-v2/GEN-SIM": [
+        "T2_US_Nebraska"
+      ]
+    }, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "MiniAODHI18Data", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "RunIISummer20UL17wmLHEGEN", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
     "PrimaryAAA": false
   }, 
   {
@@ -2829,7 +3146,147 @@
     "SecondaryLocation": [], 
     "SiteBlackList": [], 
     "SecondaryAAA": false, 
-    "CampaignName": "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628", 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49noPU-1611332897", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49noPU_HGCAL-1611332930", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49noPU_HGCAL-1611385243", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49noPU-1611384922", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49PU200_highPU-1611425057", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49PU200_highPU-1611574966", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__UPSG_Std_2026D49PU200_highPU-1611584734", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__extendedgen-1611731266", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__fullsim_noPU_2021_14TeV-1611731079", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T2_CH_CERN"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__HIN_noPU2021-1611731538", 
+    "PartialCopy": 1, 
+    "Secondaries": {}, 
+    "PrimaryAAA": false
+  }, 
+  {
+    "TiersToDM": [], 
+    "MaxCopies": 1, 
+    "SiteWhiteList": [
+      "T1_US_FNAL"
+    ], 
+    "SecondaryLocation": [], 
+    "SiteBlackList": [], 
+    "SecondaryAAA": false, 
+    "CampaignName": "CMSSW_11_3_0_pre2__generator-1611730918", 
     "PartialCopy": 1, 
     "Secondaries": {}, 
     "PrimaryAAA": false

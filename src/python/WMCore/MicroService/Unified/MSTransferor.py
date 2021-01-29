@@ -98,6 +98,7 @@ class MSTransferor(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
+        self.pnn2psnMap = {}
         self.dsetCounter = 0
         self.blockCounter = 0
         self.emailAlert = EmailAlert(self.msConfig)
@@ -125,6 +126,7 @@ class MSTransferor(MSCore):
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
         self.psn2pnnMap = self.cric.PSNtoPNNMap()
+        self.pnn2psnMap = self.cric.PNNtoPSNMap()
         if not self.uConfig:
             raise RuntimeWarning("Failed to fetch the unified configuration")
         elif not campaigns:
@@ -288,7 +290,7 @@ class MSTransferor(MSCore):
         if not wflow.getInputDataset():
             return
 
-        wflowPnns = self._getPNNs(wflow.getSitelist())
+        wflowPnns = self._getPNNsFromPSNs(wflow.getSitelist())
         primaryAAA = wflow.getReqParam("TrustSitelists")
         msg = "Checking data location for request: %s, TrustSitelists: %s, request white/black list PNNs: %s"
         self.logger.info(msg, wflow.getName(), primaryAAA, wflowPnns)
@@ -406,7 +408,7 @@ class MSTransferor(MSCore):
             # nothing to be done here
             return
 
-        wflowPnns = self._getPNNs(wflow.getSitelist())
+        wflowPnns = self._getPNNsFromPSNs(wflow.getSitelist())
         secondaryAAA = wflow.getReqParam("TrustPUSitelists")
         msg = "Checking secondary data location for request: {}, ".format(wflow.getName())
         msg += "TrustPUSitelists: {}, request white/black list PNNs: {}".format(secondaryAAA, wflowPnns)
@@ -520,23 +522,25 @@ class MSTransferor(MSCore):
                 commonPsns = set()
                 # if the dataset has a location list, use solely that one
                 if campConfig['Secondaries'].get(dsetName, []):
-                    commonPsns = set(psns) & set(campConfig['Secondaries'][dsetName])
+                    campSecPSNs = self._getPSNsFromPNNs(campConfig['Secondaries'][dsetName])
+                    commonPsns = set(psns) & campSecPSNs
                     if not commonPsns:
                         msg = "Workflow has been incorrectly assigned: %s. The secondary dataset: %s,"
                         msg += "belongs to the campaign: %s, with Secondaries location set to: %s. "
                         msg += "While the workflow has been assigned to: %s"
                         self.logger.error(msg, wflow.getName(), dsetName, dataIn['campaign'],
-                                          campConfig['Secondaries'][dsetName], psns)
+                                          campSecPSNs, psns)
                 else:
                     if dsetName.startswith("/Neutrino"):
                         # different PU type use different campaign attributes...
-                        commonPsns = set(psns) & set(campConfig['SecondaryLocation'])
+                        campSecPSNs = self._getPSNsFromPNNs(campConfig['SecondaryLocation'])
+                        commonPsns = set(psns) & campSecPSNs
                         if not commonPsns:
                             msg = "Workflow has been incorrectly assigned: %s. The secondary dataset: %s,"
                             msg += "belongs to the campaign: %s, with SecondaryLocation set to: %s. "
                             msg += "While the workflow has been assigned to: %s"
                             self.logger.error(msg, wflow.getName(), dsetName, dataIn['campaign'],
-                                              campConfig['SecondaryLocation'], psns)
+                                              campSecPSNs, psns)
                     else:
                         if campConfig['SiteWhiteList']:
                             commonPsns = set(psns) & set(campConfig['SiteWhiteList'])
@@ -552,7 +556,7 @@ class MSTransferor(MSCore):
                     # returns an empty set, which will make this workflow to be skipped for the moment
                     return commonPsns
 
-        pnns = self._getPNNs(commonPsns)
+        pnns = self._getPNNsFromPSNs(commonPsns)
         self.logger.info("  found a PSN list: %s, which maps to a list of PNNs: %s", commonPsns, pnns)
         return pnns
 
@@ -768,7 +772,7 @@ class MSTransferor(MSCore):
                 psns = set(psns) - set(campConfig['SiteBlackList'])
 
         self.logger.info("  final list of PSNs to be use: %s", psns)
-        pnns = self._getPNNs(psns)
+        pnns = self._getPNNsFromPSNs(psns)
 
         self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
                          wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())
@@ -831,9 +835,10 @@ class MSTransferor(MSCore):
         self.logger.error("Failed to create transfer document in CouchDB. Will retry again later.")
         return False
 
-    def _getPNNs(self, psnList):
+    def _getPNNsFromPSNs(self, psnList):
         """
-        Given a list/set of PSNs, return a set of valid PNNs
+        Given a list/set of PSNs, return a set of valid PNNs.
+        Note that T3, Tape and a few other PNNs are never returned.
         """
         pnns = set()
         for psn in psnList:
@@ -845,6 +850,20 @@ class MSTransferor(MSCore):
                 else:
                     pnns.add(pnn)
         return pnns
+
+    def _getPSNsFromPNNs(self, pnnList):
+        """
+        Given a list/set of PNNs, return a set of valid PSNs.
+        Note that T3 sites are never returned.
+        """
+        psns = set()
+        for pnn in pnnList:
+            for psn in self.pnn2psnMap.get(pnn, []):
+                if psn.startswith("T3_"):
+                    pass
+                else:
+                    psns.add(psn)
+        return psns
 
     def _diskPNNs(self, pnnList):
         """

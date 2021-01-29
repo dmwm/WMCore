@@ -25,10 +25,8 @@ class EmailAlert(object):
     def send(self, subject, message):
         """
         Send an email
-
         :param subject: Email subject
         :param message: Email body
-
         """
         msg = self.EMAIL_HEADER % (self.fromAddr, subject, ", ".join(self.toAddr))
         msg += message
@@ -38,7 +36,11 @@ class EmailAlert(object):
             smtp.sendmail(self.fromAddr, self.toAddr, msg)
         except Exception as ex:
             logging.exception("Error sending alert email.\nDetails: %s", str(ex))
-        finally:
+
+        try:
             # clean up smtp connection
             smtp.quit()
+        except UnboundLocalError:
+            # it means our client failed connecting to the SMTP server
+            pass
 

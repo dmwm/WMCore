@@ -1,3 +1,10 @@
+1.4.5.pre3 to 1.4.5.pre4:
+  - Catch UnboundLocalError exception when EmailAlert fails connecting to the SMTP server (Alan Malta Rodrigues) #10244
+  - Convert Campaign pileup data location to PSNs to match against the SiteWhitelist (Alan Malta Rodrigues) #10243
+  - [py2py3] Database/DBFormatter.py - src - fix #10235 (Dario Mapelli) #10238
+  - add option for preloader for xrdcp stageout (Dirk Hufnagel) #10226
+
+
 1.4.5.pre2 to 1.4.5.pre3:
   - [py2py3] src/python/A/B/C slice 1 - issue 10055 - src (Dario Mapelli) #10057
 

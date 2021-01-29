@@ -202,7 +202,7 @@ class CRIC(Service):
         """
         Given a PSN regex pattern, return a map of PSN to PNNs
         :param psnPattern: a pattern string
-        :return: a dictionary of PNNs list keyed by their PSN
+        :return: a dictionary key'ed by PSN names, with sets of PNNs as values
         """
         if not isinstance(psnPattern, basestring):
             raise TypeError('psnPattern argument must be of type basestring')
@@ -214,4 +214,22 @@ class CRIC(Service):
         for entry in results:
             if psnPattern.match(entry['psn_name']):
                 mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
+        return mapping
+
+    def PNNtoPSNMap(self, pnnPattern=''):
+        """
+        Given a PNN regex pattern, return a map of PNN to PSNs
+        :param pnnPattern: a pattern string
+        :return: a dictionary key'ed by PNN names, with sets of PSNs as values
+        """
+        if not isinstance(pnnPattern, basestring):
+            raise TypeError('pnnPattern argument must be of type basestring')
+
+        results = self._CRICSiteQuery(callname='data-processing')
+        mapping = {}
+
+        pnnPattern = re.compile(pnnPattern)
+        for entry in results:
+            if pnnPattern.match(entry['phedex_name']):
+                mapping.setdefault(entry['phedex_name'], set()).add(entry['psn_name'])
         return mapping

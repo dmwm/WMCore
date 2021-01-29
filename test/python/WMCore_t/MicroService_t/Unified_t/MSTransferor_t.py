@@ -28,13 +28,19 @@ class TransferorTest(EmulatedUnitTestCase):
 
     def setUp(self):
         "init test class"
-        self.msConfig = {'verbose': False,
-                         'group': 'DataOps',
+        self.msConfig = {'services': ['transferor'],
+                         'verbose': False,
                          'interval': 1 * 60,
                          'enableStatusTransition': True,
-                         'reqmgrUrl': 'https://cmsweb-testbed.cern.ch/reqmgr2',
+                         'enableDataTransfer': False,
+                         'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
                          'reqmgrCacheUrl': 'https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache',
-                         'phedexUrl': 'https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod',
+                         'quotaUsage': 0.9,
+                         'rucioAccount': 'wma_test',  # it should be wmcore_transferor
+                         # 'rucioAuthUrl': 'https://cms-rucio-auth.cern.ch',
+                         # 'rucioUrl': 'http://cms-rucio.cern.ch',
+                         'rucioAuthUrl': 'https://cmsrucio-auth-int.cern.ch',
+                         'rucioUrl': 'http://cmsrucio-int.cern.ch',
                          'dbsUrl': 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader'}
 
         self.msTransferor = MSTransferor(self.msConfig)
@@ -42,6 +48,63 @@ class TransferorTest(EmulatedUnitTestCase):
         self.taskChainTempl = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
         self.stepChainTempl = getTestFile('data/ReqMgr/requests/Integration/SC_LumiMask_PhEDEx.json')
         super(TransferorTest, self).setUp()
+
+    def testGetPNNsFromPSNs(self):
+        """Test MSTransferor private method _getPNNsFromPSNs()"""
+        self.assertItemsEqual(self.msTransferor.psn2pnnMap, {})
+
+        # now fill up the cache
+        self.msTransferor.psn2pnnMap = self.msTransferor.cric.PSNtoPNNMap()
+
+        self.assertItemsEqual(self.msTransferor._getPNNsFromPSNs([]), set())
+        pnns = self.msTransferor._getPNNsFromPSNs(["T1_IT_CNAF", "T1_IT_CNAF_Disk"])
+        self.assertItemsEqual(pnns, set(["T1_IT_CNAF_Disk"]))
+
+        # dropping T3s and CERNBOX
+        pnns = self.msTransferor._getPNNsFromPSNs(["T1_US_FNAL", "T2_CH_CERN_HLT"])
+        self.assertItemsEqual(pnns, set(["T1_US_FNAL_Disk", "T2_CH_CERN"]))
+
+        # testing with non-existant PSNs
+        psns = self.msTransferor._getPNNsFromPSNs(["T1_US_FNAL_Disk", "T2_CH_CERNBOX"])
+        self.assertItemsEqual(psns, set())
+
+    def testGetPSNsFromPNNs(self):
+        """Test MSTransferor private method _getPSNsFromPNNs()"""
+        self.assertItemsEqual(self.msTransferor.pnn2psnMap, {})
+
+        # now fill up the cache
+        self.msTransferor.pnn2psnMap = self.msTransferor.cric.PNNtoPSNMap()
+
+        self.assertItemsEqual(self.msTransferor._getPSNsFromPNNs([]), set())
+        psns = self.msTransferor._getPSNsFromPNNs(["T1_IT_CNAF", "T1_IT_CNAF_Disk"])
+        self.assertItemsEqual(psns, set(["T1_IT_CNAF"]))
+
+        # test dropping T3s
+        psns = self.msTransferor._getPSNsFromPNNs(["T2_UK_SGrid_RALPP"])
+        self.assertItemsEqual(psns, set(["T2_UK_SGrid_RALPP"]))
+
+        # testing with non-existant PNNs
+        psns = self.msTransferor._getPSNsFromPNNs(["T1_US_FNAL", "T2_CH_CERN_HLT"])
+        self.assertItemsEqual(psns, set())
+
+    def testDiskPNNs(self):
+        """Test MSTransferor private method _diskPNNs()"""
+        # empty list of pnns
+        self.assertItemsEqual(self.msTransferor._diskPNNs([]), set())
+
+        # only PNNs that will be dropped
+        pnns = self.msTransferor._diskPNNs(["T1_US_FNAL_Tape", "T1_US_FNAL_MSS",
+                                            "T2_CH_CERNBOX", "T0_CH_CERN_Export"])
+        self.assertItemsEqual(pnns, set())
+
+        # valid PNNs that can receive data
+        pnns = self.msTransferor._diskPNNs(["T1_US_FNAL_Disk", "T2_CH_CERN", "T2_DE_DESY"])
+        self.assertItemsEqual(pnns, set(["T1_US_FNAL_Disk", "T2_CH_CERN", "T2_DE_DESY"]))
+
+        # finally, a mix of valid and invalid PNNs
+        pnns = self.msTransferor._diskPNNs(["T1_US_FNAL_Disk", "T1_US_FNAL_MSS", "T1_US_FNAL_Tape",
+                                            "T2_CH_CERN", "T2_DE_DESY"])
+        self.assertItemsEqual(pnns, set(["T1_US_FNAL_Disk", "T2_CH_CERN", "T2_DE_DESY"]))
 
     def notestRequestRecord(self):
         """

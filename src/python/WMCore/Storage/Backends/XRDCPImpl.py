@@ -26,6 +26,7 @@ class XRDCPImpl(StageOutImpl):
         StageOutImpl.__init__(self, stagein)
         self.numRetries = 5
         self.retryPause = 300
+        self.xrdfsCmd = "xrdfs"
 
     def createSourceName(self, protocol, pfn):
         """
@@ -61,6 +62,7 @@ class XRDCPImpl(StageOutImpl):
         parser.add_argument('--wma-cerncastor', action='store_true')
         parser.add_argument('--wma-old', action='store_true')
         parser.add_argument('--wma-disablewriterecovery', action='store_true')
+        parser.add_argument('--wma-preload')
         args, unknown = parser.parse_known_args(options.split())
 
         # strip out WMAgent specific options
@@ -78,7 +80,7 @@ class XRDCPImpl(StageOutImpl):
             if args.wma_cerncastor:
                 targetPFN += "?svcClass=t0cms"
 
-        useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
+        useChecksum = (checksums is not None and 'adler32' in checksums and not self.stageIn)
 
         xrdcpExec = "xrdcp"
         if args.wma_old:
@@ -115,7 +117,14 @@ class XRDCPImpl(StageOutImpl):
         if args.wma_disablewriterecovery:
             copyCommand += "env XRD_WRITERECOVERY=0 "
 
-        copyCommand += "%s --force --nopbar " % xrdcpExec
+        if args.wma_preload:
+            xrdcpCmd = "%s %s" % (args.wma_preload, xrdcpExec)
+            self.xrdfsCmd = "%s xrdfs" % args.wma_preload
+        else:
+            xrdcpCmd = xrdcpExec
+            self.xrdfsCmd = "xrdfs"
+
+        copyCommand += "%s --force --nopbar " % xrdcpCmd
 
         if copyCommandOptions:
             copyCommand += "%s " % copyCommandOptions
@@ -136,15 +145,15 @@ class XRDCPImpl(StageOutImpl):
         if self.stageIn:
             removeCommand = ""
         else:
-            removeCommand = "xrdfs '%s' rm %s ;" % (host, path)
+            removeCommand = "%s '%s' rm %s ;" % (self.xrdfsCmd, host, path)
 
-        copyCommand += "REMOTE_SIZE=`xrdfs '%s' stat '%s' | grep Size | sed -r 's/.*Size:[ ]*([0-9]+).*/\\1/'`\n" % (host, path)
+        copyCommand += "REMOTE_SIZE=`%s '%s' stat '%s' | grep Size | sed -r 's/.*Size:[ ]*([0-9]+).*/\\1/'`\n" % (self.xrdfsCmd, host, path)
         copyCommand += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
 
         if useChecksum:
 
             copyCommand += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
-            copyCommand += "REMOTE_XS=`xrdfs '%s' query checksum '%s' | grep -i adler32 | sed -r 's/.*[adler|ADLER]32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
+            copyCommand += "REMOTE_XS=`%s '%s' query checksum '%s' | grep -i adler32 | sed -r 's/.*[adler|ADLER]32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (self.xrdfsCmd, host, path)
             copyCommand += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
@@ -163,7 +172,7 @@ class XRDCPImpl(StageOutImpl):
 
         """
         (_, host, path, _) = self.splitPFN(pfnToRemove)
-        command = "xrdfs %s rm %s" % (host, path)
+        command = "%s %s rm %s" % (self.xrdfsCmd, host, path)
         self.executeCommand(command)
         return
 

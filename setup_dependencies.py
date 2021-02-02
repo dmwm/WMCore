@@ -119,15 +119,6 @@ dependencies = {
                     'src/javascript/external/graphael',
                     'src/templates/WMCore/WebTools/WMBS'],
     },
-    'asyncstageout': {
-        'packages': ['WMCore.Agent+', 'WMCore.Storage+',
-                     'WMCore.Credential', 'WMCore.WorkerThreads',
-                     'WMCore.Services+'],
-        'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
-                    'WMCore.Services.pycurl_manager', 'WMComponent.__init__'],
-        'systems': ['wmc-database'],
-        'statics': ['src/couchapps/Agent+'],
-    },
     'crabcache': {
         'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
         'systems': ['wmc-rest'],
@@ -150,6 +141,7 @@ dependencies = {
         'packages': ['WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                      'WMCore.JobSplitting', 'WMCore.Services+', 'Utils+'],
         'systems': ['wmc-database', 'wmc-runtime'],
+        'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
     },
     'wmclient': {
         'systems': ['wmc-runtime', 'wmc-database']

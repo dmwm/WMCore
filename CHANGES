@@ -1,3 +1,6 @@
+1.4.5.pre4 to 1.4.5:
+
+
 1.4.5.pre3 to 1.4.5.pre4:
   - Catch UnboundLocalError exception when EmailAlert fails connecting to the SMTP server (Alan Malta Rodrigues) #10244
   - Convert Campaign pileup data location to PSNs to match against the SiteWhitelist (Alan Malta Rodrigues) #10243

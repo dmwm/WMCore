@@ -50,10 +50,11 @@ class PyCurlManager(unittest.TestCase):
         # test RequestHandler
         url = "https://cms-gwmsmon.cern.ch/prodview/json/site_summary"
         params = {}
+        headers = {"Cache-Control": "no-cache"}
         tfile = tempfile.NamedTemporaryFile()
         cern_sso_cookie(url, tfile.name, self.cert, self.ckey)
         cookie = {url: tfile.name}
-        header, _ = self.mgr.request(url, params, cookie=cookie)
+        header, _ = self.mgr.request(url, params, headers, cookie=cookie)
         self.assertTrue(header.status, 200)
 
     def testContinue(self):

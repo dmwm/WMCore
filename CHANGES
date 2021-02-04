@@ -1,3 +1,11 @@
+1.4.6.pre1 to 1.4.6.pre2:
+  - Make WMAgent job wrapper slightly more verbose; fix one error message (Alan Malta Rodrigues) #10261
+  - Trap SSL_connect error and Service Unavailable in DBSUploadPoller (Alan Malta Rodrigues) #10252
+  - [py2py3] pycurl_manager imports encoder to Bytes from Utilities - src (Dario Mapelli) #10250
+  - [py2py3] Utils/Utilities.py - encoder Unicode to Bytes - src (Dario Mapelli) #10250
+  - Python3 requirements for WMAgent and WMAgent-Dev (Alan Malta Rodrigues) #10247
+
+
 1.4.5 to 1.4.6.pre1:
   - add back WMBS to crabtaskworker dependencies and remove asyncstageout (belforte) #10246
 

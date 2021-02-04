@@ -224,6 +224,34 @@ def decodeBytesToUnicode(value, errors="strict"):
     return value
 
 
+def encodeUnicodeToBytes(value, errors="strict"):
+    """
+    Accepts an input "value" of generic type.
+
+    If "value" is a string of type sequence of unicode (i.e. in py2 `unicode` or
+    `future.types.newstr.newstr`, in py3 `str`), then it is converted to
+    a sequence of bytes.
+
+    This function is useful for encoding output data when using the
+    "unicode sandwich" approach, which involves converting unicode (i.e. strings
+    of type sequence of unicode codepoints) to bytes (i.e. strings of type
+    sequence of bytes, in py2 `str` or `future.types.newbytes.newbytes`,
+    in py3 `bytes`) as late as possible when passing a string to a third-party
+    function that only accepts bytes as input (pycurl's curl.setop is an
+    example).
+    py2:
+    - "errors" can be: "strict", "ignore", "replace", "xmlcharrefreplace"
+    - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
+    py3:
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace", 
+      "xmlcharrefreplace", "namereplace"
+    - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
+    """
+    if isinstance(value, str):
+        return value.encode("utf-8", errors)
+    return value
+
+
 # TODO: remove this function once we have completely migrated to Rucio
 def usingRucio():
     """

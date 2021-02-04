@@ -5,6 +5,8 @@ Version of Services/CRIC intended to be used with mock or unittest.mock
 """
 from __future__ import division, print_function
 
+from builtins import object, str, bytes
+
 import os
 import json
 import re
@@ -33,7 +35,7 @@ class MockCRICApi(object):
         :param callname: the CRIC REST API name
         :return: the dictionary that CRIC would have returned
         """
-        if callname not in mockData.keys():
+        if callname not in mockData:
             raise RuntimeError("Mock CRIC emulator knows nothing about API %s" % callname)
 
         if mockData[callname] == 'Raises HTTPError':
@@ -65,7 +67,7 @@ class MockCRICApi(object):
         nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
             nodeNames = [x for x in nodeNames if not x.endswith("_Buffer")]
-        if pattern and isinstance(pattern, basestring):
+        if pattern and isinstance(pattern, (str, bytes)):
             pattern = re.compile(pattern)
             nodeNames = [x for x in nodeNames if pattern.match(x)]
         return nodeNames
@@ -73,7 +75,7 @@ class MockCRICApi(object):
     def PNNstoPSNs(self, pnns):
         callname = 'data-processing'
         mapping = self.genericLookup(callname)
-        if isinstance(pnns, basestring):
+        if isinstance(pnns, (str, bytes)):
             pnns = [pnns]
 
         psns = set()
@@ -89,7 +91,7 @@ class MockCRICApi(object):
     def PSNstoPNNs(self, psns, allowPNNLess=False):
         callname = 'data-processing'
         mapping = self.genericLookup(callname)
-        if isinstance(psns, basestring):
+        if isinstance(psns, (str, bytes)):
             psns = [psns]
 
         pnns = set()
@@ -105,8 +107,8 @@ class MockCRICApi(object):
         return list(pnns)
 
     def PSNtoPNNMap(self, psnPattern=''):
-        if not isinstance(psnPattern, basestring):
-            raise TypeError('psnPattern argument must be of type basestring')
+        if not isinstance(psnPattern, (str, bytes)):
+            raise TypeError('psnPattern argument must be of type str or bytes')
 
         callname = 'data-processing'
         results = self.genericLookup(callname)

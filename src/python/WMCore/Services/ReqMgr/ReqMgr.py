@@ -1,3 +1,6 @@
+from builtins import str, bytes
+from future.utils import viewitems
+
 import json
 import logging
 
@@ -64,8 +67,8 @@ class ReqMgr(Service):
             args = "_nostale=true&"
         else:
             args = ""
-        for name, values in queryDict.items():
-            if isinstance(values, basestring) or isinstance(values, int):
+        for name, values in viewitems(queryDict):
+            if isinstance(values, (str, bytes, int)):
                 values = [values]
             for val in values:
                 args += '%s=%s&' % (name, val)

@@ -5,12 +5,11 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-
-
+from builtins import object
 
 import threading
 
-class WorkQueueBase():
+class WorkQueueBase(object):
     """
     Generic methods used by all of the WMBS classes.
     """

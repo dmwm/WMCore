@@ -40,7 +40,7 @@ class Mask(WMBSBase, WMMask):
 
 
         returnDict = {}
-        for key in self.keys():
+        for key in self:
             returnDict[key] = self[key]
 
 
@@ -56,7 +56,7 @@ class Mask(WMBSBase, WMMask):
 
 
         maskList = []
-        for run in self['runAndLumis'].keys():
+        for run in self['runAndLumis']:
             for lumiPair in self['runAndLumis'][run]:
                 tmpMask = WMMask()
                 tmpMask['jobID']      = jobID
@@ -90,7 +90,7 @@ class Mask(WMBSBase, WMMask):
         existingTransaction = self.beginTransaction()
 
 
-        if len(self['runAndLumis'].keys()) == 0:
+        if len(self['runAndLumis']) == 0:
             # Then we have nothing out of the ordinary
 
             maskSaveAction.execute(jobid = jobID, mask = self,

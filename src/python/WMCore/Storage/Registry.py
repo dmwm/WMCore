@@ -9,6 +9,7 @@ rather than using the common implementation to avoid generating
 extra runtime dependencies.
 
 """
+from builtins import object
 import WMCore.WMFactory
 from WMCore.Storage.StageOutError import StageOutError
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -23,7 +24,7 @@ class RegistryError(StageOutError):
     pass
 
 
-class Registry:
+class Registry(object):
     """
     _Registry_
 
@@ -45,7 +46,7 @@ def registerStageOutImpl(name, classRef):
     Register a StageOutImpl subclass with the name provided
 
     """
-    if name in Registry.StageOutImpl.keys():
+    if name in Registry.StageOutImpl:
         msg = "Duplicate StageOutImpl registered for name: %s\n" % name
         raise RegistryError(msg)
 

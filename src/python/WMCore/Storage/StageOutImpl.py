@@ -8,6 +8,8 @@ inherit this object and implement the methods accordingly
 """
 from __future__ import print_function
 
+from builtins import range, object
+
 import logging
 import os
 import time

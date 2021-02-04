@@ -5,6 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
+from builtins import int
+
 import threading
 import unittest
 
@@ -244,18 +246,18 @@ class DBSBufferFileTest(unittest.TestCase):
         assert testFileA == testFileC, \
             "ERROR: File load by ID didn't work"
 
-        assert isinstance(testFileB["id"], int) or isinstance(testFileB["id"], long), \
+        assert isinstance(testFileB["id"], int), \
             "ERROR: File id is not an integer type."
-        assert isinstance(testFileB["size"], int) or isinstance(testFileB["size"], long), \
+        assert isinstance(testFileB["size"], int), \
             "ERROR: File size is not an integer type."
-        assert isinstance(testFileB["events"], int) or isinstance(testFileB["events"], long), \
+        assert isinstance(testFileB["events"], int), \
             "ERROR: File events is not an integer type."
 
-        assert isinstance(testFileC["id"], int) or isinstance(testFileC["id"], long), \
+        assert isinstance(testFileC["id"], int), \
             "ERROR: File id is not an integer type."
-        assert isinstance(testFileC["size"], int) or isinstance(testFileC["size"], long), \
+        assert isinstance(testFileC["size"], int), \
             "ERROR: File size is not an integer type."
-        assert isinstance(testFileC["events"], int) or isinstance(testFileC["events"], long), \
+        assert isinstance(testFileC["events"], int), \
             "ERROR: File events is not an integer type."
 
         testFileA.delete()

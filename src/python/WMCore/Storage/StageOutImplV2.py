@@ -67,18 +67,18 @@ class StageOutImplV2(object):
             return pfn
 
     def runCommandFailOnNonZero(self, command):
-        logging.info("Executing %s" % command)
+        logging.info("Executing %s", command)
         (exitCode, output) = runCommand(command)
         if exitCode:
             logging.error("Error in file transfer:")
-            logging.error("  Command executed was: %s" % command )
-            logging.error("  Output was: %s" % output )
-            logging.error("  Exit code was: %s" % exitCode )
+            logging.error("  Command executed was: %s", command )
+            logging.error("  Output was: %s", output )
+            logging.error("  Exit code was: %s", exitCode )
             raise StageOutError("Transfer failure")
         return (exitCode, output)
 
     def runCommandWarnOnNonZero(self, command):
-        logging.info("Executing %s" % command)
+        logging.info("Executing %s", command)
         (exitCode, output) = runCommand(command)
         if exitCode:
             logging.error("Error in file transfer..ignoring:")

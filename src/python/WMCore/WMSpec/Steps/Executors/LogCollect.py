@@ -68,13 +68,6 @@ class LogCollect(Executor):
         # Set wait to over an hour
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
-        # hardcode CERN Castor T0_CH_CERN_MSS stageout parameters
-        castorStageOutParams = {}
-        castorStageOutParams['command'] = overrides.get('command', "xrdcp")
-        castorStageOutParams['option'] = overrides.get('option', "--wma-cerncastor")
-        castorStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
-        castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://castorcms.cern.ch//castor/cern.ch/cms")
-
         # hardcode CERN EOS T2_CH_CERN stageout parameters
         eosStageOutParams = {}
         eosStageOutParams['command'] = overrides.get('command', "xrdcp")
@@ -83,7 +76,6 @@ class LogCollect(Executor):
         eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://eoscms.cern.ch//eos/cms")
 
         try:
-            castorStageOutMgr = StageOutMgr(**castorStageOutParams)
             eosStageOutMgr = StageOutMgr(**eosStageOutParams)
             stageInMgr = StageInMgr()
             deleteMgr = DeleteMgr()
@@ -201,14 +193,14 @@ class LogCollect(Executor):
                     path = log.split('/')
                     tarFile.add(name=log,
                                 arcname=os.path.join(path[-3], path[-2], path[-1]))
-                os.remove(log)
+                    os.remove(log)
         else:
             msg = "Unable to copy any logArchives to local disk"
             logging.error(msg)
             raise WMExecutionFailure(60312, "LogCollectError", msg)
 
         # now staging out the LogCollect tarfile
-        logging.info("Staging out LogCollect tarfile to Castor and EOS")
+        logging.info("Staging out LogCollect tarfile to EOS (skipping CASTOR)")
         now = datetime.datetime.now()
         lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
                                                      self.report.data.workload,
@@ -219,13 +211,13 @@ class LogCollect(Executor):
                    'PNN': None,
                    'GUID': None}
 
-        # perform mandatory stage out to CERN Castor
+        # perform mandatory stage out to CERN EOS
         signal.signal(signal.SIGALRM, alarmHandler)
         signal.alarm(waitTime)
         try:
-            castorStageOutMgr(tarInfo)
+            eosStageOutMgr(tarInfo)
         except Alarm:
-            msg = "Indefinite hang during stageOut of LogCollect to Castor"
+            msg = "Indefinite hang during stageOut of LogCollect to EOS"
             logging.error(msg)
             raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
         except Exception as ex:
@@ -242,25 +234,8 @@ class LogCollect(Executor):
         outputRef.output.location = tarInfo['PNN']
         outputRef.output.lfn = tarInfo['LFN']
 
-        tarInfo = {'LFN': lfn,
-                   'PFN': tarLocation,
-                   'PNN': None,
-                   'GUID': None}
-
-        # then, perform best effort stage out to CERN EOS
-        signal.signal(signal.SIGALRM, alarmHandler)
-        signal.alarm(waitTime)
-        try:
-            eosStageOutMgr(tarInfo)
-        except Alarm:
-            logging.error("Indefinite hang during stageOut of LogCollect to EOS")
-        except Exception as ex:
-            logging.error("Unable to stageOut LogCollect to EOS: %s", ex)
-        signal.alarm(0)
-
-        # we got this far, delete input
-        for log in deleteLogArchives:
-
+        # we got this far, delete ALL input files assigned to this job
+        for log in self.job["input_files"]:
             # give up after timeout of 1 minutes
             signal.signal(signal.SIGALRM, alarmHandler)
             signal.alarm(60)

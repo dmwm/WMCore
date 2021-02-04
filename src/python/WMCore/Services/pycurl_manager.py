@@ -44,6 +44,7 @@ from builtins import str, range, object
 from past.builtins import basestring
 from future.utils import viewitems
 
+
 # system modules
 import json
 import logging
@@ -55,6 +56,8 @@ import pycurl
 from io import BytesIO
 import http.client
 from urllib.parse import urlencode
+
+from Utils.Utilities import encodeUnicodeToBytes
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""
@@ -214,10 +217,10 @@ class RequestHandler(object):
         # we must pass url as a string data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
-        curl.setopt(pycurl.URL, str(url))
+        curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
         if headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                    ["%s: %s" % (k, v) for k, v in viewitems(headers)])
+                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(headers)])
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)

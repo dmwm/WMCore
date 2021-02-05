@@ -842,6 +842,19 @@ class Rucio(object):
             self.logger.error("Data identifier not found in Rucio: %s. Error: %s", didName, str(exc))
         return response
 
+    def didExist(self, didName, scope='cms'):
+        """
+        Provided a given DID, check whether it's already in the Rucio server.
+        Any kind of exception will return False (thus, data not yet in Rucio).
+        :param didName: a string with the DID name (container, block, or file)
+        :return: True if DID has been found, False otherwise
+        """
+        try:
+            response = self.cli.get_did(scope=scope, name=didName)
+        except Exception:
+            response = dict()
+        return response.get("name") == didName
+
     # FIXME we can likely delete this method (replaced by another implementation)
     def getDataLockedAndAvailable_old(self, **kwargs):
         """

@@ -1,4 +1,5 @@
-# Dependencies needed to run WMAgent(-dev) on a python3 stack
+# Dependencies needed to run WMAgent(-dev)
+# on a python3 stack
 
 ### dependencies on the wmagentpy3 spec
 Jinja2==2.11.3

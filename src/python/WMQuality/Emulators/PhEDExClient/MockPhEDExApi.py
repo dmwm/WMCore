@@ -14,7 +14,7 @@ from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBS3Reader import (DBS3Reader, DBSReaderError)
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
-PROD_DBS = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
 NOT_EXIST_DATASET = 'thisdoesntexist'
 PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
@@ -35,7 +35,7 @@ class MockPhEDExApi(object):
     """
 
     def __init__(self, dict=None, responseType="json", logger=None,
-                 dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
+                 dbsUrl='https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'):
         print("Using MockPhEDExApi")
         self.dbsUrl = dbsUrl
         dict = dict or {}

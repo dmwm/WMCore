@@ -15,7 +15,7 @@ class PhEDEx(Service):
     """
 
     def __init__(self, httpDict=None, responseType="json", logger=None,
-                 dbsUrl='https://cmsweb.cern.ch/dbs/prod/global/DBSReader'):
+                 dbsUrl='https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'):
         """
         responseType will be either xml or json
         """

@@ -2,7 +2,7 @@
 
 from __future__ import (division, print_function)
 
-endpoint = 'https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader'
+endpoint = 'https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader'
 
 datasets = []
 

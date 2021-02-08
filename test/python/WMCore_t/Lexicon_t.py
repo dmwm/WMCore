@@ -790,7 +790,7 @@ class LexiconTest(unittest.TestCase):
         Test the validateUrl function for some use case of DBS 3
         """
         # Good http(s) urls
-        for url in ['https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
+        for url in ['https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader',
                     'https://mydbs.mydomain.de:8443',
                     'http://localhost',
                     'http://192.168.1.1',

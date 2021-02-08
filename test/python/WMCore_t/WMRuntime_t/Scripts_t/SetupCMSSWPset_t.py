@@ -250,7 +250,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # modifications of job input files
         pileupConfig = {"data": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
                         "mc": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
-        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
         setupScript.step.setupPileup(pileupConfig, dbsUrl)
         # SetupCMSSWPset pileup handling will be consulting SiteLocalConfig
         # to determine StorageElement (SE) name the job is running on

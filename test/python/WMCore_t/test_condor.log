@@ -105,7 +105,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: x509userproxy = "/data/srv/glidecondor/condor_local/spool/381/0/cluster20980381.proc0.subproc0/ced936bbe1cd5fd8b390fb02463f7ae0d7c34498"
 == JOB AD: JOB_GLIDEIN_SEs = "gfe02.grid.hep.ph.ic.ac.uk"
 == JOB AD: JobNotification = 0
-== JOB AD: CRAB_DBSURL = "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader"
+== JOB AD: CRAB_DBSURL = "https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader"
 == JOB AD: MachineAttrHAS_SINGULARITY0 = true
 == JOB AD: ProcId = 0
 == JOB AD: JOB_GLIDEIN_MaxMemMBs = "20240"
@@ -189,7 +189,7 @@ Output files: EventTree.root=EventTree_5.root
 == JOB AD: CRAB_RestURInoAPI = "/crabserver/prod"
 == JOB AD: CRAB_JobArch = "slc6_amd64_gcc530"
 == JOB AD: QDate = 1496925601
-== JOB AD: CRAB_PublishDBSURL = "https://cmsweb.cern.ch/dbs/prod/phys03/DBSWriter"
+== JOB AD: CRAB_PublishDBSURL = "https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSWriter"
 == JOB AD: CRAB_PublishGroupName = 0
 == JOB AD: x509UserProxyFQAN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=adow/CN=818235/CN=Albert Kenneth Dow,/cms/Role=NULL/Capability=NULL"
 == JOB AD: Err = "_condor_stderr"

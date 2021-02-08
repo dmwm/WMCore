@@ -33,7 +33,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         Initialize the PhEDEx API to point at the test server.
         """
 
-        self.endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+        self.endpoint = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
         self.dbs = None
         super(DBSReaderTest, self).setUp()
         return
@@ -248,7 +248,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
                     'ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e'
         DBS_BLOCK2 = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-' + \
                      'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
-        self.dbs = DBSReader('https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/')
+        self.dbs = DBSReader('https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader/')
 
         self.assertEqual(self.dbs.listFileBlockLocation(BLOCK), [])
         # This block is only found on DBS

@@ -14,7 +14,7 @@ class CommonTest(unittest.TestCase):
     "Unit test for Common module"
 
     def setUp(self):
-        self.dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        self.dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
         self.datasets = ['/ZMM/Summer11-DESIGN42_V11_428_SLHC1-v1/GEN-SIM',
                          '/ZMM_14TeV/Summer12-DESIGN42_V17_SLHCTk-v1/GEN-SIM']
         self.child = ['/SingleElectron/Run2016B-18Apr2017_ver2-v1/AOD']

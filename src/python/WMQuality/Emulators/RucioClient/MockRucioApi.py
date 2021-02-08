@@ -11,7 +11,7 @@ from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
 from WMCore.Services.Rucio.Rucio import WMRucioException, WMRucioDIDNotFoundException
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
-PROD_DBS = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
 NOT_EXIST_DATASET = 'thisdoesntexist'
 PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'

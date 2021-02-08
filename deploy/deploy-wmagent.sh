@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.3.patch2 -d HG2012f -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.3.patch2 -d HG2012f -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.5.patch1 -d HG2102e -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.5.patch2 -d HG2102e -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro
 ### Usage:
 
 IAM=`whoami`
@@ -342,8 +342,8 @@ if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'RelVal'+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
-  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
+  sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
+  sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE_DIR/config.py
   sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'Test'+" $MANAGE_DIR/config.py
 fi
 

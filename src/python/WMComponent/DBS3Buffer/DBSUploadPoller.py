@@ -48,38 +48,6 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
-def createConfigForJSON(config):
-    """
-    Turn a config object into a dictionary of dictionaries
-
-    """
-
-    final = {}
-    for sectionName in config.listSections_():
-        section = getattr(config, sectionName)
-        if hasattr(section, 'dictionary_'):
-            # Create a dictionary key for it
-            final[sectionName] = createDictionaryFromConfig(section)
-
-    return final
-
-
-def createDictionaryFromConfig(configSection):
-    """
-    Recursively create dictionaries from config
-
-    """
-
-    final = configSection.dictionary_()
-
-    for key in final.keys():
-        if hasattr(final[key], 'dictionary_'):
-            # Then we can turn it into a dictionary
-            final[key] = createDictionaryFromConfig(final[key])
-
-    return final
-
-
 def uploadWorker(workInput, results, dbsUrl):
     """
     _uploadWorker_
@@ -141,11 +109,35 @@ def uploadWorker(workInput, results, dbsUrl):
     return
 
 
+def isPassiveError(exceptionObj):
+    """
+    This function will parse the exception object and report whether
+    the error message corresponds to a soft or hard error (hard errors
+    are supposed to let the component crash).
+    :param exceptionObj: any exception object
+    :return: True if it's a soft error, False otherwise
+    """
+    passException = True
+    passiveErrorMsg = ['Service Unavailable', 'Service Temporarily Unavailable',
+                       'Proxy Error', 'Error reading from remote server',
+                       'Connection refused', 'timed out', 'Could not resolve',
+                       'OpenSSL SSL_connect: SSL_ERROR_SYSCALL']
+
+    excReason = getattr(exceptionObj, 'reason', '')
+    for passiveMsg in passiveErrorMsg:
+        if passiveMsg in excReason:
+            break
+        elif passiveMsg in str(exceptionObj):
+            break
+    else:
+        passException = False
+    return passException
+
+
 class DBSUploadException(WMException):
     """
     Holds the exception info for
     all the things that will go wrong
-
     """
 
 
@@ -344,19 +336,16 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             self.datasetParentageCache = self.wmstatsServerSvc.getChildParentDatasetMap()
         except Exception as ex:
-            reason = getattr(ex, 'reason', '')
-            msg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
-            msg += 'Exception: %s. Reason: %s. ' % (type(ex).__name__, reason)
-            if 'Service Unavailable' in reason or 'Proxy Error' in reason or \
-                            'Error reading from remote server' in reason:
-                pass
-            elif 'Connection refused' in str(ex) or 'timed out' in str(ex) or 'Could not resolve' in str(ex):
-                msg += 'Error: %s' % str(ex)
+            excReason = getattr(ex, 'reason', '')
+            errorMsg = 'Failed to fetch parentage map from WMStats, skipping this cycle. '
+            errorMsg += 'Exception: {}. Reason: {}. Error: {}. '.format(type(ex).__name__,
+                                                                        excReason, str(ex))
+            if isPassiveError(ex):
+                logging.warning(errorMsg)
             else:
-                msg = "Unknown failure while fetching parentage map from WMStats. Error: %s" % str(ex)
-                raise DBSUploadException(msg)
-            logging.warning(msg)
-            myThread.logdbClient.post("DBS3Upload_parentMap", msg, "warning")
+                errorMsg += 'Hit a terminal exception in DBSUploadPoller.'
+                raise DBSUploadException(errorMsg)
+            myThread.logdbClient.post("DBS3Upload_parentMap", errorMsg, "warning")
             success = False
         else:
             myThread.logdbClient.delete("DBS3Upload_parentMap", "warning", this_thread=True)
@@ -376,7 +365,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Load them if we don't have them
         blocksToLoad = []
         for block in openBlocks:
-            if block['blockname'] not in self.blockCache.keys():
+            if block['blockname'] not in self.blockCache:
                 blocksToLoad.append(block['blockname'])
 
         # Now load the blocks

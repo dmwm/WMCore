@@ -133,7 +133,10 @@ def validateInputDatasSetAndParentFlag(arguments):
     mcpileup = _getChainKey(arguments, "MCPileup")
     datapileup = _getChainKey(arguments, "DataPileup")
     includeParents = _getChainKey(arguments, "IncludeParents")
+    # TODO: this replace can be removed in one year from now, thus March 2022
     dbsURL = arguments.get("DbsUrl")
+    if dbsURL:
+        dbsURL = dbsURL.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
     if includeParents and not inputdataset:
         msg = "IncludeParents flag is True but InputDataset value has not been provided"

@@ -32,8 +32,8 @@ try:
 except IOError:
     mockData03 = {}
 
-mockData['https://cmsweb.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
-mockData['https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
+mockData['https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
+mockData['https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
 
 
 class MockDbsApi(object):

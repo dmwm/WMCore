@@ -48,7 +48,7 @@ DEFAULT_DICT = {
     "AcquisitionEra": "UPDATEME",
     "ProcessingVersion": 1,  # will be updated too
     "Campaign": "StoreResults",
-    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
+    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader",
     "GlobalTag": "crab3_tag",
     "Memory": 2000,
     "RequestPriority": 999999,
@@ -86,7 +86,7 @@ def migrateDataset(dset, dbsInst):
     Migrate dataset from the user instance to the DBS prod one.
     It returns the origin site name, which should be used for assignment
     """
-    dbsInst = "https://cmsweb.cern.ch/dbs/prod/%s/DBSReader" % dbsInst
+    dbsInst = "https://cmsweb-prod.cern.ch/dbs/prod/%s/DBSReader" % dbsInst
     migrateArgs = {'migration_url': dbsInst, 'migration_input': dset}
     dbsApi.submitMigration(migrateArgs)
     print("Migrating dataset %s from %s to prod/global" % (dset, dbsInst))
@@ -104,7 +104,7 @@ def buildRequest(userDict):
 
     newSchema = copy(DEFAULT_DICT)
     newSchema.update(userDict)
-    newSchema['DbsUrl'] = "https://cmsweb.cern.ch/dbs/prod/%s/DBSReader" % newSchema['DbsUrl']
+    newSchema['DbsUrl'] = "https://cmsweb-prod.cern.ch/dbs/prod/%s/DBSReader" % newSchema['DbsUrl']
     # Remove spaces from the Physics Group value
     newSchema['PhysicsGroup'] = newSchema['PhysicsGroup'].replace(" ", "")
     # Set PrepID according to the date and time

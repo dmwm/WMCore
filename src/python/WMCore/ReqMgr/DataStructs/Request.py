@@ -3,8 +3,6 @@ Unlike ReqMgr1 defining Request and RequestSchema classes,
 define just 1 class. Derived from Python dict and implementing
 necessary conversion and validation extra methods possibly needed.
 
-TODO/NOTE:
-    'inputMode' should be removed by now (2013-07)
 
     since arguments validation #4705, arguments which are later
         validated during spec instantiation and which are not
@@ -58,6 +56,7 @@ def initialize_request_args(request, config):
     request["CouchDBName"] = config.couch_config_cache_db
 
     generateRequestName(request)
+    replaceDbsProdUrl(request)
 
 
 def _replace_cloned_args(clone_args, user_args):
@@ -73,6 +72,18 @@ def _replace_cloned_args(clone_args, user_args):
         else:
             clone_args[prop] = user_args[prop]
     return
+
+
+def replaceDbsProdUrl(requestArgs):
+    """
+    Function to update the DBS URL from the standard cmsweb.cern.ch
+    to cmsweb-prod.cern.ch, running in the k8s infra
+    :param requestArgs: dictionary with the request arguments
+    :return: same dictionary object (with updated dbs url)
+    """
+    # TODO: this url conversion below can be removed in one year from now, thus March 2022
+    if requestArgs.get("DbsUrl"):
+        requestArgs["DbsUrl"] = requestArgs["DbsUrl"].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
 
 def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=None):
@@ -111,6 +122,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
     # apply user override arguments at the end, such that it's validated at spec level
     incrementProcVer(cloneArgs, requestArgs)
     _replace_cloned_args(cloneArgs, requestArgs)
+    replaceDbsProdUrl(cloneArgs)
 
     return cloneArgs
 

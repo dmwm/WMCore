@@ -23,7 +23,7 @@ class MockDbsApiTest(ExtendedUnitTestCase):
     """
 
     def setUp(self):
-        self.endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+        self.endpoint = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
         self.realDBS = DbsApi(self.endpoint)
         self.mockDBS = MockDbsApi(self.endpoint)
         return

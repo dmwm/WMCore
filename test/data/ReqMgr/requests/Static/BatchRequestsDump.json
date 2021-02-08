@@ -163,7 +163,7 @@
     "Dashboard": "integration",
     "DashboardHost": "cms-jobmon.cern.ch",
     "DashboardPort": 8884,
-    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/",
     "DeleteFromSource": false,
     "DeterministicPileup": false,
     "EnableHarvesting": false,

@@ -74,6 +74,10 @@ class StdBase(object):
             except Exception as ex:
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
 
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        if hasattr(self, "dbsUrl"):
+            self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+
         return
 
     # static copy of the skim mapping
@@ -297,7 +301,8 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
-        workload.setDbsUrl(self.dbsUrl)
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        workload.setDbsUrl(self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch"))
         workload.setPrepID(self.prepID)
         return workload
 
@@ -1038,7 +1043,7 @@ class StdBase(object):
                                             "validate": lambda x: x >= 0},
                      "GlobalTagConnect": {"null": True},
                      "LumiList": {"default": {}, "type": makeLumiList},
-                     "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                     "DbsUrl": {"default": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
                      "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,

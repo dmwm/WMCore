@@ -48,7 +48,7 @@ class TestWorkloadFactory(object):
 
         procTask.addInputDataset(name="/MinimumBias/Comissioning10-v4/RAW",
                                  primary="MinimumBias", processed="Comissioning10-v4", tier="RAW",
-                                 dbsurl="https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                                 dbsurl="https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
                                  block_blacklist=[], block_whitelist=[],
                                  run_blacklist=[], run_whitelist=[])
         procTask.data.constraints.sites.whitelist = []

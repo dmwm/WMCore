@@ -106,7 +106,7 @@ if __name__ == '__main__':
         end = time.mktime(datetime.datetime.strptime(args.end, "%d/%m/%Y").timetuple())
 
     if args.prod:
-        dbsURL = 'https://cmsweb.cern.ch/dbs/prod/global/DBSWriter'
+        dbsURL = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter'
         logger.info("Using production: %s", dbsURL)
     else:
         dbsURL = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSWriter'

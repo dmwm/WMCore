@@ -47,7 +47,7 @@ glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+globalDBSUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # List of SE for T1 _Disk endpoints (TODO clean this up at some point)
@@ -145,7 +145,7 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-# "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+# "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file

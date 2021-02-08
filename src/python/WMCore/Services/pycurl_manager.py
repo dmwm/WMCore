@@ -26,8 +26,8 @@ if header.status != 200:
 tfile = tempfile.NamedTemporaryFile()
 ckey = os.path.join(os.environ['HOME'], '.globus/userkey.pem')
 cert = os.path.join(os.environ['HOME'], '.globus/usercert.pem')
-url1 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/help"
-url2 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/datatiers"
+url1 = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/help"
+url2 = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/datatiers"
 url3 = "https://cms-gwmsmon.cern.ch/prodview/json/site_summary"
 cern_sso_cookie(url3, tfile.name, cert, ckey)
 cookie = {url3: tfile.name}

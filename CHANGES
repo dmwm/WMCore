@@ -1,3 +1,15 @@
+1.4.5 to 1.4.5.patch1:
+  - Update production DBS URL to cmsweb-prod - bin, doc, deploy, etc (Alan Malta Rodrigues) #10263
+  - Update URL during spec creation; and a few other places (Alan Malta Rodrigues) #10263
+  - Update production DBS URL to cmsweb-prod (Alan Malta Rodrigues) #10263
+  - Check if DID exists before creating a replication rule (Alan Malta Rodrigues) #10263
+  - Make WMAgent job wrapper slightly more verbose; fix one error message (Alan Malta Rodrigues) #10263
+  - [py2py3] pycurl_manager imports encoder to Bytes from Utilities - src (Dario Mapelli) #10263
+  - [py2py3] Utils/Utilities.py - encoder Unicode to Bytes - src (Dario Mapelli) #10263
+  - Trap SSL_connect error and Service Unavailable in DBSUploadPoller (Alan Malta Rodrigues) #10263
+  - Temporarily stop staging out log tarball to CASTOR (Alan Malta Rodrigues) #10255
+
+
 1.4.5.pre4 to 1.4.5:
 
 

@@ -1,3 +1,12 @@
+1.4.6.pre2 to 1.4.6.pre3:
+  - Update production DBS URL to cmsweb-prod - bin, doc, deploy, etc (Alan Malta Rodrigues) #10269
+  - Update URL during spec creation; and a few other places (Alan Malta Rodrigues) #10269
+  - Update production DBS URL to cmsweb-prod (Alan Malta Rodrigues) #10269
+  - Minor comment update on requirements for python3 stack (Alan Malta Rodrigues) #9
+  - Update snapshot of Unified campaigns; update a couple json templates (Alan Malta Rodrigues) 10268
+  - Check if DID exists before creating a replication rule (Alan Malta Rodrigues) #9
+
+
 1.4.6.pre1 to 1.4.6.pre2:
   - Make WMAgent job wrapper slightly more verbose; fix one error message (Alan Malta Rodrigues) #10261
   - Trap SSL_connect error and Service Unavailable in DBSUploadPoller (Alan Malta Rodrigues) #10252

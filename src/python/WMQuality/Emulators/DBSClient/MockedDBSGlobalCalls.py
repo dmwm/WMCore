@@ -2,7 +2,7 @@
 
 from __future__ import (division, print_function)
 
-endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+endpoint = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
 # Datasets to get all blocks, array, and lumis from
 datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW', '/Cosmics/ComissioningHI-v1/RAW',

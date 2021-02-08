@@ -1089,7 +1089,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if hasattr(self.data, "request"):
             if hasattr(self.data.request, "schema"):
                 if not getattr(self.data.request.schema, "DbsUrl", None):
-                    return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+                    return "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 
         return getattr(self.data.request.schema, "DbsUrl")
 

@@ -1075,7 +1075,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the workload level DbsUrl.
         """
-        self.data.dbsUrl = dbsUrl
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        self.data.dbsUrl = dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
     def getDbsUrl(self):
         """

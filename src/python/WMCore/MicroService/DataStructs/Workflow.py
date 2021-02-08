@@ -59,7 +59,8 @@ class Workflow(object):
         """
         Get the DbsUrl defined in this request
         """
-        return self.data['DbsUrl']
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        return self.data['DbsUrl'].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
     def getReqType(self):
         """

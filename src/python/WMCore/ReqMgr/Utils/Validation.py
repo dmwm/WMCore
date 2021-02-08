@@ -259,6 +259,9 @@ def validateOutputDatasets(outDsets, dbsUrl):
             msg = "Bad output dataset name, check the processed dataset name.\n %s" % str(ex)
             raise InvalidSpecParameterValue(msg)
 
+    # TODO: this url conversion below can be removed in one year from now, thus March 2022
+    dbsUrl = dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+
     # Verify whether the output datatiers are available in DBS
     _validateDatatier(datatier, dbsUrl)
 

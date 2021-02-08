@@ -150,7 +150,7 @@ def main():
         parser.error("You must provide either a workflow name or an input file name.")
         sys.exit(3)
 
-    cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb.cern.ch"
+    cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb-prod.cern.ch"
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb.cern.ch"
 
     for reqName in listRequests:

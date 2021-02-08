@@ -70,7 +70,7 @@
         "type": "<type 'int'>"
     }, 
     "DbsUrl": {
-        "default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader", 
+        "default": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
         "optional": true, 
         "type": "<type 'str'>"
     }, 

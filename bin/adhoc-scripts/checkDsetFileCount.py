@@ -43,7 +43,7 @@ def getFromRucio(dataset, logger):
     rucio = Rucio(acct=RUCIO_ACCT,
                   hostUrl=RUCIO_HOST,
                   authUrl=RUCIO_AUTH,
-                  configDict={'logger': logger, 'phedexCompatible': False})
+                  configDict={'logger': logger})
 
     result = dict()
     for block in rucio.getBlocksInContainer(dataset):

@@ -93,14 +93,12 @@ class RucioTest(EmulatedUnitTestCase):
         newParams = {"host": 'http://cmsrucio-int.cern.ch',
                      "auth_host": 'https://cmsrucio-auth-int.cern.ch',
                      "auth_type": "x509", "account": self.acct,
-                     "ca_cert": False, "timeout": 5, "phedexCompatible": False}
+                     "ca_cert": False, "timeout": 5}
         newKeys = list(newParams)
-        newKeys.remove("phedexCompatible")
 
         rucio = Rucio.Rucio(newParams['account'], hostUrl=newParams['host'],
                             authUrl=newParams['auth_host'], configDict=newParams)
 
-        self.assertEqual(getattr(rucio, "phedexCompat"), False)
         for key in newKeys:
             self.assertEqual(getattr(rucio.cli, key), newParams[key])
 
@@ -199,37 +197,9 @@ class RucioTest(EmulatedUnitTestCase):
 
     def testGetReplicaInfoForBlocks(self):
         """
-        Test `getReplicaInfoForBlocks` method, the ability to retrieve replica
-        locations provided a dataset or block. Same output as PhEDEx.
+        Test `getReplicaInfoForBlocks` method.
         """
-        res = self.myRucio.getReplicaInfoForBlocks(block=BLOCK)
-        self.assertEqual(len(res['phedex']['block']), 1)
-        block = res['phedex']['block'].pop()
-        self.assertEqual(block['name'], BLOCK)
-        replicas = [item['node'] for item in block['replica']]
-        self.assertTrue(len(replicas) > 0)
-
-        # same test, but providing a dataset as input (which has 4 blocks)
         res = self.myRucio.getReplicaInfoForBlocks(dataset=DSET)
-        self.assertTrue(len(res['phedex']['block']) >= 1)  # at this very moment, there are 11 replicas
-        blocks = [item['name'] for item in res['phedex']['block']]
-        self.assertTrue(BLOCK in blocks)
-        for item in res['phedex']['block']:
-            self.assertTrue(len(item['replica']) > 0)
-
-    def testGetReplicaInfoForBlocksRucio(self):
-        """
-        Test `getReplicaInfoForBlocks` method, however not using
-        the output compatibility with PhEDEx
-        """
-        theseArgs = self.defaultArgs.copy()
-        theseArgs['phedexCompatible'] = False
-        myRucio = Rucio.Rucio(self.acct,
-                              hostUrl=theseArgs['host'],
-                              authUrl=theseArgs['auth_host'],
-                              configDict=theseArgs)
-
-        res = myRucio.getReplicaInfoForBlocks(dataset=DSET)
         self.assertTrue(isinstance(res, list))
         self.assertTrue(len(res) >= 1)  # at this very moment, there are 11 replicas
         blocks = [item['name'] for item in res]

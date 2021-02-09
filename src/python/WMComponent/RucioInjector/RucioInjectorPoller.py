@@ -102,8 +102,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.rucio = Rucio(acct=self.rucioAcct,
                            hostUrl=config.RucioInjector.rucioUrl,
                            authUrl=config.RucioInjector.rucioAuthUrl,
-                           configDict={'logger': self.logger,
-                                       'phedexCompatible': False})
+                           configDict={'logger': self.logger})
 
         # metadata dictionary information to be added to block/container rules
         # cannot be a python dictionary, but a JSON string instead

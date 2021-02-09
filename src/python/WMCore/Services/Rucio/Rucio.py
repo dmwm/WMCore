@@ -136,9 +136,6 @@ class Rucio(object):
         self.rucioParams.setdefault('timeout', 600)
         self.rucioParams.setdefault('user_agent', 'wmcore-client')
 
-        # yield output compatible with the PhEDEx service class
-        self.phedexCompat = self.rucioParams.get("phedexCompatible", True)
-
         self.logger.info("WMCore Rucio initialization parameters: %s", self.rucioParams)
         self.cli = Client(rucio_host=hostUrl, auth_host=authUrl, account=acct,
                           ca_cert=self.rucioParams['ca_cert'], auth_type=self.rucioParams['auth_type'],
@@ -243,11 +240,11 @@ class Rucio(object):
         _getReplicaInfoForBlocks_
 
         Get block replica information.
-        It mimics the same API available in the PhEDEx Service module.
+        It used to mimic the same PhEDEx wrapper API, listing all the
+        current locations where the provided input data is.
 
         :kwargs: either a dataset or a block name has to be provided. Not both!
-        :return: a list of dictionaries with replica information; or a dictionary
-        compatible with PhEDEx.
+        :return: a list of dictionaries with replica information
         """
         kwargs.setdefault("scope", "cms")
 
@@ -275,21 +272,11 @@ class Rucio(object):
             if item['state'].upper() == 'AVAILABLE':
                 resultDict[item['name']].append(item['rse'])
 
-        if self.phedexCompat:
-            # then we need to convert it to a format like:
-            # {"phedex": {"block": [{"name": "block_A", "replica": [{"node": "nodeA"}, {"node": "nodeB"}]},
-            #                        etc etc
-            #                        }}
-            for blockName, rses in viewitems(resultDict):
-                replicas = [{"node": rse} for rse in rses]
-                result.append({"name": blockName, "replica": replicas})
-            result = {'phedex': {'block': result}}
-        else:
-            # then a list of dictionaries sounds right, e.g.:
-            # [{"name": "block_A", "replica": ["nodeA", "nodeB"]},
-            #  {"name": "block_B", etc etc}]
-            for blockName, rses in viewitems(resultDict):
-                result.append({"name": blockName, "replica": list(set(rses))})
+        # Finally, convert it to a list of dictionaries, like:
+        # [{"name": "block_A", "replica": ["nodeA", "nodeB"]},
+        #  {"name": "block_B", etc etc}]
+        for blockName, rses in viewitems(resultDict):
+            result.append({"name": blockName, "replica": list(set(rses))})
 
         return result
 

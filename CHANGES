@@ -1,10 +1,15 @@
+1.4.6.pre3 to 1.4.6.pre4:
+  - Skip RSE quota check for RelVal input data placement; added rule meta data (Alan Malta Rodrigues) #10275
+  - Remove PhEDEx backwards compatibility from the Rucio module (Alan Malta Rodrigues) #10273
+
+
 1.4.6.pre2 to 1.4.6.pre3:
   - Update production DBS URL to cmsweb-prod - bin, doc, deploy, etc (Alan Malta Rodrigues) #10269
   - Update URL during spec creation; and a few other places (Alan Malta Rodrigues) #10269
   - Update production DBS URL to cmsweb-prod (Alan Malta Rodrigues) #10269
-  - Minor comment update on requirements for python3 stack (Alan Malta Rodrigues) #9
-  - Update snapshot of Unified campaigns; update a couple json templates (Alan Malta Rodrigues) 10268
-  - Check if DID exists before creating a replication rule (Alan Malta Rodrigues) #9
+  - Minor comment update on requirements for python3 stack (Alan Malta Rodrigues) #10268
+  - Update snapshot of Unified campaigns; update a couple json templates (Alan Malta Rodrigues) #10242
+  - Check if DID exists before creating a replication rule (Alan Malta Rodrigues) #10265
 
 
 1.4.6.pre1 to 1.4.6.pre2:

@@ -1,3 +1,7 @@
+1.4.5 to 1.4.5.cmsweb1:
+  - Skip RSE quota check for RelVal input data placement; added rule meta data (Alan Malta Rodrigues) #10276
+
+
 1.4.5.pre4 to 1.4.5:
 
 

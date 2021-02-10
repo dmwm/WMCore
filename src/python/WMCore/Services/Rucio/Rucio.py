@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 from builtins import str, object
 from future.utils import viewitems, viewvalues
 
+import json
 import logging
 import random
 from copy import deepcopy
@@ -547,6 +548,8 @@ class Rucio(object):
         kwargs.setdefault('ask_approval', False)
         kwargs.setdefault('asynchronous', True)
         kwargs.setdefault('priority', 3)
+        if isinstance(kwargs.get('meta'), dict):
+            kwargs['meta'] = json.dumps(kwargs['meta'])
 
         if not isinstance(names, (list, set)):
             names = [names]

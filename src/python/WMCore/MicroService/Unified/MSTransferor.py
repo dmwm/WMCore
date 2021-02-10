@@ -597,7 +597,7 @@ class MSTransferor(MSCore):
                 # secondary already in place
                 continue
 
-            if wflow.getPURSElist():
+            if wflow.getPURSElist() and not wflow.isRelVal():
                 # then the whole workflow is very much limited to a single site
                 nodes = list(wflow.getPURSElist() & self.rseQuotas.getAvailableRSEs())
                 if not nodes:
@@ -675,6 +675,7 @@ class MSTransferor(MSCore):
                 'lifetime': self.msConfig['rulesLifetime'],
                 'account': self.msConfig['rucioAccount'],
                 'grouping': subLevel,
+                'meta': {'workflow_group': wflow.getWorkflowGroup()},
                 'comment': 'WMCore MSTransferor input data placement'}
 
         if wflow.getParentDataset():
@@ -773,6 +774,10 @@ class MSTransferor(MSCore):
 
         self.logger.info("  final list of PSNs to be use: %s", psns)
         pnns = self._getPNNsFromPSNs(psns)
+
+        if wflow.isRelVal():
+            self.logger.info("RelVal workflow '%s' ignores sites out of quota", wflow.getName())
+            return list(pnns)
 
         self.logger.info("List of out-of-space RSEs dropped for '%s' is: %s",
                          wflow.getName(), pnns & self.rseQuotas.getOutOfSpaceRSEs())

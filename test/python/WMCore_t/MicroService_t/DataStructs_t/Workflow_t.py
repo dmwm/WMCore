@@ -346,5 +346,41 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(sizeChunks[0], 26)
         self.assertEqual(sizeChunks[1], 13)
 
+    def testIsRelVal(self):
+        """
+        Test the `isRelVal` method functionality
+        """
+        requestTypes = ("StepChain", "TaskChain", "ReReco")
+        for wflowType in requestTypes:
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType})
+            self.assertFalse(wflowObj.isRelVal())
+
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi"})
+            self.assertFalse(wflowObj.isRelVal())
+
+        for wflowType in requestTypes:
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal"})
+            self.assertTrue(wflowObj.isRelVal())
+
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "HIRelVal"})
+            self.assertTrue(wflowObj.isRelVal())
+
+    def testGetWorkflowGroup(self):
+        """
+        Test the `getWorkflowGroup` method functionality
+        """
+        requestTypes = ("StepChain", "TaskChain", "ReReco")
+        for wflowType in requestTypes:
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType})
+            self.assertEqual(wflowObj.getWorkflowGroup(), "production")
+
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "ReDigi"})
+            self.assertEqual(wflowObj.getWorkflowGroup(), "production")
+
+        for wflowType in requestTypes:
+            wflowObj = Workflow("wflow_test", {"RequestType": wflowType, "SubRequestType": "RelVal"})
+            self.assertEqual(wflowObj.getWorkflowGroup(), "relval")
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -453,3 +453,21 @@ class Workflow(object):
                 newItem = dict(type="parent", name=parentName, campaign=item["campaign"])
                 break
         self.dataCampaignMap.append(newItem)
+
+    def isRelVal(self):
+        """
+        Helper function to evaluate whether this workflow corresponds to
+        a RelVal workflow or not.
+        """
+        return self.data.get('SubRequestType') in ['RelVal', 'HIRelVal']
+
+    def getWorkflowGroup(self):
+        """
+        Defines a workflow according to its group/activity, such as:
+          *) release validation workflows
+          *) standard central production workflows
+        :return: a string with the workflow class: relval, processing
+        """
+        if self.isRelVal():
+            return "relval"
+        return "production"

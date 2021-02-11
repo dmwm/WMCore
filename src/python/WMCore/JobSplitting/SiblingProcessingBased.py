@@ -61,7 +61,7 @@ class SiblingProcessingBased(JobFactory):
 
             fileSites[completeFile["pnn"]].append(completeFile)
 
-        for siteName in fileSites.keys():
+        for siteName in fileSites:
             if len(fileSites[siteName]) < filesPerJob and not filesetClosed:
                 continue
 

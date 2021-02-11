@@ -16,6 +16,8 @@ responsible for updating their state (and name).
 
 from __future__ import print_function
 
+from builtins import int, str, bytes
+
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Mask import Mask as WMMask
 from WMCore.Services.UUIDLib import makeUUID
@@ -423,7 +425,7 @@ class Job(WMBSBase, WMJob):
         """
 
         if not fwjrPath:
-            if 'fwjr' in self.keys():
+            if 'fwjr' in self:
                 fwjrPath = self['fwjr']
             else:
                 return None
@@ -443,16 +445,15 @@ class Job(WMBSBase, WMJob):
         job = WMJob(name=self['name'])
 
         # Transfer all simple keys
-        for key in self.keys():
-            keyType = type(self.get(key))
-            if keyType in [str, long, int, float]:
+        for key in self:
+            if isinstance(self.get(key), (str, bytes, int, float)):
                 job[key] = self[key]
 
         for fileObj in self['input_files']:
             job['input_files'].append(fileObj.returnDataStructsFile())
 
         job['mask'] = WMMask()
-        for key in self["mask"].keys():
+        for key in self["mask"]:
             job["mask"][key] = self["mask"][key]
 
         job.baggage = self.baggage

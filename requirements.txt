@@ -13,7 +13,7 @@ dbs-client==3.13.1            # wmagent,reqmgr2,reqmon,global-workqueue
 decorator==3.4.2              # wmagent
 funcsigs==1.0.2               # wmagent
 future==0.18.2                # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
-httplib2==0.18.0              # wmagent,reqmgr2,reqmon,acdcserver,global-workqueue,reqmgr2ms
+httplib2==0.19.0              # wmagent,reqmgr2,reqmon,acdcserver,global-workqueue,reqmgr2ms
 Markdown==3.0.1               # wmagent
 mock==2.0.0                   # wmagent
 MySQL-python==1.2.5           # wmagent

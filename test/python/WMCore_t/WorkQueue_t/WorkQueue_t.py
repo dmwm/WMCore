@@ -100,7 +100,7 @@ class WorkQueueTest(WorkQueueTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True, mockSiteDB=True)
+        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
 
     def setupConfigCacheAndAgrs(self):
         self.rerecoArgs = ReRecoWorkloadFactory.getTestArguments()

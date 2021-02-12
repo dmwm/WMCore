@@ -9,7 +9,6 @@ import unittest
 
 import mock
 
-from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
@@ -18,7 +17,6 @@ from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
-from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 from WMQuality.Emulators.RucioClient.MockRucioApi import MockRucioApi
 
 
@@ -29,12 +27,11 @@ class EmulatedUnitTestCase(unittest.TestCase):
     """
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
-                 mockSiteDB=True, mockReqMgrAux=True, mockLogDB=True,
+                 mockReqMgrAux=True, mockLogDB=True,
                  mockApMon=True, mockMemoryCache=True, mockPyCondor=True,
                  mockCRIC=True, mockRucio=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
-        self.mockSiteDB = mockSiteDB
         self.mockReqMgrAux = mockReqMgrAux
         self.mockLogDB = mockLogDB
         self.mockApMon = mockApMon
@@ -81,11 +78,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
                 self.rucioPatchers.append(mock.patch(module, new=MockRucioApi))
                 self.rucioPatchers[-1].start()
                 self.addCleanup(self.rucioPatchers[-1].stop)
-
-        if self.mockSiteDB:
-            self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)
-            self.inUseSiteDBApi = self.siteDBPatcher.start()
-            self.addCleanup(self.siteDBPatcher.stop)
 
         if self.mockReqMgrAux:
             self.reqMgrAuxPatchers = []

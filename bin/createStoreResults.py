@@ -5,7 +5,7 @@ https://github.com/dmwm/WMCore/wiki/StoreResults-requests
 Pre-requisites:
  1. a valid proxy in your X509_USER_PROXY variable
  2. wmagent env: source /data/srv/wmagent/current/apps/wmagent/etc/profile.d/init.sh
- 3. have the correct permissions in SiteDB, otherwise dataset migration won't work
+ 3. have the correct permissions in CRIC, otherwise dataset migration won't work
 
 Expected input json file like:
 [{"InputDataset": "/EmbeddingRun2016B/MuTauFinalState-imputSep16DoubleMu_mirror_miniAOD-v2/USER",

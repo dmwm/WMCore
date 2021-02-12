@@ -33,7 +33,7 @@ main.application = "reqmgr2"
 main.port = 9988  # main application port it listens on
 main.index = "ui"
 # Defaults to allow any CMS authenticated user. Write APIs should require
-# additional roles in SiteDB (i.e. "Admin" role for the "ReqMgr" group)
+# additional roles in CRIC (i.e. "Admin" role for the "ReqMgr" group)
 main.authz_defaults = {"role": None, "group": None, "site": None}
 main.log_screen = True
 

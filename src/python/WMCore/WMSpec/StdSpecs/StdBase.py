@@ -246,41 +246,6 @@ class StdBase(object):
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
-    # FIXME: this function is getting deprecated. Will be removed in March 2020
-    def reportWorkflowToDashboard(self, dashboardActivity):
-        """
-        _reportWorkflowToDashboard_
-        Gathers workflow information from the arguments and reports it to the
-        dashboard
-        """
-        try:
-            # Create a fake config
-            conf = ConfigSection()
-            conf.section_('DashboardReporter')
-            conf.DashboardReporter.dashboardHost = self.dashboardHost
-            conf.DashboardReporter.dashboardPort = self.dashboardPort
-
-            # Create the reporter
-            reporter = DashboardReporter(conf)
-
-            # Assemble the info
-            workflow = {}
-            workflow['name'] = self.workloadName
-            workflow['application'] = self.frameworkVersion
-            workflow['TaskType'] = dashboardActivity
-            # Let's try to build information about the inputDataset
-            dataset = 'DoesNotApply'
-            if hasattr(self, 'inputDataset'):
-                dataset = self.inputDataset
-            workflow['datasetFull'] = dataset
-            workflow['user'] = 'cmsdataops'
-
-            # Send the workflow info
-            reporter.addTask(workflow)
-        except Exception:
-            # This is not critical, if it fails just leave it be
-            logging.error("There was an error with dashboard reporting")
-
     def createWorkload(self):
         """
         _createWorkload_

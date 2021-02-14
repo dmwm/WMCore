@@ -14,7 +14,7 @@ import WMCore.WMSpec.WMStep as WMStep
 import WMCore.WMSpec.WMTask as WMTask
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
@@ -40,6 +40,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
         self.testDir = self.testInit.generateWorkDir()
+        self.rucioAcct = "wmcore_transferor"
 
     def tearDown(self):
         """
@@ -70,58 +71,44 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         result = self.configDatabase.commitOne(config)
         return result[0]["id"]
 
-    def _queryAndCompareWithDBS(self, pileupDict, defaultArguments, dbsUrl):
+    def _queryAndCompareWithDBS(self, pileupDict, pileupConfig, dbsUrl):
         """
         pileupDict is a Python dictionary containing particular pileup
         configuration information. Query DBS on given dataset contained
-        now in both input defaultArguments as well as in the pileupDict
+        now in both input pileupConfig as well as in the pileupDict
         and compare values.
-
         """
+        self.assertItemsEqual(list(pileupDict), list(pileupConfig))
         reader = DBS3Reader(dbsUrl)
-        # FIXME: this will have to be converted to Rucio data location, eventually...
-        phedex = PhEDEx()
+        rucioObj = Rucio(self.rucioAcct)
 
-        inputArgs = defaultArguments["PileupConfig"]
-
-        self.assertEqual(len(inputArgs), len(pileupDict),
-                         "Number of pileup types different.")
-        for pileupType in inputArgs:
-            m = ("pileup type '%s' not in PileupFetcher-produced pileup "
-                 "configuration: '%s'" % (pileupType, pileupDict))
-            self.assertTrue(pileupType in pileupDict, m)
-
-        # now query DBS for compare actual results on files lists for each
-        # pileup type and dataset and location (storage element names)
-        # pileupDict is saved in the file and now comparing items of this
-        # configuration with actual DBS results, the structure of pileupDict:
-        #    {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
-        #                     "BlockB": {"FileList": [], "PhEDExNodeNames": []}, ....}
-        for pileupType, datasets in inputArgs.items():
+        # now query DBS and compare the blocks and files from DBS
+        # against those returned by the PileupFetcher
+        for pileupType, datasets in pileupConfig.items():
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
 
             for dataset in datasets:
-                dbsFileBlocks = reader.listFileBlocks(dataset=dataset)
-                blocksLocation = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
-                for dbsFileBlockName in dbsFileBlocks:
+                dbsBlocks = reader.listFileBlocks(dataset=dataset)
+                rucioBlocksLocation = rucioObj.getPileupLockedAndAvailable(dataset,
+                                                                           account=self.rucioAcct)
+
+                # first, validate the number of blocks and their names
+                self.assertItemsEqual(list(blockDict), dbsBlocks)
+                self.assertItemsEqual(list(blockDict), list(rucioBlocksLocation))
+                # now validate the block location between Rucio and PileupFetcher
+                for block, blockLocation in blockDict.iteritems():
+                    self.assertItemsEqual(blockLocation['PhEDExNodeNames'], rucioBlocksLocation[block])
+
+                    # finally, validate the files
                     fileList = []
-                    pnns = set()
-                    for pnn in blocksLocation[dbsFileBlockName]:
-                        pnns.add(pnn)
                     # now get list of files in the block
-                    dbsFiles = reader.listFilesInBlock(dbsFileBlockName)
+                    dbsFiles = reader.listFilesInBlock(block)
                     for dbsFile in dbsFiles:
                         fileList.append(dbsFile["LogicalFileName"])
-                    # now compare the sets:
-                    m = ("PNNs don't agree for pileup type '%s', "
-                         "dataset '%s' in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    self.assertEqual(set(blockDict[dbsFileBlockName]["PhEDExNodeNames"]), pnns, m)
-                    m = ("FileList don't agree for pileup type '%s', dataset '%s' "
-                         " in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    self.assertItemsEqual(blockDict[dbsFileBlockName]["FileList"], fileList, m)
+                    self.assertItemsEqual(blockDict[block]["FileList"], fileList)
 
-    def _queryPileUpConfigFile(self, defaultArguments, task, taskPath):
+    def _queryPileUpConfigFile(self, pileupConfig, task, taskPath):
         """
         Query and compare contents of the the pileup JSON
         configuration files. Iterate over tasks's steps as
@@ -134,14 +121,14 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                 decoder = JSONDecoder()
 
                 stepPath = "%s/%s" % (taskPath, helper.name())
-                pileupConfig = "%s/%s" % (stepPath, "pileupconf.json")
+                pileupPath = "%s/%s" % (stepPath, "pileupconf.json")
                 try:
-                    with open(pileupConfig) as fObj:
+                    with open(pileupPath) as fObj:
                         pileupDict = decoder.decode(fObj.read())
                 except IOError:
-                    m = "Could not read pileup JSON configuration file: '%s'" % pileupConfig
+                    m = "Could not read pileup JSON configuration file: '%s'" % pileupPath
                     self.fail(m)
-                self._queryAndCompareWithDBS(pileupDict, defaultArguments, helper.data.dbsUrl)
+                self._queryAndCompareWithDBS(pileupDict, pileupConfig, helper.data.dbsUrl)
 
     def testPileupFetcherOnMC(self):
         pileupMcArgs = TaskChainWorkloadFactory.getTestArguments()
@@ -157,7 +144,6 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         # now that the workload was created and args validated, we can add this PileupConfig
         pileupMcArgs["PileupConfig"] = parsePileupConfig(pileupMcArgs['Task1']["MCPileup"],
                                                          pileupMcArgs['Task1']["DataPileup"])
-
         # Since this is test of the fetcher - The loading from WMBS isn't
         # really necessary because the fetching happens before the workflow
         # is inserted into WMBS: feed the workload instance directly into fetcher:
@@ -174,7 +160,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                 # create Sandbox for the fetcher ...
                 creator._makePathonPackage(taskPath)
                 fetcher(task)
-                self._queryPileUpConfigFile(pileupMcArgs, task, taskPath)
+                self._queryPileUpConfigFile(pileupMcArgs["PileupConfig"], task, taskPath)
 
 
 if __name__ == "__main__":

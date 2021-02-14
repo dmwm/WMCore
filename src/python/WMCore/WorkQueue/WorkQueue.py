@@ -17,7 +17,6 @@ import threading
 import time
 from collections import defaultdict
 
-from Utils.Utilities import usingRucio
 from WMCore import Lexicon
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
@@ -185,15 +184,12 @@ class WorkQueue(WorkQueueBase):
                 raise RuntimeError('Only blocks can be released on location')
 
         self.params.setdefault('rucioAccount', "wmcore_transferor")
-        # FIXME remove these attributes initialized to None
-        if usingRucio():
-            self.phedexService = None
-            self.rucio = Rucio(self.params['rucioAccount'],
-                               self.params['rucioUrl'], self.params['rucioAuthUrl'],
-                               configDict=dict(logger=self.logger))
-        else:
-            self.rucio = None
-            self.phedexService = PhEDEx()
+
+        self.phedexService = None
+        self.rucio = Rucio(self.params['rucioAccount'],
+                           self.params['rucioUrl'], self.params['rucioAuthUrl'],
+                           configDict=dict(logger=self.logger))
+
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
                                                               phedex=self.phedexService,

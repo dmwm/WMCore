@@ -4,6 +4,7 @@
 BossAir preliminary test
 """
 
+from builtins import range
 import threading
 import unittest
 

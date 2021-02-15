@@ -24,7 +24,7 @@ class NestedModel(RESTModel):
         args = list(args)
         basemethnom = args[0]
         basemethod = self.methods[verb][basemethnom]
-        children = self.methods[verb][basemethnom]
+        children = list(self.methods[verb][basemethnom])
         method = children.pop(children.index('default'))
         try:
             # is there a method in the keywords?

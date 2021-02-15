@@ -13,6 +13,8 @@ is based on the WMCore.WMInit class.
 """
 from __future__ import print_function
 
+from builtins import object
+
 import logging
 import os
 import shutil

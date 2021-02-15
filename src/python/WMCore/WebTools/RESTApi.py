@@ -48,7 +48,7 @@ class RESTApi(WebAPI):
                                  'version': 1}})
 
         # TODO: implement HEAD & TRACE
-        self.supporttypes = self.formatter.supporttypes.keys()
+        self.supporttypes = list(self.formatter.supporttypes)
 
     def _set_model(self, config):
         """
@@ -107,25 +107,25 @@ class RESTApi(WebAPI):
         except HTTPError as h:
             # If something raises an HTTPError assume it's something that should
             # go to the client
-            response.status = h[0]
-            for kwarg in kwargs.keys():
+            response.status = h.args[0]
+            for kwarg in kwargs:
                 if isinstance(kwargs[kwarg], cgi.FieldStorage):
                     kwargs[kwarg] = 'FieldStorage class, not printed.'
-            self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, h[1]))
-            return self._formatResponse({'exception': h[0],
+            self.debug('call to %s with args: %s kwargs: %s resulted in %s' % (request.method, args, kwargs, h.args[1]))
+            return self._formatResponse({'exception': h.args[0],
                                         'type': 'HTTPError',
-                                        'message': h[1]}, expires=0,
+                                        'message': h.args[1]}, expires=0,
                                         format=kwargs.get('return_type', None))
         except Exception as e:
             # If something raises a generic exception assume the details are private
             # and should not go to the client
             response.status = 500
-            for kwarg in kwargs.keys():
+            for kwarg in kwargs:
                 if isinstance(kwargs[kwarg], cgi.FieldStorage):
                     kwargs[kwarg] = 'FieldStorage class, not printed.'
             debugMsg = replaceToSantizeURL("""call to %s with args: %s kwargs: %s resulted in %s \n
                                               stack trace: %s""" % (request.method, args,
-                                                     kwargs, str(e), traceback.format_exc()))
+                                                     kwargs, e.__str__(), traceback.format_exc()))
             self.debug(debugMsg)
             return self._formatResponse({'exception': 500,
                                         'type': e.__class__.__name__,

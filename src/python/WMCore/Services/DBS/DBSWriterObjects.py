@@ -12,7 +12,6 @@ from builtins import int
 
 import logging
 
-from DBSAPI.dbsApi import DbsApi
 from DBSAPI.dbsException import *
 from DBSAPI.dbsApiException import *
 from DBSAPI.dbsPrimaryDataset import DbsPrimaryDataset
@@ -50,7 +49,7 @@ def createPrimaryDataset(datasetInfo, apiRef = None):
     else:
         PrimaryDatasetType = 'mc'
 
-    logging.debug("Inserting PrimaryDataset %s with Type %s"%(datasetInfo["PrimaryDataset"],PrimaryDatasetType))
+    logging.debug("Inserting PrimaryDataset %s with Type %s", datasetInfo["PrimaryDataset"], PrimaryDatasetType)
     primary = DbsPrimaryDataset(Name = datasetInfo["PrimaryDataset"], Type=PrimaryDatasetType)
 
     if apiRef != None:
@@ -242,7 +241,7 @@ def createProcessedDataset(primaryDataset, algorithm, datasetInfo,
     if apiRef != None:
         apiRef.insertProcessedDataset(processedDataset)
     #
-    logging.debug("PrimaryDataset: %s ProcessedDataset: %s DataTierList: %s  requested by PhysicsGroup: %s "%(primaryDataset['Name'],name,tierList,physicsGroup))
+    logging.debug("PrimaryDataset: %s ProcessedDataset: %s DataTierList: %s  requested by PhysicsGroup: %s ", primaryDataset['Name'], name, tierList, physicsGroup)
     return processedDataset
 
 
@@ -326,7 +325,7 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
 
             lumiList.append(lumi)
 
-            logging.debug("Lumi associated to file is: %s"%([x for x in lumiList]))
+            logging.debug("Lumi associated to file is: %s" % ([x for x in lumiList]))
 
     #  //
     # // Dataset info related to files and creation of DbsFile object
@@ -391,16 +390,16 @@ def getDBSFileBlock(dbsApiRef, procDataset, pnn):
     return that
 
     """
-    logging.warning("getDBSFileBlocks(): dset, pnn: %s, %s" % (procDataset, pnn))
+    logging.warning("getDBSFileBlocks(): dset, pnn: %s, %s", procDataset, pnn)
 
     allBlocks = dbsApiRef.listBlocks(procDataset, block_name = "*",
                                      phedex_node_name = "*")
 
-    logging.warning("getDBSFileBlock(): all blocks %s" % allBlocks)
+    logging.warning("getDBSFileBlock(): all blocks %s", allBlocks)
 
     openBlocks = [b for b in allBlocks if str(b['OpenForWriting']) == "1"]
 
-    logging.warning("getDBSFileBlocks(): open blocks %s" % openBlocks)
+    logging.warning("getDBSFileBlocks(): open blocks %s", openBlocks)
 
     blockRef = None
     if len(openBlocks) > 1:
@@ -450,5 +449,5 @@ def getDBSFileBlock(dbsApiRef, procDataset, pnn):
 
 
 
-    logging.warning("Open FileBlock located at PNN: %s to use is FileBlock: %s "%(pnn,blockRef['Name']))
+    logging.warning("Open FileBlock located at PNN: %s to use is FileBlock: %s ", pnn, blockRef['Name'])
     return blockRef

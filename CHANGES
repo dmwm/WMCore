@@ -1,3 +1,11 @@
+1.4.6.pre4 to 1.4.6.pre5:
+  - [py2py3] src/python/A/B/C slice 5 - issue #10116 - src (Dario Mapelli) #10262
+  - [py2py3] src/python/A/B/C slice 6 - issue #10127 - src (Dario Mapelli) #10277
+  - Remove reportWorkflowToDashboard method from StdBase (Alan Malta Rodrigues) #10281
+  - Completely remove SiteDB, including emulators and tests (Alan Malta Rodrigues) #10280
+  - Bump httplib2 from 0.18.1 to 0.19.0 (dependabot[bot]) #10271
+
+
 1.4.6.pre3 to 1.4.6.pre4:
   - Skip RSE quota check for RelVal input data placement; added rule meta data (Alan Malta Rodrigues) #10275
   - Remove PhEDEx backwards compatibility from the Rucio module (Alan Malta Rodrigues) #10273

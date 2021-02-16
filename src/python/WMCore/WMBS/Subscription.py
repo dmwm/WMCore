@@ -10,6 +10,8 @@ associated to a single fileset and a single workflow.
 """
 from __future__ import print_function
 
+from future.utils import listvalues
+
 import logging
 from collections import Counter
 
@@ -200,7 +202,7 @@ class Subscription(WMBSBase, WMSubscription):
             if loadChecksums:
                 fl.loadChecksum()
             fl.update(fileInfoDict[f['file']])
-            if 'locations' in f.keys():
+            if 'locations' in f:
                 fl.setLocation(f['locations'], immediateSave=False)
             files.add(fl)
 
@@ -324,9 +326,9 @@ class Subscription(WMBSBase, WMSubscription):
         """
         jobLocate = self.daofactory(classname="Subscriptions.GetNumberOfJobsPerSite")
 
-        result = jobLocate.execute(location=location,
-                                   subscription=self['id'],
-                                   state=state).values()[0]
+        result = listvalues(jobLocate.execute(location=location,
+                                              subscription=self['id'],
+                                              state=state))[0]
         return result
 
     def getJobGroups(self):
@@ -622,7 +624,7 @@ class Subscription(WMBSBase, WMSubscription):
         maskList = []
         for job in jobList:
             mask = job['mask']
-            if len(mask['runAndLumis'].keys()) > 0:
+            if len(list(mask['runAndLumis'].keys())) > 0:
                 # Then we have multiple binds
                 binds = mask.produceCommitBinds(jobID=job['id'])
                 maskList.extend(binds)

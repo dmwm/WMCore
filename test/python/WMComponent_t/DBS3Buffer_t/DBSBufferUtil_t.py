@@ -5,6 +5,7 @@ _DBSBufferUtil_t_
 Unit tests for DBSBufferUtil class
 """
 
+from builtins import range
 import unittest
 import threading
 

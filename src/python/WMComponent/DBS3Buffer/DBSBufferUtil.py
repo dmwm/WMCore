@@ -6,6 +6,8 @@ APIs related to using the DBSBuffer.
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import threading
 from collections import defaultdict
 
@@ -53,14 +55,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in dbsfile:
                 # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in dbsfile['runInfo']:
                     run = Run(runNumber=r)
                     run.extend(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in dbsfile:
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn=lfn)
@@ -139,14 +141,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in dbsfile:
                 # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in dbsfile['runInfo']:
                     run = Run(runNumber=r)
                     run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in dbsfile:
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn=lfn)
@@ -173,14 +175,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in dbsfile:
                 # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in dbsfile['runInfo']:
                     run = Run(runNumber=r)
                     run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in dbsfile:
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn=lfn)
@@ -220,7 +222,7 @@ class DBSBufferUtil(WMConnectionBase):
         returns dictionary with kew as workflow and containing dbs/phedex upload status
         """
         summary = defaultdict(dict)
-        for workflow, value in data.iteritems():
+        for workflow, value in viewitems(data):
             # only getting completed workflows
             summary[workflow]["Completed"] = True
 

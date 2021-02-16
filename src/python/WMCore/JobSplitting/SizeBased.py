@@ -30,7 +30,7 @@ class SizeBased(JobFactory):
         sizePerJob = int(kwargs.get("size_per_job", 1000))
         locationDict = self.sortByLocation()
 
-        for location in locationDict.keys():
+        for location in locationDict:
             self.newGroup()
             fileList     = locationDict[location]
             self.newJob(name = makeUUID())

@@ -9,6 +9,9 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
+from builtins import object
+from future.utils import viewitems
+
 import logging
 
 from WMCore.Storage.Registry import retrieveStageOutImpl
@@ -34,7 +37,7 @@ class DeleteMgrError(WMException):
         self.data.setdefault("ErrorType", self.__class__.__name__)
 
 
-class DeleteMgr:
+class DeleteMgr(object):
     """
     _DeleteMgr_
 
@@ -150,7 +153,7 @@ class DeleteMgr:
                 overrideParams['option'] = ""
 
         msg = "=======Delete Override Initialised:================\n"
-        for key, val in overrideParams.items():
+        for key, val in viewitems(overrideParams):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         self.logger.info(msg)

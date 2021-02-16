@@ -4,6 +4,8 @@ _ParentlessMergeBySize_
 
 WMBS merging that ignores file parents.
 """
+from __future__ import division
+
 import time
 import threading
 
@@ -203,11 +205,11 @@ class ParentlessMergeBySize(JobFactory):
 
         groupedFiles = self.defineFileGroups(mergeableFiles)
 
-        for pnn in groupedFiles.keys():
+        for pnn in groupedFiles:
             if self.mergeAcrossRuns:
                 self.defineMergeJobs(groupedFiles[pnn])
             else:
-                for runNumber in groupedFiles[pnn].keys():
+                for runNumber in groupedFiles[pnn]:
                     self.defineMergeJobs(groupedFiles[pnn][runNumber])
 
         return

@@ -73,7 +73,7 @@ class MySQLInterface(DBInterface):
         # variables: RELEASE_VERSION and RELEASE_VERSION_ID the former will
         # match against the latter, causing problems.  We'll sort the variable
         # names by length to guard against this.
-        bindVarNames = origBind.keys()
+        bindVarNames = list(origBind)
         bindVarNames.sort(stringLengthCompare)
 
         bindPositions = {}

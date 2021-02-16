@@ -69,7 +69,7 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
 
         """
         if method == 'GET':
-            for prop in param.kwargs.keys():
+            for prop in list(param.kwargs):
                 safe.kwargs[prop] = param.kwargs.pop(prop)
             safe.kwargs['API'] = api
             if param.args:
@@ -112,7 +112,7 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
         result = {'status': 'Not supported, %s' % msg, 'request': None}
         try:
             data = json.load(cherrypy.request.body)
-            if 'request' in data.keys():
+            if 'request' in data:
                 reqName = data['request']
                 result = self.mgr.info(reqName)
             return results(result)

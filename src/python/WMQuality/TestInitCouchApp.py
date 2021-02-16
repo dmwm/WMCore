@@ -11,6 +11,7 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import object
 from future import standard_library
 standard_library.install_aliases()
 
@@ -23,7 +24,7 @@ from WMCore.Database.CMSCouch import CouchServer
 
 from WMQuality.TestInit import TestInit
 
-class CouchAppTestHarness:
+class CouchAppTestHarness(object):
     """
     Test Harness for installing a couch database instance with several couchapps
     in a unittest.setUp and wiping it out in a unittest.tearDown

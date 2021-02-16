@@ -8,6 +8,8 @@ into DBS if required
 """
 from __future__ import print_function
 
+from builtins import int
+
 import logging
 
 from DBSAPI.dbsApi import DbsApi
@@ -292,7 +294,7 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
             for runinfo in fjrFileInfo.runs:
 
                 run = DbsRun(
-                    RunNumber = long(runinfo),
+                    RunNumber = int(runinfo),
                     NumberOfEvents = 0,
                     NumberOfLumiSections = 0,
                     TotalLuminosity = 0,
@@ -310,12 +312,12 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
         for lumiinfo in fjrFileInfo.getLumiSections():
 
             lumi = DbsLumiSection(
-                LumiSectionNumber = long(lumiinfo['LumiSectionNumber']),
+                LumiSectionNumber = int(lumiinfo['LumiSectionNumber']),
                 StartEventNumber = 0,
                 EndEventNumber = 0,
                 LumiStartTime = 0,
                 LumiEndTime = 0,
-                RunNumber = long(lumiinfo['RunNumber']),
+                RunNumber = int(lumiinfo['RunNumber']),
                 )
 
             # Isnt needed, causes monster slowdown

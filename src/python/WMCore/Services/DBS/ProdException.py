@@ -6,8 +6,7 @@ General Exception class for Prod modules
 
 """
 
-
-
+from future.utils import viewitems
 
 import exceptions
 import inspect
@@ -92,7 +91,7 @@ class ProdException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
+        for key, value in viewitems(data):
             self[key] = value
         return
 
@@ -106,7 +105,7 @@ class ProdException(exceptions.Exception):
         strg += self.message
         strg +="</Message>\n"
         strg +="<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg +="<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -124,6 +123,6 @@ class ProdException(exceptions.Exception):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
         strg += "Message: %s\n" % self.message
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "\t%s : %s\n" % (key, value, )
         return strg

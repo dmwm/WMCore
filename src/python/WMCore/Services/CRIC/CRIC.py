@@ -1,4 +1,7 @@
 from __future__ import (division, print_function)
+
+from builtins import zip, str, bytes
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -141,7 +144,7 @@ class CRIC(Service):
         nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
             nodeNames = [x for x in nodeNames if not x.endswith("_Buffer")]
-        if pattern and isinstance(pattern, basestring):
+        if pattern and isinstance(pattern, (str, bytes)):
             pattern = re.compile(pattern)
             nodeNames = [x for x in nodeNames if pattern.match(x)]
         return nodeNames
@@ -155,7 +158,7 @@ class CRIC(Service):
         """
         mapping = self._CRICSiteQuery(callname='data-processing')
 
-        if isinstance(pnns, basestring):
+        if isinstance(pnns, (str, bytes)):
             pnns = [pnns]
 
         psns = set()
@@ -180,7 +183,7 @@ class CRIC(Service):
         """
         mapping = self._CRICSiteQuery(callname='data-processing')
 
-        if isinstance(psns, basestring):
+        if isinstance(psns, (str, bytes)):
             psns = [psns]
 
         pnns = set()
@@ -204,8 +207,8 @@ class CRIC(Service):
         :param psnPattern: a pattern string
         :return: a dictionary key'ed by PSN names, with sets of PNNs as values
         """
-        if not isinstance(psnPattern, basestring):
-            raise TypeError('psnPattern argument must be of type basestring')
+        if not isinstance(psnPattern, (str, bytes)):
+            raise TypeError('psnPattern argument must be of type str or bytes')
 
         results = self._CRICSiteQuery(callname='data-processing')
         mapping = {}
@@ -222,8 +225,8 @@ class CRIC(Service):
         :param pnnPattern: a pattern string
         :return: a dictionary key'ed by PNN names, with sets of PSNs as values
         """
-        if not isinstance(pnnPattern, basestring):
-            raise TypeError('pnnPattern argument must be of type basestring')
+        if not isinstance(pnnPattern, (str, bytes)):
+            raise TypeError('pnnPattern argument must be of type str or bytes')
 
         results = self._CRICSiteQuery(callname='data-processing')
         mapping = {}

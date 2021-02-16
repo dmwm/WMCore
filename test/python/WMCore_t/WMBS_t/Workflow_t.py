@@ -5,6 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
+from builtins import range
+
 import threading
 import unittest
 
@@ -278,7 +280,7 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowB = Workflow(name="wf001", task='Test')
         testWorkflowB.load()
 
-        self.assertEqual(len(testWorkflowB.outputMap.keys()), 0,
+        self.assertEqual(len(testWorkflowB.outputMap), 0,
                          "ERROR: Output map exists before output is assigned")
 
         testWorkflowA.addOutput("outModOne", testFilesetA, testMergedFilesetA)
@@ -288,7 +290,7 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowC = Workflow(name="wf001", task='Test')
         testWorkflowC.load()
 
-        self.assertEqual(len(testWorkflowC.outputMap.keys()), 2,
+        self.assertEqual(len(testWorkflowC.outputMap), 2,
                          "ERROR: Incorrect number of outputs in output map")
         self.assertTrue("outModOne" in testWorkflowC.outputMap.keys(),
                         "ERROR: Output modules missing from workflow output map")

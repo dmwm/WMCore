@@ -46,4 +46,12 @@ source $INSTALL_DIR/current/apps/wmagent/etc/profile.d/init.sh
 source $INSTALL_DIR/current/apps/wmcore-devtools/etc/profile.d/init.sh
 
 export PYTHONPATH=$TEST_SRC/../test/python:$PYTHONPATH
+
+### some Rucio setup needed for jenkins and docker unit tests
+# fetch the values defined in the secrets file and update rucio.cfg file
 export RUCIO_HOME=$config/../rucio/
+MATCH_RUCIO_HOST=`cat $WMAGENT_SECRETS_LOCATION | grep RUCIO_HOST | sed s/RUCIO_HOST=//`
+MATCH_RUCIO_AUTH=`cat $WMAGENT_SECRETS_LOCATION | grep RUCIO_AUTH | sed s/RUCIO_AUTH=//`
+sed -i "s+^rucio_host.*+rucio_host = $MATCH_RUCIO_HOST+" $RUCIO_HOME/etc/rucio.cfg
+sed -i "s+^auth_host.*+auth_host = $MATCH_RUCIO_AUTH+" $RUCIO_HOME/etc/rucio.cfg
+echo "Updated RUCIO_HOME file under: $RUCIO_HOME"

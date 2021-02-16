@@ -8,6 +8,7 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 (also added in by the wrapper class, if not present).
 """
 
+from builtins import map
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ChangeState(DBFormatter):

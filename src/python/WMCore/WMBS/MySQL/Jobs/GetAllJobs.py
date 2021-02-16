@@ -7,6 +7,7 @@ MySQL implementation of Jobs.GetAllJobs
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from future.utils import listvalues
 
 class GetAllJobs(DBFormatter):
     """
@@ -43,7 +44,7 @@ class GetAllJobs(DBFormatter):
             tempList = results[0].fetchall()
             final = []
             for i in tempList:
-                final.append(i.values()[0])
+                final.append(listvalues(i)[0])
             return final
 
     def execute(self, state=None, jobType=None, conn=None,

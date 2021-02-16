@@ -7,6 +7,7 @@ MySQL implementation of Files.SetLocationByLFN
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from builtins import str, bytes
 
 class SetLocationByLFN(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (fileid, pnn)
@@ -16,7 +17,7 @@ class SetLocationByLFN(DBFormatter):
                  AND wfd.lfn = :lfn"""
 
     def getBinds(self, lfn=None, location=None):
-        if isinstance(lfn, basestring):
+        if isinstance(lfn, (str, bytes)):
             return {'lfn': lfn, 'location': location}
         elif isinstance(lfn, (list, set)):
             binds = []

@@ -15,6 +15,8 @@ from WMCore.WMBS.Job        import Job
 from WMCore.WMBS.File       import File
 from WMCore.DataStructs.Run import Run
 
+from future.utils import listvalues
+
 class LoadForTaskArchiver(DBFormatter):
     """
     _LoadForTaskArchiver_
@@ -56,7 +58,7 @@ class LoadForTaskArchiver(DBFormatter):
         for result in fileList:
             bindDict[result['id']] = 1
             result['newRuns'] = []
-        fileBinds = [{'fileid' : x} for x in bindDict.keys()]
+        fileBinds = [{'fileid' : x} for x in bindDict]
 
         #Load file information
         if len(fileBinds):
@@ -65,13 +67,13 @@ class LoadForTaskArchiver(DBFormatter):
             lumiList = self.formatDict(lumiResult)
             lumiDict = {}
             for l in lumiList:
-                if not l['fileid'] in lumiDict.keys():
+                if not l['fileid'] in lumiDict:
                     lumiDict[l['fileid']] = []
                 lumiDict[l['fileid']].append(l)
 
             for f in fileList:
                 fileRuns = {}
-                if f['id'] in lumiDict.keys():
+                if f['id'] in lumiDict:
                     for l in lumiDict[f['id']]:
                         run = l['run']
                         lumi = l['lumi']
@@ -81,7 +83,7 @@ class LoadForTaskArchiver(DBFormatter):
                             fileRuns[run] = []
                             fileRuns[run].append(lumi)
 
-                for r in fileRuns.keys():
+                for r in fileRuns:
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]
                     f['newRuns'].append(newRun)
@@ -89,9 +91,9 @@ class LoadForTaskArchiver(DBFormatter):
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
-            if not jobid in filesForJobs.keys():
+            if jobid not in filesForJobs:
                 filesForJobs[jobid] = {}
-            if f['id'] not in filesForJobs[jobid].keys():
+            if f['id'] not in filesForJobs[jobid]:
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
                 for r in wmbsFile['newRuns']:
@@ -102,8 +104,8 @@ class LoadForTaskArchiver(DBFormatter):
         #Add the file information to job objects and load the masks
         jobList = [Job(id = x) for x in jobID]
         for j in jobList:
-            if j['id'] in filesForJobs.keys():
-                j['input_files'] = filesForJobs[j['id']].values()
+            if j['id'] in filesForJobs:
+                j['input_files'] = listvalues(filesForJobs[j['id']])
             j['mask'].load(j['id'])
 
         return jobList

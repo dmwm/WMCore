@@ -5,6 +5,8 @@ _RemoveDuplicates_
 MySQL implementation of Workflow.RemoveDuplicates
 """
 
+from future.utils import listvalues
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class RemoveDuplicates(DBFormatter):
@@ -28,7 +30,7 @@ class RemoveDuplicates(DBFormatter):
         results = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         for result in self.formatDict(results):
-            if result["lfn"] in newFiles.keys():
+            if result["lfn"] in list(newFiles):
                 del newFiles[result["lfn"]]
 
-        return newFiles.values()
+        return listvalues(newFiles)

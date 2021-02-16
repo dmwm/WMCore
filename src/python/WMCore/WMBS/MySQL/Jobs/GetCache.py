@@ -11,6 +11,8 @@ __all__ = []
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from future.utils import listvalues
+
 class GetCache(DBFormatter):
     """
     _GetState_
@@ -29,7 +31,7 @@ class GetCache(DBFormatter):
         if len(results) == 0:
             return False
         else:
-            return results[0].fetchall()[0].values()[0]
+            return listvalues(results[0].fetchall()[0])[0]
 
 
     def execute(self, ID, conn = None, transaction = False):

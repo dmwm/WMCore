@@ -11,6 +11,7 @@ __all__ = []
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from future.utils import listvalues
 import logging
 
 class ListSites(DBFormatter):
@@ -24,7 +25,7 @@ class ListSites(DBFormatter):
         else:
             format = []
             for i in results[0].fetchall():
-                format.append(i.values()[0])
+                format.append(listvalues(i)[0])
             return format
 
 

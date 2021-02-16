@@ -65,7 +65,7 @@ class Create(CreateWMBSBase):
                wmbs_file_runlumi_map (fileid, run, lumi)"""
 
     def execute(self, conn=None, transaction=None):
-        for i in self.create.keys():
+        for i in self.create:
             self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"
 
         return CreateWMBSBase.execute(self, conn, transaction)

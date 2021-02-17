@@ -11,10 +11,6 @@ from __future__ import print_function
 from builtins import range
 from builtins import object
 
-# system modules
-import os
-import sys
-
 class LogDBReport(object):
     """LogDBReport class to represent LogDB messages"""
     def __init__(self, logdb):

@@ -140,9 +140,9 @@ def fixElementConflicts(*elements):
         ele._document.delete()
 
     msg = 'Resolving conflict for wf "%s", id "%s": Remove rev(s): %s: Updates: (%s)'
-    logging.info(msg % (str(merged_value['RequestName']),
-                             str(merged_value.id),
-                             ", ".join([x._document['_rev'] for x in elements[1:]]),
-                             "; ".join("%s=%s" % (x, merged_value[x]) for x in updated)
-                             ))
+    logging.info(msg, str(merged_value['RequestName']),
+                 str(merged_value.id),
+                 ", ".join([x._document['_rev'] for x in elements[1:]]),
+                 "; ".join("%s=%s" % (x, merged_value[x]) for x in updated)
+                 )
     return elements

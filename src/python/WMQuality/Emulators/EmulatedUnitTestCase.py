@@ -73,7 +73,9 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.rucioPatchers = []
             patchRucioAt = ['WMCore.WorkQueue.WorkQueue.Rucio',
                             'WMCore.WorkQueue.WorkQueueReqMgrInterface.Rucio',
-                            'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio']
+                            'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
+                            'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
+                            'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio']
             for module in patchRucioAt:
                 self.rucioPatchers.append(mock.patch(module, new=MockRucioApi))
                 self.rucioPatchers[-1].start()

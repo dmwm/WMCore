@@ -4,7 +4,7 @@
 Version of WMCore/Services/Rucio intended to be used with mock or unittest.mock
 """
 from __future__ import print_function, division
-
+import logging
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
@@ -14,7 +14,8 @@ from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockG
 PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
 NOT_EXIST_DATASET = 'thisdoesntexist'
-PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
+#PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
+PILEUP_DATASET = '/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM'
 
 SITES = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
 _BLOCK_LOCATIONS = {}
@@ -43,6 +44,7 @@ class MockRucioApi(object):
         :param block: the name of the block
         :return: a fake list of sites where the data is
         """
+        logging.info("%s: Calling mock sitesByBlock", self.__class__.__name__)
         if hash(block) % 3 == 0:
             sites = ['T2_XX_SiteA']
         elif hash(block) % 3 == 1:
@@ -51,7 +53,6 @@ class MockRucioApi(object):
             sites = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
         return sites
 
-    # TODO: not sure this wrapper is actually needed
     def __getattr__(self, item):
         """
         __getattr__ gets called in case lookup of the actual method fails. We use this to return data based on
@@ -69,7 +70,7 @@ class MockRucioApi(object):
             :param kwargs: named arguments it was called with
             :return: the dictionary that DBS would have returned
             """
-
+            logging.info("%s: Calling mock genericLookup", self.__class__.__name__)
             if kwargs:
                 signature = '%s:%s' % (item, sorted(kwargs.items()))
             else:
@@ -92,6 +93,7 @@ class MockRucioApi(object):
         Note that, by default, it will not return any Tape RSEs.
         :return: a unique list of RSEs
         """
+        logging.info("%s: Calling mock getDataLockedAndAvailable", self.__class__.__name__)
         if 'name' not in kwargs:
             raise WMRucioException("A DID name must be provided to the getBlockLockedAndAvailable API")
         if self.isContainer(kwargs['name']):
@@ -115,6 +117,26 @@ class MockRucioApi(object):
         rses.update(sites)
         return list(rses)
 
+    def getPileupLockedAndAvailable(self, container, account, scope="cms"):
+        """
+        Mock method to resolve where the pileup container (and all its blocks)
+        is locked and available.
+        """
+        logging.info("%s: calling mock getPileupLockedAndAvailable", self.__class__.__name__)
+        result = dict()
+        if not self.isContainer(container):
+            raise WMRucioException("Pileup location needs to be resolved for a container DID type")
+
+        kwargs = dict(name=container, account=account, scope=scope)
+
+        try:
+            DBS3Reader(PROD_DBS).checkDatasetPath(kwargs['name'])
+            blocks = DBS3Reader(PROD_DBS).listFileBlocks(dataset=kwargs['name'])
+            for block in blocks:
+                result[block] = self.sitesByBlock(block)
+        except DBSReaderError:
+            logging.error("%s: Failed to fetch blocks from DBS", self.__class__.__name__)
+        return result
 
     def getContainerLockedAndAvailable(self, **kwargs):
         """
@@ -122,14 +144,10 @@ class MockRucioApi(object):
         Note that, by default, it will not return any Tape RSEs.
         :return: a unique list of RSEs
         """
+        logging.info("%s: Calling mock getContainerLockedAndAvailable", self.__class__.__name__)
         if 'name' not in kwargs:
             raise WMRucioException("A DID name must be provided to the getContainerLockedAndAvailable API")
         kwargs.setdefault("scope", "cms")
-        if 'grouping' in kwargs:
-            # long strings seem not to be working, like ALL / DATASET. Make it short!
-            kwargs['grouping'] = kwargs['grouping'][0]
-        # TODO: either grouping or returnTape should change this response...
-        returnTape = kwargs.pop("returnTape", False)
 
         if kwargs['name'] == PILEUP_DATASET:
             return ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
@@ -143,7 +161,8 @@ class MockRucioApi(object):
 
     def isContainer(self, didName, scope='cms'):
         """
-        Checks whether the DID name corresponds to a container type or not.
+        Mock check for whether a DID name corresponds to a container type or not,
+        by simply relying on the naming convention
         :param didName: string with the DID name
         :param scope: string containing the Rucio scope (defaults to 'cms')
         :return: True if the DID is a container, else False

@@ -3,6 +3,7 @@ WorkQueueElementResult
 
 A dictionary based object meant to represent a WorkQueue block
 """
+from __future__ import division
 
 #Can we re-use WorkQueueElement for this?
 

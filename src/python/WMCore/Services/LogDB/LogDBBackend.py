@@ -5,7 +5,10 @@ LogDBBackend
 Interface to LogDB persistent storage
 """
 
-# syste modules
+from builtins import object, bytes
+from Utils.Utilities import encodeUnicodeToBytes
+
+# system modules
 import datetime
 import hashlib
 import time
@@ -19,7 +22,8 @@ LOGDB_MSG_TYPES = ['info', 'error', 'warning', 'comment']
 
 def gen_hash(key):
     "Generate hash for given key"
-    if  not isinstance(key, basestring):
+    key = encodeUnicodeToBytes(key)  # if key is not unicode, then it is not changed
+    if not isinstance(key, bytes):
         raise NotImplementedError
     keyhash = hashlib.md5()
     keyhash.update(key)

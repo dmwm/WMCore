@@ -14,6 +14,8 @@ necessary conversion and validation extra methods possibly needed.
 
 """
 from __future__ import print_function, division
+from builtins import range, object
+from future.utils import viewitems, viewvalues, listvalues
 
 import re
 import time
@@ -107,7 +109,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
         cloneArgs = originalArgs
     else:
         cloneArgs = {}
-        for topKey, topValue in originalArgs.iteritems():
+        for topKey, topValue in viewitems(originalArgs):
             # order of this if-else matters because Step1/Task1 is a known argument
             if re.match(chainPattern, topKey):
                 cloneArgs.setdefault(topKey, {})
@@ -208,7 +210,7 @@ class RequestInfo(object):
             # property which can't be task or stepchain property but in dictionary format
             exculdePropWithDictFormat = ["LumiList", "AgentJobInfo"]
             if prop not in exculdePropWithDictFormat and isinstance(defaultValue, dict):
-                return defaultValue.values()
+                return listvalues(defaultValue)
             else:
                 return defaultValue
 
@@ -238,7 +240,7 @@ class RequestInfo(object):
         If this request's RequestStatus is either "running-closed", "completed",
         return True, otherwise False
         """
-        for key, value in filterDict.iteritems():
+        for key, value in viewitems(filterDict):
             # special case checks where key is not exist in Request's Doc.
             # It is used whether AgentJobInfo is deleted or not for announced status
             if value == "CLEANED" and key == "AgentJobInfo":
@@ -280,7 +282,7 @@ class RequestInfo(object):
         DO NOT check if workflow status isn't among those status
         """
         if 'AgentJobInfo' in self.data:
-            for agentRequestInfo in self.data['AgentJobInfo'].values():
+            for agentRequestInfo in viewvalues(self.data['AgentJobInfo']):
                 if agentRequestInfo.get("status", {}):
                     return False
         # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist

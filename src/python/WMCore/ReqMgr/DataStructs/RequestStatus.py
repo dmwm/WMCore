@@ -3,6 +3,8 @@ Definition of valid status values for a request and valid status transitions.
 
 """
 
+from future.utils import viewitems
+
 # make this list to ensure insertion order here
 REQUEST_START_STATE = "new"
 REQUEST_STATE_TRANSITION = {
@@ -158,10 +160,10 @@ AUTO_TRANSITION = {"staged": ["acquired", "running-open", "running-closed", "com
 
 
 # list of destination states which doesn't allow any additional argument update
-STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.iteritems() if len(val) == 0]
+STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in viewitems(ALLOWED_ACTIONS_FOR_STATUS) if len(val) == 0]
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status
-REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
+REQUEST_STATE_LIST = list(REQUEST_STATE_TRANSITION)
 
 ACTIVE_STATUS_FILTER = {"RequestStatus": ['assignment-approved', 'assigned', 'staging', 'staged',
                                           'failed', 'acquired', 'running-open', 'running-closed',

@@ -7,6 +7,8 @@ Created by Dave Evans on 2010-10-12.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from future.utils import viewitems
+
 import unittest
 import time
 import logging
@@ -114,7 +116,7 @@ def fixElementConflicts(*elements):
         from WMCore.Algorithms.MiscAlgos import dict_diff
         logging.info("Conflict between %s revs %s & %s: %s",
                          ele.id, merged_value.rev, ele.rev,
-                         "; ".join("%s=%s" % (x,y) for x,y in dict_diff(merged_value, ele).items())
+                         "; ".join("%s=%s" % (x,y) for x,y in viewitems(dict_diff(merged_value, ele)))
                     )
         for key in merged_value:
             if merged_value[key] == ele.get(key):

@@ -103,6 +103,11 @@ class LogCollect(Executor):
         useEdmCopyUtil = True
         if isCMSSWSupported(cmsswVersion, "CMSSW_10_4_0"):
             pass
+        elif scramArch.startswith('slc7_amd64_'):
+            msg = "CMSSW too old or not fully functional to support edmCopyUtil, using CMSSW_10_4_0 instead"
+            logging.warning(msg)
+            cmsswVersion = "CMSSW_10_4_0"
+            scramArch = "slc7_amd64_gcc820"
         elif scramArch.startswith('slc6_amd64_'):
             msg = "CMSSW too old or not fully functional to support edmCopyUtil, using CMSSW_10_4_0 instead"
             logging.warning(msg)

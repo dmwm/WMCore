@@ -36,7 +36,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueu
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
+from WMQuality.Emulators.RucioClient.MockRucioApi import PILEUP_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
@@ -101,6 +101,12 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def __init__(self, methodName='runTest'):
         super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        self.queueParams = {}
+        self.queueParams['log_reporter'] = "WorkQueue_Unittest"
+        self.queueParams['rucioAccount'] = "wma_test"
+        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+
 
     def setupConfigCacheAndAgrs(self):
         self.rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -191,9 +197,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                        InboxDbName=self.globalQInboxDB,
                                        QueueURL=globalCouchUrl,
                                        central_logdb_url=logdbCouchUrl,
-                                       log_reporter="WorkQueue_Unittest",
                                        UnittestFlag=True,
-                                       RequestDBURL=reqdbUrl)
+                                       RequestDBURL=reqdbUrl,
+                                       **self.queueParams)
         #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
         #                            PopulateFilesets = False,
         #                            ParentQueue = self.globalQueue,
@@ -231,8 +237,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                      BossAirConfig=bossAirConfig,
                                      CacheDir=self.workDir,
                                      central_logdb_url=logdbCouchUrl,
-                                     log_reporter="WorkQueue_Unittest",
-                                     RequestDBURL=reqdbUrl)
+                                     RequestDBURL=reqdbUrl,
+                                     **self.queueParams)
 
         self.localQueue2 = localQueue(DbName=self.localQDB2,
                                       InboxDbName=self.localQInboxDB2,
@@ -242,8 +248,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                       BossAirConfig=bossAirConfig,
                                       CacheDir=self.workDir,
                                       central_logdb_url=logdbCouchUrl,
-                                      log_reporter="WorkQueue_Unittest",
-                                      RequestDBURL=reqdbUrl)
+                                      RequestDBURL=reqdbUrl,
+                                      **self.queueParams)
 
         # configuration for the Alerts messaging framework, work (alerts) and
         # control  channel addresses to which alerts
@@ -261,8 +267,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                CacheDir=self.workDir,
                                config=config,
                                central_logdb_url=logdbCouchUrl,
-                               log_reporter="WorkQueue_Unittest",
-                               RequestDBURL=reqdbUrl)
+                               RequestDBURL=reqdbUrl,
+                               **self.queueParams)
 
         # create relevant sites in wmbs
         rc = ResourceControl()

@@ -250,17 +250,3 @@ def encodeUnicodeToBytes(value, errors="strict"):
     if isinstance(value, str):
         return value.encode("utf-8", errors)
     return value
-
-
-# TODO: remove this function once we have completely migrated to Rucio
-def usingRucio():
-    """
-    Evaluates the environment variables and figure out whether we
-    need to use Rucio or not (thus PhEDEx)
-    :return: a boolean value
-    """
-    if str(os.getenv("WMAGENT_USE_RUCIO", 'false')).lower() == 'true':
-        return True
-    elif str(os.getenv("WMCORE_USE_RUCIO", 'false')).lower() == 'true':
-        return True
-    return False

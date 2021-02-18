@@ -11,7 +11,6 @@ import shutil
 import time
 import logging
 from json import JSONEncoder
-from Utils.Utilities import usingRucio
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -32,12 +31,9 @@ class PileupFetcher(FetcherInterface):
         Prepare module setup
         """
         super(PileupFetcher, self).__init__()
-        if usingRucio():
-            # FIXME: find a way to pass the Rucio account name to this fetcher module
-            self.rucioAcct = "wmcore_transferor"
-            self.rucio = Rucio(self.rucioAcct)
-        else:
-            self.phedex = PhEDEx()  # this will go away eventually
+        # FIXME: find a way to pass the Rucio account name to this fetcher module
+        self.rucioAcct = "wmcore_transferor"
+        self.rucio = Rucio(self.rucioAcct)
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
@@ -80,20 +76,12 @@ class PileupFetcher(FetcherInterface):
         :param blockDict: dictionary with DBS summary info
         :return: update blockDict in place
         """
-        if usingRucio():
-            blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
-            for blockName, blockLocation in blockReplicas.viewitems():
-                try:
-                    blockDict[blockName]['PhEDExNodeNames'] = list(blockLocation)
-                except KeyError:
-                    logging.warning("Block '%s' present in Rucio but not in DBS", blockName)
-        else:
-            blockReplicasInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=dset, complete='y')
-            for block in blockReplicasInfo:
-                try:
-                    blockDict[block]['PhEDExNodeNames'] = list(blockReplicasInfo[block])
-                except KeyError:
-                    logging.warning("Block '%s' does not have any complete PhEDEx replica", block)
+        blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
+        for blockName, blockLocation in blockReplicas.viewitems():
+            try:
+                blockDict[blockName]['PhEDExNodeNames'] = list(blockLocation)
+            except KeyError:
+                logging.warning("Block '%s' present in Rucio but not in DBS", blockName)
 
     def _getCacheFilePath(self, stepHelper):
 

@@ -50,7 +50,7 @@ REQUEST = {
         "GlobalTag": "GT-Step2",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "GENSIM",
-        "MCPileup": "/HighPileUp/Run2011A-v1/RAW",
+        "MCPileup": "/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM",
         "PrepID": "PREP-Step2",
         "ScramArch": "slc6_amd64_gcc530",
         "SplittingAlgo": "EventAwareLumiBased",
@@ -549,7 +549,7 @@ class StepChainTests(EmulatedUnitTestCase):
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
         testArguments['Step2']['KeepOutput'] = False
-        testArguments['Step3']['MCPileup'] = "/Cosmics/ComissioningHI-PromptReco-v1/RECO"
+        testArguments['Step3']['MCPileup'] = "/WJetsToLNu_1J_TuneCP5_13TeV-amcatnloFXFX-pythia8/RunIIAutumn18NanoAOD-102X_upgrade2018_realistic_v15-v1/NANOAODSIM"
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
@@ -605,7 +605,7 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertRaises(WMSpecFactoryException, factory.factoryWorkloadConstruction,
                           "TestWorkload", testArguments)
 
-        testArguments['Step1']["InputDataset"] = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+        testArguments['Step1']["InputDataset"] = '/GammaGammaToEE_Elastic_Pt15_8TeV-lpair/Summer12-START53_V7C-v1/GEN-SIM'
         factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
         testArguments['Step1']["IncludeParents"] = False

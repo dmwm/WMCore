@@ -9,7 +9,7 @@ import os
 import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
-    safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, usingRucio
+    safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -151,27 +151,6 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         cls = TestClass()
         print(getSize(cls))
         self.assertTrue(getSize(cls) > 1000)
-
-    def testUsingRucio(self):
-        """
-        Test the usingRucio function.
-        """
-        self.assertFalse(usingRucio())
-
-        os.environ['WMAGENT_USE_RUCIO'] = 'FALSE'
-        self.assertFalse(usingRucio())
-
-        os.environ['WMAGENT_USE_RUCIO'] = 'TRUE'
-        self.assertTrue(usingRucio())
-
-        os.environ.pop('WMAGENT_USE_RUCIO')
-        self.assertFalse(usingRucio())
-
-        os.environ['WMCORE_USE_RUCIO'] = 'TRUE'
-        self.assertTrue(usingRucio())
-
-        os.environ.pop('WMCORE_USE_RUCIO')
-        self.assertFalse(usingRucio())
 
 
 if __name__ == '__main__':

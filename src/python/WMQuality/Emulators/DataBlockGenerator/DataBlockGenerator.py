@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+from builtins import range, object
+
 from .Globals import GlobalParams
 from . import Globals
 
@@ -62,10 +64,12 @@ class DataBlockGenerator(object):
         for fileID in range(GlobalParams.numOfFilesPerBlock()):
 
             fileName =  "/store/data%s/file%s" % (blockName, fileID)
-            #Not sure why fileName is unit code - change to str
+            #Not sure why fileName is unicode - change to str
+            #FIXME - python3: this will likely not be necessary anymore in py3
             fileName = str(fileName)
             parentFileName = "/store/data%s_parent/file%s_parent" % (blockName, fileID)
-            #Not sure why fileName is unit code - change to str
+            #Not sure why fileName is unicode - change to str
+            #FIXME - python3: this will likely not be necessary anymore in py3
             parentFileName = str(parentFileName)
 
             if parentFlag:
@@ -87,7 +91,7 @@ class DataBlockGenerator(object):
                           # assign run and lumi numbers in appropriate range: note run numbers
                           #  for successive blocks may overlap if numOfRunsPerFile() > 1
                           'LumiList': [{'RunNumber': GlobalParams.numOfRunsPerFile(),
-                                        'LumiSectionNumber': range(1, GlobalParams.numOfLumisPerBlock()+1)}]
+                                        'LumiSectionNumber': list(range(1, GlobalParams.numOfLumisPerBlock()+1))}]
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile

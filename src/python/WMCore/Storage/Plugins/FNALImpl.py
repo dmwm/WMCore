@@ -5,8 +5,9 @@ _FNALImpl_
 Implementation of StageOutImpl interface for FNAL
 
 """
-from future import standard_library
+from builtins import range
 
+from future import standard_library
 standard_library.install_aliases()
 
 import logging

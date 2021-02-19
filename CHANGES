@@ -1,3 +1,8 @@
+1.4.6.pre6 to 1.4.6.pre7:
+  - [py2py3] src/python/A/B/C slice 10 - issue #10134 - src (Dario Mapelli) #10295
+  - [py2py3] src/python/A/B/C slice 9 - issue #10133 - src (Dario Mapelli) #10290
+
+
 1.4.6.pre5 to 1.4.6.pre6:
   - [py2py3] src/python/A/B/C slice 7 - issue #10131 - src (Dario Mapelli) #10284
   - add new dataset to mock in DBS (Alan Malta Rodrigues) #10283

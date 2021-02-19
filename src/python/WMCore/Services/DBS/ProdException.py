@@ -6,8 +6,7 @@ General Exception class for Prod modules
 
 """
 
-
-
+from future.utils import viewitems
 
 import exceptions
 import inspect
@@ -47,29 +46,29 @@ class ProdException(exceptions.Exception):
         #  //
         # // Automatically determine the module name
         #//  if not set
-        if self['ModuleName'] == None:
+        if self.data['ModuleName'] == None:
             frame = inspect.currentframe()
             lastframe = inspect.getouterframes(frame)[1][0]
             excepModule = inspect.getmodule(lastframe)
             if excepModule != None:
                 modName = excepModule.__name__
-                self['ModuleName'] = modName
+                self.data['ModuleName'] = modName
 
 
         #  //
         # // Find out where the exception came from
         #//
         stack = inspect.stack(1)[1]
-        self['FileName'] = stack[1]
-        self['LineNumber'] = stack[2]
-        self['MethodName'] = stack[3]
+        self.data['FileName'] = stack[1]
+        self.data['LineNumber'] = stack[2]
+        self.data['MethodName'] = stack[3]
 
         #  //
         # // ClassName if ClassInstance is passed
         #//
-        if self['ClassInstance'] != None:
-            self['ClassName'] = \
-              self['ClassInstance'].__class__.__name__
+        if self.data['ClassInstance'] != None:
+            self.data['ClassName'] = \
+              self.data['ClassInstance'].__class__.__name__
 
         logging.error(str(self))
 
@@ -92,8 +91,8 @@ class ProdException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
-            self[key] = value
+        for key, value in viewitems(data):
+            self.data[key] = value
         return
 
     def xml(self):
@@ -106,7 +105,7 @@ class ProdException(exceptions.Exception):
         strg += self.message
         strg +="</Message>\n"
         strg +="<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg +="<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -124,6 +123,6 @@ class ProdException(exceptions.Exception):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
         strg += "Message: %s\n" % self.message
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "\t%s : %s\n" % (key, value, )
         return strg

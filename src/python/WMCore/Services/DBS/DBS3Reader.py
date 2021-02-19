@@ -7,6 +7,11 @@ Readonly DBS Interface
 """
 from __future__ import print_function, division
 
+from builtins import object, str, bytes
+from future.utils import viewitems
+
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+
 import logging
 from collections import defaultdict
 
@@ -37,8 +42,8 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    formatFunc = lambda x: str(x) if stringify and isinstance(x, unicode) else x
-    for name, newname in mapping.iteritems():
+    formatFunc = lambda x: encodeUnicodeToBytes(x) if stringify else x
+    for name, newname in viewitems(mapping):
         if name in data:
             data[newname] = formatFunc(data[name])
     return data
@@ -212,10 +217,8 @@ class DBS3Reader(object):
                 )
         """
         # Pointless code in python3
-        if isinstance(block, str):
-            block = unicode(block)
-        if isinstance(dataset, str):
-            dataset = unicode(dataset)
+        block = decodeBytesToUnicode(block)
+        dataset = decodeBytesToUnicode(dataset)
 
         try:
             if block:
@@ -516,7 +519,7 @@ class DBS3Reader(object):
             for fp in f['parent_logical_file_name']:
                 childByParents[fp].append(f['logical_file_name'])
 
-        parentsLFNs = childByParents.keys()
+        parentsLFNs = list(childByParents)
 
         if len(parentsLFNs) == 0:
             msg = "Error in "
@@ -578,7 +581,7 @@ class DBS3Reader(object):
         """
 
         singleBlockName = None
-        if isinstance(fileBlockNames, basestring):
+        if isinstance(fileBlockNames, (str, bytes)):
             singleBlockName = fileBlockNames
             fileBlockNames = [fileBlockNames]
 
@@ -637,8 +640,7 @@ class DBS3Reader(object):
              "Files" : { LFN : Events },
              "IsOpen" : True|False}
         """
-        if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
+        fileBlockName = decodeBytesToUnicode(fileBlockName)
 
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"

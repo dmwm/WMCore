@@ -6,6 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
+from builtins import str
+from builtins import range
 import logging
 import traceback
 from math import ceil
@@ -89,7 +91,7 @@ class EventBased(JobFactory):
                                         self.subscription.workflowName(), self.subscription['id'])
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
-                        for run in lumiDict.keys():
+                        for run in lumiDict:
                             f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in fileList:

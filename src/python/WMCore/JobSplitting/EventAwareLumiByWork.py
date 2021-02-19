@@ -15,6 +15,8 @@ class to simplify the code
 
 from __future__ import (division, print_function)
 
+from future.utils import viewitems
+
 import logging
 from collections import defaultdict
 
@@ -118,7 +120,7 @@ class EventAwareLumiByWork(JobFactory):
         stopTask = False
         lastFile = None
 
-        for location, filesAtLocation in filesByLocation.iteritems():
+        for location, filesAtLocation in viewitems(filesByLocation):
             self.newGroup()  # For each location, we need a new jobGroup
             self.eventsInJob = 0
             self.jobLumis = []
@@ -240,7 +242,7 @@ class EventAwareLumiByWork(JobFactory):
                                              disk=events * self.sizePerEvent,
                                              memory=self.memoryRequirement)
         # Add job mask information
-        for run, lumiRanges in lumiList.iteritems():
+        for run, lumiRanges in viewitems(lumiList):
             for lumiRange in lumiRanges:
                 self.currentJob['mask'].addRunAndLumis(run=int(run), lumis=lumiRange)
         # Add files
@@ -281,7 +283,7 @@ class EventAwareLumiByWork(JobFactory):
             goodRunList = dcs.getLumilistWhitelist(collectionName, filesetName)
         except Exception as ex:
             msg = "Exception while trying to load goodRunList. "
-            msg += "Refusing to create any jobs.\nDetails: %s" % str(ex)
+            msg += "Refusing to create any jobs.\nDetails: %s" % ex.__str__()
             logging.exception(msg)
 
         return goodRunList
@@ -342,5 +344,5 @@ class EventAwareLumiByWork(JobFactory):
                             self.subscription.workflowName(), self.subscription['id'])
         for f in filesByLocation:
             lumiDict = fileLumis.get(f['id'], {})
-            for run in lumiDict.keys():
+            for run in lumiDict:
                 f.addRun(run=Run(run, *lumiDict[run]))

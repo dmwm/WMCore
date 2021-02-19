@@ -7,6 +7,9 @@ Created by Dave Evans on 2010-07-30.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import next
+from future.utils import viewitems, listvalues
+
 import logging
 import threading
 from operator import itemgetter
@@ -68,7 +71,7 @@ def mergeFilesInfo(chunkFiles):
         _mergeRealDataRunLumis(mergedFiles)
 
     logging.info(" ... resulted in %d unique files.", len(mergedFiles))
-    return mergedFiles.values()
+    return listvalues(mergedFiles)
 
 
 def _isRunMaskDuplicate(run, lumis, runLumis):
@@ -100,7 +103,7 @@ def _mergeRealDataRunLumis(mergedFiles):
             runLumis[item['run_number']].extend(item['lumis'])
         # now write those back to the original data structure
         mergedFiles[fname]['runs'] = []
-        for run, lumis in runLumis.items():
+        for run, lumis in viewitems(runLumis):
             mergedFiles[fname]['runs'].append({'run_number': run,
                                                'lumis': list(set(lumis))})
     return
@@ -120,7 +123,7 @@ def fixupMCFakeLumis(files, acdcVersion):
 
     For more info, see issue: https://github.com/dmwm/WMCore/issues/9126
     """
-    for fname, fvalues in files.items():
+    for fname, fvalues in viewitems(files):
         if fname.startswith('MCFakeFile') and acdcVersion < 2:
             for run in fvalues['runs']:
                 if len(run['lumis']) > 1:
@@ -225,7 +228,7 @@ class DataCollectionService(CouchService):
         for row in results["rows"]:
             files = row["doc"].get("files", [])
             fixupMCFakeLumis(files, row['doc'].get("acdc_version", 1))
-            filesInfo.extend(files.values())
+            filesInfo.extend(listvalues(files))
 
         # second lfn sort
         filesInfo.sort(key=lambda x: x["lfn"])
@@ -419,7 +422,7 @@ class DataCollectionService(CouchService):
                     allRuns[run["run_number"]] = []
                 allRuns[run["run_number"]].extend(run["lumis"])
 
-        for run in allRuns.keys():
+        for run in allRuns:
             lumis = []
             lumis.extend(set(allRuns[run]))
             lumis.sort()

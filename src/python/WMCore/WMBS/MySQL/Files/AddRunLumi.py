@@ -8,6 +8,7 @@ MySQL implementation of AddRunLumi
 from Utils.IteratorTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
+from builtins import str, bytes
 
 class AddRunLumi(DBFormatter):
     sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi, num_events)
@@ -23,7 +24,7 @@ class AddRunLumi(DBFormatter):
                 binds.extend(self.getBinds(filename=entry['lfn'], runs=entry['runs']))
             return binds
 
-        if isinstance(filename, basestring):
+        if isinstance(filename, (str, bytes)):
             lfn = filename
         elif isinstance(filename, dict):
             lfn = filename('lfn')

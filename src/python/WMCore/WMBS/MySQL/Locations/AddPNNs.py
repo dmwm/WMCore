@@ -4,6 +4,8 @@ Adds PhEDEx Node Names into the WMBS database.
 """
 from __future__ import division
 
+from builtins import str, bytes
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -15,7 +17,7 @@ class AddPNNs(DBFormatter):
         """
         Adds either a single or a list of PNNs into WMBS
         """
-        if isinstance(pnns, basestring):
+        if isinstance(pnns, (str, bytes)):
             pnns = [pnns]
 
         binds = []

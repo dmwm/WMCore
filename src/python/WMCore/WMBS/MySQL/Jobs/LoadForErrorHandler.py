@@ -9,6 +9,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMBS.File import File
 
+from future.utils import listvalues
 
 class LoadForErrorHandler(DBFormatter):
     """
@@ -69,7 +70,7 @@ class LoadForErrorHandler(DBFormatter):
             f.setdefault('newRuns', [])
 
             fileRuns = {}
-            if f['id'] in lumiDict.keys():
+            if f['id'] in lumiDict:
                 for l in lumiDict[f['id']]:
                     run = l['run']
                     lumi = l['lumi']
@@ -77,7 +78,7 @@ class LoadForErrorHandler(DBFormatter):
                     fileRuns.setdefault(run, [])
                     fileRuns[run].append((lumi, numEvents))
 
-            for r in fileRuns.keys():
+            for r in fileRuns:
                 newRun = Run(runNumber=r)
                 newRun.lumis = fileRuns[r]
                 f['newRuns'].append(newRun)
@@ -121,7 +122,7 @@ class LoadForErrorHandler(DBFormatter):
                 noDuplicateFiles[x['id']] = x
 
         # only upload to not duplicate files to prevent excessive memory
-        self.getRunLumis(fileBinds, noDuplicateFiles.values(), conn, transaction)
+        self.getRunLumis(fileBinds, listvalues(noDuplicateFiles), conn, transaction)
 
         parentList = []
         if fileBinds:
@@ -155,7 +156,7 @@ class LoadForErrorHandler(DBFormatter):
 
         for j in jobList:
             j.setdefault('input_files', [])
-            if j['id'] in filesForJobs.keys():
-                j['input_files'] = filesForJobs[j['id']].values()
+            if j['id'] in filesForJobs:
+                j['input_files'] = listvalues(filesForJobs[j['id']])
 
         return jobList

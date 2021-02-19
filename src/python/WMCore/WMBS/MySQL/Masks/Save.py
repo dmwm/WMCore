@@ -36,7 +36,7 @@ class Save(DBFormatter):
                      'lastlumi': mask['LastLumi'], 'inclusivemask': mask['inclusivemask']}
 
             fail = True
-            for key in binds.keys():
+            for key in binds:
                 if key != 'jobid' and key != 'inclusivemask' and binds[key] != None:
                     # At least one of the keys contains something
                     fail = False

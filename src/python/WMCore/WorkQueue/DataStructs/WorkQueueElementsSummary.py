@@ -4,6 +4,9 @@ WorkQueueElementsSummary
 """
 from __future__ import (print_function, division)
 
+from builtins import str, bytes, object
+from future.utils import viewitems
+
 from collections import defaultdict
 from math import ceil
 
@@ -32,12 +35,12 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     If dataLocality is set to True, then it considers only sites that pass
     the data location constraint.
     """
-    if status and isinstance(status, basestring):
+    if status and isinstance(status, (str, bytes)):
         activeStatus = [status]
     elif status and isinstance(status, (list, tuple)):
         activeStatus = status
     else:
-        activeStatus = elements.keys()
+        activeStatus = list(elements)
 
     uniqueJobsSummary = {}
     possibleJobsSummary = {}
@@ -86,7 +89,7 @@ class WorkQueueElementsSummary(object):
             elementsByRequest[ele["RequestName"]].append(ele)
 
         self.wqResultsByRequest = {}
-        for reqName, wqElements in elementsByRequest.iteritems():
+        for reqName, wqElements in viewitems(elementsByRequest):
             self.wqResultsByRequest[reqName] = WorkQueueElementResult(Elements=wqElements)
 
     def elementsWithHigherPriorityInSameSites(self, requestName, returnFormat="dict"):

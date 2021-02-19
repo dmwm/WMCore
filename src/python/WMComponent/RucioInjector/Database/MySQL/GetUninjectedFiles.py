@@ -57,15 +57,15 @@ class GetUninjectedFiles(DBFormatter):
         for row in dictResult:
             location = row['location']
 
-            if location not in formattedResult.keys():
+            if location not in formattedResult:
                 formattedResult[location] = {}
 
             locationDict = formattedResult[location]
-            if row["dataset"] not in locationDict.keys():
+            if row["dataset"] not in locationDict:
                 locationDict[row["dataset"]] = {}
 
             datasetDict = locationDict[row["dataset"]]
-            if row["blockname"] not in datasetDict.keys():
+            if row["blockname"] not in datasetDict:
                 datasetDict[row["blockname"]] = {"is-open": "y",
                                                  "files": []}
 

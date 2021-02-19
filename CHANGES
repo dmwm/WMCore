@@ -1,3 +1,13 @@
+1.4.6.pre5 to 1.4.6.pre6:
+  - [py2py3] src/python/A/B/C slice 7 - issue #10131 - src (Dario Mapelli) #10284
+  - add new dataset to mock in DBS (Alan Malta Rodrigues) #10283
+  - mock Rucio getPileupLockedAndAvailable API; patch PileupFetcher_t (Alan Malta Rodrigues) #10283
+  - fix bug in selecting stagein for UL logcollect, fixes ##10294 (Dirk Hufnagel) #10296
+  - [py2py3] src/python/A/B/C slice 8 - issue #10132 - src (Dario Mapelli) #10289
+  - Remove switch between Rucio and PhEDEx (Alan Malta Rodrigues) #10283
+  - Properly set rucio.cfg in our docker unittest setup (Alan Malta Rodrigues) #10292
+
+
 1.4.6.pre4 to 1.4.6.pre5:
   - [py2py3] src/python/A/B/C slice 5 - issue #10116 - src (Dario Mapelli) #10262
   - [py2py3] src/python/A/B/C slice 6 - issue #10127 - src (Dario Mapelli) #10277

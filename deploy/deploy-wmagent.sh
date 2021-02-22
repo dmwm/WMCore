@@ -22,10 +22,11 @@
 ### Usage:               -r <repository>   Comp repository to look for the RPMs (defaults to comp=comp)
 ### Usage:               -p <patches>      List of PR numbers in double quotes and space separated (e.g., "5906 5934 5922")
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
+### Usage:               -3|--py3  Uses the python3 stack WMAgent package
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.4.5.patch1 -d HG2102e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.5.patch2 -d HG2102e -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.6.pre7 -d HG2103e -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro --py3
 ### Usage:
 
 IAM=`whoami`
@@ -35,18 +36,17 @@ MY_IP=`host $HOSTNAME | awk '{print $4}'`
 BASE_DIR=/data/srv
 DEPLOY_DIR=$BASE_DIR/wmagent
 CURRENT_DIR=$BASE_DIR/wmagent/current
-MANAGE_DIR=$BASE_DIR/wmagent/current/config/wmagent/
 ADMIN_DIR=/data/admin/wmagent
 ENV_FILE=/data/admin/wmagent/env.sh
 CERTS_DIR=/data/certs/
 OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
-
 
 # These values may be overwritten by the arguments provided in the command line
 WMA_ARCH=slc7_amd64_gcc630
 REPO="comp=comp"
 AG_NUM=0
 FLAVOR=mysql
+RPM_NAME=wmagent
 
 ### Usage function: print the usage of the script
 usage()
@@ -164,7 +164,7 @@ check_oracle()
   tmpdir=`mktemp -d`
   cd $tmpdir
 
-  wget -nv https://raw.githubusercontent.com/dmwm/deployment/master/wmagent/manage -O manage
+  wget -nv https://raw.githubusercontent.com/dmwm/deployment/master/${RPM_NAME}/manage -O manage
   chmod +x manage
   echo -e "SELECT COUNT(*) from USER_TABLES;" > check_db_status.sql
   ### FIXME: new nodes do not have sqlplus ... what to do now?
@@ -190,6 +190,7 @@ for arg; do
     -r) REPO=$2; shift; shift ;;
     -p) PATCHES=$2; shift; shift ;;
     -n) AG_NUM=$2; shift; shift ;;
+    -3|--py3) RPM_NAME=wmagentpy3; shift;;
     -*) usage ;;
   esac
 done
@@ -242,6 +243,7 @@ fi && echo
 
 echo "Starting new agent deployment with the following data:"
 echo " - WMAgent version : $WMA_TAG"
+echo " - RPM Name        : $RPM_NAME"
 echo " - CMSWEB tag      : $DEPLOY_TAG"
 echo " - Team name       : $TEAMNAME"
 echo " - WMAgent Arch    : $WMA_ARCH"
@@ -269,14 +271,20 @@ cd $BASE_DIR/deployment-$DEPLOY_TAG
 set -e
 for step in prep sw post; do
   echo -e "\n*** Deploying WMAgent: running $step step ***"
-  ./Deploy -R wmagent@$WMA_TAG -s $step -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR wmagent
+  ./Deploy -R ${RPM_NAME}@$WMA_TAG -s $step -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR ${RPM_NAME}
 done
 set +e
+
+echo -e "\n*** Creating wmagent symlink ***"
+cd $CURRENT_DIR
+ln -s ../sw/${WMA_ARCH}/cms/${RPM_NAME}/${WMA_TAG} apps/wmagent
+cd -
+echo "Done!" && echo
 
 # XXX: update the PR number below, if needed :-)
 echo -e "\n*** Applying database schema patches ***"
 cd $CURRENT_DIR
-#  wget -nv https://github.com/dmwm/WMCore/pull/8315.patch -O - | patch -d apps/wmagent/bin -p 2
+#  wget -nv https://github.com/dmwm/WMCore/pull/10263.patch -O - | patch -d apps/${RPM_NAME}/ -p 1
 cd -
 echo "Done!" && echo
 
@@ -285,11 +293,14 @@ echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
   cd $CURRENT_DIR
   for pr in $PATCHES; do
-    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
+    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/${RPM_NAME}/lib/python*/site-packages/ -p 3
   done
 cd -
 fi
 echo "Done!" && echo
+
+# Update the manage location according to the RPM getting deployed
+MANAGE_DIR=$BASE_DIR/wmagent/current/config/${RPM_NAME}/
 
 echo -e "\n*** Activating the agent ***"
 cd $MANAGE_DIR
@@ -416,7 +427,7 @@ echo "Done!" && echo
 
 echo && echo "Deployment finished!! However you still need to:"
 echo "  1) Source the new WMA env: source /data/admin/wmagent/env.sh"
-echo "  2) Double check agent configuration: less config/wmagent/config.py"
+echo "  2) Double check agent configuration: less config/${RPM_NAME}/config.py"
 echo "  3) Start the agent with: \$manage start-agent"
 echo "  4) Remove the old WMAgent version when possible"
 echo "  $FINAL_MSG"

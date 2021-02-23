@@ -75,6 +75,18 @@ class ReqMgr(Service):
 
         return args.rstrip('&')
 
+    def getParentLocks(self):
+        """
+        _getParentLocks_
+
+        A public method to return the parent locks from ReqMgr.
+        :returns: A list of datasets
+
+        """
+        callname = 'parentlocks'
+        result = self._getResult(callname, clearCache=True, verb="GET")
+        return result[0][callname]
+
     def getRequestByNames(self, names):
 
         """

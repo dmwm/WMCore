@@ -1,0 +1,227 @@
+{
+    "PrepID": "TEST-TEST-HIG-RunIISummer15wmLHEGS-00744", 
+    "MaxMergeEvents": 100000000, 
+    "Comments": {
+        "CheckList": [
+            "StepChain: with multiple PU datasets", 
+            "StepChain with TrustPUSitelists enabled"
+        ], 
+        "WorkFlowDesc": [
+            "Two steps, PU for Step1 without input dataset; Step2 using a different PU;", 
+            "Given 100EpL, tweak EpJ to 200 instead of 205; TrustPU enabled for the MinBias"
+        ]
+    }, 
+    "Requestor": "tivanov", 
+    "Step2": {
+        "MCPileup": "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW", 
+        "PrepID": "TEST-Step2-RunIISummer15wmLHEGS-00744", 
+        "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
+        "InputFromOutputModule": "RAWSIMoutput", 
+        "InputStep": "GENSIM", 
+        "SplittingAlgo": "EventAwareLumiBased", 
+        "ScramArch": [
+            "slc6_amd64_gcc530"
+        ], 
+        "ConfigCacheID": "f7e311f2c6b5a0884faea133990edcbf", 
+        "StepName": "DIGI", 
+        "CMSSWVersion": "CMSSW_8_0_21"
+    }, 
+    "Step1": {
+        "MCPileup": "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM", 
+        "PrepID": "TEST-Step1-RunIISummer15wmLHEGS-00744", 
+        "GlobalTag": "MCRUN2_71_V1::All", 
+        "Seeding": "AutomaticSeeding", 
+        "StepName": "GENSIM", 
+        "SplittingAlgo": "EventBased", 
+        "ScramArch": [
+            "slc6_amd64_gcc481"
+        ], 
+        "EventsPerLumi": 100, 
+        "ConfigCacheID": "526ca0745cd309b7cfef9f23b3d43acb", 
+        "EventsPerJob": 200, 
+        "RequestNumEvents": 4000, 
+        "CMSSWVersion": "CMSSW_7_1_25_patch2"
+    }, 
+    "TotalInputFiles": 0, 
+    "ChainParentageMap": {
+        "Step2": {
+            "ParentDset": "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM", 
+            "ChildDsets": [
+                "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW"
+            ]
+        }, 
+        "Step1": {
+            "ParentDset": null, 
+            "ChildDsets": [
+                "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM", 
+                "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/LHE"
+            ]
+        }
+    }, 
+    "CustodialGroup": "DataOps", 
+    "MaxMergeSize": 4294967296, 
+    "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
+    "SubRequestType": "", 
+    "TrustPUSitelists": true, 
+    "HardTimeout": 129900, 
+    "OpenRunningTimeout": 0, 
+    "LumiList": {}, 
+    "DashboardHost": "cms-jobmon.cern.ch", 
+    "EnableHarvesting": false, 
+    "BlockCloseMaxWaitTime": 66400, 
+    "SiteWhitelist": [
+        "T1_US_FNAL", 
+        "T2_CH_CERN"
+    ], 
+    "GlobalTagConnect": null, 
+    "DQMConfigCacheID": null, 
+    "DeterministicPileup": false, 
+    "ValidStatus": "PRODUCTION", 
+    "AcquisitionEra": "DMWM_Test", 
+    "GlobalTag": "80X_mcRun2_asymptotic_2016_TrancheIV_v6", 
+    "Campaign": "HG2002_Val", 
+    "Multicore": 1, 
+    "CouchDBName": "reqmgr_config_cache", 
+    "NonCustodialGroup": "DataOps", 
+    "DeleteFromSource": false, 
+    "TotalInputEvents": 4000, 
+    "SizePerEvent": 250, 
+    "ConfigCacheID": null, 
+    "StepChain": 2, 
+    "CustodialSubType": "Replica", 
+    "GracePeriod": 300, 
+    "MergedLFNBase": "/store/backfill/1", 
+    "ParentageResolved": false, 
+    "EnableNewStageout": false, 
+    "SubscriptionPriority": "Low", 
+    "RobustMerge": true, 
+    "Team": "testbed-vocms0193", 
+    "AllowOpportunistic": false, 
+    "DQMHarvestUnit": "byRun", 
+    "AutoApproveSubscriptionSites": [], 
+    "RequestWorkflow": "https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache/tivanov_SC_MultiPU_HG2002_Val_200121_043659_4925/spec", 
+    "BlockCloseMaxFiles": 500, 
+    "VoGroup": "unknown", 
+    "RequestType": "StepChain", 
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/", 
+    "SiteBlacklist": [], 
+    "RequestStatus": "completed", 
+    "SoftTimeout": 129600, 
+    "Group": "DATAOPS", 
+    "BlockCloseMaxEvents": 25000000, 
+    "CustodialSites": [], 
+    "ProcessingString": "SC_MultiPU_HG2002_Val_Todor_v13", 
+    "ScramArch": [
+        "slc6_amd64_gcc530"
+    ], 
+    "TrustSitelists": false, 
+    "UnmergedLFNBase": "/store/unmerged", 
+    "DashboardPort": 8884, 
+    "TimePerEvent": 140, 
+    "DQMSequences": [], 
+    "OutputModulesLFNBases": [
+        "/store/unmerged/DMWM_Test/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/GEN-SIM/SC_MultiPU_HG2002_Val_Todor_v13-v20", 
+        "/store/unmerged/DMWM_Test/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/GEN-SIM-RAW/SC_MultiPU_HG2002_Val_Todor_v13-v20", 
+        "/store/unmerged/DMWM_Test/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/LHE/SC_MultiPU_HG2002_Val_Todor_v13-v20"
+    ], 
+    "OutputDatasets": [
+        "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM", 
+        "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/LHE", 
+        "/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW"
+    ], 
+    "PrimaryDataset": "DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8", 
+    "NonCustodialSubType": "Replica", 
+    "RunNumber": 0, 
+    "OverrideCatalog": null, 
+    "PeriodicHarvestInterval": 0, 
+    "TotalEstimatedJobs": 20, 
+    "MaxWaitTime": 86400, 
+    "RequestString": "SC_MultiPU_HG2002_Val", 
+    "RequestorDN": "", 
+    "RequestDate": [
+        2020, 
+        1, 
+        21, 
+        3, 
+        36, 
+        59
+    ], 
+    "InitialPriority": 316000, 
+    "EventStreams": null, 
+    "Memory": 2300, 
+    "Override": {
+        "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    }, 
+    "IncludeParents": false, 
+    "VoRole": "unknown", 
+    "PriorityTransition": [
+        {
+            "Priority": 316000, 
+            "DN": "", 
+            "UpdateTime": 1579577819
+        }
+    ], 
+    "CMSSWVersion": "CMSSW_8_0_21", 
+    "NonCustodialSites": [], 
+    "BlockCloseMaxSize": 5000000000000, 
+    "MinMergeSize": 2147483648, 
+    "RequestPriority": 316000, 
+    "ProcessingVersion": 20, 
+    "TotalInputLumis": 40, 
+    "FirstEvent": 1, 
+    "RequestName": "tivanov_SC_MultiPU_HG2002_Val_200121_043659_4925", 
+    "CouchURL": "https://cmsweb-testbed.cern.ch/couchdb", 
+    "CouchWorkloadDBName": "reqmgr_workload_cache", 
+    "RequestTransition": [
+        {
+            "Status": "new", 
+            "DN": "", 
+            "UpdateTime": 1579577819
+        }, 
+        {
+            "DN": "", 
+            "Status": "assignment-approved", 
+            "UpdateTime": 1579577822
+        }, 
+        {
+            "DN": "", 
+            "Status": "assigned", 
+            "UpdateTime": 1579577822
+        }, 
+        {
+            "DN": "", 
+            "Status": "staging", 
+            "UpdateTime": 1579577895
+        }, 
+        {
+            "DN": "", 
+            "Status": "staged", 
+            "UpdateTime": 1579578050
+        }, 
+        {
+            "DN": "", 
+            "Status": "acquired", 
+            "UpdateTime": 1579578770
+        }, 
+        {
+            "DN": "", 
+            "Status": "running-open", 
+            "UpdateTime": 1579578770
+        }, 
+        {
+            "DN": "", 
+            "Status": "running-closed", 
+            "UpdateTime": 1579579378
+        }, 
+        {
+            "DN": "", 
+            "Status": "completed", 
+            "UpdateTime": 1579587203
+        }
+    ], 
+    "FirstLumi": 1, 
+    "DQMUploadProxy": null, 
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+    "_id": "tivanov_SC_MultiPU_HG2002_Val_200121_043659_4925", 
+    "Dashboard": "integration"
+}

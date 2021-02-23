@@ -1,0 +1,198 @@
+{
+    "PrepID": "PrepID-test2inwf-1510737328-RunHLTPhy2017B_RAWAOD", 
+    "MaxMergeEvents": 100000000, 
+    "Comments": {
+        "CheckList": [
+            "StepChain with IncludeParents"
+        ], 
+        "WorkFlowDesc": [
+            "Single step; IncludeParents True and 3 runs whitelisted; auto-splitting"
+        ]
+    }, 
+    "Requestor": "amaltaro", 
+    "Step1": {
+        "InputDataset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO", 
+        "IncludeParents": true, 
+        "GlobalTag": "GR_P_V49", 
+        "RunWhitelist": [
+            234297, 
+            234321, 
+            234332
+        ], 
+        "StepName": "DQMHLTonRAWAOD_2017", 
+        "ConfigCacheID": "029a0b63329659025f308af53c7e092b", 
+        "EventsPerJob": 14400, 
+        "EventsPerLumi": 14400
+    }, 
+    "TotalInputFiles": 21, 
+    "ChainParentageMap": {
+        "Step1": {
+            "ParentDset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO", 
+            "ChildDsets": [
+                "/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO"
+            ]
+        }
+    }, 
+    "CustodialGroup": "DataOps", 
+    "MaxMergeSize": 4294967296, 
+    "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev", 
+    "SubRequestType": "", 
+    "TrustPUSitelists": false, 
+    "HardTimeout": 129900, 
+    "OpenRunningTimeout": 0, 
+    "LumiList": {}, 
+    "DashboardHost": "cms-jobmon.cern.ch", 
+    "EnableHarvesting": false, 
+    "BlockCloseMaxWaitTime": 66400,
+    "SiteWhitelist": [
+        "T1_US_FNAL", 
+        "T2_CH_CERN"
+    ], 
+    "BlockCloseMaxSize": 5000000000000, 
+    "DQMConfigCacheID": null, 
+    "DeterministicPileup": true, 
+    "ValidStatus": "PRODUCTION", 
+    "AcquisitionEra": "Integ_Test", 
+    "Campaign": "April2020_Val", 
+    "GlobalTag": "GR_P_V49", 
+    "ScramArch": [
+        "slc6_amd64_gcc491"
+    ], 
+    "CouchDBName": "reqmgr_config_cache", 
+    "NonCustodialGroup": "DataOps", 
+    "DeleteFromSource": false, 
+    "TotalInputEvents": 418808, 
+    "SizePerEvent": 512, 
+    "ConfigCacheID": null, 
+    "StepChain": 1, 
+    "CustodialSubType": "Replica", 
+    "GracePeriod": 300, 
+    "MergedLFNBase": "/store/backfill/1", 
+    "ParentageResolved": false, 
+    "EnableNewStageout": false, 
+    "SubscriptionPriority": "Low", 
+    "RobustMerge": true, 
+    "Team": "testbed-vocms0193", 
+    "AllowOpportunistic": false, 
+    "DQMHarvestUnit": "byRun", 
+    "AutoApproveSubscriptionSites": [], 
+    "RequestWorkflow": "https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache/amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81/spec", 
+    "BlockCloseMaxFiles": 500, 
+    "VoGroup": "unknown", 
+    "RequestType": "StepChain", 
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+    "SiteBlacklist": [], 
+    "RequestStatus": "completed", 
+    "SoftTimeout": 129600, 
+    "Group": "DATAOPS", 
+    "BlockCloseMaxEvents": 25000000, 
+    "CustodialSites": [], 
+    "ProcessingString": "StepChain_InclParents_HG2004_Val_Privv12", 
+    "Multicore": 1, 
+    "TrustSitelists": false, 
+    "UnmergedLFNBase": "/store/unmerged", 
+    "DashboardPort": 8884, 
+    "TimePerEvent": 2, 
+    "DQMSequences": [], 
+    "OutputModulesLFNBases": [
+        "/store/unmerged/Integ_Test/Cosmics/RAW-RECO/CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11"
+    ], 
+    "OutputDatasets": [
+        "/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO"
+    ], 
+    "PrimaryDataset": null, 
+    "NonCustodialSubType": "Replica", 
+    "RunNumber": 0, 
+    "OverrideCatalog": null, 
+    "PeriodicHarvestInterval": 0, 
+    "TotalEstimatedJobs": 31, 
+    "MaxWaitTime": 86400, 
+    "RequestString": "StepChain_InclParents_April2020_Val", 
+    "RequestorDN": "", 
+    "RequestDate": [
+        2020, 
+        4, 
+        14, 
+        10, 
+        7, 
+        13
+    ], 
+    "InitialPriority": 420000, 
+    "EventStreams": null, 
+    "Memory": 2300, 
+    "Override": {
+        "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    }, 
+    "IncludeParents": false, 
+    "VoRole": "unknown", 
+    "PriorityTransition": [
+        {
+            "Priority": 420000, 
+            "DN": "", 
+            "UpdateTime": 1586858833
+        }
+    ], 
+    "CMSSWVersion": "CMSSW_7_3_2", 
+    "NonCustodialSites": [], 
+    "GlobalTagConnect": null, 
+    "MinMergeSize": 2147483648, 
+    "RequestPriority": 420000, 
+    "ProcessingVersion": 11, 
+    "TotalInputLumis": 149, 
+    "FirstEvent": 1, 
+    "RequestName": "amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81", 
+    "CouchURL": "https://cmsweb-testbed.cern.ch/couchdb", 
+    "CouchWorkloadDBName": "reqmgr_workload_cache", 
+    "RequestTransition": [
+        {
+            "Status": "new", 
+            "DN": "", 
+            "UpdateTime": 1586858833
+        }, 
+        {
+            "DN": "", 
+            "Status": "assignment-approved", 
+            "UpdateTime": 1586858834
+        }, 
+        {
+            "DN": "", 
+            "Status": "assigned", 
+            "UpdateTime": 1586858835
+        }, 
+        {
+            "DN": "", 
+            "Status": "staging", 
+            "UpdateTime": 1586859358
+        }, 
+        {
+            "DN": "", 
+            "Status": "staged", 
+            "UpdateTime": 1586859733
+        }, 
+        {
+            "DN": "", 
+            "Status": "acquired", 
+            "UpdateTime": 1586860322
+        }, 
+        {
+            "DN": "", 
+            "Status": "running-open", 
+            "UpdateTime": 1586860927
+        }, 
+        {
+            "DN": "", 
+            "Status": "running-closed", 
+            "UpdateTime": 1586861535
+        }, 
+        {
+            "DN": "", 
+            "Status": "completed", 
+            "UpdateTime": 1586863942
+        }
+    ], 
+    "FirstLumi": 1, 
+    "DQMUploadProxy": null, 
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+    "_id": "amaltaro_StepChain_InclParents_April2020_Val_200414_120713_81", 
+    "Dashboard": "integration"
+}

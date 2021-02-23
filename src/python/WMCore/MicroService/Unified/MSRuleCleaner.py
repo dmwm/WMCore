@@ -34,6 +34,17 @@ from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
+from WMCore.MicroService.Unified.Common import findParent
+
+
+class MSRuleCleanerResolveParentError(WMException):
+    """
+    WMCore exception class for the MSRuleCleaner module, in WMCore MicroServices,
+    used to signal if an error occurred during parent dataset resolution step.
+    """
+    def __init__(self, message):
+        super(MSRuleCleanerResolveParentError, self).__init__(message)
 
 
 class MSRuleCleanerArchivalError(WMException):
@@ -81,15 +92,20 @@ class MSRuleCleaner(MSCore):
         self.logDB = LogDB(self.msConfig["logDBUrl"],
                            self.msConfig["logDBReporter"],
                            logger=self.logger)
+        self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
 
         # Building all the Pipelines:
         pName = 'plineMSTrCont'
         self.plineMSTrCont = Pipeline(name=pName,
                                       funcLine=[Functor(self.setPlineMarker, pName),
+                                                Functor(self.setParentDatasets),
+                                                Functor(self.getRucioRules, 'container', self.msConfig['rucioMStrAccount']),
                                                 Functor(self.cleanRucioRules)])
         pName = 'plineMSTrBlock'
         self.plineMSTrBlock = Pipeline(name=pName,
                                        funcLine=[Functor(self.setPlineMarker, pName),
+                                                 Functor(self.setParentDatasets),
+                                                 Functor(self.getRucioRules, 'block', self.msConfig['rucioMStrAccount']),
                                                  Functor(self.cleanRucioRules)])
         pName = 'plineAgentCont'
         self.plineAgentCont = Pipeline(name=pName,
@@ -130,6 +146,32 @@ class MSRuleCleaner(MSCore):
         self.wfCounters = {'cleaned': {},
                            'archived': {'normalArchived': 0,
                                         'forceArchived': 0}}
+        self.globalLocks = set()
+
+    def getGlobalLocks(self):
+        """
+        Fetches the list of 'globalLocks' from wmstats server and the list of
+        'parentLocks' from request manager. Stores/updates the unified set in
+        the 'globalLocks' instance variable. Returns the resultant unified set.
+        :return: A union set of the 'globalLocks' and the 'parentLocks' lists
+        """
+        self.logger.info("Fetching globalLocks list from wmstats server.")
+        try:
+            globalLocks = set(self.wmstatsSvc.getGlobalLocks())
+        except Exception as ex:
+            msg = "Failed to refresh global locks list for the current polling cycle. Error: %s "
+            msg += "Skipping this polling cycle."
+            self.logger.error(msg, str(ex))
+            raise ex
+        self.logger.info("Fetching parentLocks list from reqmgr2 server.")
+        try:
+            parentLocks = set(self.reqmgr2.getParentLocks())
+        except Exception as ex:
+            msg = "Failed to refresh parent locks list for the current poling cycle. Error: %s "
+            msg += "Skipping this polling cycle."
+            self.logger.error(msg, str(ex))
+            raise ex
+        self.globalLocks = globalLocks | parentLocks
 
     def resetCounters(self):
         """
@@ -152,7 +194,6 @@ class MSRuleCleaner(MSCore):
         self.currThreadIdent = self.currThread.name
         self.updateReportDict(summary, "thread_id", self.currThreadIdent)
         self.resetCounters()
-
         self.logger.info("MSRuleCleaner is running in mode: %s.", self.mode)
 
         # Build the list of workflows to work on:
@@ -167,6 +208,7 @@ class MSRuleCleaner(MSCore):
 
         # Call _execute() and feed the relevant pipeline with the objects popped from requestRecords
         try:
+            self.getGlobalLocks()
             totalNumRequests, cleanNumRequests, normalArchivedNumRequests, forceArchivedNumRequests = self._execute(requestRecords)
             msg = "\nNumber of processed workflows: %s."
             msg += "\nNumber of properly cleaned workflows: %s."
@@ -280,6 +322,11 @@ class MSRuleCleaner(MSCore):
             for pline in self.cleanuplines:
                 try:
                     pline.run(wflow)
+                except MSRuleCleanerResolveParentError as ex:
+                    msg = "%s: Parentage Resolve Error: %s. "
+                    msg += "Will retry again in the next cycle."
+                    self.logger.error(msg, pline.name, ex.message())
+                    continue
                 except Exception as ex:
                     msg = "%s: General error from pipeline. Workflow: %s. Error:  \n%s. "
                     msg += "\nWill retry again in the next cycle."
@@ -528,30 +575,75 @@ class MSRuleCleaner(MSCore):
             wflow['TransferDone'] = True
         return wflow
 
+    def setParentDatasets(self, wflow):
+        """
+        Used to resolve parent datasets for a workflow.
+        :param  wflow:   A MSRuleCleaner workflow representation
+        :return:         The workflow object
+        """
+        if wflow['InputDataset'] and wflow['IncludeParents']:
+            childDataset = wflow['InputDataset']
+            parentDataset = findParent([childDataset], self.msConfig['dbsUrl'])
+            # NOTE: If findParent() returned None then the DBS service failed to
+            #       resolve the request (it is considered an ERROR outside WMCore)
+            if parentDataset.get(childDataset, None) is None:
+                msg = "Failed to resolve parent dataset for: %s in workflow: %s" % (childDataset, wflow['RequestName'])
+                raise MSRuleCleanerResolveParentError(msg)
+            elif parentDataset:
+                wflow['ParentDataset'] = [parentDataset[childDataset]]
+                msg = "Found parent %s for input dataset %s in workflow: %s "
+                self.logger.info(msg, parentDataset, wflow['InputDataset'], wflow['RequestName'])
+            else:
+                msg = "Could not find parent for input dataset: %s in workflows: %s"
+                self.logger.error(msg, wflow['InputDataset'], wflow['RequestName'])
+        return wflow
+
     def getRucioRules(self, wflow, gran, rucioAcct):
         """
         Queries Rucio and builds the relevant list of blocklevel rules for
         the given workflow
         :param  wflow:   A MSRuleCleaner workflow representation
         :param  gran:    Data granularity to search for Rucio rules. Possible values:
-                        'block' || 'container'
+                         'block' or 'container'
         :return:         The workflow object
         """
         currPline = wflow['PlineMarkers'][-1]
-        # Find all the output placement rules created by the agents
-        for dataCont in wflow['OutputDatasets']:
-            if gran == 'container':
-                for rule in self.rucio.listDataRules(dataCont, account=rucioAcct):
-                    wflow['RulesToClean'][currPline].append(rule['id'])
-            elif gran == 'block':
-                try:
-                    blocks = self.rucio.getBlocksInContainer(dataCont)
-                    for block in blocks:
-                        for rule in self.rucio.listDataRules(block, account=rucioAcct):
-                            wflow['RulesToClean'][currPline].append(rule['id'])
-                except WMRucioDIDNotFoundException:
-                    msg = "Container: %s not found in Rucio for workflow: %s."
+
+        # Create the container list to the rucio account map and set the checkGlobalLocks flag.
+        mapRuleType = {self.msConfig['rucioWmaAccount']: ["OutputDatasets"],
+                       self.msConfig['rucioMStrAccount']: ["InputDataset", "MCPileup",
+                                                           "DataPileup", "ParentDataset"]}
+        if rucioAcct == self.msConfig['rucioMStrAccount']:
+            checkGlobalLocks = True
+        else:
+            checkGlobalLocks = False
+
+        # Find all the data placement rules created by the components:
+        for dataType in mapRuleType[rucioAcct]:
+            dataList = wflow[dataType] if isinstance(wflow[dataType], list) else [wflow[dataType]]
+            for dataCont in dataList:
+                self.logger.debug("getRucioRules: dataCont: %s", pformat(dataCont))
+                if checkGlobalLocks and dataCont in self.globalLocks:
+                    msg = "Found dataset: %s in GlobalLocks. NOT considering it for filling the "
+                    msg += "RulesToClean list for both container and block level Rules for workflow: %s!"
                     self.logger.info(msg, dataCont, wflow['RequestName'])
+                    continue
+                if gran == 'container':
+                    for rule in self.rucio.listDataRules(dataCont, account=rucioAcct):
+                        wflow['RulesToClean'][currPline].append(rule['id'])
+                        msg = "Found %s container-level rule to be deleted for container %s"
+                        self.logger.info(msg, rule['id'], dataCont)
+                elif gran == 'block':
+                    try:
+                        blocks = self.rucio.getBlocksInContainer(dataCont)
+                        for block in blocks:
+                            for rule in self.rucio.listDataRules(block, account=rucioAcct):
+                                wflow['RulesToClean'][currPline].append(rule['id'])
+                                msg = "Found %s block-level rule to be deleted for container %s"
+                                self.logger.info(msg, rule['id'], dataCont)
+                    except WMRucioDIDNotFoundException:
+                        msg = "Container: %s not found in Rucio for workflow: %s."
+                        self.logger.info(msg, dataCont, wflow['RequestName'])
         return wflow
 
     def cleanRucioRules(self, wflow):
@@ -581,12 +673,6 @@ class MSRuleCleaner(MSCore):
 
         # Set the cleanup flag:
         wflow['CleanupStatus'][currPline] = all(delResults)
-        # ----------------------------------------------------------------------
-        # FIXME : To be removed once the plineMSTrBlock && plineMSTrCont are
-        #         developed
-        if wflow['CleanupStatus'][currPline] in ['plineMSTrBlock', 'plineMSTrCont']:
-            wflow['CleanupStatus'][currPline] = True
-        # ----------------------------------------------------------------------
         return wflow
 
     def getRequestRecords(self, reqStatus):

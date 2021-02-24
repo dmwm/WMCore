@@ -6,6 +6,9 @@ Description: Provides a document Template for MSOutput MicroServices
 # futures
 from __future__ import division, print_function
 
+from future.utils import viewitems
+from builtins import str, bytes
+
 from time import time
 from copy import deepcopy
 
@@ -104,16 +107,16 @@ class MSOutputTemplate(dict):
         :return: a list of tuples
         """
         docTemplate = [
-            ('_id', None, (str, unicode)),
-            ('RequestName', None, (str, unicode)),
-            ('RequestType', "", (str, unicode)),
-            ('Campaign', [], (str, unicode)),
+            ('_id', None, (bytes, str)),
+            ('RequestName', None, (bytes, str)),
+            ('RequestType', "", (bytes, str)),
+            ('Campaign', [], (bytes, str)),
             ('CreationTime', int(time()), int),
             ('LastUpdate', None, int),
             ('IsRelVal', False, bool),
             ('OutputDatasets', [], list),
             ('OutputMap', [], list),
-            ('TransferStatus', "pending", (str, unicode))]
+            ('TransferStatus', "pending", (bytes, str))]
         return docTemplate
 
     def outputMapSchema(self):
@@ -136,14 +139,14 @@ class MSOutputTemplate(dict):
         :return: a list of tuples
         """
         outMapTemplate = [
-            ('Campaign', "", (str, unicode)),
-            ('Dataset', "", (str, unicode)),
+            ('Campaign', "", (bytes, str)),
+            ('Dataset', "", (bytes, str)),
             ('DatasetSize', 0, int),
             ('Copies', 1, int),
-            ('DiskDestination', "", (str, unicode)),
-            ('TapeDestination', "", (str, unicode)),
-            ('DiskRuleID', "", (str, unicode)),
-            ('TapeRuleID', "", (str, unicode))]
+            ('DiskDestination', "", (bytes, str)),
+            ('TapeDestination', "", (bytes, str)),
+            ('DiskRuleID', "", (bytes, str)),
+            ('TapeRuleID', "", (bytes, str))]
         return outMapTemplate
 
     def _checkAttr(self, myDoc, update=False, throw=False, **kwargs):
@@ -162,7 +165,7 @@ class MSOutputTemplate(dict):
         """
 
         # check if we can fit all the arguments provided through **kwargs
-        for kw in kwargs.keys():
+        for kw in kwargs:
             found = False
             typeok = False
             for tup in self.docSchema():
@@ -207,14 +210,14 @@ class MSOutputTemplate(dict):
         valid = []
         missing = []
         for mandField in self.required:
-            if mandField in myDoc.keys() and myDoc[mandField]:
+            if mandField in myDoc and myDoc[mandField]:
                 valid.append(True)
             else:
                 valid.append(False)
                 missing.append(mandField)
 
         for mandField in self.allowEmpty:
-            if mandField in myDoc.keys():
+            if mandField in myDoc:
                 valid.append(True)
             else:
                 valid.append(False)
@@ -299,7 +302,7 @@ class MSOutputTemplate(dict):
         """
         outputMap = []
         campaignMap = self._getCampMap(reqDoc)
-        for camp, dsets in campaignMap.viewitems():
+        for camp, dsets in viewitems(campaignMap):
             for outDset in dsets:
                 dsetMap = {tuple[0]:tuple[1] for tuple in self.outputMapSchema()}
                 dsetMap['Campaign'] = camp

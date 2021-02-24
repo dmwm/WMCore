@@ -5,6 +5,8 @@ Description: Provides a document Template for the MSRuleCleaner MicroServices
 
 # futures
 from __future__ import division, print_function
+from builtins import object, str, bytes
+from future.utils import viewitems
 
 from copy import deepcopy
 from Utils.IteratorTools import flattenList
@@ -57,10 +59,10 @@ class WfParser(object):
             for value in wfObj:
                 self._paramFinder(value)
         if isinstance(wfObj, dict):
-            for key, value in wfObj.items():
+            for key, value in viewitems(wfObj):
                 self._paramFinder(value)
-            for key in self.extDoc.keys():
-                if key in wfObj.keys():
+            for key in self.extDoc:
+                if key in wfObj:
                     self.extDoc[key]['values'].append(deepcopy(wfObj[key]))
 
     def _wfParse(self):
@@ -99,7 +101,7 @@ class WfParser(object):
         """
 
         # Convert back the so aggregated extDoc to the original structure:
-        for keyName, data in self.extDoc.items():
+        for keyName, data in viewitems(self.extDoc):
             if len(data['values']) == 0:
                 self.extDoc[keyName] = deepcopy(data['default'])
             elif len(data['values']) == 1:
@@ -120,8 +122,8 @@ class WfParser(object):
                     self.extDoc[keyName] = {}
                     for item in data['values']:
                         self.extDoc[keyName].update(item)
-                elif (isinstance(data['type'], tuple) and (str in data['type'] or unicode in data['type'])) or \
-                     (data['type'] is str or data['type'] is unicode):
+                elif (isinstance(data['type'], tuple) and (bytes in data['type'] or str in data['type'])) or \
+                     (data['type'] is bytes or data['type'] is str):
                     data['values'] = list(set(data['values']))
                     if len(data['values']) == 1:
                         self.extDoc[keyName] = deepcopy(data['values'][0])
@@ -195,14 +197,14 @@ class MSRuleCleanerWflow(dict):
         :return: a list of tuples
         """
         docTemplate = [
-            ('RequestName', None, (str, unicode)),
-            ('RequestType', None, (str, unicode)),
-            ('RequestStatus', None, (str, unicode)),
+            ('RequestName', None, (bytes, str)),
+            ('RequestType', None, (bytes, str)),
+            ('RequestStatus', None, (bytes, str)),
             ('OutputDatasets', [], list),
             ('RulesToClean', {}, dict),
             ('CleanupStatus', {}, dict),
             ('TransferDone', False, bool),
-            ('TargetStatus', None, (str, unicode)),
+            ('TargetStatus', None, (bytes, str)),
             ('ParentageResolved', True, bool),
             ('PlineMarkers', None, list),
             ('IsClean', False, bool),
@@ -211,10 +213,10 @@ class MSRuleCleanerWflow(dict):
             ('ForceArchive', False, bool),
             ('RequestTransition', [], list),
             ('IncludeParents', False, bool),
-            ('DataPileup', None, (str, unicode)),
-            ('MCPileup', None, (str, unicode)),
-            ('InputDataset', None, (str, unicode)),
-            ('ParentDataset', None, (str, unicode))]
+            ('DataPileup', None, (bytes, str)),
+            ('MCPileup', None, (bytes, str)),
+            ('InputDataset', None, (bytes, str)),
+            ('ParentDataset', None, (bytes, str))]
 
         # NOTE: ParentageResolved is set by default to True it will be False only if:
         #       - RequestType is StepChain

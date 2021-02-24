@@ -4,6 +4,9 @@ required by MS Transferor
 """
 from __future__ import division, print_function
 
+from builtins import range, object
+from future.utils import viewitems, viewvalues, listvalues
+
 import operator
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
@@ -163,7 +166,7 @@ class Workflow(object):
             if "Campaign" in item and item["Campaign"]:
                 self.campaigns.add(item["Campaign"])
 
-        self.dataCampaignMap = data.values()
+        self.dataCampaignMap = listvalues(data)
 
     def getDataCampaignMap(self):
         """
@@ -312,7 +315,7 @@ class Workflow(object):
         # flat list with the final parent blocks
         parentBlocks = set()
         # remove parent blocks without any valid replica (only invalid files)
-        for child, parents in blocksDict.items():
+        for child, parents in viewitems(blocksDict):
             for parent in list(parents):
                 if parent not in self.getParentBlocks():
                     # then drop this block
@@ -345,16 +348,16 @@ class Workflow(object):
         """
         if numChunks == 1:
             thisChunk = set()
-            thisChunk.update(self.getPrimaryBlocks().keys())
-            thisChunkSize = sum([blockInfo['blockSize'] for blockInfo in self.getPrimaryBlocks().values()])
+            thisChunk.update(list(self.getPrimaryBlocks()))
+            thisChunkSize = sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getPrimaryBlocks())])
             if self.getParentDataset():
-                thisChunk.update(self.getParentBlocks().keys())
-                thisChunkSize += sum([blockInfo['blockSize'] for blockInfo in self.getParentBlocks().values()])
+                thisChunk.update(list(self.getParentBlocks()))
+                thisChunkSize += sum([blockInfo['blockSize'] for blockInfo in viewvalues(self.getParentBlocks())])
             # keep same data structure as multiple chunks, so list of lists
             return [thisChunk], [thisChunkSize]
 
         # create a descendant list of blocks according to their sizes
-        sortedPrimary = sorted(self.getPrimaryBlocks().items(), key=operator.itemgetter(1), reverse=True)
+        sortedPrimary = sorted(viewitems(self.getPrimaryBlocks()), key=operator.itemgetter(1), reverse=True)
         if len(sortedPrimary) < numChunks:
             msg = "There are less blocks than chunks to create. "
             msg += "Reducing numChunks from %d to %d" % (numChunks, len(sortedPrimary))

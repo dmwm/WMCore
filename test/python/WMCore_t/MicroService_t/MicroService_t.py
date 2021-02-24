@@ -17,16 +17,7 @@ from WMCore_t.MicroService_t import TestConfig
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
 from WMCore.MicroService.Tools.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
-from Utils.Utilities import decodeBytesToUnicode
-
-
-def gzipDecompress(payload):
-    """Util to Gzip decompress a given data object"""
-    if isinstance(payload, bytes):
-        payload = gzip.decompress(payload)
-        payload = decodeBytesToUnicode(payload)
-        return json.loads(payload)
-    return payload
+from nose.plugins.attrib import attr
 
 
 class ServiceManager(object):
@@ -162,6 +153,7 @@ class MicroServiceTest(unittest.TestCase):
         cherrypy.engine.exit()
         cherrypy.engine.stop()
 
+    @attr("integration")
     def testPostCall(self):
         "Test function for getting status of a request from the MicroService"
         api = "status"

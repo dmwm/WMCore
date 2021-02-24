@@ -1,3 +1,7 @@
+1.4.5.patch1 to 1.4.5.patch2:
+  - fix bug in selecting stagein for ul logcollect, fixes ##10294 (Dirk Hufnagel) #10300
+
+
 1.4.5 to 1.4.5.patch1:
   - Update production DBS URL to cmsweb-prod - bin, doc, deploy, etc (Alan Malta Rodrigues) #10263
   - Update URL during spec creation; and a few other places (Alan Malta Rodrigues) #10263

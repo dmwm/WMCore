@@ -8,7 +8,7 @@ Mostly borrowed from StageOut since they share a similar function
 
 """
 
-
+from future.utils import viewitems
 
 
 from WMCore.WMSpec.Steps.Template import Template
@@ -51,7 +51,7 @@ class LogCollectStepHelper(CoreHelper):
         softwareEnvironment - setup command to bootstrap scram,defaults to None
         """
         self.data.application.setup.cmsswVersion = cmsswVersion
-        for k, v in options.items():
+        for k, v in viewitems(options):
             setattr(self.data.application.setup, k, v)
         return
 

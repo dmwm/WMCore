@@ -5,6 +5,8 @@ of pileup files in the job sandbox for the dataset.
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import datetime
 import os
 import shutil
@@ -77,7 +79,7 @@ class PileupFetcher(FetcherInterface):
         :return: update blockDict in place
         """
         blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
-        for blockName, blockLocation in blockReplicas.viewitems():
+        for blockName, blockLocation in viewitems(blockReplicas):
             try:
                 blockDict[blockName]['PhEDExNodeNames'] = list(blockLocation)
             except KeyError:

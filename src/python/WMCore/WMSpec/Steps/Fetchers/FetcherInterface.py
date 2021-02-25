@@ -3,6 +3,7 @@
 
 
 
+from builtins import object
 class FetcherInterface(object):
     """
     _FetcherInterface_

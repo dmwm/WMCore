@@ -8,6 +8,8 @@ Template for a CMSSW Step
 
 import pickle
 
+from future.utils import viewitems
+
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 from WMCore.WMSpec.Steps.Template import CoreHelper, Template
 
@@ -90,7 +92,7 @@ class CMSSWStepHelper(CoreHelper):
             modules.section_(moduleName)
         module = getattr(modules, moduleName)
 
-        for key, value in details.items():
+        for key, value in viewitems(details):
             setattr(module, key, value)
 
         return
@@ -103,7 +105,7 @@ class CMSSWStepHelper(CoreHelper):
 
         """
         if hasattr(self.data.output, "modules"):
-            return self.data.output.modules.dictionary_().keys()
+            return list(self.data.output.modules.dictionary_())
 
         return []
 
@@ -151,7 +153,7 @@ class CMSSWStepHelper(CoreHelper):
         # at pickledarguments anyways
         try:
             self.data.application.configuration.section_('arguments')
-            [setattr(self.data.application.configuration.arguments, k, v) for k, v in args.items()]
+            [setattr(self.data.application.configuration.arguments, k, v) for k, v in viewitems(args)]
         except Exception:
             pass
         self.data.application.configuration.pickledarguments = pickle.dumps(args)
@@ -174,7 +176,7 @@ class CMSSWStepHelper(CoreHelper):
         softwareEnvironment - setup command to bootstrap scram,defaults to None
         """
         self.data.application.setup.cmsswVersion = cmsswVersion
-        for k, v in options.items():
+        for k, v in viewitems(options):
             setattr(self.data.application.setup, k, v)
         return
 
@@ -334,7 +336,7 @@ class CMSSWStepHelper(CoreHelper):
         # self.data.pileup.comics.dataset = "/some/cosmics/dataset"
         # self.data.pileup.minbias.dataset = "/some/minbias/dataset"
         self.data.section_("pileup")
-        for pileupType, dataset in pileupConfig.items():
+        for pileupType, dataset in viewitems(pileupConfig):
             self.data.pileup.section_(pileupType)
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
         setattr(self.data, "dbsUrl", dbsUrl)

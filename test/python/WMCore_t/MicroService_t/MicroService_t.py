@@ -86,7 +86,7 @@ class MicroServiceTest(unittest.TestCase):
             del cherrypy.servers[name]
 
     def testGetStatus(self):
-        "Test function for getting status of the MicroService"
+        """Test the GET RESTful APIs: status and info"""
         api = "status"
         url = '%s/%s' % (self.url, api)
         params = {}
@@ -114,8 +114,6 @@ class MicroServiceTest(unittest.TestCase):
         data = self.mgr.getdata(url, params=params, headers=self.identityEncHeader, encode=True, decode=True)
         self.assertEqual(data['result'][0]['microservice'], self.managerName)
         self.assertEqual(data['result'][0]['api'], api)
-        cherrypy.engine.exit()
-        cherrypy.engine.stop()
 
     def testGetInfo(self):
         "Test function for getting state of the MicroService"

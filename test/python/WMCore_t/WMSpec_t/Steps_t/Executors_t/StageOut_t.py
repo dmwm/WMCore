@@ -5,6 +5,15 @@ Created on Jun 18, 2009
 """
 from __future__ import print_function
 
+try:
+    # https://pylint.pycqa.org/en/latest/technical_reference/features.html
+    # W1626: the `reload` built-in function is missing in python3
+    # we can use imp.reload (deprecated) or importlib.reload
+    from importlib import reload
+except:
+    pass
+
+
 import copy
 import logging
 import os
@@ -69,7 +78,7 @@ class StageOutTest(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in sys.modules:
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -133,7 +142,7 @@ class StageOutTest(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in sys.modules:
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -239,7 +248,7 @@ class otherStageOutTexst(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in sys.modules:
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
@@ -303,7 +312,7 @@ class otherStageOutTexst(unittest.TestCase):
         # not sure what happens if you delete from
         # an arrey you're iterating over. doing it in
         # two steps
-        for modname in sys.modules.keys():
+        for modname in sys.modules:
             # need to blow away things in sys.modules, otherwise
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):

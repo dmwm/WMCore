@@ -51,7 +51,7 @@ def initialize_request_args(request, config):
 
     # set the original priority when request is create
     request["PriorityTransition"] = [{"Priority": request["RequestPriority"],
-                                     "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
+                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     # update the information from config
     request["CouchURL"] = config.couch_host
     request["CouchWorkloadDBName"] = config.couch_reqmgr_db
@@ -127,6 +127,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
     replaceDbsProdUrl(cloneArgs)
 
     return cloneArgs
+
 
 def incrementProcVer(cloneArgs, requestArgs):
     """
@@ -217,8 +218,6 @@ class RequestInfo(object):
             else:
                 return defaultValue
 
-        return
-
     def get(self, prop, default=None):
         """
         gets the value when prop exist as one of the properties in the request document.
@@ -280,7 +279,7 @@ class RequestInfo(object):
         """
         check whether workflow data is cleaned up from agent only checks the couchdb
         Since dbsbuffer data is not clean up we can't just check 'AgentJobInfo' key existence
-        This all is only meaningfull if request status is right befor end status.
+        This all is only meaningfull if request status is right before end status.
         ["aborted-completed", "rejected", "announced"]
         DO NOT check if workflow status isn't among those status
         """
@@ -288,6 +287,6 @@ class RequestInfo(object):
             for agentRequestInfo in viewvalues(self.data['AgentJobInfo']):
                 if agentRequestInfo.get("status", {}):
                     return False
-        # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
+        # cannot determine whether AgentJobInfo is cleaned or not when 'AgentJobInfo' key doesn't exist
         # Maybe JobInformation is not included but since it requested by above status assumed it returns True
         return True

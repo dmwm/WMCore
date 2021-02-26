@@ -19,7 +19,7 @@ from future.utils import viewitems, viewvalues, listvalues
 
 import re
 import time
-
+from copy import deepcopy
 from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
@@ -196,15 +196,18 @@ class RequestInfo(object):
                 chain_key = "%s%s" % (chain_name, i + 1)
                 chain = self.data[chain_key]
                 if prop in chain:
-                    result.add(chain[prop])
+                    foundValue = chain[prop]
                 else:
                     if isinstance(defaultValue, dict):
-                        value = defaultValue.get(chain_key, None)
+                        foundValue = defaultValue.get(chain_key, None)
                     else:
-                        value = defaultValue
+                        foundValue = deepcopy(defaultValue)
 
-                    if value is not None:
-                        result.add(value)
+                if foundValue not in [None, ""]:
+                    if isinstance(foundValue, (list, set)):
+                        result.update(foundValue)
+                    else:
+                        result.add(foundValue)
             return list(result)
         else:
             # property which can't be task or stepchain property but in dictionary format
@@ -223,9 +226,9 @@ class RequestInfo(object):
         """
 
         if "TaskChain" in self.data:
-            return self._maskTaskStepChain(prop, "Task")
+            return self._maskTaskStepChain(prop, "Task", default)
         elif "StepChain" in self.data:
-            return self._maskTaskStepChain(prop, "Step")
+            return self._maskTaskStepChain(prop, "Step", default)
         elif prop in self.data:
             return self.data[prop]
         else:

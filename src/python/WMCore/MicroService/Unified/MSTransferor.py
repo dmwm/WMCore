@@ -29,7 +29,7 @@ from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.RequestInfo import RequestInfo
 from WMCore.MicroService.Unified.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
-from Utils.EmailAlert import EmailAlert
+from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 def newTransferRec(dataIn):
     """
@@ -79,10 +79,6 @@ class MSTransferor(MSCore):
         # Send warning messages for any data transfer above this threshold.
         # Set to negative to ignore.
         self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
-        # Set default email settings
-        self.msConfig.setdefault("toAddr", "cms-comp-ops-workflow-team@cern.ch")
-        self.msConfig.setdefault("fromAddr", "noreply@cern.ch")
-        self.msConfig.setdefault("smtpServer", "localhost")
 
         quotaAccount = self.msConfig["rucioAccount"]
 
@@ -101,7 +97,9 @@ class MSTransferor(MSCore):
         self.pnn2psnMap = {}
         self.dsetCounter = 0
         self.blockCounter = 0
-        self.emailAlert = EmailAlert(self.msConfig)
+        # service name used to route alerts via AlertManager
+        self.alertServiceName = "ms-transferor"
+        self.alertManagerApi = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -724,7 +722,7 @@ class MSTransferor(MSCore):
                     # a single one
                     self.logger.info("Rules successful created for %s : %s", dataIn['name'], res)
                     transferId.update(res)
-                    # send an email notification, if needed
+                    # send an alert, if needed
                     self.notifyLargeData(aboveWarningThreshold, transferId, wflow.getName(), dataSize, dataIn)
                 else:
                     self.logger.error("Failed to create rule for %s, will retry later", dids)
@@ -736,7 +734,7 @@ class MSTransferor(MSCore):
 
     def notifyLargeData(self, aboveWarningThreshold, transferId, wflowName, dataSize, dataIn):
         """
-        Evaluates whether the amount of data placed is too big, if so, send an email
+        Evaluates whether the amount of data placed is too big, if so, send an alert
         notification to a few persons
         :param aboveWarningThreshold: boolean flag saying if the thresholds was exceeded or not
         :param transferId: rule/transfer request id
@@ -746,12 +744,15 @@ class MSTransferor(MSCore):
         """
         # Warn about data transfer subscriptions going above some threshold
         if aboveWarningThreshold:
-            emailSubject = "[MS] Large pending data transfer under request id: {}".format(transferId)
-            emailMsg = "Workflow: {}\nhas a large amount of ".format(wflowName)
-            emailMsg += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
-            emailMsg += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
-            self.emailAlert.send(emailSubject, emailMsg)
-            self.logger.info(emailMsg)
+            alertName = "ms-transferor: Transfer over threshold: {}".format(transferId)
+            alertSeverity = "high"
+            alertSummary = "[MS] Large pending data transfer under request id: {}".format(transferId)
+            alertDescription = "Workflow: {}\nhas a large amount of ".format(wflowName)
+            alertDescription += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
+            alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
+
+            self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            self.logger.info(alertDescription)
 
     def _getValidSites(self, wflow, dataIn):
         """

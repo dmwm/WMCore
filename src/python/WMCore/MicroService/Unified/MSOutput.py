@@ -20,11 +20,11 @@ from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
 from WMCore.MicroService.Unified.MSCore import MSCore
 from WMCore.MicroService.Unified.Common import gigaBytes
 from WMCore.Services.CRIC.CRIC import CRIC
-from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
 from WMCore.WMException import WMException
+from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 
 
 class MSOutputException(WMException):
@@ -93,7 +93,9 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("mongoDBPort", 8230)
         self.msConfig.setdefault("sendNotification", False)
         self.uConfig = {}
-        self.emailAlert = EmailAlert(self.msConfig)
+        # service name used to route alerts via AlertManager
+        self.alertServiceName = "ms-output"
+        self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
         self.cric = CRIC(logger=self.logger)
         self.uConfig = {}
@@ -720,13 +722,16 @@ class MSOutput(MSCore):
                 msg += "under campaign: {}. Letting it pass though...".format(dataItem['Campaign'])
                 self.logger.warning(msg)
                 return True
-            emailSubject = "[MSOutput] Campaign '{}' not found in central CouchDB".format(dataItem['Campaign'])
-            emailMsg = "Dataset: {} cannot have an output transfer rule ".format(dataItem['Dataset'])
-            emailMsg += "because its campaign: {} cannot be found in central CouchDB.".format(dataItem['Campaign'])
-            emailMsg += " In order to get output data placement working, add it ASAP please."
-            self.logger.critical(emailMsg)
+            # send alert via AlertManager API
+            alertName = "ms-output: Campaign not found: {}".format(dataItem['Campaign'])
+            alertSeverity = "high"
+            alertSummary = "[MSOutput] Campaign '{}' not found in central CouchDB".format(dataItem['Campaign'])
+            alertDescription = "Dataset: {} cannot have an output transfer rule ".format(dataItem['Dataset'])
+            alertDescription += "because its campaign: {} cannot be found in central CouchDB.".format(dataItem['Campaign'])
+            alertDescription += " In order to get output data placement working, add it ASAP please."
+            self.logger.critical(alertDescription)
             if self.msConfig["sendNotification"]:
-                self.emailAlert.send(emailSubject, emailMsg)
+                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
             raise
 
         if dataTier in self.uConfig['tiers_to_DDM']['value']:
@@ -734,13 +739,16 @@ class MSOutput(MSCore):
         elif dataTier in self.uConfig['tiers_no_DDM']['value']:
             return False
         else:
-            emailSubject = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
-            emailMsg = "Dataset: {} contains a datatier: {}".format(dataItem['Dataset'], dataTier)
-            emailMsg += " not yet inserted into Unified configuration. "
-            emailMsg += "Please add it ASAP. Letting it pass for now..."
-            self.logger.critical(emailMsg)
+            # send alert via AlertManager API
+            alertName = "ms-output: Datatier not found: {}".format(dataTier)
+            alertSeverity = "high"
+            alertSummary = "[MSOutput] Datatier not found in the Unified configuration: {}".format(dataTier)
+            alertDescription = "Dataset: {} contains a datatier: {}".format(dataItem['Dataset'], dataTier)
+            alertDescription += " not yet inserted into Unified configuration. "
+            alertDescription += "Please add it ASAP. Letting it pass for now..."
+            self.logger.critical(alertDescription)
             if self.msConfig["sendNotification"] and not isRelVal:
-                self.emailAlert.send(emailSubject, emailMsg)
+                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
             return True
 
     def _getDataVolumeForTape(self, workflow):

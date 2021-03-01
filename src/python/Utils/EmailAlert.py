@@ -1,5 +1,9 @@
 """
 EmailAlert - send alerts via email
+
+NOTICE:
+This class does not work from kubernetes pods. The AlertManagerAPI class should be used for alerting from k8s.
+More details at: https://github.com/dmwm/WMCore/issues/10234
 """
 
 from __future__ import division

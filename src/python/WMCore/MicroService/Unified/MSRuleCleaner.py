@@ -622,6 +622,8 @@ class MSRuleCleaner(MSCore):
         for dataType in mapRuleType[rucioAcct]:
             dataList = wflow[dataType] if isinstance(wflow[dataType], list) else [wflow[dataType]]
             for dataCont in dataList:
+                if dataCont is None:
+                    continue
                 self.logger.debug("getRucioRules: dataCont: %s", pformat(dataCont))
                 if checkGlobalLocks and dataCont in self.globalLocks:
                     msg = "Found dataset: %s in GlobalLocks. NOT considering it for filling the "

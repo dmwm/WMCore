@@ -5,6 +5,8 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 from __future__ import division, print_function
 
+from future.utils import viewitems
+
 import time
 # system modules
 import unittest
@@ -48,7 +50,7 @@ class MSMonitorTest(EmulatedUnitTestCase):
         self.assertTrue(time.time() > transfersDocs[0]['lastUpdate'], 1)
 
         self.assertNotEqual(campaigns, [])
-        for cname, cdict in campaigns.items():
+        for cname, cdict in viewitems(campaigns):
             self.assertEqual(cname, cdict['CampaignName'])
             self.assertEqual(isinstance(cdict, dict), True)
             self.assertNotEqual(cdict.get('CampaignName', {}), {})

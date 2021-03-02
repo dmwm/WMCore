@@ -6,6 +6,7 @@ Class to hold and parse all information related to a given request
 """
 # futures
 from __future__ import division, print_function
+from future.utils import viewitems, viewvalues, listvalues
 
 # system modules
 import datetime
@@ -154,12 +155,12 @@ class RequestInfo(MSCore):
         orig = time.time()
         time0 = time.time()
         requestWorkflows = self._getRequestWorkflows(requestNames)
-        requestWorkflows = requestWorkflows.values()
+        requestWorkflows = listvalues(requestWorkflows)
         self.logger.debug(elapsedTime(time0, "### getWorkflows"))
 
         # get workflows info summaries and collect datasets we need to process
         winfo = workflowsInfo(requestWorkflows)
-        datasets = [d for row in winfo.values() for d in row['datasets']]
+        datasets = [d for row in viewvalues(winfo) for d in row['datasets']]
 
         # find dataset info
         time0 = time.time()
@@ -186,7 +187,7 @@ class RequestInfo(MSCore):
         tst0 = time.time()
         totBlocks = totEvents = totSize = totCpuT = 0
         for wflow in requestWorkflows:
-            for wname, wspec in wflow.items():
+            for wname, wspec in viewitems(wflow):
                 time0 = time.time()
                 cput = getComputingTime(wspec, eventsLumis=eventsLumis, dbsUrl=self.msConfig['dbsUrl'],
                                         logger=self.logger)
@@ -238,7 +239,7 @@ class RequestInfo(MSCore):
                 requestsToProcess.append(rdict)
                 self.logger.debug(elapsedTime(t0, "### getSiteWhiteList"))
         self.logger.debug("total # of workflows %s, datasets %s, blocks %s, evts %s, size %s (%s TB), cput %s (hours)",
-                          len(winfo.keys()), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT)
+                          len(winfo), len(datasets), totBlocks, totEvents, totSize, teraBytes(totSize), totCpuT)
         self.logger.debug(elapsedTime(tst0, '### workflows info'))
         self.logger.debug(elapsedTime(orig, '### total time'))
         return requestsToProcess
@@ -272,14 +273,14 @@ class RequestInfo(MSCore):
                 datasetByDbs.setdefault(wflow.getDbsUrl(), set())
                 datasetByDbs[wflow.getDbsUrl()].add(wflow.getInputDataset())
 
-        for dbsUrl, datasets in datasetByDbs.items():
+        for dbsUrl, datasets in viewitems(datasetByDbs):
             self.logger.info("Resolving %d dataset parentage against DBS: %s", len(datasets), dbsUrl)
             # first find out what's the parent dataset name
             parentByDset.update(findParent(datasets, dbsUrl))
 
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
-        for dset, value in parentByDset.items():
+        for dset, value in viewitems(parentByDset):
             if value is None:
                 retryDatasets.append(dset)
         if retryDatasets:
@@ -328,10 +329,10 @@ class RequestInfo(MSCore):
                                                rucioToken=self.rucioToken)
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
-        for dset, value in sizesByDset.items():
+        for dset, value in viewitems(sizesByDset):
             if value is None:
                 retryDatasets.append(dset)
-        for dset, value in locationsByDset.items():
+        for dset, value in viewitems(locationsByDset):
             if value is None:
                 retryDatasets.append(dset)
         if retryDatasets:
@@ -490,7 +491,7 @@ class RequestInfo(MSCore):
             except Exception as exc:
                 self.logger.error("Failed to bulk retrieve runs per block. Details: %s", str(exc))
                 raise
-            for block, runs in blockRuns.items():
+            for block, runs in viewitems(blockRuns):
                 if not set(runs).difference(runBlack):
                     self.logger.info("Dropping block with only blacklisted runs: %s", block)
                 elif block in blocksDict:
@@ -509,7 +510,7 @@ class RequestInfo(MSCore):
                 except Exception as exc:
                     self.logger.error("Failed to bulk retrieve run/lumi per block. Details: %s", str(exc))
                     raise
-                for block, fileLumis in blockFileLumis.items():
+                for block, fileLumis in viewitems(blockFileLumis):
                     for fileLumi in fileLumis:
                         if int(fileLumi['run_num']) not in runWhite:
                             continue
@@ -562,7 +563,7 @@ class RequestInfo(MSCore):
             if wflow.getParentDataset():
                 blocksByDbs[wflow.getDbsUrl()] = blocksByDbs[wflow.getDbsUrl()] | set(wflow.getPrimaryBlocks().keys())
 
-        for dbsUrl, blocks in blocksByDbs.items():
+        for dbsUrl, blocks in viewitems(blocksByDbs):
             if not blocks:
                 continue
             self.logger.debug("Fetching DBS parent blocks for %d children blocks...", len(blocks))
@@ -571,7 +572,7 @@ class RequestInfo(MSCore):
 
         # now check if any of our calls failed; if so, workflow needs to be skipped from this cycle
         # FIXME: isn't there a better way to do this?!?
-        for dset, value in parentageMap.items():
+        for dset, value in viewitems(parentageMap):
             if value is None:
                 retryDatasets.append(dset)
         if retryDatasets:
@@ -735,7 +736,7 @@ class RequestInfo(MSCore):
             include = {'EventAwareLumiBased': {'halt_job_on_file_boundaries_event_aware': 'True'},
                        'LumiBased': {'halt_job_on_file_boundaries': 'True'}}
             if tsplit.algorithm in include:
-                for key, val in include[tsplit.algorithm].items():
+                for key, val in viewitems(include[tsplit.algorithm]):
                     spl[-1][key] = val
             for get in get_those:
                 if hasattr(tsplit, get):
@@ -773,7 +774,7 @@ class RequestInfo(MSCore):
         if not select:
             allTasks.append(node)
         else:
-            for key, value in select.items():
+            for key, value in viewitems(select):
                 if (isinstance(value, list) and getattr(node, key) in value) or \
                         (not isinstance(value, list) and getattr(node, key) == value):
                     allTasks.append(node)
@@ -837,5 +838,5 @@ class RequestInfo(MSCore):
         mcores = [int(request.get('Multicore', 1))]
         if 'Chain' in request['RequestType']:
             mcoresCol = self.collectinchain(request, 'Multicore', default=1)
-            mcores.extend([int(v) for v in mcoresCol.values()])
+            mcores.extend([int(v) for v in viewvalues(mcoresCol)])
         return max(mcores)

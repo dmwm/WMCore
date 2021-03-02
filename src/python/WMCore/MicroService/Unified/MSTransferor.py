@@ -10,6 +10,7 @@ tasks might be extended to multi-threading in the future.
 """
 # futures
 from __future__ import division, print_function
+from future.utils import viewitems, listvalues
 from future import standard_library
 standard_library.install_aliases()
 
@@ -259,7 +260,7 @@ class MSTransferor(MSCore):
         # we need to first put these requests in order of priority, as done for GQ...
         orderedRequests = []
         for requests in reqData:
-            orderedRequests = requests.values()
+            orderedRequests = listvalues(requests)
         orderedRequests.sort(key=itemgetter('RequestPriority'), reverse=True)
 
         return orderedRequests
@@ -325,7 +326,7 @@ class MSTransferor(MSCore):
             self.logger.info("Request %s has %d initial blocks from %s",
                              wflow.getName(), len(inputBlocks), methodName)
 
-            for block, blockDict in inputBlocks.items():
+            for block, blockDict in viewitems(inputBlocks):
                 blockLocation = self._diskPNNs(blockDict['locations'])
                 if primaryAAA and blockLocation:
                     msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockLocation)
@@ -365,7 +366,7 @@ class MSTransferor(MSCore):
             self.logger.info("Request %s has %d initial blocks from %s",
                              wflow.getName(), len(inputBlocks), methodName)
 
-            for block, blockDict in inputBlocks.items():
+            for block, blockDict in viewitems(inputBlocks):
                 blockLocation = self._diskPNNs(blockDict['locations'])
                 commonLocation = wflowPnns & set(blockLocation)
                 if not commonLocation:
@@ -376,7 +377,7 @@ class MSTransferor(MSCore):
         maxSize = 0
         finalPNN = set()
         self.logger.info("Primary/parent data volume currently available:")
-        for pnn, size in volumeByPNN.items():
+        for pnn, size in viewitems(volumeByPNN):
             self.logger.info("  PNN: %s\t\tData volume: %s GB", pnn, gigaBytes(size))
             if size > maxSize:
                 maxSize = size
@@ -416,7 +417,7 @@ class MSTransferor(MSCore):
 
         if secondaryAAA:
             # what matters is to have pileup dataset(s) available in ANY disk storage
-            for dset, dsetDict in pileupInput.items():
+            for dset, dsetDict in viewitems(pileupInput):
                 datasetLocation = self._diskPNNs(dsetDict['locations'])
                 msg = "it has secondary: %s, total size: %s GB, disk locations: %s"
                 self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)
@@ -428,7 +429,7 @@ class MSTransferor(MSCore):
                     self.logger.info("secondary dataset %s not available even through AAA", dset)
         else:
             if len(pileupInput) == 1:
-                for dset, dsetDict in pileupInput.items():
+                for dset, dsetDict in viewitems(pileupInput):
                     datasetLocation = self._diskPNNs(dsetDict['locations'])
                     msg = "it has secondary: %s, total size: %s GB, current disk locations: %s"
                     self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)
@@ -446,7 +447,7 @@ class MSTransferor(MSCore):
                 # Note: avoid transferring the biggest one
                 largestSize = 0
                 largestDset = ""
-                for dset, dsetDict in pileupInput.items():
+                for dset, dsetDict in viewitems(pileupInput):
                     if dsetDict['dsetSize'] > largestSize:
                         largestSize = dsetDict['dsetSize']
                         largestDset = dset
@@ -463,7 +464,7 @@ class MSTransferor(MSCore):
                 else:
                     self.logger.info("Largest secondary dataset %s not available in a common location. This is BAD!")
                 # now iterate normally through the pileup datasets
-                for dset, dsetDict in pileupInput.items():
+                for dset, dsetDict in viewitems(pileupInput):
                     datasetLocation = self._diskPNNs(dsetDict['locations'])
                     msg = "it has secondary: %s, total size: %s GB, current disk locations: %s"
                     self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)

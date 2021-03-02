@@ -25,6 +25,7 @@ used in service config.py as following
 from __future__ import division, print_function
 
 # system modules
+from builtins import object
 from time import sleep
 from datetime import datetime
 from collections import deque

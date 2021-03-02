@@ -8,6 +8,7 @@ Description: UnifiedInjectorManager class provides full functionality of the Uni
 from __future__ import division
 
 # system modules
+from builtins import object
 import time
 
 # Unified modules

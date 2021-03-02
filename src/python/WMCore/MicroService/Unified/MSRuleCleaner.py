@@ -14,6 +14,8 @@ workflows remain.
 
 # futures
 from __future__ import division, print_function
+from future.utils import viewvalues
+
 import json
 import re
 import time
@@ -248,7 +250,7 @@ class MSRuleCleaner(MSCore):
         totalNumRequests = 0
 
         # Call the workflow dispatcher:
-        for _, req in reqRecords.items():
+        for req in viewvalues(reqRecords):
             wflow = MSRuleCleanerWflow(req)
             self._dispatchWflow(wflow)
             msg = "\n----------------------------------------------------------"
@@ -325,7 +327,7 @@ class MSRuleCleaner(MSCore):
                 except MSRuleCleanerResolveParentError as ex:
                     msg = "%s: Parentage Resolve Error: %s. "
                     msg += "Will retry again in the next cycle."
-                    self.logger.error(msg, pline.name, ex.message())
+                    self.logger.error(msg, pline.name, str(ex))
                     continue
                 except Exception as ex:
                     msg = "%s: General error from pipeline. Workflow: %s. Error:  \n%s. "
@@ -350,11 +352,11 @@ class MSRuleCleaner(MSCore):
         except MSRuleCleanerArchivalSkip as ex:
             msg = "%s: Proper conditions not met: %s. "
             msg += "Skipping archival in the current cycle."
-            self.logger.info(msg, wflow['PlineMarkers'][-1], ex.message())
+            self.logger.info(msg, wflow['PlineMarkers'][-1], str(ex))
         except MSRuleCleanerArchivalError as ex:
             msg = "%s: Archival Error: %s. "
             msg += "Will retry again in the next cycle."
-            self.logger.error(msg, wflow['PlineMarkers'][-1], ex.message())
+            self.logger.error(msg, wflow['PlineMarkers'][-1], str(ex))
         except Exception as ex:
             msg = "%s General error from pipeline. Workflow: %s. Error: \n%s. "
             msg += "\nWill retry again in the next cycle."
@@ -405,7 +407,7 @@ class MSRuleCleaner(MSCore):
         # Build a list of bool flags based on the mask of PlineMarkers
         cleanFlagsList = [wflow['CleanupStatus'][key]
                           for key in wflow['PlineMarkers']
-                          if key in wflow['CleanupStatus'].keys()]
+                          if key in wflow['CleanupStatus']]
 
         # If no one have worked on the workflow set the clean status to false
         if not wflow['PlineMarkers']:

@@ -8,6 +8,8 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 # futures
 from __future__ import division, print_function, absolute_import
 
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -377,13 +379,13 @@ def workflowsInfo(workflows):
     "Return minimum info about workflows in flat format"
     winfo = {}
     for wflow in workflows:
-        for key, val in wflow.iteritems():
+        for key, val in viewitems(wflow):
             datasets = set()
             pileups = set()
             selist = []
             priority = 0
             campaign = ''
-            for kkk, vvv in val.iteritems():
+            for kkk, vvv in viewitems(val):
                 if STEP_PAT.match(kkk) or TASK_PAT.match(kkk):
                     dataset = vvv.get('InputDataset', '')
                     pileup = vvv.get('MCPileup', '')

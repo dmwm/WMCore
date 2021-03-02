@@ -4,7 +4,9 @@ required for automatic data placement.
 It uses Rucio for checking quota available and data usage
 """
 from __future__ import division, print_function
+from builtins import str as newstr, bytes, object
 from future.utils import viewitems
+
 from WMCore.MicroService.Unified.Common import getMSLogger, gigaBytes, teraBytes
 
 
@@ -130,7 +132,7 @@ class RSEQuotas(object):
         self.availableRSEs.clear()
         self.outOfSpaceNodes.clear()
         # given a configurable sub-fraction of our quota, recalculate how much storage is left
-        for rse, info in self.nodeUsage.items():
+        for rse, info in viewitems(self.nodeUsage):
             quotaAvail = info['quota'] * self.quotaFraction
             info['quota_avail'] = min(quotaAvail, info['bytes_remaining'])
             if info['quota_avail'] < self.minimumSpace:
@@ -164,7 +166,7 @@ class RSEQuotas(object):
         :param dataSize: integer with the amount of bytes allocated
         :return: nothing. updates nodeUsage cache
         """
-        if isinstance(node, basestring):
+        if isinstance(node, (newstr, bytes)):
             node = [node]
         if not isinstance(dataSize, int):
             self.logger.error("dataSize needs to be integer, not '%s'!", type(dataSize))

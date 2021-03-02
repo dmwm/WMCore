@@ -4,6 +4,9 @@ _ChangeState_t_
 
 """
 
+from builtins import range, int, str as newstr
+from future.utils import viewvalues
+
 import os
 import threading
 import unittest
@@ -70,13 +73,13 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         # Run through all good state transitions and assert that they work
-        for state in self.transitions.keys():
+        for state in self.transitions:
             for dest in self.transitions[state]:
                 change.check(dest, state)
         dummystates = ['dummy1', 'dummy2', 'dummy3', 'dummy4']
 
         # Then run through some bad state transistions and assertRaises(AssertionError)
-        for state in self.transitions.keys():
+        for state in self.transitions:
             for dest in dummystates:
                 self.assertRaises(AssertionError, change.check, dest, state)
         return
@@ -136,9 +139,8 @@ class TestChangeState(unittest.TestCase):
 
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
-        for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(isinstance(transition["timestamp"], int) or
-                            isinstance(transition["timestamp"], long))
+        for transition in viewvalues(testJobADoc["states"]):
+            self.assertTrue(isinstance(transition["timestamp"], int))
 
         self.assertEqual(testJobADoc["jobid"], testJobA["id"], "Error: ID parameter is incorrect.")
         assert testJobADoc["name"] == testJobA["name"], \
@@ -261,6 +263,29 @@ class TestChangeState(unittest.TestCase):
 
         self.assertTrue("states" in testJobADoc)
         self.assertTrue("1" in testJobADoc["states"])
+
+        testFileB = File(lfn="SomeLFNB", events=1024, size=2048,
+                         locations=set(["T2_CH_CERN"]))
+        testFileB.create()
+        testFileset.addFile(testFileB)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
+
+        testJobB = jobGroup.jobs[0]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Merge"
+        testJobB["couch_record"] = newstr(testJobB["id"])
+
+        change.propagate([testJobB], "new", "none")
+        testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
+
+        self.assertTrue("states" in testJobBDoc)
+        self.assertTrue("1" in testJobBDoc["states"])
         return
 
     def testPersist(self):
@@ -476,11 +501,11 @@ class TestChangeState(unittest.TestCase):
         assert fwjrDoc["retrycount"] == 0, \
             "Error: Retry count is wrong."
 
-        assert len(fwjrDoc["fwjr"]["steps"].keys()) == 2, \
+        assert len(fwjrDoc["fwjr"]["steps"]) == 2, \
             "Error: Wrong number of steps in FWJR."
-        assert "cmsRun1" in fwjrDoc["fwjr"]["steps"].keys(), \
+        assert "cmsRun1" in fwjrDoc["fwjr"]["steps"], \
             "Error: cmsRun1 step is missing from FWJR."
-        assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
+        assert "stageOut1" in fwjrDoc["fwjr"]["steps"], \
             "Error: stageOut1 step is missing from FWJR."
 
         return

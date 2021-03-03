@@ -19,7 +19,7 @@ from future.utils import viewitems, viewvalues, listvalues
 
 import re
 import time
-
+from copy import deepcopy
 from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
@@ -51,7 +51,7 @@ def initialize_request_args(request, config):
 
     # set the original priority when request is create
     request["PriorityTransition"] = [{"Priority": request["RequestPriority"],
-                                     "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
+                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     # update the information from config
     request["CouchURL"] = config.couch_host
     request["CouchWorkloadDBName"] = config.couch_reqmgr_db
@@ -128,6 +128,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
 
     return cloneArgs
 
+
 def incrementProcVer(cloneArgs, requestArgs):
     """
     Increment the ProcessingVersion value for any requests cloned via
@@ -196,15 +197,18 @@ class RequestInfo(object):
                 chain_key = "%s%s" % (chain_name, i + 1)
                 chain = self.data[chain_key]
                 if prop in chain:
-                    result.add(chain[prop])
+                    foundValue = chain[prop]
                 else:
                     if isinstance(defaultValue, dict):
-                        value = defaultValue.get(chain_key, None)
+                        foundValue = defaultValue.get(chain_key, None)
                     else:
-                        value = defaultValue
+                        foundValue = deepcopy(defaultValue)
 
-                    if value is not None:
-                        result.add(value)
+                if foundValue not in [None, ""]:
+                    if isinstance(foundValue, (list, set)):
+                        result.update(foundValue)
+                    else:
+                        result.add(foundValue)
             return list(result)
         else:
             # property which can't be task or stepchain property but in dictionary format
@@ -214,8 +218,6 @@ class RequestInfo(object):
             else:
                 return defaultValue
 
-        return
-
     def get(self, prop, default=None):
         """
         gets the value when prop exist as one of the properties in the request document.
@@ -223,9 +225,9 @@ class RequestInfo(object):
         """
 
         if "TaskChain" in self.data:
-            return self._maskTaskStepChain(prop, "Task")
+            return self._maskTaskStepChain(prop, "Task", default)
         elif "StepChain" in self.data:
-            return self._maskTaskStepChain(prop, "Step")
+            return self._maskTaskStepChain(prop, "Step", default)
         elif prop in self.data:
             return self.data[prop]
         else:
@@ -277,7 +279,7 @@ class RequestInfo(object):
         """
         check whether workflow data is cleaned up from agent only checks the couchdb
         Since dbsbuffer data is not clean up we can't just check 'AgentJobInfo' key existence
-        This all is only meaningfull if request status is right befor end status.
+        This all is only meaningfull if request status is right before end status.
         ["aborted-completed", "rejected", "announced"]
         DO NOT check if workflow status isn't among those status
         """
@@ -285,6 +287,6 @@ class RequestInfo(object):
             for agentRequestInfo in viewvalues(self.data['AgentJobInfo']):
                 if agentRequestInfo.get("status", {}):
                     return False
-        # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
+        # cannot determine whether AgentJobInfo is cleaned or not when 'AgentJobInfo' key doesn't exist
         # Maybe JobInformation is not included but since it requested by above status assumed it returns True
         return True

@@ -6,6 +6,9 @@ WorkQueue tests
 """
 from __future__ import print_function
 
+from builtins import next, range
+from future.utils import viewitems
+
 import os
 import threading
 import time
@@ -273,7 +276,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # create relevant sites in wmbs
         rc = ResourceControl()
         site_se_mapping = {'T2_XX_SiteA': 'T2_XX_SiteA', 'T2_XX_SiteB': 'T2_XX_SiteB'}
-        for site, se in site_se_mapping.iteritems():
+        for site, se in viewitems(site_se_mapping):
             rc.insertSite(site, 100, 200, se, cmsName=site, plugin="MockPlugin")
             daofactory = DAOFactory(package="WMCore.WMBS",
                                     logger=threading.currentThread().logger,
@@ -1514,13 +1517,13 @@ class WorkQueueTest(WorkQueueTestCase):
         expectedMetrics = ('workByStatus', 'workByStatusAndPriority', 'workByAgentAndStatus',
                            'workByAgentAndPriority', 'uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA',
                            'uniqueJobsPerSite', 'possibleJobsPerSite', 'total_query_time')
-        self.assertItemsEqual(metrics.keys(), expectedMetrics)
+        self.assertItemsEqual(list(metrics), expectedMetrics)
 
-        self.assertItemsEqual(metrics['workByStatus'].keys(), STATES)
+        self.assertItemsEqual(list(metrics['workByStatus']), STATES)
         self.assertEqual(metrics['workByStatus']['Available']['sum_jobs'], 678)
         self.assertEqual(metrics['workByStatus']['Acquired'], {})
 
-        self.assertItemsEqual(metrics['workByStatusAndPriority'].keys(), STATES)
+        self.assertItemsEqual(list(metrics['workByStatusAndPriority']), STATES)
         prios = [item['priority'] for item in metrics['workByStatusAndPriority']['Available']]
         self.assertItemsEqual(prios, [8000, 999998])
         self.assertEqual(metrics['workByStatusAndPriority']['Acquired'], [])
@@ -1534,10 +1537,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([item['priority'] for item in metrics['workByAgentAndPriority']], [8000, 999998])
 
         for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
-            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertItemsEqual(list(metrics[met]), initialStatus)
             self.assertEqual(len(metrics[met]['Available']), 2)
             self.assertEqual(len(metrics[met]['Acquired']), 0)
-            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Available']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
         self.assertTrue(metrics['total_query_time'] >= 0)
 
@@ -1572,11 +1575,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertItemsEqual(prios, [8000, 999998])
 
         for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
-            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertItemsEqual(list(metrics[met]), initialStatus)
             self.assertEqual(len(metrics[met]['Available']), 2)
             self.assertEqual(len(metrics[met]['Acquired']), 2)
-            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
-            self.assertItemsEqual(metrics[met]['Acquired'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Available']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Acquired']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
 
 if __name__ == "__main__":

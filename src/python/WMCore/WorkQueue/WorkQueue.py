@@ -12,6 +12,9 @@ https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 
 from __future__ import division, print_function
 
+from builtins import str as newstr, bytes
+from future.utils import viewitems, listvalues
+
 import os
 import threading
 import time
@@ -240,7 +243,7 @@ class WorkQueue(WorkQueueBase):
             if not elementIDs:
                 elementIDs = []
             iter(elementIDs)
-            if isinstance(elementIDs, basestring):
+            if isinstance(elementIDs, (newstr, bytes)):
                 raise TypeError
         except TypeError:
             elementIDs = [elementIDs]
@@ -342,7 +345,7 @@ class WorkQueue(WorkQueueBase):
                     elif match['Inputs']:
                         blockName, dbsBlock = self._getDBSBlock(match, wmspec)
                 except Exception as ex:
-                    msg = "%s, %s: \n" % (wmspec.name(), match['Inputs'].keys())
+                    msg = "%s, %s: \n" % (wmspec.name(), list(match['Inputs']))
                     msg += "failed to retrieve data from DBS/PhEDEx in LQ: \n%s" % str(ex)
                     self.logger.error(msg)
                     self.logdb.post(wmspec.name(), msg, 'error')
@@ -402,7 +405,7 @@ class WorkQueue(WorkQueueBase):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
         dbs = self._getDbs(match['Dbs'])
-        datasetName = match['Inputs'].keys()[0]
+        datasetName = list(match['Inputs'])[0]
 
         blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
         for blockName in blocks:
@@ -411,16 +414,16 @@ class WorkQueue(WorkQueueBase):
             tmpDsetDict[blockName] = blockSummary
 
         dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
-        dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
+        dbsDatasetDict['Files'] = [f for block in listvalues(tmpDsetDict) for f in block['Files']]
         dbsDatasetDict['PhEDExNodeNames'].extend(
-                [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
+                [f for block in listvalues(tmpDsetDict) for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
         """Get DBS info for this block"""
-        blockName = match['Inputs'].keys()[0]  # TODO: Allow more than one
+        blockName = list(match['Inputs'])[0]  # TODO: Allow more than one
 
         if match['ACDC']:
             acdcInfo = match['ACDC']
@@ -517,7 +520,7 @@ class WorkQueue(WorkQueueBase):
             workByRequest[ele['RequestName']] += 1
         work = self.parent_queue.saveElements(*elements)
         self.logger.info("Assigned work to the child queue for:")
-        for reqName, numElem in workByRequest.items():
+        for reqName, numElem in viewitems(workByRequest):
             self.logger.info("    %d elements for: %s", numElem, reqName)
         return work
 
@@ -956,7 +959,7 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Retrieved %d workflows known by WorkQueue", len(reqNames))
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
-        for key, value in requestsInfo.items():
+        for key, value in viewitems(requestsInfo):
             if (value["RequestStatus"] is None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
         self.logger.info("Found %d out of %d workflows in a deletable state",
@@ -1094,7 +1097,7 @@ class WorkQueue(WorkQueueBase):
                                                                                   unit['Task'].getPathName(),
                                                                                   unit['Jobs'], policyName)
                 if unit['Inputs']:
-                    msg += ' on %s' % unit['Inputs'].keys()[0]
+                    msg += ' on %s' % list(unit['Inputs'])[0]
                 if unit['Mask']:
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
@@ -1160,7 +1163,7 @@ class WorkQueue(WorkQueueBase):
                     if not self.params.get('LocalQueueFlag'):
                         processedInputs = []
                         for unit in work:
-                            processedInputs.extend(unit['Inputs'].keys())
+                            processedInputs.extend(list(unit['Inputs']))
                         self.backend.updateInboxElements(inbound.id, ProcessedInputs=processedInputs,
                                                          RejectedInputs=rejectedWork)
                         # if global queue, then update workflow stats to request mgr couch doc

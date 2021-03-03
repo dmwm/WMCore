@@ -3,6 +3,7 @@ Unit tests for the WMCore/MicroService/DataStructs/MSOutputTemplate.py module
 """
 from __future__ import division, print_function
 
+from builtins import range
 import unittest
 from copy import deepcopy
 
@@ -102,7 +103,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(msOutDoc["RequestType"], self.taskchainSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.taskchainSpec["_id"])
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
-        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
+        self.assertItemsEqual(list(msOutDoc["OutputMap"][0]), self.outputMapKeys)
         for idx in range(2):
             self.assertEqual(msOutDoc["OutputMap"][idx]["DatasetSize"], 0)
             if msOutDoc["OutputMap"][idx]["Campaign"] == self.taskchainSpec["Task1"]["Campaign"]:
@@ -133,7 +134,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(msOutDoc["RequestType"], self.stepchainSpec["RequestType"])
         self.assertEqual(msOutDoc["_id"], self.stepchainSpec["_id"])
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
-        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
+        self.assertItemsEqual(list(msOutDoc["OutputMap"][0]), self.outputMapKeys)
         for idx in range(2):
             self.assertEqual(msOutDoc["OutputMap"][idx]["DatasetSize"], 0)
             if msOutDoc["OutputMap"][idx]["Campaign"] == self.stepchainSpec["Step1"]["Campaign"]:
@@ -160,7 +161,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertEqual(msOutDoc["_id"], self.rerecoSpec["_id"])
         self.assertEqual(len(msOutDoc["OutputMap"]), 2)
         self.assertEqual(msOutDoc["OutputMap"][0]["DatasetSize"], 0)
-        self.assertItemsEqual(msOutDoc["OutputMap"][0].viewkeys(), self.outputMapKeys)
+        self.assertItemsEqual(list(msOutDoc["OutputMap"][0]), self.outputMapKeys)
         self.assertEqual(msOutDoc["OutputMap"][0]["Campaign"], self.rerecoSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputMap"][1]["Campaign"], self.rerecoSpec["Campaign"])
         self.assertItemsEqual([msOutDoc["OutputMap"][0]["Dataset"], msOutDoc["OutputMap"][1]["Dataset"]],

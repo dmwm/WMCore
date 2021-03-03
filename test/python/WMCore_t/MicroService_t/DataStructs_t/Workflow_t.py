@@ -233,11 +233,11 @@ class WorkflowTest(unittest.TestCase):
 
         self.assertEqual(wflow.getPrimaryBlocks(), {})
         wflow.setPrimaryBlocks(primDict)
-        self.assertItemsEqual(wflow.getPrimaryBlocks().keys(), ["block_A", "block_B"])
+        self.assertItemsEqual(list(wflow.getPrimaryBlocks()), ["block_A", "block_B"])
 
         self.assertEqual(wflow.getParentBlocks(), {})
         wflow.setParentBlocks(parentDict)
-        self.assertItemsEqual(wflow.getParentBlocks().keys(), ["parent_A", "parent_B", "parent_C"])
+        self.assertItemsEqual(list(wflow.getParentBlocks()), ["parent_A", "parent_B", "parent_C"])
 
         self.assertEqual(wflow.getChildToParentBlocks(), {})
         wflow.setChildToParentBlocks(parentage)

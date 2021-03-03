@@ -7,6 +7,8 @@ Implementation of StageOutImpl interface for SRM Version 2
 """
 from __future__ import print_function
 
+from builtins import zip, range
+
 import os
 import re
 
@@ -67,7 +69,7 @@ class SRMV2Impl(StageOutImpl):
         # // assume first 4 slashes are from srm://host:8443/srm/managerv2?SFN=
         dirs = ["/".join(targetdir.split("/")[0:6 + i]) \
                 for i in range(targetdir.count("/") - 4)]
-        dirsToCheck = dirs[:];
+        dirsToCheck = dirs[:]
         dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
         for count, folder in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):

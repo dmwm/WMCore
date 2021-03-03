@@ -266,7 +266,7 @@ class WMStepHelper(TreeHelper):
 
         """
         if hasattr(self.data.output, "analysisFiles"):
-            return self.data.output.analysisFiles.dictionary_().keys()
+            return list(self.data.output.analysisFiles.dictionary_())
 
         return []
 

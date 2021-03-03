@@ -1,5 +1,8 @@
 from __future__ import division, print_function
 
+from builtins import object
+from future.utils import viewitems
+
 import logging
 from Utils.IteratorTools import nestedDictUpdate, grouper
 from WMCore.Database.CMSCouch import CouchServer
@@ -39,13 +42,13 @@ REQUEST_PROPERTY_MAP = {
 
 def convertToLegacyFormat(requestDoc):
     converted = {}
-    for key, value in requestDoc.items():
+    for key, value in viewitems(requestDoc):
 
         if key == "RequestTransition":
             newValue = []
             for transDict in value:
                 newItem = {}
-                for transKey, transValue in transDict.items():
+                for transKey, transValue in viewitems(transDict):
                     newItem[REQUEST_PROPERTY_MAP.get(transKey, transKey)] = transValue
                     newValue.append(newItem)
             value = newValue
@@ -100,7 +103,7 @@ class WMStatsReader(object):
 
     def _updateRequestInfoWithJobInfo(self, requestInfo):
         if requestInfo:
-            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(requestInfo.keys())
+            jobInfoByRequestAndAgent = self.getLatestJobInfoByRequests(list(requestInfo))
             self._combineRequestAndJobData(requestInfo, jobInfoByRequestAndAgent)
 
     def _getCouchView(self, view, options, keys=None):
@@ -318,7 +321,7 @@ class WMStatsReader(object):
 
             if legacyFormat:
                 # convert the format to wmstats old format
-                for requestName, doc in requestInfo.items():
+                for requestName, doc in viewitems(requestInfo):
                     requestInfo[requestName] = convertToLegacyFormat(doc)
             results.update(requestInfo)
 
@@ -349,7 +352,7 @@ class WMStatsReader(object):
 
         workflowDict = self.reqDB.getStatusAndTypeByRequest(requestNames)
         archivedRequests = []
-        for request, value in workflowDict.items():
+        for request, value in viewitems(workflowDict):
             if value[0].endswith("-archived"):
                 archivedRequests.append(request)
 

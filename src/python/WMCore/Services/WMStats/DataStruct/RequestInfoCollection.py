@@ -1,4 +1,7 @@
 
+from builtins import object
+from future.utils import viewitems, viewvalues, listvalues
+
 class JobSummary(object):
     """
     job summary data structure from job format in couchdb
@@ -21,11 +24,11 @@ class JobSummary(object):
     def addJobStatusInfo(self, jobStatus):
 
         #TODO need to validate the structure.
-        for key, value in self.jobStatus.items():
+        for key, value in viewitems(self.jobStatus):
             if isinstance(value, int):
                 self.jobStatus[key] += jobStatus.get(key, 0)
             elif isinstance(value, dict):
-                for secondKey, secondValue in value.items():
+                for secondKey, secondValue in viewitems(value):
                     if key in jobStatus and secondKey in jobStatus[key]:
                         self.jobStatus[key][secondKey] += jobStatus[key][secondKey]
 
@@ -105,7 +108,7 @@ class ProgressSummary(object):
     def addProgressReport(self, progressReport):
 
         #TODO need to validate the structure.
-        for key in self.progress.keys():
+        for key in self.progress:
             self.progress[key] += progressReport.get(key, 0)
 
     def getReport(self):
@@ -173,13 +176,13 @@ class RequestInfo(object):
         self.tasksByAgent = {}
         self.jobSummary = JobSummary()
         if 'AgentJobInfo' in data:
-            for agentUrl, agentRequestInfo in data['AgentJobInfo'].items():
+            for agentUrl, agentRequestInfo in viewitems(data['AgentJobInfo']):
                 self.jobSummary.addJobStatusInfo(agentRequestInfo.get('status', {}))
                 self.jobSummaryByAgent[agentUrl] = JobSummary(agentRequestInfo.get('status', {}))
 
                 if 'tasks' in agentRequestInfo:
                     self.tasksByAgent[agentUrl] = {}
-                    for taskName, data in agentRequestInfo['tasks'].items():
+                    for taskName, data in viewitems(agentRequestInfo['tasks']):
                         if taskName not in self.tasks:
                             self.tasks[taskName] = TaskInfo(self.requestName, taskName, data)
                         else:
@@ -211,7 +214,7 @@ class RequestInfo(object):
     def getTotalTopLevelJobsInWMBS(self):
         inWMBS = 0
         if "AgentJobInfo" in self.data:
-            for agentRequestInfo in self.data["AgentJobInfo"].values():
+            for agentRequestInfo in viewvalues(self.data["AgentJobInfo"]):
                 inWMBS += agentRequestInfo['status'].get('inWMBS', 0)
         return inWMBS
 
@@ -231,12 +234,12 @@ class RequestInfo(object):
             #ther is no report yet (no agent has reported)
             return datasets
 
-        for agentRequestInfo in self.data["AgentJobInfo"].values():
+        for agentRequestInfo in viewvalues(self.data["AgentJobInfo"]):
 
             tasks = agentRequestInfo.get("tasks", [])
             for task in tasks:
                 for site in tasks[task].get("sites", []):
-                    for outputDS in tasks[task]["sites"][site].get("dataset", {}).keys():
+                    for outputDS in tasks[task]["sites"][site].get("dataset", {}):
                         #TODO: need update the record instead of replacing.
                         datasets.setdefault(outputDS, ProgressSummary())
                         datasets[outputDS].addProgressReport(tasks[task]["sites"][site]["dataset"][outputDS])
@@ -267,7 +270,7 @@ class RequestInfo(object):
         if len(self.tasks) == 0:
             return False
 
-        for taskInfo in self.tasks.values():
+        for taskInfo in viewvalues(self.tasks):
             if not taskInfo.isTaskCompleted():
                 return False
         return True
@@ -279,7 +282,7 @@ class RequestInfoCollection(object):
         self.setData(data)
 
     def setData(self, data):
-        for requestName, requestInfo in data.items():
+        for requestName, requestInfo in viewitems(data):
             self.collection[requestName] = RequestInfo(requestInfo)
 
     def getData(self):
@@ -287,16 +290,16 @@ class RequestInfoCollection(object):
 
     def filterRequests(self, conditionFunc):
         filtered = {}
-        for name, reqInfo in self.collection.items():
+        for name, reqInfo in viewitems(self.collection):
             if reqInfo.filterRequest(conditionFunc):
                 filtered[name] = reqInfo
         return filtered
 
     def getJSONData(self):
         result = {}
-        for requestInfo in self.collection.values():
+        for requestInfo in viewvalues(self.collection):
             result[requestInfo.requestName] = {}
-            for agentUrl, jobSummary in requestInfo.getJobSummaryByAgent().items():
+            for agentUrl, jobSummary in viewitems(requestInfo.getJobSummaryByAgent()):
                 result[requestInfo.requestName][agentUrl]= jobSummary.getJSONStatus()
         return result
 

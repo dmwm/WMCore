@@ -11,6 +11,8 @@ mocked data).
 
 from __future__ import (division, print_function)
 
+from future.utils import viewitems
+
 import json
 import os
 
@@ -80,7 +82,7 @@ for endpoint, outFile, calls, datasets in INSTANCES:
             print(" Fetching call list %d%% done." % percentDone)
         func = getattr(realDBS, call[0])
         if len(call) > 1:
-            signature = '%s:%s' % (call[0], sorted(call[1].iteritems()))
+            signature = '%s:%s' % (call[0], sorted(viewitems(call[1])))
             try:
                 result = func(**call[1])
             except HTTPError:

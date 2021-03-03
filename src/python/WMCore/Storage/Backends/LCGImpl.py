@@ -7,6 +7,8 @@ Implementation of StageOutImpl interface for lcg-cp
 """
 import os
 
+from future.utils import viewitems
+
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
@@ -33,7 +35,7 @@ class LCGImpl(StageOutImpl):
             'GRID_ENV_LOCATION':  '/grid-env.sh',
         }
 
-        for env, script in setupScripts.iteritems():
+        for env, script in viewitems(setupScripts):
             if os.environ.get(env):
                 fullScript = os.path.normpath(os.path.join(os.environ[env], script))
                 if os.path.isfile(fullScript):

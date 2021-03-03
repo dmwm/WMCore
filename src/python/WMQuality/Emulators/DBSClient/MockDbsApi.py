@@ -5,10 +5,13 @@ Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 """
 
 from __future__ import (division, print_function)
+from builtins import object
+from future.utils import viewitems
 
 import copy
 import json
 import os
+import sys
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -35,6 +38,16 @@ except IOError:
 mockData['https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
 mockData['https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
 
+def _unicode(data):
+    """
+    Temporary workaround for problem with how unicode strings are represented
+    by unicode (as u"hello worls") and future.types.newstr (as "hello world")
+    https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
+    """
+    if sys.version_info[0] == 2:
+        return unicode(data)
+    else:
+        return str(data)
 
 class MockDbsApi(object):
     def __init__(self, url):
@@ -63,7 +76,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [_unicode(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -86,7 +99,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [_unicode(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -112,11 +125,11 @@ class MockDbsApi(object):
         :return: the dictionary that DBS would have returned
         """
 
-        if self.url not in mockData.keys():
+        if self.url not in mockData:
             raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
 
         if kwargs:
-            signature = '%s:%s' % (self.item, sorted(kwargs.iteritems()))
+            signature = '%s:%s' % (self.item, sorted(viewitems(kwargs)))
         else:
             signature = self.item
 

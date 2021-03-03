@@ -3,6 +3,10 @@
 WorkQueue SplitPolicyInterface
 
 """
+from builtins import str as newstr, bytes
+from future.utils import viewitems
+
+
 __all__ = []
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
@@ -58,7 +62,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
         if self.initialTask.siteWhitelist():
-            if isinstance(self.initialTask.siteWhitelist(), basestring):
+            if isinstance(self.initialTask.siteWhitelist(), (newstr, bytes)):
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(
                     self.initialTask.siteWhitelist()))
                 raise error
@@ -72,7 +76,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
         if self.initialTask.siteBlacklist():
-            if isinstance(self.initialTask.siteBlacklist(), basestring):
+            if isinstance(self.initialTask.siteBlacklist(), (newstr, bytes)):
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(
                     self.initialTask.siteBlacklist()))
                 raise error
@@ -114,7 +118,7 @@ class StartPolicyInterface(PolicyInterface):
         dbsUrl = self.initialTask.dbsUrl()
         if dbsUrl is None and self.pileupData:
             # Get the first DBS found
-            dbsUrl = self.wmspec.listPileupDatasets().keys()[0]
+            dbsUrl = next(iter(self.wmspec.listPileupDatasets()))
 
         args.setdefault('Status', 'Available')
         args.setdefault('WMSpec', self.wmspec)
@@ -131,7 +135,7 @@ class StartPolicyInterface(PolicyInterface):
         if not args['Priority']:
             args['Priority'] = 0
         ele = WorkQueueElement(**args)
-        for data, sites in ele['Inputs'].items():
+        for data, sites in viewitems(ele['Inputs']):
             if not sites:
                 raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
 

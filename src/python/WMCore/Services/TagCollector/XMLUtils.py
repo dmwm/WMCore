@@ -8,6 +8,8 @@ Description: Set of utilities for RequestManager code
 """
 
 from __future__ import (division, print_function)
+from builtins import str, bytes
+from Utils.Utilities import encodeUnicodeToBytes
 
 from io import BytesIO
 import re
@@ -37,9 +39,14 @@ def adjust_value(value):
 
 
 def xml_parser(data, prim_key):
-    "Generic XML parser"
-    if isinstance(data, basestring):
+    """
+    Generic XML parser
+
+    :param data: can be of type "file object", unicode string or bytes string
+    """
+    if isinstance(data, (str, bytes)):
         stream = BytesIO()
+        data = encodeUnicodeToBytes(data, "ignore")
         stream.write(data)
         stream.seek(0)
     else:

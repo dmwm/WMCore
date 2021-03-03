@@ -88,7 +88,7 @@ class ResubmitBlock(StartPolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
-            acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])
+            acdcBlockSplit = ACDCBlock.splitBlockName(next(iter(self.data)))
         else:
             # if self.data is not passed, assume the the data is input dataset
             # from the spec
@@ -96,7 +96,7 @@ class ResubmitBlock(StartPolicyInterface):
 
         if acdcBlockSplit:
             dbsBlock = {}
-            dbsBlock['Name'] = self.data.keys()[0]
+            dbsBlock['Name'] = next(iter(self.data))
             block = acdc.getChunkInfo(acdcInfo['collection'],
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],

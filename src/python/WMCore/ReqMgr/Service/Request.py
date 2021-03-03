@@ -18,8 +18,8 @@ from WMCore.REST.Auth import get_user_info
 
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
-                                                     REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
+from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION,
+                                                     ACTIVE_STATUS, check_allowed_transition)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
                                             validate_clone_create_args, validateOutputDatasets,
@@ -393,13 +393,21 @@ class Request(RESTEntity):
         return requests
 
     def _retrieveResubmissionChildren(self, request_name):
-
+        """
+        Fetches all the direct children requests from CouchDB.
+        Response from CouchDB view is in the following format:
+            [{u'id': u'child_workflow_name',
+              u'key': u'parent_workflow_name',
+              u'value': 'current_request_status'}]
+        :param request_name: string with the parent workflow name
+        :return: a list of dictionaries with the parent and child workflow and the child status
+        """
         result = self.reqmgr_db.loadView('ReqMgr', 'childresubmissionrequests', keys=[request_name])['rows']
-        childrenRequestNames = []
-        for child in result:
-            childrenRequestNames.append(child['id'])
-            childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
-        return childrenRequestNames
+        childrenRequestAndStatus = []
+        for childInfo in result:
+            childrenRequestAndStatus.append(childInfo)
+            childrenRequestAndStatus.extend(self._retrieveResubmissionChildren(childInfo['id']))
+        return childrenRequestAndStatus
 
     def _handleNoStatusUpdate(self, workload, request_args, dn):
         """
@@ -475,19 +483,32 @@ class Request(RESTEntity):
         It handles only the state transition.
         Special handling needed if a request is aborted or force completed.
         """
+        # if we got here, then the main workflow has been already validated
+        # and the status transition is allowed
         req_status = request_args["RequestStatus"]
         cascade = request_args.get("cascade", False)
 
         if req_status in ["aborted", "force-complete"]:
             # cancel the workflow first
             self.gq_service.cancelWorkflow(workload.name())
-        if req_status in ["rejected", "closed-out", "announced"] and cascade:
-            cascade_list = self._retrieveResubmissionChildren(workload.name())
-            for req_name in cascade_list:
-                self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
 
-        cherrypy.log('Updating request status for request "%s" to %s. Cascade mode: %s' % (workload.name(), req_status, cascade))
-        # then update original workflow status in couchdb
+        # cascade option is only supported for these 3 statuses. If set, we need to
+        # find all the children requests and perform the same status transition
+        if req_status in ["rejected", "closed-out", "announced"] and cascade:
+            childrenNamesAndStatus = self._retrieveResubmissionChildren(workload.name())
+            msg = "Workflow {} has {} ".format(workload.name(), len(childrenNamesAndStatus))
+            msg += "children workflows to have a status transition to: {}".format(req_status)
+            cherrypy.log(msg)
+            for childInfo in childrenNamesAndStatus:
+                if check_allowed_transition(childInfo['value'], req_status):
+                    cherrypy.log('Updating request status for {} to {}.'.format(childInfo['id'], req_status))
+                    self.reqmgr_db_service.updateRequestStatus(childInfo['id'], req_status, dn)
+                else:
+                    msg = "Status transition from {} to {} ".format(childInfo['value'], req_status)
+                    msg += "not allowed for workflow: {}, skipping it!".format(childInfo['id'])
+                    cherrypy.log(msg)
+        # then update the original/parent workflow status in couchdb
+        cherrypy.log('Updating request status for {} to {}.'.format(workload.name(), req_status))
         report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         return report
 

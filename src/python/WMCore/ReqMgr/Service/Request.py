@@ -16,6 +16,7 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.REST.Auth import get_user_info
 
+from WMCore.ReqMgr.DataStructs.Request import RequestInfo
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION,
@@ -207,53 +208,29 @@ class Request(RESTEntity):
                 msg = str(ex)
             raise InvalidSpecParameterValue(msg)
 
-    def _maskTaskStepChain(self, masked_dict, req_dict, chain_name, mask_key):
-
-        mask_exist = False
-        num_loop = req_dict["%sChain" % chain_name]
-        for i in range(num_loop):
-            if mask_key in req_dict["%s%s" % (chain_name, i + 1)]:
-                mask_exist = True
-                break
-        if mask_exist:
-            defaultValue = masked_dict[mask_key]
-            masked_dict[mask_key] = []
-            # assume mask_key is list if the condition doesn't meet.
-
-            for i in range(num_loop):
-                chain_key = "%s%s" % (chain_name, i + 1)
-                chain = req_dict[chain_key]
-                if mask_key in chain:
-                    masked_dict[mask_key].append(chain[mask_key])
-                else:
-                    if isinstance(defaultValue, dict):
-                        value = defaultValue.get(chain_key, None)
-                    else:
-                        value = defaultValue
-
-                    if value is not None:
-                        masked_dict[mask_key].append(value)
-
-            masked_dict[mask_key] = list(set(masked_dict[mask_key]))
-        return
-
-    def _mask_result(self, mask, result):
+    def _maskResult(self, mask, result):
+        """
+        If a mask of parameters was provided in the query string, then filter
+        the request key/values accordingly.
+        :param mask: a list of strings (keys of the request dictionary)
+        :param result: a dict key'ed by the request name, with the whole
+            request dictionary as a value
+        :return: updates the result object in place and returns it (dict)
+        """
 
         if len(mask) == 1 and mask[0] == "DAS":
             mask = ReqMgrConfigDataCache.getConfig("DAS_RESULT_FILTER")["filter_list"]
 
         if len(mask) > 0:
-            masked_result = {}
-            for req_name, req_info in result.items():
-                masked_result.setdefault(req_name, {})
-                for mask_key in mask:
-                    masked_result[req_name].update({mask_key: req_info.get(mask_key, None)})
-                    if "TaskChain" in req_info:
-                        self._maskTaskStepChain(masked_result[req_name], req_info, "Task", mask_key)
-                    elif "StepChain" in req_info:
-                        self._maskTaskStepChain(masked_result[req_name], req_info, "Step", mask_key)
+            maskedResult = {}
+            for reqName, reqDict in result.items():
+                reqInfo = RequestInfo(reqDict)
+                maskedResult.setdefault(reqName, {})
+                for maskKey in mask:
+                    foundValue = reqInfo.get(maskKey, None)
+                    maskedResult[reqName].update({maskKey: foundValue})
 
-            return masked_result
+            return maskedResult
         else:
             return result
 
@@ -366,7 +343,7 @@ class Request(RESTEntity):
         if not result:
             return []
 
-        result = self._mask_result(mask, result)
+        result = self._maskResult(mask, result)
 
         if not option["include_docs"]:
             return result.keys()

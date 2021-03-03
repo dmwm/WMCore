@@ -1,3 +1,11 @@
+1.4.6 to 1.4.7.pre1:
+  - [py2py3] src/python/A/B/C slice 12 - issue #10136 - src (Dario Mapelli) #10307
+  - [py2py3] src/python/A/B/C slice 11 - issue #10135 - src (Dario Mapelli) #10299
+  - Fix unhashable types in the ReqMgr2 request API with mask (Alan Malta Rodrigues) #10312
+  - Fix to unhashable types in the filtered_requests REST API (Alan Malta Rodrigues) #10311
+  - Validate status transition for cascade option (Alan Malta Rodrigues) #10309
+
+
 1.4.6.pre9 to 1.4.6:
 
 

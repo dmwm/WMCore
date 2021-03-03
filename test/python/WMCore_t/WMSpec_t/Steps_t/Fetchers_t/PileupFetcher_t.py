@@ -6,6 +6,8 @@ The test instantiates a MC worklow and calls the PileupFetcher on its generation
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import os
 import unittest
 from json import JSONDecoder
@@ -84,7 +86,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
 
         # now query DBS and compare the blocks and files from DBS
         # against those returned by the PileupFetcher
-        for pileupType, datasets in pileupConfig.items():
+        for pileupType, datasets in viewitems(pileupConfig):
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
 
@@ -97,7 +99,7 @@ class PileupFetcherTest(EmulatedUnitTestCase):
                 self.assertItemsEqual(list(blockDict), dbsBlocks)
                 self.assertItemsEqual(list(blockDict), list(rucioBlocksLocation))
                 # now validate the block location between Rucio and PileupFetcher
-                for block, blockLocation in blockDict.iteritems():
+                for block, blockLocation in viewitems(blockDict):
                     self.assertItemsEqual(blockLocation['PhEDExNodeNames'], rucioBlocksLocation[block])
 
                     # finally, validate the files

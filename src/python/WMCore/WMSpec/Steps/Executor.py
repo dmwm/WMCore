@@ -7,6 +7,7 @@ Interface definition for a step executor
 
 """
 from __future__ import absolute_import
+from builtins import object
 
 import json
 import logging
@@ -34,7 +35,7 @@ def getStepSpace(stepName):
 
     """
     modName = "WMTaskSpace"
-    if modName in sys.modules.keys():
+    if modName in sys.modules:
         taskspace = sys.modules[modName]
     else:
         try:

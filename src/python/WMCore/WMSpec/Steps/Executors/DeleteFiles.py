@@ -8,6 +8,8 @@ Implementation of an Executor for a Delete step
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import signal
 
 from WMCore.Storage.DeleteMgr import DeleteMgr, DeleteMgrError
@@ -62,7 +64,7 @@ class DeleteFiles(Executor):
         overrides.setdefault('waitTime', 300)
 
         self.logger.info("Step with the following overrides:")
-        for keyName, value in overrides.items():
+        for keyName, value in viewitems(overrides):
             self.logger.info("    %s : %s", keyName, value)
 
         # Pull out StageOutMgr Overrides
@@ -110,7 +112,7 @@ class DeleteFiles(Executor):
         # Alan: I do not get why we would have two sets of files to be deleted!
         if hasattr(self.step, 'filesToDelete'):
             # files from the configTree to be deleted
-            for k, v in self.step.filesToDelete.dictionary_().iteritems():
+            for k, v in viewitems(self.step.filesToDelete.dictionary_()):
                 if k.startswith('file'):
                     self.logger.info("Deleting LFN: %s", v)
                     fileForTransfer = {'LFN': v,

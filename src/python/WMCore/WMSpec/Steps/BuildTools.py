@@ -7,14 +7,15 @@ Utils to assist in the build process
 
 """
 
+from builtins import object
+from future.utils import viewvalues
+
 import os
 import logging
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
 
-
-
-class File:
+class File(object):
     """
     _File_
 
@@ -61,7 +62,7 @@ class File:
 
 
 
-class Directory:
+class Directory(object):
     """
     _Directory_
 
@@ -143,18 +144,18 @@ class Directory:
         logging.info("create(%s)" % newDir)
         if not os.path.exists(newDir):
             os.makedirs(newDir)
-        for f in self.files.values():
+        for f in viewvalues(self.files):
             f.fetch(newDir)
 
-        for child in self.children.values():
+        for child in viewvalues(self.children):
             child.create(newDir)
         return
 
     def __str__(self):
         result = "%s\n" % self.path()
-        for f in self.files.values():
+        for f in viewvalues(self.files):
             result += "%s ==> %s\n" % (f.path(), f.source)
-        for d in self.children.values():
+        for d in viewvalues(self.children):
             result += str(d)
 
         return result

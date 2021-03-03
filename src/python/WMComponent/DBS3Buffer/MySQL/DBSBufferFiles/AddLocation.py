@@ -5,6 +5,7 @@ _AddLocation_
 MySQL implementation of DBSBufferFiles.AddLocation
 """
 
+from builtins import str, bytes
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddLocation(DBFormatter):
@@ -13,7 +14,7 @@ class AddLocation(DBFormatter):
 
     def execute(self, siteName, conn = None, transaction = False):
         binds = []
-        if isinstance(siteName, basestring):
+        if isinstance(siteName, (str, bytes)):
             siteName = [siteName]
 
         for site in siteName:

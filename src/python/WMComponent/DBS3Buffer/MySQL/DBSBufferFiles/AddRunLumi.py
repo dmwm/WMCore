@@ -5,6 +5,8 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
+from builtins import str, bytes
+
 from Utils.IteratorTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -23,7 +25,7 @@ class AddRunLumi(DBFormatter):
                 binds.extend(self.getBinds(filename=entry['lfn'], runs=entry['runs']))
             return binds
 
-        if isinstance(filename, basestring):
+        if isinstance(filename, (str, bytes)):
             lfn = filename
         elif isinstance(filename, dict):
             lfn = filename('lfn')

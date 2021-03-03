@@ -303,5 +303,5 @@ class Create(DBCreator):
                                    """ % (i)
             self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
 
-        for i in self.create.keys():
+        for i in self.create:
             self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"

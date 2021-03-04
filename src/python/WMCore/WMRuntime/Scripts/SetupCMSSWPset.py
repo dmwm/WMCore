@@ -5,6 +5,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 
 """
 from __future__ import print_function
+from future.utils import viewitems
 
 import json
 import logging
@@ -271,7 +272,7 @@ class SetupCMSSWPset(ScriptInterface):
         #   dataset.dataTier
         #   dataset.filterName
         if hasattr(self.process, "outputModules"):
-            outputModuleNames = self.process.outputModules.keys()
+            outputModuleNames = list(self.process.outputModules)
         else:
             outputModuleNames = self.process.outputModules_()
         for outMod in outputModuleNames:
@@ -485,7 +486,7 @@ class SetupCMSSWPset(ScriptInterface):
         prodsAndFilters = {}
         prodsAndFilters.update(self.process.producers)
         prodsAndFilters.update(self.process.filters)
-        for key, value in prodsAndFilters.items():
+        for key, value in viewitems(prodsAndFilters):
             if value.type_() in ["MixingModule", "DataMixingModule", "PreMixingModule"]:
                 mixModules.append(value)
             if value.type_() == "DataMixingModule":

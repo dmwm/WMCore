@@ -5,6 +5,9 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
+from builtins import next, str as newstr, bytes, zip, range
+from future.utils import viewitems
+
 import logging
 import threading
 from collections import defaultdict
@@ -105,7 +108,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
         liveWMBSJob.update(liveJob)
         liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
 
-    for state, jobsByState in liveWMBSJobs.items():
+    for state, jobsByState in viewitems(liveWMBSJobs):
         if len(jobsByState) > 100 and state != "executing":
             # if there are to many jobs skip the couch and dashboard update
             # TODO: couch and dashboard need to be updated or parallel.
@@ -127,7 +130,7 @@ def freeSlots(multiplier=1.0, minusRunning=False, allowedStates=None, knownCmsSi
     rc_sites = ResourceControl().listThresholdsForCreate()
     thresholds = defaultdict(lambda: 0)
     jobCounts = defaultdict(dict)
-    for name, site in rc_sites.items():
+    for name, site in viewitems(rc_sites):
         if not site.get('cms_name'):
             logging.warning("Not fetching work for %s, cms_name not defined", name)
             continue
@@ -370,7 +373,7 @@ class WMBSHelper(WMConnectionBase):
                         )
 
         if self.mask:
-            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1)  # inclusive range
+            lumis = list(range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1))  # inclusive range
             wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis))  # assume run number static
         else:
             wmbsFile.addRun(Run(1, 1))
@@ -560,7 +563,7 @@ class WMBSHelper(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in selfChecksums:
                     dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                           'cktype': entry})
 
@@ -739,7 +742,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if isinstance(f, basestring) or "LumiList" not in f:
+            if isinstance(f, (newstr, bytes)) or "LumiList" not in f:
                 results.append(f)
                 continue
 

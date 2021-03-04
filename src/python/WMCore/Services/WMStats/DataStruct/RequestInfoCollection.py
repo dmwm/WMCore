@@ -1,33 +1,34 @@
-
 from builtins import object
-from future.utils import viewitems, viewvalues, listvalues
+from future.utils import viewitems, viewvalues
+
 
 class JobSummary(object):
     """
     job summary data structure from job format in couchdb
     """
-    def __init__(self , jobStatus = None):
+
+    def __init__(self, jobStatus=None):
         self.jobStatus = {
-                 "success": 0,
-                 "canceled": 0,
-                 "transition": 0,
-                 "queued": {"first": 0, "retry": 0},
-                 "submitted": {"first": 0, "retry": 0, "pending": 0, "running": 0},
-                 "failure": {"create": 0, "submit": 0, "exception": 0},
-                 "cooloff": {"create": 0, "submit": 0, "job": 0},
-                 "paused": {"create": 0, "submit": 0, "job": 0},
-         }
+            "success": 0,
+            "canceled": 0,
+            "transition": 0,
+            "queued": {"first": 0, "retry": 0},
+            "submitted": {"first": 0, "retry": 0, "pending": 0, "running": 0},
+            "failure": {"create": 0, "submit": 0, "exception": 0},
+            "cooloff": {"create": 0, "submit": 0, "job": 0},
+            "paused": {"create": 0, "submit": 0, "job": 0},
+        }
         if jobStatus != None:
             self.addJobStatusInfo(jobStatus)
 
     def addJobStatusInfo(self, jobStatus):
 
-        #TODO need to validate the structure.
+        # TODO need to validate the structure.
         for key, value in viewitems(self.jobStatus):
             if isinstance(value, int):
                 self.jobStatus[key] += jobStatus.get(key, 0)
             elif isinstance(value, dict):
-                for secondKey, secondValue in viewitems(value):
+                for secondKey in value:
                     if key in jobStatus and secondKey in jobStatus[key]:
                         self.jobStatus[key][secondKey] += jobStatus[key][secondKey]
 
@@ -37,7 +38,7 @@ class JobSummary(object):
     def getTotalJobs(self):
         return (self.getSuccess() +
                 self.jobStatus["canceled"] +
-                self.jobStatus[ "transition"] +
+                self.jobStatus["transition"] +
                 self.getFailure() +
                 self.getCooloff() +
                 self.getPaused() +
@@ -62,20 +63,20 @@ class JobSummary(object):
                 self.jobStatus["submitted"]["retry"])
 
     def getRunning(self):
-        return self.jobStatus["submitted"]["running"];
+        return self.jobStatus["submitted"]["running"]
 
     def getPending(self):
-        return self.jobStatus["submitted"]["pending"];
+        return self.jobStatus["submitted"]["pending"]
 
     def getCooloff(self):
         return (self.jobStatus["cooloff"]["create"] +
                 self.jobStatus["cooloff"]["submit"] +
-                self.jobStatus["cooloff"]["job"]);
+                self.jobStatus["cooloff"]["job"])
 
     def getPaused(self):
         return (self.jobStatus["paused"]["create"] +
                 self.jobStatus["paused"]["submit"] +
-                self.jobStatus["paused"]["job"]);
+                self.jobStatus["paused"]["job"])
 
     def getQueued(self):
         return (self.jobStatus["queued"]["first"] +
@@ -92,26 +93,28 @@ class JobSummary(object):
                 'created': self.getTotalJobs()
                 }
 
+
 class ProgressSummary(object):
 
-    def __init__(self , progressReport = None):
+    def __init__(self, progressReport=None):
         self.progress = {
-                 "totalLumis": 0,
-                 "events": 0,
-                 "size": 0
-         }
+            "totalLumis": 0,
+            "events": 0,
+            "size": 0
+        }
 
         if progressReport != None:
             self.addProgressReport(progressReport)
 
     def addProgressReport(self, progressReport):
 
-        #TODO need to validate the structure.
+        # TODO need to validate the structure.
         for key in self.progress:
             self.progress[key] += progressReport.get(key, 0)
 
     def getReport(self):
         return self.progress
+
 
 class TaskInfo(object):
 
@@ -122,12 +125,11 @@ class TaskInfo(object):
         self.jobSummary = JobSummary(data.get('status', {}))
 
     def addTaskInfo(self, taskInfo):
-
         if not (self.requestName == taskInfo.requestName and
                 self.taskName == taskInfo.taskName):
-            msg =  "%s: %s, %s: %s, %s: %s" % (self.requestName, taskInfo.requestName,
-                                               self.taskName, taskInfo.taskName,
-                                               self.taskType, taskInfo.taskType)
+            msg = "%s: %s, %s: %s, %s: %s" % (self.requestName, taskInfo.requestName,
+                                              self.taskName, taskInfo.taskName,
+                                              self.taskType, taskInfo.taskType)
             raise Exception("task doesn't match %s" % msg)
 
         self.jobSummary.addJobSummary(taskInfo.jobSummary)
@@ -162,9 +164,8 @@ class RequestInfo(object):
         """
         self.setData(data)
 
-
     def setData(self, data):
-        #If RequestName doesn't exist, try legacy format (workflow)
+        # If RequestName doesn't exist, try legacy format (workflow)
         if 'RequestName' in data:
             self.requestName = data['RequestName']
         else:
@@ -192,17 +193,15 @@ class RequestInfo(object):
     def getJobSummary(self):
         return self.jobSummary
 
-    def getJobSummaryByAgent(self, agentUrl = None):
+    def getJobSummaryByAgent(self, agentUrl=None):
         if agentUrl:
             return self.jobSummaryByAgent[agentUrl]
-        else:
-            return self.jobSummaryByAgent
+        return self.jobSummaryByAgent
 
-    def getTasksByAgent(self, agentUrl = None):
+    def getTasksByAgent(self, agentUrl=None):
         if agentUrl:
             return self.tasksByAgent[agentUrl]
-        else:
-            return self.tasksByAgent
+        return self.tasksByAgent
 
     def getTasks(self):
         return self.tasks
@@ -227,10 +226,10 @@ class RequestInfo(object):
         """
         check sampleResult.json for datastructure
         """
-        datasets = {};
+        datasets = {}
 
         if "AgentJobInfo" not in self.data:
-            #ther is no report yet (no agent has reported)
+            # ther is no report yet (no agent has reported)
             return datasets
 
         for agentRequestInfo in viewvalues(self.data["AgentJobInfo"]):
@@ -239,7 +238,7 @@ class RequestInfo(object):
             for task in tasks:
                 for site in tasks[task].get("sites", []):
                     for outputDS in tasks[task]["sites"][site].get("dataset", {}):
-                        #TODO: need update the record instead of replacing.
+                        # TODO: need update the record instead of replacing.
                         datasets.setdefault(outputDS, ProgressSummary())
                         datasets[outputDS].addProgressReport(tasks[task]["sites"][site]["dataset"][outputDS])
 
@@ -248,16 +247,13 @@ class RequestInfo(object):
     def filterRequest(self, conditionFunc):
         return conditionFunc(self.data)
 
-
     def getRequestTransition(self):
         return self.data["request_status"]
 
-    def getRequestStatus(self, timeFlag = False):
-
+    def getRequestStatus(self, timeFlag=False):
         if timeFlag:
             return self.data["request_status"][-1]
-        else:
-            return self.data["request_status"][-1]['status']
+        return self.data["request_status"][-1]['status']
 
     def isWorkflowFinished(self):
         """
@@ -266,13 +262,14 @@ class RequestInfo(object):
             It can't detect complete status.
             If the one of the task doesn't contain any jobs, it will return False
         """
-        if len(self.tasks) == 0:
+        if not self.tasks:
             return False
 
         for taskInfo in viewvalues(self.tasks):
             if not taskInfo.isTaskCompleted():
                 return False
         return True
+
 
 class RequestInfoCollection(object):
 
@@ -299,6 +296,5 @@ class RequestInfoCollection(object):
         for requestInfo in viewvalues(self.collection):
             result[requestInfo.requestName] = {}
             for agentUrl, jobSummary in viewitems(requestInfo.getJobSummaryByAgent()):
-                result[requestInfo.requestName][agentUrl]= jobSummary.getJSONStatus()
+                result[requestInfo.requestName][agentUrl] = jobSummary.getJSONStatus()
         return result
-

@@ -12,8 +12,7 @@ class JobSummary(object):
                  "canceled": 0,
                  "transition": 0,
                  "queued": {"first": 0, "retry": 0},
-                 "submitted": {"first": 0, "retry": 0},
-                 "submitted": {"pending": 0, "running": 0},
+                 "submitted": {"first": 0, "retry": 0, "pending": 0, "running": 0},
                  "failure": {"create": 0, "submit": 0, "exception": 0},
                  "cooloff": {"create": 0, "submit": 0, "job": 0},
                  "paused": {"create": 0, "submit": 0, "job": 0},
@@ -83,7 +82,7 @@ class JobSummary(object):
                 self.jobStatus["queued"]["retry"])
 
     def getJSONStatus(self):
-        return {'sucess': self.getSuccess(),
+        return {'success': self.getSuccess(),
                 'failure': self.getFailure(),
                 'cooloff': self.getCooloff(),
                 'running': self.getRunning(),
@@ -182,13 +181,13 @@ class RequestInfo(object):
 
                 if 'tasks' in agentRequestInfo:
                     self.tasksByAgent[agentUrl] = {}
-                    for taskName, data in viewitems(agentRequestInfo['tasks']):
+                    for taskName, taskData in viewitems(agentRequestInfo['tasks']):
                         if taskName not in self.tasks:
-                            self.tasks[taskName] = TaskInfo(self.requestName, taskName, data)
+                            self.tasks[taskName] = TaskInfo(self.requestName, taskName, taskData)
                         else:
-                            self.tasks[taskName].addTaskInfo(TaskInfo(self.requestName, taskName, data))
+                            self.tasks[taskName].addTaskInfo(TaskInfo(self.requestName, taskName, taskData))
                         # only one task by one agent - don't need to combine
-                        self.tasksByAgent[agentUrl][taskName] = TaskInfo(self.requestName, taskName, data)
+                        self.tasksByAgent[agentUrl][taskName] = TaskInfo(self.requestName, taskName, taskData)
 
     def getJobSummary(self):
         return self.jobSummary

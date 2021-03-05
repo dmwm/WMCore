@@ -1,3 +1,12 @@
+1.4.7.pre1 to 1.4.7.pre2:
+  - [py2py3] src/python/A/B/C slice 16 - issue #10140 - src (Dario Mapelli) #10321
+  - [py2py3] src/python/A/B/C slice 15 - issue #10139 - src (Dario Mapelli) #10319
+  - Add check and different path for wmagent component. (tivanov) #10327
+  - Fix values for the "submitted" key in JobSummary (Alan Malta Rodrigues) #10325
+  - [py2py3] src/python/A/B/C slice 14 - issue #10138 - src (Dario Mapelli) #10313
+  - [py2py3] src/python/A/B/C slice 13 - issue #10137 - src (Dario Mapelli) #10310
+
+
 1.4.6 to 1.4.7.pre1:
   - [py2py3] src/python/A/B/C slice 12 - issue #10136 - src (Dario Mapelli) #10307
   - [py2py3] src/python/A/B/C slice 11 - issue #10135 - src (Dario Mapelli) #10299

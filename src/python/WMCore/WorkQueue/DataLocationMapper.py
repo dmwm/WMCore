@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
 
+from future.utils import viewitems, viewvalues, listvalues
+from builtins import object
 from future import standard_library
 standard_library.install_aliases()
 
@@ -71,7 +73,7 @@ class DataLocationMapper(object):
 
         dataByDbs = self.organiseByDbs(dataItems)
 
-        for dbs, dataItems in dataByDbs.items():
+        for dbs, dataItems in viewitems(dataByDbs):
             # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
                 if self.rucio:
@@ -159,7 +161,7 @@ class DataLocationMapper(object):
                 self.logger.error('Error getting block location from dbs for %s: %s', dataItem, str(ex))
 
         # convert the sets to lists
-        for name, nodes in result.items():
+        for name, nodes in viewitems(result):
             psns = set()
             psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
@@ -198,8 +200,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
         modified = []
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in viewvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -226,8 +228,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         # Given that there might be multiple data items to be updated
         # handle it like a dict such that element lookup becomes easier
         modified = {}
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in viewvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -242,7 +244,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                 modified[element.id] = element
                                 break
         self.logger.info("Updating %d elements for Parent location update", len(modified))
-        self.backend.saveElements(*modified.values())
+        self.backend.saveElements(*listvalues(modified))
 
         return len(modified)
 
@@ -256,8 +258,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         # Given that there might be multiple data items to be updated
         # handle it like a dict such that element lookup becomes easier
         modified = {}
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in listvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
                     if element.get('NoPileupUpdate', False):
@@ -272,6 +274,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                 modified[element.id] = element
                                 break
         self.logger.info("Updating %d elements for Pileup location update", len(modified))
-        self.backend.saveElements(*modified.values())
+        self.backend.saveElements(*listvalues(modified))
 
         return len(modified)

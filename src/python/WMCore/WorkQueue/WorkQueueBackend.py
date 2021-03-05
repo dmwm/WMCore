@@ -5,6 +5,9 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+from builtins import object
+from future.utils import viewitems
+
 import json
 import random
 import time
@@ -370,7 +373,7 @@ class WorkQueueBackend(object):
                 if site in thresholds:
                     # Count the number of jobs currently running of greater priority, if they
                     # are less than the site thresholds, then accept this element
-                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
+                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in viewitems(siteJobCounts.get(site, {}))])
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s", curJobCount, site, thresholds[site])
                     if curJobCount < thresholds[site]:
                         possibleSite = site
@@ -414,7 +417,7 @@ class WorkQueueBackend(object):
             return elements, siteJobCounts
 
         self.logger.info("Current siteJobCounts:")
-        for site, jobsByPrio in siteJobCounts.items():
+        for site, jobsByPrio in viewitems(siteJobCounts):
             self.logger.info("    %s : %s", site, jobsByPrio)
 
         self.logger.info("Getting up to %d available work from %s", numElems, self.queueUrl)
@@ -492,7 +495,7 @@ class WorkQueueBackend(object):
                     if site in thresholds:
                         # Count the number of jobs currently running of greater priority, if they
                         # are less than the site thresholds, then accept this element
-                        curJobCount = sum([x[1] if x[0] >= prio else 0 for x in siteJobCounts.get(site, {}).items()])
+                        curJobCount = sum([x[1] if x[0] >= prio else 0 for x in viewitems(siteJobCounts.get(site, {}))])
                         self.logger.debug(
                             "Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                         if curJobCount < thresholds[site]:
@@ -637,7 +640,7 @@ class WorkQueueBackend(object):
         else:
             injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
             finalInjectionStatus = []
-            for request in injectionStatus.keys():
+            for request in injectionStatus:
                 inboxElement = self.getInboxElements(WorkflowName=request)
                 requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
                 finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})
@@ -677,7 +680,7 @@ class WorkQueueBackend(object):
             for entry in result["rows"]:
                 idsByWflow.setdefault(entry['key'], [])
                 idsByWflow[entry['key']].append(entry['id'])
-            for wflow, docIds in idsByWflow.items():
+            for wflow, docIds in viewitems(idsByWflow):
                 self.logger.info("Going to delete %d documents in *%s* db for workflow: %s. Doc IDs: %s",
                                  len(docIds), couchdb.name, wflow, docIds)
                 try:

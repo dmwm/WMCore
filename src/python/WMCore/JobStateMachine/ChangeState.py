@@ -5,6 +5,7 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
+from builtins import str
 import logging
 import re
 import time
@@ -270,7 +271,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 if job['mask']['runAndLumis'] != {}:
                     # Then we have to save the mask runAndLumis
                     jobDocument['mask']['runAndLumis'] = {}
-                    for key in job['mask']['runAndLumis'].keys():
+                    for key in job['mask']['runAndLumis']:
                         jobDocument['mask']['runAndLumis'][str(key)] = job['mask']['runAndLumis'][key]
 
                 jobDocument["name"] = job["name"]

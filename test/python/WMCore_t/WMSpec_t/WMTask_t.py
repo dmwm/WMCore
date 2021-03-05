@@ -5,6 +5,8 @@ _WMTask_t_
 Unit tests for the WMTask class.
 """
 
+from future.utils import viewitems
+
 import unittest
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -369,7 +371,7 @@ class WMTaskTest(unittest.TestCase):
                                          "/Data/ProcessedDataset/DataTier")
         # then mimic the setupPileup method
         thesePU = []
-        for puType, puList in pileupConfig.items():
+        for puType, puList in viewitems(pileupConfig):
             # there should be only one type and one PU dataset
             testTask.setInputPileupDatasets(puList)
             thesePU.extend(puList)

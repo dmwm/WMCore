@@ -6,6 +6,10 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
+from __future__ import division
+from builtins import range, object, int
+from future.utils import viewitems, viewvalues
+
 import logging
 import operator
 
@@ -49,7 +53,7 @@ def isGoodRun(goodRunList, run):
     if goodRunList is None or goodRunList == {}:
         return True
 
-    if str(run) in goodRunList.keys():
+    if str(run) in goodRunList:
         # @e can find a run
         return True
 
@@ -110,9 +114,9 @@ class LumiChecker(object):
         if not self.applyLumiCorrection:
             return
         if job:  # the first time you call "newJob" in the splitting algorithm currentJob is None
-            for run, lumiIntervals in job['mask']['runAndLumis'].iteritems():
+            for run, lumiIntervals in viewitems(job['mask']['runAndLumis']):
                 for startLumi, endLumi in lumiIntervals:
-                    for lumi in xrange(startLumi, endLumi + 1):
+                    for lumi in range(startLumi, endLumi + 1):
                         self.lumiJobs[(run, lumi)] = job
 
     def fixInputFiles(self):
@@ -123,7 +127,7 @@ class LumiChecker(object):
         if not self.applyLumiCorrection:
             return
 
-        for (run, lumi), files in self.splitLumiFiles.iteritems():
+        for (run, lumi), files in viewitems(self.splitLumiFiles):
             for file_ in files:
                 self.lumiJobs[(run, lumi)].addFile(file_)
 
@@ -203,7 +207,7 @@ class LumiBased(JobFactory):
             logging.info("There are not enough lumis/files to be splitted. Trying again next cycle")
             return
         locationDict = {}
-        for key in lDict.keys():
+        for key in lDict:
             newlist = []
             for f in lDict[key]:
                 # if hasattr(f, 'loadData'):
@@ -218,7 +222,7 @@ class LumiBased(JobFactory):
                 f['lowestRun'] = f['runs'][0]
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = int(round(f['events'] / f['lumiCount']))
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']
@@ -240,7 +244,7 @@ class LumiBased(JobFactory):
         lumisInJob = 0
         lumisInTask = 0
         self.lumiChecker = LumiChecker(applyLumiCorrection)
-        for location in locationDict.keys():
+        for location in locationDict:
 
             # For each location, we need a new jobGroup
             self.newGroup()
@@ -387,14 +391,14 @@ class LumiBased(JobFactory):
         checkMinimumWork = self.checkForAmountOfWork()
 
         # first, check whether we have enough files to reach the desired lumis_per_job
-        for sites in lDict.keys():
+        for sites in list(lDict):
             fileLumis = self.loadRunLumi.execute(files=lDict[sites])
             if not fileLumis:
                 logging.warning("Empty fileLumis dict for workflow %s, subs %s.",
                                 self.subscription.workflowName(), self.subscription['id'])
             if checkMinimumWork:
                 # fileLumis has a format like {230: {1: [1]}, 232: {1: [2]}, 304: {1: [3]}, 306: {1: [4]}}
-                availableLumisPerLocation = [runL for fileItem in fileLumis.values() for runL in fileItem.values()]
+                availableLumisPerLocation = [runL for fileItem in viewvalues(fileLumis) for runL in viewvalues(fileItem)]
 
                 if lumisPerJob > len(flattenList(availableLumisPerLocation)):
                     # then we don't split these files for the moment
@@ -402,7 +406,7 @@ class LumiBased(JobFactory):
                     continue
             for f in lDict[sites]:
                 lumiDict = fileLumis.get(f['id'], {})
-                for run in lumiDict.keys():
+                for run in lumiDict:
                     f.addRun(run=Run(run, *lumiDict[run]))
 
         return lDict

@@ -3,6 +3,8 @@
 _Harvest_
 
 """
+from future.utils import viewitems
+
 import threading
 import logging
 
@@ -60,7 +62,7 @@ class Harvest(JobFactory):
                 logging.error("File %s has no run information!", fileInfo['lfn'])
 
             # Populate a dictionary with [location][run] so we can split jobs according to those different combinations
-            if locSet not in locationDict.keys():
+            if locSet not in locationDict:
                 locationDict[locSet] = {}
 
             fileInfo['runs'] = set()
@@ -70,7 +72,7 @@ class Harvest(JobFactory):
                 for run in runSet:
                     if run.run in goodRunList:
                         runDict[fileInfo['lfn']].add(run)
-                        if run.run in locationDict[locSet].keys():
+                        if run.run in locationDict[locSet]:
                             locationDict[locSet][run.run].append(fileInfo)
                         else:
                             locationDict[locSet][run.run] = [fileInfo]
@@ -92,7 +94,7 @@ class Harvest(JobFactory):
                     maskedRun = Run(run.run, *maskedLumis)
                     newRunSet.append(maskedRun)
 
-                    if run.run in locationDict[locSet].keys():
+                    if run.run in locationDict[locSet]:
                         locationDict[locSet][run.run].append(fileInfo)
                     else:
                         locationDict[locSet][run.run] = [fileInfo]
@@ -102,7 +104,7 @@ class Harvest(JobFactory):
                 # no LumiList and no run white or black list
                 runDict[fileInfo['lfn']] = runSet
                 for run in runSet:
-                    if run.run in locationDict[locSet].keys():
+                    if run.run in locationDict[locSet]:
                         locationDict[locSet][run.run].append(fileInfo)
                     else:
                         locationDict[locSet][run.run] = [fileInfo]
@@ -118,7 +120,7 @@ class Harvest(JobFactory):
         else:
             harvestType = "Periodic"
 
-        for location in locationDict.keys():
+        for location in locationDict:
 
             if dqmHarvestUnit == "byRun":
                 self.createJobByRun(locationDict, location, baseName, harvestType, runDict, endOfRun)
@@ -134,7 +136,7 @@ class Harvest(JobFactory):
         Creates one job per run for all files available at the same location.
         """
 
-        for run in locationDict[location].keys():
+        for run in locationDict[location]:
             # Should create at least one job for every location/run, putting this here will do
             self.jobCount += 1
             self.newJob(name="%s-%s-Harvest-%i" % (baseName, harvestType, self.jobCount))
@@ -188,7 +190,7 @@ class Harvest(JobFactory):
 
         Merges the interesection of lumi ranges.
         """
-        for run, lumis in runLumis.iteritems():
+        for run, lumis in viewitems(runLumis):
             lumis.sort(key=lambda sublist: sublist[0])
             fixedLumis = [lumis[0]]
             for lumi in lumis:

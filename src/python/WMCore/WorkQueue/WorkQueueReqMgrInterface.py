@@ -2,6 +2,9 @@
 """
 Helper class for RequestManager interaction
 """
+from builtins import object
+from future.utils import viewvalues
+
 import os
 import socket
 import threading
@@ -214,7 +217,7 @@ class WorkQueueReqMgrInterface(object):
         tempResults = self.reqMgr2.getRequestByStatus("staged")
         filteredResults = []
         for requests in tempResults:
-            for request in requests.values():
+            for request in viewvalues(requests):
                 filteredResults.append(request)
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
         filteredResults.sort(key=lambda r: r["Team"])

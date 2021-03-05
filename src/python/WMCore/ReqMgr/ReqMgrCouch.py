@@ -1,3 +1,4 @@
+from builtins import object
 import cherrypy
 from WMCore.Database.CMSCouch import Database, CouchError
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache

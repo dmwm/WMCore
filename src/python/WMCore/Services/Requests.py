@@ -39,6 +39,8 @@ from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMCore.Services.pycurl_manager import portForward
+
 
 try:
     from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader
@@ -66,6 +68,7 @@ class Requests(dict):
     Generic class for sending different types of HTTP Request to a given URL
     """
 
+    @portForward(8443)
     def __init__(self, url='http://localhost', idict=None):
         """
         url should really be host - TODO fix that when have sufficient code

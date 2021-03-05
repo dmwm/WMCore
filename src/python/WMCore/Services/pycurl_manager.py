@@ -55,9 +55,66 @@ import sys
 import pycurl
 from io import BytesIO
 import http.client
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse, ParseResult
 
 from Utils.Utilities import encodeUnicodeToBytes
+
+
+def portForward(port):
+    """
+    Decorator for port forwarding of the REST call of any function to a given port.
+    It iterates trough the function's argument list and searches for any argument
+    which matches a given url pattern or has an 'url' named keyword argument.
+    Once found it parses the url and substitutes the port.
+
+    param port: The port to which the REST call should be forwarded.
+    """
+    def portForwardDecorator(callFunc):
+        urlMangleList = ['https://tivanov',
+                         'https://amaltaro',
+                         'https://cmsweb']
+
+        def portMangle(url):
+            oldUrl = urlparse(url)
+            if isinstance(url, str):
+                netlocStr = u'%s:%d' % (oldUrl.hostname, port)
+            elif isinstance(url, bytes):
+                netlocStr = b'%s:%d' % (oldUrl.hostname, port)
+            newUrl = ParseResult(scheme=oldUrl.scheme,
+                                 netloc=netlocStr,
+                                 path=oldUrl.path,
+                                 params=oldUrl.params,
+                                 query=oldUrl.query,
+                                 fragment=oldUrl.fragment)
+            return newUrl.geturl()
+
+        def argManlge(*args, **kwargs):
+
+            # searching the arguments for url to substitute
+            newArgs = []
+            for arg in args:
+                if isinstance (arg, (str, bytes)):
+                    for mUrl in urlMangleList:
+                        if isinstance(arg, str) and arg.startswith(mUrl):
+                            arg = portMangle(arg)
+                        elif isinstance(arg, bytes) and arg.startswith(mUrl.encode('utf-8')):
+                            arg = portMangle(arg)
+                newArgs.append(arg)
+            newArgs = tuple(newArgs)
+
+            # searching the keyword arguments for url to substitute
+            kwToMangle = ['url', 'URL', 'uri', 'URI']
+            for kw in kwToMangle:
+                if kw in kwargs:
+                    for mUrl in urlMangleList:
+                        if isinstance(kwargs[kw], str) and kwargs[kw].startswith(mUrl):
+                            kwargs[kw] = portMangle(kwargs[kw])
+                        elif isinstance(kwargs[kw], bytes) and kwargs[kw].startswith(mUrl.encode('utf-8')):
+                            kwargs[kw] = portMangle(kwargs[kw])
+            return callFunc(*newArgs, **kwargs)
+        return argManlge
+    return portForwardDecorator
+
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""
@@ -162,6 +219,7 @@ class RequestHandler(object):
 
         return encoded_data
 
+    @portForward(8443)
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None,
                  verb='GET', doseq=True, encode=False, cainfo=None, cookie=None):
@@ -187,7 +245,6 @@ class RequestHandler(object):
             curl.setopt(pycurl.COOKIEJAR, cookie[url])
 
         encoded_data = self.encode_params(params, verb, doseq, encode)
-
 
         if verb == 'GET':
             if encoded_data:
@@ -269,6 +326,7 @@ class RequestHandler(object):
         """
         return ResponseHeader(header)
 
+    @portForward(8443)
     def request(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, capath=None,
                 doseq=True, encode=False, decode=False, cainfo=None, cookie=None):
@@ -305,6 +363,7 @@ class RequestHandler(object):
         hbuf.flush()
         return header, data
 
+    @portForward(8443)
     def getdata(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, doseq=True,
                 encode=False, decode=False, cookie=None):
@@ -314,6 +373,7 @@ class RequestHandler(object):
                                encode=encode, decode=decode, cookie=cookie)
         return data
 
+    @portForward(8443)
     def getheader(self, url, params, headers=None, verb='GET',
                   verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch HTTP header"""
@@ -321,6 +381,7 @@ class RequestHandler(object):
                                  verbose, ckey, cert, doseq=doseq)
         return header
 
+    @portForward(8443)
     def multirequest(self, url, parray, headers=None,
                      ckey=None, cert=None, verbose=None, cookie=None):
         """Fetch data for given set of parameters"""

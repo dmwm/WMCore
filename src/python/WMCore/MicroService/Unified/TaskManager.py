@@ -5,6 +5,9 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 # futures
 from __future__ import division
+
+from builtins import range, object
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -17,7 +20,7 @@ from queue import Queue
 
 # WMCore modules
 from WMCore.MicroService.Unified.Common import getMSLogger
-
+from Utils.Utilities import encodeUnicodeToBytes
 
 def genkey(query):
     """
@@ -28,9 +31,11 @@ def genkey(query):
         record = dict(query)
         query = json.JSONEncoder(sort_keys=True).encode(record)
     keyhash = hashlib.md5()
+    query = encodeUnicodeToBytes(query)
     try:
         keyhash.update(query)
     except TypeError: # python3
+        # this may be avoided if we use encodeUnicodeToBytes(query) above
         keyhash.update(query.encode('ascii'))
     return keyhash.hexdigest()
 
@@ -83,7 +88,7 @@ class UidSet(object):
         "Add given uid or increment uid occurence in a set"
         if  not uid:
             return
-        if  uid in self.set.keys():
+        if  uid in self.set:
             self.set[uid] += 1
         else:
             self.set[uid] = 1

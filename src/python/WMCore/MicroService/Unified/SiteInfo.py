@@ -7,6 +7,7 @@ Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
 
 # futures
 from __future__ import division
+from future.utils import viewitems
 
 # syste modules
 import json
@@ -145,11 +146,11 @@ def agentsSites(url):
         if team != 'production':
             continue
         agents.setdefault(team, []).append(r)
-    for team, agents in agents.items():
+    for team, agents in viewitems(agents):
         for agent in agents:
             if agent['status'] != 'ok':
                 continue
-            for site, sinfo in agent['WMBS_INFO']['thresholds'].iteritems():
+            for site, sinfo in viewitems(agent['WMBS_INFO']['thresholds']):
                 if sinfo['state'] in ['Normal']:
                     sites_ready_in_agent.add(site)
     return sites_ready_in_agent
@@ -283,7 +284,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
                 sites_space_override=sites_space_override)
 
         ## transform no disks in veto transfer
-        for dse, free in self.disk.items():
+        for dse, free in viewitems(self.disk):
             if free <= 0:
                 if not dse in self.sites_veto_transfer:
                     self.sites_veto_transfer.append(dse)
@@ -297,7 +298,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
             self.logger.debug("no memory information from glidein mon")
             return None
         allowed = set()
-        for site, slots in self.sites_memory.items():
+        for site, slots in viewitems(self.sites_memory):
             if any([slot['MaxMemMB'] >= maxMem and \
                     slot['MaxCpus'] >= maxCore for slot in slots]):
                 allowed.add(site)
@@ -326,7 +327,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
     def fetch_glidein_info(self):
         "Fetch Glidein information"
         self.sites_memory = self.siteCache.get('gwmsmon_totals', {})
-        for site in self.sites_memory.keys():
+        for site in self.sites_memory:
             if not site in self.sites_ready:
                 self.sites_memory.pop(site)
         
@@ -407,7 +408,7 @@ class SiteInfo(with_metaclass(Singleton, object)):
             }
 
         _info_by_site = {}
-        for name, column in columns.items():
+        for name, column in viewitems(columns):
             all_data = []
             try:
                 ssb_data = self.siteCache.get('ssb_%d' % column, [])
@@ -432,8 +433,8 @@ class SiteInfo(with_metaclass(Singleton, object)):
             self.logger.debug('document %s', json.dumps(_info_by_site, indent=2))
 
         if talk:
-            self.logger.debug('disk keys: %s', self.disk.keys())
-        for site, info in _info_by_site.items():
+            self.logger.debug('disk keys: %s', list(self.disk))
+        for site, info in viewitems(_info_by_site):
             if talk:
                 self.logger.debug("Site: %s", site)
             ssite = self.ce2SE(site)

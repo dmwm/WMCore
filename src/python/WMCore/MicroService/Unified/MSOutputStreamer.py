@@ -8,6 +8,7 @@ placement service in WMCore MicroServices.
 # futures
 from __future__ import division, print_function
 
+from builtins import object
 import json
 # from itertools import islice
 # from collections import deque

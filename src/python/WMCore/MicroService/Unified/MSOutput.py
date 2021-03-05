@@ -7,6 +7,7 @@ the Output data placement in WMCore MicroServices.
 
 # futures
 from __future__ import division, print_function
+from future.utils import viewitems, viewvalues
 
 # system modules
 from http.client import HTTPException
@@ -103,7 +104,7 @@ class MSOutput(MSCore):
         self.requestNamesCached = reqCache
 
         self.tapeStatus = dict()
-        for endpoint, quota in self.msConfig['tapePledges'].viewitems():
+        for endpoint, quota in viewitems(self.msConfig['tapePledges']):
             self.tapeStatus[endpoint] = dict(quota=quota, usage=0, remaining=0)
 
         msOutIndex = IndexModel('RequestName', unique=True)
@@ -535,7 +536,7 @@ class MSOutput(MSCore):
         # TODO:
         #    To generate the object from within the Function scope see above.
         counter = 0
-        for _, request in requestRecords.viewitems():
+        for request in viewvalues(requestRecords):
             if request['RequestName'] in self.requestNamesCached:
                 # if it's cached, then it's already in MongoDB, no need to redo this thing!
                 continue
@@ -591,7 +592,7 @@ class MSOutput(MSCore):
         A function used to update one or few particular fields in a document
         :**kwargs: The keys/value pairs to be updated (will be tested against MSOutputTemplate)
         """
-        for key, value in kwargs.items():
+        for key, value in viewitems(kwargs):
             try:
                 msOutDoc.setKey(key, value)
                 msOutDoc.updateTime()

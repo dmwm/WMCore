@@ -135,22 +135,17 @@ def getSecondaryAAA(initialValue, uniRecord):
 def getSiteList(keyName, initialValue, uniRecord):
     """
     Parse information related to the SiteWhiteList and SiteBlackList, which corresponds
-    to a list of sites where the workflow gets (or doesn't get) assigned to and where the
-    primary and secondary CLASSIC MIX dataset is placed (likely in chunks of data);
-    mapped from the SiteWhitelist/SiteBlacklist key which can be AFAIK in multiple places, like:
+    to a list of sites where the workflow gets (or doesn't get) assigned to.
+    Mapped from multiple places in the Unified campaigns, such as:
       * top level dict,
       * under the parameters key and
-      * under the secondaries dictionary.
+      * under the secondaries dictionary (no longer used, see WMCore #10332).
     If it appears multiple times, we make an intersection of the values
     """
     if keyName in uniRecord.get("parameters", {}):
         print("Found internal %s for campaign: %s" % (keyName, uniRecord['name']))
         initialValue = intersect(initialValue, uniRecord["parameters"][keyName])
 
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
-        if keyName in innerDict:
-            print("Found internal %s for campaign: %s" % (keyName, uniRecord['name']))
-            initialValue = intersect(initialValue, innerDict[keyName])
     return initialValue
 
 
@@ -284,7 +279,7 @@ def insertTestCampaigns(mgr):
                    'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
-    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_10_6_1_patch1_Step1",  "CMSSW_10_6_1_patch1_Step2",
+    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_10_6_1_patch1_Step1", "CMSSW_10_6_1_patch1_Step2",
                 "CMSSW_7_3_2__test2inwf-1510737328", "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628",
                 "RelVal_Generic_Campaign", "Agent145_Val", "Agent147_Val", "Agent149_Val",
                 "Jan2021_Val", "Feb2021_Val", "Mar2021_Val", "Apr2021_Val",

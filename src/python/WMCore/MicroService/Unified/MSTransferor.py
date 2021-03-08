@@ -10,7 +10,7 @@ tasks might be extended to multi-threading in the future.
 """
 # futures
 from __future__ import division, print_function
-from future.utils import viewitems, listvalues
+from future.utils import viewitems, listvalues, listitems
 from future import standard_library
 standard_library.install_aliases()
 
@@ -326,7 +326,7 @@ class MSTransferor(MSCore):
             self.logger.info("Request %s has %d initial blocks from %s",
                              wflow.getName(), len(inputBlocks), methodName)
 
-            for block, blockDict in viewitems(inputBlocks):
+            for block, blockDict in listitems(inputBlocks):  # dict can change size here
                 blockLocation = self._diskPNNs(blockDict['locations'])
                 if primaryAAA and blockLocation:
                     msg = "Primary/parent block %s already in place (via AAA): %s" % (block, blockLocation)
@@ -417,7 +417,7 @@ class MSTransferor(MSCore):
 
         if secondaryAAA:
             # what matters is to have pileup dataset(s) available in ANY disk storage
-            for dset, dsetDict in viewitems(pileupInput):
+            for dset, dsetDict in listitems(pileupInput):  # dict can change size here
                 datasetLocation = self._diskPNNs(dsetDict['locations'])
                 msg = "it has secondary: %s, total size: %s GB, disk locations: %s"
                 self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)
@@ -429,7 +429,7 @@ class MSTransferor(MSCore):
                     self.logger.info("secondary dataset %s not available even through AAA", dset)
         else:
             if len(pileupInput) == 1:
-                for dset, dsetDict in viewitems(pileupInput):
+                for dset, dsetDict in listitems(pileupInput):  # dict can change size here
                     datasetLocation = self._diskPNNs(dsetDict['locations'])
                     msg = "it has secondary: %s, total size: %s GB, current disk locations: %s"
                     self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)
@@ -464,7 +464,7 @@ class MSTransferor(MSCore):
                 else:
                     self.logger.info("Largest secondary dataset %s not available in a common location. This is BAD!")
                 # now iterate normally through the pileup datasets
-                for dset, dsetDict in viewitems(pileupInput):
+                for dset, dsetDict in listitems(pileupInput):  # dict can change size here
                     datasetLocation = self._diskPNNs(dsetDict['locations'])
                     msg = "it has secondary: %s, total size: %s GB, current disk locations: %s"
                     self.logger.info(msg, dset, gigaBytes(dsetDict['dsetSize']), datasetLocation)

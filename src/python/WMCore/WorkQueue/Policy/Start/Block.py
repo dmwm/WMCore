@@ -119,12 +119,8 @@ class Block(StartPolicyInterface):
                 self.rejectedWork.append(blockName)
                 continue
 
-            block = dbs.getDBSSummaryInfo(datasetPath, block=blockName)
-            # blocks with 0 valid files should be ignored
-            # - ideally they would be deleted but dbs can't delete blocks
-            if int(block.get('NumberOfFiles', 0)) == 0:
-                logging.warning("Block %s being rejected for lack of valid files to process", blockName)
-                self.badWork.append(blockName)
+            block = self._getBlockSummary(dbs, datasetPath, blockName)
+            if not block:
                 continue
 
             # check lumi restrictions
@@ -207,7 +203,31 @@ class Block(StartPolicyInterface):
             validBlocks.append(block)
         return validBlocks
 
-
+    def _getBlockSummary(self, dbsObj, datasetPath, blockName):
+        """
+        Retrieve a summary for this block from both DBS and Rucio. If the block
+        has 0 valid files in DBS, or 0 files in Rucio, it is then marked as
+        rejected and skipped from the work creation. Otherwise, the DBS summary
+        is returned.
+        :param dbsObj: instance to the DBS3Reader object
+        :param datasetPath: string with the input dataset name
+        :param blockName: string with the block name
+        :return: either an empty dictionary, or the DBS summary dictionary
+        """
+        # blocks with 0 valid files should be ignored
+        # - ideally they would be deleted but dbs can't delete blocks
+        block = dbsObj.getDBSSummaryInfo(dataset=datasetPath, block=blockName)
+        if int(block.get('NumberOfFiles', 0)) == 0:
+            logging.warning("Block %s being rejected for lack of valid files in DBS to process", blockName)
+            self.badWork.append(blockName)
+            return dict()
+        # blocks with 0 files in Rucio should be ignored as well
+        blockRucio = self.rucio.getDID(didName=blockName, dynamic=False)
+        if not blockRucio['length']:
+            logging.warning("Block %s being rejected for lack of files in Rucio to process", blockName)
+            self.badWork.append(blockName)
+            return dict()
+        return block
 
     def modifyPolicyForWorkAddition(self, inboxElement):
         """

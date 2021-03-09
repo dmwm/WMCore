@@ -8,6 +8,7 @@ File based splitting test.
 
 
 
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -49,7 +50,7 @@ class FileBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         newFile = File("/some/file/name", size = 1000, events = 100)
         newFile.setLocation('blenheim')
-        lumis = range(50,60) + range(70,80)
+        lumis = list(range(50,60)) + list(range(70,80))
         newFile.addRun(Run(13, *lumis))
         self.singleFileFileset.addFile(newFile)
 

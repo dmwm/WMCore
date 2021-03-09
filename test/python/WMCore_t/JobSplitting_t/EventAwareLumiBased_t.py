@@ -10,6 +10,9 @@ Created on Sep 25, 2012
 
 @author: dballest
 """
+from builtins import range
+from future.utils import viewvalues
+
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -557,15 +560,15 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         for i in range(0, 3):
             self.assertTrue(jobs[i]['failedOnCreation'], "It should have been marked as failed")
 
-            runNums = jobs[i]['mask']['runAndLumis'].keys()
+            runNums = list(jobs[i]['mask']['runAndLumis'])
             self.assertEqual(len(runNums), 1)
 
-            lumiNums = jobs[i]['mask']['runAndLumis'].values()[0]
+            lumiNums = next(iter(viewvalues(jobs[i]['mask']['runAndLumis'])))
             self.assertEqual(len(lumiNums), 1)
 
             finalLumi = []
             for pair in lumiNums:
-                finalLumi.extend(range(pair[0], pair[1] + 1))
+                finalLumi.extend(list(range(pair[0], pair[1] + 1)))
             self.assertEqual(len(finalLumi), 1)
 
             self.assertEqual(jobs[i]['failedReason'],

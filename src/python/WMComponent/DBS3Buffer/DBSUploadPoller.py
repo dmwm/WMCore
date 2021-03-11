@@ -24,6 +24,8 @@ that is not in DBS, decide whether its components are in DBS,
 add them, and then add the files.  This is why everything is
 so convoluted.
 """
+from builtins import range
+from future.utils import viewvalues
 from future import standard_library
 standard_library.install_aliases()
 
@@ -445,7 +447,7 @@ class DBSUploadPoller(BaseWorkerThread):
             fileDict = sortListByKey(loadedFiles, 'locations')
 
             # Now add each file
-            for location in fileDict.keys():
+            for location in fileDict:
 
                 files = fileDict.get(location)
 
@@ -492,7 +494,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Mark Open blocks as Pending if they have timed out or their workflows have completed
         """
         completedWorkflows = self.dbsUtil.getCompletedWorkflows()
-        for block in self.blockCache.values():
+        for block in viewvalues(self.blockCache):
             if block.status == "Open":
                 if (block.getTime() > block.getMaxBlockTime()) or any(
                         key in completedWorkflows for key in block.workflows):
@@ -539,7 +541,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         datasetpath = newFile["datasetPath"]
 
-        for block in self.blockCache.values():
+        for block in viewvalues(self.blockCache):
             if datasetpath == block.getDatasetPath() and location == block.getLocation():
                 if not self.isBlockOpen(newFile=newFile, block=block) and not skipOpenCheck:
                     # Block isn't open anymore.  Mark it as pending so that it gets uploaded.
@@ -587,7 +589,7 @@ class DBSUploadPoller(BaseWorkerThread):
         createInDBS = []
         createInDBSBuffer = []
         updateInDBSBuffer = []
-        for block in self.blockCache.values():
+        for block in viewvalues(self.blockCache):
             if block.getName() in self.queuedBlocks:
                 # Block is already being dealt with by another process.  We'll
                 # ignore it here.

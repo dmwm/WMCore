@@ -9,6 +9,9 @@ dynamically and can be turned on/off via configuration file.
 """
 from __future__ import print_function
 
+from builtins import str, bytes
+from future.utils import viewitems, listitems
+
 import logging
 import os
 import socket
@@ -186,13 +189,13 @@ class Root(Harness):
                          'server', 'tools', 'wsgi', 'checker']
         # Deal with "long hand" configuration variables
         for i in configurables:
-            if i in configDict.keys():
-                for config_param, param_value in configDict[i].dictionary_().items():
+            if i in configDict:
+                for config_param, param_value in viewitems(configDict[i].dictionary_()):
                     if isinstance(param_value, ConfigSection):
                         # TODO: make this loads better
-                        for child_param, child_param_value in param_value.dictionary_().items():
+                        for child_param, child_param_value in viewitems(param_value.dictionary_()):
                             cherrypy.config["%s.%s.%s" % (i, config_param, child_param)] = child_param_value
-                    elif isinstance(param_value, (basestring, int)):
+                    elif isinstance(param_value, (str, bytes, int)):
                         cherrypy.config["%s.%s" % (i, config_param)] = param_value
                     else:
                         raise Exception("Unsupported configuration type: %s" % type(param_value))
@@ -244,7 +247,7 @@ class Root(Harness):
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
 
         default_port = 8080
-        if "server.socket_port" in cherrypy.config.keys():
+        if "server.socket_port" in cherrypy.config:
             default_port = cherrypy.config["server.socket_port"]
         cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
         cherrypy.config["server.accepted_queue_size"] = configDict.get("accepted_queue_size", -1)
@@ -282,14 +285,14 @@ class Root(Harness):
         globalconf = self.appconfig.dictionary_()
         del globalconf['views']
         the_index = ''
-        if 'index' in globalconf.keys():
+        if 'index' in globalconf:
             the_index = globalconf['index']
             del globalconf['index']
 
         for view in self.appconfig.views.active:
             # Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
-                if 'instances' in globalconf.keys():
+                if 'instances' in globalconf:
                     for instance in globalconf['instances']:
                         self._mountPage(view, globalconf, factory, instance)
                 else:
@@ -311,10 +314,10 @@ class Root(Harness):
         view_config.application = self.app
 
         view_dict = view.dictionary_()
-        for k in globalconf.keys():
+        for k in globalconf:
             # Add the global config to the view
             view_config.__setattr__(k, globalconf[k])
-        for k in view_dict.keys():
+        for k in view_dict:
             # overwrite global if the local config is different
             view_config.__setattr__(k, view_dict[k])
 
@@ -334,7 +337,7 @@ class Root(Harness):
                 view_config.security = security_cfg.section_(instance)
 
         if 'database' in view_config.dictionary_():
-            if not isinstance(view_config.database, basestring):
+            if not isinstance(view_config.database, (str, bytes)):
                 if len(view_config.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:
                         view_config.database.connectUrl = self.coreDatabase.connectUrl
@@ -387,7 +390,7 @@ class Root(Harness):
             for view in self.appconfig.views.active:
                 if not getattr(view, "hidden", False):
                     viewName = view._internal_name
-                    if 'instances' in globalconf.keys():
+                    if 'instances' in globalconf:
                         for instance in globalconf['instances']:
                             mount_point = '/%s/%s/%s' % (self.app.lower(), instance, viewName)
                             viewObj = cherrypy.tree.apps[mount_point].root
@@ -429,7 +432,7 @@ class Root(Harness):
         cherrypy.engine.stop()
 
         # Ensure the next server that's started gets fresh objects
-        for name, server in getattr(cherrypy, 'servers', {}).items():
+        for name, server in listitems(getattr(cherrypy, 'servers', {})):
             server.unsubscribe()
             del cherrypy.servers[name]
 

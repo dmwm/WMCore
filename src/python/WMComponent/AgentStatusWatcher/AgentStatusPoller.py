@@ -5,6 +5,9 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
+from __future__ import division
+from future.utils import viewitems
+
 import time
 import logging
 import threading
@@ -302,7 +305,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         logging.debug("%s '%s' lifetime is %d seconds", credType, credFile, secsLeft)
 
-        daysLeft = secsLeft / (60. * 60 * 24)
+        daysLeft = secsLeft / (60 * 60 * 24)
 
         if daysLeft <= self.credThresholds[credType]['error']:
             credWarning = True
@@ -362,11 +365,11 @@ class AgentStatusPoller(BaseWorkerThread):
         prioDocs = []
         sitePendCountByPrio = dataStats['WMBS_INFO'].pop('sitePendCountByPrio', [])
 
-        for site, item in sitePendCountByPrio.iteritems():
+        for site, item in viewitems(sitePendCountByPrio):
             # it seems sites with no jobs are also always here as "Sitename": {0: 0}
-            if item.keys() == [0]:
+            if list(item) == [0]:
                 continue
-            for prio, jobs in item.iteritems():
+            for prio, jobs in viewitems(item):
                 prioDoc = {}
                 prioDoc['site_name'] = site
                 prioDoc['type'] = docType
@@ -401,7 +404,7 @@ class AgentStatusPoller(BaseWorkerThread):
             siteDoc['state'] = siteDoc['thresholds'].pop('state', 'Unknown')
             siteDoc['thresholdsGQ2LQ'] = thresholdsGQ2LQ.get(site, 0)
 
-            for status in possibleJobsPerSite.keys():
+            for status in possibleJobsPerSite:
                 # make sure these keys are always present in the documents
                 jobKey = "possible_%s_jobs" % status.lower()
                 elemKey = "num_%s_elem" % status.lower()
@@ -433,7 +436,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         docType = "wma_work_info"
         workByStatus = dataStats['LocalWQ_INFO'].pop('workByStatus', {})
-        for status, info in workByStatus.items():
+        for status, info in viewitems(workByStatus):
             workDoc = {}
             workDoc['type'] = docType
             workDoc['status'] = status

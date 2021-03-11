@@ -50,6 +50,8 @@ jobs that get in cooloff would stay there forever.
 Any parameter can be skipped and the component will use internal defaults.
 """
 
+from future.utils import viewvalues
+
 import datetime
 import logging
 import threading
@@ -125,7 +127,7 @@ class RetryManagerPoller(BaseWorkerThread):
         self.typePluginsAssoc = getattr(self.config.RetryManager, 'plugins', {})
         self.typePluginsAssoc.setdefault('default', 'DefaultRetryAlgo')
 
-        for pluginName in self.typePluginsAssoc.values():
+        for pluginName in viewvalues(self.typePluginsAssoc):
             try:
                 plugin = self.pluginFactory.loadObject(classname=pluginName,
                                                        args=config)
@@ -189,7 +191,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
         transitions = Transitions()
         oldstate = '%scooloff' % cooloffType
-        if oldstate not in transitions.keys():
+        if oldstate not in transitions:
             msg = 'Unknown job type %s' % cooloffType
             logging.error(msg)
             return

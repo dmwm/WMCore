@@ -20,6 +20,7 @@ including session objects and workflow entities.
 
 """
 from __future__ import print_function
+from builtins import object
 
 import logging
 import os
@@ -49,7 +50,7 @@ class HarnessException(WMException):
     """
 
 
-class Harness:
+class Harness(object):
     """
     Harness class that wraps standard functionality used in all daemon
     components
@@ -148,7 +149,7 @@ class Harness:
                            'WARNING': logging.WARNING,
                            'INFO': logging.INFO,
                            'SQLDEBUG': logging.SQLDEBUG}
-            if hasattr(compSect, "logLevel") and compSect.logLevel in self.logMsg.keys():
+            if hasattr(compSect, "logLevel") and compSect.logLevel in self.logMsg:
                 logging.getLogger().setLevel(self.logMsg[compSect.logLevel])
             WMLogging.sqldebug("wmcore level debug:")
 
@@ -455,7 +456,7 @@ while trying to handle msg: %s
         msg += '\n'
         msg += '>>Event Subscriptions --> Handlers<<\n'
         msg += '------------------------------------\n'
-        for message in self.messages.keys():
+        for message in self.messages:
             msg += message + '-->' + str(self.messages[message]) + '\n'
         msg += '\n'
         msg += '\n'

@@ -14,6 +14,7 @@ environment in which the Runtime Script implementation needs to be called.
 
 from __future__ import print_function
 
+from builtins import object
 import logging
 import os
 import sys
@@ -23,7 +24,7 @@ import WMCore.WMRuntime.Bootstrap as Bootstrap
 from WMCore.WMRuntime.ScriptFactory import getScript
 
 
-class ScriptInvoke:
+class ScriptInvoke(object):
     """
     _ScriptInvoke_
 

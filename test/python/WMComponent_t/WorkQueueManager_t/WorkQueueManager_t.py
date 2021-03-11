@@ -5,6 +5,7 @@ WorkQueuManager test
 """
 from __future__ import print_function, division
 
+from builtins import next
 import unittest
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase

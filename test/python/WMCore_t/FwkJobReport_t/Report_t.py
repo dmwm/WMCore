@@ -1,9 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 _Report_t_
 
 Unit tests for the Report class.
 """
+
+from future.utils import viewvalues
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 
 import os
 import time
@@ -380,12 +384,12 @@ class ReportTest(unittest.TestCase):
 
         jsonReport = myReport.__to_json__(None)
 
-        assert "task" in jsonReport.keys(), \
+        assert "task" in jsonReport, \
             "Error: Task name missing from report."
 
-        assert len(jsonReport["steps"].keys()) == 1, \
+        assert len(jsonReport["steps"]) == 1, \
             "Error: Wrong number of steps in report."
-        assert "cmsRun1" in jsonReport["steps"].keys(), \
+        assert "cmsRun1" in jsonReport["steps"], \
             "Error: Step missing from json report."
 
         cmsRunStep = jsonReport["steps"]["cmsRun1"]
@@ -393,7 +397,7 @@ class ReportTest(unittest.TestCase):
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
                               "analysis", "cleanup", "input", "output", "start"]
         for jsonReportSection in jsonReportSections:
-            assert jsonReportSection in cmsRunStep.keys(), \
+            assert jsonReportSection in cmsRunStep, \
                 "Error: missing section: %s" % jsonReportSection
 
         return
@@ -465,7 +469,7 @@ class ReportTest(unittest.TestCase):
         report.setStepPMEM(stepName="cmsRun1", minimum=100, maximum=800, average=244)
 
         perf = report.retrieveStep("cmsRun1").performance
-        for section in perf.dictionary_().values():
+        for section in viewvalues(perf.dictionary_()):
             d = section.dictionary_()
             self.assertEqual(d['min'], 100)
             self.assertEqual(d['max'], 800)
@@ -558,31 +562,73 @@ class ReportTest(unittest.TestCase):
         self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999})
         self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 1)
 
-        report.addError(stepName="cmsRun1", exitCode=12345, errorType="test", errorDetails="test")
-        self.assertEqual(report.getExitCode(), 12345)
-        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
-        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345})
+        report.addError(stepName="cmsRun1", exitCode=102, errorType="test", errorDetails="test")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102})
         self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 2)
 
-        report.addError(stepName="cmsRun1", exitCode=123, errorType="test", errorDetails="test")
-        self.assertEqual(report.getExitCode(), 12345)
-        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
-        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
+        report.addError(stepName="cmsRun1", exitCode=103, errorType="test", errorDetails="test")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103})
         self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
 
         # now try to record the same exit code once again
-        report.addError(stepName="cmsRun1", exitCode=12345, errorType="test", errorDetails="test")
-        self.assertEqual(report.getExitCode(), 12345)
-        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
-        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
-        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
+        report.addError(stepName="cmsRun1", exitCode=104, errorType="test", errorDetails="test")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 4)
 
         # and once again, but different type and details (which does not matter)
-        report.addError(stepName="cmsRun1", exitCode=12345, errorType="testAA", errorDetails="testAA")
-        self.assertEqual(report.getExitCode(), 12345)
-        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
-        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 12345, 123})
-        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 3)
+        report.addError(stepName="cmsRun1", exitCode=105, errorType="testEE", errorDetails="testAA")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 5)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=106, errorType="test", errorDetails="1 тℯṧт")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 6)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=107, errorType="test", errorDetails="2 тℯṧт \x95")
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106, 107})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 7)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=108, errorType="test", errorDetails=encodeUnicodeToBytes("3 тℯṧт"))
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106, 107, 108})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 8)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=109, errorType="test", errorDetails=decodeBytesToUnicode("4 тℯṧт"))
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106, 107, 108, 109})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 9)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=110, errorType="test", errorDetails={"нεʟʟ◎": 3.14159})
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106, 107, 108, 109, 110})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 10)
+
+        # and once again, but different type and details - testing unicode handling
+        report.addError(stepName="cmsRun1", exitCode=111, errorType="test", errorDetails={"нεʟʟ◎ \x95": "ẘøґℓ∂ \x95"})
+        self.assertEqual(report.getExitCode(), 102)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 102)
+        self.assertItemsEqual(report.getStepExitCodes(stepName="cmsRun1"), {99999, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111})
+        self.assertEqual(report.getStepErrors(stepName="cmsRun1")['errorCount'], 11)
 
     def testProperties(self):
         """

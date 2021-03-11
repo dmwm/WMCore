@@ -5,6 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
+from future.utils import viewitems
+
 import os
 import subprocess
 import sys
@@ -223,13 +225,13 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         createThresholds = myResourceControl.listThresholdsForCreate()
 
-        self.assertEqual(len(createThresholds.keys()), 2,
+        self.assertEqual(len(createThresholds), 2,
                          "Error: Wrong number of site in Resource Control DB")
 
-        self.assertTrue("testSite1" in createThresholds.keys(),
+        self.assertTrue("testSite1" in createThresholds,
                         "Error: Test Site 1 missing from thresholds.")
 
-        self.assertTrue("testSite2" in createThresholds.keys(),
+        self.assertTrue("testSite2" in createThresholds,
                         "Error: Test Site 2 missing from thresholds.")
 
         self.assertEqual(createThresholds["testSite1"]["total_slots"], 10,
@@ -247,13 +249,13 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
         thresholds = myResourceControl.listThresholdsForSubmit()
 
-        self.assertEqual(len(thresholds.keys()), 2,
+        self.assertEqual(len(thresholds), 2,
                          "Error: Wrong number of sites in Resource Control DB")
 
-        self.assertTrue("testSite1" in thresholds.keys(),
+        self.assertTrue("testSite1" in thresholds,
                         "Error: testSite1 missing from thresholds.")
 
-        self.assertTrue("testSite2" in thresholds.keys(),
+        self.assertTrue("testSite2" in thresholds,
                         "Error: testSite2 missing from thresholds.")
 
         site1Info = thresholds["testSite1"]
@@ -265,12 +267,12 @@ class ResourceControlTest(EmulatedUnitTestCase):
         procThreshold2 = None
         mergeThreshold1 = None
         mergeThreshold2 = None
-        for taskType, threshold in site1Thresholds.items():
+        for taskType, threshold in viewitems(site1Thresholds):
             if taskType == "Merge":
                 mergeThreshold1 = threshold
             elif taskType == "Processing":
                 procThreshold1 = threshold
-        for taskType, threshold in site2Thresholds.items():
+        for taskType, threshold in viewitems(site2Thresholds):
             if taskType == "Merge":
                 mergeThreshold2 = threshold
             elif taskType == "Processing":
@@ -380,7 +382,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         createThresholds = myResourceControl.listThresholdsForCreate()
         submitThresholds = myResourceControl.listThresholdsForSubmit()
 
-        self.assertEqual(len(createThresholds.keys()), 2,
+        self.assertEqual(len(createThresholds), 2,
                          "Error: Wrong number of sites in create thresholds")
 
         self.assertEqual(createThresholds["testSite1"]["total_slots"], 10,
@@ -409,12 +411,12 @@ class ResourceControlTest(EmulatedUnitTestCase):
         procThreshold1 = None
         procThreshold2 = None
         self.assertEqual(set(submitThresholds.keys()), set(["testSite1", "testSite2"]))
-        for taskType, threshold in submitThresholds["testSite1"]["thresholds"].items():
+        for taskType, threshold in viewitems(submitThresholds["testSite1"]["thresholds"]):
             if taskType == "Merge":
                 mergeThreshold1 = threshold
             elif taskType == "Processing":
                 procThreshold1 = threshold
-        for taskType, threshold in submitThresholds["testSite2"]["thresholds"].items():
+        for taskType, threshold in viewitems(submitThresholds["testSite2"]["thresholds"]):
             if taskType == "Merge":
                 mergeThreshold2 = threshold
             elif taskType == "Processing":
@@ -690,7 +692,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
             self.assertEqual(len(result[x]['thresholds']), 7)
             self.assertEqual(result[x]['total_pending_slots'], 500)
             self.assertEqual(result[x]['total_running_slots'], 1)
-            for taskType, thresh in result[x]['thresholds'].items():
+            for taskType, thresh in viewitems(result[x]['thresholds']):
                 if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], 1)

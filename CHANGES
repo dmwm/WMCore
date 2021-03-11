@@ -1,3 +1,8 @@
+1.4.6 to 1.4.6.crab1:
+  - enforce oracle variable type in bind. Fix #10335 (belforte) #10351
+  - allw to run REST/Main in frontend via env.var. fix #10266 (belforte) #10350
+
+
 1.4.6.pre9 to 1.4.6:
 
 

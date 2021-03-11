@@ -8,6 +8,7 @@ import re
 import signal
 import string
 import time
+import cx_Oracle
 from collections import namedtuple
 from functools import wraps
 from threading import Thread, Condition
@@ -2095,7 +2096,25 @@ class DatabaseRESTApi(RESTApi):
         trace and cherrypy.log("%s execute: %s %s" % (trace, binds, kwbinds))
         if request.db['type'].__name__ == 'MySQLdb':
             return c, c.execute(sql, kwbinds)
-        return c, c.execute(None, *binds, **kwbinds)
+        sizes={}
+        # binds is a list of dictionaries, but somehow passing it by pointer wraps it as a 1-value tupla
+        if binds:
+            for bDict in binds[0]:
+                for k in bDict.keys():
+                    if isinstance(bDict[k], basestring):
+                        sizes[k] = cx_Oracle.STRING
+        # kwbinds is a dictionary (or lists if needed)
+        if kwbinds:
+            for k in kwbinds.keys():
+                if isinstance(kwbinds[k], basestring):
+                    sizes[k]=cx_Oracle.STRING
+        if sizes:
+            c.setinputsizes(**sizes)
+        t1 = time.time()
+        result=c.execute(None, *binds, **kwbinds)
+        elapsed = time.time() -t1
+        trace and cherrypy.log("%s ==== COMPLETED in %s sec ====" % (trace, elapsed))
+        return c, result
 
     def executemany(self, sql, *binds, **kwbinds):
         """Execute a SQL statement many times with bind variables.
@@ -2113,7 +2132,25 @@ class DatabaseRESTApi(RESTApi):
         trace and cherrypy.log("%s executemany: %s %s" % (trace, binds, kwbinds))
         if request.db['type'].__name__ == 'MySQLdb':
             return c, c.executemany(sql, binds[0])
-        return c, c.executemany(None, *binds, **kwbinds)
+        sizes={}
+        if binds:
+            # binds is a list of dictionaries, but somehow passing it by pointer wraps it as a 1-value tupla
+            for bDict in binds[0]:
+                for k in bDict.keys():
+                    if isinstance(bDict[k], basestring):
+                        sizes[k] = cx_Oracle.STRING
+        # kwbinds is a dictionary (or lists if needed)
+        if kwbinds:
+            for k in kwbinds.keys():
+                if isinstance(kwbinds[k], basestring):
+                    sizes[k]=cx_Oracle.STRING
+        if sizes:
+            c.setinputsizes(**sizes)
+        t1 = time.time()
+        result = c.executemany(None, *binds, **kwbinds)
+        elapsed = time.time() - t1
+        trace and cherrypy.log("%s ==== COMPLETED in %s sec ====" % (trace, elapsed))
+        return c, result
 
     def query(self, match, select, sql, *binds, **kwbinds):
         """Convenience function to :meth:`execute` a query, set ``"columns"`` in

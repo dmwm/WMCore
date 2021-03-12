@@ -7,6 +7,9 @@ Tests for the PSet configuration code.
 """
 from __future__ import print_function
 
+from future.utils import viewvalues
+from builtins import zip
+
 import imp
 import unittest
 import os
@@ -298,7 +301,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         # consider only locally available files
         filesInConfigDict = []
-        for v in pileupSubDict.values():
+        for v in viewvalues(pileupSubDict):
             if seLocalName in v["phedexNodeNames"]:
                 filesInConfigDict.extend(v["FileList"])
 

@@ -7,6 +7,9 @@ of related tasks.
 """
 from __future__ import print_function
 
+from builtins import next, range
+from future.utils import viewitems, viewvalues
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import sanitizeURL
@@ -217,7 +220,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         newMap = {}
         if chainMap:
-            for _, cData in chainMap.items():
+            for cData in viewvalues(chainMap):
                 cNum = cData.get('TaskNumber', cData.get('StepNumber'))
                 newMap[cNum] = {'ParentDset': cData['ParentDataset'],
                                 'ChildDsets': []}
@@ -239,7 +242,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         parentMap = self.getStepParentageMapping()
-        listOfStepNames = parentMap.keys()
+        listOfStepNames = list(parentMap)
         for stepName in listOfStepNames:
             if parentMap[stepName]['OutputDatasetMap']:
                 # then there is output dataset, let's update it
@@ -273,7 +276,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         taskMap = self.getTaskParentageMapping()
 
-        for tName in taskMap.keys():
+        for tName in taskMap:
             if not taskMap[tName]['OutputDatasetMap']:
                 continue
 
@@ -288,7 +291,7 @@ class WMWorkloadHelper(PersistencyHelper):
                     continue
                 oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
                 taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']
-                for tt in taskMap.keys():
+                for tt in taskMap:
                     if taskMap[tt]['ParentDataset'] == oldOutputDset:
                         taskMap[tt]['ParentDataset'] = outInfo['outputDataset']
 
@@ -366,7 +369,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
-        for key in ownerProperties.keys():
+        for key in ownerProperties:
             setattr(self.data.owner, key, ownerProperties[key])
 
         return
@@ -384,7 +387,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
-        for key in ownerProperties.keys():
+        for key in ownerProperties:
             setattr(self.data.owner, key, ownerProperties[key])
         return
 
@@ -422,7 +425,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the Start policy and its parameters
         """
         self.data.policies.start.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in viewitems(params):
             setattr(self.data.policies.start, key, val)
 
     def startPolicy(self):
@@ -449,7 +452,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the End policy and its parameters
         """
         self.data.policies.end.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in viewitems(params):
             setattr(self.data.policies.end, key, val)
 
     def endPolicy(self):
@@ -1355,7 +1358,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
-                for module in outModule.dictionary_().values():
+                for module in viewvalues(outModule.dictionary_()):
                     lfnBase = getattr(module, "lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)
@@ -1550,10 +1553,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
                     if stepHelper.stepType() == "LogArchive":
-                        for key, value in overrides.items():
+                        for key, value in viewitems(overrides):
                             stepHelper.addOverride(key, value)
             # save it at workload level as well
-            for key, value in overrides.items():
+            for key, value in viewitems(overrides):
                 setattr(self.data.overrides, key, value)
 
         return

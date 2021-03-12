@@ -2,6 +2,8 @@
 Provide functions to collect data and upload data
 """
 from __future__ import division
+from builtins import object
+from future.utils import viewitems
 
 import os
 import time
@@ -303,7 +305,7 @@ def combineAnalyticsData(a, b, combineFunc=None):
     """
     result = {}
     result.update(a)
-    for key, value in b.items():
+    for key, value in viewitems(b):
         if key not in result:
             result[key] = value
         else:
@@ -319,7 +321,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                              skippedInfoFromCouch, agentInfo,
                              uploadTime, summaryLevel):
     requestDocs = []
-    for request, status in combinedRequests.items():
+    for request, status in viewitems(combinedRequests):
         doc = {}
         doc['_id'] = '%s-%s' % (agentInfo['agent_url'], request)
         doc.update(agentInfo)
@@ -386,11 +388,11 @@ def _setMultiLevelStatus(statusData, status, value):
 
 
 def _combineJobsForStatusAndSite(requestData, data):
-    for status, siteJob in requestData.items():
+    for status, siteJob in viewitems(requestData):
         if not isinstance(siteJob, dict):
             _setMultiLevelStatus(data['status'], status, siteJob)
         else:
-            for site, job in siteJob.items():
+            for site, job in viewitems(siteJob):
                 _setMultiLevelStatus(data['status'], status, int(job))
                 if site != 'Agent':
                     if site is None:
@@ -419,7 +421,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel=None):
 
     if summaryLevel is not None and summaryLevel == 'task':
         data['tasks'] = {}
-        for task, taskData in requestData.items():
+        for task, taskData in viewitems(requestData):
             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
             _combineJobsForStatusAndSite(taskData, data)
     else:

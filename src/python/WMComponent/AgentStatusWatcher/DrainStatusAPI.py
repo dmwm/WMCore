@@ -3,6 +3,8 @@ API for querying the status of agent drain process
 """
 
 from __future__ import division
+from builtins import object
+
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
 from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend

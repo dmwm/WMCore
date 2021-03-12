@@ -31,11 +31,11 @@ class DataCacheTests(unittest.TestCase):
 
     def testLatestJobData(self):
         self.assertEqual(20, len(DataCache.getlatestJobData()))
-        self.assertItemsEqual(['time', 'data'], DataCache._lastedActiveDataFromAgent.keys())
+        self.assertItemsEqual(['time', 'data'], list(DataCache._lastedActiveDataFromAgent))
 
         DataCache.setlatestJobData("ALAN")
         self.assertEqual("ALAN", DataCache.getlatestJobData())
-        self.assertItemsEqual(['time', 'data'], DataCache._lastedActiveDataFromAgent.keys())
+        self.assertItemsEqual(['time', 'data'], list(DataCache._lastedActiveDataFromAgent))
 
     def testLatestJobDataExpired(self):
         self.assertFalse(DataCache.islatestJobDataExpired())
@@ -70,7 +70,7 @@ class DataCacheTests(unittest.TestCase):
     def testFilterDataByRequest(self):
         data = list(DataCache.filterDataByRequest(filterDict={}, maskList='RequestType'))
         self.assertEqual(20, len(data))
-        self.assertItemsEqual(['RequestName', 'RequestType'], data[0].keys())
+        self.assertItemsEqual(['RequestName', 'RequestType'], list(data[0]))
         reqTypes = [item['RequestType'] for item in data]
         self.assertItemsEqual(['ReReco', 'MonteCarlo', 'StepChain', 'MonteCarloFromGEN',
                                'ReDigi', 'TaskChain', 'DQMHarvest'], set(list(reqTypes)))

@@ -5,6 +5,7 @@ Version of WMCore/Services/Rucio intended to be used with mock or unittest.mock
 """
 from __future__ import print_function, division
 from future.utils import listitems
+# from builtins import object # avoid importing this, it beraks things
 
 import json
 import logging

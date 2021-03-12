@@ -729,7 +729,7 @@ class AccountantWorker(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in selfChecksums:
                     dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                           'cktype': entry})
 
@@ -816,7 +816,7 @@ class AccountantWorker(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in selfChecksums:
                     fileCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                            'cktype': entry})
 

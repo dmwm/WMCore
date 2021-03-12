@@ -1,3 +1,12 @@
+1.4.7.pre2 to 1.4.7.pre3:
+  - added Rucio mock data json (Alan Malta Rodrigues) #10342
+  - added script to query Rucio and create mock data (Alan Malta Rodrigues) #10342
+  - Reject blocks without any Rucio files in GQ (Alan Malta Rodrigues) #10342
+  - allw to run REST/Main in frontend via env.var. fix #10266 (belforte) #10339
+  - Dont map pileup location to the campaign top level site lists (Alan Malta Rodrigues) #10338
+  - MSTransferor: iterate over a dictionary as a list when it can change (Alan Malta Rodrigues) #10337
+
+
 1.4.7.pre1 to 1.4.7.pre2:
   - [py2py3] src/python/A/B/C slice 16 - issue #10140 - src (Dario Mapelli) #10321
   - [py2py3] src/python/A/B/C slice 15 - issue #10139 - src (Dario Mapelli) #10319

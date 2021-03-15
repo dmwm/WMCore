@@ -8,6 +8,8 @@ _JobSubmitterPoller_t_
 Submit jobs for execution.
 """
 from __future__ import print_function, division
+from builtins import range
+from future.utils import viewitems
 
 import logging
 import os.path
@@ -206,7 +208,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobPackage[loadedJob["id"]] = loadedJob.getDataStructsJob()
         batchDir = jobPackage['directory']
 
-        if len(jobPackage.keys()) == self.packageSize:
+        if len(jobPackage) == self.packageSize:
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
 
@@ -222,7 +224,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         Write any jobs packages to disk that haven't been written out already.
         """
-        workflowNames = self.jobsToPackage.keys()
+        workflowNames = list(self.jobsToPackage)
         for workflowName in workflowNames:
             jobPackage = self.jobsToPackage[workflowName]["package"]
             batchDir = jobPackage['directory']
@@ -452,7 +454,7 @@ class JobSubmitterPoller(BaseWorkerThread):
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
         jobIDsToPurge = set()
-        for jobID, jobInfo in self.jobDataCache.iteritems():
+        for jobID, jobInfo in viewitems(self.jobDataCache):
             if (jobInfo['request_name'] in abortedAndForceCompleteRequests) and \
                     (jobInfo['task_type'] not in ['LogCollect', "Cleanup"]):
                 jobIDsToPurge.add(jobID)
@@ -529,7 +531,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
-        for siteName in rcThresholds.keys():
+        for siteName in rcThresholds:
             # Add threshold if we don't have it already
             state = rcThresholds[siteName]["state"]
 
@@ -736,7 +738,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.debug("There are no packages to submit.")
             return
 
-        for package in jobsToSubmit.keys():
+        for package in jobsToSubmit:
             jobs = jobsToSubmit.get(package, [])
             for job in jobs:
                 job['location'], job['plugin'], job['site_cms_name'] = self.getSiteInfo(job['custom']['location'])
@@ -774,7 +776,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         This is how you get the name of a CE and the plugin for a job
         """
 
-        if jobSite not in self.locationDict.keys():
+        if jobSite not in self.locationDict:
             siteInfo = self.locationAction.execute(siteName=jobSite)
             self.locationDict[jobSite] = siteInfo[0]
         return (self.locationDict[jobSite].get('ce_name'),

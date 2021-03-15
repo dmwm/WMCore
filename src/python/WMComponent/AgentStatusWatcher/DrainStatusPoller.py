@@ -5,6 +5,8 @@ to be shutdown and a new version be put in place.
 """
 from __future__ import division
 
+from future.utils import viewitems
+
 __all__ = []
 
 import logging
@@ -155,7 +157,7 @@ class DrainStatusPoller(BaseWorkerThread):
         if self.agentConfig.get("SpeedDrainMode"):
             self.agentConfig['SpeedDrainMode'] = False
             speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
-            for key, v in speedDrainConfig.items():
+            for key, v in viewitems(speedDrainConfig):
                 if key in self.validSpeedDrainConfigKeys and v['Enabled']:
                     speedDrainConfig[key]['Enabled'] = False
 
@@ -179,7 +181,7 @@ class DrainStatusPoller(BaseWorkerThread):
             return []
 
         # loop through the speed drain configuration and make a list of what thresholds have been hit
-        for k, v in speedDrainConfig.items():
+        for k, v in viewitems(speedDrainConfig):
             # make sure keys in the speed drain config are valid
             if k in self.validSpeedDrainConfigKeys and isinstance(v['Threshold'], int) and isinstance(v['Enabled'], bool):
                 # we always want to apply the condor priority change if the threshold is hit

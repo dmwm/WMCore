@@ -7,6 +7,7 @@ from __future__ import print_function, division, absolute_import
 
 from builtins import object
 import time
+from datetime import tzinfo, timedelta
 
 
 def timeFunction(func):
@@ -52,3 +53,47 @@ class CodeTimer(object):
         runtime = end - self.start
         msg = '{label} took {time} seconds to complete'
         print(msg.format(label=self.label, time=runtime))
+
+
+class LocalTimezone(tzinfo):
+    """
+    A required python 2 class to determine current timezone for formatting rfc3339 timestamps
+    Required for sending alerts to the MONIT AlertManager
+    Can be removed once WMCore starts using python3
+
+    Details of class can be found at: https://docs.python.org/2/library/datetime.html#tzinfo-objects
+    """
+
+    def __init__(self):
+        super(LocalTimezone, self).__init__()
+        self.ZERO = timedelta(0)
+        self.STDOFFSET = timedelta(seconds=-time.timezone)
+        if time.daylight:
+            self.DSTOFFSET = timedelta(seconds=-time.altzone)
+        else:
+            self.DSTOFFSET = self.STDOFFSET
+
+        self.DSTDIFF = self.DSTOFFSET - self.STDOFFSET
+
+    def utcoffset(self, dt):
+        if self._isdst(dt):
+            return self.DSTOFFSET
+        else:
+            return self.STDOFFSET
+
+    def dst(self, dt):
+        if self._isdst(dt):
+            return self.DSTDIFF
+        else:
+            return self.ZERO
+
+    def tzname(self, dt):
+        return time.tzname[self._isdst(dt)]
+
+    def _isdst(self, dt):
+        tt = (dt.year, dt.month, dt.day,
+              dt.hour, dt.minute, dt.second,
+              dt.weekday(), 0, 0)
+        stamp = time.mktime(tt)
+        tt = time.localtime(stamp)
+        return tt.tm_isdst > 0

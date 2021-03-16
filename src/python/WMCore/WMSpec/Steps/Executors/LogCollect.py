@@ -60,6 +60,7 @@ class LogCollect(Executor):
         scramCommand = self.step.application.setup.scramCommand
         cmsswVersion = self.step.application.setup.cmsswVersion
         scramArch = getSingleScramArch(self.step.application.setup.scramArch)
+        overrideCatalog = getattr(self.step.application, 'overrideCatalog', None)
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -158,6 +159,11 @@ class LogCollect(Executor):
         for logs in grouper(self.job["input_files"], numberOfFilesPerCopy):
 
             copyCommand = "env X509_USER_PROXY=%s edmCopyUtil" % os.environ.get('X509_USER_PROXY', None)
+
+            # specify TFC if necessary
+            if overrideCatalog:
+                copyCommand += " -c %s" % overrideCatalog
+
             for log in logs:
                 copyCommand += " %s" % log['lfn']
             copyCommand += " %s" % self.step.builder.workingDir

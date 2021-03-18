@@ -5,7 +5,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.DataStructs.Workflow import Workflow
+from WMCore.MicroService.MSTransferor.Workflow import Workflow
 
 
 class WorkflowTest(unittest.TestCase):

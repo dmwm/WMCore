@@ -11,7 +11,7 @@ import os
 import unittest
 
 # WMCore modules
-from WMCore.MicroService.Unified.MSTransferor import MSTransferor
+from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 

@@ -7,7 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.Unified.RequestInfo import RequestInfo
+from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
 
 
 class RequestInfoTest(unittest.TestCase):

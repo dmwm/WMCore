@@ -11,7 +11,7 @@ from future.utils import listvalues
 import time
 import unittest
 
-from WMCore.MicroService.Unified.TaskManager import \
+from WMCore.MicroService.TaskManager import \
         TaskManager, genkey, UidSet
 
 

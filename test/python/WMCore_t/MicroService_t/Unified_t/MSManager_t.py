@@ -8,7 +8,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.Unified.MSManager import MSManager
+from WMCore.MicroService.MSManager import MSManager
 from WMCore.Agent.Configuration import Configuration
 
 

@@ -39,8 +39,7 @@ from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-from WMCore.Services.pycurl_manager import portForward
-
+from Utils.PortForward import portForward
 
 try:
     from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader

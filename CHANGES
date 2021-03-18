@@ -1,3 +1,12 @@
+1.4.7.pre3 to 1.4.7.pre4:
+  - add __init__ module for AlertManager package (Alan Malta Rodrigues) #10358
+  - Add AlertManager API (Erik Gough) #10308
+  - Add py3-cmsmonitoring to the list of python3 requirements (Alan Malta Rodrigues) #10355
+  - [py2py3] src/python/A/B/C slice 18 - issue #10142 - src (Dario Mapelli) #10331
+  - [py2py3] src/python/A/B/C slice 17 - issue #10141 - src (Dario Mapelli) #10329
+  - [py2py3] src/python/A/B/C slice 19 - issue #10143 - src (Dario Mapelli) #10348
+
+
 1.4.7.pre2 to 1.4.7.pre3:
   - added Rucio mock data json (Alan Malta Rodrigues) #10342
   - added script to query Rucio and create mock data (Alan Malta Rodrigues) #10342

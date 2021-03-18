@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from builtins import object
 from future import standard_library
 standard_library.install_aliases()
 
@@ -14,7 +15,7 @@ from tempfile import NamedTemporaryFile
 
 # DISABLING because this doesn't properly shut down the cherrypy
 # server or clean up the state
-class RootTest():
+class RootTest(object):
 
     def getBaseConfiguration(self):
         config = Configuration()
@@ -78,8 +79,8 @@ class RootTest():
         server = Root(config)
         server.start(blocking=False)
 
-        self.assertFalse('foo' in cpconfig.keys(), 'non-standard configurable passed to server')
-        self.assertFalse('stuff' in cpconfig.keys(), 'non-standard configurable passed to server')
+        self.assertFalse('foo' in cpconfig, 'non-standard configurable passed to server')
+        self.assertFalse('stuff' in cpconfig, 'non-standard configurable passed to server')
 
         server.stop()
 

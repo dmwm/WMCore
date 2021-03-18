@@ -30,12 +30,12 @@ class RucioInjectorPollerTest(unittest.TestCase):
 
         finalData = filterDataByTier(uninjectedFiles, allowedTiers)
         self.assertEqual(len(finalData), 3)
-        self.assertItemsEqual(finalData.keys(), ["SiteA", "SiteB", "SiteC"])
+        self.assertItemsEqual(list(finalData), ["SiteA", "SiteB", "SiteC"])
 
-        self.assertItemsEqual(finalData["SiteA"].keys(), ["/dset4/procStr-v1/NANOAODSIM",
+        self.assertItemsEqual(list(finalData["SiteA"]), ["/dset4/procStr-v1/NANOAODSIM",
                                                           "/dset5/procStr-v1/NANOAOD"])
-        self.assertItemsEqual(finalData["SiteB"].keys(), ["/dset7/procStr-v1/NANOAOD"])
-        self.assertItemsEqual(finalData["SiteC"].keys(), [])
+        self.assertItemsEqual(list(finalData["SiteB"]), ["/dset7/procStr-v1/NANOAOD"])
+        self.assertItemsEqual(list(finalData["SiteC"]), [])
 
         return
 

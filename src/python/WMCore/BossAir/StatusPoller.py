@@ -8,6 +8,8 @@ Possible non-production poller prototype for
 JobStatusAir
 """
 
+from future.utils import listvalues
+
 import time
 import logging
 import threading
@@ -121,7 +123,7 @@ class StatusPoller(BaseWorkerThread):
         timeOutCodeMap = {"Running": 71304, "Pending": 71305, "Error": 71306}
         # We need to show that the jobs are in state timeout
         # and then kill them.
-        jobsToKillList = flattenList(jobsToKill.values())
+        jobsToKillList = flattenList(listvalues(jobsToKill))
         myThread = threading.currentThread()
         myThread.transaction.begin()
         self.bossAir.update(jobs=jobsToKillList)

@@ -23,6 +23,9 @@ histogramLimit: Limit in terms of number of standard deviations from the
   average at which you cut the histogram off.  All points outside of that
   go into overflow and underflow.
 """
+from builtins import str as newstr, bytes
+from future.utils import viewvalues
+
 import logging
 import threading
 import traceback
@@ -189,7 +192,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         return (finishedwfs, finishedwfsWithLogCollectAndCleanUp)
 
     def killCondorJobsByWFStatus(self, statusList):
-        if isinstance(statusList, basestring):
+        if isinstance(statusList, (newstr, bytes)):
             statusList = [statusList]
         reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
         logging.info("There are %d requests in %s status in central couch.", len(reqNames), statusList)
@@ -226,7 +229,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     # Notify the WorkQueue, if there is one
                     if self.workQueue is not None:
                         subList = []
-                        for l in finishedwfs[workflow]["workflows"].values():
+                        for l in viewvalues(finishedwfs[workflow]["workflows"]):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
 

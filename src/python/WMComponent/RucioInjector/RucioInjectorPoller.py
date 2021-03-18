@@ -317,7 +317,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         # this method is very expensive O(n^4)
         logging.info("Preparing to insert replicas into Rucio...")
 
-        for location in uninjectedData.keys():
+        for location in uninjectedData:
             rseName = "%s_Test" % location if self.testRSEs else location
             for container in uninjectedData[location]:
                 for block in uninjectedData[location][container]:

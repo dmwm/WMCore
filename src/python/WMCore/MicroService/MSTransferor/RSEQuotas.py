@@ -7,7 +7,7 @@ from __future__ import division, print_function
 from builtins import str as newstr, bytes, object
 from future.utils import viewitems
 
-from WMCore.MicroService.Unified.Common import getMSLogger, gigaBytes, teraBytes
+from WMCore.MicroService.Tools.Common import getMSLogger, gigaBytes, teraBytes
 
 
 class RSEQuotas(object):

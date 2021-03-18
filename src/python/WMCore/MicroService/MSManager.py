@@ -31,12 +31,12 @@ from datetime import datetime
 from collections import deque
 
 # WMCore modules
-from WMCore.MicroService.Unified.Common import getMSLogger
-from WMCore.MicroService.Unified.MSTransferor import MSTransferor
-from WMCore.MicroService.Unified.MSMonitor import MSMonitor
-from WMCore.MicroService.Unified.MSOutput import MSOutput
-from WMCore.MicroService.Unified.MSRuleCleaner import MSRuleCleaner
-from WMCore.MicroService.Unified.TaskManager import start_new_thread
+from WMCore.MicroService.Tools.Common import getMSLogger
+from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
+from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
+from WMCore.MicroService.MSOutput.MSOutput import MSOutput
+from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
+from WMCore.MicroService.TaskManager import start_new_thread
 
 
 def daemon(func, reqStatus, interval, logger):

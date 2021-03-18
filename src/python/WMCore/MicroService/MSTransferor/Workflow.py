@@ -10,7 +10,7 @@ from future.utils import viewitems, viewvalues, listvalues
 import operator
 from copy import copy, deepcopy
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.MicroService.Unified.Common import getMSLogger, gigaBytes
+from WMCore.MicroService.Tools.Common import getMSLogger, gigaBytes
 
 
 class Workflow(object):

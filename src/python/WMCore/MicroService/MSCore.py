@@ -7,7 +7,7 @@ Description: MSCore class provides core functionality of the MS.
 from __future__ import division, print_function
 
 from builtins import object
-from WMCore.MicroService.Unified.Common import getMSLogger
+from WMCore.MicroService.Tools.Common import getMSLogger
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.ReqMgrAux.ReqMgrAux import ReqMgrAux
 from WMCore.Services.Rucio.Rucio import Rucio

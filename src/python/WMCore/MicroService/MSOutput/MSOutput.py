@@ -10,7 +10,6 @@ from __future__ import division, print_function
 from future.utils import viewitems, viewvalues
 
 # system modules
-from http.client import HTTPException
 from pymongo import IndexModel, ReturnDocument, errors
 from pprint import pformat
 from threading import current_thread
@@ -18,12 +17,12 @@ from retry import retry
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import OUTPUT_REPORT
-from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.Common import gigaBytes
+from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.Tools.Common import gigaBytes
 from WMCore.Services.CRIC.CRIC import CRIC
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.Database.MongoDB import MongoDB
-from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 from WMCore.WMException import WMException
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 

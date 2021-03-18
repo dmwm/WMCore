@@ -25,10 +25,10 @@ from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.MicroService.DataStructs.DefaultStructs import TRANSFEROR_REPORT,\
     TRANSFER_RECORD, TRANSFER_COUCH_DOC
-from WMCore.MicroService.Unified.Common import gigaBytes, teraBytes
-from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.RequestInfo import RequestInfo
-from WMCore.MicroService.Unified.RSEQuotas import RSEQuotas
+from WMCore.MicroService.Tools.Common import gigaBytes, teraBytes
+from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.MSTransferor.RequestInfo import RequestInfo
+from WMCore.MicroService.MSTransferor.RSEQuotas import RSEQuotas
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 

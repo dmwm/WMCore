@@ -58,6 +58,8 @@ import http.client
 from urllib.parse import urlencode
 
 from Utils.Utilities import encodeUnicodeToBytes
+from Utils.PortForward import portForward, PortForward
+
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""
@@ -188,7 +190,6 @@ class RequestHandler(object):
 
         encoded_data = self.encode_params(params, verb, doseq, encode)
 
-
         if verb == 'GET':
             if encoded_data:
                 url = url + '?' + encoded_data
@@ -269,6 +270,7 @@ class RequestHandler(object):
         """
         return ResponseHeader(header)
 
+    @portForward(8443)
     def request(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, capath=None,
                 doseq=True, encode=False, decode=False, cainfo=None, cookie=None):
@@ -321,6 +323,7 @@ class RequestHandler(object):
                                  verbose, ckey, cert, doseq=doseq)
         return header
 
+    @portForward(8443)
     def multirequest(self, url, parray, headers=None,
                      ckey=None, cert=None, verbose=None, cookie=None):
         """Fetch data for given set of parameters"""
@@ -404,8 +407,10 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=50, cookie=No
     if not options:
         options = pycurl_options()
 
+    portForwarder = PortForward(8443)
+
     # Make a queue with urls
-    queue = [u for u in urls if validate_url(u)]
+    queue = [portForwarder(u) for u in urls if validate_url(u)]
 
     # Check args
     num_urls = len(queue)

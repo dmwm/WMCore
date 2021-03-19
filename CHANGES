@@ -1,3 +1,11 @@
+1.4.7.pre4 to 1.4.7.pre5:
+  - Moving portForward in Utils && Minimize number of decorated functions && Remove argument parsing from the decorator && Remove static url chage from Services. (Todor Ivanov) #10330
+  - Forward WMCore.Services.Requests class to port 8443 for cmsweb services. (Todor Ivanov) #10330
+  - Reorganize microservices package structure; remove unused (Alan Malta Rodrigues) #10357
+  - Switch microservices to use AlertManager (Erik Gough) #10346
+  - [py2py3] src/python/A/B/C slice 20 - issue #10144 - src (Dario Mapelli) #10349
+
+
 1.4.7.pre3 to 1.4.7.pre4:
   - add __init__ module for AlertManager package (Alan Malta Rodrigues) #10358
   - Add AlertManager API (Erik Gough) #10308

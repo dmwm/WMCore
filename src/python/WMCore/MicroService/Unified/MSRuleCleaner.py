@@ -32,7 +32,6 @@ from WMCore.MicroService.Unified.Common import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus
-from Utils.EmailAlert import EmailAlert
 from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
@@ -88,7 +87,6 @@ class MSRuleCleaner(MSCore):
         self.msConfig.setdefault('enableRealMode', False)
 
         self.mode = "RealMode" if self.msConfig['enableRealMode'] else "DryRunMode"
-        self.emailAlert = EmailAlert(self.msConfig)
         self.curlMgr = RequestHandler()
         self.targetStatusRegex = re.compile(r'.*archived')
         self.logDB = LogDB(self.msConfig["logDBUrl"],

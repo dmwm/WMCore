@@ -18,15 +18,15 @@ from pprint import pformat
 from copy import deepcopy
 from Utils.IteratorTools import grouper
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.MicroService.DataStructs.Workflow import Workflow
+from WMCore.MicroService.MSTransferor.Workflow import Workflow
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, getPileupContainerSizesRucio,
                                                    listReplicationRules, getBlocksAndSizeRucio)
-from WMCore.MicroService.Unified.Common import \
+from WMCore.MicroService.Tools.Common import \
     elapsedTime, cert, ckey, workflowsInfo, eventsLumisInfo, getIO, \
     dbsInfo, phedexInfo, getComputingTime, getNCopies, teraBytes, \
     findBlockParents, findParent, getBlocksByDsetAndRun, getFileLumisInBlock, \
     getRunsInBlock
-from WMCore.MicroService.Unified.MSCore import MSCore
+from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.Unified.SiteInfo import SiteInfo
 from WMCore.Services.pycurl_manager import getdata \
     as multi_getdata, RequestHandler

@@ -26,9 +26,9 @@ from pprint import pformat
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import RULECLEANER_REPORT
-from WMCore.MicroService.DataStructs.MSRuleCleanerWflow import MSRuleCleanerWflow
-from WMCore.MicroService.Unified.MSCore import MSCore
-from WMCore.MicroService.Unified.Common import ckey, cert
+from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
+from WMCore.MicroService.MSCore import MSCore
+from WMCore.MicroService.Tools.Common import ckey, cert
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.Rucio.Rucio import WMRucioDIDNotFoundException
 from WMCore.ReqMgr.DataStructs import RequestStatus
@@ -36,7 +36,7 @@ from Utils.Pipeline import Pipeline, Functor
 from WMCore.WMException import WMException
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
-from WMCore.MicroService.Unified.Common import findParent
+from WMCore.MicroService.Tools.Common import findParent
 
 
 class MSRuleCleanerResolveParentError(WMException):

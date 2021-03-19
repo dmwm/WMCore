@@ -7,7 +7,7 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.Unified.Common import dbsInfo, getEventsLumis, findParent
+from WMCore.MicroService.Tools.Common import dbsInfo, getEventsLumis, findParent
 
 
 class CommonTest(unittest.TestCase):

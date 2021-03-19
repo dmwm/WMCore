@@ -19,7 +19,7 @@ import threading
 from queue import Queue
 
 # WMCore modules
-from WMCore.MicroService.Unified.Common import getMSLogger
+from WMCore.MicroService.Tools.Common import getMSLogger
 from Utils.Utilities import encodeUnicodeToBytes
 
 def genkey(query):

@@ -13,7 +13,7 @@ import unittest
 from copy import deepcopy
 
 # WMCore modules
-from WMCore.MicroService.Unified.MSMonitor import MSMonitor
+from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
 

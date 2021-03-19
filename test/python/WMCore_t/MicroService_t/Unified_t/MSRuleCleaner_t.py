@@ -11,10 +11,9 @@ import unittest
 
 
 # WMCore modules
-from WMCore.MicroService.Unified.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalError, MSRuleCleanerArchivalSkip
-from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalSkip
 from WMCore.Services.Rucio import Rucio
-from WMCore.MicroService.DataStructs.MSRuleCleanerWflow import MSRuleCleanerWflow
+from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
 
 
 def getTestFile(partialPath):

@@ -7,7 +7,7 @@ import os
 import json
 import unittest
 
-from WMCore.MicroService.DataStructs.MSRuleCleanerWflow import MSRuleCleanerWflow
+from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
 
 
 def getTestFile(partialPath):

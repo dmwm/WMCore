@@ -3,6 +3,9 @@ UnifiedSiteInfo module holds helper function to obtain site information.
 
 Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 Original code: https://github.com/CMSCompOps/WmAgentScripts/Unified
+
+NOTE Alan on Mar 17th, 2021): if part of this does not get used by MSAssigner,
+then there is no need to keep this code around.
 """
 
 # futures
@@ -34,7 +37,7 @@ except Exception as _:
 from Utils.Patterns import Singleton
 from WMCore.Services.pycurl_manager import RequestHandler
 from WMCore.Services.pycurl_manager import getdata as multi_getdata, cern_sso_cookie
-from WMCore.MicroService.Unified.Common import cert, ckey, getMSLogger
+from WMCore.MicroService.Tools.Common import cert, ckey, getMSLogger
 
 def getNodeQueues():
     "Helper function to fetch nodes usage from PhEDEx data service"

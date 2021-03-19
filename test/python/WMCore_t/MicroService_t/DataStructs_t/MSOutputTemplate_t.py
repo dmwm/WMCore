@@ -7,7 +7,7 @@ from builtins import range
 import unittest
 from copy import deepcopy
 
-from WMCore.MicroService.DataStructs.MSOutputTemplate import MSOutputTemplate
+from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 
 
 class MSOutputTemplateTest(unittest.TestCase):

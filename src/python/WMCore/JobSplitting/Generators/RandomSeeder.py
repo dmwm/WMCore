@@ -21,5 +21,5 @@ class RandomSeeder(GeneratorInterface):
 
     def __call__(self, wmbsJob):
         baggage = wmbsJob.getBaggage()
-        for x in self.options.keys():
+        for x in self.options:
             wmbsJob.addBaggageParameter("RandomSeeder.%s" %(x), random.randint(1, self._MAXINT))

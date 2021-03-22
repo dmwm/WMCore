@@ -5,6 +5,12 @@ _StepChain_t_
 """
 from __future__ import print_function
 
+from future.utils import viewitems, listvalues
+
+from builtins import range
+from builtins import str, bytes
+
+
 import os
 import threading
 import unittest
@@ -312,7 +318,7 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertFalse(task.getInputStep(), "Wrong input step")
         # task level checks for output data
         outModDict = task.getOutputModulesForTask(cmsRunOnly=True)[0].dictionary_()  # only 1 cmsRun process
-        self.assertItemsEqual(outModDict.keys(), outMods.keys())
+        self.assertItemsEqual(list(outModDict), list(outMods))
         for modName in outModDict:
             self._validateOutputModule(modName, outModDict[modName], outMods[modName])
 
@@ -513,7 +519,7 @@ class StepChainTests(EmulatedUnitTestCase):
         # workload level check
         self.assertEqual(testWorkload.getDashboardActivity(), "production")
         self.assertEqual(testWorkload.listInputDatasets(), [])
-        pileups = testWorkload.listPileupDatasets().values()
+        pileups = listvalues(testWorkload.listPileupDatasets())
         pileups = [item for puSet in pileups for item in puSet]
         self.assertItemsEqual(pileups, [testArguments['Step1']['MCPileup']])
 
@@ -555,7 +561,7 @@ class StepChainTests(EmulatedUnitTestCase):
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
         # workload level check
-        pileups = testWorkload.listPileupDatasets().values()
+        pileups = listvalues(testWorkload.listPileupDatasets())
         pileups = [item for puSet in pileups for item in puSet]
         self.assertIn(testArguments['Step2']['MCPileup'], pileups)
         self.assertIn(testArguments['Step3']['MCPileup'], pileups)
@@ -875,18 +881,18 @@ class StepChainTests(EmulatedUnitTestCase):
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
-                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                for k, v in outMods[mod].items()}
-            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                            for k, v in transientMod['RAWSIMoutput'].items()}
+                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                for k, v in viewitems(outMods[mod])}
+            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                            for k, v in viewitems(transientMod['RAWSIMoutput'])}
         for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
-                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                for k, v in outMods[mod].items()}
-            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                            for k, v in transientMod['RAWSIMoutput'].items()}
+                outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                for k, v in viewitems(outMods[mod])}
+            transientMod['RAWSIMoutput'] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                            for k, v in viewitems(transientMod['RAWSIMoutput'])}
 
         mergedMods = deepcopy(outMods)
         mergedMods['RAWSIMoutput'].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
@@ -992,22 +998,22 @@ class StepChainTests(EmulatedUnitTestCase):
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
                 if isinstance(outMods[mod], dict):
-                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                    for k, v in outMods[mod].items()}
+                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                    for k, v in viewitems(outMods[mod])}
                 else:
                     outMods[mod] = [
-                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v) for k, v in viewitems(out)} for
                         out in outMods[mod]]
         for tp in [("v1", "v41"), ("v2", "v42"), ("v3", "v43"), ("/store/data", "/store/mc")]:
             outDsets = [dset.replace(tp[0], tp[1]) for dset in outDsets]
             outputLFNBases = [lfn.replace(tp[0], tp[1]) for lfn in outputLFNBases]
             for mod in outMods:
                 if isinstance(outMods[mod], dict):
-                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v)
-                                    for k, v in outMods[mod].items()}
+                    outMods[mod] = {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v)
+                                    for k, v in viewitems(outMods[mod])}
                 else:
                     outMods[mod] = [
-                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, basestring) else v) for k, v in out.items()} for
+                        {k: (v.replace(tp[0], tp[1]) if isinstance(v, (str, bytes)) else v) for k, v in viewitems(out)} for
                         out in outMods[mod]]
         mergedMods = deepcopy(outMods)
         mergedMods['RAWSIMoutput'][0].update({'transient': False, 'lfnBase': outputLFNBases[0 + 1]})
@@ -1502,7 +1508,7 @@ class StepChainTests(EmulatedUnitTestCase):
         def _checkInputData(workload, sitewhitelist=None):
             "Validate input data/block/run/step/PU for the 4-tasks request"
             sitewhitelist = sitewhitelist or []
-            self.assertEqual(workload.listPileupDatasets().values(), [{testArguments['Step2']['MCPileup']}])
+            self.assertEqual(listvalues(workload.listPileupDatasets()), [{testArguments['Step2']['MCPileup']}])
 
             task = workload.getTaskByName(testArguments['Step1']['StepName'])
             self.assertEqual(task.taskType(), "Production")
@@ -2139,12 +2145,12 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
-            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
+            self.assertItemsEqual(outDsets[stepNumber], listvalues(parentageMapping[stepName]['OutputDatasetMap']))
             # request does not have InputDataset and we keep the output of the last step only
             self.assertEqual(None, parentageMapping[stepName]['ParentDataset'])
 
         self.assertItemsEqual(['AODSIMoutput', 'RECOSIMoutput', 'DQMoutput'],
-                              parentageMapping['RECO']['OutputDatasetMap'].keys())
+                              list(parentageMapping['RECO']['OutputDatasetMap']))
 
     def testStepParentageMapping2(self):
         """
@@ -2200,12 +2206,12 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
-            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
+            self.assertItemsEqual(outDsets[stepNumber], listvalues(parentageMapping[stepName]['OutputDatasetMap']))
             self.assertEqual('/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM',
                              parentageMapping[stepName]['ParentDataset'])
 
         self.assertItemsEqual(['AODSIMoutput', 'RECOSIMoutput', 'DQMoutput'],
-                              parentageMapping['RECO']['OutputDatasetMap'].keys())
+                              list(parentageMapping['RECO']['OutputDatasetMap']))
 
     def testStepParentageMapping3(self):
         """
@@ -2259,7 +2265,7 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
-            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
+            self.assertItemsEqual(outDsets[stepNumber], listvalues(parentageMapping[stepName]['OutputDatasetMap']))
 
         # test parentage dataset
         self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
@@ -2269,10 +2275,10 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
 
         # test output modules, only Step2 not saving the output
-        self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
-        self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
+        self.assertEqual(['RAWSIMoutput'], list(parentageMapping['GENSIM']['OutputDatasetMap']))
+        self.assertEqual(['RAWSIMoutput'], list(parentageMapping['DIGI2']['OutputDatasetMap']))
         self.assertItemsEqual(['AODSIMoutput', 'RECOSIMoutput', 'DQMoutput'],
-                              parentageMapping['RECO']['OutputDatasetMap'].keys())
+                              list(parentageMapping['RECO']['OutputDatasetMap']))
 
     def testStepParentageMapping4(self):
         """
@@ -2337,7 +2343,7 @@ class StepChainTests(EmulatedUnitTestCase):
             self.assertEqual(stepNumber, parentageMapping[stepName]['StepNumber'])
             self.assertEqual(cmsRunNumber, parentageMapping[stepName]['StepCmsRun'])
             self.assertEqual(testArguments[stepNumber].get('InputStep'), parentageMapping[stepName]['ParentStepName'])
-            self.assertItemsEqual(outDsets[stepNumber], parentageMapping[stepName]['OutputDatasetMap'].values())
+            self.assertItemsEqual(outDsets[stepNumber], listvalues(parentageMapping[stepName]['OutputDatasetMap']))
 
         # test parentage dataset
         self.assertEqual(None, parentageMapping['GENSIM']['ParentDataset'])
@@ -2347,10 +2353,10 @@ class StepChainTests(EmulatedUnitTestCase):
         self.assertEqual(parentDset, parentageMapping['RECO']['ParentDataset'])
 
         # test output modules, only Step2 not saving the output
-        self.assertEqual(['RAWSIMoutput'], parentageMapping['GENSIM']['OutputDatasetMap'].keys())
-        self.assertEqual(['RAWSIMoutput'], parentageMapping['DIGI2']['OutputDatasetMap'].keys())
+        self.assertEqual(['RAWSIMoutput'], list(parentageMapping['GENSIM']['OutputDatasetMap']))
+        self.assertEqual(['RAWSIMoutput'], list(parentageMapping['DIGI2']['OutputDatasetMap']))
         self.assertItemsEqual(['AODSIMoutput', 'RECOSIMoutput', 'DQMoutput'],
-                              parentageMapping['RECO']['OutputDatasetMap'].keys())
+                              list(parentageMapping['RECO']['OutputDatasetMap']))
 
     def testTooManySteps(self):
         """

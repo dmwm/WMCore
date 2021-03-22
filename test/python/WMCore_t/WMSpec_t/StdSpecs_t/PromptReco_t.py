@@ -7,6 +7,7 @@ _PromptReco_t_
 Unit tests for the new Tier1 PromptReconstruction workflow.
 """
 from __future__ import print_function
+from future.utils import viewitems
 
 import os
 import threading
@@ -105,11 +106,11 @@ class PromptRecoTest(unittest.TestCase):
         recoWorkflow = Workflow(name="TestWorkload",
                                 task="/TestWorkload/Reco")
         recoWorkflow.load()
-        self.assertEqual(len(recoWorkflow.outputMap.keys()), len(testArguments["WriteTiers"]) + 1,
+        self.assertEqual(len(recoWorkflow.outputMap), len(testArguments["WriteTiers"]) + 1,
                          "Error: Wrong number of WF outputs in the Reco WF.")
 
         goldenOutputMods = {"write_RECO": "RECO", "write_ALCARECO": "ALCARECO", "write_AOD": "AOD", "write_DQM": "DQM"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergedOutput = recoWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = recoWorkflow.outputMap[fset][0]["output_fileset"]
@@ -136,7 +137,7 @@ class PromptRecoTest(unittest.TestCase):
         alcaSkimWorkflow = Workflow(name="TestWorkload",
                                     task="/TestWorkload/Reco/AlcaSkim")
         alcaSkimWorkflow.load()
-        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
+        self.assertEqual(len(alcaSkimWorkflow.outputMap), len(testArguments["AlcaSkims"]) + 1,
                          "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
         goldenOutputMods = []
@@ -182,13 +183,13 @@ class PromptRecoTest(unittest.TestCase):
                          "Error: LogArchive output fileset is wrong.")
 
         goldenOutputMods = {"write_RECO": "RECO", "write_AOD": "AOD", "write_DQM": "DQM"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/Reco/RecoMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(mergeWorkflow.outputMap), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
@@ -224,8 +225,8 @@ class PromptRecoTest(unittest.TestCase):
                                      task="/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
-                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap.keys()))
+            self.assertEqual(len(mergeWorkflow.outputMap), 2,
+                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap))
 
             mergedMergeOutput = mergeWorkflow.outputMap["MergedALCARECO"][0]["merged_output_fileset"]
             unmergedMergeOutput = mergeWorkflow.outputMap["MergedALCARECO"][0]["output_fileset"]
@@ -286,7 +287,7 @@ class PromptRecoTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         unmergedOutputs = {"write_RECO": "RECO", "write_AOD": "AOD", "write_DQM": "DQM"}
-        for unmergedOutput, tier in unmergedOutputs.items():
+        for unmergedOutput, tier in viewitems(unmergedOutputs):
             fset = unmergedOutput + tier
             unmergedDataTier = Fileset(name="/TestWorkload/Reco/unmerged-%s" % fset)
             unmergedDataTier.loadData()
@@ -318,7 +319,7 @@ class PromptRecoTest(unittest.TestCase):
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
         goldenOutputMods = {"write_RECO": "RECO", "write_AOD": "AOD", "write_DQM": "DQM"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             unmergedFileset = Fileset(name="/TestWorkload/Reco/unmerged-%s" % fset)
             unmergedFileset.loadData()

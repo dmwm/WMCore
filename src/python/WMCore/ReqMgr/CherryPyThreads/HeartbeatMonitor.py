@@ -1,5 +1,8 @@
 from __future__ import division, print_function
 
+from builtins import bytes, str
+from future.utils import viewitems
+
 import time
 from WMCore.REST.HeartbeatMonitorBase import HeartbeatMonitorBase
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
@@ -13,7 +16,7 @@ def _getCampaign(propertyValue):
     """
     if not propertyValue:  # Empty string is Ok; it should never be None though
         return ["NONE"]
-    elif isinstance(propertyValue, basestring):
+    elif isinstance(propertyValue, (str, bytes)):
         return [propertyValue]
     # then it's a list
     return propertyValue
@@ -111,7 +114,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         commonInfo = {"agent_url": "reqmgr2"}
 
         docs = []
-        for status, numReq in stats['requestsByStatus'].iteritems():
+        for status, numReq in viewitems(stats['requestsByStatus']):
             doc = {}
             doc["type"] = "reqmgr2_status"
             doc["request_status"] = status
@@ -119,8 +122,8 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
             doc.update((commonInfo))
             docs.append(doc)
 
-        for status, items in stats['requestsByStatusAndCampaign'].iteritems():
-            for campaign, numReq in items.iteritems():
+        for status, items in viewitems(stats['requestsByStatusAndCampaign']):
+            for campaign, numReq in viewitems(items):
                 doc = {}
                 doc["type"] = "reqmgr2_campaign"
                 doc["request_status"] = status
@@ -129,8 +132,8 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
                 doc.update((commonInfo))
                 docs.append(doc)
 
-        for status, items in stats['requestsByStatusAndPrio'].iteritems():
-            for prio, numReq in items.iteritems():
+        for status, items in viewitems(stats['requestsByStatusAndPrio']):
+            for prio, numReq in viewitems(items):
                 doc = {}
                 doc["type"] = "reqmgr2_prio"
                 doc["request_status"] = status
@@ -139,7 +142,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
                 doc.update((commonInfo))
                 docs.append(doc)
 
-        for status, evts in stats['requestsByStatusAndNumEvts'].iteritems():
+        for status, evts in viewitems(stats['requestsByStatusAndNumEvts']):
             doc = {}
             doc["type"] = "reqmgr2_events"
             doc["request_status"] = status

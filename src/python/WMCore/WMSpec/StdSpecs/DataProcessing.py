@@ -4,6 +4,8 @@ _DataProcessing_
 
 Base module for workflows with input.
 """
+from __future__ import division
+
 from Utils.Utilities import makeList
 from WMCore.Lexicon import dataset, block, primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase

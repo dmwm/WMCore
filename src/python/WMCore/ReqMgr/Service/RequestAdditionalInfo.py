@@ -1,4 +1,5 @@
 from __future__ import (print_function, division)
+from future.utils import viewitems
 
 import json
 import traceback
@@ -27,7 +28,7 @@ def format_algo_web_list(task_name, task_type, split_param, algo_config):
 
     if default_algo in algo_list:
         new_param = {"algorithm": default_algo}
-        for key, value in split_param.items():
+        for key, value in viewitems(split_param):
             if key in algo_config["algo_params"][default_algo]:
                 new_param[key] = value
         param_list.append(new_param)

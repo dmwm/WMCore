@@ -5,6 +5,7 @@ _JobStatusByLocation_
 MySQL implementation for loading a job by scheduler status
 """
 
+from future.utils import viewitems, viewvalues
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -48,7 +49,7 @@ class JobStatusByLocation(DBFormatter):
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
 
-            for status in plugIn.stateMap().values():
+            for status in viewvalues(plugIn.stateMap()):
                 commonStates[data['site_name']].setdefault(status, 0)
 
             state = plugIn.stateMap().get(data['status'])
@@ -56,7 +57,7 @@ class JobStatusByLocation(DBFormatter):
             commonStates[data['site_name']]['pending_slots'] = data['pending_slots']
 
         results = []
-        for key, value in commonStates.items():
+        for key, value in viewitems(commonStates):
             reformedData = {'site_name': key}
             reformedData.update(value)
             results.append(reformedData)

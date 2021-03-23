@@ -3,6 +3,9 @@ ReqMgr request handling.
 
 """
 
+from builtins import str as newstr, bytes
+from future.utils import viewitems, listvalues
+
 import json
 import traceback
 
@@ -47,9 +50,9 @@ class Request(RESTEntity):
             return
 
         no_multi_key = ["detail", "_nostale", "date_range", "common_dict"]
-        for key, value in param.kwargs.items():
+        for key, value in viewitems(param.kwargs):
             # convert string to list
-            if key not in no_multi_key and isinstance(value, basestring):
+            if key not in no_multi_key and isinstance(value, (newstr, bytes)):
                 param.kwargs[key] = [value]
 
         detail = param.kwargs.get('detail', True)
@@ -63,7 +66,7 @@ class Request(RESTEntity):
                         """Can't retrieve bulk archived status requests with detail option True,
                            set detail=false or use other search arguments""")
 
-        for prop in param.kwargs.keys():
+        for prop in list(param.kwargs):
             safe.kwargs[prop] = param.kwargs.pop(prop)
         return
 
@@ -78,7 +81,7 @@ class Request(RESTEntity):
         # In case key args are also passed and request body also exists.
         # If the request.body is dictionary update the key args value as well
         if isinstance(request_args, dict):
-            for prop in param.kwargs.keys():
+            for prop in list(param.kwargs):
                 request_args[prop] = param.kwargs.pop(prop)
 
             if requestName:
@@ -97,11 +100,11 @@ class Request(RESTEntity):
         if isinstance(ids, list):
             for rid in ids:
                 doc[rid] = 'on'
-        elif isinstance(ids, basestring):
+        elif isinstance(ids, (newstr, bytes)):
             doc[ids] = 'on'
 
         docs = []
-        for key in doc.keys():
+        for key in list(doc):
             if key.startswith('request'):
                 rid = key.split('request-')[-1]
                 if rid != 'all':
@@ -223,7 +226,7 @@ class Request(RESTEntity):
 
         if len(mask) > 0:
             maskedResult = {}
-            for reqName, reqDict in result.items():
+            for reqName, reqDict in viewitems(result):
                 reqInfo = RequestInfo(reqDict)
                 maskedResult.setdefault(reqName, {})
                 for maskKey in mask:
@@ -346,12 +349,12 @@ class Request(RESTEntity):
         result = self._maskResult(mask, result)
 
         if not option["include_docs"]:
-            return result.keys()
+            return list(result)
 
         # set the return format. default format has request name as a key
         # if is set to one it returns list of dictionary with RequestName field.
         if common_dict == 1:
-            response_list = result.values()
+            response_list = listvalues(result)
         else:
             response_list = [result]
         return rows(response_list)

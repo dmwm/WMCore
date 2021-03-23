@@ -5,13 +5,7 @@ _PortForward_
 A decorator for swapping ports in an url
 """
 from __future__ import print_function, division
-from future import standard_library
-standard_library.install_aliases()
-
-from builtins import str
-
-import logging
-from urllib.parse import urlparse, ParseResult
+from builtins import str, bytes
 
 
 def portForward(port):
@@ -38,9 +32,6 @@ def portForward(port):
         """
         The actual decorator
         """
-        urlMangleList = ['https://tivanov',
-                         'https://alancc',
-                         'https://cmsweb']
 
         def portMangle(callObj, url, *args, **kwargs):
             """
@@ -57,40 +48,21 @@ def portForward(port):
             :param *args:    The positional argument list coming from the original function
             :param *kwargs:  The keywords argument list coming from the original function
             """
-            # As a first step try to get a logger from the calling object:
-            if callable(getattr(callObj, 'logger', None)):
-                logger = callObj.logger
-            else:
-                logger = logging.getLogger()
-
             forwarded = False
             try:
-                oldUrl = urlparse(url)
-                found = False
                 if isinstance(url, str):
-                    for mUrl in urlMangleList:
-                        if url.startswith(mUrl):
-                            netlocStr = u'%s:%d' % (oldUrl.hostname, port)
-                            found = True
-                            break
+                    urlToMangle = u'https://cmsweb'
+                    if url.startswith(urlToMangle):
+                        newUrl = url.replace(u'.cern.ch/', u'.cern.ch:%d/' % port, 1)
+                        forwarded = True
                 elif isinstance(url, bytes):
-                    for mUrl in urlMangleList:
-                        if url.startswith(mUrl.encode('utf-8')):
-                            netlocStr = b'%s:%d' % (oldUrl.hostname, port)
-                            found = True
-                            break
-                if found:
-                    newUrl = ParseResult(scheme=oldUrl.scheme,
-                                         netloc=netlocStr,
-                                         path=oldUrl.path,
-                                         params=oldUrl.params,
-                                         query=oldUrl.query,
-                                         fragment=oldUrl.fragment)
-                    newUrl = newUrl.geturl()
-                    forwarded = True
-            except Exception as ex:
-                msg = "Failed to forward url: %s to port: %s due to ERROR: %s"
-                logger.exception(msg, url, port, str(ex))
+                    urlToMangle = b'https://cmsweb'
+                    if url.startswith(urlToMangle):
+                        newUrl = url.replace(b'.cern.ch/', b'.cern.ch:%d/' % port, 1)
+                        forwarded = True
+
+            except Exception:
+                pass
             if forwarded:
                 return callFunc(callObj, newUrl, *args, **kwargs)
             else:
@@ -115,7 +87,6 @@ class PortForward():
         The init method for the PortForward call class. This one is supposed
         to simply provide an initial class instance with a logger.
         """
-        self.logger = logging.getLogger()
         self.port = port
 
     def __call__(self, url):

@@ -16,7 +16,6 @@ REQMGR_URL=https://cmsweb-testbed.cern.ch/reqmgr/rest
 ACDC_URL=https://cmsweb-testbed.cern.ch/couchdb/acdcserver
 WORKLOAD_SUMMARY_URL=https://cmsweb-testbed.cern.ch/couchdb/workloadsummary
 DBS3_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSWriter
-PHEDEX_URL=https://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod/
 DQM_URL=https://cmsweb-testbed.cern.ch/dqm/dev
 DASHBOARD_URL=http://dashb-ssb.cern.ch/dashboard
 REQUESTCOUCH_URL=https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache

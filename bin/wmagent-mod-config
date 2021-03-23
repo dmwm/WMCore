@@ -140,9 +140,6 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "DBS3Upload"):
         config.DBS3Upload.dbsUrl = args["dbs3_url"]
 
-    if hasattr(config, "PhEDExInjector"):
-        config.PhEDExInjector.phedexurl = args["phedex_url"]
-
     if hasattr(config, "AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
         config.AsyncTransfer.couch_instance = args["couch_url"]
@@ -302,7 +299,7 @@ def main(argv=None):
                                          "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                          "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
-                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
+                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=",
                                          "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
                                          "wmarchive_url=", "amq_credentials=",
                                          "rucio_account=", "rucio_host=", "rucio_auth="])
@@ -326,7 +323,7 @@ def main(argv=None):
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
-                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
+                          '--amq_auth_file', '--dbs3_url', '--dqm_url',
                           '--grafana_token', '--requestcouch_url', '--central_logdb_url',
                           '--wmarchive_url', '--amq_credentials',
                           '--rucio_account', '--rucio_host', '--rucio_auth'):

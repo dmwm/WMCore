@@ -32,7 +32,6 @@ from WMComponent.TaskArchiver.TaskArchiver      import TaskArchiver
 from WMComponent.ErrorHandler.ErrorHandler      import ErrorHandler
 from WMComponent.RetryManager.RetryManager      import RetryManager
 from WMComponent.DBS3Buffer.DBS3Upload          import DBS3Upload
-from WMComponent.PhEDExInjector.PhEDExInjector  import PhEDExInjector
 
 
 class ConfigTest(unittest.TestCase):
@@ -157,12 +156,6 @@ class ConfigTest(unittest.TestCase):
         components.append(ErrorHandler(config = config))
         components.append(RetryManager(config = config))
         components.append(DBS3Upload(config = config))
-
-
-        # Now the optional ones
-        if 'PhEDExInjector' in compList:
-            components.append(PhEDExInjector(config = config))
-
 
         # Init threads:
         for component in components:

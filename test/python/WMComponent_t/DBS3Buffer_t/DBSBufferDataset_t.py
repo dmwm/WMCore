@@ -58,7 +58,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         secondDataset = DBSBufferDataset(path = '/BogusPrimary/Run2012Z-PromptReco-v1/RECO')
         secondDataset.create()
         workload = WMWorkloadHelper()
-        workload.load(os.path.join(getTestBase(), 'WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl'))
+        workload.load(os.path.join(getTestBase(), 'WMComponent_t/DBS3Buffer_t/specs/TestWorkload.pkl'))
         secondDataset.addSubscription(workload.getSubscriptionInformation()['/BogusPrimary/Run2012Z-PromptReco-v1/RECO'])
         secondDataset.addSubscription(workload.getSubscriptionInformation()['/BogusPrimary/Run2012Z-PromptReco-v1/RECO'])
         self.assertEqual(len(secondDataset['subscriptions']), 3)

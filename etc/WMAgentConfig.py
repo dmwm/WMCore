@@ -50,10 +50,6 @@ localDBSVersion = "DBS_2_0_8"
 globalDBSUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
-# List of SE for T1 _Disk endpoints (TODO clean this up at some point)
-diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
-             'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov']
-
 # Job retry information.  How long it will sit in cool off.
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
@@ -158,21 +154,6 @@ config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
 config.DBSInterface.primaryDatasetType = "mc"
-
-config.component_("PhEDExInjector")
-config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
-config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
-config.PhEDExInjector.logLevel = globalLogLevel
-config.PhEDExInjector.maxThreads = 1
-config.PhEDExInjector.enabled = False
-config.PhEDExInjector.subscribeDatasets = True
-config.PhEDExInjector.safeMode = False
-# phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
-config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
-config.PhEDExInjector.pollInterval = 300
-config.PhEDExInjector.subscribeInterval = 6 * 60 * 60  # 6h
-config.PhEDExInjector.diskSites = diskSites
-config.PhEDExInjector.phedexGroup = "DataOps"
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"

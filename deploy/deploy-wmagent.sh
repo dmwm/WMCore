@@ -349,7 +349,6 @@ sed -i "s+REPLACE_TEAM_NAME+$TEAMNAME+" $MANAGE_DIR/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE_DIR/config.py
 if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE_DIR/config.py
-  sed -i "s+config.PhEDExInjector.phedexGroup = 'DataOps'+config.PhEDExInjector.phedexGroup = 'RelVal'+" $MANAGE_DIR/config.py
   sed -i "s+config.RucioInjector.metaDIDProject = 'Production'+config.RucioInjector.metaDIDProject = 'RelVal'+" $MANAGE_DIR/config.py
 elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader

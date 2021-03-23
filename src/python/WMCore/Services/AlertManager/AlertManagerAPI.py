@@ -4,6 +4,7 @@ AlertManagerAPI - send alerts to MONIT AlertManager via API calls
 """
 
 from __future__ import division
+from builtins import object
 from datetime import timedelta, datetime
 import socket
 import json

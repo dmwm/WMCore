@@ -4,6 +4,7 @@ Author: Valentin Kuznetsov <vkuznet {AT} gmail [DOT] com>
 """
 
 from __future__ import print_function
+from builtins import object, int
 
 # system modules
 import json
@@ -36,7 +37,7 @@ def quote(data):
     """
     Sanitize the data using cgi.escape.
     """
-    if isinstance(data, (int, float, long, dict, list)):
+    if isinstance(data, (int, float, dict, list)):
         res = data
     else:
         try:
@@ -97,7 +98,7 @@ class TemplatedPage(Page):
         self.templatedir = config.get('tmpldir', tmpldir)
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
-        self.jinja = True if 'jinja2' in sys.modules.keys() else False
+        self.jinja = True if 'jinja2' in sys.modules else False
         if  self.jinja:
             templates = 'JINJA'
         else:

@@ -7,6 +7,9 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description:
 """
 from __future__ import print_function
+from builtins import str as newstr, bytes, int
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -17,6 +20,10 @@ import time
 import hashlib
 import cherrypy
 from urllib.error import URLError
+
+# WMCore Modules
+from Utils.Utilities import encodeUnicodeToBytes
+
 
 def tstamp():
     "Generic time stamp"
@@ -33,14 +40,7 @@ def quote(data):
     """
     Sanitize the data using cgi.escape.
     """
-    if  isinstance(data, int) or isinstance(data, float):
-        res = data
-    elif  isinstance(data, dict):
-        res = data
-    elif  isinstance(data, list):
-        res = data
-    elif  isinstance(data, long) or isinstance(data, int) or\
-          isinstance(data, float):
+    if  isinstance(data, (int, float, dict, list)):
         res = data
     else:
         try:
@@ -56,7 +56,7 @@ def quote(data):
 def json2form(jsondata, indent=2, keep_first_value=True):
     "Convert input json dict into one used by HTML form"
     if  keep_first_value:
-        for key, val in jsondata.items():
+        for key, val in viewitems(jsondata):
             if  isinstance(val, list):
                 if len(val) == 0:
                     jsondata[key] = ""
@@ -77,7 +77,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
     rest_keys = []
     for key in keys:
         val = jsondata[key]
-        if  isinstance(val, basestring) and val.startswith('REPLACE-'):
+        if  isinstance(val, (newstr, bytes)) and val.startswith('REPLACE-'):
             priority_keys.append(key)
         else:
             rest_keys.append(key)
@@ -115,7 +115,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                         sel += "<option value=\"%s\">%s</option>" % (item, item)
                 sel += "</select>"
             val = sel
-        elif isinstance(val, basestring):
+        elif isinstance(val, (newstr, bytes)):
             if  val.startswith('REPLACE-'):
                 val = '<input type="text" name="%s" placeholder="%s" class="width-100">'\
                         % (key, val)
@@ -143,7 +143,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                 kname = key
             val = val.replace('width-100', 'width-100 visible_input')
             table += "<tr><td>%s</td><td class=\"visible\">%s</td></tr>\n" % (kname, val)
-    for key, pair in cells.items():
+    for key, pair in viewitems(cells):
         kname, val = pair
         if  not visible_attrs:
             val = val.replace('<input', '<input readonly')
@@ -160,15 +160,16 @@ def genid(kwds):
         record = dict(kwds)
         data = json.JSONEncoder(sort_keys=True).encode(record)
     else:
-        data = str(kwds)
+        data = str(kwds)  # it is fine both in py2 and in py3
     keyhash = hashlib.md5()
+    data = encodeUnicodeToBytes(data)  # if data is not unicode, then it is not changed
     keyhash.update(data)
     return keyhash.hexdigest()
 
 def checkarg(kwds, arg):
     """Check arg in a dict that it has str/unicode type"""
     data = kwds.get(arg, None)
-    cond = data and (isinstance(data, str) or isinstance(data, unicode))
+    cond = data and isinstance(data, (newstr, bytes))
     return cond
 
 def checkargs(supported):
@@ -180,7 +181,7 @@ def checkargs(supported):
 
         def require_string(val):
             """Check that provided input is a string"""
-            if not (isinstance(val, str) or isinstance(val, unicode)):
+            if not isinstance(val, (newstr, bytes)):
                 code = web_code('Invalid input')
                 raise URLError('code=%s' % code)
 
@@ -201,7 +202,7 @@ def checkargs(supported):
                     jsondict = json.loads(body, encoding='latin-1')
                 else:
                     jsondict = kwds
-                for key, val in jsondict.iteritems():
+                for key, val in viewitems(jsondict):
                     kwds[str(key)] = str(val)
 
             if  not kwds:
@@ -212,7 +213,7 @@ def checkargs(supported):
                 code  = web_code('Unsupported kwds')
                 raise URLError('code=%s' % code)
             if  kwds:
-                keys = [i for i in kwds.keys() if i not in supported]
+                keys = [i for i in kwds if i not in supported]
             if  keys:
                 code  = web_code('Unsupported key')
                 raise URLError('code=%s' % code)

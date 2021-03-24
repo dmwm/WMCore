@@ -318,6 +318,15 @@ class MSRuleCleaner(MSCore):
             msg = "Skipping workflow: %s - 'TransferStatus' is 'pending' or 'TransferInfo' is missing in MSOutput."
             msg += " Will retry again in the next cycle."
             self.logger.info(msg, wflow['RequestName'])
+        elif wflow['RequestStatus'] == 'announced' and not wflow['TransferTape']:
+            # NOTE: We skip workflows which have not yet finalised their tape transfers.
+            #       (i.e. even if a single output which is supposed to be covered
+            #       by a tape rule is in any of the following transient states:
+            #       {REPLICATING, STUCK, SUSPENDED, WAITING_APPROVAL}.)
+            #       We still need some proper logging for them.
+            msg = "Skipping workflow: %s - tape transfers are not yet completed."
+            msg += " Will retry again in the next cycle."
+            self.logger.info(msg, wflow['RequestName'])
         elif wflow['RequestStatus'] == 'announced':
             for pline in self.cleanuplines:
                 try:
@@ -531,13 +540,13 @@ class MSRuleCleaner(MSCore):
             msg = "Not properly cleaned workflow: %s" % wflow['RequestName']
             raise MSRuleCleanerArchivalSkip(msg)
         if not wflow['TargetStatus']:
-            msg = "Could not determine which archival status to target for: %s" % wflow['RequestName']
+            msg = "Could not determine which archival status to target for workflow: %s" % wflow['RequestName']
             raise MSRuleCleanerArchivalError(msg)
         if not wflow['IsLogDBClean']:
-            msg = "LogDB records have not been cleaned for: %s" % wflow['RequestName']
+            msg = "LogDB records have not been cleaned for workflow: %s" % wflow['RequestName']
             raise MSRuleCleanerArchivalSkip(msg)
         if not wflow['IsArchivalDelayExpired']:
-            msg = "Archival delay period has not yet expired for: %s." % wflow['RequestName']
+            msg = "Archival delay period has not yet expired for workflow: %s." % wflow['RequestName']
             raise MSRuleCleanerArchivalSkip(msg)
         if not self.msConfig['enableRealMode']:
             msg = "Real Run Mode not enabled."
@@ -546,9 +555,11 @@ class MSRuleCleaner(MSCore):
         # Proceed with the actual archival:
         try:
             self.reqmgr2.updateRequestStatus(wflow['RequestName'], wflow['TargetStatus'])
+            msg = "Successful status transition to: %s for workflow: %s"
+            self.logger.info(msg, wflow['TargetStatus'], wflow['RequestName'])
         except Exception as ex:
             msg = "General Exception while trying status transition to: %s " % wflow['TargetStatus']
-            msg += "for wflow: %s : %s" % (wflow['RequestName'], str(ex))
+            msg += "for workflow: %s : %s" % (wflow['RequestName'], str(ex))
             raise MSRuleCleanerArchivalError(msg)
         return wflow
 
@@ -571,8 +582,38 @@ class MSRuleCleaner(MSCore):
             msg = "General exception while fetching TransferInfo from MSOutput for %s. "
             msg += "Error: %s"
             self.logger.exception(msg, wflow['RequestName'], str(ex))
+
+        # Set Transfer status - information fetched from MSOutput only
         if transferInfo is not None and transferInfo['TransferStatus'] == 'done':
             wflow['TransferDone'] = True
+
+        # Set Tape rules status - information fetched from Rucio (tape rule ids from MSOutput)
+        if transferInfo is not None and transferInfo['OutputMap']:
+            tapeRulesStatusList = []
+            # For setting 'TransferTape' = True we require either no tape rules for the
+            # workflow have been created or all existing tape rules to be in status 'OK',
+            # so every empty TapeRuleID we consider as completed.
+            for mapRecord in transferInfo['OutputMap']:
+                if not mapRecord['TapeRuleID']:
+                    continue
+                rucioRule = self.rucio.getRule(mapRecord['TapeRuleID'])
+                if not rucioRule:
+                    tapeRulesStatusList.append(False)
+                    msg = "Tape rule: %s not found for workflow: %s "
+                    msg += "Possible server side error."
+                    self.logger.error(msg, mapRecord['TapeRuleID'], wflow['RequestName'])
+                    continue
+                if rucioRule['state'] == 'OK':
+                    tapeRulesStatusList.append(True)
+                    msg = "Tape rule: %s in final state: %s for workflow: %s"
+                    self.logger.info(msg, mapRecord['TapeRuleID'], rucioRule['state'], wflow['RequestName'])
+                else:
+                    tapeRulesStatusList.append(False)
+                    msg = "Tape rule: %s in non final state: %s for workflow: %s"
+                    self.logger.info(msg, mapRecord['TapeRuleID'], rucioRule['state'], wflow['RequestName'])
+            if all(tapeRulesStatusList):
+                wflow['TransferTape'] = True
+
         return wflow
 
     def setParentDatasets(self, wflow):

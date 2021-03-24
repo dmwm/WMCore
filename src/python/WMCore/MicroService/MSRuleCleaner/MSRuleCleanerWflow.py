@@ -180,6 +180,7 @@ class MSRuleCleanerWflow(dict):
                               'plineAgentCont': False,
                               'plineAgentBlock': False},
             "TransferDone": False  # information - returned by the MSOutput REST call.
+            "TransferTape": False  # information - fetched by Rucio about tape rules completion
             'TargetStatus': 'normal-archived' || 'rejected-achived' || 'aborted-archived',
             'ParentageResolved': Bool,
             'PlineMarkers': None,
@@ -204,6 +205,7 @@ class MSRuleCleanerWflow(dict):
             ('RulesToClean', {}, dict),
             ('CleanupStatus', {}, dict),
             ('TransferDone', False, bool),
+            ('TransferTape', False, bool),
             ('TargetStatus', None, (bytes, str)),
             ('ParentageResolved', True, bool),
             ('PlineMarkers', None, list),

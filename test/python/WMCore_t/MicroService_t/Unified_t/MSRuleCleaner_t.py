@@ -116,7 +116,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentBlock': []},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineAgentCont(self):
@@ -156,7 +157,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentCont': []},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineMSTrBlock(self):
@@ -198,7 +200,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineMSTrBlock': []},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineMSTrCont(self):
@@ -240,7 +243,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineMSTrCont': []},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testPipelineArchive(self):
@@ -294,7 +298,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {'plineAgentBlock': [], 'plineAgentCont': []},
                          'TargetStatus': 'normal-archived',
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
         # Try archival of an uncleaned workflow

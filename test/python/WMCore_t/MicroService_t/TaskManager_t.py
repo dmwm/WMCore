@@ -5,14 +5,14 @@ Author: Valentin Kuznetsov <vkuznet [AT] gmail [DOT] com>
 """
 from __future__ import division, print_function
 
-from builtins import str as newstr
-from future.utils import listvalues
-
 import time
 import unittest
 
+from builtins import str as newstr
+from future.utils import listvalues
+
 from WMCore.MicroService.TaskManager import \
-        TaskManager, genkey, UidSet
+    TaskManager, genkey, UidSet
 
 
 def myFunc(interval, results):
@@ -20,8 +20,10 @@ def myFunc(interval, results):
     time.sleep(interval)
     results.update({interval: 'ok_%s' % interval})
 
+
 class TaskManagerTest(unittest.TestCase):
     "Unit test for TaskManager module"
+
     def setUp(self):
         pass
 
@@ -81,6 +83,7 @@ class TaskManagerTest(unittest.TestCase):
 
         for worker in mgr.workers:
             self.assertEqual(False, worker.is_alive())
+
 
 if __name__ == '__main__':
     unittest.main()

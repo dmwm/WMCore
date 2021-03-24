@@ -9,11 +9,10 @@ import json
 import os
 import unittest
 
-
 # WMCore modules
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner, MSRuleCleanerArchivalSkip
-from WMCore.Services.Rucio import Rucio
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
+from WMCore.Services.Rucio import Rucio
 
 
 def getTestFile(partialPath):
@@ -32,7 +31,7 @@ class MSRuleCleanerTest(unittest.TestCase):
         "init test class"
         self.maxDiff = None
         self.msConfig = {"verbose": True,
-                         "interval": 1 *60,
+                         "interval": 1 * 60,
                          "services": ['ruleCleaner'],
                          "rucioWmaAcct": 'wma_test',
                          "rucioAccount": 'wma_test',
@@ -51,14 +50,14 @@ class MSRuleCleanerTest(unittest.TestCase):
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
-        self.rucioConfigDict =  {"rucio_host": self.msConfig['rucioUrl'],
-                                 "auth_host": self.msConfig['rucioAuthUrl'],
-                                 "auth_type": "x509",
-                                 "account": self.msConfig['rucioAccount'],
-                                 "ca_cert": False,
-                                 "timeout": 30,
-                                 "request_retries": 3,
-                                 "creds": self.creds}
+        self.rucioConfigDict = {"rucio_host": self.msConfig['rucioUrl'],
+                                "auth_host": self.msConfig['rucioAuthUrl'],
+                                "auth_type": "x509",
+                                "account": self.msConfig['rucioAccount'],
+                                "ca_cert": False,
+                                "timeout": 30,
+                                "request_retries": 3,
+                                "creds": self.creds}
 
         self.reqStatus = ['announced', 'aborted-completed', 'rejected']
         self.msRuleCleaner = MSRuleCleaner(self.msConfig)
@@ -92,18 +91,20 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': ['plineAgentBlock'],
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
                          'RequestTransition': [{u'DN': u'', u'Status': u'new', u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
@@ -133,18 +134,20 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': ['plineAgentCont'],
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
                          'RequestTransition': [{u'DN': u'', u'Status': u'new', u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
@@ -174,11 +177,12 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': ['plineMSTrBlock'],
@@ -187,7 +191,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
@@ -217,11 +222,12 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': ['plineMSTrCont'],
@@ -230,7 +236,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
@@ -271,11 +278,12 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'IsClean': True,
                          'IsLogDBClean': True,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': ['plineArchive',
@@ -285,7 +293,8 @@ class MSRuleCleanerTest(unittest.TestCase):
                          'RequestName': u'TaskChain_LumiMask_multiRun_HG2011_Val_201029_112735_5891',
                          'RequestStatus': u'announced',
                          'RequestTransition': [{u'DN': u'', u'Status': u'new', u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},

@@ -9,6 +9,7 @@ to start as a proper job.
 """
 from __future__ import print_function
 
+from builtins import object
 import logging
 import os.path
 import threading
@@ -28,7 +29,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 #
 
 
-class TaskMaker:
+class TaskMaker(object):
     """
     Class for separating and starting all tasks in a WMWorkload
 
@@ -115,7 +116,7 @@ class TaskMaker:
         for toptask in self.workload.taskIterator():
             # for each task, build sandbox, register, and subscribe
             for task in toptask.taskIterator():
-                if task.name() in self.workflowDict.keys():
+                if task.name() in self.workflowDict:
                     raise Exception(
                         'Duplicate task name for workload %s, task %s' % (self.workload.name(), task.name()))
 
@@ -155,7 +156,7 @@ class TaskMaker:
             dummyStepName = task.inputReference().inputStep.split('/')[-1]
             taskName = task.inputReference().inputStep.split('/')[-2]
             outputModule = task.inputReference().outputModule
-            if taskName not in self.workflowDict.keys():
+            if taskName not in self.workflowDict:
                 raise Exception('I am being asked to chain output for a task %s which does not yet exist' % taskName)
             outputWorkflow = self.workflowDict[taskName]
             outputWorkflow.addOutput(outputModule, fileSet)

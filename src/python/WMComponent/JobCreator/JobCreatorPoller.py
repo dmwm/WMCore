@@ -2,6 +2,9 @@
 """
 The JobCreator Poller for the JSM
 """
+
+from builtins import next
+
 __all__ = []
 
 import logging

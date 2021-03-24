@@ -1,3 +1,11 @@
+1.4.7.pre5 to 1.4.7.pre6:
+  - Change regex when building list of PR numbers in buildrelease (Alan Malta Rodrigues) #10372
+  - Remove datatier-based functionality from RucioInjector (Alan Malta Rodrigues) #10369
+  - Respect port provided by the client && Switch from urllib.urlparse to simple substring replacement. (Todor Ivanov) #10364
+  - Remove PhEDExInjector component and its config/deploy code (Alan Malta Rodrigues) #10366
+  - [py2py3] src/python/A/B/C slice 21 - issue #10145 - src (Dario Mapelli) #10361
+
+
 1.4.7.pre4 to 1.4.7.pre5:
   - Moving portForward in Utils && Minimize number of decorated functions && Remove argument parsing from the decorator && Remove static url chage from Services. (Todor Ivanov) #10330
   - Forward WMCore.Services.Requests class to port 8443 for cmsweb services. (Todor Ivanov) #10330

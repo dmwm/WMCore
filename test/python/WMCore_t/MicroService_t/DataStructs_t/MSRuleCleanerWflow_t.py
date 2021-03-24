@@ -108,7 +108,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestType': u'TaskChain',
                          'RulesToClean': {},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testReReco(self):
@@ -149,7 +150,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestType': u'ReReco',
                          'RulesToClean': {},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testIncludeParents(self):
@@ -184,7 +186,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestType': u'StepChain',
                          'RulesToClean': {},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
     def testMultiPU(self):
@@ -222,7 +225,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestType': u'StepChain',
                          'RulesToClean': {},
                          'TargetStatus': None,
-                         'TransferDone': False}
+                         'TransferDone': False,
+                         'TransferTape': False}
         self.assertDictEqual(wflow, expectedWflow)
 
 

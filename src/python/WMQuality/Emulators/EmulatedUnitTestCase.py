@@ -73,6 +73,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
             patchRucioAt = ['WMCore.WorkQueue.WorkQueue.Rucio',
                             'WMCore.WorkQueue.WorkQueueReqMgrInterface.Rucio',
                             'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
+                            'WMComponent.RucioInjector.RucioInjectorPoller.Rucio',
                             'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
                             'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio']
             for module in patchRucioAt:

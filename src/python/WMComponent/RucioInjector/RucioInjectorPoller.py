@@ -23,29 +23,6 @@ from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
-### TODO: remove this function once PhEDExInjector is out of the game
-def filterDataByTier(rawData, listTiersToInject):
-    """
-    This function will receive data - in the same format as returned from
-    the DAO - and it will pop out anything that the component is not meant
-    to inject into Rucio.
-    :param rawData: the large dict of location/container/block/files
-    :param listTiersToInject: a list of datatiers that we want to inject
-    :return: the same dictionary as in the input, but without dataset structs
-             for datatiers that we do not want to be processed by this component.
-    """
-    if not listTiersToInject:
-        # then we are actually allowed to insert anything into Rucio
-        return rawData
-    for location in rawData:
-        for container in list(rawData[location]):
-            endTier = container.rsplit('/', 1)[1]
-            if endTier not in listTiersToInject:
-                logging.debug("Container %s not meant to be injected by RucioInjector", container)
-                rawData[location].pop(container)
-    return rawData
-
-
 class RucioInjectorException(WMException):
     """
     _RucioInjectorException_
@@ -79,15 +56,12 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
 
-        self.enabled = config.RucioInjector.enabled
         # dataset rule creation has a larger polling cycle
         self.pollRules = config.RucioInjector.pollIntervalRules
         self.lastRulesExecTime = 0
         self.createBlockRules = config.RucioInjector.createBlockRules
         self.containerDiskRuleParams = config.RucioInjector.containerDiskRuleParams
         self.containerDiskRuleRSEExpr = config.RucioInjector.containerDiskRuleRSEExpr
-        self.skipRulesForTiers = config.RucioInjector.skipRulesForTiers
-        self.listTiersToInject = config.RucioInjector.listTiersToInject
         if config.RucioInjector.metaDIDProject not in RUCIO_VALID_PROJECT:
             msg = "Component configured with an invalid 'project' DID: %s"
             raise RucioInjectorException(msg % config.RucioInjector.metaDIDProject)
@@ -119,13 +93,6 @@ class RucioInjectorPoller(BaseWorkerThread):
         else:
             self.isT0agent = False
 
-        if not self.listTiersToInject:
-            logging.info("Component configured to inject all the data tiers")
-        else:
-            logging.info("Component configured to only inject data for data tiers: %s",
-                         self.listTiersToInject)
-        logging.info("Component configured to skip container rule creation for data tiers: %s",
-                     self.skipRulesForTiers)
         logging.info("Component configured to create block rules: %s", self.createBlockRules)
 
     def setup(self, parameters):
@@ -161,10 +128,6 @@ class RucioInjectorPoller(BaseWorkerThread):
 
         Poll the database for uninjected files and inject them into Rucio.
         """
-        if not self.enabled:
-            logging.info("RucioInjector component is disabled in the configuration, exiting.")
-            return
-
         logging.info("Running Rucio injector poller algorithm...")
 
         try:
@@ -173,11 +136,6 @@ class RucioInjectorPoller(BaseWorkerThread):
 
             # get dbsbuffer_file.in_phedex = 0
             uninjectedFiles = self.getUninjected.execute()
-
-            # while we commission Rucio within WM, not all datatiers are supposed
-            # to be injected by this component. Remove any data that we are not
-            # meant to process!
-            uninjectedFiles = filterDataByTier(uninjectedFiles, self.listTiersToInject)
 
             # create containers in rucio  (and update local cache)
             containersAdded = self.insertContainers(uninjectedFiles)
@@ -254,21 +212,6 @@ class RucioInjectorPoller(BaseWorkerThread):
         logging.info("Successfully inserted %d blocks into Rucio", newBlocks)
         return newBlocks
 
-    # TODO: this will likely go away once the phedex to rucio migration is over
-    def _isBlockTierAllowed(self, blockName):
-        """
-        Checks whether this blockname contains a datatier that we want to
-        be handled by this component, thus block-level rule creation as well
-        :return: True if the component can proceed with this block, False otherwise
-        """
-        if not self.listTiersToInject:
-            return True
-        endBlock = blockName.rsplit('/', 1)[1]
-        endTier = endBlock.split('#')[0]
-        if endTier not in self.listTiersToInject:
-            return False
-        return True
-
     def insertBlockRules(self):
         """
         Creates a simple replication rule for every single block that
@@ -283,9 +226,6 @@ class RucioInjectorPoller(BaseWorkerThread):
         unsubBlocks = self.getUnsubscribedBlocks.execute()
 
         for item in unsubBlocks:
-            if not self._isBlockTierAllowed(item['blockname']):
-                logging.debug("Component configured to skip block rule for: %s", item['blockname'])
-                continue
             # first, check if the block has already been created in Rucio
             if not self.rucio.didExist(item['blockname']):
                 logging.warning("Block: %s not yet in Rucio. Retrying later..", item['blockname'])
@@ -347,6 +287,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         """
         if not listLfns:
             return
+
         try:
             self.setStatus.execute(listLfns, 1)
         except Exception as ex:
@@ -374,8 +315,6 @@ class RucioInjectorPoller(BaseWorkerThread):
         ### FIXME the data format returned by this DAO
         for location in migratedBlocks:
             for container in migratedBlocks[location]:
-                if not self._isContainerTierAllowed(container, checkRulesList=False):
-                    continue
                 for block in migratedBlocks[location][container]:
                     logging.info("Closing block: %s", block)
                     if self.rucio.closeBlockContainer(block):
@@ -466,25 +405,6 @@ class RucioInjectorPoller(BaseWorkerThread):
         self.markBlocksDeleted.execute(binds)
         logging.info("Marked %d blocks as deleted in the database", len(binds))
         return
-
-    # TODO: this will likely go away once the phedex to rucio migration is over
-    def _isContainerTierAllowed(self, containerName, checkRulesList=True):
-        """
-        It compares the container datatier name to check whether the component
-        should inject data for it or not.
-        In addition to that, it can also evaluate whether it's allowed to create
-        rules for such datatier or not.
-        :param containerName: string with the name of the container
-        :param checkRulesList: boolean to check or not against the list of tiers
-          to be skipped in the rule creation
-        :return: True if the component can proceed with this container, False otherwise
-        """
-        endTier = containerName.rsplit('/', 1)[1]
-        if self.listTiersToInject and endTier not in self.listTiersToInject:
-            return False
-        if checkRulesList and endTier in self.skipRulesForTiers:
-            return False
-        return True
 
     def insertContainerRules(self):
         """

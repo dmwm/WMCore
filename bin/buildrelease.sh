@@ -77,7 +77,7 @@ echo "" >> $TMP_INFO
 
 # Use gitub public API to fetch pull request # from commit hash
 cat $TMP_COMMIT_HASHES | while read line; do
-  PR=$(curl -s https://api.github.com/search/issues?q=sha:$line | grep -Po '\"number\": \K[0-9]+')
+  PR=$(curl -s https://api.github.com/search/issues?q=sha:$line | grep -Po '\"html_url\": \"https://github.com/dmwm/WMCore/pull/\K[0-9]+' | sort | uniq)
   # Commits should have an associated PR, but just in case...
   if [[ $PR ]]
     then

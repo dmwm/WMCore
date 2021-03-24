@@ -4,6 +4,8 @@ _PromptReco_
 
 Standard PromptReco workflow.
 """
+from __future__ import division
+from future.utils import viewitems
 
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import procstringT0
@@ -76,7 +78,7 @@ class PromptRecoWorkloadFactory(DataProcessing):
             self.addLogCollectTask(recoTask)
 
         recoMergeTasks = {}
-        for recoOutLabel, recoOutInfo in recoOutMods.items():
+        for recoOutLabel, recoOutInfo in viewitems(recoOutMods):
             if recoOutInfo['dataTier'] != "ALCARECO":
                 mergeTask = self.addMergeTask(recoTask, self.procJobSplitAlgo, recoOutLabel,
                                               doLogCollect=self.doLogCollect)

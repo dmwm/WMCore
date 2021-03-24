@@ -5,6 +5,7 @@ _ReReco_t_
 Unit tests for the ReReco workflow.
 """
 from __future__ import print_function
+from future.utils import viewitems
 
 import os
 import threading
@@ -154,11 +155,11 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing")
         procWorkflow.load()
 
-        self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(procWorkflow.outputMap), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"RECOoutput": "RECO", "DQMoutput": "DQM"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergedOutput = procWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = procWorkflow.outputMap[fset][0]["output_fileset"]
@@ -182,12 +183,12 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/DataProcessingMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(mergeWorkflow.outputMap), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
@@ -254,7 +255,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/unmerged-%s" % fset)
             unmerged.loadData()
@@ -312,11 +313,11 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim")
         skimWorkflow.load()
 
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(skimWorkflow.outputMap), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"SkimA": "RAW-RECO", "SkimB": "USER"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergedOutput = skimWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = skimWorkflow.outputMap[fset][0]["output_fileset"]
@@ -344,12 +345,12 @@ class ReRecoTest(unittest.TestCase):
                          "/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(mergeWorkflow.outputMap), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
@@ -390,7 +391,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             unmerged = Fileset(
                 name="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-%s" % fset)
@@ -406,7 +407,7 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             unmerged = Fileset(
                 name="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/unmerged-%s" % fset)
@@ -520,11 +521,11 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing/SomeSkim")
         skimWorkflow.load()
 
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(skimWorkflow.outputMap), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = {"SkimA": "RAW-RECO", "SkimB": "USER"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergedOutput = skimWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = skimWorkflow.outputMap[fset][0]["output_fileset"]
@@ -549,12 +550,12 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/DataProcessing/SomeSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             mergeWorkflow = Workflow(name="TestWorkload",
                                      task="/TestWorkload/DataProcessing/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(mergeWorkflow.outputMap), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged%s" % tier][0]["merged_output_fileset"]
@@ -595,7 +596,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(skimSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
-        for skimOutput, tier in goldenOutputMods.items():
+        for skimOutput, tier in viewitems(goldenOutputMods):
             fset = skimOutput + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/SomeSkim/unmerged-%s" % fset)
             unmerged.loadData()
@@ -610,7 +611,7 @@ class ReRecoTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algo.")
 
-        for skimOutput, tier in goldenOutputMods.items():
+        for skimOutput, tier in viewitems(goldenOutputMods):
             fset = skimOutput + tier
             unmerged = Fileset(name="/TestWorkload/DataProcessing/SomeSkim/unmerged-%s" % fset)
             unmerged.loadData()

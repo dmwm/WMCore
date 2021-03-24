@@ -13,6 +13,8 @@ express processing -> FEVT/RAW/RECO/whatever -> express merge
 
 from __future__ import division
 
+from future.utils import viewitems
+
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from Utils.Utilities import makeList, makeNonEmptyList
 from WMCore.Lexicon import procstringT0
@@ -106,7 +108,7 @@ class ExpressWorkloadFactory(StdBase):
                                                          forceUnmerged=True)
 
             # there is only one
-            conversionOutLabel = conversionOutMods.keys()[0]
+            conversionOutLabel = next(iter(conversionOutMods))
 
             # everything coming after should use the reco CMSSW version and Scram Arch
             self.frameworkVersion = self.recoFrameworkVersion
@@ -145,7 +147,7 @@ class ExpressWorkloadFactory(StdBase):
             configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs)
 
             expressOutMods = {}
-            for outputModuleName in configOutput.keys():
+            for outputModuleName in configOutput:
                 outputModule = self.addOutputModule(expressTask,
                                                     outputModuleName,
                                                     configOutput[outputModuleName]['primaryDataset'],
@@ -169,7 +171,7 @@ class ExpressWorkloadFactory(StdBase):
 
         self.addLogCollectTask(expressTask, taskName="ExpressLogCollect")
 
-        for expressOutLabel, expressOutInfo in expressOutMods.items():
+        for expressOutLabel, expressOutInfo in viewitems(expressOutMods):
 
             if expressOutInfo['dataTier'] == "ALCARECO":
 
@@ -209,7 +211,7 @@ class ExpressWorkloadFactory(StdBase):
                 self.addLogCollectTask(alcaSkimTask, taskName="AlcaSkimLogCollect")
                 self.addCleanupTask(expressTask, expressOutLabel, dataTier=expressOutInfo['dataTier'])
 
-                for alcaSkimOutLabel, alcaSkimOutInfo in alcaSkimOutMods.items():
+                for alcaSkimOutLabel, alcaSkimOutInfo in viewitems(alcaSkimOutMods):
 
                     if alcaSkimOutInfo['dataTier'] == "ALCAPROMPT" and \
                             (self.alcaHarvestCondLFNBase is not None or self.alcaHarvestLumiURL is not None):

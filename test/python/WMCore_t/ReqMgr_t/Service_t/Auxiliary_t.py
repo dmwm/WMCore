@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 
@@ -29,7 +30,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
     def testProcStatus(self):
         """Test the `proc_status` REST API"""
         res = self.jsonSender.get("data/proc_status")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ['server'])
+        self.assertItemsEqual(list(res[0]["result"][0]), ['server'])
 
     def testInfo(self):
         """Test the `info` REST API"""
@@ -68,7 +69,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/cmsswversions")
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "CMSSW_VERSIONS")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["slc6", "slc7", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["slc6", "slc7", "ConfigType"])
 
     def testPutCMSSWVersions(self):
         """Test the `cmsswversions` REST API with PUT call"""
@@ -77,7 +78,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res)
 
         res = self.jsonSender.get("data/cmsswversions")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["slc6", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["slc6", "ConfigType"])
 
     def testWMAgentConfig(self):
         """Test the `wmagentconfig` REST API"""
@@ -88,7 +89,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/wmagentconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "WMAGENT_CONFIG")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key1", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
 
     @attr("integration")
     def testPutWMAgentConfig(self):
@@ -106,7 +107,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/wmagentconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "WMAGENT_CONFIG")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key2", "nono", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key2", "nono", "ConfigType"])
 
     def testCampaignConfig(self):
         """Test the `campaignconfig` REST API"""
@@ -117,7 +118,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/campaignconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "CAMPAIGN_CONFIG")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["campName", "keyblah", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["campName", "keyblah", "ConfigType"])
 
     @attr("integration")
     def testPutCampaignConfig(self):
@@ -135,7 +136,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/campaignconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "CAMPAIGN_CONFIG")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["campName", "keyblah", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["campName", "keyblah", "ConfigType"])
 
     def testUnifiedConfig(self):
         """Test the `unifiedconfig` REST API"""
@@ -146,7 +147,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/unifiedconfig/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "UNIFIED_CONFIG")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key1", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
 
     @attr("integration")
     def testPutUnifiedConfig(self):
@@ -163,7 +164,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res)
 
         res = self.jsonSender.get("data/unifiedconfig/%s" % docName)
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key2", "key3", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key2", "key3", "ConfigType"])
 
     def testTransferInfo(self):
         """Test the `transferinfo` REST API"""
@@ -174,7 +175,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
 
         res = self.jsonSender.get("data/transferinfo/%s" % docName)
         self.assertTrue(res[0]["result"][0]["ConfigType"] == "TRANSFER")
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key1", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key1", "ConfigType"])
 
     @attr("integration")
     def testPutTransferInfo(self):
@@ -191,7 +192,7 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
         self.assertTrue(res)
 
         res = self.jsonSender.get("data/transferinfo/%s" % docName)
-        self.assertItemsEqual(res[0]["result"][0].keys(), ["key2", "key3", "ConfigType"])
+        self.assertItemsEqual(list(res[0]["result"][0]), ["key2", "key3", "ConfigType"])
 
     def testAllTransferDocs(self):
         """Test the `transferinfo` REST API"""

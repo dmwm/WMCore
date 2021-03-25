@@ -3,6 +3,8 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
+from future.utils import viewitems, viewvalues
+
 from hashlib import md5
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
@@ -123,7 +125,7 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
     *arg and **kwargs are only for the interface
     """
     response = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    originalArgs = response.values()[0]
+    originalArgs = next(iter(viewvalues(response)))
 
     ### not a nice fix for #8245, but we cannot inherit the CollectionName attr
     originalArgs.pop("CollectionName", None)
@@ -165,7 +167,7 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
     *arg and **kwargs are only for the interface
     """
     response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
-    originalArgs = response.values()[0]
+    originalArgs = next(iter(viewvalues(response)))
 
     chainArgs = None
     specClass = loadSpecClassByType(originalArgs["RequestType"])
@@ -199,7 +201,7 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state):
     requests = reqmgr_db_service.getRequestByNames(request_name)
     # generator object can't be subscribed: need to loop.
     # only one row should be returned
-    for request in requests.values():
+    for request in viewvalues(requests):
         current_state = request["RequestStatus"]
     if not check_allowed_transition(current_state, new_state):
         raise InvalidStateTransition(current_state, new_state)
@@ -208,7 +210,7 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state):
 
 def create_json_template_spec(specArgs):
     template = {}
-    for key, prop in specArgs.items():
+    for key, prop in viewitems(specArgs):
 
         if key == "RequestorDN":
             # this will be automatically collected so skip it.

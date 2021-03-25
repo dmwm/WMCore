@@ -5,6 +5,7 @@ Teams, Groups, Software versions handling for ReqMgr.
 
 """
 from __future__ import print_function, division
+from future.utils import listvalues
 
 import json
 import cherrypy
@@ -195,7 +196,7 @@ class AuxBaseAPI(RESTEntity):
             cherrypy.log(msg)
             raise cherrypy.HTTPError(404, msg)
 
-        return allDocs.values()
+        return listvalues(allDocs)
 
     @restcall(formats=[('application/json', JSONFormat())])
     def post(self, subName=None):

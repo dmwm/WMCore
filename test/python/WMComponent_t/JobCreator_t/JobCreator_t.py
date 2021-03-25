@@ -5,6 +5,7 @@
 # E1103: Use thread members
 
 from __future__ import print_function
+from builtins import range, object
 
 import cProfile
 import os

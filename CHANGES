@@ -1,3 +1,11 @@
+1.4.7.pre6 to 1.4.7.pre7:
+  - Reorganize MicroService unit tests (Alan Malta Rodrigues) #10373
+  - Account for tape rule status in MSRulecleaner. (Todor Ivanov) #10370
+  - [py2py3] src/python/A/B/C slice 24 - issue #10148 - src (Dario Mapelli) #10371
+  - [py2py3] src/python/A/B/C slice 22 - issue #10146 - src (Dario Mapelli) #10362
+  - [py2py3] src/python/A/B/C slice 23 - issue #10147 - src (Dario Mapelli) #10363
+
+
 1.4.7.pre5 to 1.4.7.pre6:
   - Change regex when building list of PR numbers in buildrelease (Alan Malta Rodrigues) #10372
   - Remove datatier-based functionality from RucioInjector (Alan Malta Rodrigues) #10369

@@ -3,9 +3,10 @@ Unit tests for the WMCore/MicroService/DataStructs/MSOutputTemplate.py module
 """
 from __future__ import division, print_function
 
-from builtins import range
 import unittest
 from copy import deepcopy
+
+from builtins import range
 
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 

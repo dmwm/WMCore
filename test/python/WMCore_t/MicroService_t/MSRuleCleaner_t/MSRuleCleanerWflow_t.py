@@ -3,8 +3,8 @@ Unit tests for the WMCore/MicroService/DataStructs/MSRuleCleanerWflow.py module
 """
 from __future__ import division, print_function
 
-import os
 import json
+import os
 import unittest
 
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleanerWflow import MSRuleCleanerWflow
@@ -22,6 +22,7 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
     """
     Test the very basic functionality of the MSRuleCleanerWflow module
     """
+
     def setUp(self):
         self.maxDiff = None
         self.taskChainFile = getTestFile('data/ReqMgr/requests/Static/TaskChainRequestDump.json')
@@ -82,11 +83,12 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
-                                            u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
-                                            u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
+                         'OutputDatasets': [
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/RECO',
+                             u'/JetHT/CMSSW_7_2_0-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/DQMIO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-SiStripCalZeroBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO',
+                             u'/JetHT/CMSSW_7_2_0-TkAlMinBias-RECODreHLT_TaskChain_LumiMask_multiRun_HG2011_Val_Todor_v1-v11/ALCARECO'],
                          'ParentDataset': [],
                          'ParentageResolved': True,
                          'PlineMarkers': None,
@@ -95,7 +97,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1606723304},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1606723305},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1606723305},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1606723306},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1606723461},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1606723590},
@@ -139,7 +142,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1588759495},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1588759500},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1588759500},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1588760963},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1588761258},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1588761688},
@@ -166,7 +170,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'IsClean': False,
                          'IsLogDBClean': False,
                          'MCPileup': [],
-                         'OutputDatasets': [u'/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO'],
+                         'OutputDatasets': [
+                             u'/Cosmics/Integ_Test-CosmicSP-StepChain_InclParents_HG2004_Val_Privv12-v11/RAW-RECO'],
                          'ParentDataset': [],
                          'ParentageResolved': False,
                          'PlineMarkers': None,
@@ -175,7 +180,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1586858833},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1586858834},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1586858834},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1586858835},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1586859358},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1586859733},
@@ -203,9 +209,10 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'IsLogDBClean': False,
                          'MCPileup': [u'/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM',
                                       u'/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW'],
-                         'OutputDatasets': [u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM',
-                                            u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/LHE',
-                                            u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW'],
+                         'OutputDatasets': [
+                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM',
+                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/LHE',
+                             u'/DYJetsToLL_Pt-50To100_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/DMWM_Test-SC_MultiPU_HG2002_Val_Todor_v13-v20/GEN-SIM-RAW'],
                          'ParentDataset': [],
                          'ParentageResolved': False,
                          'PlineMarkers': None,
@@ -214,7 +221,8 @@ class MSRuleCleanerWflowTest(unittest.TestCase):
                          'RequestTransition': [{u'DN': u'',
                                                 u'Status': u'new',
                                                 u'UpdateTime': 1579577819},
-                                               {u'DN': u'', u'Status': u'assignment-approved', u'UpdateTime': 1579577822},
+                                               {u'DN': u'', u'Status': u'assignment-approved',
+                                                u'UpdateTime': 1579577822},
                                                {u'DN': u'', u'Status': u'assigned', u'UpdateTime': 1579577822},
                                                {u'DN': u'', u'Status': u'staging', u'UpdateTime': 1579577895},
                                                {u'DN': u'', u'Status': u'staged', u'UpdateTime': 1579578050},

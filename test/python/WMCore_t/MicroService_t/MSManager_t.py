@@ -8,12 +8,13 @@ from __future__ import division, print_function
 
 import unittest
 
-from WMCore.MicroService.MSManager import MSManager
 from WMCore.Agent.Configuration import Configuration
+from WMCore.MicroService.MSManager import MSManager
 
 
 class MSManagerTest(unittest.TestCase):
     "Unit test for MSManager module"
+
     def setUp(self):
         "Setup MSManager for testing"
         config = Configuration()
@@ -32,7 +33,7 @@ class MSManagerTest(unittest.TestCase):
         data.smtpServer = "localhost"
         data.fromAddr = "noreply@cern.ch"
         data.toAddr = ["cms-comp-ops-workflow-team@cern.ch"]
-        data.warningTransferThreshold = 100. * (1000 ** 4) # 100 TB (terabyte)
+        data.warningTransferThreshold = 100. * (1000 ** 4)  # 100 TB (terabyte)
         self.mgr = MSManager(data)
 
         data.services = ['monitor']
@@ -42,7 +43,6 @@ class MSManagerTest(unittest.TestCase):
         data.limitRequestsPerCycle = 50
         data.enableDataTransfer = True
         self.mgr_trans = MSManager(data)
-
 
     def tearDown(self):
         "Tear down MSManager"
@@ -82,6 +82,7 @@ class MSManagerTest(unittest.TestCase):
         self.assertTrue("enableStatusTransition" in self.mgr_monit.msConfig)
         self.assertTrue(self.mgr_trans.msConfig.get("enableDataTransfer"))
         self.assertFalse("enableDataTransfer" in self.mgr_monit.msConfig)
+
 
 if __name__ == '__main__':
     unittest.main()

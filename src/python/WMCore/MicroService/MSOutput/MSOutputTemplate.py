@@ -102,6 +102,7 @@ class MSOutputTemplate(dict):
                            'Copies': 1,
                            ...}],
                     "TransferStatus": "pending"|"done,
+                    "DBSUpdateStatus": "pending"|"done,
             "RequestType": ""
             }
         :return: a list of tuples
@@ -116,7 +117,8 @@ class MSOutputTemplate(dict):
             ('IsRelVal', False, bool),
             ('OutputDatasets', [], list),
             ('OutputMap', [], list),
-            ('TransferStatus', "pending", (bytes, str))]
+            ('TransferStatus', "pending", (bytes, str)),
+            ('DBSUpdateStatus', "pending", (bytes, str))]
         return docTemplate
 
     def outputMapSchema(self):
@@ -135,7 +137,8 @@ class MSOutputTemplate(dict):
              'DiskDestination': "",
              'TapeDestination': "",
              'DiskRuleID': "",
-             'TapeRuleID': ""}
+             'TapeRuleID': "",
+             'DBSStatus': ""}
         :return: a list of tuples
         """
         outMapTemplate = [
@@ -146,7 +149,8 @@ class MSOutputTemplate(dict):
             ('DiskDestination', "", (bytes, str)),
             ('TapeDestination', "", (bytes, str)),
             ('DiskRuleID', "", (bytes, str)),
-            ('TapeRuleID', "", (bytes, str))]
+            ('TapeRuleID', "", (bytes, str)),
+            ('DBSStatus', "", (bytes, str))]
         return outMapTemplate
 
     def _checkAttr(self, myDoc, update=False, throw=False, **kwargs):

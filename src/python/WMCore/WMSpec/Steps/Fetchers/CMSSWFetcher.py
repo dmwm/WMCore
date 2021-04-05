@@ -54,7 +54,3 @@ class CMSSWFetcher(FetcherInterface):
                 configCache = ConfigCache(cacheUrl, cacheDb)
                 configCache.loadByID(configId)
                 configCache.saveConfigToDisk(targetFile = fileTarget)
-                tweak = TweakAPI.makeTweakFromJSON(configCache.getPSetTweaks())
-                if tweak:
-                    tweakFile = "%s/%s" % (stepPath, tweakTarget)
-                    tweak.persist(tweakFile, "json")

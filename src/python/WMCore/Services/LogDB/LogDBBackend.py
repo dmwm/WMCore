@@ -180,7 +180,7 @@ class LogDBBackend(object):
         This is done via tstamp view end endkey, e.g.
         curl "http://127.0.0.1:5984/logdb/_design/LogDB/_view/tstamp?endkey=1427912282"
         """
-        cutoff = round(time.time()-thr)
+        cutoff = int(round(time.time()-thr))
         #docs = self.db.allDocs() # may need another view to look-up old docs
         spec = {'endkey':cutoff, 'reduce':False}
         docs = self.db.loadView(self.design, self.tsview, spec)

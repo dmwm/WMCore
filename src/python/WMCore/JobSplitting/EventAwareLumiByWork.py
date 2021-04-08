@@ -324,7 +324,7 @@ class EventAwareLumiByWork(JobFactory):
                     for lumi in runLumi.lumis:
                         if (runLumi.run, lumi) in lumiList:
                             self.filesByLumi[run][lumi].append(fileObj)
-                            eventsByLumi[run][lumi] = round(eventsInFile / lumisInFile)
+                            eventsByLumi[run][lumi] = int(round(eventsInFile / lumisInFile))
 
         return lumisByFile, eventsByLumi
 

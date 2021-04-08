@@ -1,3 +1,7 @@
+1.4.7.pre8 to 1.4.7:
+  - Update CMS WM overview schematic (Alan Malta Rodrigues) #10438
+
+
 1.4.7.pre7 to 1.4.7.pre8:
   - [py2py3] src/python/A/B/C slice 25 - issue #10149 - src (Dario Mapelli) #10379
 

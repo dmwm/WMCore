@@ -25,9 +25,7 @@ from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 from WMCore.WMException import WMException
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
-
-#DBS modules
-from dbs.apis.dbsClient import DbsApi
+from WMCore.Services.DBS.DBS3Writer import DBS3Writer
 
 
 class MSOutputException(WMException):
@@ -251,35 +249,6 @@ class MSOutput(MSCore):
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
-    def getDBSStatus(self, dataset):
-        """
-        The function to get the DBS status of outputs
-        :param dataset: dataset name
-        :return: DBS status of the given dataset
-        """
-
-        dbsReadUrl = self.msConfig["dbsReadUrl"]
-        dbsApi = DbsApi(url=dbsReadUrl)
-
-        response = None
-        try:
-            response = dbsApi.listDatasets(dataset=dataset, dataset_access_type='*', detail=True)
-        except Exception as ex:
-            msg = "Exception while getting the status of following dataset on DBS: {} ".format(dataset)
-            msg += "Error: {}".format(str(ex))
-            self.logger.exception(msg)
-
-        if response:
-            dbsStatus = response[0]['dataset_access_type']
-            isAllowedStatus = dbsStatus in self.msConfig["allowedDbsStatuses"]
-
-            if isAllowedStatus:
-                return dbsStatus
-            else:
-                raise Exception("This is not an allowed DBS status: {}".format(str(dbsStatus)))
-        else:
-            return None
-
     def setDBSStatus(self, workflow):
         """
         The function to set the DBS status of outputs as VALID
@@ -292,7 +261,7 @@ class MSOutput(MSCore):
             raise UnsupportedError(msg)
 
         dbsWriteUrl = self.msConfig["dbsWriteUrl"]
-        dbsApi = DbsApi(url=dbsWriteUrl)
+        dbs3Writer = DBS3Writer(dbsWriteUrl)
 
         # if anything fail along the way, set it back to "pending"
         dbsUpdateStatus = "done"
@@ -300,18 +269,11 @@ class MSOutput(MSCore):
 
             if self.msConfig['enableDbsStatusChange']:
 
-                try:
-                    dbsApi.updateDatasetType(dataset=dMap["Dataset"],
-                                             dataset_access_type=self.msConfig['dbsStatus']["valid"])
-                except Exception as ex:
-                    msg = "Exception while setting the status of following dataset on DBS: {} ".format(dMap["Dataset"])
-                    msg += "Error: {}".format(str(ex))
-                    self.logger.exception(msg)
+                res = dbs3Writer.setDBSStatus(dataset=dMap["Dataset"],
+                                              status=self.msConfig['dbsStatus']["valid"])
 
-                dbsStatus = self.getDBSStatus(dMap["Dataset"])
-
-                if dbsStatus == self.msConfig['dbsStatus']["valid"]:
-                    dMap["DBSStatus"] = dbsStatus
+                if res:
+                    dMap["DBSStatus"] = self.msConfig['dbsStatus']["valid"]
                 else:
                     # There is at least one dataset whose dbs status update is unsuccessful
                     dbsUpdateStatus = "pending"

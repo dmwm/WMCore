@@ -971,3 +971,32 @@ class DBS3Reader(object):
                     frozenKey = frozenset(runLumiPair)
                     parentFrozenData[frozenKey] = fileId
         return parentFrozenData
+
+    def getDBSStatus(self, dataset):
+        """
+        The function to get the DBS status of outputs
+        :param dataset: dataset name
+        :return: DBS status of the given dataset
+        """
+
+        dbsApi = DbsApi(url=self.dbsURL)
+        allowedDbsStatuses = ["VALID", "INVALID", "PRODUCTION"]
+
+        response = None
+        try:
+            response = dbsApi.listDatasets(dataset=dataset, dataset_access_type='*', detail=True)
+        except Exception as ex:
+            msg = "Exception while getting the status of following dataset on DBS: {} ".format(dataset)
+            msg += "Error: {}".format(str(ex))
+            self.logger.exception(msg)
+
+        if response:
+            dbsStatus = response[0]['dataset_access_type']
+            isAllowedStatus = dbsStatus in allowedDbsStatuses
+
+            if isAllowedStatus:
+                return dbsStatus
+            else:
+                raise Exception("This is not an allowed DBS status: {}".format(str(dbsStatus)))
+        else:
+            return None

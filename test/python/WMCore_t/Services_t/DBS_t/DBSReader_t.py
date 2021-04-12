@@ -24,6 +24,8 @@ PARENT_DATASET = '/Cosmics/ComissioningHI-v1/RAW'
 PARENT_BLOCK = PARENT_DATASET + '#929366bc-0c31-11e1-b764-003048caaace'
 PARENT_FILE = '/store/data/ComissioningHI/Cosmics/RAW/v1/000/181/369/662EAD44-300C-E111-A709-BCAEC518FF62.root'
 
+DATASET_INVALID = '/ggXToJPsiJPsi_JPsiToMuMu_M6p2_JPCZeroMinusPlus_TuneCP5_13TeV-pythia8-JHUGen/RunIIFall17pLHE-93X_mc2017_realistic_v3-v2/LHE'
+
 
 class DBSReaderTest(EmulatedUnitTestCase):
     def setUp(self):
@@ -303,6 +305,11 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.dbs = DBSReader(self.endpoint)
         self.assertEqual(self.dbs.blockToDatasetPath(BLOCK), DATASET)
         self.assertRaises(DBSReaderError, self.dbs.blockToDatasetPath, BLOCK + 'asas')
+
+    def testGetDBSStatus(self):
+        """getDBSStatus gets DBS Status of a dataset"""
+        self.dbs = DBSReader(self.endpoint)
+        self.assertEqual(self.dbs.getDBSStatus(DATASET_INVALID), 'INVALID')
 
 
 if __name__ == '__main__':

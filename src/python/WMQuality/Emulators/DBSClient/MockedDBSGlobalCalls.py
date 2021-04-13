@@ -84,6 +84,10 @@ calls = [['listDataTiers'],
           {'block_name': '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0'}],
          ['listBlockParents',
           {'block_name': '/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'}],
+         ['listDatasets',
+          {'dataset_access_type': '*',
+           'dataset': '/ggXToJPsiJPsi_JPsiToMuMu_M6p2_JPCZeroMinusPlus_TuneCP5_13TeV-pythia8-JHUGen/RunIIFall17pLHE-93X_mc2017_realistic_v3-v2/LHE',
+           'detail': True}],
 
          # Exception throwing calls
 

@@ -7,12 +7,12 @@ Unit test for the DBS Writer class.
 
 import unittest
 
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.Services.DBS.DBS3Writer import DBS3Writer as DBS3Writer
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 # A dummy dataset to play with
-DUMMY_DATASET = '/RelValDarkSUSY_14TeV/DMWM_Test-TC_LHE_PFN_Mar2021_Val_Alanv5-v11/GEN-SIM'
+DUMMY_DATASET = '/DYToEE_M-50_NNPDF31_TuneCP5_14TeV-powheg-pythia8/Run3Summer19DRPremix-BACKFILL_2024Scenario_106X_mcRun3_2024_realistic_v4-v6/GEN-SIM-RAW'
+
 
 class DBSWriterTest(EmulatedUnitTestCase):
     def setUp(self):
@@ -22,8 +22,8 @@ class DBSWriterTest(EmulatedUnitTestCase):
         Initialize the API to point at the test server.
         """
 
-        self.dbsReaderUrl = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/'
-        self.dbsWriterUrl = 'https://cmsweb-testbed.cern.ch/dbs/int/global/DBSWriter/'
+        self.dbsReaderUrl = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/'
+        self.dbsWriterUrl = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter/'
         self.dbsReader = None
         self.dbsWriter = None
         super(DBSWriterTest, self).setUp()
@@ -39,19 +39,15 @@ class DBSWriterTest(EmulatedUnitTestCase):
         return
 
     def testSetDBSStatus(self):
-        self.dbsReader = DBSReader(self.dbsReaderUrl)
-        self.dbsWriter = DBS3Writer(self.dbsWriterUrl)
+        self.dbsWriter = DBS3Writer(url=self.dbsReaderUrl,
+                                    writeUrl=self.dbsWriterUrl)
 
+        res = self.dbsWriter.setDBSStatus(DUMMY_DATASET, "PRODUCTION")
+        self.assertTrue(res)
         res = self.dbsWriter.setDBSStatus(DUMMY_DATASET, "VALID")
         self.assertTrue(res)
-        status = self.dbsReader.getDBSStatus(DUMMY_DATASET)
-        self.assertEqual(status,"VALID")
-
         res = self.dbsWriter.setDBSStatus(DUMMY_DATASET, "INVALID")
         self.assertTrue(res)
-        status = self.dbsReader.getDBSStatus(DUMMY_DATASET)
-        self.assertEqual(status, "INVALID")
-
 
 
 if __name__ == '__main__':

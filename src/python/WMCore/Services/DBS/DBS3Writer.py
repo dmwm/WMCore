@@ -23,12 +23,12 @@ class DBS3Writer(DBS3Reader):
     General API for writing data to DBS
     """
 
-    def __init__(self, url, logger=None, **contact):
+    def __init__(self, url, writeUrl, logger=None, **contact):
 
         # instantiate dbs api object
         try:
-            self.dbsWriteUrl = url
-            self.dbs = DbsApi(url, **contact)
+            super(DBS3Writer, self).__init__(url=url)
+            self.dbs = DbsApi(writeUrl, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
         except dbsClientException as ex:
             msg = "Error in DBSWriter with DbsApi\n"
@@ -42,17 +42,15 @@ class DBS3Writer(DBS3Reader):
         :return: True if operation is successful, False otherwise
         """
 
-        dbsApi = DbsApi(url=self.dbsWriteUrl)
-
         try:
-            dbsApi.updateDatasetType(dataset=dataset,
+            self.dbs.updateDatasetType(dataset=dataset,
                                      dataset_access_type=status)
         except Exception as ex:
             msg = "Exception while setting the status of following dataset on DBS: {} ".format(dataset)
             msg += "Error: {}".format(str(ex))
             self.logger.exception(msg)
 
-        dbsStatus = self.getDBSStatus(dataset)
+        dbsStatus = super(DBS3Writer, self).getDBSStatus(dataset)
 
         if dbsStatus == status:
             return True

@@ -260,8 +260,8 @@ class MSOutput(MSCore):
             msg += "It needs to be of type: MSOutputTemplate"
             raise UnsupportedError(msg)
 
-        dbsWriteUrl = self.msConfig["dbsWriteUrl"]
-        dbs3Writer = DBS3Writer(dbsWriteUrl)
+        dbs3Writer = DBS3Writer(url=self.msConfig["dbsReadUrl"],
+                                writeUrl=self.msConfig["dbsWriteUrl"])
 
         # if anything fail along the way, set it back to "pending"
         dbsUpdateStatus = "done"

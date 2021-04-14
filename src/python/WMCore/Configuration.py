@@ -14,8 +14,6 @@ import os
 import sys
 import traceback
 
-from Utils.Utilities import encodeUnicodeToBytes
-
 PY3 = sys.version_info[0] == 3
 
 # PY3 compatibility (can be removed once python2 gets dropped)
@@ -140,9 +138,7 @@ class ConfigSection(object):
             return
 
         if isinstance(value, unicode):
-            # We should not use "ignore" in this case
-            # if this failed before, it is better to have it fail also now.
-            value = encodeUnicodeToBytes(value)
+            value = str(value)
 
         # for backward compatibility use getattr and sure to work if the
         # _internal_skipChecks flag is not set

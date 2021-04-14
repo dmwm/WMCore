@@ -76,8 +76,8 @@ class DBS3Reader(object):
 
         # instantiate dbs api object
         try:
-            self.dbsURL = url
-            self.dbs = DbsApi(url, **contact)
+            self.dbsURL = url.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
+            self.dbs = DbsApi(self.dbsURL, **contact)
             self.logger = logger or logging.getLogger(self.__class__.__name__)
         except dbsClientException as ex:
             msg = "Error in DBSReader with DbsApi\n"

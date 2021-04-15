@@ -124,8 +124,8 @@ class CMSSW_t(unittest.TestCase):
             executor = CMSSWExecutor()
             executor.initialise(self.step, self.job)
             executor.pre()
-            # Remove the scram pre-script as it requires an actual SCRAM environment
-            executor.step.runtime.scramPreScripts.remove("SetupCMSSWPset")
+            # Remove the preScripts, as it is not needed for this test
+            executor.step.runtime.preScripts.remove("SetupCMSSWPset")
             executor.execute()
             executor.post()
             # Check that there were no errors
@@ -156,7 +156,7 @@ class CMSSW_t(unittest.TestCase):
             executor = StepFactory.getStepExecutor("CMSSW")
             executor.initialise(self.step, self.job)
             executor.pre()
-            executor.step.runtime.scramPreScripts.remove("SetupCMSSWPset")
+            executor.step.runtime.preScripts.remove("SetupCMSSWPset")
             try:
                 executor.execute()
                 self.fail("An exception should have been raised")
@@ -189,7 +189,7 @@ class CMSSW_t(unittest.TestCase):
             executor = StepFactory.getStepExecutor("CMSSW")
             executor.initialise(self.step, self.job)
             executor.pre()
-            executor.step.runtime.scramPreScripts.remove("SetupCMSSWPset")
+            executor.step.runtime.preScripts.remove("SetupCMSSWPset")
             try:
                 executor.execute()
                 self.fail("An exception should have been raised")
@@ -222,7 +222,7 @@ class CMSSW_t(unittest.TestCase):
             executor = StepFactory.getStepExecutor("CMSSW")
             executor.initialise(self.step, self.job)
             executor.pre()
-            executor.step.runtime.scramPreScripts.remove("SetupCMSSWPset")
+            executor.step.runtime.preScripts.remove("SetupCMSSWPset")
             executor.execute()
             executor.post()
             self.assertEqual(60450, executor.report.getExitCode())

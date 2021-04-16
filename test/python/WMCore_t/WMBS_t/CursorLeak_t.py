@@ -5,6 +5,7 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
+from builtins import range
 import threading
 import unittest
 
@@ -102,13 +103,13 @@ class CursorLeakTest(unittest.TestCase):
                          checksums={"cksum": "1"}, locations="se1.fnal.gov")
         testFileA.create()
 
-        for i in xrange(15):
+        for i in range(15):
             testParent = File(lfn=makeUUID(), size=1024, events=10,
                               checksums={"cksum": "1"}, locations="se1.fnal.gov")
             testParent.create()
             testFileA.addParent(testParent["lfn"])
 
-            for i in xrange(100):
+            for i in range(100):
                 testGParent = File(lfn=makeUUID(), size=1024, events=10,
                                    checksums={"cksum": "1"}, locations="se1.fnal.gov")
                 testGParent.create()

@@ -4,8 +4,9 @@ _EventBased_t_
 
 Event based splitting test.
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
+from builtins import range
 import os
 import random
 import threading
@@ -161,12 +162,12 @@ class EventBasedTest(unittest.TestCase):
                                 merged=False, first_event=firstEvent)
                 if acdcVer == 2:
                     # lumi range is really inclusive (process first and last lumi)
-                    run = Run(1, *range(1 + j * lumisPerJob + (i * lumisPerFile),
-                                        1 + (j + 1) * lumisPerJob + (i * lumisPerFile)))
+                    run = Run(1, *list(range(1 + j * lumisPerJob + (i * lumisPerFile),
+                                        1 + (j + 1) * lumisPerJob + (i * lumisPerFile))))
                 else:
                     # bigger lumi range, LastLumi is in most of the cases not processed
-                    run = Run(1, *range(1 + j * lumisPerJob + (i * lumisPerFile),
-                                        2 + (j + 1) * lumisPerJob + (i * lumisPerFile)))
+                    run = Run(1, *list(range(1 + j * lumisPerJob + (i * lumisPerFile),
+                                        2 + (j + 1) * lumisPerJob + (i * lumisPerFile))))
 
                 acdcFile.addRun(run)
                 acdcDoc = {"collection_name": workflowName,
@@ -198,18 +199,18 @@ class EventBasedTest(unittest.TestCase):
             acdcFile = File(lfn=lfn, size=1024, events=eventsPerJob, locations=self.validLocations,
                             merged=False, first_event=firstEvent)
             if acdcVer == 2:
-                run = Run(1, *range(lumi, lumi + 1))
+                run = Run(1, *list(range(lumi, lumi + 1)))
             else:
-                run = Run(1, *range(lumi, lumi + 2))
+                run = Run(1, *list(range(lumi, lumi + 2)))
             acdcFile.addRun(run)
             acdcFiles.append(acdcFile)
         # create one last entry with more lumis
         acdcFile = File(lfn=lfn, size=1024, events=eventsPerJob, locations=self.validLocations,
                         merged=False, first_event=firstEvent)
         if acdcVer == 2:
-            run = Run(1, *range(277, 277 + 4))
+            run = Run(1, *list(range(277, 277 + 4)))
         else:
-            run = Run(1, *range(277, 277 + 5))
+            run = Run(1, *list(range(277, 277 + 5)))
         acdcFile.addRun(run)
         acdcFiles.append(acdcFile)
 
@@ -238,7 +239,7 @@ class EventBasedTest(unittest.TestCase):
         newFile = File("MCFakeFile-some-hash-%s" % str(index).zfill(5), size=1000,
                        events=numEvents,
                        locations=set(["T1_US_FNAL_Disk"]))
-        newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
+        newFile.addRun(Run(1, *list(range(firstLumi, lastLumi + 1))))
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent
         newFile.create()

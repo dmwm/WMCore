@@ -5,6 +5,7 @@ Unittests for Utilities functions
 
 from __future__ import division, print_function
 
+from builtins import object
 import os
 import unittest
 
@@ -47,7 +48,7 @@ class UtilitiesTests(unittest.TestCase):
         self.assertEqual(lheaders['CAPITAL'], 1)
         self.assertEqual(lheaders['Camel'], 1)
         self.assertEqual(lheaders[val], val)
-        self.assertEqual(len(lheaders.keys()), 3)
+        self.assertEqual(len(lheaders), 3)
 
     def testMakeNonEmptyList(self):
         """
@@ -144,14 +145,25 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         with self.assertRaises(TypeError):
             getSize(zipEncodeStr)
 
-        class TestClass():
+        class TestClass1():
             def __init__(self):
                 self.data = "blah"
 
-        cls = TestClass()
-        print(getSize(cls))
-        self.assertTrue(getSize(cls) > 1000)
+        cls1 = TestClass1()
+        print(getSize(cls1)) # 1129
+        self.assertTrue(getSize(cls1) > 1000)
 
+        class TestClass2(object):
+            """
+            In python2, classes that inherit from `object` have a smaller
+            memory footprint
+            """
+            def __init__(self):
+                self.data = "blah"
+
+        cls2 = TestClass2()
+        print(getSize(cls2)) # 426
+        self.assertTrue(getSize(cls2) > 400)
 
 if __name__ == '__main__':
     unittest.main()

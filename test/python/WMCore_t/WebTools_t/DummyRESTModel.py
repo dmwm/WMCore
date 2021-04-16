@@ -1,3 +1,5 @@
+from builtins import map, range, object, str, bytes
+
 from WMCore.WebTools.RESTModel import RESTModel, restexpose
 from cherrypy import HTTPError
 
@@ -5,21 +7,21 @@ DUMMY_ROLE = "dummy"
 DUMMY_GROUP = "dummies"
 DUMMY_SITE = "dummyHome"
 
-class DummyDAO1:
+class DummyDAO1(object):
     """
     A DAO that has no arguments and does nothing but return 123
     """
     def execute(self):
         return 123
 
-class DummyDAO2:
+class DummyDAO2(object):
     """
     A DAO that takes a single argument
     """
     def execute(self, num):
         return {'num': num}
 
-class DummyDAO3:
+class DummyDAO3(object):
     """
     A DAO with keyword arguments
     TODO: use this
@@ -27,7 +29,7 @@ class DummyDAO3:
     def execute(self, num, thing=None):
         return {'num': num, 'thing': thing}
 
-class DummyDAOFac:
+class DummyDAOFac(object):
     """
     Something that replicates a Factory that loads our dummy DAO classes
     """
@@ -141,7 +143,7 @@ class DummyRESTModel(RESTModel):
         if not isinstance(request_input["aList"], list):
             request_input["aList"] = [int(request_input["aList"])]
         else:
-            request_input["aList"] = map(int, request_input["aList"])
+            request_input["aList"] = list(map(int, request_input["aList"]))
         return request_input
 
     def val_0(self, request_input):
@@ -168,7 +170,7 @@ class DummyRESTModel(RESTModel):
     def val_2(self, request_input):
         # Checks its second request_input is a string
         try:
-            assert isinstance(request_input['input_str'], basestring)
+            assert isinstance(request_input['input_str'], (str, bytes))
         except AssertionError:
             raise HTTPError(400, 'val_2 failed: %s not string or unicode' % type(request_input['input_str']))
         return request_input

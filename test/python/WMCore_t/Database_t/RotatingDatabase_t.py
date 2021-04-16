@@ -1,3 +1,4 @@
+from builtins import range
 import unittest
 import os
 import sys
@@ -14,7 +15,10 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.couchURL = os.getenv("COUCHURL")
         self.server = CouchServer(self.couchURL)
         # Kill off any databases left over from previous runs
-        for db in [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_')]:
+        # In python 3 the variables defined inside a comprehension are deteled
+        # outside the comprehension. See: pylint W1662 comprehension-escape
+        dbs = [db for db in self.server.listDatabases() if db.startswith('rotdb_unittest_')]
+        for db in dbs:
             try:
                 self.server.deleteDatabase(db)
             except:

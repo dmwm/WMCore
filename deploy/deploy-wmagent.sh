@@ -275,9 +275,13 @@ for step in prep sw post; do
 done
 set +e
 
-echo -e "\n*** Creating wmagent symlink ***"
+echo -e "\n*** Creating wmagent symlinks ***"
 cd $CURRENT_DIR
+
+[[ sw${REPO##comp=comp} != sw ]] && [[ -d sw${REPO##comp=comp} ]] &&  ln -s sw${REPO##comp=comp} sw
 ln -s ../sw/${WMA_ARCH}/cms/${RPM_NAME}/${WMA_TAG} apps/wmagent
+ln -s ../config/${RPM_NAME} config/wmagent
+
 cd -
 echo "Done!" && echo
 

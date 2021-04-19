@@ -217,21 +217,21 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertTrue(len(result) > 10)
 
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN$')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERNBOX', 'T2_CH_CERN'])
 
         # test a exact site name, which is treated as a regex and yields a confusing result!!!
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN', 'T2_CH_CERN_HLT'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERN_HLT'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERNBOX', 'T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN_HLT'], ['T2_CH_CERN'])
 
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN_HLT')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN_HLT'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN_HLT'])
         self.assertItemsEqual(result['T2_CH_CERN_HLT'], ['T2_CH_CERN'])
 
         result = self.myCRIC.PSNtoPNNMap('T1_US_FNAL')
-        self.assertItemsEqual(result.keys(), ['T1_US_FNAL'])
+        self.assertItemsEqual(list(result), ['T1_US_FNAL'])
         self.assertItemsEqual(result['T1_US_FNAL'], ['T1_US_FNAL_Disk', 'T3_US_FNALLPC'])
 
         # test a PNN as input, expecting nothing mapped to it
@@ -269,12 +269,12 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertTrue(len(result) > 10)
 
         result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN$')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
 
         # test a exact site name, which is treated as a regex and yields a confusing result!!!
         result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN', 'T2_CH_CERNBOX'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERNBOX'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERNBOX'], ['T2_CH_CERN'])
 
@@ -282,7 +282,7 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertItemsEqual(result, {})
 
         result = self.myCRIC.PNNtoPSNMap('T1_US_FNAL')
-        self.assertItemsEqual(result.keys(), ['T1_US_FNAL_Disk'])
+        self.assertItemsEqual(list(result), ['T1_US_FNAL_Disk'])
         self.assertItemsEqual(result['T1_US_FNAL_Disk'], ['T1_US_FNAL'])
 
         return

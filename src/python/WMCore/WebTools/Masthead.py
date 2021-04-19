@@ -44,7 +44,7 @@ class Masthead(TemplatedPage, Controllers):
         for f in files:
             filename = "%s/css/%s" % (path, f)
             if os.path.exists(filename):
-                lines = file(filename).readlines()
+                lines = open(filename).readlines()
                 for l in lines:
                     data = data + l
 
@@ -60,7 +60,7 @@ class Masthead(TemplatedPage, Controllers):
         for f in files:
             filename = "%s/css/%s" % (path, f)
             if os.path.exists(filename):
-                lines = file(filename).readlines()
+                lines = open(filename).readlines()
                 for l in lines:
                     data = data + l
 

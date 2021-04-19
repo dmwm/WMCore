@@ -254,7 +254,7 @@ class RESTFrontPage(object):
                     raise HTTPError(404, "No such file")
                 try:
                     mtime = max(mtime, os.stat(fpath).st_mtime)
-                    data = file(fpath).read()
+                    data = open(fpath).read()
                 except:
                     cherrypy.log("ERROR: front-page '%s' failed to retrieve file" % item)
                     raise HTTPError(404, "No such file")
@@ -287,7 +287,7 @@ class RESTFrontPage(object):
                                 raise HTTPError(404, "No such file")
                             try:
                                 mtime = max(mtime, os.stat(fpath).st_mtime)
-                                value += file(fpath).read().strip()
+                                value += open(fpath).read().strip()
                             except:
                                 cherrypy.log("ERROR: embedded '%s' file '%s' failed to"
                                              " retrieve file" % (var, fpath))
@@ -1466,7 +1466,7 @@ class DBConnectionPool(Thread):
         dbh, err = None, None
 
         # If tracing, issue log line that identifies this connection series.
-        trace = s["trace"] and ("RESTSQL:" + "".join(random.sample(string.letters, 12)))
+        trace = s["trace"] and ("RESTSQL:" + "".join(random.sample(string.ascii_letters, 12)))
         trace and cherrypy.log("%s ENTER %s@%s %s (%s) inuse=%d idle=%d" %
                                (trace, s["user"], s["dsn"], self.id, req["id"],
                                 len(self.inuse), len(self.idle)))

@@ -1,3 +1,7 @@
+1.4.7.patch1 to 1.4.7.patch2:
+  - Temporary fix to let CouchDB replications go through the standard port - wmagent (Alan Malta Rodrigues) #10453
+
+
 1.4.7 to 1.4.7.patch1:
   - Temporarily stop staging out log tarball to CASTOR (Alan Malta Rodrigues) #10449
   - Force cmsweb-prod in DBS3Reader (Alan Malta Rodrigues) #10449

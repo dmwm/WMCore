@@ -44,20 +44,26 @@ class DrainStatusAPI(object):
         results = self.dbsUtil.isAllWorkflowCompleted()
         return results
 
-    def checkCondorStates(self):
+    def checkCondorStates(self, totalOnly=False):
         """
         Check idle and running jobs in Condor
+        :param totalOnly: return the absolute number of idle plus running jobs
+        :return: it returns either an integer or a dictionary, depending on totalOnly argument
         """
-        results = {}
-        queries = [["1", "idle"], ["2", "running"]]
+        results = 0 if totalOnly else {}
+        states = ("Running", "Idle")
 
-        for query in queries:
-            jobs = self.condorAPI.getCondorJobs("JobStatus=="+query[0], [])
+        jobs = self.condorAPI.getCondorJobs()
+        for state in states:
+            if jobs is None and totalOnly:
+                return None
             # if there is an error, report it instead of the length of an empty list
-            if jobs is None:
-                results[query[1]] = "unknown (schedd query error)"
+            elif jobs is None:
+                results[state.lower()] = "unknown (schedd query error)"
+            elif totalOnly:
+                results += int(jobs[0].get(state))
             else:
-                results[query[1]] = len(jobs)
+                results[state.lower()] = int(jobs[0].get(state))
 
         return results
 

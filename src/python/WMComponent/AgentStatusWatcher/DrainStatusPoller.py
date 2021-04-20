@@ -172,8 +172,8 @@ class DrainStatusPoller(BaseWorkerThread):
         # get the current speed drain status
         speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
 
-        # get condor jobs
-        jobs = self.condorAPI.getCondorJobs("", [])
+        # get a summary of the condor jobs
+        jobs = self.drainAPI.checkCondorStates(totalOnly=True)
         if jobs is None:
             logging.warning("There was an error querying the schedd.  Not checking speed drain thresholds.")
             return []
@@ -185,7 +185,7 @@ class DrainStatusPoller(BaseWorkerThread):
                 # we always want to apply the condor priority change if the threshold is hit
                 if not v['Enabled'] or k == 'CondorPriority':
                     logging.info("Checking speed drain threshold for %s. ", k)
-                    if len(jobs) < v['Threshold']:
+                    if jobs < v['Threshold']:
                         logging.info("Agent will update speed drain configuration for %s. ", k)
                         enableKeys.append(k)
             else:

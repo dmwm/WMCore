@@ -22,22 +22,31 @@ class PyCondorAPI(object):
         self.schedd = htcondor.Schedd()
         self.coll = htcondor.Collector()
 
-    def getCondorJobs(self, constraint, attr_list):
+    def getCondorJobs(self, constraint='true', attrList=None, opts="SummaryOnly"):
         """
-        _getCondorJobs_
-
         Given a job/schedd constraint, return a list of jobs attributes
         or None if the query to condor fails.
+        :param constraint: the query constraint (str or ExprTree). Defaults to 'true'
+        :param attrList: a list of attribute strings to be returned in the call.
+                         It defaults to all attributes.
+        :param opts: string with additional flags for the query. Defaults to only summary.
+            https://htcondor.readthedocs.io/en/v8_9_7/apis/python-bindings/api/htcondor.html#htcondor.QueryOpts
+        :return: a list of classads representing the matching jobs
         """
+        attrList = attrList or []
+        # if option parameter is invalid, default it to the standard behavior
+        opts = getattr(htcondor.htcondor.QueryOpts, opts, "Default")
+        msg = "Querying condor schedd with params: constraint=%s, attrList=%s, opts=%s"
+        logging.info(msg, constraint, attrList, opts)
         try:
-            jobs = self.schedd.query(constraint, attr_list)
+            jobs = self.schedd.query(constraint, attrList, opts=opts)
             return jobs
         except Exception:
             # if there is an error, try to recreate the schedd instance
             logging.info("Recreating Schedd instance due to query error...")
             self.schedd = htcondor.Schedd()
         try:
-            jobs = self.schedd.query(constraint, attr_list)
+            jobs = self.schedd.query(constraint, attrList, opts=opts)
         except Exception as ex:
             jobs = None  # return None to signalize the query failed
             msg = "Condor failed to fetch schedd constraints for: %s" % constraint

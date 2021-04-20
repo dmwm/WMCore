@@ -25,8 +25,8 @@
 ### Usage:               -3|--py3  Uses the python3 stack WMAgent package
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -d <deployment_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.5.patch1 -d HG2102e -t production -n 30
-### Usage: Example: sh deploy-wmagent.sh -w 1.4.6.pre7 -d HG2103e -t testbed-vocms001 -p "9963 9959" -r comp=comp.amaltaro --py3
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.7.patch2 -d HG2104e -t production -n 30
+### Usage: Example: sh deploy-wmagent.sh -w 1.4.7.patch2 -d HG2104e -t testbed-vocms001 -p "10179" -r comp=comp.amaltaro --py3
 ### Usage:
 
 IAM=`whoami`

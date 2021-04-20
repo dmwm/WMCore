@@ -19,7 +19,7 @@ mock==2.0.0                   # wmagent
 MySQL-python==1.2.5           # wmagent
 nose2==0.9.2                  # wmagent
 psutil==5.6.6                 # wmagent,reqmgr2,reqmon,global-workqueue
-py==1.7.0                     # wmagent
+py==1.10.0                     # wmagent
 pycurl==7.43.0.3              # wmagent,reqmgr2,reqmon,global-workqueue,reqmgr2ms
 pymongo==3.10.1               # reqmgr2ms
 pyOpenSSL==18.0.0             # wmagent

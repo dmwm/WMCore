@@ -87,15 +87,6 @@ class File(WMObject, dict):
         if pnn:
             self['locations'] = self['locations'] | set(self.makelist(pnn))
 
-    def __cmp__(self, rhs):
-        """
-        Sort files in run number and lumi section order
-        """
-        # if self['run'] == rhs['run']:
-        #    return cmp(self['lumi'], rhs['lumi'])
-
-        return self.__eq__(rhs)
-
     def __eq__(self, rhs):
         """
         File is equal if it has the same name

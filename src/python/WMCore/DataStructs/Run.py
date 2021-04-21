@@ -18,6 +18,11 @@ class Run(WMObject):
     _Run_
 
     Run container, is a list of lumi sections with associate event counts
+
+    TODO 
+    - use the decorator `from functools import total_ordering` after
+      dropping support for python 2.6
+    - then, drop __ne__, __le__, __gt__, __ge__
     """
 
     def __init__(self, runNumber=None, *newLumis):
@@ -29,6 +34,19 @@ class Run(WMObject):
     def __str__(self):
         return "Run%s:%s" % (self.run, self.eventsPerLumi)
 
+    def __eq__(self, rhs):
+        """
+        Check equality of run numbers and then underlying lumi/event dicts
+        """
+        if not isinstance(rhs, Run):
+            return False
+        if self.run != rhs.run:
+            return False
+        return self.eventsPerLumi == rhs.eventsPerLumi
+
+    def __ne__(self, rhs):
+        return not self.__eq__(rhs)
+
     def __lt__(self, rhs):
         """
         Compare on run # first, then by lumis as a list is compared
@@ -39,15 +57,14 @@ class Run(WMObject):
             return sorted(self.eventsPerLumi.keys()) < sorted(rhs.eventsPerLumi.keys())
         return self.eventsPerLumi < rhs.eventsPerLumi
 
-    def __gt__(self, rhs):
-        """
-        Compare on run # first, then by lumis as a list is compared
-        """
-        if self.run != rhs.run:
-            return self.run > rhs.run
-        if sorted(self.eventsPerLumi.keys()) != sorted(rhs.eventsPerLumi.keys()):
-            return sorted(self.eventsPerLumi.keys()) > sorted(rhs.eventsPerLumi.keys())
-        return self.eventsPerLumi > rhs.eventsPerLumi
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __gt__(self, other):
+        return not self.__le__(other)
+
+    def __ge__(self, other):
+        return not self.__lt__(other)
 
     def extend(self, items):
         """
@@ -55,9 +72,6 @@ class Run(WMObject):
         """
         self.extendLumis(items)
         return
-
-    def __cmp__(self, rhs):
-        return (self > rhs) - (self < rhs)  # Python3 equivalent of cmp()
 
     def __add__(self, rhs):
         """
@@ -113,19 +127,6 @@ class Run(WMObject):
             del self.eventsPerLumi[oldLumi]  # Delete it
         except IndexError:
             pass
-
-    def __eq__(self, rhs):
-        """
-        Check equality of run numbers and then underlying lumi/event dicts
-        """
-        if not isinstance(rhs, Run):
-            return False
-        if self.run != rhs.run:
-            return False
-        return self.eventsPerLumi == rhs.eventsPerLumi
-
-    def __ne__(self, rhs):
-        return not self.__eq__(rhs)
 
     def __hash__(self):
         """

@@ -4,7 +4,6 @@ API for querying the status of agent drain process
 
 from __future__ import division
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMCore.Services.PyCondor.PyCondorAPI import PyCondorAPI
 from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 
 
@@ -18,7 +17,6 @@ class DrainStatusAPI(object):
         self.globalBackend = WorkQueueBackend(config.WorkloadSummary.couchurl)
         self.localBackend = WorkQueueBackend(config.WorkQueueManager.couchurl)
         self.dbsUtil = DBSBufferUtil()
-        self.condorAPI = PyCondorAPI()
 
     def collectDrainInfo(self):
         """
@@ -30,7 +28,7 @@ class DrainStatusAPI(object):
         # if workflows are completed, collect additional drain statistics
         if results['workflows_completed']:
             results['upload_status'] = self.checkFileUploadStatus()
-            results['condor_status'] = self.checkCondorStates()
+            results['condor_status'] = {}  # will be updated by DrainStatusPoller
             results['local_wq_status'] = self.checkLocalWQStatus(dbname="workqueue")
             results['local_wqinbox_status'] = self.checkLocalWQStatus(dbname="workqueue_inbox")
             results['global_wq_status'] = self.checkGlobalWQStatus()
@@ -42,29 +40,6 @@ class DrainStatusAPI(object):
         Check to see if all workflows have a 'completed' status
         """
         results = self.dbsUtil.isAllWorkflowCompleted()
-        return results
-
-    def checkCondorStates(self, totalOnly=False):
-        """
-        Check idle and running jobs in Condor
-        :param totalOnly: return the absolute number of idle plus running jobs
-        :return: it returns either an integer or a dictionary, depending on totalOnly argument
-        """
-        results = 0 if totalOnly else {}
-        states = ("Running", "Idle")
-
-        jobs = self.condorAPI.getCondorJobs()
-        for state in states:
-            if jobs is None and totalOnly:
-                return None
-            # if there is an error, report it instead of the length of an empty list
-            elif jobs is None:
-                results[state.lower()] = "unknown (schedd query error)"
-            elif totalOnly:
-                results += int(jobs[0].get(state))
-            else:
-                results[state.lower()] = int(jobs[0].get(state))
-
         return results
 
     def checkFileUploadStatus(self):

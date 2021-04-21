@@ -4,8 +4,7 @@ eventually report no issues meaning that the agent is ready
 to be shutdown and a new version be put in place.
 """
 from __future__ import division
-
-__all__ = []
+from future.utils import viewitems, viewvalues
 
 import logging
 import copy
@@ -36,6 +35,8 @@ class DrainStatusPoller(BaseWorkerThread):
         self.validSpeedDrainConfigKeys = ['CondorPriority', 'NoJobRetries', 'EnableAllSites']
         self.reqAuxDB = ReqMgrAux(self.config.General.ReqMgr2ServiceURL)
         self.emailAlert = EmailAlert(config.EmailAlert.dictionary_())
+        self.condorStates = ("Running", "Idle")
+        self.condorSummary = {}  # it will contain a summary of the jobs in condor
 
     @timeFunction
     def algorithm(self, parameters):
@@ -53,9 +54,10 @@ class DrainStatusPoller(BaseWorkerThread):
             return
 
         try:
-
             # see if the agent is in drain mode
             if self.agentConfig["UserDrainMode"] or self.agentConfig["AgentDrainMode"]:
+                # first, update our summary of condor jobs
+                self.condorSummary = self.getCondorSummary()
                 # check to see if the agent hit any speed drain thresholds
                 thresholdsHit = self.checkSpeedDrainThresholds()
                 if thresholdsHit:
@@ -63,6 +65,7 @@ class DrainStatusPoller(BaseWorkerThread):
                     self.updateAgentSpeedDrainConfig(thresholdsHit)
                 # now collect drain statistics
                 DrainStatusPoller.drainStats = self.drainAPI.collectDrainInfo()
+                self.updateCondorDrainStats()
                 logging.info("Finished collecting agent drain status.")
                 logging.info("Drain stats: %s", str(DrainStatusPoller.drainStats))
             else:
@@ -155,7 +158,7 @@ class DrainStatusPoller(BaseWorkerThread):
         if self.agentConfig.get("SpeedDrainMode"):
             self.agentConfig['SpeedDrainMode'] = False
             speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
-            for key, v in speedDrainConfig.items():
+            for key, v in viewitems(speedDrainConfig):
                 if key in self.validSpeedDrainConfigKeys and v['Enabled']:
                     speedDrainConfig[key]['Enabled'] = False
 
@@ -168,15 +171,15 @@ class DrainStatusPoller(BaseWorkerThread):
         that need updated for speed draining
         """
         enableKeys = []
+        if not self.condorSummary:
+            msg = "Cannot check speed drain because there was an error fetching job summary from HTCondor."
+            msg += " Will retry again in the next cycle."
+            logging.warning(msg)
+            return []
+        totalJobs = sum(viewvalues(self.condorSummary))
 
         # get the current speed drain status
         speedDrainConfig = self.agentConfig.get("SpeedDrainConfig")
-
-        # get a summary of the condor jobs
-        jobs = self.drainAPI.checkCondorStates(totalOnly=True)
-        if jobs is None:
-            logging.warning("There was an error querying the schedd.  Not checking speed drain thresholds.")
-            return []
 
         # loop through the speed drain configuration and make a list of what thresholds have been hit
         for k, v in speedDrainConfig.items():
@@ -185,10 +188,37 @@ class DrainStatusPoller(BaseWorkerThread):
                 # we always want to apply the condor priority change if the threshold is hit
                 if not v['Enabled'] or k == 'CondorPriority':
                     logging.info("Checking speed drain threshold for %s. ", k)
-                    if jobs < v['Threshold']:
+                    if totalJobs < v['Threshold']:
                         logging.info("Agent will update speed drain configuration for %s. ", k)
                         enableKeys.append(k)
             else:
                 logging.warning("Speed drain configuration error for %s.  Please check aux db contents.", k)
 
         return enableKeys
+
+    def getCondorSummary(self):
+        """
+        Retrieve a summary of the jobs in condor and keep the current number of
+        Idle and Running jobs.
+        :return: returns a key/value pair of job state and number of jobs.
+        """
+        jobs = self.condorAPI.getCondorJobsSummary()
+
+        results = {}
+        if jobs:
+            for state in self.condorStates:
+                results[state.lower()] = int(jobs[0].get(state))
+        return results
+
+    def updateCondorDrainStats(self):
+        """
+        Update the class drain statistics variable with the condor information.
+        Make sure those state keys are always present, even if the previous HTcondor
+        call failed to be served.
+        """
+        # these key names are expected in WMStats
+        if "condor_status" in DrainStatusPoller.drainStats:
+            summary = {}
+            for state in self.condorStates:
+                summary[state.lower()] = self.condorSummary.get(state, "schedd query error")
+            DrainStatusPoller.drainStats["condor_status"].update(summary)

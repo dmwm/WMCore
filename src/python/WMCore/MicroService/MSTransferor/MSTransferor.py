@@ -100,7 +100,8 @@ class MSTransferor(MSCore):
         self.blockCounter = 0
         # service name used to route alerts via AlertManager
         self.alertServiceName = "ms-transferor"
-        self.alertManagerApi = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
+        self.alertManagerUrl = self.msConfig.get("alertManagerUrl", None)
+        self.alertManagerApi = AlertManagerAPI(self.alertManagerUrl, logger=logger)
 
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
@@ -752,7 +753,10 @@ class MSTransferor(MSCore):
             alertDescription += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
             alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
 
-            self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            try:
+                self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+            except Exception as ex:
+                self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
             self.logger.info(alertDescription)
 
     def _getValidSites(self, wflow, dataIn):

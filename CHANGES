@@ -1,3 +1,11 @@
+1.4.8.pre1 to 1.4.8.pre2:
+  - [py2py3] modernize ordering in DataStructs/Run.py and File.py - #10169 - src (Dario Mapelli) #10465
+  - Retrieve only a summary of the condor jobs in DrainStatusPoller (Alan Malta Rodrigues) #10458
+  - Wrap sendAlert() in a try/except block. (Todor Ivanov) #10467
+  - Remove py package from the requirements list (Alan Malta Rodrigues) #10462
+  - Remove unused tweak file (Kenyi Hurtado) #10434
+
+
 1.4.7 to 1.4.8.pre1:
   - Add repository suffix to the sw link directly (tivanov) #10454
   - Bump WMAgent deployment example to 1.4.7 series (Alan Malta Rodrigues) #10457

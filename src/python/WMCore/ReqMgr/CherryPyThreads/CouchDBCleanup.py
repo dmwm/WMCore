@@ -17,6 +17,9 @@ class CouchDBCleanup(CherryPyPeriodicTask):
 
         super(CouchDBCleanup, self).__init__(config)
         self.reqDB = RequestDBReader(config.reqmgrdb_url)
+        # create another object to always retrieve up-to-date views (no stale)
+        self.reqDBNoStale = RequestDBReader(config.reqmgrdb_url)
+        self.reqDBNoStale._setNoStale()
         self.reqmgrAux = ReqMgrAux(config.reqmgr2_url, logger=self.logger)
         # statuses that we want to keep the transfer documents
         self.transferStatuses = ["assigned", "staging", "staged", "acquired",
@@ -37,29 +40,34 @@ class CouchDBCleanup(CherryPyPeriodicTask):
         Cleanup TRANSFER documents from the reqmgr_auxiliary CouchDB.
         The list of status can be expanded in the future
         """
-        self.logger.info("Fetching TRANSFER documents from CouchDB...")
+        self.logger.info("Fetching all the TRANSFER documents from CouchDB...")
 
-        transferDocs = self.reqmgrAux.getTransferInfo("ALL_DOCS")
+        transferDocs = []
+        for row in self.reqmgrAux.getTransferInfo("ALL_DOCS"):
+            transferDocs.append(row['workflowName'])
         if not transferDocs:
             self.logger.info("  there are no transfer documents in the database.")
             return
-        auxDocs = []
-        for row in transferDocs:
-            auxDocs.append(row['workflowName'])
+        self.logger.info("%d transfer documents retrieved from the database.", len(transferDocs))
 
-        results = self.reqDB._getCouchView("bystatus", {}, self.transferStatuses)
+        self.logger.info("Fetching workflows from CouchDB for statuses: %s", self.transferStatuses)
+        results = self.reqDBNoStale._getCouchView("bystatus", {}, self.transferStatuses)
+        if not results["rows"]:
+            self.logger.info("  there are no workflows matching those statuses.")
+            return
         activeRequests = []
         for row in results["rows"]:
             activeRequests.append(row["id"])
+        self.logger.info("%d workflows retrieved from the database.", len(activeRequests))
 
-        # now find transfer docs that are not active in the system
-        transferDocs = []
-        for transferDoc in auxDocs:
-            if transferDoc not in activeRequests:
-                transferDocs.append(transferDoc)
-        self.logger.info("Found %d transfer documents to delete", len(transferDocs))
-
+        # now find transfer documents (workflows) that are not active in the system
+        docsToDelete = []
         for wflowName in transferDocs:
+            if wflowName not in activeRequests:
+                docsToDelete.append(wflowName)
+        self.logger.info("Found %d transfer documents to delete", len(docsToDelete))
+
+        for wflowName in docsToDelete:
             self.logger.info("Deleting transfer document: %s", wflowName)
             try:
                 self.reqmgrAux.deleteConfigDoc("transferinfo", wflowName)
@@ -95,8 +103,8 @@ class CouchDBCleanup(CherryPyPeriodicTask):
                     self.logger.warning("  request '%s' already deleted", req)
                 else:
                     total += len(deleted)
-                    self.logger.info("request %s deleted", req)
+                    self.logger.info("ACDC collection %s deleted", req)
             except Exception as ex:
                 self.logger.error("Failed to delete request: %s, will try again later. Error: %s", req, str(ex))
-        self.logger.info("total %s requests deleted", total)
+        self.logger.info("Total %s ACDC collections deleted", total)
         return

@@ -15,7 +15,6 @@ import logging
 from json import JSONEncoder
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 
@@ -35,7 +34,7 @@ class PileupFetcher(FetcherInterface):
         super(PileupFetcher, self).__init__()
         # FIXME: find a way to pass the Rucio account name to this fetcher module
         self.rucioAcct = "wmcore_transferor"
-        self.rucio = Rucio(self.rucioAcct)
+        self.rucio = None
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
@@ -78,6 +77,8 @@ class PileupFetcher(FetcherInterface):
         :param blockDict: dictionary with DBS summary info
         :return: update blockDict in place
         """
+        # initialize Rucio here to avoid this authentication on T0-WMAgent
+        self.rucio = Rucio(self.rucioAcct)
         blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
         for blockName, blockLocation in viewitems(blockReplicas):
             try:

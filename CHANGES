@@ -1,3 +1,8 @@
+1.4.8.pre2 to 1.4.8.pre3:
+  - Do not delete transfer documents if bystatus couchview response is empty (Alan Malta Rodrigues) #10471
+  - Only create Rucio connection in PileupFetcher if there is a pileup dataset (Alan Malta Rodrigues) #10470
+
+
 1.4.8.pre1 to 1.4.8.pre2:
   - [py2py3] modernize ordering in DataStructs/Run.py and File.py - #10169 - src (Dario Mapelli) #10465
   - Retrieve only a summary of the condor jobs in DrainStatusPoller (Alan Malta Rodrigues) #10458

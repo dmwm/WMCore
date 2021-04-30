@@ -1,3 +1,7 @@
+1.4.8.pre3 to 1.4.8.pre4:
+  - Properly evaluate stuck rules in MSTransferor (Alan Malta Rodrigues) #10474
+
+
 1.4.8.pre2 to 1.4.8.pre3:
   - Do not delete transfer documents if bystatus couchview response is empty (Alan Malta Rodrigues) #10471
   - Only create Rucio connection in PileupFetcher if there is a pileup dataset (Alan Malta Rodrigues) #10470

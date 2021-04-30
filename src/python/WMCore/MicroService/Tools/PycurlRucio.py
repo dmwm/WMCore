@@ -50,6 +50,18 @@ def parseNewLineJson(stream):
             yield json.loads(line)
 
 
+def stringDateToEpoch(strDate):
+    """
+    Given a date/time in the format of:
+        'Thu, 29 Apr 2021 13:15:42 UTC'
+    it returns an integer with the equivalent EPOCH time
+    :param strDate: a string with the date and time
+    :return: the equivalent EPOCH time (integer)
+    """
+    timestamp = datetime.datetime.strptime(strDate, "%a, %d %b %Y %H:%M:%S %Z")
+    return int(timestamp.strftime('%s'))
+
+
 def getRucioToken(rucioAuthUrl, rucioAcct):
     """
     Provided a Rucio account, fetch a token from the authentication server
@@ -69,8 +81,7 @@ def getRucioToken(rucioAuthUrl, rucioAcct):
         tokenExpiration = res.getHeaderKey('X-Rucio-Auth-Token-Expires')
         logging.info("Retrieved Rucio token valid until: %s", tokenExpiration)
         # convert the human readable expiration time to EPOCH time
-        tokenExpiration = datetime.datetime.strptime(tokenExpiration, "%a, %d %b %Y %H:%M:%S %Z")
-        tokenExpiration = int(tokenExpiration.strftime('%s'))
+        tokenExpiration = stringDateToEpoch(tokenExpiration)
         return userToken, tokenExpiration
 
     raise RuntimeError("Failed to acquire a Rucio token. Error: {}".format(res.getReason()))
@@ -188,16 +199,24 @@ def listReplicationRules(containers, rucioAccount, grouping,
                         logging.warning(msg)
                         continue
 
-                    timeDiff = item['stuck_at'] - item['created_at']
-                    if int(timeDiff.days) > STUCK_LIMIT:
+                    # then calculate for how long it's been stuck
+                    utcTimeNow = int(datetime.datetime.utcnow().strftime('%s'))
+                    if item['stuck_at']:
+                        stuckAt = stringDateToEpoch(item['stuck_at'])
+                    else:
+                        # consider it to be stuck since its creation
+                        stuckAt = stringDateToEpoch(item['created_at'])
+
+                    daysStuck = (utcTimeNow - stuckAt) // (24 * 60 * 60)
+                    if daysStuck > STUCK_LIMIT:
                         msg = "Container {} has a STUCK rule for {} days (limit set to: {}).".format(container,
-                                                                                                     timeDiff.days,
+                                                                                                     daysStuck,
                                                                                                      STUCK_LIMIT)
                         msg += " Not going to use it! Rule info: {}".format(item)
                         logging.warning(msg)
                         continue
                     else:
-                        msg = "Container {} has a STUCK rule for only {} days.".format(container, timeDiff.days)
+                        msg = "Container {} has a STUCK rule for only {} days.".format(container, daysStuck)
                         msg += " Considering it for the pileup location"
                         logging.info(msg)
                 else:

@@ -9,7 +9,7 @@ import unittest
 
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, parseNewLineJson,
                                                    getPileupContainerSizesRucio, listReplicationRules,
-                                                   getBlocksAndSizeRucio)
+                                                   getBlocksAndSizeRucio, stringDateToEpoch)
 
 CONT1 = "/Pseudoscalar2HDM_MonoZLL_mScan_mH-500_ma-300/DMWM_Test-TC_PreMix_Agent122_Validation_Alanv1-v11/MINIAODSIM"
 CONT2 = "/RelValH125GGgluonfusion_14/Integ_Test-SC_LumiMask_PhEDEx_HG2004_Val_Privv19-v11/NANOAODSIM"
@@ -26,7 +26,7 @@ class PycurlRucioTests(unittest.TestCase):
         self.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
         self.rucioAccount = "wma_test"
         self.rucioScope = "cms"
-        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
+        #self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         self.badDID = "/wrong/did/name"
 
     def testParseNewLineJson(self):
@@ -45,6 +45,7 @@ class PycurlRucioTests(unittest.TestCase):
         Test the getPileupContainerSizesRucio function, which fetches the container
         total bytes.
         """
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         resp = getPileupContainerSizesRucio([], self.rucioUrl,
                                             self.rucioToken, scope=self.rucioScope)
         self.assertEqual(resp, {})
@@ -62,6 +63,7 @@ class PycurlRucioTests(unittest.TestCase):
         Test the listReplicationRules function, which fetches the container
         rules a return a list of RSEs key'ed by the container name.
         """
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         resp = listReplicationRules([], self.rucioAccount, grouping="A",
                                     rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
         self.assertEqual(resp, {})
@@ -83,6 +85,7 @@ class PycurlRucioTests(unittest.TestCase):
         Test the getBlocksAndSizeRucio function, which fetches all the blocks
         (in a container) and their sizes.
         """
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         BLOCK = "/DMSimp_MonoZLL_NLO_Vector_TuneCP3_GQ0p25_GDM1p0_MY1-500_MXd-1/RunIIFall17NanoAODv4-PU2017_12Apr2018_Nano14Dec2018_102X_mc2017_realistic_v6-v1/NANOAODSIM#048c25e9-38bb-496d-86f7-405ffd3d3fd8"
         resp = getBlocksAndSizeRucio([], self.rucioUrl, self.rucioToken, self.rucioScope)
         self.assertEqual(resp, {})
@@ -94,6 +97,15 @@ class PycurlRucioTests(unittest.TestCase):
         self.assertTrue(len(resp[CONT4]) > 3)
         self.assertItemsEqual(list(resp[CONT4][BLOCK]), ["blockSize", "locations"])
         self.assertIsNone(resp[self.badDID])
+
+    def testStringDateToEpoch(self):
+        """
+        Test the stringDateToEpoch function
+        """
+        dateString = 'Thu, 29 Apr 2021 13:15:42 UTC'
+        self.assertEqual(1619694942, stringDateToEpoch(dateString))
+        dateString = 'Thu, 1 Jan 1970 01:00:00 UTC'
+        self.assertEqual(0, stringDateToEpoch(dateString))
 
 
 if __name__ == '__main__':

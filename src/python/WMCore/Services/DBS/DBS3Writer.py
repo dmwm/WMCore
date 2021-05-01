@@ -41,18 +41,13 @@ class DBS3Writer(DBS3Reader):
         :param dataset: Dataset name
         :return: True if operation is successful, False otherwise
         """
-
         try:
+            # This API call returns None if successful, throws exception o/w
             self.dbs.updateDatasetType(dataset=dataset,
-                                     dataset_access_type=status)
+                                       dataset_access_type=status)
+            return True
         except Exception as ex:
             msg = "Exception while setting the status of following dataset on DBS: {} ".format(dataset)
             msg += "Error: {}".format(str(ex))
             self.logger.exception(msg)
-
-        dbsStatus = super(DBS3Writer, self).getDBSStatus(dataset)
-
-        if dbsStatus == status:
-            return True
-        else:
             return False

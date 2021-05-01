@@ -109,6 +109,9 @@ class MSOutput(MSCore):
         for endpoint, quota in viewitems(self.msConfig['tapePledges']):
             self.tapeStatus[endpoint] = dict(quota=quota, usage=0, remaining=0)
 
+        self.dbs3Writer = DBS3Writer(url=self.msConfig["dbsReadUrl"],
+                                     writeUrl=self.msConfig["dbsWriteUrl"])
+
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
             'database': 'msOutDB',
@@ -260,36 +263,27 @@ class MSOutput(MSCore):
             msg += "It needs to be of type: MSOutputTemplate"
             raise UnsupportedError(msg)
 
-        dbs3Writer = DBS3Writer(url=self.msConfig["dbsReadUrl"],
-                                writeUrl=self.msConfig["dbsWriteUrl"])
-
-        # if anything fail along the way, set it back to "pending"
-        dbsUpdateStatus = "done"
+        # if anything fail along the way, set it back to False
+        dbsUpdateStatus = True
         for dMap in workflow['OutputMap']:
 
-            if self.msConfig['enableDbsStatusChange']:
+            res = self.dbs3Writer.setDBSStatus(dataset=dMap["Dataset"],
+                                               status=self.msConfig['dbsStatus']["valid"])
 
-                res = dbs3Writer.setDBSStatus(dataset=dMap["Dataset"],
-                                              status=self.msConfig['dbsStatus']["valid"])
-
-                if res:
-                    dMap["DBSStatus"] = self.msConfig['dbsStatus']["valid"]
-                else:
-                    # There is at least one dataset whose dbs status update is unsuccessful
-                    dbsUpdateStatus = "pending"
-
+            if res:
+                dMap["DBSStatus"] = self.msConfig['dbsStatus']["valid"]
             else:
-                msg = "DRY-RUN DBS: DBS status change for DID: {}, ".format(dMap['Dataset'])
-                self.logger.info(msg)
+                # There is at least one dataset whose dbs status update is unsuccessful
+                dbsUpdateStatus = False
 
         # Finally, update the MSOutput template document with either partial or
         # complete dbs statuses
         self.docKeyUpdate(workflow, OutputMap=workflow['OutputMap'])
         workflow.updateTime()
-        if dbsUpdateStatus == "done":
+        if dbsUpdateStatus:
             self.logger.info("All the DBS status updates succeeded for: %s. Marking it as 'done'",
                              workflow['RequestName'])
-            self.docKeyUpdate(workflow, DBSUpdateStatus='done')
+            self.docKeyUpdate(workflow, DBSUpdateStatus=True)
         else:
             self.logger.info("DBS status updates partially successful for: %s. Keeping it 'pending'",
                              workflow['RequestName'])
@@ -521,7 +515,7 @@ class MSOutput(MSCore):
                                                  Functor(self.docCleaner)])
 
         wfCounterTotal = 0
-        mQueryDict = { "$or": [ { "TransferStatus": "pending" }, { "DBSUpdateStatus": "pending" } ] }
+        mQueryDict = { "$or": [ { "TransferStatus": "pending" }, { "DBSUpdateStatus": False } ] }
         pipeCollections = [(msPipelineRelVal, self.msOutRelValColl),
                            (msPipelineNonRelVal, self.msOutNonRelValColl)]
         for pipeColl in pipeCollections:

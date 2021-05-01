@@ -979,8 +979,6 @@ class DBS3Reader(object):
         :return: DBS status of the given dataset
         """
 
-        allowedDbsStatuses = ["VALID", "INVALID", "PRODUCTION"]
-
         response = None
         try:
             response = self.dbs.listDatasets(dataset=dataset, dataset_access_type='*', detail=True)
@@ -991,12 +989,7 @@ class DBS3Reader(object):
 
         if response:
             dbsStatus = response[0]['dataset_access_type']
-            isAllowedStatus = dbsStatus in allowedDbsStatuses
-
-            if isAllowedStatus:
-                self.logger.info("%s is %s", dataset, dbsStatus)
-                return dbsStatus
-            else:
-                raise Exception("This is not an allowed DBS status: {}".format(str(dbsStatus)))
+            self.logger.info("%s is %s", dataset, dbsStatus)
+            return dbsStatus
         else:
             return None

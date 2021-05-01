@@ -102,7 +102,7 @@ class MSOutputTemplate(dict):
                            'Copies': 1,
                            ...}],
                     "TransferStatus": "pending"|"done,
-                    "DBSUpdateStatus": "pending"|"done,
+                    "DBSUpdateStatus": False|True,
             "RequestType": ""
             }
         :return: a list of tuples
@@ -118,7 +118,7 @@ class MSOutputTemplate(dict):
             ('OutputDatasets', [], list),
             ('OutputMap', [], list),
             ('TransferStatus', "pending", (bytes, str)),
-            ('DBSUpdateStatus', "pending", (bytes, str))]
+            ('DBSUpdateStatus', False, bool)]
         return docTemplate
 
     def outputMapSchema(self):

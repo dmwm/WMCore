@@ -51,12 +51,12 @@ def portForward(port):
             forwarded = False
             try:
                 if isinstance(url, str):
-                    urlToMangle = u'https://cmsweb'
+                    urlToMangle = u'https://tivanov'
                     if url.startswith(urlToMangle):
                         newUrl = url.replace(u'.cern.ch/', u'.cern.ch:%d/' % port, 1)
                         forwarded = True
                 elif isinstance(url, bytes):
-                    urlToMangle = b'https://cmsweb'
+                    urlToMangle = b'https://tivanov'
                     if url.startswith(urlToMangle):
                         newUrl = url.replace(b'.cern.ch/', b'.cern.ch:%d/' % port, 1)
                         forwarded = True

@@ -12,6 +12,7 @@ to retrieve data asynchronously into a private ReqMgr database. Rather
 than consult TC at every request injection.
 
 """
+from __future__ import print_function
 
 import sys
 import os

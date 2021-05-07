@@ -47,6 +47,9 @@ python parseUnifiedCampaigns.py --fin=wmcore_campaign.json --url=https://alancc7
 """
 from __future__ import print_function, division
 
+from builtins import object
+from future.utils import viewitems
+
 import argparse
 import json
 import logging
@@ -125,7 +128,7 @@ def getSecondaryAAA(initialValue, uniRecord):
       * under the secondaries dictionary.
     If it appears multiple times, we make an OR of the values.
     """
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
+    for _, innerDict in viewitems(uniRecord.get("secondaries", {})):
         if "secondary_AAA" in innerDict:
             print("Found internal secondary_AAA for campaign: %s" % uniRecord['name'])
             initialValue = initialValue or innerDict["secondary_AAA"]
@@ -158,7 +161,7 @@ def getSecondaryLocation(initialValue, uniRecord):
       * under the secondaries dictionary.
     If it appears multiple times, we make an intersection of the values.
     """
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
+    for _, innerDict in viewitems(uniRecord.get("secondaries", {})):
         if "SecondaryLocation" in innerDict:
             print("Found internal SecondaryLocation for campaign: %s" % uniRecord['name'])
             initialValue = intersect(initialValue, innerDict["SecondaryLocation"])
@@ -175,7 +178,7 @@ def getSecondaries(initialValue, uniRecord):
       * taken from the SiteWhitelist key or
       * taken from the SecondaryLocation one
     """
-    for dset, innerDict in uniRecord.get("secondaries", {}).items():
+    for dset, innerDict in viewitems(uniRecord.get("secondaries", {})):
         print("Found secondaries for campaign: %s" % uniRecord['name'])
         initialValue[dset] = intersect(innerDict.get("SiteWhitelist", []),
                                        innerDict.get("SecondaryLocation", []))
@@ -221,7 +224,7 @@ def parse(istream, verbose=0):
         conf = dict(confRec)
         # Set default value from top level campaign configuration
         # or use the default values defined above
-        for uniKey, wmKey in remap.items():
+        for uniKey, wmKey in viewitems(remap):
             conf[wmKey] = rec.get(uniKey, conf[wmKey])
 
         conf['SiteWhiteList'] = getSiteList("SiteWhitelist", conf['SiteWhiteList'], rec)
@@ -330,7 +333,7 @@ def main():
             campData = json.load(istream)
             if isinstance(campData, dict):
                 # then it's a Unified-like campaign schema
-                for key, val in campData.items():
+                for key, val in viewitems(campData):
                     rec = {'name': key}
                     rec.update(val)
                     data.append(rec)

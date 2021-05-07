@@ -66,7 +66,7 @@ dbsApi = DbsApi(args)
 
 badBlocks = []
 badFiles = []
-for blockName in blocks.keys():
+for blockName in blocks:
     print("%s:" % blockName)
     blockFiles = []
     try:

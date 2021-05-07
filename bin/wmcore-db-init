@@ -3,6 +3,9 @@
 Commands for initializing the proper database tables
 or cleaning the database.
 """
+from __future__ import print_function
+
+from builtins import input
 
 __revision__ = "$Id: wmcore-db-init,v 1.10 2010/07/05 03:05:32 meloam Exp $"
 __version__ = "$Revision: 1.10 $"
@@ -40,8 +43,8 @@ valid = ['config=', 'create', 'destroy', 'modules=']
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
-except getopt.GetoptError, ex:
-    print str(ex)
+except getopt.GetoptError as ex:
+    print(str(ex))
     usage()
     sys.exit(1)
 
@@ -54,14 +57,14 @@ for opt, arg in opts:
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "create"
     if opt == "--destroy":
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "destroy"
     if opt == "--modules":
@@ -86,7 +89,7 @@ if config == None:
         sys.exit(1)
 
 if not os.path.exists(config):
-    print "Can't find config: %s" % config
+    print("Can't find config: %s" % config)
     sys.exit(1)
 
 # load the config file here.
@@ -102,7 +105,7 @@ def connectionTest(config):
     in the config file.
 
     """
-    print 'checking default database connection'
+    print('checking default database connection')
 
     (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
     socket = getattr(config.CoreDatabase, "socket", None)
@@ -112,13 +115,13 @@ def connectionTest(config):
        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
                                     dialect = dialect,
                                     socketLoc = socket)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl
         msg += str(ex)
-        print msg
+        print(msg)
         raise ex
-    print 'default database connection tested'
+    print('default database connection tested')
 
 def create(config):
     params = {}
@@ -146,8 +149,8 @@ def executeCommand(command):
 def askConfirmation():
     while True:
         msg = "Are you sure you want to delete all the database? The operation is NOT reversible. (yes, no)"
-        print msg
-        answer = raw_input()
+        print(msg)
+        answer = input()
         if answer.upper() in ['YES', 'NO']:
             return answer
 
@@ -162,5 +165,5 @@ if command == "destroy":
         destroy(cfgObject)
         sys.exit(0)
     else:
-        print "Exiting without doing anything"
+        print("Exiting without doing anything")
 

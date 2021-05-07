@@ -10,6 +10,7 @@ from __future__ import print_function
 #     -> this prints out html file, normally resulting html snippet will be used ...
 
 
+from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 

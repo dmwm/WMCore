@@ -6,6 +6,8 @@ Utility script for manipulating resource control.
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import os
 import sys
 from argparse import ArgumentParser
@@ -126,7 +128,7 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
     else:
         runningSlots = runningSlots
 
-    for siteName in allSites.keys():
+    for siteName in allSites:
         updateSiteInfo(resourceControl, siteName, pendingSlots, runningSlots,
                        ceName or siteName, allSites[siteName], plugin, cmsName or siteName)
 
@@ -135,7 +137,7 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
             updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
 
     if state:
-        for siteName in allSites.keys():
+        for siteName in allSites:
             setSiteState(resourceControl, siteName, state)
 
     return
@@ -166,7 +168,7 @@ def printThresholds(resourceControl, desiredSiteName):
 
     thresholds = resourceControl.listThresholdsForSubmit()
 
-    for siteName in thresholds.keys():
+    for siteName in thresholds:
         if desiredSiteName and desiredSiteName != siteName:
             continue
         siteThresholds = thresholds[siteName]
@@ -185,7 +187,7 @@ def printThresholds(resourceControl, desiredSiteName):
         print("%s - %d running, %d pending, %d running slots total, %d pending slots total%s:" % (
             siteName, runningJobs, pendingJobs, runningSlots, pendingSlots, stateMsg))
 
-        for task, thres in siteThresholds['thresholds'].iteritems():
+        for task, thres in viewitems(siteThresholds['thresholds']):
             print("  %s - %d running, %d pending, %d max running, %d max pending, priority %s" %
                   (task, thres["task_running_jobs"], thres['task_pending_jobs'], thres["max_slots"],
                    thres["pending_slots"], str(thres.get("priority", 1))))

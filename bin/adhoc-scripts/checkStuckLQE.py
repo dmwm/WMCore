@@ -10,6 +10,9 @@ for the elements sitting in the Available status
 """
 from __future__ import print_function, division
 
+from builtins import next
+from future.utils import viewvalues, listvalues
+
 import sys
 import os
 
@@ -55,14 +58,14 @@ def commonDataLocation(element):
     """
     commonLoc = set()
     if element['PileupData']:
-        commonLoc = set(element['PileupData'].values()[0])
+        commonLoc = set(next(iter(viewvalues(element['PileupData']))))
     if element['Inputs']:
         if commonLoc:
-            commonLoc = commonLoc & set(element['Inputs'].values()[0])
+            commonLoc = commonLoc & set(next(iter(viewvalues(element['Inputs']))))
         else:
-            commonLoc = set(element['Inputs'].values()[0])
+            commonLoc = set(list(element['Inputs'].values())[0])
     if element['ParentData']:
-        tempLoc = element['ParentData'].values()
+        tempLoc = listvalues(element['ParentData'])
         parentLoc = set(tempLoc[0])
         for temp in tempLoc:
             parentLoc = parentLoc & set(temp)

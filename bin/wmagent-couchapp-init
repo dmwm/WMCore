@@ -13,7 +13,7 @@ import os
 import shutil
 import sys
 import tempfile
-import urllib
+import urllib.parse
 
 from urllib.parse import urlsplit
 
@@ -47,7 +47,7 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     """
     if not basePath:
         basePath = couchAppRoot(couchAppName)
-    print("Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName)))
+    print("Installing %s into %s" % (couchAppName, urllib.parse.unquote_plus(couchDBName)))
 
     couchappConfig = Config()
 
@@ -106,8 +106,8 @@ def setupCron(couchUrl, couchDBName):
     quoted slash.
     """
     print("Setting up cron jobs for the job dump.")
-    fwjrDumpName = urllib.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
-    jobDumpName = urllib.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
+    fwjrDumpName = urllib.parse.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
+    jobDumpName = urllib.parse.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
 
     indexJobsUrl = "'%s/%s/_design/JobDump/_view/statusByWorkflowName?limit=1'" % (couchUrl, jobDumpName)
     indexFwjrUrl = "'%s/%s/_design/FWJRDump/_view/outputByJobID?limit=1'" % (couchUrl, fwjrDumpName)
@@ -287,8 +287,8 @@ if __name__ == "__main__":
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
             
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
-        fwjrDumpName = urllib.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
-        jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
+        fwjrDumpName = urllib.parse.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
+        jobDumpName = urllib.parse.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName, "WMStatsAgent")

@@ -1,3 +1,9 @@
+1.4.8 to 1.4.9.pre1:
+  - Replace mox dependency with mock. Remove deprecated testMkdir test (khurtado) #10484
+  - Remake MSTransferor alert subject; increase alert expiration time to 1h (Alan Malta Rodrigues) #10475
+  - Python3 workflow test templates (Alan Malta Rodrigues) #10480
+
+
 1.4.8.pre4 to 1.4.8:
 
 

@@ -13,6 +13,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 from builtins import object
 from future import standard_library
+
 standard_library.install_aliases()
 
 import os
@@ -23,6 +24,7 @@ from WMCore.Database.CMSCouch import CouchServer
 
 from WMQuality.TestInit import TestInit
 
+
 class CouchAppTestHarness(object):
     """
     Test Harness for installing a couch database instance with several couchapps
@@ -30,7 +32,8 @@ class CouchAppTestHarness(object):
 
 
     """
-    def __init__(self, dbName, couchUrl = None):
+
+    def __init__(self, dbName, couchUrl=None):
         self.couchUrl = os.environ.get("COUCHURL", couchUrl)
         self.dbName = dbName
         if self.couchUrl == None:
@@ -40,11 +43,10 @@ class CouchAppTestHarness(object):
             raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
 
-
     def create(self, dropExistingDb=True):
         """create couch db instance"""
-        #import pdb
-        #pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         if self.dbName in self.couchServer.listDatabases():
             if not dropExistingDb:
                 return
@@ -60,7 +62,7 @@ class CouchAppTestHarness(object):
         """
         push a list of couchapps to the database
         """
-        for couchappdir in  couchappdirs:
+        for couchappdir in couchappdirs:
             couchapppush(couchappdir, "%s/%s" % (self.couchUrl, urllib.parse.quote_plus(self.dbName)))
 
 
@@ -102,8 +104,7 @@ class TestInitCouchApp(TestInit):
         self.couch.create(dropExistingDb=self.dropExistingDb)
         # just create the db is couchapps are not specified
         if len(couchapps) > 0:
-            self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(couchapp), couchapp) for couchapp in couchapps ])
-
+            self.couch.pushCouchapps(*[os.path.join(self.couchAppRoot(couchapp), couchapp) for couchapp in couchapps])
 
     couchUrl = property(lambda x: x.couch.couchUrl)
     couchDbName = property(lambda x: x.couch.dbName)

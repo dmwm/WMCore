@@ -6,6 +6,7 @@ wmagent-couchapp-init
 from __future__ import print_function, division
 
 from future import standard_library
+
 standard_library.install_aliases()
 
 import argparse
@@ -16,9 +17,7 @@ import tempfile
 import urllib
 
 from urllib.parse import urlsplit
-
 from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL
@@ -45,14 +44,20 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     Install the given couch app on the given server in the given database.  If
     the database already exists it will be deleted.
     """
+    # set of options required by the couchapp push command
+    # from collections import namedtuple
+    # couchOpts = namedtuple("opts", ["export", "output", "force", "no_atomic"])
+    # for attribute in ["export", "output", "force", "no_atomic"]:
+    #     setattr(couchOpts, attribute, False)
+    ### AMR debugging workqueue couchapps, remove it later ###
+    #couchOpts.export = True
+    #couchOpts.output = "/data/WorkQueue.json"
+    ##########################################################
     if not basePath:
         basePath = couchAppRoot(couchAppName)
     print("Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName)))
 
-    couchappConfig = Config()
-
-    couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
-                 "%s/%s" % (couchUrl, couchDBName))
+    couchapppush("%s/%s" % (basePath, couchAppName), "%s/%s" % (couchUrl, couchDBName))
     return
 
 

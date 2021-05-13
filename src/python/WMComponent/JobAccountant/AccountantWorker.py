@@ -454,6 +454,8 @@ class AccountantWorker(WMConnectionBase):
                                                 conn=self.getDBConn(),
                                                 transaction=self.existingTransaction())
 
+        # FIXME: temporary workaround for: https://github.com/dmwm/WMCore/issues/9633
+        skipOutputFiles = False
         if jobSuccess:
             fileList = fwkJobReport.getAllFiles()
 
@@ -504,6 +506,7 @@ class AccountantWorker(WMConnectionBase):
                 if not fwjrFile.get("locations") and fwjrFile.get("lfn", "").endswith(".root"):
                     logging.warning("The following file doesn't have any location: %s", fwjrFile)
                     jobSuccess = False
+                    skipOutputFiles = True
                     break
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step='logArch1')
@@ -547,6 +550,12 @@ class AccountantWorker(WMConnectionBase):
                 wmbsJob["outcome"] = "success"
             else:
                 wmbsJob["outcome"] = "failure"
+
+            # FIXME: BAD HACK to avoid crashing the component
+            if skipOutputFiles:
+                logging.warning("Skipping output file registration for failed job: %d", jobID)
+                self.listOfJobsToFail.append(wmbsJob)
+                return jobSuccess
 
             for fwjrFile in fileList:
 

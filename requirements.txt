@@ -29,3 +29,4 @@ setuptools==39.2.0            # wmagent
 Sphinx==1.3.5                 # wmagent,reqmgr2,acdcserver,global-workqueue,reqmgr2ms
 SQLAlchemy==1.3.3             # wmagent
 stomp.py==4.1.15              # wmagent
+CMSCouchapp==1.2.10           # wmagent

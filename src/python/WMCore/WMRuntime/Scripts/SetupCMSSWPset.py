@@ -5,165 +5,65 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 
 """
 from __future__ import print_function
-from future.utils import viewitems
+from builtins import next, object
 
 import json
 import logging
 import os
 import pickle
-import random
 import socket
-import re
-
-import FWCore.ParameterSet.Config as cms
 
 from PSetTweaks.PSetTweak import PSetTweak
-from PSetTweaks.WMTweak import applyTweak, makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
+from PSetTweaks.WMTweak import  makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-from WMCore.WMRuntime.Tools.Scram import isCMSSWSupported, isEnforceGUIDInFileNameSupported
+from WMCore.WMRuntime.Tools.Scram import Scram
 
 
-def fixupGlobalTag(process):
+def factory(module, name):
     """
-    _fixupGlobalTag_
-
-    Make sure that the process has a GlobalTag.globaltag string.
-
-    Requires that the configuration already has a properly configured GlobalTag object.
+    _factory_
+    Function to return a dummy module name when a module
+    is not available
 
     """
-    if hasattr(process, "GlobalTag"):
-        if not hasattr(process.GlobalTag, "globaltag"):
-            process.GlobalTag.globaltag = cms.string("")
-    return
+
+    class DummyClass(object):
+        """
+        _DummyClass_
+        Dummy class to return when a cms class cannot be imported 
+
+        """
+        def __init__(self, module, name='', *args, **kwargs):
+            self.__module = module
+            self.__name = name
+            self.__d = dict()
+
+        def __setitem__(self, key, value):
+            self.__d[key] = value
+
+        def __getitem__(self, item):
+            return self.__d[item]
+
+        def __call__(self, *args, **kwargs):
+            pass
+
+        def __repr__(self):
+            return "{module}.{name}".format(module=self.__module, name=self.__name)
+
+    return DummyClass
 
 
-def fixupGlobalTagTransaction(process):
+class Unpickler(pickle.Unpickler):
     """
-    _fixupGlobalTagTransaction_
-
-    Make sure that the process has a GlobalTag.DBParameters.transactionId string.
-
-    Requires that the configuration already has a properly configured GlobalTag object
-
-    (used to customize conditions access for Tier0 express processing)
-
-    """
-    if hasattr(process, "GlobalTag"):
-        if not hasattr(process.GlobalTag.DBParameters, "transactionId"):
-            process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
-    return
-
-
-def fixupFirstRun(process):
-    """
-    _fixupFirstRun_
-
-    Make sure that the process has a firstRun parameter.
-
-    """
-    if not hasattr(process.source, "firstRun"):
-        process.source.firstRun = cms.untracked.uint32(0)
-    return
-
-
-def fixupLastRun(process):
-    """
-    _fixupLastRun_
-
-    Make sure that the process has a lastRun parameter.
+    _Unpickler_
+    Use this when loading a PSet pickle
+    and a specific module is not available (i.e.: FWCore modules)
 
     """
-    if not hasattr(process.source, "lastRun"):
-        process.source.lastRun = cms.untracked.uint32(0)
-    return
-
-
-def fixupLumisToProcess(process):
-    """
-    _fixupLumisToProcess_
-
-    Make sure that the process has a lumisToProcess parameter.
-
-    """
-    if not hasattr(process.source, "lumisToProcess"):
-        process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
-    return
-
-
-def fixupSkipEvents(process):
-    """
-    _fixupSkipEvents_
-
-    Make sure that the process has a skip events parameter.
-
-    """
-    if not hasattr(process.source, "skipEvents"):
-        process.source.skipEvents = cms.untracked.uint32(0)
-    return
-
-
-def fixupFirstEvent(process):
-    """
-    _fixupFirstEvent_
-
-    Make sure that the process has a first event parameter.
-
-    """
-    if not hasattr(process.source, "firstEvent"):
-        process.source.firstEvent = cms.untracked.uint32(0)
-    return
-
-
-def fixupMaxEvents(process):
-    """
-    _fixupMaxEvents_
-
-    Make sure that the process has a max events parameter.
-
-    """
-    if not hasattr(process, "maxEvents"):
-        process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(-1))
-    if not hasattr(process.maxEvents, "input"):
-        process.maxEvents.input = cms.untracked.int32(-1)
-    return
-
-
-def fixupFileNames(process):
-    """
-    _fixupFileNames_
-
-    Make sure that the process has a fileNames parameter.
-
-    """
-    if not hasattr(process.source, "fileNames"):
-        process.source.fileNames = cms.untracked.vstring()
-    return
-
-
-def fixupSecondaryFileNames(process):
-    """
-    _fixupSecondaryFileNames_
-
-    Make sure that the process has a secondaryFileNames parameter.
-
-    """
-    if not hasattr(process.source, "secondaryFileNames"):
-        process.source.secondaryFileNames = cms.untracked.vstring()
-    return
-
-
-def fixupFirstLumi(process):
-    """
-    _fixupFirstLumi
-
-    Make sure that the process has firstLuminosityBlock parameter.
-    """
-    if not hasattr(process.source, "firstLuminosityBlock"):
-        process.source.firstLuminosityBlock = cms.untracked.uint32(1)
-    return
+    def find_class(self, module, name):
+        return factory(module, name)
 
 
 class SetupCMSSWPset(ScriptInterface):
@@ -171,17 +71,6 @@ class SetupCMSSWPset(ScriptInterface):
     _SetupCMSSWPset_
 
     """
-    fixupDict = {"process.GlobalTag.globaltag": fixupGlobalTag,
-                 "process.GlobalTag.DBParameters.transactionId": fixupGlobalTagTransaction,
-                 "process.source.fileNames": fixupFileNames,
-                 "process.source.secondaryFileNames": fixupSecondaryFileNames,
-                 "process.maxEvents.input": fixupMaxEvents,
-                 "process.source.skipEvents": fixupSkipEvents,
-                 "process.source.firstEvent": fixupFirstEvent,
-                 "process.source.firstRun": fixupFirstRun,
-                 "process.source.lastRun": fixupLastRun,
-                 "process.source.lumisToProcess": fixupLumisToProcess,
-                 "process.source.firstLuminosityBlock": fixupFirstLumi}
 
     def __init__(self, crabPSet=False):
         ScriptInterface.__init__(self)
@@ -189,6 +78,45 @@ class SetupCMSSWPset(ScriptInterface):
         self.process = None
         self.jobBag = None
         self.logger = logging.getLogger()
+        self.tweak = PSetTweak()
+        self.scram = None
+        self.configPickle = "Pset.pkl"
+        self.psetFile = None
+
+    def createScramEnv(self):
+        scramArchitecture = self.getScramVersion()
+        cmsswVersion = self.getCmsswVersion()
+        self.logger.info("Creating Scram environment with scram arch: %s and CMSSW version: %s",
+            scramArchitecture,
+            cmsswVersion)
+
+        scram = Scram(
+            version=cmsswVersion,
+            directory=self.stepSpace.location,
+            architecture=scramArchitecture,
+            initialise=self.step.data.application.setup.softwareEnvironment
+        )
+        scram.project() # creates project area
+        scram.runtime() # creates runtime environment
+
+        return scram
+
+    def scramRun(self, cmdArgs):
+        """
+        _scramRun_
+
+        Run command inside scram environment
+
+        """
+        self.logger.info("ScramRun command args: %s", cmdArgs)
+        if self.scram:
+            retval = self.scram(command=cmdArgs)
+            if retval > 0:
+                msg = "Error running scram process. Error code: %s" % (retval)
+                logging.error(msg)
+                raise RuntimeError(msg)
+        else:
+            raise RuntimeError("Scram is not defined")
 
     def createProcess(self, scenario, funcName, funcArgs):
         """
@@ -197,44 +125,41 @@ class SetupCMSSWPset(ScriptInterface):
         Create a Configuration.DataProcessing PSet.
 
         """
-        if funcName == "merge":
 
-            if getattr(self.jobBag, "useErrorDataset", False):
-                funcArgs['outputmod_label'] = "MergedError"
+        procScript = "cmssw_wm_create_process.py"
 
+        processDic = {"scenario": scenario}
+        processJson = os.path.join(self.stepSpace.location, "process_scenario.json")
+        funcArgsJson = os.path.join(self.stepSpace.location, "process_funcArgs.json")
+
+        if funcName == "merge" or funcName == "repack":
             try:
-                from Configuration.DataProcessing.Merge import mergeProcess
-                self.process = mergeProcess(**funcArgs)
+                with open(funcArgsJson, 'wb') as f:
+                    json.dump(funcArgs, f)
             except Exception as ex:
-                msg = "Failed to create a merge process."
-                self.logger.exception(msg)
+                self.logger.exception("Error writing out process funcArgs json")
                 raise ex
-        elif funcName == "repack":
-            try:
-                from Configuration.DataProcessing.Repack import repackProcess
-                self.process = repackProcess(**funcArgs)
-            except Exception as ex:
-                msg = "Failed to create a repack process."
-                self.logger.exception(msg)
-                raise ex
+            funcArgsParam = funcArgsJson
         else:
             try:
-                from Configuration.DataProcessing.GetScenario import getScenario
-                scenarioInst = getScenario(scenario)
+                with open(processJson, 'wb') as f:
+                    json.dump(processDic, f)
             except Exception as ex:
-                msg = "Failed to retrieve the Scenario named "
-                msg += str(scenario)
-                msg += "\nWith Error:"
-                msg += str(ex)
-                self.logger.error(msg)
+                self.logger.exception("Error writing out process scenario json")
                 raise ex
-            try:
-                self.process = getattr(scenarioInst, funcName)(**funcArgs)
-            except Exception as ex:
-                msg = "Failed to load process from Scenario %s (%s)." % (scenario, scenarioInst)
-                self.logger.error(msg)
-                raise ex
+            funcArgsParam = processJson
 
+        cmd = "%s --output_pkl %s --funcname %s --funcargs %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            funcName,
+            funcArgsParam)
+
+        if funcName == "merge":
+            if getattr(self.jobBag, "useErrorDataset", False):
+                cmd += " --useErrorDataset"
+
+        self.scramRun(cmd)
         return
 
     def loadPSet(self):
@@ -242,15 +167,24 @@ class SetupCMSSWPset(ScriptInterface):
         _loadPSet_
 
         Load a PSet that was shipped with the job sandbox.
+        Mock actual Pset values that depend on CMSSW, as these are
+        handled externally.
 
         """
-        psetModule = "WMTaskSpace.%s.PSet" % self.step.data._internal_name
+        self.logger.info("Working dir: %s", os.getcwd())
+        # Pickle original pset configuration
+        procScript = "edm_pset_pickler.py"
+        cmd = "%s --input %s --output_pkl %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.psetFile),
+            os.path.join(self.stepSpace.location, self.configPickle))
+        self.scramRun(cmd)
 
         try:
-            processMod = __import__(psetModule, globals(), locals(), ["process"], -1)
-            self.process = processMod.process
+            with open(os.path.join(self.stepSpace.location, self.configPickle), 'rb') as f:
+                self.process = Unpickler(f).load()
         except ImportError as ex:
-            msg = "Unable to import process from %s:\n" % psetModule
+            msg = "Unable to import pset from %s:\n" % self.psetFile
             msg += str(ex)
             self.logger.error(msg)
             raise ex
@@ -260,10 +194,8 @@ class SetupCMSSWPset(ScriptInterface):
     def fixupProcess(self):
         """
         _fixupProcess_
-
         Look over the process object and make sure that all of the attributes
         that we expect to exist actually exist.
-
         """
         # Make sure that for each output module the following parameters exist
         # in the PSet returned from the framework:
@@ -272,32 +204,48 @@ class SetupCMSSWPset(ScriptInterface):
         #   dataset.dataTier
         #   dataset.filterName
         if hasattr(self.process, "outputModules"):
-            outputModuleNames = list(self.process.outputModules)
-        else:
+            outputModuleNames = list(self.process.outputModules) 
+        elif hasattr(self.process, "outputModules_"):
             outputModuleNames = self.process.outputModules_()
+        elif hasattr(self.process, "_Process__outputmodules"):
+            outputModuleNames = list(self.process._Process__outputmodules)
+        else:
+            msg = "Error loading output modules from process"
+            raise AttributeError(msg)
+
         for outMod in outputModuleNames:
-            outModRef = getattr(self.process, outMod)
-            if not hasattr(outModRef, "dataset"):
-                outModRef.dataset = cms.untracked.PSet()
-            if not hasattr(outModRef.dataset, "dataTier"):
-                outModRef.dataset.dataTier = cms.untracked.string("")
-            if not hasattr(outModRef.dataset, "filterName"):
-                outModRef.dataset.filterName = cms.untracked.string("")
-            if not hasattr(outModRef, "fileName"):
-                outModRef.fileName = cms.untracked.string("")
-            if not hasattr(outModRef, "logicalFileName"):
-                outModRef.logicalFileName = cms.untracked.string("")
+            tweak = PSetTweak()
+            self.logger.info("DEBUG output module = %s", outMod)
+            tweak.addParameter("process.options", "customTypeCms.untracked.PSet()")
+            tweak.addParameter("process.%s.dataset" % outMod, "customTypeCms.untracked.PSet(dataTier=cms.untracked.string(''), filterName=cms.untracked.string(''))")
+            self.applyPsetTweak(tweak, skipIfSet=True, cleanupTweak=True)
+            #tweak.addParameter("process.%s.dataset.dataTier" % outMod, "customTypeCms.untracked.string('')")
+            #tweak.addParameter("process.%s.dataset.filterName" % outMod, "customTypeCms.untracked.string('')")
+            tweak.addParameter("process.%s.fileName" % outMod, "customTypeCms.untracked.string('')")
+            tweak.addParameter("process.%s.logicalFileName" % outMod, "customTypeCms.untracked.string('')")
+            self.applyPsetTweak(tweak, skipIfSet=True)
+
         return
 
-    def applyTweak(self, psetTweak):
-        """
-        _applyTweak_
+    def applyPsetTweak(self, psetTweak, skipIfSet=False, allowFailedTweaks=False, name='', cleanupTweak=False):
+        procScript = "edm_pset_tweak.py"
+        psetTweakJson = os.path.join(self.stepSpace.location, "PSetTweak%s.json" % name)
+        psetTweak.persist(psetTweakJson, formatting='simplejson')
 
-        Apply a tweak to the process.
-        """
-        tweak = PSetTweak()
-        tweak.unpersist(psetTweak)
-        applyTweak(self.process, tweak, self.fixupDict)
+        cmd = "%s --input_pkl %s --output_pkl %s --json %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle),
+            psetTweakJson)
+        if skipIfSet:
+            cmd += " --skip_if_set"
+        if allowFailedTweaks:
+            cmd += " --allow_failed_tweaks"
+        self.scramRun(cmd)
+
+        if cleanupTweak is True:
+            psetTweak = PSetTweak()
+
         return
 
     def handleSeeding(self):
@@ -307,20 +255,33 @@ class SetupCMSSWPset(ScriptInterface):
         Handle Random Seed settings for the job
         """
         seeding = getattr(self.jobBag, "seeding", None)
+        seedJson = os.path.join(self.stepSpace.location, "reproducible_seed.json")
         self.logger.info("Job seeding set to: %s", seeding)
+        procScript = "cmssw_handle_random_seeds.py"
+
+        cmd = "%s --input_pkl %s --output_pkl %s --seeding %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle),
+            seeding)
+
         if seeding == "ReproducibleSeeding":
-            randService = self.process.RandomNumberGeneratorService
-            tweak = PSetTweak()
+            randService = self.jobBag.process.RandomNumberGeneratorService
+            seedParams = {}
             for x in randService:
                 parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
-                tweak.addParameter(parameter, x.initialSeed)
-            applyTweak(self.process, tweak, self.fixupDict)
-        else:
-            if hasattr(self.process, "RandomNumberGeneratorService"):
-                from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
-                helper = RandomNumberServiceHelper(self.process.RandomNumberGeneratorService)
-                helper.populate()
+                seedParams[parameter] = x.initialSeed
+            try:
+                with open(seedJson, 'wb') as f:
+                    json.dump(seedParams, f)
+            except Exception as ex:
+                self.logger.exception("Error writing out process funcArgs json:")
+                raise ex
+            cmd += " --reproducible_json %s" % (seedJson)
+
+        self.scramRun(cmd)
         return
+
 
     def handlePerformanceSettings(self):
         """
@@ -328,19 +289,45 @@ class SetupCMSSWPset(ScriptInterface):
 
         Install the standard performance report services
         """
+        tweak = PSetTweak()
         # include the default performance report services
         if getattr(self.step.data.application.command, 'silentMemoryCheck', False):
-            self.process.add_(cms.Service("SimpleMemoryCheck", jobReportOutputOnly=cms.untracked.bool(True)))
+            tweak.addParameter("process.SimpleMemoryCheck", "customTypeCms.Service('SimpleMemoryCheck', jobReportOutputOnly=cms.untracked.bool(True))")
         else:
-            self.process.add_(cms.Service("SimpleMemoryCheck"))
+            tweak.addParameter("process.SimpleMemoryCheck", "customTypeCms.Service('SimpleMemoryCheck')")
 
-        self.process.add_(cms.Service("CPU"))
-        self.process.add_(cms.Service("Timing"))
-        self.process.Timing.summaryOnly = cms.untracked(cms.bool(True))
+        tweak.addParameter("process.CPU", "customTypeCms.Service('CPU')")
+        tweak.addParameter("process.Timing", "customTypeCms.Service('Timing')")
+        self.applyPsetTweak(tweak)
+        self.tweak.addParameter("process.Timing.summaryOnly", "customTypeCms.untracked(cms.bool(True))")
 
         return
 
-    def handleChainedProcessing(self):
+    def makeThreadsStreamsTweak(self):
+        """
+        _makeThreadsStreamsTweak_
+
+        Tweak threads and streams paraameters
+        """
+        origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+        eventStreams = int(getattr(self.step.data.application.multicore, 'eventStreams', 0))
+        resources = {'cores': origCores}
+        resizeResources(resources)
+        numCores = resources['cores']
+        if numCores != origCores:
+            self.logger.info(
+                "Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
+            eventStreams = 0
+
+        tweak = PSetTweak()
+        tweak.addParameter("process.options", "customTypeCms.untracked.PSet()")
+        self.applyPsetTweak(tweak, skipIfSet=True)
+        self.tweak.addParameter("process.options.numberOfThreads", "customTypeCms.untracked.uint32(%s)" % numCores)
+        self.tweak.addParameter("process.options.numberOfStreams", "customTypeCms.untracked.uint32(%s)" % eventStreams)
+
+        return
+
+    def handleChainedProcessingTweak(self):
         """
         _handleChainedProcessing_
 
@@ -358,10 +345,8 @@ class SetupCMSSWPset(ScriptInterface):
         tfc.addMapping("direct", inputFile, inputFile, mapping_type="lfn-to-pfn")
         tfc.addMapping("direct", inputFile, inputFile, mapping_type="pfn-to-lfn")
 
-        fixupFileNames(self.process)
-        fixupMaxEvents(self.process)
-        self.process.source.fileNames.setValue([inputFile])
-        self.process.maxEvents.input.setValue(-1)
+        self.tweak.addParameter('process.source.fileNames', "customTypeCms.untracked.vstring(%s)" % [inputFile])
+        self.tweak.addParameter("process.maxEvents", "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))")
 
         tfcName = "override_catalog.xml"
         tfcPath = os.path.join(os.getcwd(), tfcName)
@@ -379,42 +364,17 @@ class SetupCMSSWPset(ScriptInterface):
         _handlePileup_
 
         Handle pileup settings.
-        """
-        # find out local site SE name
-        siteConfig = loadSiteLocalConfig()
-        PhEDExNodeName = siteConfig.localStageOut["phedex-node"]
-        self.logger.info("Running on site '%s', local PNN: '%s'", siteConfig.siteName, PhEDExNodeName)
+        There has been stored pileup configuration stored in a JSON file
+        as a result of DBS querrying when running PileupFetcher,
+        this method loads this configuration from sandbox and returns it
+        as dictionary.
+        The PileupFetcher was called by WorkQueue which creates job's sandbox
+        and sandbox gets migrated to the worker node.
 
-        pileupDict = self._getPileupConfigFromJson()
-
-        # 2011-02-03 according to the most recent version of instructions, we do
-        # want to differentiate between "MixingModule" and "DataMixingModule"
-        mixModules, dataMixModules = self._getPileupMixingModules()
-
-        # 2011-02-03
-        # on the contrary to the initial instructions (wave), there are
-        # going to be only two types of pileup input datasets: "data" or "mc"
-        # unlike all previous places where pileupType handled in a flexible
-        # way as specified in the configuration passed by the user, here are
-        # the two pileupTypes hardcoded: and we are going to add the "mc"
-        # datasets to "MixingModule"s and only add the "data" datasets to the
-        # "DataMixingModule"s
-
-        # if the user in the configuration specifies different pileup types
-        # than "data" or "mc", the following call will not modify anything
-        self._processPileupMixingModules(pileupDict, PhEDExNodeName, dataMixModules, "data")
-        self._processPileupMixingModules(pileupDict, PhEDExNodeName, mixModules, "mc")
-
-        return
-
-    def _processPileupMixingModules(self, pileupDict, PhEDExNodeName,
-                                    modules, requestedPileupType):
-        """
-        Iterates over all modules and over all pileup configuration types.
+        External script iterates over all modules and over all pileup configuration types.
         The only considered types are "data" and "mc" (input to this method).
         If other pileup types are specified by the user, the method doesn't
         modify anything.
-
         The method considers only files which are present on this local PNN.
         The job will use only those, unless it was told to trust the PU site
         location (trustPUSitelists=True), in this case ALL the blocks/files
@@ -422,98 +382,63 @@ class SetupCMSSWPset(ScriptInterface):
         Dataset, divided into blocks, may not have all blocks present on a
         particular PNN. However, all files belonging into a block will be
         present when reported by DBS.
-
         The structure of the pileupDict: PileupFetcher._queryDbsAndGetPileupConfig
 
-        2011-02-03:
-        According to the current implementation of helper testing module
-        WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
-        each type of modules instances can have either "secsource"
-        or "input" attribute, so need to probe both, one shall succeed.
         """
-        self.logger.info("Requested pileup type %s with %d mixing modules", requestedPileupType, len(modules))
+        # find out local site SE name
+        siteConfig = loadSiteLocalConfig()
+        PhEDExNodeName = siteConfig.localStageOut["phedex-node"]
+        self.logger.info("Running on site '%s', local PNN: '%s'", siteConfig.siteName, PhEDExNodeName)
+        jsonPileupConfig = os.path.join(self.stepSpace.location, "pileupconf.json")
 
-        for m in modules:
-            self.logger.info("Loaded module type: %s", m.type_())
-            for pileupType in self.step.data.pileup.listSections_():
-                # there should be either "input" or "secsource" attributes
-                # and both "MixingModule", "DataMixingModule" can have both
-                inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
-                self.logger.info("pileupType: %s with input attributes: %s", pileupType, bool(inputTypeAttrib))
-                if not inputTypeAttrib:
-                    continue
-                inputTypeAttrib.fileNames = cms.untracked.vstring()
-                if pileupType == requestedPileupType:
-                    eventsAvailable = 0
-                    useAAA = True if getattr(self.jobBag, 'trustPUSitelists', False) else False
-                    self.logger.info("Pileup set to read data remotely: %s", useAAA)
-                    for blockName in sorted(pileupDict[pileupType].keys()):
-                        blockDict = pileupDict[pileupType][blockName]
-                        if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
-                            eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
-                            for fileLFN in blockDict["FileList"]:
-                                # vstring does not support unicode
-                                inputTypeAttrib.fileNames.append(str(fileLFN))
-                    if requestedPileupType == 'data':
-                        if getattr(self.jobBag, 'skipPileupEvents', None) is not None:
-                            # For deterministic pileup, we want to shuffle the list the
-                            # same for every job in the task and skip events
-                            random.seed(self.job['task'])
-                            self.logger.info("Skipping %d pileup events for deterministic data mixing",
-                                             self.jobBag.skipPileupEvents)
-                            inputTypeAttrib.skipEvents = cms.untracked.uint32(
-                                int(self.jobBag.skipPileupEvents) % eventsAvailable)
-                            inputTypeAttrib.sequential = cms.untracked.bool(True)
-                    # Shuffle according to the seed above or randomly
-                    random.shuffle(inputTypeAttrib.fileNames)
-                    self.logger.info("Added %s events from the pileup blocks", eventsAvailable)
-
-                    # Handle enforceGUIDInFileName for pileup
-                    self.handleEnforceGUIDInFileName(inputTypeAttrib)
-
-        return
-
-    def _getPileupMixingModules(self):
-        """
-        Method returns two lists:
-            1) list of mixing modules ("MixingModule")
-            2) list of data mixing modules ("DataMixingModules")
-        The first gets added only pileup files of type "mc", the
-        second pileup files of type "data".
-
-        """
-        mixModules, dataMixModules = [], []
-        prodsAndFilters = {}
-        prodsAndFilters.update(self.process.producers)
-        prodsAndFilters.update(self.process.filters)
-        for key, value in viewitems(prodsAndFilters):
-            if value.type_() in ["MixingModule", "DataMixingModule", "PreMixingModule"]:
-                mixModules.append(value)
-            if value.type_() == "DataMixingModule":
-                dataMixModules.append(value)
-        return mixModules, dataMixModules
-
-    def _getPileupConfigFromJson(self):
-        """
-        There has been stored pileup configuration stored in a JSON file
-        as a result of DBS querrying when running PileupFetcher,
-        this method loads this configuration from sandbox and returns it
-        as dictionary.
-
-        The PileupFetcher was called by WorkQueue which creates job's sandbox
-        and sandbox gets migrated to the worker node.
-
-        """
-        workingDir = self.stepSpace.location
-        jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
-        self.logger.info("Pileup JSON configuration file: '%s'", jsonPileupConfig)
+        # Load pileup json
         try:
             with open(jsonPileupConfig) as jdata:
                 pileupDict = json.load(jdata)
         except IOError:
             m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig
             raise RuntimeError(m)
-        return pileupDict
+
+        # Create a json with a list of files and events available
+        # after dealing with PhEDEx/AAA logic
+        newPileupDict = {}
+        fileList = []
+        eventsAvailable = 0
+        for pileupType in self.step.data.pileup.listSections_():
+            useAAA = True if getattr(self.jobBag, 'trustPUSitelists', False) else False
+            self.logger.info("Pileup set to read data remotely: %s", useAAA)
+            for blockName in sorted(pileupDict[pileupType].keys()):
+                blockDict = pileupDict[pileupType][blockName]
+                if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
+                    eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
+                    for fileLFN in blockDict["FileList"]:
+                        fileList.append(str(fileLFN))
+            newPileupDict[pileupType] = {"eventsAvailable": eventsAvailable, "FileList": fileList}
+        newJsonPileupConfig = os.path.join(self.stepSpace.location, "CMSSWPileupConfig.json")
+        self.logger.info("Generating json for CMSSW pileup script")
+        try:
+            with open(newJsonPileupConfig, 'wb') as f:
+                json.dump(newPileupDict, f)
+        except Exception as ex:
+            self.logger.exception("Error writing out process filelist json:")
+            raise ex
+
+        procScript = "cmssw_handle_pileup.py"
+        cmd = "%s --input_pkl %s --output_pkl %s --pileup_dict %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle),
+            newJsonPileupConfig)
+
+        if getattr(self.jobBag, "skipPileupEvents", None):
+            randomSeed = self.job['task']
+            skipPileupEvents = self.jobBag.skipPileupEvents
+            cmd += " --skip_pileup_events %s --random_seed %s" % (
+                skipPileupEvents,
+                randomSeed)
+        self.scramRun(cmd)
+
+        return
 
     def handleProducersNumberOfEvents(self):
         """
@@ -524,11 +449,16 @@ class SetupCMSSWPset(ScriptInterface):
         but after that is tweaked the producers number of events need to
         be fixed as well. This method takes care of that.
         """
-        producers = {}
-        producers.update(self.process.producers)
-        for producer in producers:
-            if hasattr(producers[producer], "nEvents"):
-                producers[producer].nEvents = self.process.maxEvents.input.value()
+
+        procScript = "cmssw_handle_nEvents.py"
+        cmd = "%s --input_pkl %s --output_pkl %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle))
+        self.scramRun(cmd)
+
+        return
+
 
     def handleDQMFileSaver(self):
         """
@@ -538,8 +468,6 @@ class SetupCMSSWPset(ScriptInterface):
         be tweaked with the dataset name in order to store it
         properly in the DQMGUI, others tweaks can be added as well
         """
-        if not hasattr(self.process, "dqmSaver"):
-            return
 
         runIsComplete = getattr(self.jobBag, "runIsComplete", False)
         multiRun = getattr(self.jobBag, "multiRun", False)
@@ -547,19 +475,24 @@ class SetupCMSSWPset(ScriptInterface):
         self.logger.info("DQMFileSaver set to multiRun: %s, runIsComplete: %s, runLimits: %s",
                          multiRun, runIsComplete, runLimits)
 
-        self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
-        if multiRun and isCMSSWSupported(self.getCmsswVersion(), "CMSSW_8_0_0"):
-            self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
+        procScript = "cmssw_handle_dqm_filesaver.py"
+
+        cmd = "%s --input_pkl %s --output_pkl %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle))
+
         if hasattr(self.step.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.step.data.application.configuration.pickledarguments)
             datasetName = args.get('datasetName', None)
-            if datasetName:
-                if multiRun:
-                    # then change the dataset name in order to get a different root file name
-                    datasetName = datasetName.rsplit('/', 1)
-                    datasetName[0] += runLimits
-                    datasetName = "/".join(datasetName)
-                self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
+        if datasetName:
+            cmd += " --datasetName %s" % (datasetName)
+        if multiRun and runLimits:
+            cmd += " --multiRun --runLimits=%s" % (runLimits)
+        if runIsComplete:
+            cmd += " --runIsComplete"
+        self.scramRun(cmd)
+
         return
 
     def handleLHEInput(self):
@@ -569,10 +502,10 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for jobs reading LHE articles from CERN, such
         that these jobs can read data remotely
         """
+
         if getattr(self.jobBag, "lheInputFiles", False):
             self.logger.info("Enabling 'lazy-download' for lheInputFiles job")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCacheHintDir=cms.untracked.string("lazy-download")))
+            self._enableLazyDownload()
 
         return
 
@@ -583,11 +516,21 @@ class SetupCMSSWPset(ScriptInterface):
         Repacking small events is super inefficient reading directly from EOS.
         """
         self.logger.info("Hardcoding read/cache strategies for repack")
-        self.process.add_(
-            cms.Service("SiteLocalConfigService",
-                        overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
-                        )
-        )
+        self._enableLazyDownload()
+        return
+
+    def _enableLazyDownload(self):
+        """
+        _enableLazyDownload_
+
+        Set things to read data remotely
+        """
+        procScript = "cmssw_enable_lazy_download.py"
+        cmd = "%s --input_pkl %s --output_pkl %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle))
+        self.scramRun(cmd)
 
         return
 
@@ -621,12 +564,11 @@ class SetupCMSSWPset(ScriptInterface):
         """
         if self.getCmsswVersion().startswith("CMSSW_7_5") and False:
             self.logger.info("Using fastCloning/lazydownload")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")))
+            self._enableLazyDownload()
         elif funcName == "merge":
             self.logger.info("Using lazydownload")
-            self.process.add_(cms.Service("SiteLocalConfigService",
-                                          overrideSourceCacheHintDir=cms.untracked.string("lazy-download")))
+            self._enableLazyDownload()
+
         return
 
     def handleCondorStatusService(self):
@@ -635,10 +577,13 @@ class SetupCMSSWPset(ScriptInterface):
 
         Enable CondorStatusService for CMSSW releases that support it.
         """
-        if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_0"):
-            self.logger.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
-            self.process.add_(cms.Service("CondorStatusService",
-                                          tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
+        procScript = "cmssw_handle_condor_status_service.py"
+        cmd = "%s --input_pkl %s --output_pkl %s --name %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle),
+            self.step.data._internal_name)
+        self.scramRun(cmd)
 
         return
 
@@ -658,29 +603,28 @@ class SetupCMSSWPset(ScriptInterface):
         else:
             inputSource = self.process.source
 
+        if hasattr(inputSource, "type_"):
+            inputSourceType = inputSource.type_()
+        elif hasattr(inputSource, "_TypedParameterizable__type"):
+            inputSourceType = inputSource._TypedParameterizable__type
+        else:
+            msg = "Source type could not be determined."
+            self.logger.error(msg)
+            raise AttributeError(msg)
+
         # only enable if source is PoolSource or EmbeddedRootSource
-        if inputSource.type_() not in ["PoolSource", "EmbeddedRootSource"]:
+        if inputSourceType not in ["PoolSource", "EmbeddedRootSource"]:
             self.logger.info("Not evaluating enforceGUIDInFileName parameter for process source %s",
-                             inputSource.type_())
+                             inputSourceType)
             return
 
-        self.logger.info("Evaluating if release %s supports enforceGUIDInFileName parameter...",
-                         self.getCmsswVersion())
-
-        # enable if release supports enforceGUIDInFileName
-        if isEnforceGUIDInFileNameSupported(self.getCmsswVersion()):
-            # check to make sure primary input files follow guid naming convention
-            # prevents enabling guid checks on some workflows (StoreResults/StepChain) that use custom input file names
-            # EmbeddedRootSource input files will always follow guid naming convention
-            if inputSource.type_() == "PoolSource" and inputSource.fileNames:
-                guidRegEx = re.compile("[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}.root$")
-                if not guidRegEx.search(inputSource.fileNames[0]):
-                    self.logger.info("Not enabling enforceGUIDInFileName due to non-GUID input file names")
-                    return
-            self.logger.info("Setting enforceGUIDInFileName to True.")
-            inputSource.enforceGUIDInFileName = cms.untracked.bool(True)
-        else:
-            self.logger.info("CMSSW release does not support enforceGUIDInFileName.")
+        procScript = "cmssw_enforce_guid_in_filename.py"
+        cmd = "%s --input_pkl %s --output_pkl %s --input_source %s" % (
+            procScript,
+            os.path.join(self.stepSpace.location, self.configPickle),
+            os.path.join(self.stepSpace.location, self.configPickle),
+            inputSourceType)
+        self.scramRun(cmd)
 
         return
 
@@ -692,9 +636,28 @@ class SetupCMSSWPset(ScriptInterface):
         """
         if not self.crabPSet:
             return self.step.data.application.setup.cmsswVersion
-        else:
-            # CRAB3 needs to use an environment var to get the version
-            return os.environ.get("CMSSW_VERSION", "")
+
+        # CRAB3 needs to use an environment var to get the version
+        return os.environ.get("CMSSW_VERSION", "")
+
+
+    def getScramVersion(self, allSteps=False):
+        """
+        _getScramVersion_
+
+        Return a string representing the first Scram version to be used (or all)
+        """
+        if not self.crabPSet:
+            scramArch = self.step.data.application.setup.scramArch
+            if allSteps:
+                return scramArch
+            else:
+                if isinstance(scramArch, list):
+                    return next(iter(scramArch or []), None)
+
+        # CRAB3 needs to use an environment var to get the version
+        return os.environ.get("SCRAM_ARCH", "")
+
 
     def __call__(self):
         """
@@ -705,19 +668,34 @@ class SetupCMSSWPset(ScriptInterface):
         """
         self.logger.info("Executing SetupCMSSWPSet...")
         self.jobBag = self.job.getBaggage()
+        self.configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
+        self.psetFile = getattr(self.step.data.application.command, "configuration", "PSet.py")
+        self.scram = self.createScramEnv()
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario is not None and scenario != "":
+            self.logger.info("DEBUG: I'm in scenario")
             self.logger.info("Setting up job scenario/process")
             funcName = getattr(self.step.data.application.configuration, "function", None)
             if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
                 funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
             else:
                 funcArgs = {}
+
+            # Create process
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception as ex:
                 self.logger.exception("Error creating process for Config/DataProcessing:")
+                raise ex
+            # Now, load the new picked process
+            try:
+                with open(os.path.join(self.stepSpace.location, self.configPickle), 'rb') as f:
+                    self.process = Unpickler(f).load()
+            except ImportError as ex:
+                msg = "Unable to import pset from %s:\n" % self.psetFile
+                msg += str(ex)
+                self.logger.error(msg)
                 raise ex
 
             if funcName == "repack":
@@ -728,8 +706,8 @@ class SetupCMSSWPset(ScriptInterface):
 
             if socket.getfqdn().endswith("cern.ch"):
                 self.handleSpecialCERNMergeSettings(funcName)
-
         else:
+            self.logger.info("DEBUG: Now in the none scenario to load PSET")
             try:
                 self.loadPSet()
             except Exception as ex:
@@ -737,54 +715,38 @@ class SetupCMSSWPset(ScriptInterface):
                 raise ex
 
         # Check process.source exists
-        if getattr(self.process, "source", None) is None:
+        self.logger.info("Debug: Self.process")
+        self.logger.info(dir(self.process))
+        if getattr(self.process, "source", None) is None and getattr(self.process, "_Process__source", None) is None:
             msg = "Error in CMSSW PSet: process is missing attribute 'source'"
             msg += " or process.source is defined with None value."
             self.logger.error(msg)
             raise RuntimeError(msg)
 
         self.handleCondorStatusService()
-
         self.fixupProcess()
 
         # In case of CRAB3, the number of threads in the PSet should not be overridden
         if not self.crabPSet:
             try:
-                origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
-                eventStreams = int(getattr(self.step.data.application.multicore, 'eventStreams', 0))
-                resources = {'cores': origCores}
-                resizeResources(resources)
-                numCores = resources['cores']
-                if numCores != origCores:
-                    self.logger.info(
-                        "Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
-                    eventStreams = 0
-                options = getattr(self.process, "options", None)
-                if options is None:
-                    self.process.options = cms.untracked.PSet()
-                    options = getattr(self.process, "options")
-                options.numberOfThreads = cms.untracked.uint32(numCores)
-                options.numberOfStreams = cms.untracked.uint32(eventStreams)
+                self.makeThreadsStreamsTweak()
             except AttributeError as ex:
                 self.logger.error("Failed to override numberOfThreads: %s", str(ex))
 
-        psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
-        if psetTweak is not None:
-            self.applyPSetTweak(psetTweak, self.fixupDict)
-
         # Apply task level tweaks
-        taskTweak = makeTaskTweak(self.step.data)
-        applyTweak(self.process, taskTweak, self.fixupDict)
+        makeTaskTweak(self.step.data, self.tweak)
+        self.applyPsetTweak(self.tweak, cleanupTweak=True)
 
         # Check if chained processing is enabled
         # If not - apply the per job tweaks
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
         if hasattr(self.step.data.input, "chainedProcessing") and self.step.data.input.chainedProcessing:
-            self.handleChainedProcessing()
+            self.logger.info("Handling Chain processing tweaks")
+            self.handleChainedProcessingTweak()
         else:
-            # Apply per job PSet Tweaks
-            jobTweak = makeJobTweak(self.job)
-            applyTweak(self.process, jobTweak, self.fixupDict)
+            self.logger.info("Creating job level tweaks")
+            makeJobTweak(self.job, self.tweak)
+        self.applyPsetTweak(self.tweak, cleanupTweak=True)
 
         # check for pileup settings presence, pileup support implementation
         # and if enabled, process pileup configuration / settings
@@ -792,24 +754,22 @@ class SetupCMSSWPset(ScriptInterface):
             self.handlePileup()
 
         # Apply per output module PSet Tweaks
+        self.logger.info("Output module section")
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
-            outTweak = makeOutputTweak(mod, self.job)
-            applyTweak(self.process, outTweak, self.fixupDict)
+            makeOutputTweak(mod, self.job, self.tweak)
+        self.applyPsetTweak(self.tweak, cleanupTweak=True)
 
         # revlimiter for testing
         if getattr(self.step.data.application.command, "oneEventMode", False):
-            self.process.maxEvents.input = 1
+            self.tweak.addParameter('process.maxEvents.input', "customTypeCms.untracked.int32(1)")
 
         # check for random seeds and the method of seeding which is in the job baggage
         self.handleSeeding()
 
         # make sure default parametersets for perf reports are installed
         self.handlePerformanceSettings()
-
-        # check for event numbers in the producers
-        self.handleProducersNumberOfEvents()
 
         # fixup the dqmFileSaver
         self.handleDQMFileSaver()
@@ -822,40 +782,42 @@ class SetupCMSSWPset(ScriptInterface):
 
         # Check if we accept skipping bad files
         if hasattr(self.step.data.application.configuration, "skipBadFiles"):
-            self.process.source.skipBadFiles = \
-                cms.untracked.bool(self.step.data.application.configuration.skipBadFiles)
+            self.tweak.addParameter("process.source.skipBadFiles",
+                "customTypeCms.untracked.bool(%s)" % self.step.data.application.configuration.skipBadFiles)
 
         # Apply events per lumi section if available
         if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
-            self.process.source.numberEventsInLuminosityBlock = \
-                cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
+            self.tweak.addParameter("process.source.numberEventsInLuminosityBlock",
+                "customTypeCms.untracked.uint32(%s)" % self.step.data.application.configuration.eventsPerLumi)
 
         # limit run time if desired
         if hasattr(self.step.data.application.configuration, "maxSecondsUntilRampdown"):
-            self.process.maxSecondsUntilRampdown = cms.untracked.PSet(
-                input=cms.untracked.int32(self.step.data.application.configuration.maxSecondsUntilRampdown))
+            self.tweak.addParameter("process.maxSecondsUntilRampdown.input",
+                "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s)" % self.step.data.application.configuration.maxSecondsUntilRampdown)
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application, 'overrideCatalog'):
             self.logger.info("Found a TFC override: %s", self.step.data.application.overrideCatalog)
-            self.process.source.overrideCatalog = \
-                cms.untracked.string(self.step.data.application.overrideCatalog)
+            self.tweak.addParameter("process.source.overrideCatalog",
+                "customTypeCms.untracked.string('%s')" % self.step.data.application.overrideCatalog)
 
         configFile = self.step.data.application.command.configuration
-        configPickle = getattr(self.step.data.application.command, "configurationPickle", "PSet.pkl")
         workingDir = self.stepSpace.location
         try:
-            with open("%s/%s" % (workingDir, configPickle), 'wb') as pHandle:
-                pickle.dump(self.process, pHandle)
+            self.applyPsetTweak(self.tweak)
 
             with open("%s/%s" % (workingDir, configFile), 'w') as handle:
                 handle.write("import FWCore.ParameterSet.Config as cms\n")
                 handle.write("import pickle\n")
-                handle.write("with open('%s', 'rb') as handle:\n" % configPickle)
+                handle.write("with open('%s', 'rb') as handle:\n" % self.configPickle)
                 handle.write("    process = pickle.load(handle)\n")
         except Exception as ex:
             self.logger.exception("Error writing out PSet:")
             raise ex
+
+        # check for event numbers in the producers
+        self.handleProducersNumberOfEvents()
+
         self.logger.info("CMSSW PSet setup completed!")
 
         return 0

@@ -244,7 +244,6 @@ class Scram(object):
         )
 
         # send commands to the subshell utilising the process writer method
-        self.procWriter(proc, self.library_path)
         self.procWriter(proc, self.preCommand())
         self.procWriter(proc, "%s --arch %s project CMSSW %s\n" % (self.command, self.architecture, self.version))
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 3; fi\n""")
@@ -319,7 +318,7 @@ class Scram(object):
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
 
-    def __call__(self, command, hackLdLibPath=True, runtimeDir=None, cleanEnv=True):
+    def __call__(self, command, hackLdLibPath=False, runtimeDir=None, cleanEnv=True):
         """
         _operator(command)_
 
@@ -338,6 +337,7 @@ class Scram(object):
 
         bashcmd = "/bin/bash"
         if cleanEnv:
+            # Start with a clean environment
             bashcmd = "env - " + bashcmd
 
         logging.info("Creating a subprocess to run the PSet setup.")
@@ -359,11 +359,6 @@ class Scram(object):
                 rtCmsswBase = self.runtimeEnv[varName].replace('\"', '')
             if varName == "SCRAM_ARCH":
                 rtScramArch = self.runtimeEnv[varName].replace('\"', '')
-
-        # Make sure to pass PYTHONPATH env (with WMCore path) to CMSSW python
-        # Scram was modified in CMSSW_10_1_0 and it no longer returns this env var
-        if "PYTHONPATH" not in self.runtimeEnv:
-            self.procWriter(proc, 'export PYTHONPATH=%s\n' % os.environ['PYTHONPATH'])
 
         if os.environ.get('VO_CMS_SW_DIR', None) is not None:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])

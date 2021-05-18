@@ -334,6 +334,20 @@ class PSetTweak(object):
         jsoniser(self.process)
         return jsoniser.json
 
+    def simplejsonise(self):
+        """
+        _simplejsonise_
+
+        return simple json format of this tweak
+        E.g.:
+        {"process.maxEvents.input": 1200, "process.source.firstRun": 1, "process.source.firstLuminosityBlock": 59965}
+
+        """
+        jsoniser = JSONiser()
+        jsoniser.dejson(self.jsondictionary())
+        result = json.dumps(jsoniser.parameters)
+        return result
+
 
     def persist(self, filename, formatting="python"):
         """
@@ -342,7 +356,7 @@ class PSetTweak(object):
         Save this object as either python, json or pickle
 
         """
-        if formatting not in ("python", "json", "pickle"):
+        if formatting not in ("python", "json", "pickle", "simplejson"):
             msg = "Unsupported Format: %s" % formatting
             raise RuntimeError(msg)
 
@@ -355,6 +369,9 @@ class PSetTweak(object):
         if formatting == "pickle":
             with open(filename, "w") as handle:
                 pickle.dump(self, handle)
+        if formatting == "simplejson":
+            with open(filename, "w") as handle:
+                handle.write(self.simplejsonise())
         return
 
     def unpersist(self, filename, formatting=None):

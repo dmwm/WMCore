@@ -429,6 +429,54 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
+    def testAddEnvironmentVariables(self):
+        """
+        _testAddEnvironmentVariables_
+
+        Verify that the setTaskEnvironmentVariables() method updates the environment 
+        for all tasks.
+        """
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+        testDict = {
+            "VAR0":"Value0"
+            }
+        workload.newTask("task1")
+        workload.newTask("task2")
+        workload.newTask("task3")
+        workload.newTask("task4")
+
+        workload.setTaskEnvironmentVariables(testDict)
+
+        for task in workload.getAllTasks():
+            taskDict = task.getEnvironmentVariables()
+            self.assertEqual(testDict,taskDict,
+                         "Error: Task dictionary should be the same as test dictionary.")
+        return
+
+    def testSetStepOverrideCatalog(self):
+        """
+        _testSetStepOverrideCatalog_
+
+        Verify that the setStepOverrideCatalog() method sets the TFC for  
+        all steps.
+        """
+        (testWorkload, procTaskCMSSWHelper,
+         mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
+         harvestTaskCMSSWHelper) = self.makeTestWorkload()
+        testCatalog = "trivialcatalog_file:/test/catalog/file.xml?protocol=eos"
+        testWorkload.setOverrideCatalog(testCatalog)
+
+        self.assertEqual(procTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step procTaskCMSSWHelper")
+        self.assertEqual(mergeTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step mergeTaskCMSSWHelper")
+        self.assertEqual(skimTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step skimTaskCMSSWHelper")
+        self.assertEqual(harvestTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step harvestTaskCMSSWHelper")
+
+        return
+
     def testUpdatingMergeParameters(self):
         """
         _testUpdatingMergeParameters_

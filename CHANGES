@@ -1,3 +1,12 @@
+1.4.9.pre1 to 1.4.9.pre2:
+  - Decouple CMSSW and WMCore python versions from PSet tweak (khurtado) #10179
+  - Add CMSCouchapp dependency to the requirements files (Alan Malta Rodrigues) #10492
+  - added Cheetah3 to requirements_py3.txt (Dario Mapelli) #10491
+  - Add methods to modify environment variables in WMTasks and overrideCatalog option in Steps. Includes unit tests for new methods. (germanfgv) #10344
+  - Adjust couchapp push command to match CMSCouchapp (Alan Malta Rodrigues) #10485
+  - [py2py3] modernized scripts left out of slices (Dario Mapelli) #10482
+
+
 1.4.8 to 1.4.9.pre1:
   - Replace mox dependency with mock. Remove deprecated testMkdir test (khurtado) #10484
   - Remake MSTransferor alert subject; increase alert expiration time to 1h (Alan Malta Rodrigues) #10475

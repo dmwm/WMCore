@@ -5,6 +5,7 @@ wmcore-SysStat
 
 Hardware monitoring utility for launched sensor daemons.
 """
+from __future__ import print_function
 
 import sys
 import os
@@ -26,7 +27,7 @@ def error(msg):
     General error handler.
     """
     
-    print "ERROR:", msg 
+    print("ERROR:", msg) 
     sys.exit(1)
     
 def warning(msg):
@@ -34,7 +35,7 @@ def warning(msg):
     General warning handler.
     """
     
-    print "WARNING:", msg
+    print("WARNING:", msg)
 
 def extractList(targetType, arg):
     """
@@ -157,7 +158,7 @@ def disks():
     """
     
     disks = os.popen('ls -1 /dev/?d[a-z]').readlines()
-    disks = map(lambda x: x.split('/')[2].rstrip(), disks)
+    disks = [x.split('/')[2].rstrip() for x in disks]
     return disks
 
 def loadConfiguration():
@@ -173,7 +174,7 @@ def loadConfiguration():
             
             if "HWMon" not in dir(config):
                 error("No 'HWMon' section found in WMCore configuration file! Please, check your configuration file.")
-    except ImportError, ex:
+    except ImportError as ex:
         error("Can no load configuration file! Please, check configuration file (" + os.path.abspath(configFile) + ")")
 
 def prepareList(targetType, arg):
@@ -197,7 +198,7 @@ def prepareList(targetType, arg):
         if targetType == ITEM_WMCOMPONENT:
             specifiedList[ITEM_WMCOMPONENT] = config.listComponents_()
         elif targetType == ITEM_SERVICE:
-            specifiedList[ITEM_SERVICE] = servicesList.keys()
+            specifiedList[ITEM_SERVICE] = list(servicesList)
         elif targetType == ITEM_RESOURCE:
             specifiedList[ITEM_RESOURCE] = resourcesList
         elif targetType == ITEM_DISK:
@@ -300,7 +301,7 @@ def kill(pid, signal):
     
     try:
         os.kill(int(pid), signal)
-    except OSError, ex:
+    except OSError as ex:
         err = str(err)
         if err.find("No such process") >= 0:
             pass
@@ -399,7 +400,7 @@ def start():
         for target in specifiedList[ttype]:
             statSensorDaemon = isSensorDaemonRunning(target)
             if statSensorDaemon[0]:
-                print "%-7s | Sensor daemon (pid: %s) is already running for %s %s." % (status[2], str(statSensorDaemon[1]), ITEM_TYPE[ttype], target)
+                print("%-7s | Sensor daemon (pid: %s) is already running for %s %s." % (status[2], str(statSensorDaemon[1]), ITEM_TYPE[ttype], target))
                 continue
             
             #statSensor = isSensorRunning(target)
@@ -408,11 +409,11 @@ def start():
             #    continue
               
             if ttype == ITEM_WMCOMPONENT and not isWMComponentRunning(target)[0]:
-                print "%-7s | %s %s is not running." % (status[2], ITEM_TYPE[ttype], target)
+                print("%-7s | %s %s is not running." % (status[2], ITEM_TYPE[ttype], target))
                 continue
                 
             if ttype == ITEM_SERVICE and not isServiceRunning(target)[0]:
-                print "%-7s | %s %s is not running." % (status[2], ITEM_TYPE[ttype], target)
+                print("%-7s | %s %s is not running." % (status[2], ITEM_TYPE[ttype], target))
                 continue
             
             cmd = ["wmcore-sensord"]
@@ -432,16 +433,16 @@ def start():
             
             if sensord.returncode == None:
                 if pid != 0:
-                    print "%-7s | Sensor daemon (pid: %s) for %s %s (pid: %s) started." \
-                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target, pid)
+                    print("%-7s | Sensor daemon (pid: %s) for %s %s (pid: %s) started." \
+                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target, pid))
                 else:
-                    print "%-7s | Sensor daemon (pid: %s) for %s %s started." \
-                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target)
+                    print("%-7s | Sensor daemon (pid: %s) for %s %s started." \
+                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target))
             else:                
                 if pid != 0:
-                    print "%-7s | Sensor daemon for %s %s (pid: %s) did not start." % (status[0], ITEM_TYPE[ttype], target, str(pid))
+                    print("%-7s | Sensor daemon for %s %s (pid: %s) did not start." % (status[0], ITEM_TYPE[ttype], target, str(pid)))
                 else:
-                    print "%-7s | Sensor daemon for %s %s did not start." % (status[0], ITEM_TYPE[ttype], target)
+                    print("%-7s | Sensor daemon for %s %s did not start." % (status[0], ITEM_TYPE[ttype], target))
     
 def shutdown():
     """
@@ -454,7 +455,7 @@ def shutdown():
         for target in specifiedList[ttype]:
             stat = isSensorDaemonRunning(target)
             if stat[0]:
-                print ">>> Shutting down sensor daemon (pid: %s) for %s %s" % (stat[1], ITEM_TYPE[ttype], target)
+                print(">>> Shutting down sensor daemon (pid: %s) for %s %s" % (stat[1], ITEM_TYPE[ttype], target))
                 kill(stat[1], signal.SIGTERM)
     
 def restart():
@@ -462,13 +463,13 @@ def restart():
     Restarts sensor daemons for specified targets.
     """
     
-    print ">>> Shutting down specified sensor daemons."
+    print(">>> Shutting down specified sensor daemons.")
     shutdown()
-    print ">>> Please wait 10 sec."
+    print(">>> Please wait 10 sec.")
     startTime = datetime.today()
     while (datetime.today() - startTime).seconds <= 10:
         time.sleep(1)
-    print ">>> Starting up specified sensor daemons."
+    print(">>> Starting up specified sensor daemons.")
     start()
 
 def status():
@@ -487,7 +488,7 @@ def status():
     status = ["\033[41m OFF  \033[m", "\033[42m  ON  \033[m", "\033[43m  NO  \033[m"]
     
     if len(specifiedList) == 0:
-        print "No information for specified targets."
+        print("No information for specified targets.")
         return
     
     data = {}
@@ -513,7 +514,7 @@ def status():
             data[ITEM_TYPE[ttype]][target]["DAEMON"] = [statSensorDaemon[0], statSensorDaemon[1]]
             data[ITEM_TYPE[ttype]][target]["SENSOR"] = [statSensor[0], statSensor[1]]
             
-    print formatOutput(CMD_STATUS, data)
+    print(formatOutput(CMD_STATUS, data))
 
 def prepareAvailableList(arg):
     """
@@ -530,7 +531,7 @@ def prepareAvailableList(arg):
     loadConfiguration()
     if len(arg) == 0:
         listAvail[ITEM_WMCOMPONENT] = config.listComponents_()
-        listAvail[ITEM_SERVICE] = servicesList.keys()
+        listAvail[ITEM_SERVICE] = list(servicesList)
         listAvail[ITEM_RESOURCE] = resourcesList
         listAvail[ITEM_DISK] = disks()
     else:    
@@ -543,7 +544,7 @@ def prepareAvailableList(arg):
                 if targetType == ITEM_WMCOMPONENT:
                     listAvail[ITEM_WMCOMPONENT] = config.listComponents_()
                 elif targetType == ITEM_SERVICE:
-                    listAvail[ITEM_SERVICE] = servicesList.keys()
+                    listAvail[ITEM_SERVICE] = list(servicesList)
                 elif targetType == ITEM_RESOURCE:
                     listAvail[ITEM_RESOURCE] = resourcesList
                 elif targetType == ITEM_DISK:
@@ -613,8 +614,8 @@ valid = ['config=', 'wmcomponents=', 'services=', 'resources=', 'disks=', 'list=
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
-except getopt.GetoptError, ex:
-    print error(str(ex) + help())
+except getopt.GetoptError as ex:
+    print(error(str(ex) + help()))
 
 configFile    = None
 config        = None
@@ -626,7 +627,7 @@ debugMode     = False
 availableList = {}
 
 if len(opts) == 0:
-    print help()
+    print(help())
     sys.exit(0)
 
 if opts[0][0] != "--config":
@@ -707,7 +708,7 @@ if output == None:
 
 if loadDefaults == True:
     specifiedList[ITEM_WMCOMPONENT] = config.listComponents_()
-    specifiedList[ITEM_SERVICE] = servicesList.keys()
+    specifiedList[ITEM_SERVICE] = list(servicesList)
     specifiedList[ITEM_RESOURCE] = resourcesList
     specifiedList[ITEM_DISK] = disks()
 
@@ -726,8 +727,8 @@ elif command == CMD_RESTART:
     restart()
     sys.exit(0)
 elif command == CMD_HELP:
-    print help(short=False)
+    print(help(short=False))
     sys.exit(0)
 elif command == CMD_LIST:
-    print available()
+    print(available())
     sys.exit(0)

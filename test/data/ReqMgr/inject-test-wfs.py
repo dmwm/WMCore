@@ -14,6 +14,9 @@ It will:
 """
 from __future__ import print_function
 
+from builtins import range, str as newstr, bytes as newbytes
+from future.utils import viewitems
+
 import sys
 import os
 import pwd
@@ -98,7 +101,7 @@ def parseArgs():
     args = parser.parse_args()
 
     # sites argument could be "T1_US_FNAL,T2_CH_CERN" ...
-    if isinstance(args.site, basestring):
+    if isinstance(args.site, (newstr, newbytes)):
         args.site = args.site.split(',')
 
     return args
@@ -142,7 +145,7 @@ def handleAssignment(args, fname, jsonData):
         # always overwrite it as provided in the command line and task/step name
         if 'ProcessingString' in assignDict and isinstance(assignDict['ProcessingString'], dict):
             assignRequest['ProcessingString'] = assignDict['ProcessingString']
-            for task, _ in assignRequest['ProcessingString'].iteritems():
+            for task, _ in viewitems(assignRequest['ProcessingString']):
                 assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
 
         # also reuse values as provided in the request schema at creation level

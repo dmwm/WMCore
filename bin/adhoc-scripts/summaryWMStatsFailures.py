@@ -6,6 +6,8 @@ per task
 """
 from __future__ import print_function, division
 
+from future.utils import viewitems
+
 from future import standard_library
 standard_library.install_aliases()
 import http.client
@@ -40,12 +42,12 @@ def main():
     data = data[wf]['AgentJobInfo']
 
     summary = {}
-    for agent in data.keys():
+    for agent in data:
         print("\nChecking AgentJobInfo for: %s" % agent)
         print("  Skipped files: %s" % pformat(data[agent]['skipped']))
         print("  Overall agent status:\t\t %s" % data[agent]['status'])
 
-        for task, values in data[agent]['tasks'].iteritems():
+        for task, values in viewitems(data[agent]['tasks']):
             if values['jobtype'] not in ['Production', 'Processing', 'Merge', 'Harvest']:
                 # print("Skipping task type %s, for %s" % (values['jobtype'], task))
                 continue

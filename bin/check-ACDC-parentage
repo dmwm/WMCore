@@ -2,6 +2,7 @@
 from __future__ import print_function, division
 from future import standard_library
 standard_library.install_aliases()
+from future.utils import viewitems
 
 import json
 import time
@@ -34,7 +35,7 @@ def investigateACDCCollection(workflow):
     if "rows" in result:
         if result["rows"]:
             for row in result["rows"]:
-                for inFile, value in row["doc"]["files"].items():
+                for inFile, value in viewitems(row["doc"]["files"]):
                     if not value["merged"] or value["merged"] == "0":
                         if value["parents"] and "/unmerged/" in value["parents"][0]:
                             missingFiles.add(inFile)

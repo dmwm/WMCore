@@ -4,6 +4,7 @@ _inject-to-config-cache_
 
 Add a config and it's meta data to the config cache.
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -19,7 +20,7 @@ def loadConfig(configPath):
 
     Import a config.
     """
-    print "Importing the config, this may take a while...",
+    print("Importing the config, this may take a while...", end=' ')
     sys.stdout.flush()
     cfgBaseName = os.path.basename(configPath).replace(".py", "")
     cfgDirName = os.path.dirname(configPath)
@@ -28,16 +29,16 @@ def loadConfig(configPath):
     loadedConfig = imp.load_module(cfgBaseName, modPath[0],
                                    modPath[1], modPath[2])
 
-    print "done."
+    print("done.")
     return loadedConfig
 
 if __name__ == "__main__":
     if len(sys.argv) != 8:
-        print "Usage: %s couchUrl database_name user_name group_name input_file label description" % sys.argv[0]
+        print("Usage: %s couchUrl database_name user_name group_name input_file label description" % sys.argv[0])
         sys.exit(1)
 
     if not os.path.exists(sys.argv[5]):
-        print "Error: Can't locate config file."
+        print("Error: Can't locate config file.")
         sys.exit(1)
 
     loadedConfig = loadConfig(sys.argv[5])
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     configCache.setDescription(sys.argv[7])
     configCache.save()
 
-    print "Added file to the config cache:"
-    print "  DocID:    %s" % configCache.document["_id"]
-    print "  Revision: %s" % configCache.document["_rev"]
+    print("Added file to the config cache:")
+    print("  DocID:    %s" % configCache.document["_id"])
+    print("  Revision: %s" % configCache.document["_rev"])
     sys.exit(0)

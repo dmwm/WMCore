@@ -17,6 +17,9 @@ source apps/wmagent/etc/profile.d/init.sh
  """
 from __future__ import print_function, division
 
+from builtins import range, str, bytes
+from future.utils import viewitems
+
 import argparse
 import logging
 import os
@@ -112,7 +115,7 @@ def lfn2dset(lfns):
     """
     Convert a LFN into a dataset name
     """
-    if isinstance(lfns, basestring):
+    if isinstance(lfns, (str, bytes)):
         lfns = [lfns]
 
     listDsets = set()
@@ -162,7 +165,7 @@ def getDsetAndWf(lfns, wfsDict):
 
     match = []
     for dset in uniqDsets:
-        for wf, values in wfsDict.iteritems():
+        for wf, values in viewitems(wfsDict):
             if dset in values['OutputDatasets']:
                 match.append((wf, values['RequestStatus'], dset))
     if match:
@@ -179,7 +182,7 @@ def fetchWorkflowsSpec(config, listOfWfs):
     Fetch the workload of a list of workflows. Filter out only a few
     usefull keys
     """
-    if isinstance(listOfWfs, basestring):
+    if isinstance(listOfWfs, (str, bytes)):
         listOfWfs = [listOfWfs]
 
     wfDBReader = RequestDBReader(config.AnalyticsDataCollector.centralRequestDBURL,

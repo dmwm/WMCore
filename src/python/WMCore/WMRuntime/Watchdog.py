@@ -98,7 +98,7 @@ class Watchdog(threading.Thread):
                 changedCores = origCores != resources['cores']
                 # If we did base maxPSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
-                # Add the new number of cores to the args such that DashboardInterface can see it
+                # Add the new number of cores to the args such that PerformanceMonitor can see it
                 args['cores'] = resources['cores']
                 if changedCores:
                     if origMaxPSS:

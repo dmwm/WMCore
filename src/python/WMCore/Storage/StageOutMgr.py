@@ -16,7 +16,6 @@ import logging
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
-from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Storage.StageOutError import StageOutFailure
@@ -24,7 +23,23 @@ from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.WMException import WMException
 
 
-# If we don't import them, they cannot be ever used (bad PyCharm!)
+def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
+    """
+    Prepare some extra information regarding the stage out step (for both prod/analysis jobs).
+
+    NOTE: this information used to be shipped to the old SSB dashboard. I'm unsure
+    whether it's provided to any other monitoring system at the moment.
+    """
+    tempDict = {}
+    tempDict['LFN'] = fileToStage['LFN'] if 'LFN' in fileToStage else None
+    tempDict['PNN'] = fileToStage['PNN'] if 'PNN' in fileToStage else None
+    tempDict['PNN'] = pnn if pnn else tempDict['PNN']
+    tempDict['StageOutCommand'] = fileToStage['command'] if 'command' in fileToStage else None
+    tempDict['StageOutCommand'] = command if command else tempDict['StageOutCommand']
+    tempDict['StageOutType'] = stageOutType
+    tempDict['StageOutExit'] = stageOutExit
+    fileToStage['StageOutReport'].append(tempDict)
+    return fileToStage
 
 
 class StageOutMgr(object):

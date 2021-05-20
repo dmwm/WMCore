@@ -12,12 +12,10 @@ import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload

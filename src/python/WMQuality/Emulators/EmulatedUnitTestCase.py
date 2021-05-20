@@ -12,7 +12,6 @@ import mock
 from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
-from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
 from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
@@ -28,13 +27,12 @@ class EmulatedUnitTestCase(unittest.TestCase):
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
                  mockReqMgrAux=True, mockLogDB=True,
-                 mockApMon=True, mockMemoryCache=True, mockPyCondor=True,
+                 mockMemoryCache=True, mockPyCondor=True,
                  mockCRIC=True, mockRucio=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockReqMgrAux = mockReqMgrAux
         self.mockLogDB = mockLogDB
-        self.mockApMon = mockApMon
         self.mockMemoryCache = mockMemoryCache
         self.mockPyCondor = mockPyCondor
         self.mockCRIC = mockCRIC
@@ -96,15 +94,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
                                            new=MockLogDB)
             self.inUseLogDB = self.logDBPatcher.start()
             self.addCleanup(self.logDBPatcher.stop)
-
-        if self.mockApMon:
-            self.apMonPatchers = []
-            patchApMonAt = ['WMCore.Services.Dashboard.apmon.ApMon',
-                            'WMCore.Services.Dashboard.DashboardAPI.apmon.ApMon']
-            for module in patchApMonAt:
-                self.apMonPatchers.append(mock.patch(module, new=MockApMon))
-                self.apMonPatchers[-1].start()
-                self.addCleanup(self.apMonPatchers[-1].stop)
 
         if self.mockMemoryCache:
             self.memoryCachePatcher = mock.patch('WMCore.Cache.GenericDataCache.MemoryCacheStruct',

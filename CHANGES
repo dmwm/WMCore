@@ -1,3 +1,9 @@
+1.4.9.pre2 to 1.4.9.pre3:
+  - stop mocking Dashboard (Alan Malta Rodrigues) #10494
+  - Remove Services/Dashboard package; WMRuntime DashboardMonitor and DashboardInterface (Alan Malta Rodrigues) #10494
+  - new unittest deploy scripts for wmagentpy3 (Dario Mapelli) #10496
+
+
 1.4.9.pre1 to 1.4.9.pre2:
   - Decouple CMSSW and WMCore python versions from PSet tweak (khurtado) #10179
   - Add CMSCouchapp dependency to the requirements files (Alan Malta Rodrigues) #10492

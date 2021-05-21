@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from builtins import str as newstr, bytes as newbytes
+
 import atexit
 import hashlib
 import os
@@ -203,7 +205,7 @@ if can_nose:
                 print("Failed to collect TestCase IDs")
                 return retval
 
-            idhandle = open(".noseids", "r")
+            idhandle = open(".noseids", "rb")
             testIds = pickle.load(idhandle)['ids']
             idhandle.close()
 
@@ -223,6 +225,8 @@ if can_nose:
                                 print('%s needs own slice' % testIds[testID][1])
                                 continue
                             testName = "%s%s" % (testIds[testID][1], testIds[testID][2])
+                            if isinstance(testName, newstr):
+                                testName = testName.encode("utf-8")
                             testHash = hashlib.md5(testName).hexdigest()
                             hashSnip = testHash[:7]
                             hashInt = int(hashSnip, 16)

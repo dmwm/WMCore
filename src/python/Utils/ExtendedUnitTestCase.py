@@ -31,13 +31,19 @@ class ExtendedUnitTestCase(unittest.TestCase):
                     traverse_list(value)
             return
 
+        def get_dict_sortkey(x):
+            if isinstance(x, dict):
+                return list(x.keys())
+            else:
+                return x
+
         def traverse_list(theList):
             for value in theList:
                 if isinstance(value, dict):
                     traverse_dict(value)
                 elif isinstance(value, list):
                     traverse_list(value)
-            theList.sort()
+            theList.sort(key=get_dict_sortkey)
             return
 
         if not isinstance(expected_obj, type(actual_obj)):

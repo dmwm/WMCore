@@ -15,7 +15,6 @@ import zlib
 from Utils.Utilities import decodeBytesToUnicode
 from Utils.PythonVersion import PY3
 
-
 def calculateChecksums(filename):
     """
     _calculateChecksums_

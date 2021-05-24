@@ -57,7 +57,7 @@ from io import BytesIO
 import http.client
 from urllib.parse import urlencode
 
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from Utils.PortForward import portForward, PortForward
 
 
@@ -76,6 +76,8 @@ class ResponseHeader(object):
         startRegex = r"^HTTP/\d.\d \d{3}"
         continueRegex = r"^HTTP/\d.\d 100"  # Continue: client should continue its request
         replaceRegex = r"^HTTP/\d.\d"
+
+        response = decodeBytesToUnicode(response)
 
         for row in response.split('\r'):
             row = row.replace('\n', '')

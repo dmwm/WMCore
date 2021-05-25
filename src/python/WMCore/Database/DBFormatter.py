@@ -11,6 +11,7 @@ from builtins import str, bytes, zip, range
 import datetime
 import time
 import types
+import sys
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -77,7 +78,7 @@ class DBFormatter(WMObject):
                 entry = {}
                 for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if isinstance(i[index], str):
+                    if isinstance(i[index], str) and sys.version_info[0] == 2:
                         entry[str(descriptions[index].lower())] = i[index].encode("utf-8")
                     else:
                         entry[str(descriptions[index].lower())] = i[index]

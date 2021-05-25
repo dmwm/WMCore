@@ -11,6 +11,9 @@ import stat
 import subprocess
 import time
 import zlib
+import sys
+
+from Utils.Utilities import decodeBytesToUnicode
 
 
 def calculateChecksums(filename):
@@ -34,7 +37,7 @@ def calculateChecksums(filename):
     # the lambda basically creates an iterator function with zero
     # arguments that steps through the file in 4096 byte chunks
     with open(filename, 'rb') as f:
-        for chunk in iter((lambda: f.read(4096)), ''):
+        for chunk in iter((lambda: f.read(4096)), b''):
             adler32Checksum = zlib.adler32(chunk, adler32Checksum)
             cksumProcess.stdin.write(chunk)
 
@@ -49,7 +52,11 @@ def calculateChecksums(filename):
     if len(cksumStdout) != 2 or int(cksumStdout[1]) != filesize:
         raise RuntimeError("Something went wrong with the cksum calculation !")
 
-    return (format(adler32Checksum & 0xffffffff, '08x'), "%s" % cksumStdout[0])
+    if sys.version_info[0] == 3:
+        # using native-string approach. convert from bytes to unicode in
+        # python 3 only.
+        cksumStdout[0] = decodeBytesToUnicode(cksumStdout[0])
+    return (format(adler32Checksum & 0xffffffff, '08x'), cksumStdout[0])
 
 
 def tail(filename, nLines=20):

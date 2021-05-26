@@ -35,6 +35,7 @@ from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -410,8 +411,16 @@ class Requests(dict):
 
     def addBasicAuth(self, username, password):
         """Add basic auth headers to request"""
-        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (
+        ## TODO: base64.encodestring is deprecated
+        # https://docs.python.org/3.8/library/base64.html#base64.encodestring
+        # change to base64.encodebytes after we drop python2
+        username = encodeUnicodeToBytes(username)
+        password = encodeUnicodeToBytes(password)
+        encodedauth = base64.encodestring(b'%s:%s' % (
             username, password)).strip()
+        if sys.version_info[0] == 3:
+            encodedauth = decodeBytesToUnicode(encodedauth)
+        auth_string = "Basic %s" % encodedauth
         self.additionalHeaders["Authorization"] = auth_string
 
     def getKeyCert(self):
@@ -559,6 +568,8 @@ class JSONRequests(Requests):
         if data:
             decoder = JSONDecoder()
             thunker = JSONThunker()
+            if sys.version_info[0] == 3:
+                data = decodeBytesToUnicode(data)
             data = decoder.decode(data)
             unthunked = thunker.unthunk(data)
             return unthunked

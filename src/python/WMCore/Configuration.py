@@ -9,24 +9,23 @@ Module dealing with Configuration file in python format
 
 """
 
-import imp
+from builtins import object, int, str as newstr, bytes as newbytes
+
+from future.utils import listvalues
+
 import os
 import traceback
 
 from Utils.PythonVersion import PY3
 
-# PY3 compatibility (can be removed once python2 gets dropped)
-if PY3:
-    basestring = str
-    unicode = str
-    long = int
+import imp
 
 _SimpleTypes = [
     bool,
     float,
-    basestring,  # For py2/py3 compatibility, don't let futurize remove PY3 Remove when python 3 transition complete
-    str,
-    long,  # PY3: Not needed in python3, will be converted to duplicate int
+    # basestring,  # For py2/py3 compatibility, don't let futurize remove PY3 Remove when python 3 transition complete
+    newbytes,
+    newstr,
     type(None),
     int,
 ]
@@ -111,7 +110,7 @@ class ConfigSection(object):
         elif isinstance(value, tuple(_ComplexTypes)):
             vallist = value
             if isinstance(value, dict):
-                vallist = value.values()
+                vallist = listvalues(value)
             for val in vallist:
                 self._complexTypeCheck(name, val)
         else:
@@ -136,8 +135,13 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if isinstance(value, unicode):
-            value = str(value)
+        # FIXME: This needs to be fixed when we run with py3 env
+        # This is the best solution we can afford right now. We tried to use
+        # Utils.Utilities.encodeUnicodeToBytes but it misteriously caused
+        # https://github.com/dmwm/WMCore/issues/10381
+        if not PY3:
+            if isinstance(value, unicode):
+                value = str(value)
 
         # for backward compatibility use getattr and sure to work if the
         # _internal_skipChecks flag is not set
@@ -588,7 +592,7 @@ def loadConfigurationFile(filename):
         modPath = imp.find_module(cfgBaseName, [cfgDirName])
     try:
         modRef = imp.load_module(cfgBaseName, modPath[0],
-                                 modPath[1], modPath[2])
+                                          modPath[1], modPath[2])
     except Exception as ex:
         msg = "Unable to load Configuration File:\n"
         msg += "%s\n" % filename
@@ -597,7 +601,7 @@ def loadConfigurationFile(filename):
         msg += str(traceback.format_exc())
         raise RuntimeError(msg)
 
-    for attr in modRef.__dict__.values():
+    for attr in listvalues(modRef.__dict__):
         if isinstance(attr, Configuration):
             return attr
 

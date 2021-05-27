@@ -1,3 +1,10 @@
+1.4.9.pre3 to 1.4.9.pre4:
+  - [py2py3] fix stuck unittest in test/python/Utils_t (Dario Mapelli) #10503
+  - [py2py3] attempt to fix problem with formatting data from DB (Dario Mapelli) #10504
+  - [py2py3] pycurl_manager: converting response to unicode before parsing - src (Dario Mapelli) #10501
+  - [py2py3] setup_test.py compatible with both py2 and py3 (Dario Mapelli) #10499
+
+
 1.4.9.pre2 to 1.4.9.pre3:
   - stop mocking Dashboard (Alan Malta Rodrigues) #10494
   - Remove Services/Dashboard package; WMRuntime DashboardMonitor and DashboardInterface (Alan Malta Rodrigues) #10494

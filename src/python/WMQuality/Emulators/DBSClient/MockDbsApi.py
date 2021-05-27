@@ -11,12 +11,12 @@ from future.utils import viewitems
 import copy
 import json
 import os
-import sys
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.WMBase import getTestBase
 
+from Utils.PythonVersion import PY2
 
 # Read in the data just once so that we don't have to do it for every test (in __init__)
 
@@ -44,7 +44,7 @@ def _unicode(data):
     by unicode (as u"hello worls") and future.types.newstr (as "hello world")
     https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
     """
-    if sys.version_info[0] == 2:
+    if PY2:
         return unicode(data)
     else:
         return str(data)

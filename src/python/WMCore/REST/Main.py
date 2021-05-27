@@ -39,6 +39,7 @@ from cherrypy.lib import profiler
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
 from Utils.Utilities import lowerCmsHeaders
+from Utils.PythonVersion import PY2
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
@@ -434,7 +435,7 @@ class RESTDaemon(RESTMain):
             self.run()
         except Exception as e:
             error = True
-            if sys.version_info[0] == 2:
+            if PY2:
                 trace = BytesIO()
             else:
                 trace = StringIO()

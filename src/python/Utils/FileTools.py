@@ -11,9 +11,9 @@ import stat
 import subprocess
 import time
 import zlib
-import sys
 
 from Utils.Utilities import decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 
 
 def calculateChecksums(filename):
@@ -52,7 +52,7 @@ def calculateChecksums(filename):
     if len(cksumStdout) != 2 or int(cksumStdout[1]) != filesize:
         raise RuntimeError("Something went wrong with the cksum calculation !")
 
-    if sys.version_info[0] == 3:
+    if PY3:
         # using native-string approach. convert from bytes to unicode in
         # python 3 only.
         cksumStdout[0] = decodeBytesToUnicode(cksumStdout[0])

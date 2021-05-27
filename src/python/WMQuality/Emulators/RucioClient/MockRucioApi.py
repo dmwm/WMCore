@@ -10,12 +10,13 @@ from future.utils import listitems
 import json
 import logging
 import os
-import sys
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
 from WMCore.Services.Rucio.Rucio import WMRucioException, WMRucioDIDNotFoundException
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
+
+from Utils.PythonVersion import PY2
 
 PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
@@ -44,7 +45,7 @@ def _unicode(data):
     by unicode (as u"hello worls") and future.types.newstr (as "hello world")
     https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
     """
-    if sys.version_info[0] == 2:
+    if PY2:
         return unicode(data)
     else:
         return str(data)

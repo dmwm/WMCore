@@ -11,10 +11,9 @@ Module dealing with Configuration file in python format
 
 import imp
 import os
-import sys
 import traceback
 
-PY3 = sys.version_info[0] == 3
+from Utils.PythonVersion import PY3
 
 # PY3 compatibility (can be removed once python2 gets dropped)
 if PY3:

@@ -14,8 +14,6 @@ from builtins import str
 from future.utils import viewvalues
 
 import io
-import logging
-import mmap
 import re
 
 from urllib.parse import urlparse, urlunparse
@@ -727,11 +725,5 @@ def getStringsBetween(start, end, source):
 
 def getIterMatchObjectOnRegexp(filePath, regexp):
     with io.open(filePath, 'r', encoding='utf8', errors='ignore') as f:
-        try:
-            mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        except ValueError:
-            logging.warning("Cannot mmap empty file: %s", filePath)
-        else:
-            for m in re.finditer(regexp, mm):
-                yield m
-            mm.close()
+        for m in re.finditer(regexp, f.read()):
+            yield m

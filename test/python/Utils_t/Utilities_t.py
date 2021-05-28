@@ -10,7 +10,8 @@ import os
 import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
-    safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize
+    safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
+    encodeUnicodeToBytes
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -26,14 +27,14 @@ class UtilitiesTests(unittest.TestCase):
         self.assertEqual(makeList(""), [])
         self.assertEqual(makeList(['123']), ['123'])
         self.assertEqual(makeList([456]), [456])
-        self.assertItemsEqual(makeList(['123', 456, '789']), ['123', 456, '789'])
+        self.assertListEqual(makeList(['123', 456, '789']), ['123', 456, '789'])
 
         self.assertEqual(makeList('123'), ['123'])
         self.assertEqual(makeList(u'123'), [u'123'])
-        self.assertItemsEqual(makeList('123,456'), ['123', '456'])
-        self.assertItemsEqual(makeList(u'123,456'), [u'123', u'456'])
-        self.assertItemsEqual(makeList('["aa","bb","cc"]'), ['aa', 'bb', 'cc'])
-        self.assertItemsEqual(makeList(u' ["aa", "bb", "cc"] '), ['aa', 'bb', 'cc'])
+        self.assertListEqual(makeList('123,456'), ['123', '456'])
+        self.assertListEqual(makeList(u'123,456'), [u'123', u'456'])
+        self.assertListEqual(makeList('["aa","bb","cc"]'), ['aa', 'bb', 'cc'])
+        self.assertListEqual(makeList(u' ["aa", "bb", "cc"] '), ['aa', 'bb', 'cc'])
 
         self.assertRaises(ValueError, makeList, 123)
         self.assertRaises(ValueError, makeList, 123.456)
@@ -57,10 +58,10 @@ class UtilitiesTests(unittest.TestCase):
         for empty list or string.
         """
         self.assertEqual(makeList(['123']), makeNonEmptyList(['123']))
-        self.assertItemsEqual(makeList(['123', 456, '789']), makeNonEmptyList(['123', 456, '789']))
+        self.assertListEqual(makeList(['123', 456, '789']), makeNonEmptyList(['123', 456, '789']))
 
-        self.assertItemsEqual(makeList(u'123,456'), makeNonEmptyList(u'123, 456'))
-        self.assertItemsEqual(makeList('["aa","bb","cc"]'), makeNonEmptyList('["aa", "bb", "cc"]'))
+        self.assertListEqual(makeList(u'123,456'), makeNonEmptyList(u'123, 456'))
+        self.assertListEqual(makeList('["aa","bb","cc"]'), makeNonEmptyList('["aa", "bb", "cc"]'))
 
         self.assertRaises(ValueError, makeNonEmptyList, [])
         self.assertRaises(ValueError, makeNonEmptyList, "")
@@ -127,6 +128,7 @@ cms::Exception caught in CMS.EventProcessor and rethrown
 """
         encodedMessage = \
             'eNp1j8FqwzAMhu95Cl0G2yEhaXvyrU3dkkFHqfcCnq02hkQOtlz6+HM2MrbDdBLS9/1CxdNJHcsI7UnJh8GJnScBsL0yhoMbEOpV+ZqoXNVNDc1GrBuxWUMr1TucfWRJ9pKoMGMU4scHo9OtZ3C5G+O8L3OBvCPxOXiDMfpw0G5IAWEnj91b8Xvn6KbYTxPab0+ZHm0aUD7QpDn/r/qP1dFdD85e8IoBySz0Ts+j1md9y4zjxMAebGYWTsMCGE+sHeVk0JS/+Qqc79lkuNtDryN8IBLAc1VVL5+o0W8i'
+        encodedMessage = encodeUnicodeToBytes(encodedMessage)
         self.assertEqual(zipEncodeStr(message, maxLen=300, compressLevel=9, steps=10, truncateIndicator=" (...)"),
                          encodedMessage)
         # Test different maximum lengths
@@ -150,8 +152,8 @@ cms::Exception caught in CMS.EventProcessor and rethrown
                 self.data = "blah"
 
         cls1 = TestClass1()
-        print(getSize(cls1)) # 1129
-        self.assertTrue(getSize(cls1) > 1000)
+        print(getSize(cls1)) # py2: 1129, py3: 205
+        self.assertTrue(getSize(cls1) > 200)
 
         class TestClass2(object):
             """
@@ -162,8 +164,8 @@ cms::Exception caught in CMS.EventProcessor and rethrown
                 self.data = "blah"
 
         cls2 = TestClass2()
-        print(getSize(cls2)) # 426
-        self.assertTrue(getSize(cls2) > 400)
+        print(getSize(cls2)) # py2: 426, py3: 205
+        self.assertTrue(getSize(cls2) > 200)
 
 if __name__ == '__main__':
     unittest.main()

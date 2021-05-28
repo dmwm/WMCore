@@ -136,6 +136,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     truncate message until zip/encoded version
     is within the limits allowed.
     """
+    message = encodeUnicodeToBytes(message)
     encodedStr = zlib.compress(message, compressLevel)
     encodedStr = base64.b64encode(encodedStr)
     if len(encodedStr) < maxLen or maxLen == -1:
@@ -146,6 +147,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     # Estimate new length for message zip/encoded version
     # to be less than maxLen.
     # Also, append truncate indicator to message.
+    truncateIndicator = encodeUnicodeToBytes(truncateIndicator)
     strLen = int((maxLen - len(truncateIndicator)) / compressRate)
     message = message[:strLen] + truncateIndicator
 

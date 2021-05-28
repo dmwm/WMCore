@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 
+from builtins import zip, str, range
+from future.utils import viewitems
+
 import unittest
 
 # import FWCore.ParameterSet.Config as cms
@@ -345,14 +348,14 @@ class LumiListTest(unittest.TestCase):
     def testLumisWithEvents(self):
         """Make sure that runs and lumis with event counts as used in CRAB3 works
         """
-        clumis = {'1': range(2, 20) + range(31, 39) + range(45, 49),
-                  '2': range(6, 20) + range(30, 40),
-                  '3': range(10, 20) + range(30, 40) + range(50, 60),
-                  '4': range(1, 100),
+        clumis = {'1': list(range(2, 20)) + list(range(31, 39)) + list(range(45, 49)),
+                  '2': list(range(6, 20)) + list(range(30, 40)),
+                  '3': list(range(10, 20)) + list(range(30, 40)) + list(range(50, 60)),
+                  '4': list(range(1, 100)),
                   }
         # create a lumilist like {'21' : {'2':None ...} ...}
         lumis = {}
-        for run, ls in clumis.items():
+        for run, ls in viewitems(clumis):
             newrun = str(int(run) + 20)
             lumis[newrun] = {str(l): None for l in ls}
 

@@ -48,15 +48,15 @@ class GetMigratedBlocks(DBFormatter):
 
         formattedResult = {}
         for row in dictResult:
-            if row["location"] not in formattedResult.keys():
+            if row["location"] not in formattedResult:
                 formattedResult[row["location"]] = {}
 
             locationDict = formattedResult[row["location"]]
-            if row["dataset"] not in locationDict.keys():
+            if row["dataset"] not in locationDict:
                 locationDict[row["dataset"]] = {}
 
             datasetDict = locationDict[row["dataset"]]
-            if row["blockname"] not in datasetDict.keys():
+            if row["blockname"] not in datasetDict:
                 datasetDict[row["blockname"]] = {"is-open": "n",
                                                  "files": []}
 

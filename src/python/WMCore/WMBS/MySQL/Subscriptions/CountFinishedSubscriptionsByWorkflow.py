@@ -5,6 +5,8 @@ MySQL implementation of Subscription.CountFinishedSubscriptionsByWorkflow
 """
 from __future__ import division, print_function
 
+from builtins import str, bytes
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -30,7 +32,7 @@ class CountFinishedSubscriptionsByWorkflow(DBFormatter):
         This DAO returns a list of dictionaries containing
         the key 'id' with the id of the finished subscriptions
         """
-        if isinstance(workflowNames, basestring):
+        if isinstance(workflowNames, (str, bytes)):
             workflowNames = [workflowNames]
 
         binds = [{'workflowName': w} for w in workflowNames]

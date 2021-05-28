@@ -11,12 +11,6 @@ dependencies = {
         'modules': ['WMCore.Configuration'],
         'systems': ['wmc-base']
     },
-    'wmc-wmarchive': {
-        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch', 'wmc-httpd'],
-        'packages': ['WMCore.REST'],
-        'modules': ['WMCore.Configuration'],
-        'systems': ['wmc-base']
-    },
     'wmc-base': {
         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
         'packages': ['Utils', 'WMCore.DataStructs', 'WMCore.Cache'],
@@ -52,9 +46,24 @@ dependencies = {
                     'src/templates/WMCore/WebTools',
                     'src/templates/WMCore/WebTools/Masthead', ]
     },
+    'wmcore': {
+        'packages': ['WMCore+',
+                     'WMComponent+',
+                     'WMQuality+',
+                     'PSetTweaks+',
+                     'Utils+'],
+        'modules': [],
+        'systems': [],
+        'statics': ['src/couchapps+',
+                    'src/css+',
+                    'src/html+',
+                    'src/javascript+',
+                    'src/templates+',
+                    'etc+'
+                    ],
+    },
     'reqmgr2': {
         'packages': ['WMCore.ReqMgr+',
-                     'WMCore.WMDataMining+',
                      'WMCore.Services+',
                      'WMCore.ACDC',
                      'Utils'],
@@ -66,7 +75,6 @@ dependencies = {
                     'src/couchapps/ReqMgrAux+',
                     'src/couchapps/ConfigCache+',
                     'src/couchapps/WMStats+',
-                    'src/couchapps/WMDataMining+',
                     'src/html/ReqMgr+'
                     ],
     },
@@ -82,7 +90,7 @@ dependencies = {
         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
         'statics': [],
     },
-    'workqueue': {
+    'global-workqueue': {
         'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
                      'WMCore.Wrappers+', 'WMCore.Services+',
                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
@@ -105,21 +113,11 @@ dependencies = {
                      'WMCore.JobSplitting+', 'WMCore.ProcessPool',
                      'WMCore.Services+', 'WMCore.WMSpec+',
                      'WMCore.WMBS+', 'WMCore.ResourceControl+'],
-        'systems': ['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
+        'systems': ['wmc-web', 'wmc-database', 'global-workqueue', 'wmc-runtime'],
         'statics': ['src/javascript/WMCore/WebTools/Agent',
                     'src/javascript/WMCore/WebTools/WMBS',
                     'src/javascript/external/graphael',
                     'src/templates/WMCore/WebTools/WMBS'],
-    },
-    'asyncstageout': {
-        'packages': ['WMCore.Agent+', 'WMCore.Storage+',
-                     'WMCore.Credential', 'WMCore.WorkerThreads',
-                     'WMCore.ACDC',
-                     'WMCore.Services+'],
-        'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
-                    'WMCore.Services.pycurl_manager', 'WMComponent.__init__'],
-        'systems': ['wmc-database'],
-        'statics': ['src/couchapps/Agent+'],
     },
     'crabcache': {
         'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
@@ -128,30 +126,28 @@ dependencies = {
                     'WMCore.Services.pycurl_manager', ],
     },
     'crabserver': {
-        'packages': ['WMCore.Credential', 'WMCore.Services+',
-                     'WMCore.WMSpec+', 'WMCore.ACDC'],
+        'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.WMSpec+'],
         'modules': ['WMCore.DataStructs.LumiList'],
         'systems': ['wmc-rest', 'wmc-database'],
     },
     'crabclient': {
-        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+',
-                     'WMCore.Services.PhEDEx+', 'WMCore.Services.DBS+'],
+        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks',
+                     'WMCore.Services.UserFileCache+', 'WMCore.Services.DBS+'],
         'systems': ['wmc-base'],
         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', ],
     },
     'crabtaskworker': {
-        'packages': ['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
+        'packages': ['WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                      'WMCore.JobSplitting', 'WMCore.Services+', 'Utils+'],
-        'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
         'systems': ['wmc-database', 'wmc-runtime'],
+        'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
     },
     'wmclient': {
         'systems': ['wmc-runtime', 'wmc-database']
     },
     'reqmon': {
-        'packages': ['WMCore.WMStats+', 'WMCore.WMDataMining+',
-                     'WMCore.Services+', 'WMCore.Wrappers+',
+        'packages': ['WMCore.WMStats+', 'WMCore.Services+', 'WMCore.Wrappers+',
                      'WMCore.ReqMgr.DataStructs+'
                      ],
         'modules': ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
@@ -197,7 +193,7 @@ dependencies = {
                     'WMCore.WMException',
                     'WMCore.Lexicon',
                     'WMCore.WMBS.File'],
-        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'workqueue'],
+        'systems': ['wmc-web', 'wmc-database', 'wmc-runtime', 'global-workqueue'],
         'statics': ['src/javascript/external/graphael',
                     'src/couchapps/FWJRDump+',
                     'src/couchapps/T0Request+',

@@ -5,6 +5,7 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
+from builtins import range
 import threading
 import unittest
 from pprint import pformat as pretty

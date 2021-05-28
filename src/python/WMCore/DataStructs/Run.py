@@ -8,6 +8,8 @@ container representing a run, and its constituent lumi sections and event counts
 
 from __future__ import print_function
 
+from future.utils import viewitems, listitems
+
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -16,6 +18,11 @@ class Run(WMObject):
     _Run_
 
     Run container, is a list of lumi sections with associate event counts
+
+    TODO 
+    - use the decorator `from functools import total_ordering` after
+      dropping support for python 2.6
+    - then, drop __ne__, __le__, __gt__, __ge__
     """
 
     def __init__(self, runNumber=None, *newLumis):
@@ -27,6 +34,19 @@ class Run(WMObject):
     def __str__(self):
         return "Run%s:%s" % (self.run, self.eventsPerLumi)
 
+    def __eq__(self, rhs):
+        """
+        Check equality of run numbers and then underlying lumi/event dicts
+        """
+        if not isinstance(rhs, Run):
+            return False
+        if self.run != rhs.run:
+            return False
+        return self.eventsPerLumi == rhs.eventsPerLumi
+
+    def __ne__(self, rhs):
+        return not self.__eq__(rhs)
+
     def __lt__(self, rhs):
         """
         Compare on run # first, then by lumis as a list is compared
@@ -37,15 +57,14 @@ class Run(WMObject):
             return sorted(self.eventsPerLumi.keys()) < sorted(rhs.eventsPerLumi.keys())
         return self.eventsPerLumi < rhs.eventsPerLumi
 
-    def __gt__(self, rhs):
-        """
-        Compare on run # first, then by lumis as a list is compared
-        """
-        if self.run != rhs.run:
-            return self.run > rhs.run
-        if sorted(self.eventsPerLumi.keys()) != sorted(rhs.eventsPerLumi.keys()):
-            return sorted(self.eventsPerLumi.keys()) > sorted(rhs.eventsPerLumi.keys())
-        return self.eventsPerLumi > rhs.eventsPerLumi
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __gt__(self, other):
+        return not self.__le__(other)
+
+    def __ge__(self, other):
+        return not self.__lt__(other)
 
     def extend(self, items):
         """
@@ -53,9 +72,6 @@ class Run(WMObject):
         """
         self.extendLumis(items)
         return
-
-    def __cmp__(self, rhs):
-        return (self > rhs) - (self < rhs)  # Python3 equivalent of cmp()
 
     def __add__(self, rhs):
         """
@@ -66,7 +82,7 @@ class Run(WMObject):
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError(msg)
 
-        for lumi, events in rhs.eventsPerLumi.iteritems():
+        for lumi, events in viewitems(rhs.eventsPerLumi):
             if lumi not in self.eventsPerLumi or not self.eventsPerLumi[lumi]:  # Either doesn't exist, 0, or None
                 self.eventsPerLumi[lumi] = events
             else:
@@ -112,25 +128,12 @@ class Run(WMObject):
         except IndexError:
             pass
 
-    def __eq__(self, rhs):
-        """
-        Check equality of run numbers and then underlying lumi/event dicts
-        """
-        if not isinstance(rhs, Run):
-            return False
-        if self.run != rhs.run:
-            return False
-        return self.eventsPerLumi == rhs.eventsPerLumi
-
-    def __ne__(self, rhs):
-        return not self.__eq__(rhs)
-
     def __hash__(self):
         """
         Calculate the value of the hash
         """
         value = self.run.__hash__()
-        value += hash(frozenset(self.eventsPerLumi.items()))  # Hash that represents the dictionary
+        value += hash(frozenset(listitems(self.eventsPerLumi)))  # Hash that represents the dictionary
         return value
 
     @property
@@ -218,7 +221,7 @@ class Run(WMObject):
         """
         self.run = jsondata["Run"]
         self.eventsPerLumi = {}
-        for lumi, events in jsondata["Lumis"].iteritems():
+        for lumi, events in viewitems(jsondata["Lumis"]):
             self.eventsPerLumi[int(lumi)] = events  # Make the keys integers again
 
         return self

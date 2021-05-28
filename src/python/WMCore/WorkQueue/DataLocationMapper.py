@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
 
+from future.utils import viewitems, viewvalues, listvalues
+from builtins import object
+from future import standard_library
+standard_library.install_aliases()
+
 from collections import defaultdict
 import logging
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+
+from urllib.parse import urlparse
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
@@ -49,6 +51,7 @@ class DataLocationMapper(object):
         self.params.setdefault('locationFrom', 'subscription')
         self.params.setdefault('incompleteBlocks', False)
         self.params.setdefault('requireBlocksSubscribed', True)
+        self.params.setdefault('rucioAccount', "wmcore_transferor")
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
@@ -56,8 +59,8 @@ class DataLocationMapper(object):
                 self.params['locationFrom'], validLocationFrom)
             raise ValueError(msg)
 
-        if self.params.get('phedex'):
-            self.phedex = self.params['phedex']  # NOTE: this might be a Rucio instance
+        self.phedex = self.params.get('phedex')
+        self.rucio = self.params.get('rucio')
         if self.params.get('cric'):
             self.cric = self.params['cric']
 
@@ -70,35 +73,44 @@ class DataLocationMapper(object):
 
         dataByDbs = self.organiseByDbs(dataItems)
 
-        for dbs, dataItems in dataByDbs.items():
+        for dbs, dataItems in viewitems(dataByDbs):
             # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
-                output = self.locationsFromPhEDEx(dataItems)
+                if self.rucio:
+                    # then it's Rucio
+                    output = self.locationsFromRucio(dataItems)
+                else:
+                    output = self.locationsFromPhEDEx(dataItems)
             else:
                 output = self.locationsFromDBS(dbs, dataItems)
             result[dbs] = output
 
         return result
 
+    def locationsFromRucio(self, dataItems):
+        """
+        Get data location from Rucio. Location is mapped to the actual
+        sites associated with them, so PSNs are actually returned
+        :param dataItems: list of datasets/blocks names
+        :return: dictionary key'ed by the dataset/block, with a list of PSNs as value
+        """
+        result = defaultdict(set)
+        self.logger.info("Fetching location from Rucio...")
+        for dataItem in dataItems:
+            try:
+                dataLocations = self.rucio.getDataLockedAndAvailable(name=dataItem,
+                                                                     account=self.params['rucioAccount'])
+                # resolve the PNNs into PSNs
+                result[dataItem] = self.cric.PNNstoPSNs(dataLocations)
+            except Exception as ex:
+                self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
+
+        return result
+
     def locationsFromPhEDEx(self, dataItems):
         """Get data location from phedex"""
         result = defaultdict(set)
-        if hasattr(self.phedex, "getBlocksInContainer"):
-            ### It's RUCIO!!!
-            self.logger.info("Fetching location from Rucio...")
-            for dataItem in dataItems:
-                try:
-                    if isDataset(dataItem):
-                        response = self.phedex.getReplicaInfoForBlocks(dataset=dataItem)
-                        for item in response:
-                            result[dataItem].update(item['replica'])
-                    else:
-                        response = self.phedex.getReplicaInfoForBlocks(block=dataItem)
-                        for item in response:
-                            result[item['name']].update(item['replica'])
-                except Exception as ex:
-                    self.logger.error('Error getting block location from Rucio for %s: %s', dataItem, str(ex))
-        elif self.params['locationFrom'] == 'subscription':
+        if self.params['locationFrom'] == 'subscription':
             self.logger.info("Fetching subscription data from PhEDEx")
             # subscription api doesn't support partial update
             result = self.phedex.getSubscriptionMapping(*dataItems)
@@ -141,15 +153,15 @@ class DataLocationMapper(object):
         for dataItem in dataItems:
             try:
                 if isDataset(dataItem):
-                    phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly=True)
+                    phedexNodeNames = dbs.listDatasetLocation(dataItem)
                 else:
-                    phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly=True)
+                    phedexNodeNames = dbs.listFileBlockLocation(dataItem)
                 result[dataItem].update(phedexNodeNames)
             except Exception as ex:
                 self.logger.error('Error getting block location from dbs for %s: %s', dataItem, str(ex))
 
         # convert the sets to lists
-        for name, nodes in result.items():
+        for name, nodes in viewitems(result):
             psns = set()
             psns.update(self.cric.PNNstoPSNs(nodes))
             result[name] = list(psns)
@@ -188,8 +200,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
         modified = []
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in viewvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -216,8 +228,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         # Given that there might be multiple data items to be updated
         # handle it like a dict such that element lookup becomes easier
         modified = {}
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in viewvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -232,7 +244,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                 modified[element.id] = element
                                 break
         self.logger.info("Updating %d elements for Parent location update", len(modified))
-        self.backend.saveElements(*modified.values())
+        self.backend.saveElements(*listvalues(modified))
 
         return len(modified)
 
@@ -246,8 +258,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         # Given that there might be multiple data items to be updated
         # handle it like a dict such that element lookup becomes easier
         modified = {}
-        for _, dataMapping in dataLocations.items():
-            for data, locations in dataMapping.items():
+        for dataMapping in listvalues(dataLocations):
+            for data, locations in viewitems(dataMapping):
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
                     if element.get('NoPileupUpdate', False):
@@ -262,6 +274,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                 modified[element.id] = element
                                 break
         self.logger.info("Updating %d elements for Pileup location update", len(modified))
-        self.backend.saveElements(*modified.values())
+        self.backend.saveElements(*listvalues(modified))
 
         return len(modified)

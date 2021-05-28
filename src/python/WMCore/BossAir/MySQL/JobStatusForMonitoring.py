@@ -5,6 +5,7 @@ _JobStatusMonitoring_
 MySQL implementation for loading a job by scheduler status
 """
 
+from future.utils import viewitems
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -55,7 +56,7 @@ class JobStatusForMonitoring(DBFormatter):
             commonStates[data['workflow']][state] += data['num_jobs']
 
         results = []
-        for key, value in commonStates.items():
+        for key, value in viewitems(commonStates):
             reformedData = {'request_name': key}
             reformedData.update(value)
             results.append(reformedData)

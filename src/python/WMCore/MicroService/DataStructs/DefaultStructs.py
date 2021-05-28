@@ -30,6 +30,7 @@ TRANSFEROR_REPORT = dict(start_time=0,
                          nodes_out_of_space=None,
                          success_request_transition=0,
                          failed_request_transition=0,
+                         problematic_requests=0,
                          num_datasets_subscribed=0,
                          num_blocks_subscribed=0)
 
@@ -48,22 +49,30 @@ TRANSFER_RECORD = dict(dataset="",
 
 # summary metrics for the MSOutput thread
 # (also available through the `info` REST API)
-OUTPUT_PRODUCER_REPORT = dict(thread_id="",
-                              start_time=0,
-                              end_time=0,
-                              execution_time=0,
-                              error="",
-                              total_num_requests=0,
-                              total_num_campaigns=0,
-                              num_datasets_subscribed=0,
-                              num_data_requests=0)
+OUTPUT_REPORT = dict(thread_id="",
+                     start_time=0,
+                     end_time=0,
+                     execution_time=0,
+                     error="",
+                     total_num_requests=0,
+                     total_num_campaigns=0,
+                     num_datasets_subscribed=0,
+                     num_data_requests=0)
 
-OUTPUT_CONSUMER_REPORT = dict(thread_id="",
-                              start_time=0,
-                              end_time=0,
-                              execution_time=0,
-                              error="",
-                              total_num_requests=0,
-                              total_num_campaigns=0,
-                              num_datasets_subscribed=0,
-                              num_data_requests=0)
+# summary metrics for the MSRuleCleaner thread
+# (also available through the `info` REST API)
+RULECLEANER_REPORT = dict(thread_id="",
+                          start_time=0,
+                          end_time=0,
+                          execution_time=0,
+                          error="",
+                          total_num_requests=0,
+                          clean_num_requests=0,
+                          normal_archived_num_requests=0,
+                          force_archived_num_requests=0,
+                          success_block_rules_deleted=0,
+                          failed_block_rules_deleted=0,
+                          success_container_rules_deleted=0,
+                          failed_container_rules_deleted=0,
+                          success_request_transition=0,
+                          failed_request_transition=0)

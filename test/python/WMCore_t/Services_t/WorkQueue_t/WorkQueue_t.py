@@ -42,7 +42,13 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.testInit.setupCouch('local_workqueue_t', *self.couchApps)
         self.testInit.setupCouch('local_workqueue_t_inbox', *self.couchApps)
         self.testInit.generateWorkDir()
-        return
+
+        # setup rucio parameters for global/local queue
+        self.queueParams = {}
+        self.queueParams['log_reporter'] = "Services_WorkQueue_Unittest"
+        self.queueParams['rucioAccount'] = "wma_test"
+        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
 
     def tearDown(self):
         """
@@ -61,7 +67,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                                       assignKwargs={'SiteWhitelist': ['T2_XX_SiteA']})
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True)
+                              UnittestFlag=True,
+                              **self.queueParams)
         self.assertTrue(globalQ.queueWork(specUrl, specName, "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
@@ -96,13 +103,14 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                                       assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]})
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True)
+                              UnittestFlag=True,
+                              **self.queueParams)
         localQ = localQueue(DbName='local_workqueue_t',
                             QueueURL=self.testInit.couchUrl,
                             CacheDir=self.testInit.testDir,
                             ParentQueueCouchUrl='%s/workqueue_t' % self.testInit.couchUrl,
-                            ParentQueueInboxCouchDBName='workqueue_t_inbox'
-                            )
+                            ParentQueueInboxCouchDBName='workqueue_t_inbox',
+                            **self.queueParams)
         # Try a full chain of priority update and propagation
         self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
         globalApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
@@ -148,7 +156,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
 
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
-                              UnittestFlag=True)
+                              UnittestFlag=True,
+                              **self.queueParams)
         self.assertTrue(globalQ.queueWork(specUrl, specName, "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')

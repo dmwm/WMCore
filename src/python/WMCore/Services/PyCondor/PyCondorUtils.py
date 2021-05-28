@@ -1,5 +1,9 @@
 from __future__ import print_function, division
 
+from builtins import str, object
+
+from future.utils import viewitems
+
 import logging
 import os
 import pickle
@@ -21,7 +25,7 @@ class OutputObj(object):
         self.outputMessage = outputMessage
         self.outputObj = outputObj
         self.environmentStr = ""
-        for key, val in os.environ.iteritems():
+        for key, val in viewitems(os.environ):
             self.environmentStr += "%s=%s\n" % (key, val)
 
 

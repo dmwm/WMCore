@@ -5,6 +5,11 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+from builtins import map, object
+
+from future import standard_library
+standard_library.install_aliases()
+
 import logging
 import os
 import shutil
@@ -12,11 +17,7 @@ import tarfile
 import tempfile
 import zipfile
 
-try:
-    from urlparse import urlsplit
-except ImportError:
-    # PY3
-    from urllib.parse import urlsplit
+from urllib.parse import urlsplit
 
 import PSetTweaks
 import Utils
@@ -37,7 +38,7 @@ def tarFilter(tarinfo):
         return tarinfo
 
 
-class SandboxCreator:
+class SandboxCreator(object):
     def __init__(self):
         self.packageWMCore = True
 

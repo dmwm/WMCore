@@ -48,7 +48,9 @@ echo "Hostname:   $(hostname -f)"
 echo "System:     $(uname -a)"
 echo "Arguments:  $@"
 
-WMA_SCRAM_ARCH=slc6_amd64_gcc493
+# Python library required for Python2/Python3 compatibility through "future"
+PY_FUTURE_VERSION=0.18.2
+
 # Saving START_TIME and when job finishes END_TIME.
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
@@ -94,19 +96,23 @@ echo -e "======== WMAgent validate arguments finished at $(TZ=GMT date) ========
 echo "======== WMAgent CMS environment load starting at $(TZ=GMT date) ========"
 if [ -f "$VO_CMS_SW_DIR"/cmsset_default.sh ]
 then  #   LCG style --
+    echo "WN with a LCG style environment, thus using VO_CMS_SW_DIR=$VO_CMS_SW_DIR"
     . $VO_CMS_SW_DIR/cmsset_default.sh
 elif [ -f "$OSG_APP"/cmssoft/cms/cmsset_default.sh ]
 then  #   OSG style --
+    echo "WN with an OSG style environment, thus using OSG_APP=$OSG_APP"
     . $OSG_APP/cmssoft/cms/cmsset_default.sh CMSSW_3_3_2
 elif [ -f "$CVMFS"/cms.cern.ch/cmsset_default.sh ]
 then
+    echo "WN with CVMFS environment, thus using CVMFS=$CVMFS"
     . $CVMFS/cms.cern.ch/cmsset_default.sh
 elif [ -f /cvmfs/cms.cern.ch/cmsset_default.sh ]
 then  # ok, lets call it CVMFS then
     export CVMFS=/cvmfs/cms.cern.ch
+    echo "WN missing VO_CMS_SW_DIR/OSG_APP/CVMFS environment variable, forcing it to CVMFS=$CVMFS"
     . $CVMFS/cmsset_default.sh
 else
-    echo "Error during job bootstrap: VO_CMS_SW_DIR, OSG_APP, CVMFS  or /cvmfs were not found." >&2
+    echo "Error during job bootstrap: VO_CMS_SW_DIR, OSG_APP, CVMFS or /cvmfs were not found." >&2
     echo "  Because of this, we can't load CMSSW. Not good." >&2
     exit 11003
 fi
@@ -114,7 +120,16 @@ echo "WMAgent bootstrap: WMAgent thinks it found the correct CMSSW setup script"
 echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ========\n"
 
 
-echo "======== WMAgent Python boostrap starting at $(TZ=GMT date) ========"
+echo "======== WMAgent COMP Python bootstrap starting at $(TZ=GMT date) ========"
+# First, decide which COMP ScramArch to use based on the required OS
+if [ "$REQUIRED_OS" = "rhel7" ];
+then
+    WMA_SCRAM_ARCH=slc7_amd64_gcc630
+else
+    WMA_SCRAM_ARCH=slc6_amd64_gcc493
+fi
+echo "Job requires OS: $REQUIRED_OS, thus setting ScramArch to: $WMA_SCRAM_ARCH"
+
 suffix=etc/profile.d/init.sh
 if [ -d "$VO_CMS_SW_DIR"/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
@@ -126,16 +141,19 @@ elif [ -d "$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
     prefix="$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python
 else
-    echo "Error during job bootstrap: job environment does not contain the init.sh script." >&2
-    echo "  Because of this, we can't load CMSSW. Not good." >&2
+    echo "Failed to find a COMP python installation in the worker node setup." >&2
+    echo "  Without a known python, there is nothing else we can do with this job. Quiting!" >&2
     exit 11004
 fi
 
+compPythonPath=`echo $prefix | sed 's|/python||'`
+echo "WMAgent bootstrap: COMP Python path is: $compPythonPath"
 latestPythonVersion=`ls -t "$prefix"/*/"$suffix" | head -n1 | sed 's|.*/external/python/||' | cut -d '/' -f1`
 pythonMajorVersion=`echo $latestPythonVersion | cut -d '.' -f1`
 pythonCommand="python"${pythonMajorVersion}
 echo "WMAgent bootstrap: latest python release is: $latestPythonVersion"
-source "$prefix"/"$latestPythonVersion"/"$suffix"
+source "$prefix/$latestPythonVersion/$suffix"
+source "$compPythonPath/py2-future/$PY_FUTURE_VERSION/$suffix"
 
 command -v $pythonCommand > /dev/null
 rc=$?
@@ -157,7 +175,7 @@ $pythonCommand Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$
 
 cd job
 export WMAGENTJOBDIR=$PWD
-export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
+export PYTHONPATH=$PYTHONPATH:$WMAGENTJOBDIR/WMCore.zip:$WMAGENTJOBDIR
 echo -e "======== WMAgent Unpack the job finished at $(TZ=GMT date) ========\n"
 
 echo "======== Current environment dump starting ========"

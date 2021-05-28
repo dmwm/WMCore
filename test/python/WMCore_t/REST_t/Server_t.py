@@ -1,3 +1,4 @@
+from builtins import object
 from WMCore.REST.Server import RESTFrontPage
 from WMCore.REST.Server import MiniRESTApi
 from WMCore.REST.Server import RESTApi
@@ -9,10 +10,10 @@ import os, threading
 srcfile = os.path.abspath(__file__).rsplit("/", 1)[-1].split(".")[0]
 dbspec = {}
 
-class FakeApp:
+class FakeApp(object):
     appname = "app"
 
-class FakeConf:
+class FakeConf(object):
     db = srcfile + ".dbspec"
 
 RESTFrontPage(None, None, "/", "/dev/null", {})

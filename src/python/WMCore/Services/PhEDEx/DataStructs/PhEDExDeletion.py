@@ -22,9 +22,9 @@ class PhEDExDeletion(object):
         """
         Initialize PhEDEx deletion with default values
         """
-        if type(datasetPathList) == str:
+        if isinstance(datasetPathList, str):
             datasetPathList = [datasetPathList]
-        if type(nodeList) == str:
+        if isinstance(nodeList, str):
             nodeList = [nodeList]
 
         self.datasetPaths = set(datasetPathList)

@@ -5,6 +5,7 @@ _Workflow_
 A class that describes some work to be undertaken on some files
 """
 
+from builtins import str
 from WMCore.DataStructs.Pickleable import Pickleable
 
 class Workflow(Pickleable):

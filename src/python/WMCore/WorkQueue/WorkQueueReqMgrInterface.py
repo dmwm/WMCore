@@ -2,6 +2,9 @@
 """
 Helper class for RequestManager interaction
 """
+from builtins import object
+from future.utils import viewvalues
+
 import os
 import socket
 import threading
@@ -15,6 +18,7 @@ from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError, TERMINAL_EXCEPTIONS
 
 
@@ -26,6 +30,8 @@ class WorkQueueReqMgrInterface(object):
             import logging
             kwargs['logger'] = logging
         self.logger = kwargs['logger']
+        self.rucio = Rucio(kwargs.get("rucioAccount", "wmcore_transferor"),
+                           configDict=dict(logger=self.logger))
         # this will break all in one test
         self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
 
@@ -39,7 +45,6 @@ class WorkQueueReqMgrInterface(object):
             myThread.setName(self.__class__.__name__)
 
         self.logdb = LogDB(centralurl, identifier, logger=self.logger)
-        self.previous_state = {}
 
     def __call__(self, queue):
         """Synchronize WorkQueue and RequestManager"""
@@ -63,7 +68,7 @@ class WorkQueueReqMgrInterface(object):
         try:  # report back to ReqMgr
             self.logger.info("cancel aborted requests")
             count = self.cancelWork(queue)
-            self.logger.info("finised canceling requests")
+            self.logger.info("finished canceling requests")
             msg += "Work canceled: %s " % count
         except Exception as ex:
             errorMsg = "Error caught during canceling the request"
@@ -182,7 +187,7 @@ class WorkQueueReqMgrInterface(object):
                 elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):
                     self.reportRequestStatus(ele['RequestName'], 'running-closed')
                 elif request['RequestStatus'] == 'running-closed' and ele.get('OpenForNewData', False):
-                    queue.closeWork(ele['RequestName'])
+                    queue.closeWork(ele['RequestName'], rucioObj=self.rucio)
                 # we do not want to move the request to 'failed' status
                 elif ele['Status'] == 'Failed':
                     continue
@@ -212,7 +217,7 @@ class WorkQueueReqMgrInterface(object):
         tempResults = self.reqMgr2.getRequestByStatus("staged")
         filteredResults = []
         for requests in tempResults:
-            for request in requests.values():
+            for request in viewvalues(requests):
                 filteredResults.append(request)
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
         filteredResults.sort(key=lambda r: r["Team"])
@@ -296,7 +301,7 @@ class WorkQueueReqMgrInterface(object):
         for reqName in requests:
             try:
                 self.logger.info("Processing request %s" % (reqName))
-                units = queue.addWork(requestName=reqName)
+                units = queue.addWork(requestName=reqName, rucioObj=self.rucio)
                 self.logdb.delete(reqName, 'error', True, agent=False)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - but at least it was split the first time. Log and skip.

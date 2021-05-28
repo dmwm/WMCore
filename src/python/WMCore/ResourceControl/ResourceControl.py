@@ -5,6 +5,8 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
+from builtins import str, bytes
+
 import time
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
@@ -163,7 +165,7 @@ class ResourceControl(WMConnectionBase):
 
         subTypeAction = self.wmbsDAOFactory(classname="Subscriptions.InsertType")
         insertAction = self.daofactory(classname="InsertThreshold")
-        if isinstance(taskType, basestring):
+        if isinstance(taskType, (str, bytes)):
             taskType = [taskType]
         for singleTask in taskType:
             subTypeAction.execute(subType=singleTask,

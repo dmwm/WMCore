@@ -16,13 +16,19 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
 """
 from __future__ import print_function
 
+from builtins import object, str as newstr, bytes as newbytes, next
+from future.utils import viewitems
+
+from future import standard_library
+standard_library.install_aliases()
+
 import json
 import logging
 import os
 import sys
-import urllib
+import urllib.parse
 from argparse import ArgumentParser
-from httplib import HTTPSConnection, HTTPConnection
+from http.client import HTTPSConnection, HTTPConnection
 
 
 class RESTClient(object):
@@ -119,7 +125,7 @@ class ReqMgrClient(RESTClient):
         urn = self.urn_prefix + "/request"
         for request_name in config.request_names:
             self.logger.info("Deleting '%s' request ...", request_name)
-            args = urllib.urlencode({"request_name": request_name})
+            args = urllib.parse.urlencode({"request_name": request_name})
             status, data = self.http_request("DELETE", urn, data=args)
             if status != 200:
                 self.logger.error("Failed to delete request with status: %s, data: %s", status, data)
@@ -176,7 +182,7 @@ class ReqMgrClient(RESTClient):
         assign_args = config.request_args["assignRequest"]
         assign_args["RequestStatus"] = "assigned"
         json_args = json.dumps(assign_args)
-        if isinstance(config.request_names, basestring):
+        if isinstance(config.request_names, (newstr, newbytes)):
             config.request_names = [config.request_names]
         for request_name in config.request_names:
             self.logger.info("Assigning %s with request args: %s ...",
@@ -228,7 +234,7 @@ class ReqMgrClient(RESTClient):
         self._caller_checker("/about", "GET")
         self._caller_checker("/info", "GET")
         group = "mygroup"
-        args = urllib.urlencode({"group_name": group})
+        args = urllib.parse.urlencode({"group_name": group})
         self._caller_checker("/group", "PUT", input_data=args)
         data = self._caller_checker("/group", "GET")
         assert group in data, "%s should be in %s" % (group, data)
@@ -236,7 +242,7 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/group", "GET")
         assert group not in data, "%s should be deleted from %s" % (group, data)
         team = "myteam"
-        args = urllib.urlencode({"team_name": team})
+        args = urllib.parse.urlencode({"team_name": team})
         self._caller_checker("/team", "PUT", input_data=args)
         data = self._caller_checker("/team", "GET")
         assert team in data, "%s should be in %s" % (team, data)
@@ -256,7 +262,7 @@ class ReqMgrClient(RESTClient):
         # returns also all allowed transitions
         data = self._caller_checker("/status?transition=true", "GET")
         for status_def in data:
-            status = status_def.keys()[0]
+            status = next(iter(status_def))
             trans = status_def[status]
             assert status in data2, "%s is not in %s" % (status, data2)
             assert isinstance(trans, list), "transition %s should be list" % trans
@@ -407,7 +413,7 @@ def process_request_args(input_config_file, command_line_json, logger):
         logger.info("Parsing request arguments on the command line ...")
         cli_json = json.loads(command_line_json)
         # if a key exists in cli_json, update values in the main request_args dict
-        for k in request_args.keys():
+        for k in request_args:
             if k in cli_json:
                 request_args[k].update(cli_json[k])
     else:
@@ -418,11 +424,11 @@ def process_request_args(input_config_file, command_line_json, logger):
     def check(items):
         for k, v in items:
             if isinstance(v, dict):
-                check(v.items())
-            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+                check(viewitems(v))
+            if isinstance(v, newstr) and v.endswith("OVERRIDE-ME"):
                 logger.warning("Not properly set: %s: %s", k, v)
 
-    check(request_args.items())
+    check(viewitems(request_args))
     return request_args
 
 

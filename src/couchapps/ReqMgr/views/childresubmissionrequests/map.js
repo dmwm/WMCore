@@ -5,6 +5,6 @@
  */
 function(doc){
     if(doc.InitialTaskPath){
-        emit(doc.InitialTaskPath.split("/")[1], null);
+        emit(doc.InitialTaskPath.split("/")[1], doc.RequestStatus);
     }
 }

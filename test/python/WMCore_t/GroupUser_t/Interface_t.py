@@ -7,8 +7,8 @@ Created by Dave Evans on 2010-07-29.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import range
 import unittest
-import os
 
 from WMCore.GroupUser.Interface import Interface
 from WMQuality.TestInitCouchApp import TestInitCouchApp

@@ -1,3 +1,5 @@
+from future.utils import viewitems
+
 import cherrypy
 from os import listdir
 
@@ -26,7 +28,7 @@ class SecureDocumentation(TemplatedPage):
         index += "<li>Your <b>Authn Method</b>: %s</li>\n" % user['method']
         index += "<li>Your roles:\n"
         index += "<ul>\n"
-        for k, v in user['roles'].iteritems():
+        for k, v in viewitems(user['roles']):
             for t in ['group', 'site']:
                 for n in v[t]:
                     index += "<li><b>%s</b>: %s=%s</li>\n" % (k, t, n)

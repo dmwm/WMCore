@@ -6,11 +6,14 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
+from builtins import str, zip, range
+
 import datetime
 import time
 import types
 
 from WMCore.DataStructs.WMObject import WMObject
+from Utils.PythonVersion import PY2
 
 
 class DBFormatter(WMObject):
@@ -73,10 +76,10 @@ class DBFormatter(WMObject):
                 # WARNING: this can generate errors for some stupid reason
                 # in both oracle and mysql.
                 entry = {}
-                for index in xrange(0, len(descriptions)):
+                for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if isinstance(i[index], unicode):
-                        entry[str(descriptions[index].lower())] = str(i[index])
+                    if isinstance(i[index], str) and PY2:
+                        entry[str(descriptions[index].lower())] = i[index].encode("utf-8")
                     else:
                         entry[str(descriptions[index].lower())] = i[index]
 
@@ -95,9 +98,9 @@ class DBFormatter(WMObject):
         for r in result:
             descriptions = r.keys
             for i in r.fetchall():
-                for index in xrange(0, len(descriptions)):
-                    if isinstance(i[index], unicode):
-                        listOut.append(str(i[index]))
+                for index in range(0, len(descriptions)):
+                    if isinstance(i[index], str):
+                        listOut.append(i[index].encode("utf-8"))
                     else:
                         listOut.append(i[index])
             r.close()
@@ -126,7 +129,7 @@ class DBFormatter(WMObject):
 
         """
         if isinstance(cursor.keys, types.MethodType):
-            keys = [x.lower() for x in cursor.keys()]
+            keys = [x.lower() for x in cursor.keys()]  # warning: do not modernize this line.
         else:
             keys = [x.lower() for x in cursor.keys]
         result = []
@@ -146,7 +149,7 @@ class DBFormatter(WMObject):
 
     def getBinds(self, **kwargs):
         binds = {}
-        for i in kwargs.keys():
+        for i in kwargs:
             binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
         return binds
 

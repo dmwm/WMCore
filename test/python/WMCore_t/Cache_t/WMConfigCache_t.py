@@ -5,6 +5,10 @@ _WMConfigCache_t_
 Test class for the WMConfigCache
 """
 
+from future import standard_library
+standard_library.install_aliases()
+import urllib.parse
+
 import os
 import unittest
 import tempfile
@@ -94,6 +98,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.setPSetTweaks(PSetTweak = PSetTweak)
         configCache.attachments['attach1'] = attach
         psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
+        psetPath = "file://" + urllib.parse.quote(os.path.abspath(psetPath))
         configCache.addConfig(newConfig = psetPath, psetHash = None)
 
         configCache.setLabel("sample-label")
@@ -129,6 +134,7 @@ class testWMConfigCache(unittest.TestCase):
         configCache.attachments['attach1'] = attach
         configCache.document['md5_hash'] = "somemd5"
         psetPath = os.path.join(getTestBase(), "WMCore_t/Cache_t/PSet.txt")
+        psetPath = "file://" + urllib.parse.quote(os.path.abspath(psetPath))
         configCache.addConfig(newConfig = psetPath, psetHash = None)
         configCache.save()
 
@@ -201,7 +207,7 @@ class testWMConfigCache(unittest.TestCase):
 
         configs = configCacheA.listAllConfigsByLabel()
 
-        self.assertEqual(len(configs.keys()), 2,
+        self.assertEqual(len(configs), 2,
                          "Error: There should be two configs")
         self.assertEqual(configs["labelA"], configCacheA.getCouchID(),
                          "Error: Label A is wrong.")

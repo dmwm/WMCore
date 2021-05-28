@@ -105,7 +105,7 @@ class SplitFileBased(JobFactory):
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
-            for key in mergeableFile.keys():
+            for key in mergeableFile:
                 newMergeFile[key] = mergeableFile[key]
 
             if newMergeFile["file_run"] not in mergeUnits:
@@ -170,7 +170,7 @@ class SplitFileBased(JobFactory):
         mergeableFiles = mergeDAO.execute(self.subscription["id"])
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
-        for runNumber in mergeUnits.keys():
+        for runNumber in mergeUnits:
             mergeUnits[runNumber].sort(mergeUnitCompare)
             self.createProcJobs(mergeUnits[runNumber])
 

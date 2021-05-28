@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 _DBFormatterTest_
 
@@ -7,6 +8,7 @@ Unit tests for the DBFormatter class
 """
 from __future__ import print_function
 
+from builtins import str
 import threading
 import unittest
 
@@ -41,8 +43,8 @@ create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
         myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.insert_binds = \
-            [{'bind1': 'value1a', 'bind2': 'value2a'}, \
-             {'bind1': 'value1b', 'bind2': 'value2b'}, \
+            [{'bind1': 'value1aà', 'bind2': u'value2aà'},
+             {'bind1': 'value1b', 'bind2': 'value2b'},
              {'bind1': 'value1c', 'bind2': 'value2d'}]
         myThread.select = "select * from test"
 
@@ -69,7 +71,6 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         """
         Test various formats
         """
-
         myThread = threading.currentThread()
         dbformatter = DBFormatter(myThread.logger, myThread.dbi)
         myThread.transaction.begin()

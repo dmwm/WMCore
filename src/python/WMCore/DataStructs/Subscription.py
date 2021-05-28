@@ -5,6 +5,7 @@ _Subscription_
 workflow + fileset = subscription
 """
 
+from builtins import range
 import copy
 
 from WMCore.DataStructs.Pickleable import Pickleable

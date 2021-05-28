@@ -6,17 +6,22 @@ General Exception class for WM modules
 
 """
 
-import exceptions
+from builtins import str, bytes
+from future.utils import viewitems
+
 import inspect
 import logging
 import sys
 import traceback
 
-WMEXCEPTION_START_STR = "<@========== WMException Start ==========@>"
-WMEXCEPTION_END_STR = "<@---------- WMException End ----------@>"
+from Utils.Utilities import decodeBytesToUnicode
+from WMCore.Configuration import PY3
+
+WMEXCEPTION_START_STR = str("<@========== WMException Start ==========@>")
+WMEXCEPTION_END_STR = str("<@---------- WMException End ----------@>")
 
 
-class WMException(exceptions.Exception):
+class WMException(Exception):
     """
     _WMException_
 
@@ -27,12 +32,13 @@ class WMException(exceptions.Exception):
 
     def __init__(self, message, errorNo=None, **data):
         self.name = str(self.__class__.__name__)
-        if hasattr(message, "decode"):
-            # Fix for the unicode encoding issue, see #8056 and #8403
-            # interprets this string using utf-8 codec and ignoring any errors
-            message = message.decode('utf-8', 'ignore')
 
-        exceptions.Exception.__init__(self, self.name, message)
+        # Fix for the unicode encoding issue, see #8056 and #8403
+        # interprets this string using utf-8 codec and ignoring any errors.
+        # using unicode sandwich pattern
+        message = decodeBytesToUnicode(message, "ignore")
+
+        Exception.__init__(self, self.name, message)
 
         #  //
         # // Init data dictionary with defaults
@@ -50,7 +56,7 @@ class WMException(exceptions.Exception):
             self.data.setdefault("ErrorNr", errorNo)
 
         self._message = message
-        self.data.update(data)
+        self.addInfo(**data)
 
         #  //
         # // Automatically determine the module name
@@ -60,7 +66,7 @@ class WMException(exceptions.Exception):
                 frame = inspect.currentframe()
                 lastframe = inspect.getouterframes(frame)[1][0]
                 excepModule = inspect.getmodule(lastframe)
-                if excepModule != None:
+                if excepModule is not None:
                     modName = excepModule.__name__
                     self.data['ModuleName'] = modName
             finally:
@@ -81,7 +87,7 @@ class WMException(exceptions.Exception):
         # // ClassName if ClassInstance is passed
         # //
         try:
-            if self.data['ClassInstance'] != None:
+            if self.data['ClassInstance'] is not None:
                 self.data['ClassName'] = self.data['ClassInstance'].__class__.__name__
         except Exception:
             pass
@@ -91,6 +97,8 @@ class WMException(exceptions.Exception):
             self.traceback = "\n".join(traceback.format_tb(sys.exc_info()[2]))
         except Exception:
             self.traceback = "WMException error: Couldn't get traceback\n"
+        # using unicode sandwich pattern
+        self.traceback = decodeBytesToUnicode(self.traceback, "ignore")
 
     def __getitem__(self, key):
         """
@@ -102,6 +110,9 @@ class WMException(exceptions.Exception):
         """
         make exception look like a dictionary
         """
+        # using unicode sandwich pattern
+        key = decodeBytesToUnicode(key, "ignore")
+        value = decodeBytesToUnicode(value, "ignore")
         self.data[key] = value
 
     def addInfo(self, **data):
@@ -111,8 +122,12 @@ class WMException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
-            self[key] = value
+        for key, value in viewitems(data):
+            # assumption: value is not iterable (list, dict, tuple, ...)
+            # using unicode sandwich pattern
+            key = decodeBytesToUnicode(key, "ignore")
+            value = decodeBytesToUnicode(value, "ignore")
+            self.data[key] = value
         return
 
     def xml(self):
@@ -125,7 +140,7 @@ class WMException(exceptions.Exception):
         strg += self._message
         strg += "</Message>\n"
         strg += "<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -139,22 +154,30 @@ class WMException(exceptions.Exception):
         logging.error(strg)
         return strg
 
-    def __str__(self):
+    def __as_unicode(self):
         """create a string rep of this exception"""
         # WARNING: Do not change this string - it is used to extract error from log
         strg = WMEXCEPTION_START_STR
         strg += "\nException Class: %s\n" % self.name
         strg += "Message: %s\n" % self._message
-        for key, value in self.data.items():
+        for key, value in viewitems(self.data):
             strg += "\t%s : %s\n" % (key, value,)
         strg += "\nTraceback: \n"
         strg += self.traceback
         strg += '\n'
         strg += WMEXCEPTION_END_STR
-        if hasattr(strg, "decode"):
-            # Fix for the unicode encoding issue, #8043
-            strg = strg.decode('utf-8', 'ignore')
         return strg
+
+    def __as_bytes(self):
+        return self.__as_unicode().encode("utf-8")
+    
+    if PY3:
+        __str__ = __as_unicode
+    else:
+        __str__ = __as_bytes
+    __unicode__ = __as_unicode
+    __repr__ = __str__
+
 
     def message(self):
         return self._message

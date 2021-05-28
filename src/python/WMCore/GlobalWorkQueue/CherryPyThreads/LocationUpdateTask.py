@@ -8,6 +8,7 @@ class LocationUpdateTask(CherryPyPeriodicTask):
     def __init__(self, rest, config):
 
         super(LocationUpdateTask, self).__init__(config)
+        self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
 
     def setConcurrentTasks(self, config):
         """
@@ -20,10 +21,8 @@ class LocationUpdateTask(CherryPyPeriodicTask):
         gather active data statistics
         """
         tStart = time()
-        globalQ = globalQueue(**config.queueParams)
-        res = globalQ.updateLocationInfo()
-        tEnd = time()
-        self.logger.info("LocationUpdateTask took %.3f secs and updated %d non-unique elements",
-                         tEnd - tStart, res)
+        res = self.globalQ.updateLocationInfo()
+        self.logger.info("%s executed in %.3f secs and updated %d non-unique elements",
+                         self.__class__.__name__, time() - tStart, res)
 
         return

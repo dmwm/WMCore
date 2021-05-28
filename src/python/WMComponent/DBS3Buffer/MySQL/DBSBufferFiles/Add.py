@@ -3,6 +3,8 @@
 MySQL implementation of AddFile
 """
 
+from builtins import str, bytes
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -13,7 +15,7 @@ class Add(DBFormatter):
     def getBinds(self, files, size, events, cksum, dataset_algo, status, workflowID, inPhedex):
         # Can't use self.dbi.buildbinds here...
         binds = []
-        if isinstance(files, basestring):
+        if isinstance(files, (str, bytes)):
             bind = {'lfn': files,
                     'filesize': size,
                     'events': events,

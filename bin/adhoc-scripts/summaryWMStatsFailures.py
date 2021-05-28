@@ -6,7 +6,11 @@ per task
 """
 from __future__ import print_function, division
 
-import httplib
+from future.utils import viewitems
+
+from future import standard_library
+standard_library.install_aliases()
+import http.client
 import json
 import os
 import sys
@@ -16,7 +20,7 @@ from pprint import pformat
 def getWMStatsData(workflow):
     url = 'cmsweb.cern.ch'
     headers = {"Accept": "application/json", "Content-type": "application/json"}
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     urn = "/wmstatsserver/data/request/%s" % workflow
     conn.request("GET", urn, headers=headers)
     r2 = conn.getresponse()
@@ -38,12 +42,12 @@ def main():
     data = data[wf]['AgentJobInfo']
 
     summary = {}
-    for agent in data.keys():
+    for agent in data:
         print("\nChecking AgentJobInfo for: %s" % agent)
         print("  Skipped files: %s" % pformat(data[agent]['skipped']))
         print("  Overall agent status:\t\t %s" % data[agent]['status'])
 
-        for task, values in data[agent]['tasks'].iteritems():
+        for task, values in viewitems(data[agent]['tasks']):
             if values['jobtype'] not in ['Production', 'Processing', 'Merge', 'Harvest']:
                 # print("Skipping task type %s, for %s" % (values['jobtype'], task))
                 continue

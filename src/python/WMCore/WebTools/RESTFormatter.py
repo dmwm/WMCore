@@ -7,6 +7,9 @@ appropriate format and sets the CherryPy header appropriately.
 
 Could add YAML via http://pyyaml.org/
 """
+
+from builtins import str, bytes
+
 import json
 from types import GeneratorType
 
@@ -66,26 +69,31 @@ class RESTFormatter(TemplatedPage):
             return self.json(data)
         if isinstance(data, dict) or isinstance(data, list):
             return json.dumps(data)
-        return str(data)
+        # Do not be misguided by the function name, this must return bytes, 
+        # otherwise the unit test
+        # testSupportedFormat (WMCore_t.WebTools_t.RESTFormat_t.RESTFormatTest)
+        # fails with "ValueError: Page handlers MUST return bytes. 
+        # Use tools.encode if you wish to return unicode."
+        return bytes(str(data), "utf-8")
 
     def format(self, data, datatype, expires):
         response_data = ''
         func = self.supporttypes[datatype]
-        if datatype not in self.supporttypes.keys():
+        if datatype not in self.supporttypes:
             response.status = 406
             expires=0
             response_data = self.supporttypes['text/plain']({'exception': 406,
                                                 'type': 'HTTPError',
             'message': '%s is not supported. Valid accept headers are: %s' %\
-                    (datatype, self.supporttypes.keys())})
+                    (datatype, list(self.supporttypes))})
 
         try:
             response_data = self.supporttypes[datatype](data)
         except HTTPError as h:
             # This won't be triggered with a default formatter, but could be by a subclass
-            response.status = h[0]
+            response.status = h.args[0]
             expires=0
-            rec = {'exception': h[0],'type': 'HTTPError','message': h[1]}
+            rec = {'exception': h.args[0],'type': 'HTTPError','message': h.args[1]}
             response_data = func(rec)
         except Exception as e:
             response.status = 500

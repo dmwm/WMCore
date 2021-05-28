@@ -10,6 +10,8 @@ type.
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.JobStateMachine.Transitions import Transitions
 
+from future.utils import listvalues
+
 class WorkflowSummary(DBFormatter):
     sql = """SELECT MAX(wmbs_workflow.id) AS id, wmbs_workflow.name AS wmspec,
                     COUNT(wmbs_job.id) AS num_job,
@@ -72,7 +74,7 @@ class WorkflowSummary(DBFormatter):
                 workflow[result["wmspec"]]['processing'] += self.processingCount(result)
 
         # need to order by id (client side)
-        return workflow.values()
+        return listvalues(workflow)
 
     def execute(self, conn = None, transaction = False):
         results = self.dbi.processData(self.sql,

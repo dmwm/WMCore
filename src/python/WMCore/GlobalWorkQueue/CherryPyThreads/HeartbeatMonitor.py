@@ -1,5 +1,8 @@
 from __future__ import (division, print_function)
 
+from future.utils import viewitems
+
+from time import time
 from WMCore.REST.HeartbeatMonitorBase import HeartbeatMonitorBase
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
@@ -10,21 +13,23 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         self.initialStatus = ['Available', 'Negotiating', 'Acquired']
         self.producer = "global_workqueue"
         self.docTypeAMQ = "cms_%s_info" % self.producer
+        self.globalQ = globalQueue(logger=self.logger, **config.queueParams)
 
     def addAdditionalMonitorReport(self, config):
         """
         Collect some statistics for Global Workqueue and upload it to WMStats and
         MonIT.
         """
+        tStart = time()
         self.logger.info("Collecting GlobalWorkqueue statistics...")
 
         # retrieve whole docs for these status in order to create site metrics
-        globalQ = globalQueue(**config.queueParams)
-        results = globalQ.monitorWorkQueue(self.initialStatus)
+        results = self.globalQ.monitorWorkQueue(self.initialStatus)
 
         if self.postToAMQ:
             allDocs = self.buildMonITDocs(results)
             self.uploadToAMQ(allDocs)
+        self.logger.info("%s executed in %.3f secs.", self.__class__.__name__, time() - tStart)
 
         return results
 
@@ -40,7 +45,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         commonInfo = {"agent_url": "global_workqueue"}
 
         docs = []
-        for status, data in stats['workByStatus'].items():
+        for status, data in viewitems(stats['workByStatus']):
             doc = dict()
             doc["type"] = "work_info"
             doc["status"] = status
@@ -49,7 +54,7 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
             doc["max_jobs_elem"] = data.get('max_jobs_elem', 0)  # largest # of jobs found in a WQE
             docs.append(doc)
 
-        for status, data in stats['workByStatusAndPriority'].items():
+        for status, data in viewitems(stats['workByStatusAndPriority']):
             for item in data:
                 doc = dict()
                 doc["type"] = "work_prio_status"
@@ -78,8 +83,8 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
             docs.append(doc)
 
         # let's remap Jobs --> sum_jobs , and NumElems --> num_elem
-        for metric in mapMetricToType.keys():
-            for status, sites in stats[metric].iteritems():
+        for metric in mapMetricToType:
+            for status, sites in viewitems(stats[metric]):
                 if not sites:
                     # no work in this status available for any sites, skip!
                     continue

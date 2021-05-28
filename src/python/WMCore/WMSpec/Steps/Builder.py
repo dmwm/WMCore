@@ -7,6 +7,7 @@ Interface definition for Step Builder implementations
 """
 from __future__ import print_function
 
+from builtins import object
 import logging
 
 import WMCore.WMSpec.Steps.BuildTools as BuildTools

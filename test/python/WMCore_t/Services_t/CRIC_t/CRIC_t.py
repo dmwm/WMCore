@@ -217,27 +217,76 @@ class CRICTest(EmulatedUnitTestCase):
         self.assertTrue(len(result) > 10)
 
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN$')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERNBOX', 'T2_CH_CERN'])
 
         # test a exact site name, which is treated as a regex and yields a confusing result!!!
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN', 'T2_CH_CERN_HLT'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERN_HLT'])
         self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERNBOX', 'T2_CH_CERN'])
         self.assertItemsEqual(result['T2_CH_CERN_HLT'], ['T2_CH_CERN'])
 
         result = self.myCRIC.PSNtoPNNMap('T2_CH_CERN_HLT')
-        self.assertItemsEqual(result.keys(), ['T2_CH_CERN_HLT'])
+        self.assertItemsEqual(list(result), ['T2_CH_CERN_HLT'])
         self.assertItemsEqual(result['T2_CH_CERN_HLT'], ['T2_CH_CERN'])
 
         result = self.myCRIC.PSNtoPNNMap('T1_US_FNAL')
-        self.assertItemsEqual(result.keys(), ['T1_US_FNAL'])
+        self.assertItemsEqual(list(result), ['T1_US_FNAL'])
         self.assertItemsEqual(result['T1_US_FNAL'], ['T1_US_FNAL_Disk', 'T3_US_FNALLPC'])
 
         # test a PNN as input, expecting nothing mapped to it
         self.assertItemsEqual(self.myCRIC.PSNtoPNNMap('T1_US_FNAL_Disk'), {})
 
         return
+
+    def testPNNtoPSNMap(self):
+        """
+        Test API to get a map of PSNs to PNNs
+        """
+        with self.assertRaises(TypeError):
+            self.myCRIC.PNNtoPSNMap(1)
+        with self.assertRaises(TypeError):
+            self.myCRIC.PNNtoPSNMap({'config': 'blah'})
+        with self.assertRaises(TypeError):
+            self.myCRIC.PNNtoPSNMap(['blah'])
+
+        result = self.myCRIC.PNNtoPSNMap()
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T1_')])
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T2_')])
+        self.assertTrue([psn for psn in result.keys() if psn.startswith('T3_')])
+        self.assertTrue(len(result) > 50)
+
+        result = self.myCRIC.PNNtoPSNMap(pnnPattern='T1.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T1_')])
+        self.assertTrue(len(result) < 10)
+
+        result = self.myCRIC.PNNtoPSNMap(pnnPattern='T2.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T2_')])
+        self.assertTrue(len(result) > 10)
+
+        result = self.myCRIC.PNNtoPSNMap(pnnPattern='T3.*')
+        self.assertFalse([psn for psn in result.keys() if not psn.startswith('T3_')])
+        self.assertTrue(len(result) > 10)
+
+        result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN$')
+        self.assertItemsEqual(list(result), ['T2_CH_CERN'])
+        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
+
+        # test a exact site name, which is treated as a regex and yields a confusing result!!!
+        result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN')
+        self.assertItemsEqual(list(result), ['T2_CH_CERN', 'T2_CH_CERNBOX'])
+        self.assertItemsEqual(result['T2_CH_CERN'], ['T2_CH_CERN_HLT', 'T2_CH_CERN'])
+        self.assertItemsEqual(result['T2_CH_CERNBOX'], ['T2_CH_CERN'])
+
+        result = self.myCRIC.PNNtoPSNMap('T2_CH_CERN_HLT')
+        self.assertItemsEqual(result, {})
+
+        result = self.myCRIC.PNNtoPSNMap('T1_US_FNAL')
+        self.assertItemsEqual(list(result), ['T1_US_FNAL_Disk'])
+        self.assertItemsEqual(result['T1_US_FNAL_Disk'], ['T1_US_FNAL'])
+
+        return
+
 
 
 if __name__ == '__main__':

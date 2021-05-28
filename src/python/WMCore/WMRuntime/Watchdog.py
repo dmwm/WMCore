@@ -7,6 +7,7 @@ This cleverly named object is the thread that handles the monitoring of individu
 """
 from __future__ import division
 from __future__ import print_function
+from future.utils import viewitems
 
 import logging
 import os
@@ -97,14 +98,14 @@ class Watchdog(threading.Thread):
                 changedCores = origCores != resources['cores']
                 # If we did base maxPSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
-                # Add the new number of cores to the args such that DashboardInterface can see it
+                # Add the new number of cores to the args such that PerformanceMonitor can see it
                 args['cores'] = resources['cores']
                 if changedCores:
                     if origMaxPSS:
                         args['maxPSS'] = resources['memory'] - 50
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
-                for k, v in args.iteritems():
+                for k, v in viewitems(args):
                     logging.info("  %s: %r", k, v)
             # Actually initialize the monitor variables
             mon.initMonitor(task=task, job=wmbsJob,

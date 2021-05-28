@@ -11,6 +11,7 @@ Created on Nov 20, 2012
 @author: dballest
 """
 
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram

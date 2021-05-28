@@ -5,6 +5,9 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
+from builtins import next, str as newstr, bytes, zip, range
+from future.utils import viewitems
+
 import logging
 import threading
 from collections import defaultdict
@@ -105,7 +108,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
         liveWMBSJob.update(liveJob)
         liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
 
-    for state, jobsByState in liveWMBSJobs.items():
+    for state, jobsByState in viewitems(liveWMBSJobs):
         if len(jobsByState) > 100 and state != "executing":
             # if there are to many jobs skip the couch and dashboard update
             # TODO: couch and dashboard need to be updated or parallel.
@@ -127,7 +130,7 @@ def freeSlots(multiplier=1.0, minusRunning=False, allowedStates=None, knownCmsSi
     rc_sites = ResourceControl().listThresholdsForCreate()
     thresholds = defaultdict(lambda: 0)
     jobCounts = defaultdict(dict)
-    for name, site in rc_sites.items():
+    for name, site in viewitems(rc_sites):
         if not site.get('cms_name'):
             logging.warning("Not fetching work for %s, cms_name not defined", name)
             continue
@@ -370,7 +373,7 @@ class WMBSHelper(WMConnectionBase):
                         )
 
         if self.mask:
-            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1)  # inclusive range
+            lumis = list(range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1))  # inclusive range
             wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis))  # assume run number static
         else:
             wmbsFile.addRun(Run(1, 1))
@@ -560,7 +563,7 @@ class WMBSHelper(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in selfChecksums:
                     dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
                                           'cktype': entry})
 
@@ -669,22 +672,20 @@ class WMBSHelper(WMConnectionBase):
         adds the ACDC files into WMBS database
         """
         wmbsParents = []
-        # TODO:  this check can be removed when ErrorHandler filters parents file for unmerged data
-        if acdcFile["parents"]:
-            firstParent = next(iter(acdcFile["parents"]))
-            # If files is merged and has unmerged parents skip the wmbs population
-            if acdcFile.get("merged", 0) and ("/store/unmerged/" in firstParent or "MCFakeFile" in firstParent):
-                # don't set the parents
-                pass
-            else:
-                # set the parentage for all the unmerged parents
-                for parent in acdcFile["parents"]:
-                    logging.debug("WMBS ACDC Parent File: %s", parent)
-                    parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
-                                                                        locations=acdcFile["locations"],
-                                                                        merged=True),
-                                                         inFileset=False)
-                    wmbsParents.append(parent)
+        # If file is merged, then it will be the parent of whatever output that
+        # process this job (it twists my mind!). Meaning, block below can be skipped
+        if int(acdcFile.get("merged", 0)) == 0 and acdcFile["parents"]:
+            # set the parentage for all the unmerged parents
+            for parent in acdcFile["parents"]:
+                if parent.startswith("/store/unmerged/") or parent.startswith("MCFakeFile"):
+                    logging.warning("WMBS ACDC skipped parent invalid file: %s", parent)
+                    continue
+                logging.debug("WMBS ACDC Parent File: %s", parent)
+                parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
+                                                                    locations=acdcFile["locations"],
+                                                                    merged=True),
+                                                     inFileset=False)
+                wmbsParents.append(parent)
 
         # pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
@@ -741,7 +742,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if isinstance(f, basestring) or "LumiList" not in f:
+            if isinstance(f, (newstr, bytes)) or "LumiList" not in f:
                 results.append(f)
                 continue
 

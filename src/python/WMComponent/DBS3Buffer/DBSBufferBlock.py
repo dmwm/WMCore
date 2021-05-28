@@ -5,6 +5,7 @@ DBSBufferBlock
 This is a block object which will be uploaded to DBS
 """
 
+from builtins import object
 import time
 import logging
 import copy
@@ -24,7 +25,7 @@ class DBSBufferBlockException(WMException):
 
 
 
-class DBSBufferBlock:
+class DBSBufferBlock(object):
     """
     _DBSBufferBlock_
 
@@ -102,9 +103,9 @@ class DBSBufferBlock:
             msg =  "Duplicate file inserted into DBSBufferBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
-            logging.debug("Block length: %i" % len(self.files))
+            logging.debug("Block length: %i", len(self.files))
             l = sorted([x['id'] for x in self.files])
-            logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
+            logging.debug("First file: %s    Last file: %s", l[0], l[-1])
             return
 
         for setting in self.data['close_settings']:
@@ -129,7 +130,7 @@ class DBSBufferBlock:
         fileDict['auto_cross_section'] = 0.0
 
         # Do the checksums
-        for cktype in dbsFile['checksums'].keys():
+        for cktype in dbsFile['checksums']:
             cksum = dbsFile['checksums'][cktype]
             if cktype.lower() == 'cksum':
                 fileDict['check_sum'] = cksum
@@ -298,7 +299,7 @@ class DBSBufferBlock:
 
         try:
             if datasetName[0] == '/':
-                junk, primary, processed, tier = datasetName.split('/')
+                _, primary, processed, tier = datasetName.split('/')
             else:
                 primary, processed, tier = datasetName.split('/')
         except Exception:
@@ -455,14 +456,14 @@ class DBSBufferBlock:
         self.startTime = blockInfo.get('creation_date')
         self.inBuff    = True
 
-        if 'status' in blockInfo.keys():
+        if 'status' in blockInfo:
             self.status = blockInfo['status']
             if self.status == "Pending":
                 self.data['block']['open_for_writing'] = 0
 
             del blockInfo['status']
 
-        for key in blockInfo.keys():
+        for key in blockInfo:
             self.data['block'][key] = blockInfo.get(key)
 
     def convertToDBSBlock(self):
@@ -489,7 +490,7 @@ class DBSBufferBlock:
         for key in self.data:
             if key in keyToRemove:
                 continue
-            elif key in dbsBufferToDBSBlockKey.keys():
+            elif key in dbsBufferToDBSBlockKey:
                 block[dbsBufferToDBSBlockKey[key]] = copy.deepcopy(self.data[key])
             else:
                 block[key] = copy.deepcopy(self.data[key])

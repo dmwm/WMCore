@@ -27,7 +27,7 @@ class GetSpecAndNameFromTask(DBFormatter):
         Runs the query
         """
 
-        if type(tasks) != list:
+        if not isinstance(tasks, list):
             tasks = [tasks]
 
         binds = []

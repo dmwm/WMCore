@@ -1,0 +1,48 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": "ProcessingString-OVERRIDE-ME", 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "Run2016B", 
+        "CMSSWVersion": "CMSSW_10_6_8_patch1", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {"WorkFlowDesc": "ZeroBias data harvesting byRun; 5 runs whitelisted", "CheckList": ""}, 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "6c075881a8454070ce3c1e8921cdb45e", 
+        "DQMHarvestUnit": "byRun", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "GlobalTag": "106X_dataRun2_v27", 
+        "InputDataset": "/ZeroBias/Run2016B-UL16_ver2_forHarvestOnly-v1/DQMIO", 
+        "Memory": 3000, 
+        "Multicore": 1, 
+        "PrepID": "TEST-Harvest-ReReco-Run2016B-ZeroBias-UL16_ver2_forHarvestOnly-00001", 
+        "ProcessingString": "UL16_ver2_forHarvestOnly", 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 999999, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "DQMHarvest",
+        "RunWhitelist": [273394, 273445, 274999, 275376, 275370],
+        "ScramArch": [
+            "slc7_amd64_gcc700"
+        ], 
+        "SizePerEvent": 300, 
+        "TimePerEvent": 1
+    }
+}

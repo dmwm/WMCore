@@ -4,6 +4,8 @@ _JobFactory_
 
 """
 
+from builtins import range
+
 import logging
 import threading
 
@@ -88,13 +90,13 @@ class JobFactory(WMObject):
         module = __import__(module, globals(), locals(), [grouptype])
         self.groupInstance = getattr(module, grouptype.split('.')[-1])
 
-        list(map(lambda x: x.start(), self.generators))
+        list([x.start() for x in self.generators])
 
         self.limit = int(kwargs.get("file_load_limit", self.limit))
         self.algorithm(*args, **kwargs)
         self.commit()
 
-        list(map(lambda x: x.finish(), self.generators))
+        list([x.finish() for x in self.generators])
         return self.jobGroups
 
     def algorithm(self, *args, **kwargs):
@@ -115,7 +117,7 @@ class JobFactory(WMObject):
         """
         self.appendJobGroup()
         self.currentGroup = self.groupInstance(subscription=self.subscription)
-        list(map(lambda x: x.startGroup(self.currentGroup), self.generators))
+        list([x.startGroup(self.currentGroup) for x in self.generators])
         return
 
     def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
@@ -157,7 +159,7 @@ class JobFactory(WMObject):
         """
 
         if self.currentGroup:
-            list(map(lambda x: x.finishGroup(self.currentGroup), self.generators))
+            list([x.finishGroup(self.currentGroup) for x in self.generators])
         if self.currentGroup:
             self.jobGroups.append(self.currentGroup)
             self.currentGroup = None
@@ -328,7 +330,7 @@ class JobFactory(WMObject):
         if isinstance(resultProxy.keys, list):
             keys = resultProxy.keys
         else:
-            keys = resultProxy.keys()
+            keys = resultProxy.keys()  # do not futurize this!
             if isinstance(keys, set):
                 # If it's a set, handle it
                 keys = list(keys)
@@ -463,7 +465,7 @@ class JobFactory(WMObject):
 
         if self.checkForAmountOfWork():
             # first, check whether we have enough files to reach the desired events_per_job
-            for sites in lDict.keys():
+            for sites in list(lDict):  # lDict changes size during for loop!
                 availableEventsPerLocation = sum([f['events'] for f in lDict[sites]])
                 if eventsPerJob > availableEventsPerLocation:
                     # then we don't split these files for the moment

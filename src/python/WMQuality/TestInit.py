@@ -13,14 +13,14 @@ is based on the WMCore.WMInit class.
 """
 from __future__ import print_function
 
+from builtins import object
+
 import logging
 import os
 import shutil
 import tempfile
 import threading
 import traceback
-
-from _mysql_exceptions import OperationalError
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -157,8 +157,9 @@ class TestInit(object):
         # If the database is not empty when we go to set the schema, abort!
         try:
             result = self.init.checkDatabaseContents()
-        except OperationalError:
+        except Exception as e:
             logging.debug("Error checking DB contents, assume DB does not exist")
+            logging.debug(str(e))
             return
         if len(result) > 0:
             msg = "Database not empty, cannot set schema !\n"

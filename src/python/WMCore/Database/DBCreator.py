@@ -7,11 +7,7 @@ Base class for formatters that create tables.
 
 """
 
-
-
-
-
-
+from builtins import str
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMException import WMException
@@ -66,7 +62,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # create indexes
-        for i in self.indexes.keys():
+        for i in self.indexes:
             try:
                 self.dbi.processData(self.indexes[i],
                                      conn = conn,
@@ -78,7 +74,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # set constraints
-        for i in self.constraints.keys():
+        for i in self.constraints:
             try:
                 self.dbi.processData(self.constraints[i],
                                  conn = conn,
@@ -90,7 +86,7 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCORE-2')
 
         # insert permanent data
-        for i in self.inserts.keys():
+        for i in self.inserts:
             try:
                 self.dbi.processData(self.inserts[i],
                                      conn = conn,
@@ -112,6 +108,6 @@ class DBCreator(DBFormatter):
         """
         string = ''
         for i in self.create, self.constraints, self.inserts, self.indexes:
-            for j in i.keys():
+            for j in i:
                 string = string + i[j].lstrip() + '\n'
         return string

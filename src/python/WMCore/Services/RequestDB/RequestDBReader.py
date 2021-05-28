@@ -1,3 +1,4 @@
+from builtins import str, bytes, object
 import time
 
 from WMCore.Database.CMSCouch import CouchServer, Database
@@ -44,7 +45,7 @@ class RequestDBReader(object):
         keys = keys or []
         options = self.setDefaultStaleOptions(options)
 
-        if keys and isinstance(keys, basestring):
+        if keys and isinstance(keys, (str, bytes)):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
 
@@ -69,7 +70,7 @@ class RequestDBReader(object):
         if detail or returnDict:
             return result
         else:
-            return result.keys()
+            return list(result)
 
     def _getRequestByName(self, requestName, detail):
         result = self.couchDB.getDoc(requestName)
@@ -165,7 +166,7 @@ class RequestDBReader(object):
         if isinstance(requestNames, list) and len(requestNames) == 1:
             requestNames = requestNames[0]
 
-        if isinstance(requestNames, basestring):
+        if isinstance(requestNames, (str, bytes)):
             requestInfo = self._getRequestByName(requestNames, detail=detail)
         else:
             requestInfo = self._getRequestByNames(requestNames, detail=detail)
@@ -237,7 +238,7 @@ class RequestDBReader(object):
         return requestInfo
 
     def getStatusAndTypeByRequest(self, requestNames):
-        if isinstance(requestNames, basestring):
+        if isinstance(requestNames, (str, bytes)):
             requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}

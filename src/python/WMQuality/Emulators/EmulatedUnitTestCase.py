@@ -9,16 +9,14 @@ import unittest
 
 import mock
 
-from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMQuality.Emulators.CRICClient.MockCRICApi import MockCRICApi
 from WMQuality.Emulators.Cache.MockMemoryCacheStruct import MockMemoryCacheStruct
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
-from WMQuality.Emulators.DashboardApMon.MockApMon import MockApMon
 from WMQuality.Emulators.LogDB.MockLogDB import MockLogDB
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 from WMQuality.Emulators.PyCondorAPI.MockPyCondorAPI import MockPyCondorAPI
 from WMQuality.Emulators.ReqMgrAux.MockReqMgrAux import MockReqMgrAux
-from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
+from WMQuality.Emulators.RucioClient.MockRucioApi import MockRucioApi
 
 
 class EmulatedUnitTestCase(unittest.TestCase):
@@ -28,18 +26,17 @@ class EmulatedUnitTestCase(unittest.TestCase):
     """
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True,
-                 mockSiteDB=True, mockReqMgrAux=True, mockLogDB=True,
-                 mockApMon=True, mockMemoryCache=True, mockPyCondor=True,
-                 mockCRIC=True):
+                 mockReqMgrAux=True, mockLogDB=True,
+                 mockMemoryCache=True, mockPyCondor=True,
+                 mockCRIC=True, mockRucio=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
-        self.mockSiteDB = mockSiteDB
         self.mockReqMgrAux = mockReqMgrAux
         self.mockLogDB = mockLogDB
-        self.mockApMon = mockApMon
         self.mockMemoryCache = mockMemoryCache
         self.mockPyCondor = mockPyCondor
         self.mockCRIC = mockCRIC
+        self.mockRucio = mockRucio
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -52,28 +49,35 @@ class EmulatedUnitTestCase(unittest.TestCase):
         """
 
         if self.mockDBS:
-            self.dbsPatcher1 = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
-            self.dbsPatcher2 = mock.patch('WMCore.Services.DBS.DBS3Reader.DbsApi', new=MockDbsApi)
-            self.inUseDbsApi = self.dbsPatcher1.start()
-            self.inUseDbsApi = self.dbsPatcher2.start()
-            self.addCleanup(self.dbsPatcher1.stop)
-            self.addCleanup(self.dbsPatcher2.stop)
+            self.dbsPatchers = []
+            patchDBSAt = ["dbs.apis.dbsClient.DbsApi",
+                          "WMCore.Services.DBS.DBS3Reader.DbsApi"]
+            for module in patchDBSAt:
+                self.dbsPatchers.append(mock.patch(module, new=MockDbsApi))
+                self.dbsPatchers[-1].start()
+                self.addCleanup(self.dbsPatchers[-1].stop)
 
         if self.mockPhEDEx:
             self.phedexPatchers = []
-            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.Services.DBS.DBS3Reader.PhEDEx',
-                             'WMCore.WorkQueue.WorkQueue.PhEDEx',
-                             'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.PhEDEx',
-                             'WMComponent.PhEDExInjector.PhEDExInjectorPoller.PhEDEx']
+            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx',
+                             'WMCore.WorkQueue.WorkQueue.PhEDEx']
             for module in patchPhedexAt:
                 self.phedexPatchers.append(mock.patch(module, new=MockPhEDExApi))
                 self.phedexPatchers[-1].start()
                 self.addCleanup(self.phedexPatchers[-1].stop)
 
-        if self.mockSiteDB:
-            self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)
-            self.inUseSiteDBApi = self.siteDBPatcher.start()
-            self.addCleanup(self.siteDBPatcher.stop)
+        if self.mockRucio:
+            self.rucioPatchers = []
+            patchRucioAt = ['WMCore.WorkQueue.WorkQueue.Rucio',
+                            'WMCore.WorkQueue.WorkQueueReqMgrInterface.Rucio',
+                            'WMCore.WorkQueue.Policy.Start.StartPolicyInterface.Rucio',
+                            'WMComponent.RucioInjector.RucioInjectorPoller.Rucio',
+                            'WMCore.WMSpec.Steps.Fetchers.PileupFetcher.Rucio',
+                            'WMCore_t.WMSpec_t.Steps_t.Fetchers_t.PileupFetcher_t.Rucio']
+            for module in patchRucioAt:
+                self.rucioPatchers.append(mock.patch(module, new=MockRucioApi))
+                self.rucioPatchers[-1].start()
+                self.addCleanup(self.rucioPatchers[-1].stop)
 
         if self.mockReqMgrAux:
             self.reqMgrAuxPatchers = []
@@ -90,15 +94,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
                                            new=MockLogDB)
             self.inUseLogDB = self.logDBPatcher.start()
             self.addCleanup(self.logDBPatcher.stop)
-
-        if self.mockApMon:
-            self.apMonPatchers = []
-            patchApMonAt = ['WMCore.Services.Dashboard.apmon.ApMon',
-                            'WMCore.Services.Dashboard.DashboardAPI.apmon.ApMon']
-            for module in patchApMonAt:
-                self.apMonPatchers.append(mock.patch(module, new=MockApMon))
-                self.apMonPatchers[-1].start()
-                self.addCleanup(self.apMonPatchers[-1].stop)
 
         if self.mockMemoryCache:
             self.memoryCachePatcher = mock.patch('WMCore.Cache.GenericDataCache.MemoryCacheStruct',

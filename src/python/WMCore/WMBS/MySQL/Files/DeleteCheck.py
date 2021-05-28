@@ -18,7 +18,7 @@ class DeleteCheck(DBFormatter):
 
 
     def execute(self, file = None, fileset = None, conn = None, transaction = False):
-        if type(file) == list:
+        if isinstance(file, list):
             if len(file) < 1:
                 return
             binds = []

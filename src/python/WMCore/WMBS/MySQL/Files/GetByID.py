@@ -20,7 +20,7 @@ class GetByID(DBFormatter):
         formattedResult["first_event"] = int(formattedResult["first_event"])
         formattedResult["merged"] = bool(int(formattedResult["merged"]))
 
-        if "size" in formattedResult.keys():
+        if "size" in formattedResult:
             formattedResult["size"] = int(formattedResult["size"])
         else:
             # The size column is named "filesize" in Oracle as size is
@@ -47,7 +47,7 @@ class GetByID(DBFormatter):
             tmpDict["lfn"]         = entry["lfn"]
             tmpDict["events"]      = int(entry["events"])
             tmpDict["first_event"] = int(entry["first_event"])
-            if "size" in entry.keys():
+            if "size" in entry:
                 tmpDict["size"]    = int(entry["size"])
             else:
                 tmpDict["size"]    = int(entry["filesize"])
@@ -60,7 +60,7 @@ class GetByID(DBFormatter):
 
         #Making some modifications to allow it to load a whole list of files
         #This DAO object should be called directly, not through WMBSFile
-        if type(file) == list:
+        if isinstance(file, list):
             #Then we have a list of the form [fileid, fileid, etc.]
             if len(file) == 0:
                 #Ignore empty lists

@@ -6,6 +6,7 @@ CouchService.py
 Created by Dave Evans on 2010-04-20.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from builtins import object
 from time import time
 
 import WMCore.Database.CouchUtils as CouchUtils

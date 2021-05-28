@@ -28,7 +28,7 @@ REQUEST = {
     "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135",
     "DQMHarvestUnit": "byRun",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
+    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/",
     "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
     "InputDataset": "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO",
     "Memory": 1000,

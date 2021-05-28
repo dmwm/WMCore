@@ -10,6 +10,10 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from __future__ import division
+from builtins import range
+from future.utils import viewvalues
+
 import unittest
 import random
 
@@ -175,7 +179,7 @@ class ContinuousSummaryHistogramTest(unittest.TestCase):
         self.assertAlmostEqual(jsonHistogram["stdDev"], 1.0, places = 0)
         self.assertEqual(len(jsonHistogram["data"]), 16)
         self.assertEqual(jsonHistogram["internalData"]["nPoints"], 1000)
-        pointsInHistogram = sum([x for x in jsonHistogram["data"].values()])
+        pointsInHistogram = sum([x for x in viewvalues(jsonHistogram["data"])])
 
         # With high probability we must have chopped at least one point
         self.assertTrue(pointsInHistogram < 1000)

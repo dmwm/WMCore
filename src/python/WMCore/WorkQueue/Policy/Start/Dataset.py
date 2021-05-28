@@ -35,7 +35,7 @@ class Dataset(StartPolicyInterface):
         datasetPath = self.initialTask.getInputDatasetPath()
 
         # dataset splitting can't have its data selection overridden
-        if self.data and self.data.keys() != [datasetPath]:
+        if self.data and list(self.data) != [datasetPath]:
             raise RuntimeError("Can't provide different data to split with")
 
         blocks = self.validBlocks(self.initialTask, self.dbs())
@@ -166,11 +166,11 @@ class Dataset(StartPolicyInterface):
                 blockSummary['NumberOfRuns'] = runs
 
             validBlocks.append(blockSummary)
-
+            blockLocation = set(self.blockLocationRucioPhedex(blockName))
             if locations is None:
-                locations = set(dbs.listFileBlockLocation(blockName))
+                locations = blockLocation
             else:
-                locations = locations.intersection(dbs.listFileBlockLocation(blockName))
+                locations = locations.intersection(blockLocation)
 
         # all needed blocks present at these sites
         if task.getTrustSitelists().get('trustlists'):

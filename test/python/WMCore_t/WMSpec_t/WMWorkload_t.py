@@ -5,6 +5,8 @@ _WMWorkload_t_
 Unittest for WMWorkload class
 """
 
+from future.utils import viewitems
+
 import os
 import unittest
 
@@ -314,7 +316,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload.setOwnerDetails(name="Mobutu", group="DMWM", ownerProperties=ownerProps)
         result = workload.getOwner()
 
-        for key in ownerProps.keys():
+        for key in ownerProps:
             self.assertEqual(result[key], ownerProps[key])
 
     def testDbsUrl(self):
@@ -325,7 +327,7 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = TestSpecs.oneTaskTwoStep()
         url = testWorkload.getDbsUrl()
-        self.assertEqual(url, "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+        self.assertEqual(url, "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader")
         return
 
     def testWhiteBlacklists(self):
@@ -427,6 +429,54 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
+    def testAddEnvironmentVariables(self):
+        """
+        _testAddEnvironmentVariables_
+
+        Verify that the setTaskEnvironmentVariables() method updates the environment 
+        for all tasks.
+        """
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+        testDict = {
+            "VAR0":"Value0"
+            }
+        workload.newTask("task1")
+        workload.newTask("task2")
+        workload.newTask("task3")
+        workload.newTask("task4")
+
+        workload.setTaskEnvironmentVariables(testDict)
+
+        for task in workload.getAllTasks():
+            taskDict = task.getEnvironmentVariables()
+            self.assertEqual(testDict,taskDict,
+                         "Error: Task dictionary should be the same as test dictionary.")
+        return
+
+    def testSetStepOverrideCatalog(self):
+        """
+        _testSetStepOverrideCatalog_
+
+        Verify that the setStepOverrideCatalog() method sets the TFC for  
+        all steps.
+        """
+        (testWorkload, procTaskCMSSWHelper,
+         mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
+         harvestTaskCMSSWHelper) = self.makeTestWorkload()
+        testCatalog = "trivialcatalog_file:/test/catalog/file.xml?protocol=eos"
+        testWorkload.setOverrideCatalog(testCatalog)
+
+        self.assertEqual(procTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step procTaskCMSSWHelper")
+        self.assertEqual(mergeTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step mergeTaskCMSSWHelper")
+        self.assertEqual(skimTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step skimTaskCMSSWHelper")
+        self.assertEqual(harvestTaskCMSSWHelper.getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step harvestTaskCMSSWHelper")
+
+        return
+
     def testUpdatingMergeParameters(self):
         """
         _testUpdatingMergeParameters_
@@ -485,7 +535,7 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.setMergeParameters(minSize=10, maxSize=100, maxEvents=1000)
 
         procSplitParams = procTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(procSplitParams.keys()), 6,
+        self.assertEqual(len(procSplitParams), 6,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -497,7 +547,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         skimSplitParams = skimTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(skimSplitParams.keys()), 7,
+        self.assertEqual(len(skimSplitParams), 7,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -511,7 +561,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(mergeSplitParams.keys()), 8,
+        self.assertEqual(len(mergeSplitParams), 8,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -527,7 +577,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(mergeDQMSplitParams.keys()), 8,
+        self.assertEqual(len(mergeDQMSplitParams), 8,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -834,7 +884,7 @@ class WMWorkloadTest(unittest.TestCase):
 
         # step level checks
         for stepObj in (procTaskCMSSWHelper, procTaskCMSSW2Helper, procTaskCMSSW3Helper):
-            taskName = [k for k, values in stepMap.items() if values[1] == stepObj.name()][0]
+            taskName = [k for k, values in viewitems(stepMap) if values[1] == stepObj.name()][0]
             self.assertEqual(stepObj.getAcqEra(), acqEra[taskName])
             self.assertEqual(stepObj.getProcStr(), procStr[taskName])
             # FIXME: maybe we don't set ProcVer at step level
@@ -1280,7 +1330,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertFalse("SubSliceSize" in testWorkload.startPolicyParameters(),
                          "Error: Shouldn't have sub-slice size.")
         procSplitParams = procTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(procSplitParams.keys()), 7,
+        self.assertEqual(len(procSplitParams), 7,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -1298,7 +1348,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
 
         skimSplitParams = skimTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(skimSplitParams.keys()), 8,
+        self.assertEqual(len(skimSplitParams), 8,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "RunBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -1314,7 +1364,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Site black list was updated.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(mergeSplitParams.keys()), 8,
+        self.assertEqual(len(mergeSplitParams), 8,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1344,7 +1394,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size.")
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(mergeSplitParams.keys()), 8,
+        self.assertEqual(len(mergeSplitParams), 8,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1420,7 +1470,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
                          15, "Error: Wrong sub-slice size.")
         prodSplitParams = prodTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(prodSplitParams.keys()), 7,
+        self.assertEqual(len(prodSplitParams), 7,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(prodSplitParams["algorithm"], "EventBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -1442,7 +1492,7 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
 
         mergeSplitParams = mergeTask.jobSplittingParameters(performance=False)
-        self.assertEqual(len(mergeSplitParams.keys()), 8,
+        self.assertEqual(len(mergeSplitParams), 8,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -1489,13 +1539,13 @@ class WMWorkloadTest(unittest.TestCase):
 
         results = testWorkload.listJobSplittingParametersByTask(performance=False)
 
-        self.assertEqual(len(results.keys()), 3, \
+        self.assertEqual(len(results), 3, \
                          "Error: Wrong number of tasks.")
-        self.assertTrue("/TestWorkload/ProcessingTask" in results.keys(),
+        self.assertTrue("/TestWorkload/ProcessingTask" in results,
                         "Error: Task is missing.")
-        self.assertTrue("/TestWorkload/ProcessingTask/MergeTask" in results.keys(),
+        self.assertTrue("/TestWorkload/ProcessingTask/MergeTask" in results,
                         "Error: Task is missing.")
-        self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results.keys(),
+        self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results,
                         "Error: Task is missing.")
         self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
                                                                    "algorithm": "FileBased",
@@ -2016,24 +2066,34 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = self.makeTestWorkload()[0]
 
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'),
-                         "Should be False, I did not set you yet.")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'),
-                         "Should be False, I did not set you yet.")
-        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True now")
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True now")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
+        with self.assertRaises(RuntimeError):
+            testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+
+        # then add an input dataset
+        for task in testWorkload.taskIterator():
+            task.addInputDataset(name='/My/Dataset-name/TIER', primary="My",
+                                 processed="Dataset-name", tier="TIER")
+
         testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=False)
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be False now")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False now")
-        testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=True)
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should still be False")
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'),
-                        "Bad job!! You should be True once again")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
         testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'),
-                        "Bad job!! You should be True once again")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False again")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'))
+
+        with self.assertRaises(RuntimeError):
+            testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+
+        # then add a pileup dataset
+        for task in testWorkload.taskIterator():
+            stepHelper = task.getStepHelper("cmsRun1")
+            stepHelper.setupPileup(pileupConfig={"mc": "/My/Pileup-name/TIER"}, dbsUrl="any_dbs_url")
+
+        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'))
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'))
         return
 
     def testOverrides(self):

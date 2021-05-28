@@ -9,6 +9,8 @@ for each step
 
 """
 
+from builtins import object
+
 import logging
 import os
 import threading

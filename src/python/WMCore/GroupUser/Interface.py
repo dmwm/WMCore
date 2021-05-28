@@ -10,6 +10,8 @@ from __future__ import print_function
 
 
 
+from builtins import str, object
+
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchConnectionError(Exception):
@@ -19,7 +21,7 @@ class CouchConnectionError(Exception):
         self.arg = arg
 
 
-class Interface:
+class Interface(object):
     def __init__(self, couchUrl, couchDatabase):
         self.cdb_url = couchUrl
         self.cdb_database = couchDatabase
@@ -63,7 +65,7 @@ class Interface:
         """
         updateUri = "/" + self.couch.name + "/_design/GroupUser/_update/"+ update + "/" + document
         argsstr = "?"
-        for k, v in args.items():
+        for k, v in list(args.items()):
             argsstr += "%s=%s&" % (k, v)
         updateUri += argsstr
         updateUri= updateUri[:-1]

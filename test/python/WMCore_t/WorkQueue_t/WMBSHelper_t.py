@@ -5,6 +5,7 @@ _WMBSHelper_t_
 Unit tests for the WMBSHelper class.
 """
 
+from builtins import next
 import os
 import threading
 import unittest
@@ -15,6 +16,8 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSReader import DBSReader
+### FIXME mock PhEDEx (or Rucio?)
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -22,8 +25,8 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
-from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
@@ -75,6 +78,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = DBSReader(self.inputDataset.dbsurl)
+        self.phedex = PhEDEx()
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger=threading.currentThread().logger,
                                      dbinterface=threading.currentThread().dbi)
@@ -537,10 +541,15 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir,
                           commonLocation=commonLocation)
         if block:
+            blockName = block
             if parentFlag:
-                block = self.dbs.getFileBlockWithParents(block)[block]
+                block = self.dbs.getFileBlockWithParents(blockName)
+                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
+                block['PhEDExNodeNames'] = location[blockName]
             else:
-                block = self.dbs.getFileBlock(block)[block]
+                block = self.dbs.getFileBlock(blockName)
+                location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[blockName], complete='y')
+                block['PhEDExNodeNames'] = location[blockName]
         sub, files = wmbs.createSubscriptionAndAddFiles(block=block)
         if detail:
             return wmbs, sub, files
@@ -597,7 +606,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(procWorkflow.spec, os.path.join(self.workDir, procWorkflow.name,
                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(procWorkflow.outputMap.keys()), 1,
+        self.assertEqual(len(procWorkflow.outputMap), 1,
                          "Error: Wrong number of WF outputs.")
         mergedProcOutput = procWorkflow.outputMap["OutputADataTierA"][0]["merged_output_fileset"]
         unmergedProcOutput = procWorkflow.outputMap["OutputADataTierA"][0]["output_fileset"]
@@ -618,7 +627,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
+        self.assertEqual(len(mergeWorkflow.outputMap), 1,
                          "Error: Wrong number of WF outputs.")
 
         cleanupWorkflow = Workflow(name="TestWorkload",
@@ -630,7 +639,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
                                                             "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
+        self.assertEqual(len(cleanupWorkflow.outputMap), 0,
                          "Error: Wrong number of WF outputs.")
 
         unmergedMergeOutput = mergeWorkflow.outputMap["MergedDataTierA"][0]["output_fileset"]
@@ -648,7 +657,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(skimWorkflow.outputMap), 2,
                          "Error: Wrong number of WF outputs.")
 
         mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputADataTierA"][0]["merged_output_fileset"]
@@ -750,8 +759,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
-                         "Error: Wrong number of WF outputs.")
+        self.assertEqual(len(mergeWorkflow.outputMap), 1, "Error: Wrong number of WF outputs.")
 
         unmergedMergeOutput = mergeWorkflow.outputMap["MergedDataTierA"][0]["output_fileset"]
         unmergedMergeOutput.loadData()
@@ -768,7 +776,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(skimWorkflow.outputMap), 2,
                          "Error: Wrong number of WF outputs.")
 
         mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputADataTierA"][0]["merged_output_fileset"]
@@ -823,8 +831,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # create workflow
         block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block))
-        self.assertEqual(len(files), 1)
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
+        self.assertEqual(len(files), 5)
 
     def testReRecoBlackRunRestriction(self):
         """ReReco workflow with Run restrictions"""
@@ -832,14 +840,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.topLevelTask.setInputRunBlacklist([181183])  # Set run blacklist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
 
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 0)
 
     def testReRecoWhiteRunRestriction(self):
         block = self.dataset + "#" + BLOCK2
         self.topLevelTask.setInputRunWhitelist([181183])  # Set run whitelist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsOK(self):
@@ -847,7 +855,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['181367']
         self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['57,80']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsKO(self):
@@ -855,7 +863,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['123454321']
         self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['123,123']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
-        files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
+        files = wmbs.validFiles(self.dbs.getFileBlock(block)['Files'])
         self.assertEqual(len(files), 0)
 
     def testDuplicateFileInsert(self):
@@ -865,7 +873,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
         # check initially inserted files.
-        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        dbsFiles = self.dbs.getFileBlock(block)['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
         firstFileset = wmbs.topLevelFileset
         wmbsDao = wmbs.daofactory(classname="Files.InFileset")
@@ -879,14 +887,16 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         dbs = self.getDBS(wmspec)
         wmbs = self.createWMBSHelperWithTopTask(wmspec, block)
         # check duplicate insert
-        dbsFiles = dbs.getFileBlock(block)[block]['Files']
-        numOfFiles = wmbs.addFiles(dbs.getFileBlock(block)[block])
+        dbsFiles = dbs.getFileBlock(block)
+        location = self.phedex.getReplicaPhEDExNodesForBlocks(block=[block], complete='y')
+        dbsFiles['PhEDExNodeNames'] = location[block]
+        numOfFiles = wmbs.addFiles(dbsFiles)
         self.assertEqual(numOfFiles, 0)
         secondFileset = wmbs.topLevelFileset
 
         wmbsDao = wmbs.daofactory(classname="Files.InFileset")
         numOfFiles = len(wmbsDao.execute(secondFileset.id))
-        self.assertEqual(numOfFiles, len(dbsFiles))
+        self.assertEqual(numOfFiles, len(dbsFiles['Files']))
 
         self.assertNotEqual(firstFileset.id, secondFileset.id)
 
@@ -902,7 +912,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         subId = wmbs.topLevelSubscription['id']
 
         # check initially inserted files.
-        dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
+        dbsFiles = self.dbs.getFileBlock(block)['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
 
         # Not clear what's supposed to happen here, 2nd test is completely redundant

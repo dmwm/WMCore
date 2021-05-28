@@ -530,7 +530,7 @@ class CreateWMBSBase(DBCreator):
         everything is in place have the DBCreator make everything.
         """
         for requiredTable in self.requiredTables:
-            if requiredTable not in self.create.keys():
+            if requiredTable not in self.create:
                 raise WMException("The table '%s' is not defined." % requiredTable, "WMCORE-2")
 
         DBCreator.execute(self, conn, transaction)

@@ -74,7 +74,7 @@ class TwoFileBased(JobFactory):
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
 
-        for location in locationDict.keys():
+        for location in locationDict:
             #Now we have all the files in a certain location
             fileList    = locationDict[location]
             filesInJob  = 0

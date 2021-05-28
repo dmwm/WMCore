@@ -1,3 +1,499 @@
+1.4.9.pre3 to 1.4.9.pre4:
+  - [py2py3] fix stuck unittest in test/python/Utils_t (Dario Mapelli) #10503
+  - [py2py3] attempt to fix problem with formatting data from DB (Dario Mapelli) #10504
+  - [py2py3] pycurl_manager: converting response to unicode before parsing - src (Dario Mapelli) #10501
+  - [py2py3] setup_test.py compatible with both py2 and py3 (Dario Mapelli) #10499
+
+
+1.4.9.pre2 to 1.4.9.pre3:
+  - stop mocking Dashboard (Alan Malta Rodrigues) #10494
+  - Remove Services/Dashboard package; WMRuntime DashboardMonitor and DashboardInterface (Alan Malta Rodrigues) #10494
+  - new unittest deploy scripts for wmagentpy3 (Dario Mapelli) #10496
+
+
+1.4.9.pre1 to 1.4.9.pre2:
+  - Decouple CMSSW and WMCore python versions from PSet tweak (khurtado) #10179
+  - Add CMSCouchapp dependency to the requirements files (Alan Malta Rodrigues) #10492
+  - added Cheetah3 to requirements_py3.txt (Dario Mapelli) #10491
+  - Add methods to modify environment variables in WMTasks and overrideCatalog option in Steps. Includes unit tests for new methods. (germanfgv) #10344
+  - Adjust couchapp push command to match CMSCouchapp (Alan Malta Rodrigues) #10485
+  - [py2py3] modernized scripts left out of slices (Dario Mapelli) #10482
+
+
+1.4.8 to 1.4.9.pre1:
+  - Replace mox dependency with mock. Remove deprecated testMkdir test (khurtado) #10484
+  - Remake MSTransferor alert subject; increase alert expiration time to 1h (Alan Malta Rodrigues) #10475
+  - Python3 workflow test templates (Alan Malta Rodrigues) #10480
+
+
+1.4.8.pre4 to 1.4.8:
+
+
+1.4.8.pre3 to 1.4.8.pre4:
+  - Properly evaluate stuck rules in MSTransferor (Alan Malta Rodrigues) #10474
+
+
+1.4.8.pre2 to 1.4.8.pre3:
+  - Do not delete transfer documents if bystatus couchview response is empty (Alan Malta Rodrigues) #10471
+  - Only create Rucio connection in PileupFetcher if there is a pileup dataset (Alan Malta Rodrigues) #10470
+
+
+1.4.8.pre1 to 1.4.8.pre2:
+  - [py2py3] modernize ordering in DataStructs/Run.py and File.py - #10169 - src (Dario Mapelli) #10465
+  - Retrieve only a summary of the condor jobs in DrainStatusPoller (Alan Malta Rodrigues) #10458
+  - Wrap sendAlert() in a try/except block. (Todor Ivanov) #10467
+  - Remove py package from the requirements list (Alan Malta Rodrigues) #10462
+  - Remove unused tweak file (Kenyi Hurtado) #10434
+
+
+1.4.7 to 1.4.8.pre1:
+  - Add repository suffix to the sw link directly (tivanov) #10454
+  - Bump WMAgent deployment example to 1.4.7 series (Alan Malta Rodrigues) #10457
+  - [py2py3] fix some pylint --py3k warnings - #10440 - src (Dario Mapelli) #10441
+  - Create symbolic links in deploy-wmagent (tivanov) #10454
+  - Force cmsweb-prod in DBS3Reader (Alan Malta Rodrigues) #10444
+  - revert changes to src/python/WMCore/Configuration.py from slice 17 (Dario Mapelli) #10443
+  - [py2py3] fix issue #10398 - test (Dario Mapelli) #10439
+
+
+1.4.7.pre8 to 1.4.7:
+  - Update CMS WM overview schematic (Alan Malta Rodrigues) #10438
+
+
+1.4.7.pre7 to 1.4.7.pre8:
+  - [py2py3] src/python/A/B/C slice 25 - issue #10149 - src (Dario Mapelli) #10379
+
+
+1.4.7.pre6 to 1.4.7.pre7:
+  - Reorganize MicroService unit tests (Alan Malta Rodrigues) #10373
+  - Account for tape rule status in MSRulecleaner. (Todor Ivanov) #10370
+  - [py2py3] src/python/A/B/C slice 24 - issue #10148 - src (Dario Mapelli) #10371
+  - [py2py3] src/python/A/B/C slice 22 - issue #10146 - src (Dario Mapelli) #10362
+  - [py2py3] src/python/A/B/C slice 23 - issue #10147 - src (Dario Mapelli) #10363
+
+
+1.4.7.pre5 to 1.4.7.pre6:
+  - Change regex when building list of PR numbers in buildrelease (Alan Malta Rodrigues) #10372
+  - Remove datatier-based functionality from RucioInjector (Alan Malta Rodrigues) #10369
+  - Respect port provided by the client && Switch from urllib.urlparse to simple substring replacement. (Todor Ivanov) #10364
+  - Remove PhEDExInjector component and its config/deploy code (Alan Malta Rodrigues) #10366
+  - [py2py3] src/python/A/B/C slice 21 - issue #10145 - src (Dario Mapelli) #10361
+
+
+1.4.7.pre4 to 1.4.7.pre5:
+  - Moving portForward in Utils && Minimize number of decorated functions && Remove argument parsing from the decorator && Remove static url chage from Services. (Todor Ivanov) #10330
+  - Forward WMCore.Services.Requests class to port 8443 for cmsweb services. (Todor Ivanov) #10330
+  - Reorganize microservices package structure; remove unused (Alan Malta Rodrigues) #10357
+  - Switch microservices to use AlertManager (Erik Gough) #10346
+  - [py2py3] src/python/A/B/C slice 20 - issue #10144 - src (Dario Mapelli) #10349
+
+
+1.4.7.pre3 to 1.4.7.pre4:
+  - add __init__ module for AlertManager package (Alan Malta Rodrigues) #10358
+  - Add AlertManager API (Erik Gough) #10308
+  - Add py3-cmsmonitoring to the list of python3 requirements (Alan Malta Rodrigues) #10355
+  - [py2py3] src/python/A/B/C slice 18 - issue #10142 - src (Dario Mapelli) #10331
+  - [py2py3] src/python/A/B/C slice 17 - issue #10141 - src (Dario Mapelli) #10329
+  - [py2py3] src/python/A/B/C slice 19 - issue #10143 - src (Dario Mapelli) #10348
+
+
+1.4.7.pre2 to 1.4.7.pre3:
+  - added Rucio mock data json (Alan Malta Rodrigues) #10342
+  - added script to query Rucio and create mock data (Alan Malta Rodrigues) #10342
+  - Reject blocks without any Rucio files in GQ (Alan Malta Rodrigues) #10342
+  - allw to run REST/Main in frontend via env.var. fix #10266 (belforte) #10339
+  - Dont map pileup location to the campaign top level site lists (Alan Malta Rodrigues) #10338
+  - MSTransferor: iterate over a dictionary as a list when it can change (Alan Malta Rodrigues) #10337
+
+
+1.4.7.pre1 to 1.4.7.pre2:
+  - [py2py3] src/python/A/B/C slice 16 - issue #10140 - src (Dario Mapelli) #10321
+  - [py2py3] src/python/A/B/C slice 15 - issue #10139 - src (Dario Mapelli) #10319
+  - Add check and different path for wmagent component. (tivanov) #10327
+  - Fix values for the "submitted" key in JobSummary (Alan Malta Rodrigues) #10325
+  - [py2py3] src/python/A/B/C slice 14 - issue #10138 - src (Dario Mapelli) #10313
+  - [py2py3] src/python/A/B/C slice 13 - issue #10137 - src (Dario Mapelli) #10310
+
+
+1.4.6 to 1.4.7.pre1:
+  - [py2py3] src/python/A/B/C slice 12 - issue #10136 - src (Dario Mapelli) #10307
+  - [py2py3] src/python/A/B/C slice 11 - issue #10135 - src (Dario Mapelli) #10299
+  - Fix unhashable types in the ReqMgr2 request API with mask (Alan Malta Rodrigues) #10312
+  - Fix to unhashable types in the filtered_requests REST API (Alan Malta Rodrigues) #10311
+  - Validate status transition for cascade option (Alan Malta Rodrigues) #10309
+
+
+1.4.6.pre9 to 1.4.6:
+
+
+1.4.6.pre8 to 1.4.6.pre9:
+  - Add check for None dataContainer. (Todor Ivanov) #10320
+  - Update deployment script to accept python3 WMAgent service (Alan Malta Rodrigues) #10302
+
+
+1.4.6.pre7 to 1.4.6.pre8:
+  - Include logic for cleaning input data rules. (Todor Ivanov) #10224
+
+
+1.4.6.pre6 to 1.4.6.pre7:
+  - [py2py3] src/python/A/B/C slice 10 - issue #10134 - src (Dario Mapelli) #10295
+  - [py2py3] src/python/A/B/C slice 9 - issue #10133 - src (Dario Mapelli) #10290
+
+
+1.4.6.pre5 to 1.4.6.pre6:
+  - [py2py3] src/python/A/B/C slice 7 - issue #10131 - src (Dario Mapelli) #10284
+  - add new dataset to mock in DBS (Alan Malta Rodrigues) #10283
+  - mock Rucio getPileupLockedAndAvailable API; patch PileupFetcher_t (Alan Malta Rodrigues) #10283
+  - fix bug in selecting stagein for UL logcollect, fixes ##10294 (Dirk Hufnagel) #10296
+  - [py2py3] src/python/A/B/C slice 8 - issue #10132 - src (Dario Mapelli) #10289
+  - Remove switch between Rucio and PhEDEx (Alan Malta Rodrigues) #10283
+  - Properly set rucio.cfg in our docker unittest setup (Alan Malta Rodrigues) #10292
+
+
+1.4.6.pre4 to 1.4.6.pre5:
+  - [py2py3] src/python/A/B/C slice 5 - issue #10116 - src (Dario Mapelli) #10262
+  - [py2py3] src/python/A/B/C slice 6 - issue #10127 - src (Dario Mapelli) #10277
+  - Remove reportWorkflowToDashboard method from StdBase (Alan Malta Rodrigues) #10281
+  - Completely remove SiteDB, including emulators and tests (Alan Malta Rodrigues) #10280
+  - Bump httplib2 from 0.18.1 to 0.19.0 (dependabot[bot]) #10271
+
+
+1.4.6.pre3 to 1.4.6.pre4:
+  - Skip RSE quota check for RelVal input data placement; added rule meta data (Alan Malta Rodrigues) #10275
+  - Remove PhEDEx backwards compatibility from the Rucio module (Alan Malta Rodrigues) #10273
+
+
+1.4.6.pre2 to 1.4.6.pre3:
+  - Update production DBS URL to cmsweb-prod - bin, doc, deploy, etc (Alan Malta Rodrigues) #10269
+  - Update URL during spec creation; and a few other places (Alan Malta Rodrigues) #10269
+  - Update production DBS URL to cmsweb-prod (Alan Malta Rodrigues) #10269
+  - Minor comment update on requirements for python3 stack (Alan Malta Rodrigues) #10268
+  - Update snapshot of Unified campaigns; update a couple json templates (Alan Malta Rodrigues) #10242
+  - Check if DID exists before creating a replication rule (Alan Malta Rodrigues) #10265
+
+
+1.4.6.pre1 to 1.4.6.pre2:
+  - Make WMAgent job wrapper slightly more verbose; fix one error message (Alan Malta Rodrigues) #10261
+  - Trap SSL_connect error and Service Unavailable in DBSUploadPoller (Alan Malta Rodrigues) #10252
+  - [py2py3] pycurl_manager imports encoder to Bytes from Utilities - src (Dario Mapelli) #10250
+  - [py2py3] Utils/Utilities.py - encoder Unicode to Bytes - src (Dario Mapelli) #10250
+  - Python3 requirements for WMAgent and WMAgent-Dev (Alan Malta Rodrigues) #10247
+
+
+1.4.5 to 1.4.6.pre1:
+  - add back WMBS to crabtaskworker dependencies and remove asyncstageout (belforte) #10246
+
+
+1.4.5.pre4 to 1.4.5:
+
+
+1.4.5.pre3 to 1.4.5.pre4:
+  - Catch UnboundLocalError exception when EmailAlert fails connecting to the SMTP server (Alan Malta Rodrigues) #10244
+  - Convert Campaign pileup data location to PSNs to match against the SiteWhitelist (Alan Malta Rodrigues) #10243
+  - [py2py3] Database/DBFormatter.py - src - fix #10235 (Dario Mapelli) #10238
+  - add option for preloader for xrdcp stageout (Dirk Hufnagel) #10226
+
+
+1.4.5.pre2 to 1.4.5.pre3:
+  - [py2py3] src/python/A/B/C slice 1 - issue 10055 - src (Dario Mapelli) #10057
+
+
+1.4.5.pre1 to 1.4.5.pre2:
+  - [py2py3] src/python/A/B/C slice 3 - issue 10114 - src (Dario Mapelli) #10117
+  - [py2py3] issue #10173, PR #10187 - src (Dario Mapelli) #10187
+
+
+1.4.4 to 1.4.5.pre1:
+  - [py2py3] WMCore/WMSpec/ConfigSectionTree.py - issue #10218 - src (Dario Mapelli) #10221
+  - [py2py3] src/python/A/B/C slice 4 - issue 10115 - src (Dario Mapelli) #10165
+  - [py2py3] fix pre-py2.6: `type() ==` -> `isinstance` (Dario Mapelli) #10172
+
+
+1.4.4.pre5 to 1.4.4:
+  - Add 2021 validation campaigns. (Todor Ivanov) #10210
+
+
+1.4.4.pre4 to 1.4.4.pre5:
+  - MSTransferor: do not consider Rucio blocks with 0 or None size (Alan Malta Rodrigues) #10205
+  - Stop trying to resolve StepChain parentage for workflows in normal-archived (Alan Malta Rodrigues) #10201
+  - Fix pileup location with multi-RSE rules (Alan Malta Rodrigues) #10194
+  - Remove DDM service wrapper module (Alan Malta Rodrigues) #10190
+
+
+1.4.4.pre3 to 1.4.4.pre4:
+  - [py2py3] WMCore/WMException.py - issue 10173 - src (Dario Mapelli) #10174
+  - Add archival logic to MSRuleCleaner. (Todor Ivanov) #10153
+  - Mock Rucio APIs (Alan Malta Rodrigues) #10099
+  - Fix GlobalWorkQueue CherryPy threads initialization and logger (Alan Malta Rodrigues) #10099
+  - Reuse Rucio object in WorkQueue start policy modules (Alan Malta Rodrigues) #10099
+
+
+1.4.4.pre2 to 1.4.4.pre3:
+  - [py2py3] src/python/A/B/C slice 2 - issue 10098 - src (Dario Mapelli) #10103
+  - Fix servicekey permission in the agent deployment; remove central services url option (Alan Malta Rodrigues) #10163
+
+
+1.4.4.pre1 to 1.4.4.pre2:
+  - Fix regexp for enable cherrypy threads && Fix file permissions for dmwm-service-key.pem (Todor Ivanov) #10155
+  - Catch UnicodeDecodeError in JobAccountant (Alan Malta Rodrigues) #10152
+  - Only resolve RSE requires_approval for T0 data placement (Alan Malta Rodrigues) #10130
+  - Add only merged parents to the ACDC docs (Alan Malta Rodrigues) #9997
+  - Fix JobAccountant missing parent dbsbuffer file (Alan Malta Rodrigues) #9997
+
+
+1.4.3 to 1.4.4.pre1:
+  - Remove badly encoded single quotes from Rucio module (Alan Malta Rodrigues) #10124
+  - add all Rucio lfns2pfns args. to getPFN. Fix #10056 (belforte) #10122
+  - Add requiresApproval method to Rucio class. Manage RSE rule approval requirements in insertContainerRules (germanfgv) #10105
+  - Minor updates to some json test templates (Alan Malta Rodrigues) #10113
+
+
+1.4.3.pre6 to 1.4.3:
+
+
+1.4.3.pre5 to 1.4.3.pre6:
+  - Split properly archived and froce archived counters. (Todor Ivanov) #10100
+
+
+1.4.3.pre4 to 1.4.3.pre5:
+  - Import freeSlots only inside the freeResouceCheck method (Alan Malta Rodrigues) #10102
+
+
+1.4.3.pre3 to 1.4.3.pre4:
+  - Evaluate all WQEs when local resources are available (Alan Malta Rodrigues) #10072
+  - Deprecate useRucio parameter within MicroServices; remove PhEDEx logic from MSOutput/MSMonitor (Alan Malta Rodrigues) #10094
+  - Add PyPI support for reqmon, reqmgr2ms, global-workqueue, acdcserver (Erik Gough) #10059
+  - Removed DataStructs/DASDocument module (Alan Malta Rodrigues) #10096
+  - [py2py3] WMCore/DataStructs - futurize (Dario Mapelli) #10012
+
+
+1.4.3.pre2 to 1.4.3.pre3:
+  - Update setup dependencies for CRAB services (Alan Malta Rodrigues) #10084
+  - Only inject templates that can have MSTransferor making data placement (Alan Malta Rodrigues) #9784
+  - Update workflow json templates (Alan Malta Rodrigues) #9784
+  - Removing file status condition from GetUnsubscribedDatasets query (germanfgv) #10067
+  - Code re-factoring and add timerange for user activities under throttling (Valentin Kuznetsov) #9211
+
+
+1.4.3.pre1 to 1.4.3.pre2:
+  - Add zeroCounters() function. (Todor Ivanov) #10080
+  - Keep only ruleID instead of the full Rucio rule. (Todor Ivanov) #10079
+  - [py2py3] WMCore/Algorithms - futurize (Dario Mapelli) 10012
+
+
+1.4.2 to 1.4.3.pre1:
+  - Remove WMDataMining thread/code (Alan Malta Rodrigues) #10065
+  - Add WMRucioDIDNotFoundException. (Todor Ivanov) #10023
+  - MSRuleClener basic logic. (Todor Ivanov) #10023
+  - Script to parse recursively cms-sw/cmsdist spec files (Dario Mapelli) #10036
+  - Switch validation script to Rucio; rollback py3 changes (Alan Malta Rodrigues) #10045
+
+
+1.4.2.pre8 to 1.4.2:
+
+
+1.4.2.pre7 to 1.4.2.pre8:
+  - MSOutput: use different lifetime configuration for RelVal Disk rules (Alan Malta Rodrigues) #10046
+  - Purge data when deleting block-level rules. Fix naming of tape RSEs taken from database (germanfgv) #10044
+
+
+1.4.2.pre6 to 1.4.2.pre7:
+  - Fix pileup data location in global workqueue (Alan Malta Rodrigues) #10042
+  - MSTransferor: resolve RSE expression for pileup location (Alan Malta Rodrigues) #10041
+  - [py2py3] WMCore/Credential - Jenkins pylint: some changes (Dario Mapelli) #10008
+  - [py2py3] WMCore/Credential - src (Dario Mapelli) #10008
+
+
+1.4.2.pre5 to 1.4.2.pre6:
+  - List of json templates that can undergo input data placement (Alan Malta Rodrigues) #10034
+  - Ignore availability for block level rules against the origin site/RSE (Alan Malta Rodrigues) #10031
+  - Implementation for the Rucio getPFN method (belforte) #10029
+  - Only add replicas if parent block has been properly added/attached into Rucio (Alan Malta Rodrigues) #10024
+  - Deal with T0 output data subscription in RucioInjector (Alan Malta Rodrigues) #10006
+  - Introduce deploy-centralvm.sh (Todor Ivanov) #10014
+  - Delete blocks using container-block mapping. Improving logging. (germanfgv) #9959
+
+
+1.4.2.pre4 to 1.4.2.pre5:
+  - MSRulecleaner initial commit. (Todor Ivanov) #10003
+  - Bump deployment example to patch3 and a new cmsweb tag (Alan Malta Rodrigues) #10005
+  - Add CMSMonitoring dependency for ReqMgr2 (Erik Gough) #10004
+
+
+1.4.2.pre3 to 1.4.2.pre4:
+  - Remove PhEDEx functionality from MSTransferor (Alan Malta Rodrigues) #10002
+  - If listDataRules API fail, raise a WMRucioException (Alan Malta Rodrigues) #9999
+
+
+1.4.2.pre2 to 1.4.2.pre3:
+  - Properly validate RequestPriority parameter (Alan Malta Rodrigues) #9994
+  - MSOutput: create Disk rules with an weight attr, default to ddm_quota (Alan Malta Rodrigues) #9993
+  - Skip Custodial and make generic Disk NonCustodial data placement in RucioInjector (Alan Malta Rodrigues) #9989
+  - Treat NANOAOD/NANOAODSIM as any other datatier in the output data placement logic (Alan Malta Rodrigues) #9988
+  - Add getTransferInfo to MSOutput and info request to MSManager. (Todor Ivanov) #9978
+
+
+1.4.2.pre1 to 1.4.2.pre2:
+  - Disable PhEDExInjector; Enable all tiers to be injected in Rucio (Alan Malta Rodrigues) #9980
+  - [py2py3] WMCore/WMFactory - futurize (Dario Mapelli) #9971
+
+
+1.4.1 to 1.4.2.pre1:
+  - Skip Tape (too) data placement for Resubmission workflows (Alan Malta Rodrigues) #9983
+  - Increase polling cycle for WorkQueueManagerLocationPoller to 1h (Alan Malta Rodrigues) #9981
+  - Bump deployment example to 1.4.1.patch1 (Alan Malta Rodrigues) #9968
+  - Revert stage2 fixers on DQMUpload module (Alan Malta Rodrigues) #9945
+  - Use list_replication_rules Rucio API to list rules (Alan Malta Rodrigues) #9963
+
+
+1.4.1.pre5 to 1.4.1:
+
+
+1.4.1.pre4 to 1.4.1.pre5:
+  - Make RSE expression configurable when picking a Tape RSE (Alan Malta Rodrigues) #9957
+
+
+1.4.1.pre3 to 1.4.1.pre4:
+  - Avoid resolving container location with the dataset_locks, whenever possible (Alan Malta Rodrigues) #9955
+  - Flag to disable PhEDExInjector; setup to enable all datatiers in RucioInjector (Alan Malta Rodrigues) #9947
+  - MSMonitor: deal with ZeroDivision exception for large rules in INJECT state (Alan Malta Rodrigues) #9951
+  - Fix DQMHarvest input data placement in MSTransferor; print exception error (Alan Malta Rodrigues) #9949
+
+
+1.4.1.pre2 to 1.4.1.pre3:
+  - Drop Tape RSEs from the MSTransferor input location (Alan Malta Rodrigues) #9944
+  - Different algorithm to run the block/container data location (Alan Malta Rodrigues) #9936
+  - Update python requirements (Erik Gough) #9941
+  - Fix Rucio data location method; support dropping Tape RSEs (Alan Malta Rodrigues) #9936
+  - Add listParentDIDs functionality to Rucio service (germanfgv) #9935
+
+
+1.4.1.pre1 to 1.4.1.pre2:
+  - Drop Tape RSEs from the pileup location (Alan Malta Rodrigues) #9930
+  - Construct the PU location via rucio considering MSTransferor locks (Alan Malta Rodrigues) #9930
+  - Decouple PhEDEx from the DBS3Reader wrapper module (Alan Malta Rodrigues) #9927
+  - Avoid passing unicode strings to FWCore.ParameterSet function (Alan Malta Rodrigues) #9924
+  - Fix checkStuckLGE script referencing unitialized variable (Alan Malta Rodrigues) #9922
+  - Remove wmarchive dependency (Valentin Kuznetsov) #9921
+  - PyPI packaging for ReqMgr2 (Erik Gough) #9874
+
+
+1.4.0 to 1.4.1.pre1:
+  - MSOutput: skip tape data placement for RelVals (Alan Malta Rodrigues) #9920
+  - MSOutput: flag HIRelVal workflows as RelVal in the mongodb records (Alan Malta Rodrigues) #9919
+  - MSOutput: new DatasetSize param for the mongo record; fetch container size from DM systems (Alan Malta Rodrigues) #9916
+  - MSOutput: make alert notification and RSE attribute configurable (Alan Malta Rodrigues) #9915
+
+
+1.4.0.pre10 to 1.4.0:
+
+
+1.4.0.pre9 to 1.4.0.pre10:
+  - MSOutput: PhEDEx/Rucio logic to decide which RSE to use for Tape transfers (Alan Malta Rodrigues) #9912
+  - MSOutput: support custodial/tape data placement (Alan Malta Rodrigues) #9911
+  - MSOutput: skip output data placement for Resubmission request type (Alan Malta Rodrigues) #9910
+  - Avoid failing MSTransferor cycle if Campaigns are misconfigured (Alan Malta Rodrigues) #9909
+  - Added TiersToDM parameter to the campaign configuration; dump of Unified campaigns (Alan Malta Rodrigues) #9906
+  - Evaluate whether dataset can be replicated through the DM system or not (Alan Malta Rodrigues) #9906
+
+
+1.4.0.pre8 to 1.4.0.pre9:
+  - Update schema for MSOutput records with OutputMap; Updated MSOutput logic (Alan Malta Rodrigues) #9904
+  - remove deep parameter (Alan Malta Rodrigues) #9900
+  - Get block replicas info using the Rucio bulk API (Alan Malta Rodrigues) #9900
+  - MS: Update MSOutput record schema (Alan Malta Rodrigues) #9901
+
+
+1.4.0.pre7 to 1.4.0.pre8:
+  - Single node dataset-level subscription for DQMHarvest workflows (Alan Malta Rodrigues) #9889
+  - Rucio wrapper API to find where data is locked and available (Alan Malta Rodrigues) #9889
+  - Fix rule progress calculation in MSMonitor (Alan Malta Rodrigues) #9899
+  - Fix Rucio rule creation when there are duplicate rules (Alan Malta Rodrigues) #9897
+  - Support caching of RSE expressions in the Rucio wrapper (Alan Malta Rodrigues) #9892
+
+
+1.4.0.pre6 to 1.4.0.pre7:
+  - default rucio rules to asynchronous (Alan Malta Rodrigues) #9759
+  - MSTransferor: support input data placement with Rucio (Alan Malta Rodrigues) #9759
+  - Pick site function (Eric Vaandering) #9884
+
+
+1.4.0.pre5 to 1.4.0.pre6:
+  - Use python and python libraries from CVMFS COMP under slc7_amd64_gcc630 (Alan Malta Rodrigues) #9819
+  - MS: Track Rucio rule progress in MSMonitor (Alan Malta Rodrigues) #9881
+  - Improve py2 compatibility of WMException __init__ (Dario Mapelli) #9868
+
+
+1.4.0.pre4 to 1.4.0.pre5:
+  - [py2py3] WMCore.Cache - compatible with both python2 and python3 (Dario Mapelli) #9818
+  - remove unneeded ImportError for py2/py3 (Alan Malta Rodrigues) #9875
+  - [py2py3] update stdlib - not pickle - test (Dario Mapelli) #9762
+  - [py2py3] update stdlib - not pickle (Dario Mapelli) #9762
+  - PY3: Properly deal with strings in REST/Main (Alan Malta Rodrigues) #9871
+
+
+1.4.0.pre3 to 1.4.0.pre4:
+  - Notify Todor upon component automatic restarts (Alan Malta Rodrigues) #9866
+  - Update ParentageResolved flag for StepChains without parent as well (Alan Malta Rodrigues) #9865
+  - Script to print a summary of LQEs stuck in Available for a given workflow (Alan Malta Rodrigues) #9863
+  - allow not adding hostname to DN for hash (belforte) #9867
+
+
+1.4.0.pre2 to 1.4.0.pre3:
+  - added getAccountLimits method to the Rucio wrapper (Alan Malta Rodrigues) #9857
+  - Fix HEAD request via pycurl_manager; added a few extra getters (Alan Malta Rodrigues) #9855
+  - Do not send parent/child data to DBS if there is nothing to be fixed (Alan Malta Rodrigues) #9853
+
+
+1.3.7.pre1 to 1.4.0.pre2:
+  - Update Rucio get_account_usage to get_local_account_usage API (Alan Malta Rodrigues) #9850
+  - [py2py3] WMQuality.TestInit - Remove dependency on MySQL-python (Dario Mapelli) #9848
+  - Bump rucio-clients from 1.22.2 to .1.23.0 (Alan Malta Rodrigues) #9846
+  - Force HEPCloud resources to be down in the CERN agents (Alan Malta Rodrigues) #9844
+  - [py2py3] Configuration - sys.version_info compatible with py2.6 (Dario Mapelli) #9839
+  - Upload to pypi using twine (Erik Gough) #9780
+  - Update WMAgent and WMCore python requirements (Alan Malta Rodrigues) #9825
+  - Bump deployment script example (Alan Malta Rodrigues) #9813
+  - Use PSN as PNN for opportunistic diskless resources (Alan Malta Rodrigues) #9693
+
+
+1.3.6 to 1.3.7.pre1:
+  - Add leading zeros to adler32 to ensure 8 chars length (Alan Malta Rodrigues) #9809
+  - [py2py3] PSetTweaks - compatible with both python2 and python3 (Dario Mapelli) #9740
+  - [py2py3] Utils - compatible with both python2 and python3 (Dario Mapelli) #9731
+  - Fix missing job report error codes (Erik Gough) #9781
+
+
+1.3.6.pre7 to 1.3.6:
+  - Add MSOutput to WMCore diagram. (tivanov) #9804
+  - Add MSOutput to Micro Services diagram. (tivanov) #9802
+
+
+1.3.6.pre6 to 1.3.6.pre7:
+  - Pileup is transferred to a single location, do the same for input blocks (Alan Malta Rodrigues) #9800
+
+
+1.3.6.pre5 to 1.3.6.pre6:
+  - Do not validate Trust flags for ACDC workflows (Alan Malta Rodrigues) #9793
+
+
+1.3.6.pre4 to 1.3.6.pre5:
+  - reduce default number of pycurl connections to 50 (Alan Malta Rodrigues) #9785
+  - Add support for Rucio in MSOutput Consumer thread && Handle DuplicateRule error from Rucio client. (Todor Ivanov) #9772
+  - Remove duplicated REQUIRED_OS logic, as this has been integrated in T2_CH_CERN_HLT already. (khurtado) #9767
+  - Add nose2 to the wmagent requirements file (Alan Malta Rodrigues) #9778
+
+
+1.3.6.pre3 to 1.3.6.pre4:
+  - Update old integration Rucio URLs (Alan Malta Rodrigues) #9775 
+  - Remove status 'completed' from msOutput. (tivanov) #9773
+  - Validate/fail workflow assignment for improper use of TrustSitelists/TrustPUSitelists (Alan Malta Rodrigues) #9770 
+  - Only fail cleanup jobs if they fail to delete all input files (Alan Malta Rodrigues) #9754
+  - Couple primary/parent block distribution to where the PU dataset is (Alan Malta Rodrigues) #9764 
+  - Fix python version evaluation in Configuration module (Alan Malta Rodrigues) #9766
+  - Add guid consistency check support for secondary input (Erik Gough) #9716
+
+
 1.3.6.pre2 to 1.3.6.pre3:
   - Implement a check for 'excludeDataTier' && Always create destinationOutputMap && Always use destinationOutput map for transfer subscriptions && Skip transfer submission for workflows with empty outputDataset list or with all data tiers excluded. (Todor Ivanov) #9755
 

@@ -36,7 +36,7 @@ class MarkFinishedSubscriptions(DBFormatter):
             finished = 0
 
         #Make sure it's a list of IDs
-        if type(ids) != list:
+        if not isinstance(ids, list):
             ids = [ids]
 
         binds = []

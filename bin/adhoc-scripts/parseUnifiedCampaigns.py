@@ -28,7 +28,8 @@ where individual records have the following structure:
     "datasetB": ["list of sites for SiteWhitelist"]
  },
  "MaxCopies": integer,
- "PartialCopy": integer
+ "PartialCopy": integer,
+ "TiersToDM": ["datatiers blocked in unified configuration that can be passed to DDM"]
 }
 ```
 
@@ -45,6 +46,9 @@ python parseUnifiedCampaigns.py --fin=wmcore_campaign.json --url=https://alancc7
          --verbose=10 --testcamp
 """
 from __future__ import print_function, division
+
+from builtins import object
+from future.utils import viewitems
 
 import argparse
 import json
@@ -124,7 +128,7 @@ def getSecondaryAAA(initialValue, uniRecord):
       * under the secondaries dictionary.
     If it appears multiple times, we make an OR of the values.
     """
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
+    for _, innerDict in viewitems(uniRecord.get("secondaries", {})):
         if "secondary_AAA" in innerDict:
             print("Found internal secondary_AAA for campaign: %s" % uniRecord['name'])
             initialValue = initialValue or innerDict["secondary_AAA"]
@@ -134,22 +138,17 @@ def getSecondaryAAA(initialValue, uniRecord):
 def getSiteList(keyName, initialValue, uniRecord):
     """
     Parse information related to the SiteWhiteList and SiteBlackList, which corresponds
-    to a list of sites where the workflow gets (or doesn't get) assigned to and where the
-    primary and secondary CLASSIC MIX dataset is placed (likely in chunks of data);
-    mapped from the SiteWhitelist/SiteBlacklist key which can be AFAIK in multiple places, like:
+    to a list of sites where the workflow gets (or doesn't get) assigned to.
+    Mapped from multiple places in the Unified campaigns, such as:
       * top level dict,
       * under the parameters key and
-      * under the secondaries dictionary.
+      * under the secondaries dictionary (no longer used, see WMCore #10332).
     If it appears multiple times, we make an intersection of the values
     """
     if keyName in uniRecord.get("parameters", {}):
         print("Found internal %s for campaign: %s" % (keyName, uniRecord['name']))
         initialValue = intersect(initialValue, uniRecord["parameters"][keyName])
 
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
-        if keyName in innerDict:
-            print("Found internal %s for campaign: %s" % (keyName, uniRecord['name']))
-            initialValue = intersect(initialValue, innerDict[keyName])
     return initialValue
 
 
@@ -162,7 +161,7 @@ def getSecondaryLocation(initialValue, uniRecord):
       * under the secondaries dictionary.
     If it appears multiple times, we make an intersection of the values.
     """
-    for _, innerDict in uniRecord.get("secondaries", {}).items():
+    for _, innerDict in viewitems(uniRecord.get("secondaries", {})):
         if "SecondaryLocation" in innerDict:
             print("Found internal SecondaryLocation for campaign: %s" % uniRecord['name'])
             initialValue = intersect(initialValue, innerDict["SecondaryLocation"])
@@ -179,7 +178,7 @@ def getSecondaries(initialValue, uniRecord):
       * taken from the SiteWhitelist key or
       * taken from the SecondaryLocation one
     """
-    for dset, innerDict in uniRecord.get("secondaries", {}).items():
+    for dset, innerDict in viewitems(uniRecord.get("secondaries", {})):
         print("Found secondaries for campaign: %s" % uniRecord['name'])
         initialValue[dset] = intersect(innerDict.get("SiteWhitelist", []),
                                        innerDict.get("SecondaryLocation", []))
@@ -201,6 +200,7 @@ def parse(istream, verbose=0):
         'SecondaryLocation': 'SecondaryLocation',
         'secondaries': 'Secondaries',
         'partial_copy': 'PartialCopy',
+        'toDDM': 'TiersToDM',
         'maxcopies': 'MaxCopies'}
     # campaign schema dict
     confRec = {
@@ -212,6 +212,7 @@ def parse(istream, verbose=0):
         'SecondaryLocation': [],
         'Secondaries': {},
         'PartialCopy': 1,
+        'TiersToDM': [],
         'MaxCopies': 1}
 
     if not isinstance(istream, list):
@@ -223,7 +224,7 @@ def parse(istream, verbose=0):
         conf = dict(confRec)
         # Set default value from top level campaign configuration
         # or use the default values defined above
-        for uniKey, wmKey in remap.items():
+        for uniKey, wmKey in viewitems(remap):
             conf[wmKey] = rec.get(uniKey, conf[wmKey])
 
         conf['SiteWhiteList'] = getSiteList("SiteWhitelist", conf['SiteWhiteList'], rec)
@@ -259,6 +260,7 @@ def upload(mgr, campRec):
     if not mgr:
         return
     campaign = campRec.get('CampaignName', '')
+    print("Inserting campaign record: %s" % json.dumps(campRec))
     if campaign:
         res = mgr.postCampaignConfig(campaign, campRec)
         print(res)
@@ -275,14 +277,20 @@ def insertTestCampaigns(mgr):
     if not mgr:
         return
 
-    defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1,
+    defaultCamp = {'CampaignName': '', 'MaxCopies': 1, 'PartialCopy': 1, 'TiersToDM': [],
                    'PrimaryAAA': False, 'Secondaries': {}, 'SecondaryAAA': False,
                    'SecondaryLocation': ["T1_US_FNAL", "T2_CH_CERN"],
                    'SiteBlackList': [], 'SiteWhiteList': ["T1_US_FNAL", "T2_CH_CERN"]}
 
-    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_9_4_0__test2inwf-1510737328", "CMSSW_7_3_2__test2inwf-1510737328",
-                "Dec2019_Val", "Jan2020_Val", "Feb2020_Val", "Agent128_Val",
-                "Agent130_Val", "HG1912_Val", "HG2001_Val", "HG2002_Val")
+    testCamp = ("CMSSW_10_6_1_Step3", "CMSSW_10_6_1_patch1_Step1", "CMSSW_10_6_1_patch1_Step2",
+                "CMSSW_7_3_2__test2inwf-1510737328", "CMSSW_11_2_0_pre6__fullsim_noPU_2021_14TeV-1599843628",
+                "RelVal_Generic_Campaign", "Agent145_Val", "Agent147_Val", "Agent149_Val",
+                "Jan2021_Val", "Feb2021_Val", "Mar2021_Val", "Apr2021_Val",
+                "May2021_Val", "Jun2021_Val", "Jul2021_Val", "Aug2021_Val",
+                "Sept2021_Val", "Oct2021_Val", "Nov2021_Val", "Dec2021_Val",
+                "HG2101_Val", "HG2102_Val", "HG2103_Val", "HG2104_Val",
+                "HG2105_Val", "HG2106_Val", "HG2107_Val", "HG2108_Val",
+                "HG2109_Val", "HG2110_Val", "HG2111_Val", "HG2112_Val")
     for campName in testCamp:
         defaultCamp['CampaignName'] = campName
         upload(mgr, defaultCamp)
@@ -325,7 +333,7 @@ def main():
             campData = json.load(istream)
             if isinstance(campData, dict):
                 # then it's a Unified-like campaign schema
-                for key, val in campData.items():
+                for key, val in viewitems(campData):
                     rec = {'name': key}
                     rec.update(val)
                     data.append(rec)
@@ -340,7 +348,6 @@ def main():
     output = []  # in case we want to dump all records to a json file
     for rec in process(data):
         output.append(rec)
-        print(json.dumps(rec))
         upload(mgr, rec)
     if opts.testcamp:
         insertTestCampaigns(mgr)

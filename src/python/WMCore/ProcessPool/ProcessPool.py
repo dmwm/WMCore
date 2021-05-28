@@ -6,6 +6,8 @@ _ProcessPool_
 """
 from __future__ import print_function
 
+from builtins import range, object
+
 import zmq
 import subprocess
 import sys
@@ -38,7 +40,7 @@ class ProcessPoolException(WMException):
     """
 
 
-class ProcessPoolWorker:
+class ProcessPoolWorker(object):
     """
     _ProcessPoolWorker_
 
@@ -61,7 +63,7 @@ class ProcessPoolWorker:
         return
 
 
-class ProcessPool:
+class ProcessPool(object):
     def __init__(self, slaveClassName, totalSlaves, componentDir,
                  config, namespace='WMComponent', inPort='5555',
                  outPort='5558'):

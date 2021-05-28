@@ -6,8 +6,9 @@ Class used to interact with Condor daemons on the agent
 
 from __future__ import print_function, division
 
+from builtins import str, object
+from past.builtins import basestring
 import logging
-
 try:
     # This module has dependency with python binding for condor package (condor)
     import htcondor
@@ -16,33 +17,63 @@ except ImportError:
 
 
 class PyCondorAPI(object):
+    """
+    Some APIs to interact with HTCondor via the HTCondor python bindings.
+    """
     def __init__(self):
         self.schedd = htcondor.Schedd()
         self.coll = htcondor.Collector()
 
-    def getCondorJobs(self, constraint, attr_list):
+    def recreateSchedd(self):
         """
-        _getCondorJobs_
+        In case our current schedd object is in a "strange" state, we
+        better recreate it.
+        """
+        logging.warning("Recreating Schedd instance due to query error...")
+        self.schedd = htcondor.Schedd()
 
-        Given a job/schedd constraint, return a list of jobs attributes
-        or None if the query to condor fails.
+    def getCondorJobsSummary(self):
         """
+        Retrieves a job summary from the HTCondor Schedd object
+        :return: a list of classads representing the matching jobs, or None if failed
+        """
+        ### NOTE: SummaryOnly does not work with xquery method
+        jobs = None  # return None to signalize the query failed
+        queryOpts = htcondor.htcondor.QueryOpts.SummaryOnly
         try:
-            jobs = self.schedd.query(constraint, attr_list)
-            return jobs
+            return self.schedd.query(opts=queryOpts)
         except Exception:
-            # if there is an error, try to recreate the schedd instance
-            logging.info("Recreating Schedd instance due to query error...")
-            self.schedd = htcondor.Schedd()
-        try:
-            jobs = self.schedd.query(constraint, attr_list)
-        except Exception as ex:
-            jobs = None  # return None to signalize the query failed
-            msg = "Condor failed to fetch schedd constraints for: %s" % constraint
-            msg += "Error message: %s" % str(ex)
-            logging.exception(msg)
+            self.recreateSchedd()
 
+        try:
+            jobs = self.schedd.query(opts=queryOpts)
+        except Exception as ex:
+            logging.exception("Failed to fetch summary of jobs from Condor Schedd. Error: %s", str(ex))
         return jobs
+
+    def getCondorJobs(self, constraint='true', attrList=None, limit=-1, opts="Default"):
+        """
+        Given a job/schedd constraint, return a list of job classad.
+        :param constraint: the query constraint (str or ExprTree). Defaults to 'true'
+        :param attrList: a list of attribute strings to be returned in the call.
+                         It defaults to all attributes.
+        :param limit: a limit on the number of matches to return. Defaults to -1 (all)
+        :param opts: string with additional flags for the query. Defaults to Default.
+            https://htcondor.readthedocs.io/en/v8_9_7/apis/python-bindings/api/htcondor.html#htcondor.QueryOpts
+        :return: returns an iterator to the job classads
+        """
+        attrList = attrList or []
+        # if option parameter is invalid, default it to the standard behavior
+        opts = getattr(htcondor.htcondor.QueryOpts, opts, "Default")
+        msg = "Querying condor schedd with params: constraint=%s, attrList=%s, limit=%s, opts=%s"
+        logging.info(msg, constraint, attrList, limit, opts)
+        try:
+            return self.schedd.xquery(constraint, attrList, limit, opts=opts)
+        except Exception:
+            self.recreateSchedd()
+
+        # if we hit another exception, let it be raised up in the chain
+        return self.schedd.xquery(constraint, attrList, limit, opts=opts)
 
     def editCondorJobs(self, job_spec, attr, value):
         """
@@ -109,9 +140,10 @@ def getScheddParamValue(param):
     Given a schedd parameter, retrieve it's value with htcondor, e.g.:
     MAX_JOBS_RUNNING, MAX_JOBS_PER_OWNER, etc
     """
+    paramResult = None
     if not isinstance(param, basestring):
         logging.error("Parameter %s must be string type", param)
-        return
+        return paramResult
 
     try:
         paramResult = htcondor.param[param]
@@ -119,7 +151,5 @@ def getScheddParamValue(param):
         msg = "Condor failed to fetch schedd parameter: %s" % param
         msg += "Error message: %s" % str(ex)
         logging.exception(msg)
-        # since it has failed, just return None (not sure it's good?!?)
-        paramResult = None
 
     return paramResult

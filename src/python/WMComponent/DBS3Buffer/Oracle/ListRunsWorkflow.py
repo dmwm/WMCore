@@ -5,8 +5,9 @@ _ListRunsWorkflow_
 For a given workflow, list the processed runs according to DBSBUFFER tables
 """
 
+from future.utils import viewvalues
+
 import threading
-import exceptions
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -34,6 +35,6 @@ class ListRunsWorkflow(DBFormatter):
         runs = []
 
         for result in results[0].fetchall():
-            runs.append(result.values()[0])
+            runs.append(next(iter(viewvalues(result))))
 
         return runs

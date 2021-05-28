@@ -7,7 +7,10 @@ Note: This can be used within the CMSSW environment to act on a
 process/config but does not depend on any CMSSW libraries. It needs to stay like this.
 
 """
-from __future__ import print_function
+from __future__ import print_function, division
+
+from builtins import map, range, str, object
+from future.utils import viewitems, viewkeys
 
 import logging
 import os
@@ -119,7 +122,7 @@ def lfnGroup(job):
     default both to 0. The result will be a 5-digit string.
     """
     modifier = str(job.get("agentNumber", 0))
-    jobLfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    jobLfnGroup = modifier + str(job.get("counter", 0) // 1000).zfill(4)
     return jobLfnGroup
 
 
@@ -213,7 +216,7 @@ def expandParameter(process, param):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in viewitems(lastResults):
                 for param in listParams(lastResultVal):
                     newResultKey = "%s.%s" % (lastResultKey, param)
                     newResultVal = getattr(lastResultVal, param)
@@ -227,7 +230,7 @@ def expandParameter(process, param):
 
         else:
             newResults = {}
-            for lastResultKey, lastResultVal in lastResults.items():
+            for lastResultKey, lastResultVal in viewitems(lastResults):
                 newResultKey = "%s.%s" % (lastResultKey, pset)
                 newResultVal = getattr(lastResultVal, pset, None)
                 if not hasattr(newResultVal, "parameters_"):
@@ -265,7 +268,7 @@ class TweakMaker(object):
         # handle process parameters
         processParams = []
         for param in self.processLevel:
-            processParams.extend(expandParameter(process, param).keys())
+            processParams.extend(viewkeys(expandParameter(process, param)))
 
         for param in processParams:
             if hasParameter(process, param):
@@ -310,6 +313,9 @@ def applyTweak(process, tweak, fixup=None):
     making sure all the necessary PSets and configuration values exist).
     """
     for param, value in tweak:
+        if isinstance(value, type(u'')) and hasattr(value, "encode"):
+            logging.info("Found unicode parameter type for param: %s, with value: %s", param, value)
+            value = value.encode("utf-8")
         if fixup and param in fixup:
             fixup[param](process)
 
@@ -371,13 +377,12 @@ def decomposeConfigSection(csect):
     return decomposer.parameters
 
 
-def makeTaskTweak(stepSection):
+def makeTaskTweak(stepSection, result):
     """
     _makeTaskTweak_
 
     Create a tweak for options in the task that apply to all jobs.
     """
-    result = PSetTweak()
 
     # GlobalTag
     if hasattr(stepSection, "application"):
@@ -385,21 +390,20 @@ def makeTaskTweak(stepSection):
             if hasattr(stepSection.application.configuration, "pickledarguments"):
                 args = pickle.loads(stepSection.application.configuration.pickledarguments)
                 if 'globalTag' in args:
-                    result.addParameter("process.GlobalTag.globaltag", args['globalTag'])
+                    result.addParameter("process.GlobalTag.globaltag",  "customTypeCms.string('%s')" % args['globalTag'])
                 if 'globalTagTransaction' in args:
-                    result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
+                    result.addParameter("process.GlobalTag.DBParameters.transactionId",  "customTypeCms.untracked.string('%s')" % args['globalTagTransaction'])
 
-    return result
+    return
 
 
-def makeJobTweak(job):
+def makeJobTweak(job, result):
     """
     _makeJobTweak_
 
     Convert information from a WMBS Job object into a PSetTweak
     that can be used to modify a CMSSW process.
     """
-    result = PSetTweak()
     baggage = job.getBaggage()
 
     # Check in the baggage if we are processing .lhe files
@@ -415,7 +419,7 @@ def makeJobTweak(job):
             if job['mask'].get('FirstLumi', None) != None:
                 logging.info("Setting 'firstLuminosityBlock' attr to: %s", job['mask']['FirstLumi'])
                 result.addParameter("process.source.firstLuminosityBlock",
-                                    job['mask']['FirstLumi'])
+                                    "customTypeCms.untracked.uint32(%s)" % job['mask']['FirstLumi'])
             else:
                 # We don't have lumi information in the mask, raise an exception
                 raise WMTweakMaskError(job['mask'],
@@ -429,16 +433,16 @@ def makeJobTweak(job):
     logging.info("Adding %d files to 'fileNames' attr", len(primaryFiles))
     logging.info("Adding %d files to 'secondaryFileNames' attr", len(secondaryFiles))
     if len(primaryFiles) > 0:
-        result.addParameter("process.source.fileNames", primaryFiles)
+        result.addParameter("process.source.fileNames", "customTypeCms.untracked.vstring(%s)" % primaryFiles)
         if len(secondaryFiles) > 0:
-            result.addParameter("process.source.secondaryFileNames", secondaryFiles)
+            result.addParameter("process.source.secondaryFileNames", "customTypeCms.untracked.vstring(%s)" % secondaryFiles)
     elif not lheInput:
         # First event parameter should be set from whatever the mask says,
         # That should have the added protection of not going over 2^32 - 1
         # If there is nothing in the mask, then we fallback to the counter method
         if job['mask'].get('FirstEvent', None) != None:
             logging.info("Setting 'firstEvent' attr to: %s", job['mask']['FirstEvent'])
-            result.addParameter("process.source.firstEvent", job['mask']['FirstEvent'])
+            result.addParameter("process.source.firstEvent", "customTypeCms.untracked.uint32(%s)" % job['mask']['FirstEvent'])
         else:
             # No first event information in the mask, raise and error
             raise WMTweakMaskError(job['mask'],
@@ -451,7 +455,7 @@ def makeJobTweak(job):
     if maxEvents is None:
         maxEvents = -1
     logging.info("Setting 'maxEvents.input' attr to: %s", maxEvents)
-    result.addParameter("process.maxEvents.input", maxEvents)
+    result.addParameter("process.maxEvents", "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s))"% maxEvents)
 
     # We don't want to set skip events for MonteCarlo jobs which have
     # no input files.
@@ -459,22 +463,22 @@ def makeJobTweak(job):
     if firstEvent != None and firstEvent >= 0 and (len(primaryFiles) > 0 or lheInput):
         if lheInput:
             logging.info("Setting 'skipEvents' attr to: %s", firstEvent - 1)
-            result.addParameter("process.source.skipEvents", firstEvent - 1)
+            result.addParameter("process.source.skipEvents", "customTypeCms.untracked.uint32(%s)" % (firstEvent - 1))
         else:
             logging.info("Setting 'skipEvents' attr to: %s", firstEvent)
-            result.addParameter("process.source.skipEvents", firstEvent)
+            result.addParameter("process.source.skipEvents", "customTypeCms.untracked.uint32(%s)" % firstEvent)
 
     firstRun = mask['FirstRun']
     if firstRun != None:
-        result.addParameter("process.source.firstRun", firstRun)
+        result.addParameter("process.source.firstRun", "customTypeCms.untracked.uint32(%s)" % firstRun)
     elif not len(primaryFiles):
         # Then we have a MC job, we need to set firstRun to 1
         logging.debug("MCFakeFile initiated without job FirstRun - using one.")
-        result.addParameter("process.source.firstRun", 1)
+        result.addParameter("process.source.firstRun", "customTypeCms.untracked.uint32(1)")
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
-    for run in runs.keys():
+    for run in viewkeys(runs):
         lumiPairs = runs[run]
         for lumiPair in lumiPairs:
             if len(lumiPair) != 2:
@@ -484,7 +488,7 @@ def makeJobTweak(job):
 
     if len(lumisToProcess) > 0:
         logging.info("Adding %d run/lumis mask to 'lumisToProcess' attr", len(lumisToProcess))
-        result.addParameter("process.source.lumisToProcess", lumisToProcess)
+        result.addParameter("process.source.lumisToProcess", "customTypeCms.untracked.VLuminosityBlockRange(%s)" % lumisToProcess)
 
     # install any settings from the per job baggage
     procSection = getattr(baggage, "process", None)
@@ -492,22 +496,28 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k, v in baggageParams.items():
+    for k, v in viewitems(baggageParams):
+        if isinstance(v, str):
+            v =  "customTypeCms.untracked.string(%s)" % v
+        elif isinstance(v, int):
+            v =  "customTypeCms.untracked.uint32(%s)" % v
+        elif isinstance(v, list):
+            v =  "customTypeCms.untracked.vstring(%s)" % v
         result.addParameter(k, v)
 
-    return result
+    return
 
 
-def makeOutputTweak(outMod, job):
+def makeOutputTweak(outMod, job, result):
     """
     _makeOutputTweak_
 
     Make a PSetTweak for the output module and job instance provided
 
     """
-    result = PSetTweak()
     # output filenames
     modName = str(getattr(outMod, "_internal_name"))
+    logging.info("modName = %s", modName)
     fileName = "%s.root" % modName
 
     result.addParameter("process.%s.fileName" % modName, fileName)
@@ -517,10 +527,7 @@ def makeOutputTweak(outMod, job):
         lfn = "%s/%s/%s.root" % (lfnBase, lfnGroup(job), modName)
         result.addParameter("process.%s.logicalFileName" % modName, lfn)
 
-    # TODO: Nice standard way to meddle with the other parameters in the
-    #      output module based on the settings in the section
-
-    return result
+    return
 
 
 def readAdValues(attrs, adname, castInt=False):

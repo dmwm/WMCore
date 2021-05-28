@@ -4,7 +4,9 @@ This script can be used to update the status of a request in ReqMgr2.
 """
 from __future__ import print_function, division
 
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+import http.client
 import json
 import os
 import sys
@@ -20,7 +22,7 @@ def setStatus(url, workflow, newstatus):
     else:
         encodedParams = json.dumps({"RequestStatus": newstatus})
 
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("PUT", "/reqmgr2/data/request/%s" % workflow, encodedParams, headers)
     resp = conn.getresponse()
     if resp.status != 200:
@@ -37,7 +39,7 @@ def getStatus(url, workflow):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
 
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     urn = "/reqmgr2/data/request/%s" % workflow
     conn.request("GET", urn, headers=headers)
     res = conn.getresponse()

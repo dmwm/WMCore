@@ -5,6 +5,7 @@ Teams, Groups, Software versions handling for ReqMgr.
 
 """
 from __future__ import print_function, division
+from future.utils import listvalues
 
 import json
 import cherrypy
@@ -48,8 +49,7 @@ class Info(RESTEntity):
         # authorization / access control:
         # cherrypy (modified CMS web version here) can read this information
         # from HTTP headers. CMS web frontend puts this information into
-        # headers as read from SiteDB (or on private VM from a fake
-        # SiteDB file)
+        # headers as read from CRIC
         #        print "cherrypy.request", cherrypy.request
         #        print "DN: %s" % cherrypy.request.user['dn']
         #        print "Requestor/login: %s" % cherrypy.request.user['login']
@@ -57,10 +57,9 @@ class Info(RESTEntity):
         #        print "cherrypy.request.user: %s" % cherrypy.request.user
         # from WMCore.REST.Auth import authz_match
         # authz_match(role=["Global Admin"], group=["global"])
-        # check SiteDB/DataWhoAmI.py
 
         # implement as authentication decorator over modification calls
-        # check config.py main.authz_defaults and SiteDB
+        # check config.py main.authz_defaults and CRIC
         # (only Admin: ReqMgr to be able to modify stuff)
 
         wmcore_reqmgr_version = WMCore.__version__
@@ -197,7 +196,7 @@ class AuxBaseAPI(RESTEntity):
             cherrypy.log(msg)
             raise cherrypy.HTTPError(404, msg)
 
-        return allDocs.values()
+        return listvalues(allDocs)
 
     @restcall(formats=[('application/json', JSONFormat())])
     def post(self, subName=None):

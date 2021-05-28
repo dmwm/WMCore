@@ -3,8 +3,6 @@ Unlike ReqMgr1 defining Request and RequestSchema classes,
 define just 1 class. Derived from Python dict and implementing
 necessary conversion and validation extra methods possibly needed.
 
-TODO/NOTE:
-    'inputMode' should be removed by now (2013-07)
 
     since arguments validation #4705, arguments which are later
         validated during spec instantiation and which are not
@@ -16,10 +14,12 @@ TODO/NOTE:
 
 """
 from __future__ import print_function, division
+from builtins import range, object
+from future.utils import viewitems, viewvalues, listvalues
 
 import re
 import time
-
+from copy import deepcopy
 from WMCore.REST.Auth import get_user_info
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
@@ -51,13 +51,14 @@ def initialize_request_args(request, config):
 
     # set the original priority when request is create
     request["PriorityTransition"] = [{"Priority": request["RequestPriority"],
-                                     "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
+                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     # update the information from config
     request["CouchURL"] = config.couch_host
     request["CouchWorkloadDBName"] = config.couch_reqmgr_db
     request["CouchDBName"] = config.couch_config_cache_db
 
     generateRequestName(request)
+    replaceDbsProdUrl(request)
 
 
 def _replace_cloned_args(clone_args, user_args):
@@ -73,6 +74,18 @@ def _replace_cloned_args(clone_args, user_args):
         else:
             clone_args[prop] = user_args[prop]
     return
+
+
+def replaceDbsProdUrl(requestArgs):
+    """
+    Function to update the DBS URL from the standard cmsweb.cern.ch
+    to cmsweb-prod.cern.ch, running in the k8s infra
+    :param requestArgs: dictionary with the request arguments
+    :return: same dictionary object (with updated dbs url)
+    """
+    # TODO: this url conversion below can be removed in one year from now, thus March 2022
+    if requestArgs.get("DbsUrl"):
+        requestArgs["DbsUrl"] = requestArgs["DbsUrl"].replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
 
 def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=None):
@@ -96,7 +109,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
         cloneArgs = originalArgs
     else:
         cloneArgs = {}
-        for topKey, topValue in originalArgs.iteritems():
+        for topKey, topValue in viewitems(originalArgs):
             # order of this if-else matters because Step1/Task1 is a known argument
             if re.match(chainPattern, topKey):
                 cloneArgs.setdefault(topKey, {})
@@ -111,8 +124,10 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
     # apply user override arguments at the end, such that it's validated at spec level
     incrementProcVer(cloneArgs, requestArgs)
     _replace_cloned_args(cloneArgs, requestArgs)
+    replaceDbsProdUrl(cloneArgs)
 
     return cloneArgs
+
 
 def incrementProcVer(cloneArgs, requestArgs):
     """
@@ -182,25 +197,26 @@ class RequestInfo(object):
                 chain_key = "%s%s" % (chain_name, i + 1)
                 chain = self.data[chain_key]
                 if prop in chain:
-                    result.add(chain[prop])
+                    foundValue = chain[prop]
                 else:
                     if isinstance(defaultValue, dict):
-                        value = defaultValue.get(chain_key, None)
+                        foundValue = defaultValue.get(chain_key, None)
                     else:
-                        value = defaultValue
+                        foundValue = deepcopy(defaultValue)
 
-                    if value is not None:
-                        result.add(value)
+                if foundValue not in [None, ""]:
+                    if isinstance(foundValue, (list, set)):
+                        result.update(foundValue)
+                    else:
+                        result.add(foundValue)
             return list(result)
         else:
             # property which can't be task or stepchain property but in dictionary format
             exculdePropWithDictFormat = ["LumiList", "AgentJobInfo"]
             if prop not in exculdePropWithDictFormat and isinstance(defaultValue, dict):
-                return defaultValue.values()
+                return listvalues(defaultValue)
             else:
                 return defaultValue
-
-        return
 
     def get(self, prop, default=None):
         """
@@ -209,9 +225,9 @@ class RequestInfo(object):
         """
 
         if "TaskChain" in self.data:
-            return self._maskTaskStepChain(prop, "Task")
+            return self._maskTaskStepChain(prop, "Task", default)
         elif "StepChain" in self.data:
-            return self._maskTaskStepChain(prop, "Step")
+            return self._maskTaskStepChain(prop, "Step", default)
         elif prop in self.data:
             return self.data[prop]
         else:
@@ -226,7 +242,7 @@ class RequestInfo(object):
         If this request's RequestStatus is either "running-closed", "completed",
         return True, otherwise False
         """
-        for key, value in filterDict.iteritems():
+        for key, value in viewitems(filterDict):
             # special case checks where key is not exist in Request's Doc.
             # It is used whether AgentJobInfo is deleted or not for announced status
             if value == "CLEANED" and key == "AgentJobInfo":
@@ -263,14 +279,14 @@ class RequestInfo(object):
         """
         check whether workflow data is cleaned up from agent only checks the couchdb
         Since dbsbuffer data is not clean up we can't just check 'AgentJobInfo' key existence
-        This all is only meaningfull if request status is right befor end status.
+        This all is only meaningfull if request status is right before end status.
         ["aborted-completed", "rejected", "announced"]
         DO NOT check if workflow status isn't among those status
         """
         if 'AgentJobInfo' in self.data:
-            for agentRequestInfo in self.data['AgentJobInfo'].values():
+            for agentRequestInfo in viewvalues(self.data['AgentJobInfo']):
                 if agentRequestInfo.get("status", {}):
                     return False
-        # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
+        # cannot determine whether AgentJobInfo is cleaned or not when 'AgentJobInfo' key doesn't exist
         # Maybe JobInformation is not included but since it requested by above status assumed it returns True
         return True

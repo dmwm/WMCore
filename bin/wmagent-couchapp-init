@@ -5,21 +5,19 @@ wmagent-couchapp-init
 """
 from __future__ import print_function, division
 
+from future import standard_library
+
+standard_library.install_aliases()
+
 import argparse
 import os
 import shutil
 import sys
 import tempfile
-import urllib
+import urllib.parse
 
-try:
-    from urlparse import urlsplit
-except ImportError:
-    # PY3
-    from urllib.parse import urlsplit
-
+from urllib.parse import urlsplit
 from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL
@@ -46,14 +44,20 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
     Install the given couch app on the given server in the given database.  If
     the database already exists it will be deleted.
     """
+    # set of options required by the couchapp push command
+    # from collections import namedtuple
+    # couchOpts = namedtuple("opts", ["export", "output", "force", "no_atomic"])
+    # for attribute in ["export", "output", "force", "no_atomic"]:
+    #     setattr(couchOpts, attribute, False)
+    ### AMR debugging workqueue couchapps, remove it later ###
+    #couchOpts.export = True
+    #couchOpts.output = "/data/WorkQueue.json"
+    ##########################################################
     if not basePath:
         basePath = couchAppRoot(couchAppName)
-    print("Installing %s into %s" % (couchAppName, urllib.unquote_plus(couchDBName)))
+    print("Installing %s into %s" % (couchAppName, urllib.parse.unquote_plus(couchDBName)))
 
-    couchappConfig = Config()
-
-    couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
-                 "%s/%s" % (couchUrl, couchDBName))
+    couchapppush("%s/%s" % (basePath, couchAppName), "%s/%s" % (couchUrl, couchDBName))
     return
 
 
@@ -107,8 +111,8 @@ def setupCron(couchUrl, couchDBName):
     quoted slash.
     """
     print("Setting up cron jobs for the job dump.")
-    fwjrDumpName = urllib.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
-    jobDumpName = urllib.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
+    fwjrDumpName = urllib.parse.quote_plus("%s/fwjrs" % couchDBName).replace("%", "\\%")
+    jobDumpName = urllib.parse.quote_plus("%s/jobs" % couchDBName).replace("%", "\\%")
 
     indexJobsUrl = "'%s/%s/_design/JobDump/_view/statusByWorkflowName?limit=1'" % (couchUrl, jobDumpName)
     indexFwjrUrl = "'%s/%s/_design/FWJRDump/_view/outputByJobID?limit=1'" % (couchUrl, fwjrDumpName)
@@ -288,8 +292,8 @@ if __name__ == "__main__":
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
             
     if hasattr(wmagentConfig, "JobStateMachine") and hasattr(wmagentConfig.JobStateMachine, "couchDBName"):
-        fwjrDumpName = urllib.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
-        jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
+        fwjrDumpName = urllib.parse.quote_plus("%s/fwjrs" % wmagentConfig.JobStateMachine.couchDBName)
+        jobDumpName = urllib.parse.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName, "WMStatsAgent")

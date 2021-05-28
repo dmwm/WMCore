@@ -10,6 +10,8 @@ Also, provides utils to shutdown the daemon process
 """
 from __future__ import print_function
 
+from builtins import str, range
+
 import os
 import subprocess
 import shutil
@@ -24,7 +26,7 @@ def run(command):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
-    )
+        )
 
     proc.stdin.write(command)
     stdout, stderr = proc.communicate()

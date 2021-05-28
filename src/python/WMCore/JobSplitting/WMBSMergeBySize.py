@@ -103,7 +103,7 @@ class WMBSMergeBySize(JobFactory):
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
 
-            for key in mergeableFile.keys():
+            for key in mergeableFile:
                 newMergeFile[key] = mergeableFile[key]
 
             if newMergeFile["pnn"] not in mergeUnits:
@@ -243,8 +243,8 @@ class WMBSMergeBySize(JobFactory):
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 
-        for pnn in mergeUnits.keys():
-            for runNumber in mergeUnits[pnn].keys():
+        for pnn in mergeUnits:
+            for runNumber in mergeUnits[pnn]:
                 self.defineMergeJobs(mergeUnits[pnn][runNumber])
 
         return

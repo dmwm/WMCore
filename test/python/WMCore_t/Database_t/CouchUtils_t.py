@@ -7,6 +7,8 @@ Created by Dave Evans on 2010-10-04.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import object
+
 import unittest
 
 import WMCore.Database.CouchUtils as CouchUtils

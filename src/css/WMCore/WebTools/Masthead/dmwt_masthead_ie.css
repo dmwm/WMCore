@@ -69,7 +69,7 @@
 .masthead .mastheadLeft ul li a:active, .masthead .mastheadRight ul li a:active {
 	text-decoration: underline;
 }
-.masthead #dbs a, .masthead #phedex a, .masthead #sitedb a, .masthead #prodrequest a, .masthead #dashboard a{
+.masthead #dbs a, .masthead #phedex a, .masthead #prodrequest a, .masthead #dashboard a{
 	padding-bottom: 0.75em;	
 }
 /* This next bit is for site dependant masthead */

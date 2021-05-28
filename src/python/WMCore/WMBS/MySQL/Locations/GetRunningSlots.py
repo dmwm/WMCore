@@ -7,6 +7,9 @@ Created on Mon Jun 18 12:39:14 2012
 
 @author: dballest
 """
+
+from future.utils import  listvalues
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetRunningSlots(DBFormatter):
@@ -19,4 +22,4 @@ class GetRunningSlots(DBFormatter):
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 
-        return result[0].fetchall()[0].values()[0]
+        return listvalues(result[0].fetchall()[0])[0]

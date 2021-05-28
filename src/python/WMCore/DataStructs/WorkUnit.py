@@ -8,6 +8,8 @@ Data object that contains details for a single work unit
 
 from __future__ import absolute_import, division, print_function
 
+from future.utils import listitems
+
 import sys
 import time
 from functools import total_ordering
@@ -70,7 +72,7 @@ class WorkUnit(WMObject, dict):
         Hash function for this dict.
         """
 
-        return hash(frozenset(self.items()))
+        return hash(frozenset(listitems(self)))
 
     def json(self, thunker=None):
         """

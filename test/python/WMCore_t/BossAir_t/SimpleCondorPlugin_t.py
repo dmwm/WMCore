@@ -7,6 +7,8 @@ SimpleCondorPlugin unittests
 """
 from __future__ import division, print_function
 
+from future.utils import viewitems
+
 import os.path
 import re
 import threading
@@ -445,7 +447,7 @@ class SimpleCondorPluginTest(BossAirTest):
                            'BPH': 'pdmvserv_BPH-Summer12-00208_00263_v1__160726_025423_731',
                            'undefined': 'amaltaro_TaskChain_MC_DMWM_Test_July_Patches_160727_234956_6253'}
 
-        for group, request in mapGroupReqName.iteritems():
+        for group, request in viewitems(mapGroupReqName):
             match = GROUP_NAME_RE.match(request)
             matchedGroup = match.groups()[0] if match else 'undefined'
             self.assertEqual(group, matchedGroup)

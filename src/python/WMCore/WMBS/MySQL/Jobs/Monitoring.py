@@ -4,6 +4,7 @@ _Monitoring_
 
 Monitoring DAO classes for Jobs in WMBS
 """
+from builtins import map
 __all__ = []
 
 

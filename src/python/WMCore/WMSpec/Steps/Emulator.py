@@ -8,7 +8,8 @@ Define the Interface for a Step Emulator
 """
 
 
-class Emulator:
+from builtins import object
+class Emulator(object):
     """
     _Emulator_
 

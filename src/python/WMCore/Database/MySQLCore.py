@@ -10,7 +10,7 @@ import copy
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.ResultSet import ResultSet
 
-def bindVarCompare(a, b):
+def bindVarCompare(a):
     """
     _bindVarCompare_
 
@@ -18,25 +18,17 @@ def bindVarCompare(a, b):
     variable name and the second being it's position in the query.  We sort on
     the position in the query.
     """
-    if a[1] > b[1]:
-        return 1
-    elif a[1] == b[1]:
-        return 0
-    else:
-        return -1
+    return a[1]
 
-def stringLengthCompare(a, b):
+def stringLengthCompare(a):
     """
     _stringLengthCompare_
 
-    Sort comparison function to sort strings by length from longest to shortest.
+    Sort comparison function to sort strings by length.
+    Since we want to sort from longest to shortest, this must be reversed when used
     """
-    if len(a) > len(b):
-        return -1
-    if len(a) == len(b):
-        return 0
-    else:
-        return 1
+    return len(a)
+
 
 class MySQLInterface(DBInterface):
     def substitute(self, origSQL, origBindsList):
@@ -73,8 +65,8 @@ class MySQLInterface(DBInterface):
         # variables: RELEASE_VERSION and RELEASE_VERSION_ID the former will
         # match against the latter, causing problems.  We'll sort the variable
         # names by length to guard against this.
-        bindVarNames = origBind.keys()
-        bindVarNames.sort(stringLengthCompare)
+        bindVarNames = list(origBind)
+        bindVarNames.sort(key=stringLengthCompare, reverse=True)
 
         bindPositions = {}
         for bindName in bindVarNames:
@@ -103,7 +95,7 @@ class MySQLInterface(DBInterface):
                 right = updatedSQL[bindPosition + len(bindName) + 1:]
                 updatedSQL = left + "%s" + right
 
-        bindVarPositionList.sort(bindVarCompare)
+        bindVarPositionList.sort(key=bindVarCompare)
 
         mySQLBindVarsList = []
         for origBind in origBindsList:

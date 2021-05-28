@@ -3,6 +3,9 @@ ReqMgr request handling.
 
 """
 
+from builtins import str as newstr, bytes
+from future.utils import viewitems, listvalues
+
 import json
 import traceback
 
@@ -16,13 +19,15 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.REST.Auth import get_user_info
 
+from WMCore.ReqMgr.DataStructs.Request import RequestInfo
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST,
-                                                     REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
+from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION,
+                                                     ACTIVE_STATUS, check_allowed_transition)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
-                                            validate_clone_create_args, validateOutputDatasets, workqueue_stat_validation)
+                                            validate_clone_create_args, validateOutputDatasets,
+                                            validate_request_priority, workqueue_stat_validation)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
@@ -45,9 +50,9 @@ class Request(RESTEntity):
             return
 
         no_multi_key = ["detail", "_nostale", "date_range", "common_dict"]
-        for key, value in param.kwargs.items():
+        for key, value in viewitems(param.kwargs):
             # convert string to list
-            if key not in no_multi_key and isinstance(value, basestring):
+            if key not in no_multi_key and isinstance(value, (newstr, bytes)):
                 param.kwargs[key] = [value]
 
         detail = param.kwargs.get('detail', True)
@@ -61,7 +66,7 @@ class Request(RESTEntity):
                         """Can't retrieve bulk archived status requests with detail option True,
                            set detail=false or use other search arguments""")
 
-        for prop in param.kwargs.keys():
+        for prop in list(param.kwargs):
             safe.kwargs[prop] = param.kwargs.pop(prop)
         return
 
@@ -76,7 +81,7 @@ class Request(RESTEntity):
         # In case key args are also passed and request body also exists.
         # If the request.body is dictionary update the key args value as well
         if isinstance(request_args, dict):
-            for prop in param.kwargs.keys():
+            for prop in list(param.kwargs):
                 request_args[prop] = param.kwargs.pop(prop)
 
             if requestName:
@@ -95,11 +100,11 @@ class Request(RESTEntity):
         if isinstance(ids, list):
             for rid in ids:
                 doc[rid] = 'on'
-        elif isinstance(ids, basestring):
+        elif isinstance(ids, (newstr, bytes)):
             doc[ids] = 'on'
 
         docs = []
-        for key in doc.keys():
+        for key in list(doc):
             if key.startswith('request'):
                 rid = key.split('request-')[-1]
                 if rid != 'all':
@@ -206,53 +211,29 @@ class Request(RESTEntity):
                 msg = str(ex)
             raise InvalidSpecParameterValue(msg)
 
-    def _maskTaskStepChain(self, masked_dict, req_dict, chain_name, mask_key):
-
-        mask_exist = False
-        num_loop = req_dict["%sChain" % chain_name]
-        for i in range(num_loop):
-            if mask_key in req_dict["%s%s" % (chain_name, i + 1)]:
-                mask_exist = True
-                break
-        if mask_exist:
-            defaultValue = masked_dict[mask_key]
-            masked_dict[mask_key] = []
-            # assume mask_key is list if the condition doesn't meet.
-
-            for i in range(num_loop):
-                chain_key = "%s%s" % (chain_name, i + 1)
-                chain = req_dict[chain_key]
-                if mask_key in chain:
-                    masked_dict[mask_key].append(chain[mask_key])
-                else:
-                    if isinstance(defaultValue, dict):
-                        value = defaultValue.get(chain_key, None)
-                    else:
-                        value = defaultValue
-
-                    if value is not None:
-                        masked_dict[mask_key].append(value)
-
-            masked_dict[mask_key] = list(set(masked_dict[mask_key]))
-        return
-
-    def _mask_result(self, mask, result):
+    def _maskResult(self, mask, result):
+        """
+        If a mask of parameters was provided in the query string, then filter
+        the request key/values accordingly.
+        :param mask: a list of strings (keys of the request dictionary)
+        :param result: a dict key'ed by the request name, with the whole
+            request dictionary as a value
+        :return: updates the result object in place and returns it (dict)
+        """
 
         if len(mask) == 1 and mask[0] == "DAS":
             mask = ReqMgrConfigDataCache.getConfig("DAS_RESULT_FILTER")["filter_list"]
 
         if len(mask) > 0:
-            masked_result = {}
-            for req_name, req_info in result.items():
-                masked_result.setdefault(req_name, {})
-                for mask_key in mask:
-                    masked_result[req_name].update({mask_key: req_info.get(mask_key, None)})
-                    if "TaskChain" in req_info:
-                        self._maskTaskStepChain(masked_result[req_name], req_info, "Task", mask_key)
-                    elif "StepChain" in req_info:
-                        self._maskTaskStepChain(masked_result[req_name], req_info, "Step", mask_key)
+            maskedResult = {}
+            for reqName, reqDict in viewitems(result):
+                reqInfo = RequestInfo(reqDict)
+                maskedResult.setdefault(reqName, {})
+                for maskKey in mask:
+                    foundValue = reqInfo.get(maskKey, None)
+                    maskedResult[reqName].update({maskKey: foundValue})
 
-            return masked_result
+            return maskedResult
         else:
             return result
 
@@ -365,15 +346,15 @@ class Request(RESTEntity):
         if not result:
             return []
 
-        result = self._mask_result(mask, result)
+        result = self._maskResult(mask, result)
 
         if not option["include_docs"]:
-            return result.keys()
+            return list(result)
 
         # set the return format. default format has request name as a key
         # if is set to one it returns list of dictionary with RequestName field.
         if common_dict == 1:
-            response_list = result.values()
+            response_list = listvalues(result)
         else:
             response_list = [result]
         return rows(response_list)
@@ -392,13 +373,21 @@ class Request(RESTEntity):
         return requests
 
     def _retrieveResubmissionChildren(self, request_name):
-
+        """
+        Fetches all the direct children requests from CouchDB.
+        Response from CouchDB view is in the following format:
+            [{u'id': u'child_workflow_name',
+              u'key': u'parent_workflow_name',
+              u'value': 'current_request_status'}]
+        :param request_name: string with the parent workflow name
+        :return: a list of dictionaries with the parent and child workflow and the child status
+        """
         result = self.reqmgr_db.loadView('ReqMgr', 'childresubmissionrequests', keys=[request_name])['rows']
-        childrenRequestNames = []
-        for child in result:
-            childrenRequestNames.append(child['id'])
-            childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
-        return childrenRequestNames
+        childrenRequestAndStatus = []
+        for childInfo in result:
+            childrenRequestAndStatus.append(childInfo)
+            childrenRequestAndStatus.extend(self._retrieveResubmissionChildren(childInfo['id']))
+        return childrenRequestAndStatus
 
     def _handleNoStatusUpdate(self, workload, request_args, dn):
         """
@@ -409,14 +398,16 @@ class Request(RESTEntity):
         if 'RequestPriority' in request_args:
             # Yes, we completely ignore any other arguments posted by the user (web UI case)
             request_args = {'RequestPriority': request_args['RequestPriority']}
+            validate_request_priority(request_args)
             # must update three places: GQ elements, workload_cache and workload spec
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
             workload.setPriority(request_args['RequestPriority'])
             workload.saveCouchUrl(workload.specUrl())
-            cherrypy.log('Updated priority of "%s" to %s' % (workload.name(), request_args['RequestPriority']))
+            cherrypy.log('Updated priority of "{}" to: {}'.format(workload.name(), request_args['RequestPriority']))
         elif workqueue_stat_validation(request_args):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+            cherrypy.log('Updated workqueue statistics of "{}", with:  {}'.format(workload.name(), request_args))
         else:
             msg = "There are invalid arguments for no-status update: %s" % request_args
             raise InvalidSpecParameterValue(msg)
@@ -431,6 +422,7 @@ class Request(RESTEntity):
             msg = "There are invalid arguments for assignment-approved transition: %s" % request_args
             raise InvalidSpecParameterValue(msg)
 
+        validate_request_priority(request_args)
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         return report
 
@@ -471,19 +463,32 @@ class Request(RESTEntity):
         It handles only the state transition.
         Special handling needed if a request is aborted or force completed.
         """
+        # if we got here, then the main workflow has been already validated
+        # and the status transition is allowed
         req_status = request_args["RequestStatus"]
         cascade = request_args.get("cascade", False)
 
         if req_status in ["aborted", "force-complete"]:
             # cancel the workflow first
             self.gq_service.cancelWorkflow(workload.name())
-        if req_status in ["rejected", "closed-out", "announced"] and cascade:
-            cascade_list = self._retrieveResubmissionChildren(workload.name())
-            for req_name in cascade_list:
-                self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
 
-        cherrypy.log('Updating request status for request "%s" to %s. Cascade mode: %s' % (workload.name(), req_status, cascade))
-        # then update original workflow status in couchdb
+        # cascade option is only supported for these 3 statuses. If set, we need to
+        # find all the children requests and perform the same status transition
+        if req_status in ["rejected", "closed-out", "announced"] and cascade:
+            childrenNamesAndStatus = self._retrieveResubmissionChildren(workload.name())
+            msg = "Workflow {} has {} ".format(workload.name(), len(childrenNamesAndStatus))
+            msg += "children workflows to have a status transition to: {}".format(req_status)
+            cherrypy.log(msg)
+            for childInfo in childrenNamesAndStatus:
+                if check_allowed_transition(childInfo['value'], req_status):
+                    cherrypy.log('Updating request status for {} to {}.'.format(childInfo['id'], req_status))
+                    self.reqmgr_db_service.updateRequestStatus(childInfo['id'], req_status, dn)
+                else:
+                    msg = "Status transition from {} to {} ".format(childInfo['value'], req_status)
+                    msg += "not allowed for workflow: {}, skipping it!".format(childInfo['id'])
+                    cherrypy.log(msg)
+        # then update the original/parent workflow status in couchdb
+        cherrypy.log('Updating request status for {} to {}.'.format(workload.name(), req_status))
         report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         return report
 

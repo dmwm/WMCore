@@ -27,7 +27,7 @@ class PhEDExTest(EmulatedUnitTestCase):
 
         Initialize the PhEDEx API to point at the test server.
         """
-        self.dbsTestUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        self.dbsTestUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
         self.phedexApi = PhEDEx()
 
         return

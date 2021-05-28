@@ -5,6 +5,7 @@ _StoreResults_t_
 Unit tests for the StoreResults workflow.
 """
 from __future__ import print_function
+from future.utils import viewitems
 
 import threading
 import unittest
@@ -72,10 +73,10 @@ class StoreResultsTest(unittest.TestCase):
                                 task="/TestWorkload/StoreResults")
         testWorkflow.load()
 
-        self.assertEqual(len(testWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(testWorkflow.outputMap), 2,
                          "Error: Wrong number of WF outputs.")
         goldenOutputMods = {"Merged": "USER"}
-        for goldenOutputMod, tier in goldenOutputMods.items():
+        for goldenOutputMod, tier in viewitems(goldenOutputMods):
             fset = goldenOutputMod + tier
             mergedOutput = testWorkflow.outputMap[fset][0]["merged_output_fileset"]
             unmergedOutput = testWorkflow.outputMap[fset][0]["output_fileset"]

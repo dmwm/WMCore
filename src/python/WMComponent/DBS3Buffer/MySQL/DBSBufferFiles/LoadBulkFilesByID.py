@@ -90,12 +90,12 @@ class LoadBulkFilesByID(DBFormatter):
         interimDictionary = {}
 
         for entry in resultList:
-            if entry['id'] not in interimDictionary.keys():
+            if entry['id'] not in interimDictionary:
                 interimDictionary[entry['id']] = set()
             interimDictionary[entry['id']].add(entry['location'])
 
         finalList = []
-        for entry in interimDictionary.keys():
+        for entry in interimDictionary:
             tmpDict = {'id': entry, 'locations': interimDictionary[entry]}
             finalList.append(tmpDict)
 
@@ -112,12 +112,12 @@ class LoadBulkFilesByID(DBFormatter):
         interimDictionary = {}
 
         for entry in resultList:
-            if entry['id'] not in interimDictionary.keys():
+            if entry['id'] not in interimDictionary:
                 interimDictionary[entry['id']] = {}
             interimDictionary[entry['id']][entry['cktype']] = entry['cksum']
 
         finalList = []
-        for entry in interimDictionary.keys():
+        for entry in interimDictionary:
             tmpDict = {'id': entry, 'checksums': interimDictionary[entry]}
             finalList.append(tmpDict)
 
@@ -134,14 +134,14 @@ class LoadBulkFilesByID(DBFormatter):
         interimDictionary = {}
 
         for entry in resultList:
-            if entry['id'] not in interimDictionary.keys():
+            if entry['id'] not in interimDictionary:
                 interimDictionary[entry['id']] = {}
-            if entry['run'] not in interimDictionary[entry['id']].keys():
+            if entry['run'] not in interimDictionary[entry['id']]:
                 interimDictionary[entry['id']][entry['run']] = []
             interimDictionary[entry['id']][entry['run']].append(entry['lumi'])
 
         finalList = []
-        for entry in interimDictionary.keys():
+        for entry in interimDictionary:
             tmpDict = {'id': entry, 'runInfo': interimDictionary[entry]}
             finalList.append(tmpDict)
 
@@ -158,12 +158,12 @@ class LoadBulkFilesByID(DBFormatter):
         interimDictionary = {}
 
         for entry in resultList:
-            if entry['id'] not in interimDictionary.keys():
+            if entry['id'] not in interimDictionary:
                 interimDictionary[entry['id']] = []
             interimDictionary[entry['id']].append(entry['lfn'])
 
         finalList = []
-        for entry in interimDictionary.keys():
+        for entry in interimDictionary:
             tmpDict = {'id': entry, 'parentLFNs': interimDictionary[entry]}
             finalList.append(tmpDict)
 
@@ -244,12 +244,12 @@ class LoadBulkFilesByID(DBFormatter):
         interimDictionary = {}
 
         for entry in inputList:
-            if entry['id'] not in interimDictionary.keys():
+            if entry['id'] not in interimDictionary:
                 interimDictionary[entry['id']] = set()
             interimDictionary[entry['id']].add(entry[key])
 
         finalList = []
-        for entry in interimDictionary.keys():
+        for entry in interimDictionary:
             tmpDict = {'id': entry, key: interimDictionary[entry]}
             finalList.append(tmpDict)
 

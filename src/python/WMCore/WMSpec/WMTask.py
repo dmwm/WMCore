@@ -10,6 +10,9 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
+from builtins import map, zip, str as newstr, bytes
+from future.utils import viewitems
+
 import logging
 import os.path
 import time
@@ -23,6 +26,7 @@ from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 
 
@@ -328,6 +332,40 @@ class WMTaskHelper(TreeHelper):
         master(self)
         return
 
+    def addEnvironmentVariables(self, envDict):
+        """
+        _addEnvironmentVariables_
+
+        add a key = value style setting to the environment for this task and all
+        its children
+        """
+        for key, value in viewitems(envDict):
+            setattr(self.data.environment, key, value)
+        for task in self.childTaskIterator():
+            task.addEnvironmentVariables(envDict)
+        return
+
+    def setOverrideCatalog(self, tfcFile):
+        """
+        _setOverrideCatalog_
+
+        Used for setting overrideCatalog option for each step in the task.
+        """
+        for step in self.steps().nodeIterator():
+            step = CoreHelper(step)
+            step.setOverrideCatalog(tfcFile)
+        for task in self.childTaskIterator():
+            task.setOverrideCatalog(tfcFile)
+        return
+
+    def getEnvironmentVariables(self):
+        """
+        _getEnvironmentVariables_
+
+        Retrieve a dictionary with all environment variables defined for this task
+        """
+        return self.data.environment.dictionary_()
+
     def setupEnvironment(self):
         """
         _setupEnvironment_
@@ -342,7 +380,7 @@ class WMTaskHelper(TreeHelper):
 
         envDict = self.data.environment.dictionary_()
 
-        for key in envDict.keys():
+        for key in envDict:
             if str(envDict[key].__class__) == "<class 'WMCore.Configuration.ConfigSection'>":
                 # At this point we do not support the
                 # setting of sub-sections for environment variables
@@ -379,7 +417,7 @@ class WMTaskHelper(TreeHelper):
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
-        for key, val in extras.items():
+        for key, val in viewitems(extras):
             setattr(self.data.input, key, val)
 
         return
@@ -452,7 +490,7 @@ class WMTaskHelper(TreeHelper):
 
         Set the job splitting parameters.
         """
-        for key, val in params.items():
+        for key, val in viewitems(params):
             setattr(self.data.input.splitting, key, val)
 
         return
@@ -551,9 +589,9 @@ class WMTaskHelper(TreeHelper):
         splittingParams["trustSitelists"] = self.getTrustSitelists().get('trustlists')
         splittingParams["trustPUSitelists"] = self.getTrustSitelists().get('trustPUlists')
 
-        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() is not None:
+        if "runWhitelist" not in splittingParams and self.inputRunWhitelist() is not None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
-        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() is not None:
+        if "runBlacklist" not in splittingParams and self.inputRunBlacklist() is not None:
             splittingParams["runBlacklist"] = self.inputRunBlacklist()
 
         return splittingParams
@@ -629,7 +667,7 @@ class WMTaskHelper(TreeHelper):
         confValues = TreeHelper(generator)
         args = {}
         tempArgs = confValues.pythoniseDict(sections=False)
-        for entry in tempArgs.keys():
+        for entry in tempArgs:
             args[entry.split('%s.' % generatorName)[1]] = tempArgs[entry]
         return args
 
@@ -699,7 +737,7 @@ class WMTaskHelper(TreeHelper):
         except KeyError:
             raise RuntimeError("Primary, Processed and Tier must be set")
 
-        for opt, arg in options.iteritems():
+        for opt, arg in viewitems(options):
             if opt == 'block_blacklist':
                 self.setInputBlockBlacklist(arg)
             elif opt == 'block_whitelist':
@@ -814,7 +852,7 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, "production"):
             self.data.section_("production")
 
-        for opt, arg in options.items():
+        for opt, arg in viewitems(options):
             setattr(self.data.production, opt, arg)
 
     def inputDataset(self):
@@ -851,10 +889,10 @@ class WMTaskHelper(TreeHelper):
 
         if isinstance(dsetName, list):
             self.data.input.pileup.datasets.extend(dsetName)
-        elif isinstance(dsetName, basestring):
+        elif isinstance(dsetName, (newstr, bytes)):
             self.data.input.pileup.datasets.append(dsetName)
         else:
-            raise ValueError("Pileup dataset must be either a list or basestring")
+            raise ValueError("Pileup dataset must be either a list or a string (unicode or bytes)")
         # make the list unique
         self.data.input.pileup.datasets = list(set(self.data.input.pileup.datasets))
 
@@ -1468,7 +1506,7 @@ class WMTaskHelper(TreeHelper):
             # then there is no need to set anything, single cmsRun step at most
             return
 
-        for stepName, stepValues in stepMap.items():
+        for stepName, stepValues in viewitems(stepMap):
             cmsRunNum = stepValues[1]
             stepHelper = self.getStepHelper(cmsRunNum)
             callableMethod = getattr(stepHelper, propMethodMap[propertyName])
@@ -1526,7 +1564,7 @@ class WMTaskHelper(TreeHelper):
 
         runs = []
         lumis = []
-        for run, runLumis in lumiMask.items():
+        for run, runLumis in viewitems(lumiMask):
             runs.append(int(run))
             lumiList = []
             for lumi in runLumis:
@@ -1568,7 +1606,7 @@ class WMTaskHelper(TreeHelper):
         """
         set task properties (only for assignment stage but make it more general)
         """
-        for prop, value in properties.items():
+        for prop, value in viewitems(properties):
             self._propMethodMap()[prop](value)
 
     def deleteChild(self, childName):
@@ -1627,7 +1665,7 @@ class WMTaskHelper(TreeHelper):
     def _getKeyValue(self, keyname, stepname, values):
         if keyname not in values:
             return
-        elif isinstance(values[keyname], basestring):
+        elif isinstance(values[keyname], (newstr, bytes)):
             return values[keyname]
         elif isinstance(values[keyname], dict):
             return values[keyname].get(stepname)
@@ -1644,7 +1682,7 @@ class WMTaskHelper(TreeHelper):
         :return: a single string for each of those 3 properties
         """
         reqStepName = None
-        for reqStep, values in stepMapping.iteritems():
+        for reqStep, values in viewitems(stepMapping):
             if stepName == values[1]:
                 reqStepName = reqStep
         if not reqStepName:
@@ -1789,6 +1827,7 @@ class WMTask(ConfigSectionTree):
         self.section_("input")
         self.section_("notifications")
         self.section_("subscriptions")
+        self.section_("environment")
         self.notifications.targets = []
         self.input.sandbox = None
         self.input.section_("splitting")

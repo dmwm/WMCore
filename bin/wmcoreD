@@ -28,7 +28,9 @@ wmcoreD --restart --config=WMCoreConfig.py
 wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
+from __future__ import print_function
 
+from builtins import str
 __revision__ = "$Id: wmcoreD,v 1.16 2010/05/26 21:09:35 sfoulkes Exp $"
 __version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
@@ -73,8 +75,8 @@ valid = ['config=', 'start', 'shutdown', 'status', 'restart',
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
-except getopt.GetoptError, ex:
-    print str(ex)
+except getopt.GetoptError as ex:
+    print(str(ex))
     usage()
     sys.exit(1)
 
@@ -92,28 +94,28 @@ for opt, arg in opts:
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "start"
     if opt == "--shutdown":
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "shutdown"
     if opt == "--status":
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "status"
     if opt == "--restart":
         if command != None:
             msg = "Command specified twice:\n"
             msg += usage()
-            print msg
+            print(msg)
             sys.exit(1)
         command = "restart"
     if opt == "--cleanup-logs":
@@ -145,7 +147,7 @@ if config == None:
         sys.exit(1)
 
 if not os.path.exists(config):
-    print "Can't find config: %s" % config
+    print("Can't find config: %s" % config)
     sys.exit(1)
 
 # load the config file here.
@@ -155,7 +157,7 @@ cfgObject = loadConfigurationFile(config)
 if componentsList != None:
     msg = "Components List Specified:\n"
     msg += str(componentsList).replace('\'', '')
-    print msg
+    print(msg)
     components = componentsList
 else:    
     components = cfgObject.listComponents_() + cfgObject.listWebapps_()
@@ -170,10 +172,10 @@ def connectionTest(configFile):
     """
     config = loadConfigurationFile(configFile)
     wmInit = WMInit()    
-    print "Checking default database connection...",
+    print("Checking default database connection...", end=' ')
 
     if not hasattr(config, "CoreDatabase"):
-        print "skipped."
+        print("skipped.")
         return
 
     (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
@@ -183,14 +185,14 @@ def connectionTest(configFile):
        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
                                     dialect = dialect,
                                     socketLoc = socket)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl 
         msg += str(ex)
-        print msg
+        print(msg)
         raise ex
 
-    print "ok."
+    print("ok.")
     return
 
 def startup(configFile):
@@ -228,8 +230,8 @@ def startup(configFile):
         if os.path.exists(daemonXML):
             daemon = Details(daemonXML)
             if not daemon.isAlive():         
-                print "Error: Component %s Did not start properly..." % component
-                print "Check component log to see why"
+                print("Error: Component %s Did not start properly..." % component)
+                print("Check component log to see why")
                 sys.exit(1)
         else:
             print('Path for daemon file does not exist!')
@@ -262,14 +264,14 @@ def shutdown(configFile):
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
-            print "Cannot find Daemon.xml for component:", component
-            print "Unable to shut it down"
+            print("Cannot find Daemon.xml for component:", component)
+            print("Unable to shut it down")
         else:
             daemon = Details(daemonXml)
             if not daemon.isAlive():
-                print "Component %s with process id %s is not running" % (
+                print("Component %s with process id %s is not running" % (
                     component, daemon['ProcessID'],
-                    )
+                    ))
                 daemon.removeAndBackupDaemonFile()
             else:
                 daemon.killWithPrejudice()
@@ -278,10 +280,10 @@ def shutdown(configFile):
             # // Log Cleanup
             #//
             msg = "Removing %s/ComponentLog" % compDir
-            print msg
+            print(msg)
             try:
                 os.remove("%s/ComponentLog" % compDir)
-            except StandardError, ex:
+            except Exception as ex:
                 msg = "Unable to cleanup Component Log: "
                 msg += "%s/ComponentLog\n" % compDir
                 msg += str(ex)
@@ -290,12 +292,12 @@ def shutdown(configFile):
             #  //
             # // Cleanout everything in ComponentDir
             #//  for this component
-            print "Removing %s\n" % compDir
+            print("Removing %s\n" % compDir)
             exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
             if exitCode:
                 msg = "Failed to clean up dir: %s\n" % compDir
                 msg += output
-                print msg
+                print(msg)
 
     return
 
@@ -321,13 +323,13 @@ def status(configFile):
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
-            print "Component:%s Not Running" % component
+            print("Component:%s Not Running" % component)
             continue
         daemon = Details(daemonXml)
         if not daemon.isAlive():
-            print "Component:%s Not Running" % component
+            print("Component:%s Not Running" % component)
         else:
-            print "Component:%s Running:%s" % (component, daemon['ProcessID'])
+            print("Component:%s Running:%s" % (component, daemon['ProcessID']))
 
     sys.exit(0)
 

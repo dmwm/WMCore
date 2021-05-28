@@ -4,6 +4,9 @@
 JobArchiver test
 """
 
+from builtins import range
+from future.utils import listvalues
+
 import os
 import shutil
 import threading
@@ -215,7 +218,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
             0].fetchall()
 
         for val in result:
-            self.assertEqual(val.values(), ['cleanout'])
+            self.assertEqual(listvalues(val), ['cleanout'])
 
         dirList = os.listdir(cacheDir)
         for job in testJobGroup.jobs:

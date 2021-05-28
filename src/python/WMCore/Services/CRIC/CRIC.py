@@ -1,9 +1,14 @@
 from __future__ import (division, print_function)
 
+from builtins import zip, str, bytes
+
+from future import standard_library
+standard_library.install_aliases()
+
 import json
 import logging
 import re
-from urllib import urlencode
+from urllib.parse import urlencode
 
 from WMCore.Services.Service import Service
 
@@ -139,7 +144,7 @@ class CRIC(Service):
         nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
             nodeNames = [x for x in nodeNames if not x.endswith("_Buffer")]
-        if pattern and isinstance(pattern, basestring):
+        if pattern and isinstance(pattern, (str, bytes)):
             pattern = re.compile(pattern)
             nodeNames = [x for x in nodeNames if pattern.match(x)]
         return nodeNames
@@ -153,7 +158,7 @@ class CRIC(Service):
         """
         mapping = self._CRICSiteQuery(callname='data-processing')
 
-        if isinstance(pnns, basestring):
+        if isinstance(pnns, (str, bytes)):
             pnns = [pnns]
 
         psns = set()
@@ -168,16 +173,17 @@ class CRIC(Service):
                 self["logger"].debug("No PSNs for PNN: %s" % pnn)
         return list(psns)
 
-    def PSNstoPNNs(self, psns):
+    def PSNstoPNNs(self, psns, allowPNNLess=False):
         """
         Given a list of PSNs, return all their PNNs
 
         :param psns: a string or a list of PSNs
+        :param allowPNNLess: flag to return the PSN as a PNN if no match
         :return: a list with unique PNNs matching those PSNs
         """
         mapping = self._CRICSiteQuery(callname='data-processing')
 
-        if isinstance(psns, basestring):
+        if isinstance(psns, (str, bytes)):
             psns = [psns]
 
         pnns = set()
@@ -188,6 +194,9 @@ class CRIC(Service):
                     pnnSet.add(item['phedex_name'])
             if pnnSet:
                 pnns.update(pnnSet)
+            elif allowPNNLess:
+                pnns.add(psn)
+                self["logger"].debug("PSN %s has no PNNs. PNNLess flag enabled though.", psn)
             else:
                 self["logger"].debug("No PNNs for PSN: %s" % psn)
         return list(pnns)
@@ -196,10 +205,10 @@ class CRIC(Service):
         """
         Given a PSN regex pattern, return a map of PSN to PNNs
         :param psnPattern: a pattern string
-        :return: a dictionary of PNNs list keyed by their PSN
+        :return: a dictionary key'ed by PSN names, with sets of PNNs as values
         """
-        if not isinstance(psnPattern, basestring):
-            raise TypeError('psnPattern argument must be of type basestring')
+        if not isinstance(psnPattern, (str, bytes)):
+            raise TypeError('psnPattern argument must be of type str or bytes')
 
         results = self._CRICSiteQuery(callname='data-processing')
         mapping = {}
@@ -208,4 +217,22 @@ class CRIC(Service):
         for entry in results:
             if psnPattern.match(entry['psn_name']):
                 mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
+        return mapping
+
+    def PNNtoPSNMap(self, pnnPattern=''):
+        """
+        Given a PNN regex pattern, return a map of PNN to PSNs
+        :param pnnPattern: a pattern string
+        :return: a dictionary key'ed by PNN names, with sets of PSNs as values
+        """
+        if not isinstance(pnnPattern, (str, bytes)):
+            raise TypeError('pnnPattern argument must be of type str or bytes')
+
+        results = self._CRICSiteQuery(callname='data-processing')
+        mapping = {}
+
+        pnnPattern = re.compile(pnnPattern)
+        for entry in results:
+            if pnnPattern.match(entry['phedex_name']):
+                mapping.setdefault(entry['phedex_name'], set()).add(entry['psn_name'])
         return mapping

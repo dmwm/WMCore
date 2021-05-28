@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 
 from __future__ import division, print_function
+from future.utils import viewitems
+
+from builtins import str, bytes
+from past.builtins import basestring
 
 import subprocess
 import os
@@ -18,7 +22,7 @@ def lowerCmsHeaders(headers):
     code check only cms headers in lower case, e.g. cms-xxx-yyy.
     """
     lheaders = {}
-    for hkey, hval in headers.items(): # perform lower-case
+    for hkey, hval in viewitems(headers): # perform lower-case
         # lower header keys since we check lower-case in headers
         if hkey.startswith('Cms-') or hkey.startswith('CMS-'):
             lheaders[hkey.lower()] = hval
@@ -132,6 +136,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     truncate message until zip/encoded version
     is within the limits allowed.
     """
+    message = encodeUnicodeToBytes(message)
     encodedStr = zlib.compress(message, compressLevel)
     encodedStr = base64.b64encode(encodedStr)
     if len(encodedStr) < maxLen or maxLen == -1:
@@ -142,6 +147,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     # Estimate new length for message zip/encoded version
     # to be less than maxLen.
     # Also, append truncate indicator to message.
+    truncateIndicator = encodeUnicodeToBytes(truncateIndicator)
     strLen = int((maxLen - len(truncateIndicator)) / compressRate)
     message = message[:strLen] + truncateIndicator
 
@@ -188,15 +194,61 @@ def getSize(obj):
     return size
 
 
-# TODO: remove this function once we have completely migrated to Rucio
-def usingRucio():
+def decodeBytesToUnicode(value, errors="strict"):
     """
-    Evaluates the environment variables and figure out whether we
-    need to use Rucio or not (thus PhEDEx)
-    :return: a boolean value
+    Accepts an input "value" of generic type.
+
+    If "value" is a string of type sequence of bytes (i.e. in py2 `str` or
+    `future.types.newbytes.newbytes`, in py3 `bytes`), then it is converted to
+    a sequence of unicode codepoints.
+
+    This function is useful for cleaning input data when using the
+    "unicode sandwich" approach, which involves converting bytes (i.e. strings
+    of type sequence of bytes) to unicode (i.e. strings of type sequence of
+    unicode codepoints, in py2 `unicode` or `future.types.newstr.newstr`,
+    in py3 `str` ) as soon as possible when recieving input data, and
+    converting unicode back to bytes as late as possible.
+    achtung!:
+    - converting unicode back to bytes is not covered by this function
+    - converting unicode back to bytes is not always necessary. when in doubt,
+      do not do it.
+    Reference: https://nedbatchelder.com/text/unipain.html
+
+    py2:
+    - "errors" can be: "strict", "ignore", "replace",
+    - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
+    py3:
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace"
+    - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
     """
-    if str(os.getenv("WMAGENT_USE_RUCIO", 'false')).lower() == 'true':
-        return True
-    elif str(os.getenv("WMCORE_USE_RUCIO", 'false')).lower() == 'true':
-        return True
-    return False
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors)
+    return value
+
+
+def encodeUnicodeToBytes(value, errors="strict"):
+    """
+    Accepts an input "value" of generic type.
+
+    If "value" is a string of type sequence of unicode (i.e. in py2 `unicode` or
+    `future.types.newstr.newstr`, in py3 `str`), then it is converted to
+    a sequence of bytes.
+
+    This function is useful for encoding output data when using the
+    "unicode sandwich" approach, which involves converting unicode (i.e. strings
+    of type sequence of unicode codepoints) to bytes (i.e. strings of type
+    sequence of bytes, in py2 `str` or `future.types.newbytes.newbytes`,
+    in py3 `bytes`) as late as possible when passing a string to a third-party
+    function that only accepts bytes as input (pycurl's curl.setop is an
+    example).
+    py2:
+    - "errors" can be: "strict", "ignore", "replace", "xmlcharrefreplace"
+    - ref: https://docs.python.org/2/howto/unicode.html#the-unicode-type
+    py3:
+    - "errors" can be: "strict", "ignore", "replace", "backslashreplace", 
+      "xmlcharrefreplace", "namereplace"
+    - ref: https://docs.python.org/3/howto/unicode.html#the-string-type
+    """
+    if isinstance(value, str):
+        return value.encode("utf-8", errors)
+    return value

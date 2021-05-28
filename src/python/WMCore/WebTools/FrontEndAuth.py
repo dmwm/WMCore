@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from future.utils import viewitems
+
 import hashlib
 import hmac
 
@@ -127,7 +129,7 @@ class FrontEndAuth(cherrypy.Tool):
         if not (role or group or site):
             return True
 
-        for k, v in user['roles'].iteritems():
+        for k, v in viewitems(user['roles']):
             if (not role) or (k in role):
                 if not (group or site):
                     return True

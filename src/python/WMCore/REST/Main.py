@@ -6,7 +6,12 @@
 Manages a web server application. Loads configuration and all views, starting
 up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
+
 from __future__ import print_function
+from builtins import object
+from future.utils import viewitems
+from future import standard_library
+standard_library.install_aliases()
 
 import errno
 import logging
@@ -16,11 +21,11 @@ import re
 import signal
 import socket
 import sys
-import thread
+import _thread
 import time
 import traceback
 from argparse import ArgumentParser
-from io import StringIO
+from io import BytesIO, StringIO
 from glob import glob
 from subprocess import Popen, PIPE
 from pprint import pformat
@@ -34,6 +39,7 @@ from cherrypy.lib import profiler
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
 from Utils.Utilities import lowerCmsHeaders
+from Utils.PythonVersion import PY2
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
@@ -210,7 +216,7 @@ class RESTMain(object):
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
+        _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128 * 1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 
@@ -219,9 +225,9 @@ class RESTMain(object):
                         'server', 'tools', 'wsgi', 'checker'):
             if not hasattr(self.srvconfig, section):
                 continue
-            for opt, value in getattr(self.srvconfig, section).dictionary_().iteritems():
+            for opt, value in viewitems(getattr(self.srvconfig, section).dictionary_()):
                 if isinstance(value, ConfigSection):
-                    for xopt, xvalue in value.dictionary_().iteritems():
+                    for xopt, xvalue in viewitems(value.dictionary_()):
                         cpconfig.update({"%s.%s.%s" % (section, opt, xopt): xvalue})
                 elif isinstance(value, str) or isinstance(value, int):
                     cpconfig.update({"%s.%s" % (section, opt): value})
@@ -382,47 +388,57 @@ class RESTDaemon(RESTMain):
 
     def start_daemon(self):
         """Start the deamon."""
+        # This REST server can be run in the frontend i.e. interactively (e.g. to use pdb)
+        # by setting an env. var. via: export DONT_DAEMONIZE_REST=True
+        # if the variable is missing or set to any other value, code starts normally as a daemon
+        daemonize = os.getenv('DONT_DAEMONIZE_REST', 'False') != 'True'
 
-        # Redirect all output to the logging daemon.
-        devnull = open(os.devnull, "w")
-        if isinstance(self.logfile, list):
-            subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
-                            bufsize=0, close_fds=True, shell=False)
-            logger = subproc.stdin
-        elif isinstance(self.logfile, str):
-            logger = open(self.logfile, "a+", 0)
-        else:
-            raise TypeError("'logfile' must be a string or array")
-        os.dup2(logger.fileno(), sys.stdout.fileno())
-        os.dup2(logger.fileno(), sys.stderr.fileno())
-        os.dup2(devnull.fileno(), sys.stdin.fileno())
-        logger.close()
-        devnull.close()
-
-        # First fork. Discard the parent.
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
-
-        # Establish as a daemon, set process group / session id.
         os.chdir(self.statedir)
-        os.setsid()
 
-        # Second fork. The child does the work, discard the second parent.
-        pid = os.fork()
-        if pid > 0:
-            os._exit(0)
+        if daemonize:
+            # Redirect all output to the logging daemon.
+            devnull = open(os.devnull, "w")
+            if isinstance(self.logfile, list):
+                subproc = Popen(self.logfile, stdin=PIPE, stdout=devnull, stderr=devnull,
+                                bufsize=0, close_fds=True, shell=False)
+                logger = subproc.stdin
+            elif isinstance(self.logfile, str):
+                logger = open(self.logfile, "a+", 0)
+            else:
+                raise TypeError("'logfile' must be a string or array")
+            os.dup2(logger.fileno(), sys.stdout.fileno())
+            os.dup2(logger.fileno(), sys.stderr.fileno())
+            os.dup2(devnull.fileno(), sys.stdin.fileno())
+            logger.close()
+            devnull.close()
 
-        # Save process group id to pid file, then run real worker.
-        with open(self.pidfile, "w") as pidObj:
-            pidObj.write("%d\n" % os.getpgid(0))
+            # First fork. Discard the parent.
+            pid = os.fork()
+            if pid > 0:
+                os._exit(0)
 
+            # Establish as a daemon, set process group / session id.
+            os.setsid()
+
+            # Second fork. The child does the work, discard the second parent.
+            pid = os.fork()
+            if pid > 0:
+                os._exit(0)
+
+            # Save process group id to pid file, then run real worker.
+            with open(self.pidfile, "w") as pidObj:
+                pidObj.write("%d\n" % os.getpgid(0))
+
+        # following code is executed both in daemon and not daemon mode
         error = False
         try:
             self.run()
         except Exception as e:
             error = True
-            trace = StringIO()
+            if PY2:
+                trace = BytesIO()
+            else:
+                trace = StringIO()
             traceback.print_exc(file=trace)
             cherrypy.log("ERROR: terminating due to error: %s" % trace.getvalue())
 
@@ -441,34 +457,36 @@ class RESTDaemon(RESTMain):
         # to run the server proper.  The parent monitors the child, and if
         # it exits abnormally, restarts it, otherwise exits completely with
         # the child's exit code.
-        cherrypy.log("WATCHDOG: starting server daemon (pid %d)" % os.getpid())
-        while True:
-            serverpid = os.fork()
-            if not serverpid: break
-            signal.signal(signal.SIGINT, signal.SIG_IGN)
-            signal.signal(signal.SIGTERM, signal.SIG_IGN)
-            signal.signal(signal.SIGQUIT, signal.SIG_IGN)
-            (xpid, exitrc) = os.waitpid(serverpid, 0)
-            (exitcode, exitsigno, exitcore) = (exitrc >> 8, exitrc & 127, exitrc & 128)
-            retval = (exitsigno and ("signal %d" % exitsigno)) or str(exitcode)
-            retmsg = retval + ((exitcore and " (core dumped)") or "")
-            restart = (exitsigno > 0 and exitsigno not in (2, 3, 15))
-            cherrypy.log("WATCHDOG: server exited with exit code %s%s"
-                         % (retmsg, (restart and "... restarting") or ""))
+        daemonize = os.getenv('DONT_DAEMONIZE_REST', 'False') != 'True'
+        if daemonize:
+            cherrypy.log("WATCHDOG: starting server daemon (pid %d)" % os.getpid())
+            while True:
+                serverpid = os.fork()
+                if not serverpid: break
+                signal.signal(signal.SIGINT, signal.SIG_IGN)
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)
+                signal.signal(signal.SIGQUIT, signal.SIG_IGN)
+                (xpid, exitrc) = os.waitpid(serverpid, 0)
+                (exitcode, exitsigno, exitcore) = (exitrc >> 8, exitrc & 127, exitrc & 128)
+                retval = (exitsigno and ("signal %d" % exitsigno)) or str(exitcode)
+                retmsg = retval + ((exitcore and " (core dumped)") or "")
+                restart = (exitsigno > 0 and exitsigno not in (2, 3, 15))
+                cherrypy.log("WATCHDOG: server exited with exit code %s%s"
+                             % (retmsg, (restart and "... restarting") or ""))
 
-            if not restart:
-                sys.exit((exitsigno and 1) or exitcode)
+                if not restart:
+                    sys.exit((exitsigno and 1) or exitcode)
 
-            for pidfile in glob("%s/*/*pid" % self.statedir):
-                if os.path.exists(pidfile):
-                    with open(pidfile) as fd:
-                        pid = int(fd.readline())
-                    os.remove(pidfile)
-                    cherrypy.log("WATCHDOG: killing slave server %d" % pid)
-                    try:
-                        os.kill(pid, 9)
-                    except:
-                        pass
+                for pidfile in glob("%s/*/*pid" % self.statedir):
+                    if os.path.exists(pidfile):
+                        with open(pidfile) as fd:
+                            pid = int(fd.readline())
+                        os.remove(pidfile)
+                        cherrypy.log("WATCHDOG: killing slave server %d" % pid)
+                        try:
+                            os.kill(pid, 9)
+                        except:
+                            pass
 
         # Run. Override signal handlers after CherryPy has itself started and
         # installed its own handlers. To achieve this we need to start the

@@ -5,6 +5,9 @@ _Transitions_
 Controls what state transitions are allowed.
 """
 
+from future.utils import viewvalues
+
+
 class Transitions(dict):
     """
     All allowed state transitions in the JSM.
@@ -37,7 +40,7 @@ class Transitions(dict):
         states other than cleanout.
         """
         knownstates = set(self.keys())
-        for possiblestates in self.values():
+        for possiblestates in viewvalues(self):
             for i in possiblestates:
                 knownstates.add(i)
         return list(knownstates)

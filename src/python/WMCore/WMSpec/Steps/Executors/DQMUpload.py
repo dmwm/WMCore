@@ -7,6 +7,8 @@ Implementation of an Executor for a DQMUpload step
 """
 from __future__ import print_function
 
+from future.utils import viewitems
+
 import logging
 import os
 import sys
@@ -191,12 +193,12 @@ class DQMUpload(Executor):
         """
         boundary = '----------=_DQM_FILE_BOUNDARY_=-----------'
         (body, crlf) = ('', '\r\n')
-        for (key, value) in args.items():
+        for (key, value) in viewitems(args):
             payload = str(value)
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"' % key) + crlf
             body += crlf + payload + crlf
-        for (key, filename) in files.items():
+        for (key, filename) in viewitems(files):
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"; filename="%s"'
                      % (key, os.path.basename(filename))) + crlf

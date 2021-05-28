@@ -5,6 +5,7 @@ _JobPackage_
 Unittests for JobPackage persistency mechanism
 """
 
+from builtins import range
 import os
 import unittest
 
@@ -42,7 +43,7 @@ class JobPackageTest(unittest.TestCase):
             package[i] = newJob
 
         # There is an extra key for the directory the package is stored in.
-        assert len(package.keys()) == 101, \
+        assert len(package) == 101, \
                "Error: Wrong number of jobs in package."
 
         for i in range(100):
@@ -76,7 +77,7 @@ class JobPackageTest(unittest.TestCase):
         newPackage.load(self.persistFile)
 
         # There is an extra key for the directory the package is stored in.
-        assert len(newPackage.keys()) == 101, \
+        assert len(newPackage) == 101, \
                "Error: Wrong number of jobs in package."
 
         for i in range(100):
@@ -117,7 +118,7 @@ class JobPackageTest(unittest.TestCase):
         newPackage.load(self.persistFile)
 
         # There is an extra key for the directory the package is stored in.
-        assert len(newPackage.keys()) == 101, \
+        assert len(newPackage) == 101, \
                "Error: Wrong number of jobs in package."
 
         for i in range(100):

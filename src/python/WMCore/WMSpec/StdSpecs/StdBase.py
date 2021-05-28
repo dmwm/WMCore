@@ -5,16 +5,17 @@ _StdBase_
 Base class with helper functions for standard WMSpec files.
 """
 from __future__ import division
+from future.utils import viewitems
+from builtins import range, object
+
 import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -73,6 +74,10 @@ class StdBase(object):
                     setattr(self, argumentDefinition[arg]["attr"], defaultValue)
             except Exception as ex:
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
+
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        if hasattr(self, "dbsUrl"):
+            self.dbsUrl = self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
         return
 
@@ -242,41 +247,6 @@ class StdBase(object):
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
-    # FIXME: this function is getting deprecated. Will be removed in March 2020
-    def reportWorkflowToDashboard(self, dashboardActivity):
-        """
-        _reportWorkflowToDashboard_
-        Gathers workflow information from the arguments and reports it to the
-        dashboard
-        """
-        try:
-            # Create a fake config
-            conf = ConfigSection()
-            conf.section_('DashboardReporter')
-            conf.DashboardReporter.dashboardHost = self.dashboardHost
-            conf.DashboardReporter.dashboardPort = self.dashboardPort
-
-            # Create the reporter
-            reporter = DashboardReporter(conf)
-
-            # Assemble the info
-            workflow = {}
-            workflow['name'] = self.workloadName
-            workflow['application'] = self.frameworkVersion
-            workflow['TaskType'] = dashboardActivity
-            # Let's try to build information about the inputDataset
-            dataset = 'DoesNotApply'
-            if hasattr(self, 'inputDataset'):
-                dataset = self.inputDataset
-            workflow['datasetFull'] = dataset
-            workflow['user'] = 'cmsdataops'
-
-            # Send the workflow info
-            reporter.addTask(workflow)
-        except Exception:
-            # This is not critical, if it fails just leave it be
-            logging.error("There was an error with dashboard reporting")
-
     def createWorkload(self):
         """
         _createWorkload_
@@ -297,7 +267,8 @@ class StdBase(object):
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
-        workload.setDbsUrl(self.dbsUrl)
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        workload.setDbsUrl(self.dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch"))
         workload.setPrepID(self.prepID)
         return workload
 
@@ -362,7 +333,7 @@ class StdBase(object):
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         newSplitArgs = {}
-        for argName in splitArgs.keys():
+        for argName in splitArgs:
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
@@ -455,7 +426,7 @@ class StdBase(object):
                                                    configDoc, couchDBName,
                                                    configCacheUrl, cmsswVersion)
         outputModules = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in configOutput:
             outputModule = self.addOutputModule(procTask,
                                                 outputModuleName,
                                                 configOutput[outputModuleName].get('primaryDataset',
@@ -856,7 +827,7 @@ class StdBase(object):
         pileupConfig has the following data structure:
             {'mc': ['/mc_pd/procds/tier'], 'data': ['/data_pd/procds/tier']}
         """
-        for puType, puList in pileupConfig.items():
+        for puType, puList in viewitems(pileupConfig):
             task.setInputPileupDatasets(puList)
 
         if stepName:
@@ -1038,7 +1009,7 @@ class StdBase(object):
                                             "validate": lambda x: x >= 0},
                      "GlobalTagConnect": {"null": True},
                      "LumiList": {"default": {}, "type": makeLumiList},
-                     "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                     "DbsUrl": {"default": "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
                      "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,

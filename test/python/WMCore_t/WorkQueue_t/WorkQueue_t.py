@@ -6,6 +6,9 @@ WorkQueue tests
 """
 from __future__ import print_function
 
+from builtins import next, range
+from future.utils import viewitems
+
 import os
 import threading
 import time
@@ -36,7 +39,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueu
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
+from WMQuality.Emulators.RucioClient.MockRucioApi import PILEUP_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
@@ -100,7 +103,13 @@ class WorkQueueTest(WorkQueueTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True, mockSiteDB=True)
+        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        self.queueParams = {}
+        self.queueParams['log_reporter'] = "WorkQueue_Unittest"
+        self.queueParams['rucioAccount'] = "wma_test"
+        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+
 
     def setupConfigCacheAndAgrs(self):
         self.rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -191,9 +200,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                        InboxDbName=self.globalQInboxDB,
                                        QueueURL=globalCouchUrl,
                                        central_logdb_url=logdbCouchUrl,
-                                       log_reporter="WorkQueue_Unittest",
                                        UnittestFlag=True,
-                                       RequestDBURL=reqdbUrl)
+                                       RequestDBURL=reqdbUrl,
+                                       **self.queueParams)
         #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
         #                            PopulateFilesets = False,
         #                            ParentQueue = self.globalQueue,
@@ -231,8 +240,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                      BossAirConfig=bossAirConfig,
                                      CacheDir=self.workDir,
                                      central_logdb_url=logdbCouchUrl,
-                                     log_reporter="WorkQueue_Unittest",
-                                     RequestDBURL=reqdbUrl)
+                                     RequestDBURL=reqdbUrl,
+                                     **self.queueParams)
 
         self.localQueue2 = localQueue(DbName=self.localQDB2,
                                       InboxDbName=self.localQInboxDB2,
@@ -242,8 +251,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                       BossAirConfig=bossAirConfig,
                                       CacheDir=self.workDir,
                                       central_logdb_url=logdbCouchUrl,
-                                      log_reporter="WorkQueue_Unittest",
-                                      RequestDBURL=reqdbUrl)
+                                      RequestDBURL=reqdbUrl,
+                                      **self.queueParams)
 
         # configuration for the Alerts messaging framework, work (alerts) and
         # control  channel addresses to which alerts
@@ -261,13 +270,13 @@ class WorkQueueTest(WorkQueueTestCase):
                                CacheDir=self.workDir,
                                config=config,
                                central_logdb_url=logdbCouchUrl,
-                               log_reporter="WorkQueue_Unittest",
-                               RequestDBURL=reqdbUrl)
+                               RequestDBURL=reqdbUrl,
+                               **self.queueParams)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
         site_se_mapping = {'T2_XX_SiteA': 'T2_XX_SiteA', 'T2_XX_SiteB': 'T2_XX_SiteB'}
-        for site, se in site_se_mapping.iteritems():
+        for site, se in viewitems(site_se_mapping):
             rc.insertSite(site, 100, 200, se, cmsName=site, plugin="MockPlugin")
             daofactory = DAOFactory(package="WMCore.WMBS",
                                     logger=threading.currentThread().logger,
@@ -337,9 +346,9 @@ class WorkQueueTest(WorkQueueTestCase):
         reco = workload.newTask("reco")
         workload.setOwnerDetails(name="evansde77", group="DMWM")
         workload.setSiteWhitelist(site)
-        workload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
         # first task uses the input dataset
-        reco.addInputDataset(primary="PRIMARY", processed="processed-v1", tier="TIERONE")
+        reco.addInputDataset(name="/PRIMARY/processed-v1/TIERONE",
+                             primary="PRIMARY", processed="processed-v1", tier="TIERONE")
         reco.data.input.splitting.algorithm = "File"
         reco.data.input.splitting.include_parents = parentage
         reco.setTaskType("Processing")
@@ -354,6 +363,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                          lfnBase="/store/dunkindonuts",
                                          mergedLFNBase="/store/kfc")
 
+        workload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
         dcs = DataCollectionService(url=serverUrl, database=couchDB)
 
         def getJob(workload):
@@ -1156,7 +1166,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.setSiteWhitelist('T1_US_FNAL')
-        spec.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+        spec.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
         spec.save(spec.specUrl())
         self.localQueue.params['Team'] = 'cmsdataops'
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team="cmsdataops")
@@ -1263,7 +1273,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          False)
 
         # close the global inbox elements, they won't be split anymore
-        self.globalQueue.closeWork('testProcessing', 'testProduction')
+        self.globalQueue.closeWork(['testProcessing', 'testProduction'])
         self.localQueue.getWMBSInjectionStatus()
         time.sleep(1)
         # There are too many jobs to pull down for testProcessing still has element not in WMBS
@@ -1507,13 +1517,13 @@ class WorkQueueTest(WorkQueueTestCase):
         expectedMetrics = ('workByStatus', 'workByStatusAndPriority', 'workByAgentAndStatus',
                            'workByAgentAndPriority', 'uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA',
                            'uniqueJobsPerSite', 'possibleJobsPerSite', 'total_query_time')
-        self.assertItemsEqual(metrics.keys(), expectedMetrics)
+        self.assertItemsEqual(list(metrics), expectedMetrics)
 
-        self.assertItemsEqual(metrics['workByStatus'].keys(), STATES)
+        self.assertItemsEqual(list(metrics['workByStatus']), STATES)
         self.assertEqual(metrics['workByStatus']['Available']['sum_jobs'], 678)
         self.assertEqual(metrics['workByStatus']['Acquired'], {})
 
-        self.assertItemsEqual(metrics['workByStatusAndPriority'].keys(), STATES)
+        self.assertItemsEqual(list(metrics['workByStatusAndPriority']), STATES)
         prios = [item['priority'] for item in metrics['workByStatusAndPriority']['Available']]
         self.assertItemsEqual(prios, [8000, 999998])
         self.assertEqual(metrics['workByStatusAndPriority']['Acquired'], [])
@@ -1527,10 +1537,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([item['priority'] for item in metrics['workByAgentAndPriority']], [8000, 999998])
 
         for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
-            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertItemsEqual(list(metrics[met]), initialStatus)
             self.assertEqual(len(metrics[met]['Available']), 2)
             self.assertEqual(len(metrics[met]['Acquired']), 0)
-            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Available']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
         self.assertTrue(metrics['total_query_time'] >= 0)
 
@@ -1565,11 +1575,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertItemsEqual(prios, [8000, 999998])
 
         for met in ('uniqueJobsPerSiteAAA', 'possibleJobsPerSiteAAA', 'uniqueJobsPerSite', 'possibleJobsPerSite'):
-            self.assertItemsEqual(metrics[met].keys(), initialStatus)
+            self.assertItemsEqual(list(metrics[met]), initialStatus)
             self.assertEqual(len(metrics[met]['Available']), 2)
             self.assertEqual(len(metrics[met]['Acquired']), 2)
-            self.assertItemsEqual(metrics[met]['Available'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
-            self.assertItemsEqual(metrics[met]['Acquired'].keys(), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Available']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
+            self.assertItemsEqual(list(metrics[met]['Acquired']), ['T2_XX_SiteA', 'T2_XX_SiteB'])
 
 
 if __name__ == "__main__":

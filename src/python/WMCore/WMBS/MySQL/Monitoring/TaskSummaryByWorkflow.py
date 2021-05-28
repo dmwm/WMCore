@@ -8,6 +8,8 @@ List the summary of job numbers by task given a workflow
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.JobStateMachine.Transitions import Transitions
 
+from future.utils import listvalues
+
 class TaskSummaryByWorkflow(DBFormatter):
     sql = """SELECT wmbs_workflow.id, wmbs_workflow.name AS wmspec,
                     wmbs_workflow.task,
@@ -71,7 +73,7 @@ class TaskSummaryByWorkflow(DBFormatter):
                 workflow[result["task"]]['processing'] += self.processingCount(result)
 
         # need to order by id (client side)
-        return workflow.values()
+        return listvalues(workflow)
 
     def execute(self, workflowName, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {'workflow_name': workflowName},

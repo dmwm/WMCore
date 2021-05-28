@@ -4,6 +4,8 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
+from future.utils import viewitems, viewvalues
+
 from hashlib import md5
 
 STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
@@ -26,11 +28,11 @@ def possibleSites(element):
     commonSites = set(elem['SiteWhitelist']) - set(elem['SiteBlacklist'])
 
     if elem['Inputs'] and elem['NoInputUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in elem['Inputs'].values() for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['Inputs']) for y in x]))
     if elem['ParentFlag'] and elem['NoInputUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in elem['ParentData'].values() for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['ParentData']) for y in x]))
     if elem['PileupData'] and elem['NoPileupUpdate'] is False:
-        commonSites = commonSites.intersection(set([y for x in elem['PileupData'].values() for y in x]))
+        commonSites = commonSites.intersection(set([y for x in viewvalues(elem['PileupData']) for y in x]))
 
     return list(commonSites)
 
@@ -154,11 +156,11 @@ class WorkQueueElement(dict):
         myhash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
         # Check repr is reproducible - should be
         if self['Mask']:
-            myhash.update(",".join(["%s=%s" % (x, y) for x, y in self['Mask'].items()]) + spacer)
+            myhash.update(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['Mask'])]) + spacer)
         else:
             myhash.update("None" + spacer)
         # Check ACDC is deterministic and all params relevant
-        myhash.update(",".join(["%s=%s" % (x, y) for x, y in self['ACDC'].items()]) + spacer)
+        myhash.update(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['ACDC'])]) + spacer)
         myhash.update(repr(self['Dbs']) + spacer)
         self._id = myhash.hexdigest()
         return self._id
@@ -211,7 +213,7 @@ class WorkQueueElement(dict):
                    'FilesProcessed': 'files_processed',
                    'PercentComplete': 'percent_complete',
                    'PercentSuccess': 'percent_success'}
-        for ourkey, wmbskey in mapping.items():
+        for ourkey, wmbskey in viewitems(mapping):
             if wmbskey in wmbsStatus and self[ourkey] != wmbsStatus[wmbskey]:
                 self['Modified'] = True
                 self[ourkey] = wmbsStatus[wmbskey]
@@ -252,17 +254,17 @@ class WorkQueueElement(dict):
 
         # input data restrictions (TrustSitelists flag)
         if self['NoInputUpdate'] is False:
-            for locations in self['Inputs'].values():
+            for locations in viewvalues(self['Inputs']):
                 if site not in locations:
                     return False
             if self['ParentFlag']:
-                for locations in self['ParentData'].values():
+                for locations in viewvalues(self['ParentData']):
                     if site not in locations:
                         return False
 
         # pileup data restrictions (TrustPUSitelists flag)
         if self['NoPileupUpdate'] is False:
-            for locations in self['PileupData'].values():
+            for locations in viewvalues(self['PileupData']):
                 if site not in locations:
                     return False
 

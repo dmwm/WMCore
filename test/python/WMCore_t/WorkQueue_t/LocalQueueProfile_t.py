@@ -33,12 +33,18 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         self.cacheDir = tempfile.mkdtemp()
         self.specGenerator = WMSpecGenerator(self.cacheDir)
         self.specs = self.createReRecoSpec(1, "file")
+        # setup rucio parameters for global/local queue
+        self.queueParams = {}
+        self.queueParams['log_reporter'] = "lq_profile_test"
+        self.queueParams['rucioAccount'] = "wma_test"
+        self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
+        self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
 
         # Create queues
         self.localQueue = localQueue(DbName=self.queueDB, InboxDbName=self.queueInboxDB,
                                      NegotiationTimeout=0, QueueURL='global.example.com', CacheDir=self.cacheDir,
                                      central_logdb_url="%s/%s" % (self.couchURL, self.logDBName),
-                                     log_reporter='lq_profile_test')
+                                     **self.queueParams)
 
 
     def tearDown(self):

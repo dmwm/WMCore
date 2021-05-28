@@ -4,6 +4,7 @@ _ProcessPool_t
 Unit tests for the ProcessPool class.
 """
 
+from builtins import range
 import unittest
 import nose
 

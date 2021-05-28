@@ -7,6 +7,7 @@ RetryAlgoBase
 This is the base class for Retry Algos
 """
 
+from builtins import object
 import time
 import datetime
 import logging

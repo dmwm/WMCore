@@ -4,6 +4,9 @@ A basic action is a thing that will run a SQL statement
 A more complex one would be something that ran multiple SQL
 objects to produce a single output.
 """
+
+from builtins import object
+
 class DAOFactory(object):
     def __init__(self, package='WMCore', logger=None, dbinterface=None, owner=""):
         self.package = package
@@ -25,7 +28,7 @@ class DAOFactory(object):
             dia = self.dbinterface.engine.dialect
             #TODO: Make good
             dialect = None
-            for i in self.dialects.keys():
+            for i in self.dialects:
                 if isinstance(dia, self.dialects[i]):
                     dialect = i
             if not dialect:

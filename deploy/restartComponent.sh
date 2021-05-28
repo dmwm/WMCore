@@ -18,7 +18,7 @@ for comp in $COMPONENTS; do
     TAIL_LOG=`tail -n100 $COMPLOG`
     /data/srv/wmagent/current/config/wmagent/manage execute-agent wmcoreD --restart --components=$comp
     echo -e "ComponentLog quiet for $INTERVAL secs\n\nTail of the log is:\n$TAIL_LOG" |
-      mail -s "$HOST : $comp restarted" alan.malta@cern.ch
+      mail -s "$HOST : $comp restarted" alan.malta@cern.ch,todor.trendafilov.ivanov@cern.ch
   fi
 done
 

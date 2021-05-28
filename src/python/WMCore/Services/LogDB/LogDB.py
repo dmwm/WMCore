@@ -3,16 +3,22 @@
 LogDB provides functionality to post/search messages into LogDB.
 https://github.com/dmwm/WMCore/issues/5705
 """
+# futures
+from builtins import object
+from future.utils import viewitems
 
-import logging
+from future import standard_library
+standard_library.install_aliases()
+
 # standard modules
+import logging
 import re
 import threading
 from collections import defaultdict
-from httplib import HTTPException
+from http.client import HTTPException
 
-from WMCore.Lexicon import splitCouchServiceURL
 # project modules
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 
 
@@ -189,7 +195,7 @@ class LogDB(object):
             if thr != "DataCacheUpdate" and thr not in hbinfo:
                 self._append_down_component_detail(report, thr, "Thread not running")
 
-        for thr, info in hbinfo.iteritems():
+        for thr, info in viewitems(hbinfo):
             if info['type'] == 'agent-error':
                 self._append_down_component_detail(report, thr, info['msg'], info['ts'])
         return report

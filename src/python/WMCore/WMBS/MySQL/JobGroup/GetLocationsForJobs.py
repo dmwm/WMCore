@@ -11,6 +11,7 @@ import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from future.utils import listvalues
 
 class GetLocationsForJobs(DBFormatter):
     """
@@ -35,7 +36,7 @@ class GetLocationsForJobs(DBFormatter):
 
         for res in modifiedResult:
             # Should only have one entry (one site_name per site)
-            tmp = res.values()[0]
+            tmp = listvalues(res)[0]
             if not tmp in newResult:
                 newResult.append(tmp)
 

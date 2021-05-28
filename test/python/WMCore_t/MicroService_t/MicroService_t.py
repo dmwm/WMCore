@@ -11,7 +11,7 @@ import unittest
 import cherrypy
 from WMCore_t.MicroService_t import TestConfig
 from WMCore.MicroService.Service.RestApiHub import RestApiHub
-from WMCore.MicroService.Unified.Common import cert, ckey
+from WMCore.MicroService.Tools.Common import cert, ckey
 from WMCore.Services.pycurl_manager import RequestHandler
 
 

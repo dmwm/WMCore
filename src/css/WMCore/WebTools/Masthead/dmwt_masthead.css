@@ -84,7 +84,7 @@
 .masthead .mastheadLeft ul li a:active, .masthead .mastheadRight ul li a:active {
 	text-decoration: underline;
 }
-.masthead #dbs a, .masthead #phedex a, .masthead #help a, .masthead #sitedb a, .masthead #conddb a, .masthead #prodrequest a, .masthead #dashboard a{	
+.masthead #dbs a, .masthead #phedex a, .masthead #help a, .masthead #conddb a, .masthead #prodrequest a, .masthead #dashboard a{	
 	margin: 0em 1em 0em 1em;
 	padding: 1em 1em 0.7em 1em;
 }

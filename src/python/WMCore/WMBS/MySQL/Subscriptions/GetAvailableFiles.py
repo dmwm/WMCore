@@ -28,7 +28,7 @@ class GetAvailableFiles(DBFormatter):
         formattedResults = DBFormatter.formatDict(self, results)
 
         for formattedResult in formattedResults:
-            if "file" in formattedResult.keys():
+            if "file" in formattedResult:
                 formattedResult["file"] = int(formattedResult["file"])
             else:
                 formattedResult["file"] = int(formattedResult["fileid"])
@@ -37,14 +37,14 @@ class GetAvailableFiles(DBFormatter):
         tempResults = {}
         for formattedResult in formattedResults:
             fileID = formattedResult['file']
-            if fileID not in tempResults.keys():
+            if fileID not in tempResults:
                 tempResults[fileID] = []
-            if "pnn" in formattedResult.keys():
+            if "pnn" in formattedResult:
                 if not formattedResult['pnn'] in tempResults[fileID]:
                     tempResults[fileID].append(formattedResult["pnn"])
 
         finalResults = []
-        for key in tempResults.keys():
+        for key in tempResults:
             tmpDict = {"file": key}
             if not tempResults[key] == []:
                 tmpDict['locations'] = tempResults[key]

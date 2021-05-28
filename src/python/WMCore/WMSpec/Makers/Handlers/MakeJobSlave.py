@@ -26,7 +26,6 @@ from WMCore.WMSpec.Makers.Interface.CreateWorkArea import CreateWorkArea
 import os
 import string
 import logging
-import exceptions
 import time
 import threading
 

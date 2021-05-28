@@ -216,14 +216,14 @@ class ReportIntegrationTest(unittest.TestCase):
                    "Error: Output file has wrong size: %s, %s" % \
                    (outputFile["size"], fwkJobReportFile["size"])
 
-            for ckType in fwkJobReportFile["checksums"].keys():
-                assert ckType in outputFile["checksums"].keys(), \
+            for ckType in fwkJobReportFile["checksums"]:
+                assert ckType in outputFile["checksums"], \
                        "Error: Output file is missing checksums: %s" % ckType
                 assert outputFile["checksums"][ckType] == fwkJobReportFile["checksums"][ckType], \
                        "Error: Checksums don't match."
 
-            assert len(fwkJobReportFile["checksums"].keys()) == \
-                   len(outputFile["checksums"].keys()), \
+            assert len(fwkJobReportFile["checksums"]) == \
+                   len(outputFile["checksums"]), \
                    "Error: Wrong number of checksums."
 
             jobType = self.getJobTypeAction.execute(jobID = jobID)
@@ -263,7 +263,7 @@ class ReportIntegrationTest(unittest.TestCase):
                 if len(fwjrRuns[run.run]) == 0:
                     del fwjrRuns[run.run]
 
-            assert len(fwjrRuns.keys()) == 0, \
+            assert len(fwjrRuns) == 0, \
                    "Error: Missing runs, lumis: %s" % fwjrRuns
 
             testJobGroup = JobGroup(id = testJob["jobgroup"])

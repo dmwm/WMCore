@@ -11,9 +11,7 @@ list of disctionaries with the following keys:
     subscription_id
 
 """
-
-
-
+from __future__ import division
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -97,8 +95,8 @@ class SubscriptionStatus(DBFormatter):
                     filesetDict["running"] += result["job_count"]
 
         results = []
-        for workflowName in workflows.keys():
-            for filesetName in workflows[workflowName].keys():
+        for workflowName in workflows:
+            for filesetName in workflows[workflowName]:
                 success = workflows[workflowName][filesetName]["success"]
                 failure = workflows[workflowName][filesetName]["failure"]
                 running = workflows[workflowName][filesetName]["running"]

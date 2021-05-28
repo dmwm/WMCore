@@ -8,12 +8,13 @@ Created on Mar 13, 2013
 @author: dballest
 """
 
+from builtins import object
 import json
 import os
 
 from random import random
 
-class DbsApi():
+class DbsApi(object):
     """
     _DbsApi_
 

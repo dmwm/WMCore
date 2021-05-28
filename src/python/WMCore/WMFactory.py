@@ -6,6 +6,7 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
+from builtins import object
 import threading
 
 

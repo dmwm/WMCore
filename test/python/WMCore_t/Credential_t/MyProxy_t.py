@@ -5,15 +5,13 @@ Test the basic MyProxy operations.
 You need to source your UI before running these tests.
 The user Proxy and MyProxy is initialized in testCreateMyProxy method and they are used by the remaining tests.
 """
+from __future__ import division
 
 import unittest
 import os
 import logging
 import logging.config
-import socket
 import time
-import tempfile
-import subprocess
 
 from nose.plugins.attrib import attr
 from WMCore.Credential.Proxy import Proxy, myProxyEnvironment
@@ -91,7 +89,7 @@ class MyProxyTest(unittest.TestCase):
         self.proxy.renewMyProxy( proxy = self.proxyPath )
         time.sleep( 5 )
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath )
-        self.assertEqual(int(timeLeft) / 3600, 167)
+        self.assertEqual(int(int(timeLeft) // 3600), 167)
 
     @attr("integration")
     def testRenewMyProxyForServer( self ):
@@ -102,7 +100,7 @@ class MyProxyTest(unittest.TestCase):
         self.proxy.renewMyProxy( proxy = self.proxyPath, serverRenewer = True )
         time.sleep( 5 )
         timeLeft = self.proxy.getMyProxyTimeLeft( proxy = self.proxyPath, serverRenewer = True )
-        self.assertEqual(int(timeLeft) / 3600, 167)
+        self.assertEqual(int(int(timeLeft) // 3600), 167)
 
     @attr("integration")
     def testMyProxyEnvironment(self):

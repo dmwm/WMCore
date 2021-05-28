@@ -8,9 +8,8 @@ Description: LogDB report class to represent LogDB messages
 """
 from __future__ import print_function
 
-# system modules
-import os
-import sys
+from builtins import range
+from builtins import object
 
 class LogDBReport(object):
     """LogDBReport class to represent LogDB messages"""
@@ -45,7 +44,7 @@ class LogDBReport(object):
     def to_txt(self, request, order='ts', sep=' '):
         """Represent given messages in ASCII text format for given set of requests"""
         docs = self.orderby(self.docs(request), order)
-        keys = docs[0].keys()
+        keys = list(docs[0])
         out = sep.join(keys) + '\n'
         for doc in docs:
             values = []

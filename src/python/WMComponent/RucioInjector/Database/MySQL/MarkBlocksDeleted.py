@@ -20,6 +20,10 @@ class MarkBlocksDeleted(DBFormatter):
              """
 
     def execute(self, binds, conn=None, transaction=False):
+
+        if not binds:
+            return
+
         self.dbi.processData(self.sql, binds, conn=conn,
                              transaction=transaction)
 

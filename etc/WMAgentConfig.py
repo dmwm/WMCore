@@ -47,12 +47,8 @@ glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
 localDBSVersion = "DBS_2_0_8"
-globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+globalDBSUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
-
-# List of SE for T1 _Disk endpoints (TODO clean this up at some point)
-diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
-             'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov']
 
 # Job retry information.  How long it will sit in cool off.
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
@@ -88,7 +84,6 @@ config.General.logdb_name = logDBName
 config.General.central_logdb_url = "need to get from secrets file"
 config.General.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.General.centralWMStatsURL = "Central WMStats URL"
-config.General.rucioAccount = "OVERWRITE_BY_SECRETS"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -129,12 +124,16 @@ config.WorkQueueManager.pollInterval = 180  # 3 min
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
+config.WorkQueueManager.rucioUrl = "OVER_WRITE_BY_SECRETS"
+config.WorkQueueManager.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 200  # don't pull more than this number of elements per cycle
 config.WorkQueueManager.queueParams["QueueDepth"] = 0.5  # pull work from GQ for only half of the resources
+config.WorkQueueManager.queueParams["rucioAccount"] = "wmcore_transferor"  # account for data locks
+
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"
@@ -142,7 +141,7 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-# "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+# "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 config.DBS3Upload.dumpBlock = False  # to dump block meta-data into a json file
@@ -155,20 +154,6 @@ config.DBSInterface.globalDBSVersion = globalDBSVersion
 config.DBSInterface.MaxFilesToCommit = 200
 config.DBSInterface.doGlobalMigration = False
 config.DBSInterface.primaryDatasetType = "mc"
-
-config.component_("PhEDExInjector")
-config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"
-config.PhEDExInjector.componentDir = config.General.workDir + "/PhEDExInjector"
-config.PhEDExInjector.logLevel = globalLogLevel
-config.PhEDExInjector.maxThreads = 1
-config.PhEDExInjector.subscribeDatasets = True
-config.PhEDExInjector.safeMode = False
-# phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
-config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
-config.PhEDExInjector.pollInterval = 300
-config.PhEDExInjector.subscribeInterval = 6 * 60 * 60  # 6h
-config.PhEDExInjector.diskSites = diskSites
-config.PhEDExInjector.phedexGroup = "DataOps"
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -362,15 +347,14 @@ config.component_("RucioInjector")
 config.RucioInjector.namespace = "WMComponent.RucioInjector.RucioInjector"
 config.RucioInjector.componentDir = config.General.workDir + "/RucioInjector"
 config.RucioInjector.logLevel = globalLogLevel
-config.RucioInjector.enabled = True
 config.RucioInjector.pollInterval = 300
 config.RucioInjector.pollIntervalRules = 43200
 config.RucioInjector.cacheExpiration = 2 * 24 * 60 * 60  # two days
 config.RucioInjector.createBlockRules = True
 config.RucioInjector.RSEPostfix = False  # enable it to append _Test to the RSE names
 config.RucioInjector.metaDIDProject = "Production"
-config.RucioInjector.listTiersToInject = ["NANOAOD", "NANOAODSIM"]  # []
-config.RucioInjector.skipRulesForTiers = ["NANOAOD", "NANOAODSIM"]
+config.RucioInjector.containerDiskRuleParams = {"weight": "ddm_quota", "copies": 2, "grouping": "DATASET"}
+config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=real&rse_type=DISK"
 config.RucioInjector.rucioAccount = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioUrl = "OVER_WRITE_BY_SECRETS"
 config.RucioInjector.rucioAuthUrl = "OVER_WRITE_BY_SECRETS"

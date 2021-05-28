@@ -14,6 +14,9 @@ It will:
 """
 from __future__ import print_function
 
+from builtins import range, str as newstr, bytes as newbytes
+from future.utils import viewitems
+
 import sys
 import os
 import pwd
@@ -98,7 +101,7 @@ def parseArgs():
     args = parser.parse_args()
 
     # sites argument could be "T1_US_FNAL,T2_CH_CERN" ...
-    if isinstance(args.site, basestring):
+    if isinstance(args.site, (newstr, newbytes)):
         args.site = args.site.split(',')
 
     return args
@@ -142,7 +145,7 @@ def handleAssignment(args, fname, jsonData):
         # always overwrite it as provided in the command line and task/step name
         if 'ProcessingString' in assignDict and isinstance(assignDict['ProcessingString'], dict):
             assignRequest['ProcessingString'] = assignDict['ProcessingString']
-            for task, _ in assignRequest['ProcessingString'].iteritems():
+            for task, _ in viewitems(assignRequest['ProcessingString']):
                 assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
 
         # also reuse values as provided in the request schema at creation level
@@ -185,19 +188,26 @@ def main():
 
     cloneRepo(logger)
 
-    # Retrieve template names available and filter blacklisted
     os.chdir("WMCore/test/data/ReqMgr")
     wmcorePath = "requests/" + args.mode + "/"
     if args.filename:
+        # then only specified template will be injected
         if os.path.isfile(wmcorePath + args.filename):
             templates = [args.filename]
         else:
             logger.info("File %s not found.", wmcorePath + args.filename)
-            sys.exit(3)
     else:
         templates = os.listdir(wmcorePath)
-    blacklist = ['StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
-    templates = [item for item in templates if item not in blacklist]
+
+    # Filter out templates not allowed to be injected
+    disallowedList = ['ReReco_badBlocks.json', 'TaskChain_InclParents.json',
+                      'StepChain_InclParents.json', 'SC_Straight.json',
+                      'StoreResults.json', 'Resub_MonteCarlo_eff.json', 'Resub_TaskChain_Multicore.json']
+    logger.info("Skipping injection for these templates: %s\n", disallowedList)
+    templates = [item for item in templates if item not in disallowedList]
+    if not templates:
+        logging.info("There are no templates to be injected.")
+        sys.exit(3)
 
     startT = time()
     reqMgrCommand = "reqmgr2.py"

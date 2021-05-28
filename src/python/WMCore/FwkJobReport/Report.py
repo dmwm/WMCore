@@ -6,6 +6,8 @@ _Report_
 Framework job report object.
 """
 from __future__ import print_function
+from builtins import str as newstr, bytes, range, object
+from future.utils import viewitems, listitems
 
 import logging
 import math
@@ -14,6 +16,7 @@ import sys
 import time
 import traceback
 
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from WMCore.Configuration import ConfigSection
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
@@ -88,7 +91,7 @@ def addAttributesToFile(fileSection, **attributes):
 
     Add attributes to a file in the FWJR.
     """
-    for attName, attValue in attributes.items():
+    for attName, attValue in viewitems(attributes):
         setattr(fileSection, attName, attValue)
     return
 
@@ -197,7 +200,7 @@ class Report(object):
                 continue
 
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
-            for key in jsonPerformance[reportSection].keys():
+            for key in jsonPerformance[reportSection]:
                 val = jsonPerformance[reportSection][key]
                 if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
@@ -447,7 +450,7 @@ class Report(object):
 
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
-        keyList = aFile.keys()
+        keyList = list(aFile)
 
         fileRef.section_("runs")
         if "runs" in aFile:
@@ -511,7 +514,7 @@ class Report(object):
         fileRef = getattr(srcMod.files, fileSection)
         srcMod.files.fileCount += 1
 
-        keyList = attrs.keys()
+        keyList = list(attrs)
 
         fileRef.section_("runs")
         if "runs" in attrs:
@@ -544,7 +547,7 @@ class Report(object):
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        for x, y in attrs.items():
+        for x, y in viewitems(attrs):
             setattr(newFile, x, y)
 
         analysisFiles.fileCount += 1
@@ -563,7 +566,7 @@ class Report(object):
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        for x, y in attrs.items():
+        for x, y in viewitems(attrs):
             setattr(newFile, x, y)
 
         self.report.cleanup.removed.fileCount += 1
@@ -599,15 +602,19 @@ class Report(object):
         errDetails.type = str(errorType)
 
         try:
-            if hasattr(errorDetails, "decode"):
-                # Fix for the unicode encoding issue, #8043
-                # interprets this string using utf-8 codec and ignoring any errors
-                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+            if isinstance(errorDetails, newstr):
+                errDetails.details = errorDetails
+            elif isinstance(errorDetails, bytes):
+                errDetails.details = decodeBytesToUnicode(errorDetails, 'ignore')
             else:
-                # Then cast it to string and decode it
-                errorDetails = str(errorDetails)
-                errDetails.details = errorDetails.decode('utf-8', 'ignore')
+                errDetails.details = newstr(errorDetails)
         except UnicodeEncodeError as ex:
+            msg = "Failed to encode the job error details for job ID: %s." % self.getJobID()
+            msg += "\nException message: %s\nOriginal error details: %s" % (str(ex), errorDetails)
+            logging.error(msg)
+            msg = "DEFAULT ERROR MESSAGE, because it failed to UTF-8 encode the original message."
+            errDetails.details = msg
+        except UnicodeDecodeError as ex:
             msg = "Failed to decode the job error details for job ID: %s." % self.getJobID()
             msg += "\nException message: %s\nOriginal error details: %s" % (str(ex), errorDetails)
             logging.error(msg)
@@ -786,7 +793,7 @@ class Report(object):
         for run in runList:
             lumis = getattr(fileRef.runs, run)
             if isinstance(lumis, dict):
-                newRun = Run(int(run), *lumis.items())
+                newRun = Run(int(run), *listitems(lumis))
             else:
                 newRun = Run(int(run), *lumis)
             newFile.addRun(newRun)
@@ -1496,7 +1503,7 @@ class Report(object):
         error = None
         files = self.getAllFilesFromStep(step=stepName)
         for f in files:
-            if 'adler32' not in f.get('checksums', {}).keys():
+            if 'adler32' not in f.get('checksums', {}):
                 error = f.get('lfn', None)
             elif f['checksums']['adler32'] is None:
                 error = f.get('lfn', None)

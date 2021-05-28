@@ -41,27 +41,33 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
 
 def getX509():
     "Helper function to get x509 from env or tmp file"
+    certFile = os.environ.get('X509_USER_CERT', '')
+    keyFile = os.environ.get('X509_USER_KEY', '')
+    if certFile and keyFile:
+        return certFile, keyFile
+
     proxy = os.environ.get('X509_USER_PROXY', '')
     if not proxy:
         proxy = '/tmp/x509up_u%s' % pwd.getpwuid(os.getuid()).pw_uid
         if not os.path.isfile(proxy):
-            return ''
-    return proxy
+            return '', ''
+    return proxy, proxy
 
 
 def getContent(url, params=None):
-    cert = getX509()
+    certFile, keyFile = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
-    handler = HTTPSClientAuthHandler(cert, cert)
+    handler = HTTPSClientAuthHandler(keyFile, certFile)
     opener = urllib2.build_opener(handler)
     opener.addheaders = [("User-Agent", client),
                          ("Accept", "application/json")]
+
     try:
         response = opener.open(url, params)
         output = response.read()
     except HTTPError as e:
         print("The server couldn't fulfill the request at %s" % url)
-        print("Error code: ", e.code)
+        print("Error: {}".format(e))
         output = '{}'
         # sys.exit(1)
     except URLError as e:
@@ -144,7 +150,7 @@ def main():
         parser.error("You must provide either a workflow name or an input file name.")
         sys.exit(3)
 
-    cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb.cern.ch"
+    cmswebUrl = "https://" + args.cms if args.cms else "https://cmsweb-prod.cern.ch"
     reqmgrUrl = "https://" + args.reqmgr if args.reqmgr else "https://cmsweb.cern.ch"
 
     for reqName in listRequests:

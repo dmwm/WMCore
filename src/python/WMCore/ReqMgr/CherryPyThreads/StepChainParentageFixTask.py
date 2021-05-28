@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import (division, print_function)
+from future.utils import viewitems, viewvalues
 
 import time
 from collections import defaultdict
@@ -18,12 +19,11 @@ def getChildDatasetsForStepChainMissingParent(reqmgrDB, status):
 
     requestsByChildDataset = defaultdict(set)
 
-    for reqName, info in results.items():
+    for reqName, info in viewitems(results):
 
-        for dsInfo in info.values():
-            if dsInfo["ParentDset"]:
-                for childDS in dsInfo["ChildDsets"]:
-                    requestsByChildDataset[childDS].add(reqName)
+        for dsInfo in viewvalues(info):
+            for childDS in dsInfo["ChildDsets"]:
+                requestsByChildDataset[childDS].add(reqName)
     return requestsByChildDataset
 
 
@@ -37,7 +37,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
         super(StepChainParentageFixTask, self).__init__(config)
         self.reqmgrDB = RequestDBWriter(config.reqmgrdb_url)
         self.dbsSvc = DBS3Reader(config.dbs_url, logger=self.logger)
-        self.statusToCheck = ["closed-out", "announced", "normal-archived"]
+        self.statusToCheck = ["closed-out", "announced"]
 
     def setConcurrentTasks(self, config):
         """
@@ -62,7 +62,7 @@ class StepChainParentageFixTask(CherryPyPeriodicTask):
             # We need to just get one of the StepChain workflow if multiple workflow contains the same datasets. (i.e. ACDC)
             requestsByChildDataset.update(reqByChildDS)
 
-            for wfs in reqByChildDS.values():
+            for wfs in viewvalues(reqByChildDS):
                 requests = requests.union(wfs)
 
         failedRequests = set()

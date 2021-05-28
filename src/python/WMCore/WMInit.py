@@ -62,7 +62,7 @@ def connectToDB():
     return
 
 
-class WMInit:
+class WMInit(object):
     def __init__(self):
         return
 

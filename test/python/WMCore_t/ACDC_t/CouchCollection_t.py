@@ -6,6 +6,7 @@ Created by Dave Evans on 2010-10-04.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import range
 import unittest
 import random
 
@@ -113,10 +114,10 @@ class CouchCollection_t(unittest.TestCase):
             if fileset["name"] == "TestFilesetC":
                 testFiles.extend(testFilesB)
 
-            self.assertEqual(len(testFiles), len(fileset.files.keys()),
+            self.assertEqual(len(testFiles), len(fileset.files),
                              "Error: Wrong number of files in fileset.")
             for testFile in testFiles:
-                self.assertTrue(testFile["lfn"] in fileset.files.keys(),
+                self.assertTrue(testFile["lfn"] in fileset.files,
                                 "Error: File is missing.")
                 self.assertEqual(testFile["events"],
                                  fileset.files[testFile["lfn"]]["events"],

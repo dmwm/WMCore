@@ -12,6 +12,7 @@
 # Mattia Cinquilli <mcinquil@cern.ch>
 # on 2013/04/14 for integration on CRAB services.
 
+from builtins import str
 import logging
 import re
 import socket
@@ -279,5 +280,5 @@ if __name__ == '__main__':
             import traceback
 
             traceback.print_exc()
-        logger.error("Error:" + str(e))
+        logger.error("Error: %s", str(e))
         sys.exit(1)

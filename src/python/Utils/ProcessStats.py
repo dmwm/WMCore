@@ -29,6 +29,8 @@ upteima and cpu/mem/threads information.
 from __future__ import print_function
 from __future__ import division
 
+from future.utils import viewitems
+
 # system modules
 import os
 import sys
@@ -83,7 +85,7 @@ def threadStack():
     tdict = {}
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     threads = []
-    for tid, stack in sys._current_frames().items():
+    for tid, stack in viewitems(sys._current_frames()):
         tdict = {"thead": id2name.get(tid, ""), "thead_id": tid}
         stacklist = []
         for filename, lineno, name, line in traceback.extract_stack(stack):

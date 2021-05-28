@@ -1,3 +1,6 @@
+from builtins import str, bytes, object
+from future.utils import viewitems
+
 from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer, CouchConflictError
 from WMCore.Lexicon import splitCouchServiceURL
@@ -314,7 +317,7 @@ class WorkQueue(object):
         since inbox db will be cleaned up first when workflow is completed
         """
         workflowStatus = self.getWorkflowStatusFromWQE(stale=stale)
-        return [wf for wf, status in workflowStatus.iteritems() if status == "completed"]
+        return [wf for wf, status in viewitems(workflowStatus) if status == "completed"]
 
     def getJobsByStatus(self, inboxFlag=False, group=True):
         """
@@ -378,7 +381,7 @@ class WorkQueue(object):
 
         Returns the whole elements in workqueue that match the list of status given.
         """
-        if isinstance(status, basestring):
+        if isinstance(status, (str, bytes)):
             status = [status]
 
         options = {'stale': 'update_after'} if stale else {}

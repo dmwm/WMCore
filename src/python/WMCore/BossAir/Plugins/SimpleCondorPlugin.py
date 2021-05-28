@@ -127,17 +127,11 @@ class SimpleCondorPlugin(BasePlugin):
         # Required for global pool accounting
         self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
         self.acctGroupUser = getattr(config.BossAir, 'acctGroupUser', "cmsdataops")
-
-        # Build a requirement string.  All CMS resources match DESIRED_Sites on the START
-        # expression side; however, there are currently some resources (T2_CH_CERN_HLT)
-        # that are missing the REQUIRED_OS logic.  Hence, we duplicate it here.
-        # TODO(bbockelm): Remove reqStr once HLT has upgraded.
-        self.reqStr = ('((REQUIRED_OS=?="any") || '
-                       '(GLIDEIN_REQUIRED_OS =?= "any") || '
-                       'stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS)) && '
-                       '(AuthenticatedIdentity =!= "volunteer-node@cern.ch")')
+ 
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
+        else:
+            self.reqStr = None
 
         # x509 proxy handling
         proxy = Proxy({'logger': myThread.logger})
@@ -515,8 +509,13 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
             ad['transfer_output_files'] = "Report.%i.pkl,wmagentJob.log" % job["retry_count"]
 
-            # Do not define Requirements and X509 ads for Volunteer resources
-            if self.reqStr and "T3_CH_Volunteer" not in job.get('possibleSites'):
+            # Dictionary keys need to be consistent across all jobs within the same 
+            # clusterId when working with queue_with_itemdata()
+            # Initialize 'Requirements' to an empty string for all jobs.
+            # See issue: https://htcondor-wiki.cs.wisc.edu/index.cgi/tktview?tn=7715 
+            ad['Requirements'] = ''
+            # Do not define custom Requirements for Volunteer resources
+            if self.reqStr is not None:
                 ad['Requirements'] = self.reqStr
 
             ad['My.x509userproxy'] = classad.quote(self.x509userproxy)

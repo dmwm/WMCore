@@ -5,7 +5,10 @@ LogDBBackend
 Interface to LogDB persistent storage
 """
 
-# syste modules
+from builtins import object, bytes
+from Utils.Utilities import encodeUnicodeToBytes
+
+# system modules
 import datetime
 import hashlib
 import time
@@ -19,7 +22,8 @@ LOGDB_MSG_TYPES = ['info', 'error', 'warning', 'comment']
 
 def gen_hash(key):
     "Generate hash for given key"
-    if  not isinstance(key, basestring):
+    key = encodeUnicodeToBytes(key)  # if key is not unicode, then it is not changed
+    if not isinstance(key, bytes):
         raise NotImplementedError
     keyhash = hashlib.md5()
     keyhash.update(key)
@@ -176,7 +180,7 @@ class LogDBBackend(object):
         This is done via tstamp view end endkey, e.g.
         curl "http://127.0.0.1:5984/logdb/_design/LogDB/_view/tstamp?endkey=1427912282"
         """
-        cutoff = round(time.time()-thr)
+        cutoff = int(round(time.time()-thr))
         #docs = self.db.allDocs() # may need another view to look-up old docs
         spec = {'endkey':cutoff, 'reduce':False}
         docs = self.db.loadView(self.design, self.tsview, spec)

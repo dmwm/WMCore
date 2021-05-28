@@ -10,20 +10,18 @@ Placeholder for ideas at present....
 """
 from __future__ import print_function
 
-from urllib2 import urlopen, Request
+from future.moves.urllib.parse import urlparse
+from future.moves.urllib.request import urlopen, Request
 
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+from builtins import object
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 
-class PersistencyHelper:
+class PersistencyHelper(object):
     """
     _PersistencyHelper_
 

@@ -6,14 +6,14 @@ You need to source your UI before running these tests.
 Your proxy is initialized in testAAACreateProxy method and it is used by the remaining tests.
 """
 from __future__ import print_function
+from __future__ import division
 
+from past.utils import old_div
 import unittest
 import os
 import logging
 import logging.config
-import socket
 import time
-import tempfile
 import subprocess
 
 from nose.plugins.attrib import attr
@@ -66,7 +66,7 @@ class ProxyTest(unittest.TestCase):
         if vomsProxyInfoCall.wait() != 0:
             return None
 
-        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        stdout, _ = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
 
     def getUserAttributes(self):
@@ -80,7 +80,7 @@ class ProxyTest(unittest.TestCase):
         if vomsProxyInfoCall.wait() != 0:
             return None
 
-        (stdout, stderr) = vomsProxyInfoCall.communicate()
+        stdout, _ = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
 
     @attr("integration")
@@ -111,7 +111,7 @@ class ProxyTest(unittest.TestCase):
         Test if getTimeLeft method returns correctly the proxy time left.
         """
         timeLeft = self.proxy.getTimeLeft()
-        self.assertEqual(int(timeLeft) / 3600, 191)
+        self.assertEqual(int(int(timeLeft) // 3600), 191)
 
     @attr("integration")
     def testRenewProxy( self ):
@@ -122,7 +122,7 @@ class ProxyTest(unittest.TestCase):
         self.proxy.renew()
         time.sleep( 10 )
         timeLeft = self.proxy.getTimeLeft()
-        self.assertEqual(int(timeLeft) / 3600, 191)
+        self.assertEqual(int(int(timeLeft) // 3600), 191)
 
     @attr("integration")
     def testDestroyProxy(self ):
@@ -185,7 +185,7 @@ class ProxyTest(unittest.TestCase):
         attribute = self.proxy.prepareAttForVomsRenewal( self.proxy.getAttributeFromProxy( proxyPath ) )
         self.proxy.vomsExtensionRenewal( proxyPath, attribute )
         vomsTimeLeft = self.proxy.getVomsLife( proxyPath )
-        self.assertEqual(int(vomsTimeLeft) / 3600, 191)
+        self.assertEqual(int(int(vomsTimeLeft) // 3600), 191)
 
     @attr("integration")
     def testElevateAttribute( self ):

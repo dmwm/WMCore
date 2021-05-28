@@ -5,6 +5,7 @@ _Job_t_
 Testcase for the Job class.
 """
 
+from builtins import range
 import unittest, logging, random, time
 
 from WMCore.DataStructs.Job import Job

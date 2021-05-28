@@ -5,6 +5,8 @@ _UnpackUserTarball_
 Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 
 import logging
 import os
@@ -13,16 +15,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import urllib
-from urllib import URLopener
 
-try:
-    from commands import getstatusoutput
-    from urlparse import urlsplit
-except ImportError:
-    # PY3
-    from urllib.parse import urlsplit
-    from subprocess import getstatusoutput
+import urllib.request
+from urllib.parse import urlsplit
+from subprocess import getstatusoutput
 
 
 def setHttpProxy(url):
@@ -61,10 +57,10 @@ def getRetriever(scheme):
         certfile = None
 
     if scheme == 'http' or not certfile:
-        retriever = urllib.urlretrieve
+        retriever = urllib.request.urlretrieve
     else:
         logging.info("Using %s as X509 certificate", certfile)
-        op = URLopener(None, key_file=certfile, cert_file=certfile)
+        op = urllib.request.URLopener(None, key_file=certfile, cert_file=certfile)
         op.addheader('Accept', 'application/octet-stream')
         retriever = op.retrieve
 

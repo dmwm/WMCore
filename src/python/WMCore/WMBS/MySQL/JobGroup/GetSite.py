@@ -11,6 +11,8 @@ __all__ = []
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from future.utils import listvalues
+
 class GetSite(DBFormatter):
     sql = """SELECT site_name FROM wmbs_location
               WHERE ID = (SELECT location FROM wmbs_jobgroup jg WHERE jg.ID = :jobGroupID)"""
@@ -18,7 +20,7 @@ class GetSite(DBFormatter):
 
     def format(self, result):
         rowProxy = result[0].fetchall()[0]
-        return rowProxy.values()[0]
+        return listvalues(rowProxy)[0]
 
     def execute(self, jobGroupID = None, conn = None,
                 transaction = False):

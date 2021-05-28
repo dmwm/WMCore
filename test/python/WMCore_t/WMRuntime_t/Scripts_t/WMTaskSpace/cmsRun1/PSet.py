@@ -4,68 +4,26 @@ _Pset_
 
 Bogus CMSSW PSet for testing runtime code.
 """
-
 import FWCore.ParameterSet.Config as cms
 
-class Container():
-    """
-    _Container_
+process = cms.Process('Test')
 
-    Empty class that we can use like a PSet.
-    """
-    pass
+# import of standard configurations for Services and mixing modules
+process.load('Configuration.StandardSequences.Services_cff')
+process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
-    def type_(self):
-        return "PoolSource"
+# Input source
+process.source = cms.Source("EmptySource")
+process.source.fileNames = cms.untracked.vstring()
+process.source.secondaryFileNames = cms.untracked.vstring()
+process.source.firstLuminosityBlock = cms.untracked.uint32(1)
 
-class Process():
-    """
-    _Process_
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(10),
+    output = cms.optional.untracked.allowed(cms.int32,cms.PSet)
+)
 
-    Process class that has one output module.
-    """
-    outputRECORECO = Container()
-    source = Container()
-    services = {}
-    producers = {}
-    filters = {}
-
-    def __init__(self):
-        """
-        __init__
-
-        """
-        mixing1 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
-        mixing1.setType("MixingModule")
-        mixing2 = cms.PSet(secsource = cms.PSet(fileNames = cms.untracked.vstring()))
-        mixing2.setType("MixingModule")
-        datamixing1 = cms.PSet(secsource = cms.PSet(fileNames = cms.untracked.vstring()))
-        datamixing1.setType("DataMixingModule")
-        datamixing2 = cms.PSet(input = cms.PSet(fileNames = cms.untracked.vstring()))
-        datamixing2.setType("DataMixingModule")
-
-        self.producers["mix1"] = mixing1
-        self.producers["datamix1"] = datamixing1
-        self.filters["mix2"] = mixing2
-        self.filters["datamix2"] = datamixing2
-
-    def outputModules_(self):
-        """
-        _outputModules_
-
-        Return a list of output modules.
-        """
-        return ["outputRECORECO"]
-
-    def add_(self, service):
-        """
-        _add__
-
-        Add a service to our services dict.
-        """
-        self.services[service.serviceName] = service
-        setattr(self, service.serviceName, service)
-        return
-
-
-process = Process()
+process.options = cms.untracked.PSet()
+process.options.numberOfThreads = 8
+process.options.numberOfStreams = 2

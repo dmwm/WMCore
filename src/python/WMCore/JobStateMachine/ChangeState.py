@@ -5,6 +5,7 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
+from builtins import str
 import logging
 import re
 import time
@@ -16,7 +17,6 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.JobStateMachine.SummaryDB import updateSummaryDB
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Lexicon import sanitizeURL
-from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
@@ -91,12 +91,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self._connectDatabases()
-
-        try:
-            self.dashboardReporter = DashboardReporter(config)
-        except Exception as ex:
-            logging.error("Error setting up the dashboard reporter: %s", str(ex))
-            raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
@@ -173,12 +167,11 @@ class ChangeState(WMObject, WMConnectionBase):
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 
-        # 4. Report the job transition to the dashboard
+        # 4. Complete the job information for jobs in created state
         try:
-            self.reportToDashboard(jobs, newstate, oldstate)
+            self.completeCreatedJobsInformation(jobs, newstate, oldstate)
         except Exception as ex:
-            logging.error("Error reporting to the dashboard: %s", str(ex))
-            logging.error(traceback.format_exc())
+            logging.exception("Error complementing created job information: %s", str(ex))
 
         # 5. Document the state transition in couch
         try:
@@ -270,7 +263,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 if job['mask']['runAndLumis'] != {}:
                     # Then we have to save the mask runAndLumis
                     jobDocument['mask']['runAndLumis'] = {}
-                    for key in job['mask']['runAndLumis'].keys():
+                    for key in job['mask']['runAndLumis']:
                         jobDocument['mask']['runAndLumis'][str(key)] = job['mask']['runAndLumis'][key]
 
                 jobDocument["name"] = job["name"]
@@ -496,58 +489,6 @@ class ChangeState(WMObject, WMConnectionBase):
         dao.execute(jobs, conn=self.getDBConn(),
                     transaction=self.existingTransaction())
 
-    def reportToDashboard(self, jobs, newstate, oldstate):
-        """
-        _reportToDashboard_
-
-        Report job information to the dashboard, completes the job dictionaries
-        with any additional information needed
-        """
-
-        # If the new state is created it possible came from 3 locations:
-        # JobCreator in that case it comes with all the needed info
-        # ErrorHandler comes with the standard information of a WMBSJob
-        # RetryManager comes with the standard information of a WMBSJob
-        # Unpause script comes with the standard information of a WMBSJob
-        # For those last 3 cases we need to fill the gaps
-        if newstate == 'created':
-            incrementRetry = True if 'cooloff' in oldstate else False
-            self.completeCreatedJobsInformation(jobs, incrementRetry)
-            self.dashboardReporter.handleCreated(jobs)
-        # If the new state is executing that was done only by the JobSubmitter,
-        # it sends jobs with select information, nevertheless is enough
-        elif newstate == 'executing':
-            statusMessage = 'Job was successfuly submitted'
-            self.dashboardReporter.handleJobStatusChange(jobs, 'submitted',
-                                                         statusMessage)
-        # If the new state is success, then the JobAccountant sent the jobs.
-        # Jobs come with all the standard information of a WMBSJob plus FWJR
-        elif newstate == 'success':
-            statusMessage = 'Job has completed successfully'
-            self.dashboardReporter.handleJobStatusChange(jobs, 'succeeded',
-                                                         statusMessage)
-        elif newstate == 'jobfailed':
-            # If it failed after being in complete state, then  the JobAccountant
-            # sent the jobs, these come with all the standard information of a WMBSJob
-            # plus FWJR
-            if oldstate == 'complete':
-                statusMessage = 'Job failed at the site'
-            # If it failed while executing then it timed out in BossAir
-            # The JobTracker should sent the jobs with the required information
-            elif oldstate == 'executing':
-                statusMessage = 'Job timed out in the agent'
-            self.dashboardReporter.handleJobStatusChange(jobs, 'failed',
-                                                         statusMessage)
-        # In this case either a paused job was killed or the workqueue is killing
-        # a workflow, in both cases a WMBSJob with all the info should come
-        elif newstate == 'killed':
-            if oldstate == 'jobpaused':
-                statusMessage = 'A paused job was killed, maybe it is beyond repair'
-            else:
-                statusMessage = 'The whole workflow is being killed'
-            self.dashboardReporter.handleJobStatusChange(jobs, 'killed',
-                                                         statusMessage)
-
     def loadExtraJobInformation(self, jobs):
         # This is needed for both couch and dashboard
         jobIDsToCheck = []
@@ -580,7 +521,22 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobs[idx]["taskType"] = jobTask["type"]
                 jobs[idx]["jobType"] = jobTask["subtype"]
 
-    def completeCreatedJobsInformation(self, jobs, incrementRetry=False):
+    def completeCreatedJobsInformation(self, jobs, newstate, oldstate):
+        """
+        This method adds some extra information to the job object, if its
+        new state is 'created' and its was in 'cooloff'.
+        This is required for jobs coming from ErrorHandler, RetryManager
+        or from the T0 pause script, where standard information of a
+        WMBSJob is provided.
+        :param jobs: list of job objects (dictionaries)
+        :param newstate: string with the new state for this set of jobs
+        :param oldstate: string with the previous state for this set of jobs
+        :return: updates the job objects in-place
+        """
+        if newstate != 'created':
+            return
+
+        incrementRetry = True if 'cooloff' in oldstate else False
         for job in jobs:
             # It there's no jobID in the mask then it's not loaded
             if "jobID" not in job["mask"]:

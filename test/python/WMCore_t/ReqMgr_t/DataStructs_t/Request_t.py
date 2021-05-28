@@ -8,7 +8,7 @@ from __future__ import division, print_function
 import unittest
 from copy import deepcopy
 
-from WMCore.ReqMgr.DataStructs.Request import initialize_clone
+from WMCore.ReqMgr.DataStructs.Request import initialize_clone, RequestInfo
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
@@ -24,19 +24,21 @@ TASK_ARGS = TaskChainWorkloadFactory.getChainCreateArgs()
 
 ### Some original request dicts (ones to be cloned from)
 rerecoOriginalArgs = {'Memory': 234, 'SkimName1': 'skim_2017', 'SkimInput1': 'RECOoutput',
-                      'Skim1ConfigCacheID': 'abcdef',
+                      'Skim1ConfigCacheID': 'abcdef', 'IncludeParents': True,
                       'TimePerEvent': 1.2, 'RequestType': 'ReReco', 'RequestName': 'test_rereco'}
 stepChainOriginalArgs = {'Memory': 1234, 'TimePerEvent': 1.2, 'RequestType': 'StepChain',
                          "ScramArch": ["slc6_amd64_gcc481"], "RequestName": "test_stepchain",
-                         "Step1": {"ConfigCacheID": "blah", "GlobalTag": "PHYS18", "BlockWhitelist": ["A", "B"]},
-                         "Step2": {"AcquisitionEra": "ACQERA", "ProcessingVersion": 3, "LumisPerJob": 10},
+                         "Step1": {"ConfigCacheID": "blah", "GlobalTag": "PHYS18", "BlockWhitelist": ["A", "B"],
+                                   "ScramArch": ["slc6_amd64_gcc493"]},
+                         "Step2": {"AcquisitionEra": "ACQERA", "ProcessingVersion": 3, "LumisPerJob": 10,
+                                   "ScramArch": ["slc7_amd64_gcc630"]},
                          "StepChain": 2, "ConfigCacheID": None}
 taskChainOriginalArgs = {'PrepID': None, 'Campaign': "MainTask", 'RequestType': 'TaskChain',
                          "ScramArch": ["slc6_amd64_gcc481", "slc7_amd64_gcc630"], "RequestName": "test_taskchain",
                          "Task1": {"ConfigCacheID": "blah", "InputDataset": "/1/2/RAW", "BlockWhitelist": ["A", "B"],
                                    "LumiList": {"202205": [[1, 10], [20, 25]], "202209": [[1, 3], [5, 5], [6, 9]]}},
                          "Task2": {"AcquisitionEra": "ACQERA", "KeepOutput": False, "ProcessingVersion": 2,
-                                   "LumisPerJob": 10},
+                                   "LumisPerJob": 10, "ScramArch": ["slc6_amd64_gcc493"]},
                          "Task3": {"InputTask": "task111", "TaskName": "blah", "LumisPerJob": 10},
                          "TaskChain": 3, "DQMConfigCacheID": 'unidunite',
                          "ProcessingVersion": {"name1": 4, "name2": 5, "name3": 6}}
@@ -154,9 +156,10 @@ class RequestTests(unittest.TestCase):
         scArgs = deepcopy(stepChainOriginalArgs)
         # setting by hand, I assume I better not use the code that is being tested here :-)
         updateDict(scArgs, requestArgs)
-        scArgs['Step1'] = {"ConfigCacheID": "blah", "GlobalTag": "PHYS18", "BlockWhitelist": ["C"]}
+        scArgs['Step1'] = {"ConfigCacheID": "blah", "GlobalTag": "PHYS18",
+                           "BlockWhitelist": ["C"], "ScramArch": ["slc6_amd64_gcc493"]}
         scArgs['Step2'] = {"AcquisitionEra": "ACQERA", "ProcessingVersion": 1, "LumisPerJob": 5,
-                           "Campaign": "Step2Camp"}
+                           "Campaign": "Step2Camp", "ScramArch": ["slc7_amd64_gcc630"]}
         self.assertDictEqual(cloneArgs, scArgs)
 
     def testTC_initialize_clone(self):
@@ -211,6 +214,116 @@ class RequestTests(unittest.TestCase):
         tcArgs['Task3'].update(requestArgs['Task3'])
         tcArgs.update({"PrepID": "prepBlah", "ProcessingVersion": 1})
         self.assertDictEqual(cloneArgs, tcArgs)
+
+    def testRequestInfoReReco(self):
+        """
+        Test the RequestInfo class with a ReReco workflow.
+        """
+        # test overwrite of original values
+        reqArgs = deepcopy(rerecoOriginalArgs)
+        reqArgs['AgentJobInfo'] = {"agent_a": {"num_jobs": 2, "status": "done"}}
+        reqInfo = RequestInfo(reqArgs)
+
+        self.assertItemsEqual(reqArgs, reqInfo.data)
+
+        # test `andFilterCheck` method
+        self.assertFalse(reqInfo.andFilterCheck(dict(RequestType="BAD_TYPE")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(RequestType="ReReco")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents="False")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(IncludeParents="True")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(IncludeParents=True)))
+        self.assertFalse(reqInfo.andFilterCheck(dict(AgentJobInfo="CLEANED")))
+
+        # test `isWorkflowCleaned` method
+        self.assertFalse(reqInfo.isWorkflowCleaned())
+
+        # finally, test the `get` method
+        self.assertIsNone(reqInfo.get(prop="NonExistent", default=None))
+        self.assertIsNone(reqInfo.get(prop="NonExistent"))
+        self.assertEqual(reqInfo.get(prop="NonExistent", default="diff_default"), "diff_default")
+        self.assertEqual(reqInfo.get(prop="Memory"), 234)
+
+    def testRequestInfoStepChain(self):
+        """
+        Test the RequestInfo class with a StepChain workflow.
+        """
+        # test overwrite of original values
+        reqArgs = deepcopy(stepChainOriginalArgs)
+        reqArgs['AgentJobInfo'] = {"agent_a": {"num_jobs": 2, "status": "done"}}
+        from pprint import pprint
+        pprint(reqArgs)
+
+        reqInfo = RequestInfo(reqArgs)
+        self.assertItemsEqual(reqArgs, reqInfo.data)
+
+        # test `andFilterCheck` method
+        self.assertFalse(reqInfo.andFilterCheck(dict(RequestType="BAD_TYPE")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(RequestType="StepChain")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents="False")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents="True")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents=True)))
+        self.assertTrue(reqInfo.andFilterCheck(dict(ProcessingVersion=3)))
+        self.assertTrue(reqInfo.andFilterCheck(dict(GlobalTag="PHYS18")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(AgentJobInfo="CLEANED")))
+
+        # test `isWorkflowCleaned` method
+        self.assertFalse(reqInfo.isWorkflowCleaned())
+
+        # finally, test the `get` method
+        self.assertIsNone(reqInfo.get(prop="NonExistent", default=None))
+        self.assertIsNone(reqInfo.get(prop="NonExistent"))
+        self.assertEqual(reqInfo.get(prop="NonExistent", default="diff_default"), "diff_default")
+        # Memory is not inside any Step dict, that's why a plain integer...
+        self.assertEqual(reqInfo.get(prop="Memory"), 1234)
+        self.assertEqual(reqInfo.get(prop="RequestName"), "test_stepchain")
+        self.assertEqual(reqInfo.get(prop="AcquisitionEra"), ["ACQERA"])
+        self.assertEqual(reqInfo.get(prop="LumisPerJob"), [10])
+        # NOTE: inner step properties have precedence over the top level ones.
+        self.assertItemsEqual(reqInfo.get(prop="ScramArch"), ["slc6_amd64_gcc493", "slc7_amd64_gcc630"])
+
+    def testRequestInfoTaskChain(self):
+        """
+        Test the RequestInfo class with a TaskChain workflow.
+        """
+        # test overwrite of original values
+        reqArgs = deepcopy(taskChainOriginalArgs)
+        reqArgs['AgentJobInfo'] = {"agent_a": {}}
+        from pprint import pprint
+        pprint(reqArgs)
+
+        reqInfo = RequestInfo(reqArgs)
+        self.assertItemsEqual(reqArgs, reqInfo.data)
+
+        # test `andFilterCheck` method
+        self.assertFalse(reqInfo.andFilterCheck(dict(RequestType="BAD_TYPE")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(RequestType="TaskChain")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents="False")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents="True")))
+        self.assertFalse(reqInfo.andFilterCheck(dict(IncludeParents=True)))
+        self.assertTrue(reqInfo.andFilterCheck(dict(KeepOutput=False)))
+        # NOTE: None value will always fail to match (thus returning False)
+        self.assertFalse(reqInfo.andFilterCheck(dict(PrepID=None)))
+        self.assertTrue(reqInfo.andFilterCheck(dict(TaskChain=3)))
+        self.assertTrue(reqInfo.andFilterCheck(dict(Campaign="MainTask")))
+        self.assertTrue(reqInfo.andFilterCheck(dict(AgentJobInfo="CLEANED")))
+
+        # test `isWorkflowCleaned` method
+        self.assertTrue(reqInfo.isWorkflowCleaned())
+
+        # finally, test the `get` method
+        self.assertIsNone(reqInfo.get(prop="NonExistent", default=None))
+        self.assertIsNone(reqInfo.get(prop="NonExistent"))
+        self.assertEqual(reqInfo.get(prop="NonExistent", default="diff_default"), "diff_default")
+        # PrepID is not inside any Step dict, that's why a plain integer...
+        self.assertEqual(reqInfo.get(prop="PrepID"), None)
+        self.assertEqual(reqInfo.get(prop="RequestName"), "test_taskchain")
+        self.assertEqual(reqInfo.get(prop="LumisPerJob"), [10])
+        self.assertEqual(reqInfo.get(prop="AcquisitionEra"), ["ACQERA"])
+        # NOTE: inner task properties have precedence over the top level ones.
+        self.assertEqual(reqInfo.get(prop="ProcessingVersion"), [2])
+        self.assertEqual(reqInfo.get(prop="BlockWhitelist"), ["A", "B"])
+        self.assertItemsEqual(reqInfo.get(prop="ScramArch"), ['slc6_amd64_gcc481',
+                                                              'slc6_amd64_gcc493', 'slc7_amd64_gcc630'])
 
 
 if __name__ == '__main__':

@@ -111,6 +111,16 @@ class RunTest(unittest.TestCase):
         self.assertEqual(runlist[1], run2)
         self.assertEqual(runlist[2], run3)
 
+        comparisons_0 = [
+            run1 < run2, run1 <= run2,
+            run1 == run2, run1 != run2,
+            run1 > run2, run1 >= run2,
+            ]
+        self.assertListEqual(comparisons_0,
+                             [True, True,
+                              False, True,
+                              False, False])
+
         run4 = Run(4, 1, 2, 3)
         run5 = Run(4, 4, 5, 6)
         run6 = Run(4, 7, 8, 9)
@@ -140,6 +150,34 @@ class RunTest(unittest.TestCase):
         self.assertEqual(runlist[2], run9)
         self.assertEqual(runlist[3], run10)
         self.assertEqual(runlist[4], run11)
+
+        comparisons_1 = [
+            run10 < run11, run10 <= run11,
+            run10 == run11, run10 != run11,
+            run10 > run11, run10 >= run11,
+            ]
+        self.assertListEqual(comparisons_1,
+                             [True, True,
+                              False, True,
+                              False, False])
+        comparisons_2_same = [
+            run7 < run7, run7 <= run7,
+            run7 == run7, run7 != run7,
+            run7 > run7, run7 >= run7,
+            ]
+        self.assertListEqual(comparisons_2_same,
+                             [False, True,
+                              True, False,
+                              False, True])
+        comparisons_3_same = [
+            run7 < run8, run7 <= run8,
+            run7 == run8, run7 != run8,
+            run7 > run8, run7 >= run8,
+            ]
+        self.assertListEqual(comparisons_3_same,
+                             [False, True,
+                              True, False,
+                              False, True])
 
     def testD(self):
         """

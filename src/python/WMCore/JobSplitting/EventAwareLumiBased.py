@@ -12,6 +12,9 @@ Created on Sep 25, 2012
 @author: dballest
 """
 
+from __future__ import division
+from builtins import int
+
 import logging
 import math
 import operator
@@ -106,7 +109,7 @@ class EventAwareLumiBased(JobFactory):
             return
 
         locationDict = {}
-        for key in lDict.keys():
+        for key in lDict:
             newlist = []
             # First we need to load the data
             if self.loadRunLumi:
@@ -116,7 +119,7 @@ class EventAwareLumiBased(JobFactory):
                                     self.subscription.workflowName(), self.subscription['id'])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
+                    for run in lumiDict:
                         f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
@@ -131,7 +134,7 @@ class EventAwareLumiBased(JobFactory):
 
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = int(round(f['events'] / f['lumiCount']))
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']

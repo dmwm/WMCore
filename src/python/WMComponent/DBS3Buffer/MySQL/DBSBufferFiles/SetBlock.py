@@ -18,7 +18,7 @@ class SetBlock(DBFormatter):
 
         """
 
-        if type(lfn) == list:
+        if isinstance(lfn, list):
             binds = []
             for entry in lfn:
                 binds.append({'block': blockName, 'filelfn': entry})

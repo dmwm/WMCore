@@ -9,6 +9,8 @@ import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+from builtins import int
+
 __all__ = []
 
 
@@ -45,7 +47,7 @@ class GetTask(DBFormatter):
             binds = []
             for ID in jobID:
                 binds.append({'jobid': int(ID)})
-        elif isinstance(jobID, (int, long)):
+        elif isinstance(jobID, int):
             binds = {'jobid': int(jobID)}
         else:
             logging.error('Incompatible jobid in GetTask')

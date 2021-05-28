@@ -4,7 +4,9 @@ _ReportEmu_
 
 Class for creating bogus framework job reports.
 """
+from __future__ import division
 
+from builtins import object
 import os.path
 
 from WMCore.DataStructs.File import File
@@ -66,7 +68,7 @@ class ReportEmu(object):
         else:
             outputTotalEvents = totalEvents
 
-        outputSize = int(totalSize * ((outputTotalEvents * 1.0) / (totalEvents * 1.0)))
+        outputSize = int(totalSize * outputTotalEvents / totalEvents )
         return (outputSize, outputTotalEvents)
 
     def addOutputFilesToReport(self, report):

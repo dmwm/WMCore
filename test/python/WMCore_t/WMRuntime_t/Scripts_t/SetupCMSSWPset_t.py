@@ -7,10 +7,14 @@ Tests for the PSet configuration code.
 """
 from __future__ import print_function
 
+from future.utils import viewvalues
+from builtins import zip
+
 import imp
 import unittest
 import os
 import sys
+import shutil
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
@@ -74,29 +78,25 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                             parents = set([File(lfn = "/some/parent/two")])))
         return newJob
 
-    def loadProcessFromPSet(self):
+    def loadProcessFromPSet(self, psetPath=None):
         """
         _loadProcessFromPSet_
 
         This requires changing the working directory,
         do so in a safe manner to encapsulate the change to this method only
         """
-
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import Unpickler
         currentPath = os.getcwd()
         loadedProcess = None
-        try:
-            if not os.path.isdir(self.testDir):
-                raise
-            os.chdir(self.testDir)
-            testFile = "PSet.py"
-            pset = imp.load_source('process', testFile)
-            loadedProcess = pset.process
-        except Exception as ex:
-            self.fail("An exception was caught while trying to load the PSet, %s" % str(ex))
-        finally:
-            os.chdir(currentPath)
 
-        return loadedProcess
+        if psetPath is None:
+            psetPath = self.testDir
+        with open(os.path.join(psetPath, "PSet.pkl")) as f:
+            pset = Unpickler(f).load()
+
+        os.chdir(currentPath)
+
+        return pset
 
     def testPSetFixup(self):
         """
@@ -111,24 +111,16 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
         setupScript.stepSpace.location = self.testDir
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), "WMTaskSpace", "cmsRun1", "PSet.py"),
+                        os.path.join(setupScript.stepSpace.location, "PSet.py"))
         setupScript.job = self.createTestJob()
         setupScript()
 
-        fixedPSet = self.loadProcessFromPSet()
+        fixedPSet = self.loadProcessFromPSet(setupScript.stepSpace.location)
 
-        self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
-                         "Error: Wrong number of files.")
-        self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,
-                         "Error: Wrong number of secondary files.")
-        self.assertEqual(fixedPSet.source.fileNames.value[0], "/some/file/one",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.fileNames.value[1], "/some/file/two",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.secondaryFileNames.value[0], "/some/parent/one",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.secondaryFileNames.value[1], "/some/parent/two",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.maxEvents.input.value, -1,
+        self.assertTrue(hasattr(fixedPSet.source, 'fileNames'))
+        self.assertTrue(hasattr(fixedPSet.source, 'secondaryFileNames'))
+        self.assertEqual(fixedPSet.maxEvents.input._value, -1,
                          "Error: Wrong maxEvents.")
 
     def testEventsPerLumi(self):
@@ -144,26 +136,18 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.step.setEventsPerLumi(500)
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
         setupScript.stepSpace.location = self.testDir
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), "WMTaskSpace", "cmsRun1", "PSet.py"),
+                        os.path.join(setupScript.stepSpace.location, "PSet.py"))
         setupScript.job = self.createTestJob()
         setupScript()
 
-        fixedPSet = self.loadProcessFromPSet()
+        fixedPSet = self.loadProcessFromPSet(setupScript.stepSpace.location)
 
-        self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
-                         "Error: Wrong number of files.")
-        self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,
-                         "Error: Wrong number of secondary files.")
-        self.assertEqual(fixedPSet.source.fileNames.value[0], "/some/file/one",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.fileNames.value[1], "/some/file/two",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.secondaryFileNames.value[0], "/some/parent/one",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.secondaryFileNames.value[1], "/some/parent/two",
-                         "Error: Wrong input file.")
-        self.assertEqual(fixedPSet.source.numberEventsInLuminosityBlock.value,
+        self.assertTrue(hasattr(fixedPSet.source, 'fileNames'))
+        self.assertTrue(hasattr(fixedPSet.source, 'secondaryFileNames'))
+        self.assertEqual(fixedPSet.source.numberEventsInLuminosityBlock._value,
                          500, "Error: Wrong number of events per luminosity block")
-        self.assertEqual(fixedPSet.maxEvents.input.value, -1,
+        self.assertEqual(fixedPSet.maxEvents.input._value, -1,
                          "Error: Wrong maxEvents.")
 
     def testChainedProcesing(self):
@@ -178,19 +162,22 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
         setupScript.stepSpace.location = self.testDir
+        shutil.copyfile(os.path.join(os.path.dirname(__file__), "WMTaskSpace", "cmsRun1", "PSet.py"),
+                        os.path.join(setupScript.stepSpace.location, "PSet.py"))
         setupScript.job = self.createTestJob()
         setupScript.step.setupChainedProcessing("my_first_step", "my_input_module")
         setupScript()
+        fixedPSet = self.loadProcessFromPSet(setupScript.stepSpace.location)
 
         # test if the overriden TFC is right
+        print("DEBUG override: {0}".format(setupScript.step.data.application.overrideCatalog))
         self.assertTrue(hasattr(setupScript.step.data.application, "overrideCatalog"),
                         "Error: overriden TFC was not set")
         tfc = loadTFC(setupScript.step.data.application.overrideCatalog)
         inputFile = "../my_first_step/my_input_module.root"
         self.assertEqual(tfc.matchPFN("direct", inputFile), inputFile)
         self.assertEqual(tfc.matchLFN("direct", inputFile), inputFile)
-
-        self.assertEqual(setupScript.process.source.fileNames.value, [inputFile])
+        self.assertTrue(hasattr(fixedPSet.source, 'fileNames'))
 
 
     def testPileupSetup(self):
@@ -250,7 +237,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # modifications of job input files
         pileupConfig = {"data": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
                         "mc": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
-        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        dbsUrl = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
         setupScript.step.setupPileup(pileupConfig, dbsUrl)
         # SetupCMSSWPset pileup handling will be consulting SiteLocalConfig
         # to determine StorageElement (SE) name the job is running on
@@ -298,7 +285,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         """
         # consider only locally available files
         filesInConfigDict = []
-        for v in pileupSubDict.values():
+        for v in viewvalues(pileupSubDict):
             if seLocalName in v["phedexNodeNames"]:
                 filesInConfigDict.extend(v["FileList"])
 

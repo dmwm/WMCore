@@ -1,4 +1,5 @@
 from __future__ import (division, print_function)
+from builtins import object
 
 
 class MockPyCondorAPI(object):
@@ -9,7 +10,13 @@ class MockPyCondorAPI(object):
     def __init__(self, *args, **kwargs):
         print("Using MockPyCondorAPI")
 
-    def getCondorJobs(self, constraint, attr_list):
+    def getCondorJobsSummary(self):
+        """
+        Mock a condor query for the job summary
+        """
+        return []
+
+    def getCondorJobs(self, constraint='true', attrList=None, limit=-1, opts="SummaryOnly"):
         """
         Given a job/schedd constraint, return a list of jobs attributes
         or None if the query to condor fails.

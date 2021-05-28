@@ -5,6 +5,8 @@ _WMTask_t_
 Unit tests for the WMTask class.
 """
 
+from future.utils import viewitems
+
 import unittest
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -104,6 +106,46 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2c.getStep("step1"), None)
 
         self.assertEqual(task1.listNodes(), ['task1', 'task2a', 'task3', 'task2b', 'task2c'])
+        return
+
+    def testAddEnvironmentVariables(self):
+        """
+        _testAddEnvironmentVariables_
+        Verify that methods for setting and retrieving task environment variables.
+        """
+        testTask = makeWMTask("TestTask")
+        testDict = {
+            "VAR0":"Value0",
+            "VAR1":"Value1",
+            "VAR2":"Value2",
+            "VAR3":"Value3",
+            }
+
+        testTask.addEnvironmentVariables(testDict)
+        retrievedDict = testTask.getEnvironmentVariables()
+
+        self.assertEqual(retrievedDict, testDict,
+                "Error: Env variables dict doesn't match with test dict")
+
+        return
+
+    def testSetOverrideCatalog(self):
+        """
+        _testSetStepOverrideCatalog_
+
+        Verify methods for setting and retrieving overrideCatalog option.
+        """
+        testTask = makeWMTask("TestTask")
+        testTask = makeWMTask("MultiTask")
+
+        taskCmssw = testTask.makeStep("cmsRun1")
+        taskCmssw.setStepType("CMSSW")
+
+        testCatalog = "trivialcatalog_file:/test/catalog/file.xml?protocol=eos"
+        testTask.setOverrideCatalog(testCatalog)
+
+        self.assertEqual(taskCmssw.getTypeHelper().getOverrideCatalog(),testCatalog,
+                        "Error: Wrong overrideCatalog value for step taskCmssw")
         return
 
     def testSiteWhiteBlacklists(self):
@@ -369,7 +411,7 @@ class WMTaskTest(unittest.TestCase):
                                          "/Data/ProcessedDataset/DataTier")
         # then mimic the setupPileup method
         thesePU = []
-        for puType, puList in pileupConfig.items():
+        for puType, puList in viewitems(pileupConfig):
             # there should be only one type and one PU dataset
             testTask.setInputPileupDatasets(puList)
             thesePU.extend(puList)

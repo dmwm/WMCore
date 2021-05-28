@@ -4,6 +4,7 @@ _Step.Executor.LogArchive_
 
 Implementation of an Executor for a LogArchive step
 """
+from __future__ import division
 
 import logging
 import os
@@ -22,7 +23,7 @@ from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
-lfnGroup = lambda j: str(j.get("counter", 0) / 1000).zfill(4)
+lfnGroup = lambda j: str(j.get("counter", 0) // 1000).zfill(4)
 
 
 class LogArchive(Executor):

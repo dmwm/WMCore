@@ -40,4 +40,4 @@ ui.static = ROOTDIR
 # REST interface
 data = views.section_('data')
 data.object = 'WMCore.MicroService.Service.RestApiHub.RestApiHub'
-data.manager = 'WMCore.MicroService.Unified.MSManager.MSManager'
+data.manager = 'WMCore.MicroService.MSManager.MSManager'

@@ -5,12 +5,16 @@ Perform general agent monitoring, like:
  3. Couchdb replication status (and status of its database)
  4. Disk usage status
 """
+from __future__ import division
+from future.utils import viewitems
+
 import time
 import logging
 import threading
 from pprint import pformat
 from Utils.Timers import timeFunction
 from Utils.Utilities import numberCouchProcess
+from Utils.PortForward import PortForward
 from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, initAgentInfo
 from WMCore.Credential.Proxy import Proxy
@@ -24,6 +28,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 # CMSMonitoring modules
 from CMSMonitoring.StompAMQ import StompAMQ
+
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -50,6 +55,9 @@ class AgentStatusPoller(BaseWorkerThread):
         self.credThresholds = {'proxy': {'error': 3, 'warning': 5},
                                'certificate': {'error': 10, 'warning': 20}}
 
+        # create a portForwarder to be used for rerouting the replication process
+        self.portForwarder = PortForward(8443)
+
         # Monitoring setup
         self.userAMQ = getattr(config.AgentStatusWatcher, "userAMQ", None)
         self.passAMQ = getattr(config.AgentStatusWatcher, "passAMQ", None)
@@ -73,6 +81,7 @@ class AgentStatusPoller(BaseWorkerThread):
         # set up common replication code
         wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
         wmstatsTarget = self.config.General.centralWMStatsURL
+        wmstatsTarget = self.portForwarder(wmstatsTarget)
 
         self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
                                     'filter': "WMStatsAgent/repfilter"})
@@ -85,7 +94,9 @@ class AgentStatusPoller(BaseWorkerThread):
             # set up workqueue replication
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
+            parentQURL = self.portForwarder(parentQURL)
             childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
+            childURL = self.portForwarder(childURL)
             query_params = {'childUrl': childURL, 'parentUrl': sanitizeURL(parentQURL)['url']}
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
@@ -302,7 +313,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         logging.debug("%s '%s' lifetime is %d seconds", credType, credFile, secsLeft)
 
-        daysLeft = secsLeft / (60. * 60 * 24)
+        daysLeft = secsLeft / (60 * 60 * 24)
 
         if daysLeft <= self.credThresholds[credType]['error']:
             credWarning = True
@@ -362,11 +373,11 @@ class AgentStatusPoller(BaseWorkerThread):
         prioDocs = []
         sitePendCountByPrio = dataStats['WMBS_INFO'].pop('sitePendCountByPrio', [])
 
-        for site, item in sitePendCountByPrio.iteritems():
+        for site, item in viewitems(sitePendCountByPrio):
             # it seems sites with no jobs are also always here as "Sitename": {0: 0}
-            if item.keys() == [0]:
+            if list(item) == [0]:
                 continue
-            for prio, jobs in item.iteritems():
+            for prio, jobs in viewitems(item):
                 prioDoc = {}
                 prioDoc['site_name'] = site
                 prioDoc['type'] = docType
@@ -401,7 +412,7 @@ class AgentStatusPoller(BaseWorkerThread):
             siteDoc['state'] = siteDoc['thresholds'].pop('state', 'Unknown')
             siteDoc['thresholdsGQ2LQ'] = thresholdsGQ2LQ.get(site, 0)
 
-            for status in possibleJobsPerSite.keys():
+            for status in possibleJobsPerSite:
                 # make sure these keys are always present in the documents
                 jobKey = "possible_%s_jobs" % status.lower()
                 elemKey = "num_%s_elem" % status.lower()
@@ -433,7 +444,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         docType = "wma_work_info"
         workByStatus = dataStats['LocalWQ_INFO'].pop('workByStatus', {})
-        for status, info in workByStatus.items():
+        for status, info in viewitems(workByStatus):
             workDoc = {}
             workDoc['type'] = docType
             workDoc['status'] = status

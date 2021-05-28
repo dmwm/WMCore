@@ -3,16 +3,17 @@
 WorkQueue SplitPolicyInterface
 
 """
+from builtins import str as newstr, bytes
+from future.utils import viewitems
+
+
 __all__ = []
-import os
-from Utils.Utilities import usingRucio
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.CRIC.CRIC import CRIC
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
@@ -22,6 +23,9 @@ class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
 
     def __init__(self, **args):
+        # We need to pop this object instance from args because otherwise
+        # the super class blows up when doing a deepcopy(args)
+        self.rucio = args.pop("rucioObject", None)
         PolicyInterface.__init__(self, **args)
         self.workQueueElements = []
         self.wmspec = None
@@ -36,10 +40,10 @@ class StartPolicyInterface(PolicyInterface):
         self.badWork = []  # list of bad work unit (e.g. without any valid files)
         self.pileupData = {}
         self.cric = CRIC()
-        if usingRucio():
-            self.rucio = Rucio(self.args['rucioAcct'], configDict={'phedexCompatible': False})
-        else:
-            self.phedex = PhEDEx()  # this will go away eventually
+        # FIXME: for the moment, it will always use the default value
+        self.rucioAcct = self.args.get("rucioAcct", "wmcore_transferor")
+        if not self.rucio:
+            self.rucio = Rucio(self.rucioAcct, configDict={'logger': self.logger})
 
     def split(self):
         """Apply policy to spec"""
@@ -58,7 +62,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
         if self.initialTask.siteWhitelist():
-            if isinstance(self.initialTask.siteWhitelist(), basestring):
+            if isinstance(self.initialTask.siteWhitelist(), (newstr, bytes)):
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(
                     self.initialTask.siteWhitelist()))
                 raise error
@@ -72,7 +76,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
         if self.initialTask.siteBlacklist():
-            if isinstance(self.initialTask.siteBlacklist(), basestring):
+            if isinstance(self.initialTask.siteBlacklist(), (newstr, bytes)):
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(
                     self.initialTask.siteBlacklist()))
                 raise error
@@ -114,7 +118,7 @@ class StartPolicyInterface(PolicyInterface):
         dbsUrl = self.initialTask.dbsUrl()
         if dbsUrl is None and self.pileupData:
             # Get the first DBS found
-            dbsUrl = self.wmspec.listPileupDatasets().keys()[0]
+            dbsUrl = next(iter(self.wmspec.listPileupDatasets()))
 
         args.setdefault('Status', 'Available')
         args.setdefault('WMSpec', self.wmspec)
@@ -131,7 +135,7 @@ class StartPolicyInterface(PolicyInterface):
         if not args['Priority']:
             args['Priority'] = 0
         ele = WorkQueueElement(**args)
-        for data, sites in ele['Inputs'].items():
+        for data, sites in viewitems(ele['Inputs']):
             if not sites:
                 raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
 
@@ -140,7 +144,7 @@ class StartPolicyInterface(PolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))
         self.workQueueElements.append(ele)
 
-    def __call__(self, wmspec, task, data=None, mask=None, team=None, continuous=False):
+    def __call__(self, wmspec, task, data=None, mask=None, team=None, continuous=False, rucioObj=None):
         self.wmspec = wmspec
         # bring in spec specific settings
         self.args.update(self.wmspec.startPolicyParameters())
@@ -241,18 +245,29 @@ class StartPolicyInterface(PolicyInterface):
         raise NotImplementedError("This can't be called on a base StartPolicyInterface object")
 
     def getDatasetLocations(self, datasets):
-        """Returns a dictionary with the location of the datasets according to DBS"""
+        """
+        Returns a dictionary with the location of the datasets according to Rucio
+        The definition of "location" here is a union of all sites holding at least
+        part of the dataset (defined by the DATASET grouping).
+        :param datasets: dictionary with a list of dataset names (key'ed by the DBS URL)
+        :return: a dictionary of dataset locations, key'ed by the dataset name
+        """
         result = {}
         for dbsUrl in datasets:
             for datasetPath in datasets[dbsUrl]:
-                locations = set()
-                if hasattr(self, "rucio"):
-                    resp = self.rucio.getReplicaInfoForBlocks(dataset=datasetPath)
-                    for item in resp:
-                        locations.update(item['replica'])
-                else:
-                    resp = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetPath], complete='y')
-                    for blockSites in resp.values():
-                        locations.update(blockSites)
+                locations = self.rucio.getDataLockedAndAvailable(name=datasetPath,
+                                                                 account=self.rucioAcct)
                 result[datasetPath] = self.cric.PNNstoPSNs(locations)
         return result
+
+    def blockLocationRucioPhedex(self, blockName):
+        """
+        Wrapper around Rucio and PhEDEx systems.
+        Fetch the current location of the block name (if Rucio,
+        also consider the locks made on that block)
+        :param blockName: string with the block name
+        :return: a list of RSEs
+        """
+        location = self.rucio.getDataLockedAndAvailable(name=blockName,
+                                                        account=self.rucioAcct)
+        return location

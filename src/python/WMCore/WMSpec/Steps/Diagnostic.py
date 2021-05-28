@@ -7,6 +7,7 @@ Interface and base class for step specific diagnostic handlers
 
 
 """
+from builtins import object
 
 from WMCore.FwkJobReport.Report import FwkJobReportException
 

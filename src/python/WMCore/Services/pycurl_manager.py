@@ -26,8 +26,8 @@ if header.status != 200:
 tfile = tempfile.NamedTemporaryFile()
 ckey = os.path.join(os.environ['HOME'], '.globus/userkey.pem')
 cert = os.path.join(os.environ['HOME'], '.globus/usercert.pem')
-url1 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/help"
-url2 = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/datatiers"
+url1 = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/help"
+url2 = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/datatiers"
 url3 = "https://cms-gwmsmon.cern.ch/prodview/json/site_summary"
 cern_sso_cookie(url3, tfile.name, cert, ckey)
 cookie = {url3: tfile.name}
@@ -37,10 +37,15 @@ for row in data:
     print(row)
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+
+from builtins import str, range, object
+from past.builtins import basestring
+from future.utils import viewitems
 
 
 # system modules
-import httplib
 import json
 import logging
 import os
@@ -49,11 +54,11 @@ import subprocess
 import sys
 import pycurl
 from io import BytesIO
-try:
-    from urllib import urlencode
-except ImportError:
-    # PY3
-    from urllib.parse import urlencode
+import http.client
+from urllib.parse import urlencode
+
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.PortForward import portForward, PortForward
 
 
 class ResponseHeader(object):
@@ -72,6 +77,8 @@ class ResponseHeader(object):
         continueRegex = r"^HTTP/\d.\d 100"  # Continue: client should continue its request
         replaceRegex = r"^HTTP/\d.\d"
 
+        response = decodeBytesToUnicode(response)
+
         for row in response.split('\r'):
             row = row.replace('\n', '')
             if not row:
@@ -89,6 +96,30 @@ class ResponseHeader(object):
                 self.header[key.strip()] = val.strip()
             except:
                 pass
+
+    def getReason(self):
+        """
+        Return the HTTP request reason
+        """
+        return self.reason
+
+    def getHeader(self):
+        """
+        Return the header dictionary object
+        """
+        return self.header
+
+    def getHeaderKey(self, keyName):
+        """
+        Provided a key name, return it from the HTTP header.
+        Note that - by design - header keys are meant to be
+        case insensitive
+        :param keyName: a header key name to be looked up
+        :return: the value for that header key, or None if not found
+        """
+        for keyHea, valHea in self.header.items():
+            if keyHea.lower() == keyName.lower():
+                return valHea
 
 
 class RequestHandler(object):
@@ -161,7 +192,6 @@ class RequestHandler(object):
 
         encoded_data = self.encode_params(params, verb, doseq, encode)
 
-
         if verb == 'GET':
             if encoded_data:
                 url = url + '?' + encoded_data
@@ -190,10 +220,10 @@ class RequestHandler(object):
         # we must pass url as a string data-type, otherwise pycurl will fail with error
         # TypeError: invalid arguments to setopt
         # see https://curl.haxx.se/mail/curlpython-2007-07/0001.html
-        curl.setopt(pycurl.URL, str(url))
+        curl.setopt(pycurl.URL, encodeUnicodeToBytes(url))
         if headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                    ["%s: %s" % (k, v) for k, v in headers.items()])
+                [encodeUnicodeToBytes("%s: %s" % (k, v)) for k, v in viewitems(headers)])
         bbuf = BytesIO()
         hbuf = BytesIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -242,6 +272,7 @@ class RequestHandler(object):
         """
         return ResponseHeader(header)
 
+    @portForward(8443)
     def request(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, capath=None,
                 doseq=True, encode=False, decode=False, cainfo=None, cookie=None):
@@ -262,7 +293,7 @@ class RequestHandler(object):
             data = bbuf.getvalue()
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \
                   % (url, header.status, header.reason, header.header)
-            exc = httplib.HTTPException(msg)
+            exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)
             setattr(exc, 'url', url)
@@ -291,9 +322,10 @@ class RequestHandler(object):
                   verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch HTTP header"""
         header, _ = self.request(url, params, headers, verb,
-                                 verbose, ckey, cert, doseq)
+                                 verbose, ckey, cert, doseq=doseq)
         return header
 
+    @portForward(8443)
     def multirequest(self, url, parray, headers=None,
                      ckey=None, cert=None, verbose=None, cookie=None):
         """Fetch data for given set of parameters"""
@@ -368,7 +400,7 @@ def cern_sso_cookie(url, fname, cert, ckey):
     proc.wait()
 
 
-def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=None):
+def getdata(urls, ckey, cert, headers=None, options=None, num_conn=50, cookie=None):
     """
     Get data for given list of urls, using provided number of connections
     and user credentials
@@ -377,8 +409,10 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=N
     if not options:
         options = pycurl_options()
 
+    portForwarder = PortForward(8443)
+
     # Make a queue with urls
-    queue = [u for u in urls if validate_url(u)]
+    queue = [portForwarder(u) for u in urls if validate_url(u)]
 
     # Check args
     num_urls = len(queue)
@@ -390,14 +424,14 @@ def getdata(urls, ckey, cert, headers=None, options=None, num_conn=100, cookie=N
     for _ in range(num_conn):
         curl = pycurl.Curl()
         curl.fp = None
-        for key, val in options.items():
+        for key, val in viewitems(options):
             curl.setopt(getattr(pycurl, key), val)
         curl.setopt(pycurl.SSLKEY, ckey)
         curl.setopt(pycurl.SSLCERT, cert)
         mcurl.handles.append(curl)
         if headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                        ["%s: %s" % (k, v) for k, v in headers.items()])
+                        ["%s: %s" % (k, v) for k, v in viewitems(headers)])
 
     # Main loop
     freelist = mcurl.handles[:]

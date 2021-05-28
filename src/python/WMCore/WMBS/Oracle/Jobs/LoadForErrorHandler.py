@@ -19,3 +19,8 @@ class LoadForErrorHandler(MySQLLoadForErrorHandler):
                    LEFT OUTER JOIN wmbs_file_location wfl ON wfd.id = wfl.fileid
                    LEFT OUTER JOIN wmbs_pnns wpnn ON wpnn.id = wfl.pnn
                  WHERE wja.job = :jobid"""
+
+    parentSQL = """SELECT parent.lfn AS lfn, wfp.child AS id
+                     FROM wmbs_file_parent wfp
+                     INNER JOIN wmbs_file_details parent ON parent.id = wfp.parent
+                     WHERE wfp.child = :fileid AND parent.merged = '1'"""

@@ -20,13 +20,21 @@ from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
+from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller, isPassiveError
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUIDLib import makeUUID
 from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.DBSClient.DBS3API import DbsApi as MockDbsApi
 from WMQuality.TestInit import TestInit
+
+
+class MyTestException(Exception):
+
+    def __init__(self, errorMsg=None):
+        super(MyTestException, self).__init__(errorMsg)
+        if errorMsg is not None:
+            self.reason = errorMsg
 
 
 class DBSUploadTest(unittest.TestCase):
@@ -259,40 +267,40 @@ class DBSUploadTest(unittest.TestCase):
 
         results = self.dbsApi.listFileArray(dataset=datasetName, detail=True)
         for result in results:
-            file = None
-            for file in files:
-                if file["lfn"] == result["logical_file_name"]:
+            fileObj = None
+            for fileObj in files:
+                if fileObj["lfn"] == result["logical_file_name"]:
                     break
             else:
-                file = None
+                fileObj = None
 
-            self.assertTrue(file is not None, "Error: File not found.")
-            self.assertEqual(file["size"], result["file_size"],
+            self.assertTrue(fileObj is not None, "Error: File not found.")
+            self.assertEqual(fileObj["size"], result["file_size"],
                              "Error: File size mismatch.")
-            self.assertEqual(file["events"], result["event_count"],
+            self.assertEqual(fileObj["events"], result["event_count"],
                              "Error: Event count mismatch.")
 
-            dbsParents = self.dbsApi.listFileParents(logical_file_name=file["lfn"])
+            dbsParents = self.dbsApi.listFileParents(logical_file_name=fileObj["lfn"])
             if len(dbsParents) == 0:
-                self.assertEqual(len(file["parents"]), 0,
+                self.assertEqual(len(fileObj["parents"]), 0,
                                  "Error: Missing parents.")
             else:
                 for dbsParent in dbsParents[0]["parent_logical_file_name"]:
                     fileParent = None
-                    for fileParent in file["parents"]:
+                    for fileParent in fileObj["parents"]:
                         if fileParent["lfn"] == dbsParent:
                             break
                     else:
                         fileParent = None
 
                     self.assertTrue(fileParent is not None, "Error: Missing parent.")
-                self.assertEqual(len(file["parents"]), len(dbsParents[0]["parent_logical_file_name"]),
+                self.assertEqual(len(fileObj["parents"]), len(dbsParents[0]["parent_logical_file_name"]),
                                  "Error: Wrong number of parents.")
 
-            runLumis = self.dbsApi.listFileLumiArray(logical_file_name=file["lfn"])
+            runLumis = self.dbsApi.listFileLumiArray(logical_file_name=fileObj["lfn"])
             for runLumi in runLumis:
                 fileRun = None
-                for fileRun in file["runs"]:
+                for fileRun in fileObj["runs"]:
                     if fileRun.run == runLumi["run_num"]:
                         for lumi in runLumi["lumi_section_num"]:
                             self.assertTrue(lumi in fileRun.lumis,
@@ -408,9 +416,9 @@ class DBSUploadTest(unittest.TestCase):
             dbsBlock.status = "Open"
             dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
-            for file in allFiles[i * 5: (i * 5) + 5]:
-                dbsBlock.addFile(file, 'data', 'VALID')
-                dbsUtil.setBlockFiles({"block": blockName, "filelfn": file["lfn"]})
+            for fileObj in allFiles[i * 5: (i * 5) + 5]:
+                dbsBlock.addFile(fileObj, 'data', 'VALID')
+                dbsUtil.setBlockFiles({"block": blockName, "filelfn": fileObj["lfn"]})
                 if i < 2:
                     dbsBlock.status = "InDBS"
                 dbsUtil.updateBlocks([dbsBlock])
@@ -425,9 +433,9 @@ class DBSUploadTest(unittest.TestCase):
         dbsBlock.status = "InDBS"
         dbsBlock.setDataset(childFiles[0]["datasetPath"], 'data', 'VALID')
         dbsUtil.createBlocks([dbsBlock])
-        for file in childFiles:
-            dbsBlock.addFile(file, 'data', 'VALID')
-            dbsUtil.setBlockFiles({"block": blockName, "filelfn": file["lfn"]})
+        for fileObj in childFiles:
+            dbsBlock.addFile(fileObj, 'data', 'VALID')
+            dbsUtil.setBlockFiles({"block": blockName, "filelfn": fileObj["lfn"]})
 
         dbsUtil.updateFileStatus([dbsBlock], "InDBS")
 
@@ -612,6 +620,21 @@ class DBSUploadTest(unittest.TestCase):
             # We don't trust anyone else with _exit
             del os.environ["DONT_TRAP_EXIT"]
         return
+
+    def testPassiveExceptions(self):
+        """
+        Ensure we are properly evaluating passive/hard exceptions in the
+        `isPassiveError` function.
+        """
+        # hard errors
+        for errMessage in ["Unknown exception", "Proxy WRONG Error", None]:
+            self.assertIs(isPassiveError(MyTestException(errMessage)), False)
+        # soft errors
+        for errMessage in ['Service Unavailable', 'Service Temporarily Unavailable',
+                           'Proxy Error', 'Error reading from remote server',
+                           'Connection refused', 'timed out', 'Could not resolve',
+                           'OpenSSL SSL_connect: SSL_ERROR_SYSCALL']:
+            self.assertIs(isPassiveError(MyTestException(errMessage)), True)
 
 
 if __name__ == '__main__':

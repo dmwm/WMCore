@@ -202,7 +202,7 @@ def dqm_urls():
 def dbs_urls():
     "Return list of DBS urls"
     urls = []
-    base = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/"
+    base = "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader/"
     for inst in ["prod", "phys01", "phys02", "phys03"]:
         urls.append(base.replace("prod", inst))
     return urls

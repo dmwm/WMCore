@@ -25,7 +25,7 @@ class Create(CreateAgentBase):
         CreateAgentBase.__init__(self, logger, dbi, params)
 
     def execute(self, conn=None, transaction=None):
-        for i in self.create.keys():
+        for i in self.create:
             self.create[i] += " ENGINE=InnoDB ROW_FORMAT=DYNAMIC"
             self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
 

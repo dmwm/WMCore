@@ -5,6 +5,7 @@ _File_
 Data object that contains details for a single file
 
 """
+from past.builtins import basestring
 __all__ = []
 
 from WMCore.DataStructs.Run import Run
@@ -85,15 +86,6 @@ class File(WMObject, dict):
         # Make sure we don't add None, [], "" as file location
         if pnn:
             self['locations'] = self['locations'] | set(self.makelist(pnn))
-
-    def __cmp__(self, rhs):
-        """
-        Sort files in run number and lumi section order
-        """
-        # if self['run'] == rhs['run']:
-        #    return cmp(self['lumi'], rhs['lumi'])
-
-        return self.__eq__(rhs)
 
     def __eq__(self, rhs):
         """

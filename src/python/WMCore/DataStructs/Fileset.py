@@ -7,6 +7,8 @@ Data object that contains a set of files
 """
 
 from __future__ import print_function
+from builtins import str, map
+
 from operator import itemgetter
 from WMCore.DataStructs.WMObject import WMObject
 __all__ = []

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from builtins import range
 import logging
 import unittest
 import os

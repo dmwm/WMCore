@@ -6,6 +6,7 @@ Template class for all Step Template implementations to inherit and implement
 the API
 
 """
+from builtins import object
 import os
 
 from WMCore.WMSpec.WMStep import WMStepHelper
@@ -61,6 +62,21 @@ class CoreHelper(WMStepHelper):
         """
         return self.data.environment
 
+    def setOverrideCatalog(self, overrideCatalog):
+        """
+        _setOverrideCatalog_
+        set the override catalog needed at least at CERN to use production castor pools
+        """
+        if overrideCatalog is not None:
+            self.data.application.overrideCatalog = overrideCatalog
+
+    def getOverrideCatalog(self):
+        """
+        _getOverrideCatalog_
+        return the TFC specified in overrideCatalog.
+        """
+        return getattr(self.data.application, "overrideCatalog", None)
+
     def addDirectory(self, dirName):
         """
         _addDirectory_
@@ -115,7 +131,7 @@ class CoreHelper(WMStepHelper):
         """
         return self.data.build.directories
 
-class Template:
+class Template(object):
     """
     _Template_
 

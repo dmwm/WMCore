@@ -5,7 +5,7 @@ https://github.com/dmwm/WMCore/wiki/StoreResults-requests
 Pre-requisites:
  1. a valid proxy in your X509_USER_PROXY variable
  2. wmagent env: source /data/srv/wmagent/current/apps/wmagent/etc/profile.d/init.sh
- 3. have the correct permissions in SiteDB, otherwise dataset migration won't work
+ 3. have the correct permissions in CRIC, otherwise dataset migration won't work
 
 Expected input json file like:
 [{"InputDataset": "/EmbeddingRun2016B/MuTauFinalState-imputSep16DoubleMu_mirror_miniAOD-v2/USER",
@@ -21,7 +21,10 @@ Expected input json file like:
 
 from __future__ import print_function, division
 
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+
+import http.client
 import json
 import os
 import sys
@@ -45,7 +48,7 @@ DEFAULT_DICT = {
     "AcquisitionEra": "UPDATEME",
     "ProcessingVersion": 1,  # will be updated too
     "Campaign": "StoreResults",
-    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader",
+    "DbsUrl": "https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader",
     "GlobalTag": "crab3_tag",
     "Memory": 2000,
     "RequestPriority": 999999,
@@ -83,7 +86,7 @@ def migrateDataset(dset, dbsInst):
     Migrate dataset from the user instance to the DBS prod one.
     It returns the origin site name, which should be used for assignment
     """
-    dbsInst = "https://cmsweb.cern.ch/dbs/prod/%s/DBSReader" % dbsInst
+    dbsInst = "https://cmsweb-prod.cern.ch/dbs/prod/%s/DBSReader" % dbsInst
     migrateArgs = {'migration_url': dbsInst, 'migration_input': dset}
     dbsApi.submitMigration(migrateArgs)
     print("Migrating dataset %s from %s to prod/global" % (dset, dbsInst))
@@ -101,7 +104,7 @@ def buildRequest(userDict):
 
     newSchema = copy(DEFAULT_DICT)
     newSchema.update(userDict)
-    newSchema['DbsUrl'] = "https://cmsweb.cern.ch/dbs/prod/%s/DBSReader" % newSchema['DbsUrl']
+    newSchema['DbsUrl'] = "https://cmsweb-prod.cern.ch/dbs/prod/%s/DBSReader" % newSchema['DbsUrl']
     # Remove spaces from the Physics Group value
     newSchema['PhysicsGroup'] = newSchema['PhysicsGroup'].replace(" ", "")
     # Set PrepID according to the date and time
@@ -127,7 +130,7 @@ def submitWorkflow(schema):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
     encodedParams = json.dumps(schema)
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("POST", "/reqmgr2/data/request", encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()
@@ -150,7 +153,7 @@ def approveRequest(workflow):
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
 
-    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    conn = http.client.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
     conn.request("PUT", "/reqmgr2/data/request/%s" % workflow, encodedParams, headers)
     resp = conn.getresponse()
     data = resp.read()

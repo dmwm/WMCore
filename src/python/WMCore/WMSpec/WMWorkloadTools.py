@@ -8,6 +8,9 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+from builtins import str, bytes
+from future.utils import viewitems
+
 import json
 import re
 import inspect
@@ -20,7 +23,7 @@ from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUB
 
 def makeLumiList(lumiDict):
     try:
-        if isinstance(lumiDict, basestring):
+        if isinstance(lumiDict, (str, bytes)):
             lumiDict = json.loads(lumiDict)
         ll = LumiList(compactList=lumiDict)
         return ll.getCompactList()
@@ -108,7 +111,7 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     Check whether create or assign mandatory parameters were properly
     set in the request schema.
     """
-    for arg, argDef in argumentDefinition.iteritems():
+    for arg, argDef in viewitems(argumentDefinition):
         optional = argDef.get(optionKey, True)
         if not optional and arg not in arguments:
             msg = "Argument '%s' is mandatory! Its definition is:\n%s" % (arg, inspect.getsource(argDef))
@@ -133,7 +136,10 @@ def validateInputDatasSetAndParentFlag(arguments):
     mcpileup = _getChainKey(arguments, "MCPileup")
     datapileup = _getChainKey(arguments, "DataPileup")
     includeParents = _getChainKey(arguments, "IncludeParents")
+    # TODO: this replace can be removed in one year from now, thus March 2022
     dbsURL = arguments.get("DbsUrl")
+    if dbsURL:
+        dbsURL = dbsURL.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
     if includeParents and not inputdataset:
         msg = "IncludeParents flag is True but InputDataset value has not been provided"
@@ -318,7 +324,7 @@ def setArgumentsWithDefault(arguments, argumentDefinition):
 
     # set the Campaign default value to the same as AcquisitionEra if Campaign is not specified
     if "Campaign" in argumentDefinition and not arguments.get("Campaign"):
-        if "AcquisitionEra" in arguments and isinstance(arguments["AcquisitionEra"], basestring):
+        if "AcquisitionEra" in arguments and isinstance(arguments["AcquisitionEra"], (str, bytes)):
             arguments["Campaign"] = arguments["AcquisitionEra"]
 
     return

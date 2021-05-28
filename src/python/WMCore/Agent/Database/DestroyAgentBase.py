@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 
 import threading
-import string
 
 from WMCore.Database.DBCreator import DBCreator
 
@@ -38,5 +37,5 @@ class DestroyAgentBase(DBCreator):
         for requiredTable in orderedTables:
             i += 1
             tableName = requiredTable[2:]
-            prefix = string.zfill(i, 2)
+            prefix = str.zfill(str(i), 2)
             self.create[prefix + tableName] = "DROP TABLE %s" % tableName

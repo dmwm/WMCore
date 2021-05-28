@@ -3,6 +3,7 @@ MockReqMgrAux class provides mocking methods of ReqMgrAux class
 """
 # futures
 from __future__ import (division, print_function)
+from builtins import object
 
 # system modules
 import time
@@ -28,6 +29,7 @@ class MockReqMgrAux(object):
                  "SecondaryLocation": ["T1", "T2"],
                  "Secondaries": {"datasetA": ["T1", "T2"], "datasetB": ["T1"]},
                  "MaxCopies": 2,
+                 "TiersToDM": [],
                  "PartialCopy": 1
                  }
         self.campaigns = [cdict]

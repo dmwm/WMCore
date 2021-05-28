@@ -8,15 +8,12 @@ Used for the expat xml parsers
 
 """
 
-import os
-import re
+from builtins import next, str, object
+from future.utils import viewitems
+
 import xml.parsers.expat
 
-
-
-
-
-class Node:
+class Node(object):
     """
     _Node_
 
@@ -28,7 +25,8 @@ class Node:
         self.name = str(name)
         self.attrs = {}
         self.text = None
-        [ self.attrs.__setitem__(str(k), str(v)) for k,v in attrs.items()]
+        for k, v in viewitems(attrs):
+            self.attrs.__setitem__(str(k), str(v))
         self.children = []
 
     def __str__(self):

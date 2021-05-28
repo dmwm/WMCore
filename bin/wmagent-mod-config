@@ -10,6 +10,9 @@ Note: this script is also used by ASO deployment, see:
 https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from future.utils import viewitems
 
 import getopt
 import imp
@@ -17,11 +20,7 @@ import os
 import socket
 import sys
 import traceback
-try:
-    from urlparse import urlparse
-except ImportError:
-    # PY3
-    from urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Lexicon import splitCouchServiceURL
@@ -82,7 +81,7 @@ def modifyConfiguration(config, **args):
         "working_dir": [("General", "workDir")],
     }
 
-    for k, v in args.items():
+    for k, v in viewitems(args):
         parameters = mapping.get(k, [])
         for p in parameters:
             if hasattr(config, p[0]):
@@ -113,8 +112,6 @@ def modifyConfiguration(config, **args):
     if hasattr(config, "General"):
         config.General.central_logdb_url = args["central_logdb_url"]
         config.General.centralWMStatsURL = args["wmstats_url"]
-        # Both PhEDExInjector and WorkQueueManager use it, so we better make it general
-        config.General.rucioAccount = args["rucio_account"]
         # t0 agent doesn't have reqmgr2_url
         if "reqmgr2_url" in args:
             config.General.ReqMgr2ServiceURL = args["reqmgr2_url"]
@@ -143,9 +140,6 @@ def modifyConfiguration(config, **args):
 
     if hasattr(config, "DBS3Upload"):
         config.DBS3Upload.dbsUrl = args["dbs3_url"]
-
-    if hasattr(config, "PhEDExInjector"):
-        config.PhEDExInjector.phedexurl = args["phedex_url"]
 
     if hasattr(config, "AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
@@ -247,6 +241,8 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
+        config.WorkQueueManager.rucioUrl = args["rucio_host"]
+        config.WorkQueueManager.rucioAuthUrl = args["rucio_auth"]
 
     # custom AnalyticsDataCollector
     if hasattr(config, "AnalyticsDataCollector"):
@@ -304,7 +300,7 @@ def main(argv=None):
                                          "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
                                          "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                          "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
-                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=",
+                                         "reqmgr2_url=", "acdc_url=", "amq_auth_file=", "dbs3_url=",
                                          "dqm_url=", "grafana_token=", "requestcouch_url=", "central_logdb_url=",
                                          "wmarchive_url=", "amq_credentials=",
                                          "rucio_account=", "rucio_host=", "rucio_auth="])
@@ -328,7 +324,7 @@ def main(argv=None):
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
                           '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr2_url', '--acdc_url',
-                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url',
+                          '--amq_auth_file', '--dbs3_url', '--dqm_url',
                           '--grafana_token', '--requestcouch_url', '--central_logdb_url',
                           '--wmarchive_url', '--amq_credentials',
                           '--rucio_account', '--rucio_host', '--rucio_auth'):

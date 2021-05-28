@@ -11,7 +11,6 @@ __all__ = []
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 
-import exceptions
 import threading
 
 

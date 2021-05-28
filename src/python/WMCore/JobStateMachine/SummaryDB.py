@@ -7,6 +7,8 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Set of modules/functions to update WMAgent SummaryDB.
 """
 
+from future.utils import viewitems, viewvalues
+
 # system modules
 import logging
 from pprint import pformat
@@ -72,7 +74,7 @@ def fwjr_parser(doc):
     wrappedTotalJobTime = 0
     pdict = dict(totalJobCPU=0, totalJobTime=0, totalEventCPU=0)
     ddict = {}
-    for key, val in steps.items():
+    for key, val in viewitems(steps):
         if val['stop'] is not None and val['start'] is not None:
             wrappedTotalJobTime += val['stop'] - val['start']
         site_name = val['site']
@@ -89,14 +91,14 @@ def fwjr_parser(doc):
                 pdict['totalEventCPU'] += float(perf['cpu']['TotalLoopCPU'])
 
             odict = val['output']
-            for kkk, vvv in odict.items():
+            for kkk, vvv in viewitems(odict):
                 for row in vvv:
                     if row.get('merged', False):
                         prim = row['dataset']['primaryDataset']
                         proc = row['dataset']['processedDataset']
                         tier = row['dataset']['dataTier']
                         dataset = '/%s/%s/%s' % (prim, proc, tier)
-                        totalLumis = sum([len(r) for r in row['runs'].values()])
+                        totalLumis = sum([len(r) for r in viewvalues(row['runs'])])
                         dataset_summary = \
                             dict(size=row['size'], events=row['events'], totalLumis=totalLumis)
                         ddict[dataset] = dataset_summary
@@ -129,7 +131,7 @@ def merge_docs(doc1, doc2):
             del doc1[key]
         if key in doc2:
             del doc2[key]
-    for key, val in doc1.items():
+    for key, val in viewitems(doc1):
         if key not in doc2:
             return False
         if isinstance(val, dict):
@@ -142,9 +144,9 @@ def merge_docs(doc1, doc2):
 
 def update_tasks(old_tasks, new_tasks):
     "Update tasks dictionaries"
-    for task, tval in new_tasks.items():
+    for task, tval in viewitems(new_tasks):
         if task in old_tasks:
-            for site, sval in tval['sites'].items():
+            for site, sval in viewitems(tval['sites']):
                 if site in old_tasks[task]['sites']:
                     old_sdict = old_tasks[task]['sites'][site]
                     new_sdict = sval

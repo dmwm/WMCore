@@ -6,11 +6,12 @@ Top level emulator controller
 
 """
 
+from builtins import object
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 
 
-class TaskEmulator:
+class TaskEmulator(object):
     """
     _TaskEmulator_
 

@@ -33,7 +33,7 @@ main.application = "reqmgr2"
 main.port = 9988  # main application port it listens on
 main.index = "ui"
 # Defaults to allow any CMS authenticated user. Write APIs should require
-# additional roles in SiteDB (i.e. "Admin" role for the "ReqMgr" group)
+# additional roles in CRIC (i.e. "Admin" role for the "ReqMgr" group)
 main.authz_defaults = {"role": None, "group": None, "site": None}
 main.log_screen = True
 
@@ -68,7 +68,6 @@ data.couch_reqmgr_aux_db = "reqmgr_auxiliary"
 data.couch_config_cache_db = "reqmgr_config_cache"
 data.couch_workload_summary_db = "workloadsummary"
 data.couch_wmstats_db = "wmstats"
-data.couch_wmdatamining_db = "wmdatamining"
 data.couch_acdc_db = "acdcserver"
 data.couch_workqueue_db = "workqueue"
 data.central_logdb_url = LOG_DB_URL
@@ -120,4 +119,3 @@ config.views.data.couch_host = getenv("COUCHURL", None)
 # end of deployment/reqmgr2/config-localhost.py
 # ---------------------------------------------------------------------------
 
-# Production instance of wmdatamining, must be a production back-end

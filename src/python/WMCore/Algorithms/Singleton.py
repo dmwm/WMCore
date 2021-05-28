@@ -9,13 +9,14 @@ http://code.activestate.com/recipes/52558/
 
 
 
+from builtins import object
 class Singleton(object):
     """
     A python singleton
     """
 
 
-    class SingletonImplementation:
+    class SingletonImplementation(object):
         """
         Implementation of the singleton interface
         """

@@ -4,7 +4,8 @@ _Credential_
 Parent of all credentials class.
 Childs class should implement methods of this class.
 """
-class Credential:
+from builtins import object
+class Credential(object):
     """
     An abstract credential
     """

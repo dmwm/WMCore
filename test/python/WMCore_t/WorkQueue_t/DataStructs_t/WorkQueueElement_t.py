@@ -3,6 +3,7 @@
     WorkQueueElement unit tests
 """
 
+from builtins import range
 import unittest
 import itertools
 

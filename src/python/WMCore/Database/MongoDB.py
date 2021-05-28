@@ -6,6 +6,8 @@ Description: Provides a wrapper class for MongoDB
 # futures
 from __future__ import division, print_function
 
+from builtins import str, object
+
 from pymongo import MongoClient, errors, IndexModel
 
 

@@ -1,3 +1,6 @@
+from builtins import str, bytes
+from future.utils import viewitems
+
 import json
 import logging
 
@@ -64,13 +67,25 @@ class ReqMgr(Service):
             args = "_nostale=true&"
         else:
             args = ""
-        for name, values in queryDict.items():
-            if isinstance(values, basestring) or isinstance(values, int):
+        for name, values in viewitems(queryDict):
+            if isinstance(values, (str, bytes, int)):
                 values = [values]
             for val in values:
                 args += '%s=%s&' % (name, val)
 
         return args.rstrip('&')
+
+    def getParentLocks(self):
+        """
+        _getParentLocks_
+
+        A public method to return the parent locks from ReqMgr.
+        :returns: A list of datasets
+
+        """
+        callname = 'parentlocks'
+        result = self._getResult(callname, clearCache=True, verb="GET")
+        return result[0][callname]
 
     def getRequestByNames(self, names):
 

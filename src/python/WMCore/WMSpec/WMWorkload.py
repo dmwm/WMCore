@@ -7,6 +7,9 @@ of related tasks.
 """
 from __future__ import print_function
 
+from builtins import next, range
+from future.utils import viewitems, viewvalues
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import sanitizeURL
@@ -123,6 +126,29 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setTaskEnvironmentVariables(self, envDict):
+        """
+        _setTaskEnvironmentVariables_
+
+        Used for setting environment variables for each task in a request.
+        """
+        if not isinstance(envDict, dict):
+            return
+
+        for task in self.taskIterator():
+            task.addEnvironmentVariables(envDict)
+        return
+
+    def setOverrideCatalog(self, tfcFile):
+        """
+        _setOverrideCatalog_
+
+        Used for setting overrideCatalog option for each step in the workload.
+        """
+        for task in self.taskIterator():
+            task.setOverrideCatalog(tfcFile)
+        return
+
     def setStepMapping(self, mapping):
         """
         _setStepMapping_
@@ -217,7 +243,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         newMap = {}
         if chainMap:
-            for _, cData in chainMap.items():
+            for cData in viewvalues(chainMap):
                 cNum = cData.get('TaskNumber', cData.get('StepNumber'))
                 newMap[cNum] = {'ParentDset': cData['ParentDataset'],
                                 'ChildDsets': []}
@@ -239,7 +265,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return
 
         parentMap = self.getStepParentageMapping()
-        listOfStepNames = parentMap.keys()
+        listOfStepNames = list(parentMap)
         for stepName in listOfStepNames:
             if parentMap[stepName]['OutputDatasetMap']:
                 # then there is output dataset, let's update it
@@ -273,7 +299,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         taskMap = self.getTaskParentageMapping()
 
-        for tName in taskMap.keys():
+        for tName in taskMap:
             if not taskMap[tName]['OutputDatasetMap']:
                 continue
 
@@ -288,7 +314,7 @@ class WMWorkloadHelper(PersistencyHelper):
                     continue
                 oldOutputDset = taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']]
                 taskMap[tName]['OutputDatasetMap'][outInfo['outputModule']] = outInfo['outputDataset']
-                for tt in taskMap.keys():
+                for tt in taskMap:
                     if taskMap[tt]['ParentDataset'] == oldOutputDset:
                         taskMap[tt]['ParentDataset'] = outInfo['outputDataset']
 
@@ -366,7 +392,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
-        for key in ownerProperties.keys():
+        for key in ownerProperties:
             setattr(self.data.owner, key, ownerProperties[key])
 
         return
@@ -384,7 +410,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
-        for key in ownerProperties.keys():
+        for key in ownerProperties:
             setattr(self.data.owner, key, ownerProperties[key])
         return
 
@@ -422,7 +448,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the Start policy and its parameters
         """
         self.data.policies.start.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in viewitems(params):
             setattr(self.data.policies.start, key, val)
 
     def startPolicy(self):
@@ -449,7 +475,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the End policy and its parameters
         """
         self.data.policies.end.policyName = policyName
-        for key, val in params.iteritems():
+        for key, val in viewitems(params):
             setattr(self.data.policies.end, key, val)
 
     def endPolicy(self):
@@ -1075,7 +1101,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the workload level DbsUrl.
         """
-        self.data.dbsUrl = dbsUrl
+        # TODO: this replace can be removed in one year from now, thus March 2022
+        self.data.dbsUrl = dbsUrl.replace("cmsweb.cern.ch", "cmsweb-prod.cern.ch")
 
     def getDbsUrl(self):
         """
@@ -1089,7 +1116,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if hasattr(self.data, "request"):
             if hasattr(self.data.request, "schema"):
                 if not getattr(self.data.request.schema, "DbsUrl", None):
-                    return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+                    return "https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader"
 
         return getattr(self.data.request.schema, "DbsUrl")
 
@@ -1354,7 +1381,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
-                for module in outModule.dictionary_().values():
+                for module in viewvalues(outModule.dictionary_()):
                     lfnBase = getattr(module, "lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)
@@ -1549,10 +1576,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
                     if stepHelper.stepType() == "LogArchive":
-                        for key, value in overrides.items():
+                        for key, value in viewitems(overrides):
                             stepHelper.addOverride(key, value)
             # save it at workload level as well
-            for key, value in overrides.items():
+            for key, value in viewitems(overrides):
                 setattr(self.data.overrides, key, value)
 
         return
@@ -1861,15 +1888,27 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setTrustLocationFlag(self, inputFlag=False, pileupFlag=False):
         """
-        _setTrustLocationFlag_
-
         Set the input and the pileup flags in the top level tasks
         indicating that site lists should be used as location data
 
         The input data flag has to be set only for top level tasks, otherwise
         it affects where secondary jobs are meant to run.
         The pileup flag has to be set for all the tasks in the workload.
+
+        Validate these parameters to make sure they are only set for workflows
+        that require those type of input datasets (ACDCs are not validated)
         """
+        isACDCWorkflow = False
+        for task in self.taskIterator():
+            if task.getInputACDC():
+                isACDCWorkflow = True
+
+        if inputFlag is True and isACDCWorkflow is False and not self.listInputDatasets():
+            msg = "Setting TrustSitelists=True for workflows without input dataset is forbidden!"
+            raise RuntimeError(msg)
+        if pileupFlag is True and isACDCWorkflow is False and not self.listPileupDatasets():
+            msg = "Setting TrustPUSitelists=True for workflows without pileup dataset is forbidden!"
+            raise RuntimeError(msg)
         for task in self.getAllTasks(cpuOnly=True):
             if task.isTopOfTree():
                 task.setTrustSitelists(inputFlag, pileupFlag)

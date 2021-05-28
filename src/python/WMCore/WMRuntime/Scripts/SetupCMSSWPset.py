@@ -127,33 +127,23 @@ class SetupCMSSWPset(ScriptInterface):
         """
 
         procScript = "cmssw_wm_create_process.py"
-
-        processDic = {"scenario": scenario}
-        processJson = os.path.join(self.stepSpace.location, "process_scenario.json")
         funcArgsJson = os.path.join(self.stepSpace.location, "process_funcArgs.json")
 
-        if funcName == "merge" or funcName == "repack":
-            try:
-                with open(funcArgsJson, 'wb') as f:
-                    json.dump(funcArgs, f)
-            except Exception as ex:
-                self.logger.exception("Error writing out process funcArgs json")
-                raise ex
-            funcArgsParam = funcArgsJson
-        else:
-            try:
-                with open(processJson, 'wb') as f:
-                    json.dump(processDic, f)
-            except Exception as ex:
-                self.logger.exception("Error writing out process scenario json")
-                raise ex
-            funcArgsParam = processJson
+        if funcName not in ("merge", "repack"):
+            funcArgs['scenario'] = scenario
+
+        try:
+            with open(funcArgsJson, 'wb') as f:
+                json.dump(funcArgs, f)
+        except Exception as ex:
+            self.logger.exception("Error writing out process funcArgs json")
+            raise ex
 
         cmd = "%s --output_pkl %s --funcname %s --funcargs %s" % (
             procScript,
             os.path.join(self.stepSpace.location, self.configPickle),
             funcName,
-            funcArgsParam)
+            funcArgsJson)
 
         if funcName == "merge":
             if getattr(self.jobBag, "useErrorDataset", False):

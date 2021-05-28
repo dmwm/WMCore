@@ -8,7 +8,6 @@ For a given workflow, list the processed runs according to DBSBUFFER tables
 from future.utils import viewvalues
 
 import threading
-import exceptions
 
 from WMCore.Database.DBFormatter import DBFormatter
 

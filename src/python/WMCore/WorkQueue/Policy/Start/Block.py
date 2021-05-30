@@ -223,7 +223,7 @@ class Block(StartPolicyInterface):
             return dict()
         # blocks with 0 files in Rucio should be ignored as well
         blockRucio = self.rucio.getDID(didName=blockName, dynamic=False)
-        if not blockRucio['length']:
+        if not blockRucio.get('length'):
             logging.warning("Block %s being rejected for lack of files in Rucio to process", blockName)
             self.badWork.append(blockName)
             return dict()

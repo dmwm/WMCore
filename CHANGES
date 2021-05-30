@@ -1,3 +1,13 @@
+1.4.9.pre4 to 1.4.9.pre5:
+  - Fix missing exceptions module in python3 (Todor Ivanov) #10524
+  - [py2py3] modernize WMCore/Services/Requests.py (Dario Mapelli) #10508
+  - [py2py3] modernize src/python/WMCore/Configuration.py (Dario Mapelli) #9974
+  - [py2py3] fix unittests in test/python/Utils_t - #10500 - src (Dario Mapelli) #10500
+  - [py2py3] Use Utils.PythonVersion.PY2/3 consistently (Dario Mapelli) #10518
+  - [py2py3] new module: Utils/PythonVersion.py (Dario Mapelli) #10518
+  - [py2py3] adapt MySQLCore.substitute to new list.sort() interface (Dario Mapelli) #10506
+
+
 1.4.9.pre3 to 1.4.9.pre4:
   - [py2py3] fix stuck unittest in test/python/Utils_t (Dario Mapelli) #10503
   - [py2py3] attempt to fix problem with formatting data from DB (Dario Mapelli) #10504

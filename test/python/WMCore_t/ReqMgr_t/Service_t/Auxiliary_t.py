@@ -11,6 +11,8 @@ from http.client import HTTPException
 from WMCore_t.ReqMgr_t.TestConfig import config
 from nose.plugins.attrib import attr
 
+from Utils.PythonVersion import PY3
+
 import WMCore
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
 
@@ -23,6 +25,8 @@ class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
                           (config.views.data.couch_reqmgr_aux_db, "ReqMgrAux")])
         self.setSchemaModules([])
         RESTBaseUnitTestWithDBBackend.setUp(self)
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         RESTBaseUnitTestWithDBBackend.tearDown(self)

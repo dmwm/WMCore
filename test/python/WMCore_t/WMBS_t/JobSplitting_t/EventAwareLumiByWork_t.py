@@ -13,6 +13,8 @@ import threading
 import unittest
 from collections import Counter
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
@@ -62,6 +64,9 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # dummy workflow
         self.testWorkflow = Workflow(spec="spec.xml", owner="dmwm", name="testWorkflow", task="Test")
         self.testWorkflow.create()
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

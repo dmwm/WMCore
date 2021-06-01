@@ -8,6 +8,8 @@ from __future__ import division, print_function
 import unittest
 from copy import deepcopy
 
+from Utils.PythonVersion import PY3
+
 from WMCore.ReqMgr.DataStructs.Request import initialize_clone, RequestInfo
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
@@ -56,6 +58,10 @@ class RequestTests(unittest.TestCase):
     """
     unittest for ReqMgr DataStructs Request functions.
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testInvalidKeys_initialize_clone(self):
         """

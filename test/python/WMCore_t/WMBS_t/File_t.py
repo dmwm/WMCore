@@ -9,6 +9,8 @@ import logging
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.DataStructs.Run import Run
@@ -44,6 +46,9 @@ class FileTest(unittest.TestCase):
         locationAction = self.daofactory(classname="Locations.New")
         locationAction.execute(siteName="site1", pnn="T1_US_FNAL_Disk")
         locationAction.execute(siteName="site2", pnn="T2_CH_CERN")
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

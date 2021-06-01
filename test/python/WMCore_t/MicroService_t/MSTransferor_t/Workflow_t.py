@@ -5,6 +5,8 @@ from __future__ import division, print_function
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.MicroService.MSTransferor.Workflow import Workflow
 
 
@@ -12,6 +14,10 @@ class WorkflowTest(unittest.TestCase):
     """
     Test the very basic functionality of the Workflow module
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testCampaignMap(self):
         """

@@ -13,6 +13,8 @@ import os
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Configuration import ConfigSection
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -49,7 +51,8 @@ class PromptRecoTest(unittest.TestCase):
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
         self.promptSkim = None
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

@@ -12,6 +12,9 @@ import unittest
 
 import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
 from copy import copy
+
+from Utils.PythonVersion import PY3
+
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
@@ -24,6 +27,8 @@ class WMWorkloadTest(unittest.TestCase):
 
         """
         self.persistFile = "%s/WMWorkloadPersistencyTest.pkl" % os.getcwd()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

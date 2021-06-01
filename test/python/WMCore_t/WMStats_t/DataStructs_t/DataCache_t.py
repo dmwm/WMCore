@@ -6,6 +6,7 @@ import json
 import os
 import unittest
 
+from Utils.PythonVersion import PY3
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 
 
@@ -19,6 +20,8 @@ class DataCacheTests(unittest.TestCase):
         with open(self.fileCache) as jo:
             data = json.load(jo)
         DataCache().setlatestJobData(data)
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         pass

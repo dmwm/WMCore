@@ -12,6 +12,8 @@ Unittest for the WMCore.DataStructs.File class
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
@@ -21,6 +23,10 @@ class FileTest(unittest.TestCase):
     _FileTest_
 
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testDefinition(self):
         """

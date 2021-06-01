@@ -8,6 +8,8 @@ from __future__ import division
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.RucioInjector.RucioInjectorPoller import RucioInjectorPoller, RucioInjectorException
@@ -50,6 +52,9 @@ class RucioInjectorPollerTest(EmulatedUnitTestCase):
         self.testFilesB = []
         self.testDatasetA = "/SampleA/PromptReco-v1/RECO"
         self.testDatasetB = "/SampleB/CRUZET11-v1/RAW"
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

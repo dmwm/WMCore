@@ -45,7 +45,7 @@ class WorkUnitTest(unittest.TestCase):
         self.assertEqual(testWorkUnit['last_unit_count'], TEST_LAST_UNIT_COUNT)
         self.assertEqual(testWorkUnit['fileid'], TEST_FILEID)
         self.assertEqual(testWorkUnit['run_lumi'].run, TEST_RUN_NUMBER)
-        self.assertItemsEqual(testWorkUnit['run_lumi'].lumis, [TEST_LUMI])
+        self.assertCountEqual(testWorkUnit['run_lumi'].lumis, [TEST_LUMI]) if PY3 else self.assertItemsEqual(testWorkUnit['run_lumi'].lumis, [TEST_LUMI])
 
         # Test the defaults we did not set
         self.assertEqual(testWorkUnit['retry_count'], 0)
@@ -135,7 +135,7 @@ class WorkUnitTest(unittest.TestCase):
         self.assertEqual(info[2], TEST_LAST_UNIT_COUNT)
         self.assertEqual(info[7], TEST_FILEID)
         self.assertEqual(info[8].run, TEST_RUN_NUMBER)
-        self.assertItemsEqual(info[8].lumis, [TEST_LUMI])
+        self.assertCountEqual(info[8].lumis, [TEST_LUMI]) if PY3 else self.assertItemsEqual(info[8].lumis, [TEST_LUMI])
 
         # Test the defaults we did not set
         self.assertEqual(info[1], 0)

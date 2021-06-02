@@ -17,6 +17,8 @@ import subprocess
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.WMException      import WMException
+from Utils.Utilities import decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 
 class SubprocessAlgoException(WMException):
     """
@@ -110,6 +112,9 @@ def runCommand(cmd, shell = True, timeout = None):
         pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
                                 stderr = subprocess.PIPE, shell = shell)
         stdout, stderr = pipe.communicate()
+        if PY3:
+            stdout = decodeBytesToUnicode(stdout)
+            stderr = decodeBytesToUnicode(stderr)
         returnCode     = pipe.returncode
     except Alarm:
         msg =  "Alarm sounded while running command after %s seconds.\n" % timeout

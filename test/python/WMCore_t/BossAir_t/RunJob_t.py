@@ -8,6 +8,8 @@ from builtins import range
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.BossAir.RunJob import RunJob
 from WMCore.DAOFactory import DAOFactory
 from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -56,7 +58,8 @@ class RunJobTest(unittest.TestCase):
         newuser = wmbsFactory(classname = "Users.New")
         newuser.execute(dn = "mnorman", group_name = "phgroup", role_name = "cmsrole")
 
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """

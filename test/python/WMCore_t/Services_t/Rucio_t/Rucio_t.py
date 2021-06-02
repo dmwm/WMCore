@@ -12,6 +12,8 @@ import os
 from nose.plugins.attrib import attr
 from rucio.client import Client as testClient
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.Rucio import Rucio
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -74,6 +76,8 @@ class RucioTest(EmulatedUnitTestCase):
                                  auth_type=self.defaultArgs['auth_type'],
                                  creds=self.defaultArgs['creds'],
                                  timeout=self.defaultArgs['timeout'])
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """

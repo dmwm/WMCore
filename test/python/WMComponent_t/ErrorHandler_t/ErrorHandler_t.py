@@ -13,6 +13,8 @@ import threading
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
@@ -69,6 +71,9 @@ class ErrorHandlerTest(EmulatedUnitTestCase):
 
         self.dataCS = DataCollectionService(url=self.testInit.couchUrl,
                                             database="errorhandler_t")
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

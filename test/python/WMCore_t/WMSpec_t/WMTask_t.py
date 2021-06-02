@@ -9,6 +9,8 @@ from future.utils import viewitems
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
@@ -18,7 +20,8 @@ from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 class WMTaskTest(unittest.TestCase):
     def setUp(self):
-        pass
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         pass

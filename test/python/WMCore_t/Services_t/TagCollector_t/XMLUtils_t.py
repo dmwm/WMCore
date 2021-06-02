@@ -7,6 +7,8 @@ from __future__ import division, print_function
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
 
 
@@ -14,6 +16,10 @@ class XMLUtilsTest(unittest.TestCase):
     """
     unittest for XMLUtils functions
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testParser(self):
         """

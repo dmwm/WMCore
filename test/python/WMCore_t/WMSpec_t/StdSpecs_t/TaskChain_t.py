@@ -20,6 +20,8 @@ import unittest
 from copy import deepcopy
 from hashlib import md5
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -453,7 +455,8 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

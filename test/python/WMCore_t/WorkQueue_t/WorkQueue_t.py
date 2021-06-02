@@ -17,6 +17,8 @@ import logging
 
 from retry import retry
 
+from Utils.PythonVersion import PY3
+
 from WMCore.WMBase import getTestBase
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Configuration import Configuration
@@ -283,6 +285,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                     dbinterface=threading.currentThread().dbi)
             addLocation = daofactory(classname="Locations.New")
             addLocation.execute(siteName=site, pnn=se)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def setupReReco(self, assignArgs=None, **kwargs):
         # Sample Tier1 ReReco spec

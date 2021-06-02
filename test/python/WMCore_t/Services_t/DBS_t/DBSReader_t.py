@@ -7,6 +7,8 @@ Unit test for the DBS helper class.
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.DBS.DBS3Reader import getDataTiers, DBS3Reader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
@@ -36,6 +38,8 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.endpoint = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
         self.dbs = None
         super(DBSReaderTest, self).setUp()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

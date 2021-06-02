@@ -16,6 +16,8 @@ import threading
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
@@ -82,6 +84,10 @@ class JobSubmitterTest(EmulatedUnitTestCase):
         config = self.getConfig()
         myThread.logdbClient = MockLogDB(config.General.central_logdb_url,
                                          config.Agent.hostName, logger=None)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
         return
 
     def tearDown(self):

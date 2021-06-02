@@ -7,6 +7,8 @@ from builtins import str
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, parseNewLineJson,
                                                    getPileupContainerSizesRucio, listReplicationRules,
                                                    getBlocksAndSizeRucio, stringDateToEpoch)
@@ -28,6 +30,8 @@ class PycurlRucioTests(unittest.TestCase):
         self.rucioScope = "cms"
         #self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         self.badDID = "/wrong/did/name"
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testParseNewLineJson(self):
         """

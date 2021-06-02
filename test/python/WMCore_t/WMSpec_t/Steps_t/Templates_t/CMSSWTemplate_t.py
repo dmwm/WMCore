@@ -9,6 +9,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
@@ -22,6 +24,9 @@ class CMSSWTemplateTest(unittest.TestCase):
     Tests the helper methods
 
     """
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testA(self):
         """

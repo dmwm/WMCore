@@ -11,6 +11,7 @@ import os
 import unittest
 
 # WMCore modules
+from Utils.PythonVersion import PY3
 from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -48,6 +49,8 @@ class TransferorTest(EmulatedUnitTestCase):
         self.taskChainTempl = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Prod.json')
         self.stepChainTempl = getTestFile('data/ReqMgr/requests/Integration/SC_LumiMask_PhEDEx.json')
         super(TransferorTest, self).setUp()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testGetPNNsFromPSNs(self):
         """Test MSTransferor private method _getPNNsFromPSNs()"""

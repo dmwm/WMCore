@@ -11,6 +11,8 @@ from __future__ import absolute_import, division, print_function
 import json
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DataStructs.Run import Run
 from WMCore.DataStructs.WorkUnit import WorkUnit
 
@@ -25,6 +27,9 @@ class WorkUnitTest(unittest.TestCase):
     """
     _WorkUnitTest_
     """
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testWorkUnitDefinitionDefault(self):
         """

@@ -10,8 +10,10 @@ Copyright (c) 2012 evansde77. All rights reserved.
 import unittest
 import os
 import tempfile
+
 from WMQuality.TestInit import TestInit
 from Utils.TemporaryEnvironment import tmpEnv
+from Utils.PythonVersion import PY3
 from WMCore.WMRuntime.Tools.Scram import (Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch,
                                           isCMSSWSupported, isEnforceGUIDInFileNameSupported)
 
@@ -22,6 +24,8 @@ class Scram_t(unittest.TestCase):
         self.testInit.setLogging()
         self.testDir = self.testInit.generateWorkDir()
         self.oldCwd = os.getcwd()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         self.testInit.delWorkDir()

@@ -14,6 +14,8 @@ import logging
 import unittest
 from collections import Counter
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.LumiList import LumiList
@@ -44,6 +46,9 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         logging.basicConfig()
         logging.getLogger().setLevel(logging.DEBUG)
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

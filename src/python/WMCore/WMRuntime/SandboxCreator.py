@@ -162,9 +162,9 @@ class SandboxCreator(object):
 
             # Add a dummy module for zipimport testing
             (handle, dummyModulePath) = tempfile.mkstemp()
-            os.write(handle, "#!/usr/bin/env python\n")
-            os.write(handle, "print('ZIPIMPORTTESTOK')\n")
-            os.close(handle)
+            with open(dummyModulePath, "w") as f_:
+                f_.write("#!/usr/bin/env python\n")
+                f_.write("print('ZIPIMPORTTESTOK')\n")
             zipFile.write(filename=dummyModulePath, arcname='WMCore/ZipImportTestModule.py')
 
             # Add the wmcore zipball to the sandbox

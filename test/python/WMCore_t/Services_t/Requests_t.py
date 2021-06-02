@@ -181,7 +181,7 @@ class testJSONRequests(unittest.TestCase):
     def roundTripLax(self, data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
-        datakeys = data.keys()
+        datakeys = list(data.keys())
 
         for k in decoded.keys():
             assert k in datakeys
@@ -351,7 +351,6 @@ class TestRequests(unittest.TestCase):
         out = req.makeRequest('/', decoder=False)
         self.assertEqual(out[3], False)
         self.assertTrue('html' in out[0])
-
 
 if __name__ == "__main__":
     unittest.main()

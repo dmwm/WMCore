@@ -9,10 +9,12 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function, division
+from builtins import str as newstr, bytes as newbytes, object
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
+from Utils.PythonVersion import PY3
 
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str, object
 from future.utils import viewitems
 import urllib.request, urllib.parse, urllib.error
 
@@ -642,10 +644,12 @@ class Database(CouchDBRequests):
         if add_checksum:
             # calculate base64 encoded MD5
             keyhash = hashlib.md5()
-            keyhash.update(str(value))
-            req_headers['Content-MD5'] = base64.b64encode(keyhash.digest())
+            value_str = str(value) if not isinstance(value, (newstr, newbytes)) else value
+            keyhash.update(encodeUnicodeToBytes(value_str))
+            content_md5 = base64.b64encode(keyhash.digest())
+            req_headers['Content-MD5'] = decodeBytesToUnicode(content_md5) if PY3 else content_md5
         elif checksum:
-            req_headers['Content-MD5'] = checksum
+            req_headers['Content-MD5'] = decodeBytesToUnicode(checksum) if PY3 else checksum
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
                         value, encode=False,
                         contentType=contentType,

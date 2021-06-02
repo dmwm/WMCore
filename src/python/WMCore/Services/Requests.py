@@ -12,9 +12,6 @@ from __future__ import division, print_function
 from future import standard_library
 standard_library.install_aliases()
 
-from future import standard_library
-standard_library.install_aliases()
-
 from builtins import str, bytes, object
 from future.utils import viewvalues
 
@@ -24,7 +21,6 @@ import os
 import shutil
 import socket
 import stat
-import sys
 import tempfile
 import traceback
 import types
@@ -36,6 +32,7 @@ from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
 from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -308,6 +305,8 @@ class Requests(dict):
             result = decoder(result)
         elif decoder is not False:
             result = self.decode(result)
+        if PY3:
+            result = decodeBytesToUnicode(result)
         return result
 
     def encode(self, data):
@@ -418,7 +417,7 @@ class Requests(dict):
         password = encodeUnicodeToBytes(password)
         encodedauth = base64.encodestring(b'%s:%s' % (
             username, password)).strip()
-        if sys.version_info[0] == 3:
+        if PY3:
             encodedauth = decodeBytesToUnicode(encodedauth)
         auth_string = "Basic %s" % encodedauth
         self.additionalHeaders["Authorization"] = auth_string
@@ -568,7 +567,7 @@ class JSONRequests(Requests):
         if data:
             decoder = JSONDecoder()
             thunker = JSONThunker()
-            if sys.version_info[0] == 3:
+            if PY3:
                 data = decodeBytesToUnicode(data)
             data = decoder.decode(data)
             unthunked = thunker.unthunk(data)

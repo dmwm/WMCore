@@ -1,3 +1,10 @@
+1.4.9.pre5 to 1.4.9.pre6:
+  - [py2py3] fix unittests from #10011 - src (Dario Mapelli) #10561
+  - [py2py3] fix unittests from #9818 - src (Dario Mapelli) #10522
+  - Flowchart with the WMCore Jenkins CI setup (Alan Malta Rodrigues) #10560
+  - Fix DID existence check in global workqueue (Alan Malta Rodrigues) #10557
+
+
 1.4.9.pre4 to 1.4.9.pre5:
   - Fix missing exceptions module in python3 (Todor Ivanov) #10524
   - [py2py3] modernize WMCore/Services/Requests.py (Dario Mapelli) #10508

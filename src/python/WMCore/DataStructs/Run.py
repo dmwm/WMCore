@@ -49,13 +49,24 @@ class Run(WMObject):
 
     def __lt__(self, rhs):
         """
-        Compare on run # first, then by lumis as a list is compared
+        Compare on run # first, then by lumis as a list, then by events in each lumi
         """
+        # check run number
         if self.run != rhs.run:
             return self.run < rhs.run
+        # if same run number, check list of lumi sections
         if sorted(self.eventsPerLumi.keys()) != sorted(rhs.eventsPerLumi.keys()):
             return sorted(self.eventsPerLumi.keys()) < sorted(rhs.eventsPerLumi.keys())
-        return self.eventsPerLumi < rhs.eventsPerLumi
+        # if same list of lumis, check events in each lumi section
+        for lumiNumber in sorted(self.eventsPerLumi):
+            if self.eventsPerLumi[lumiNumber] == rhs.eventsPerLumi.get(lumiNumber):
+                continue
+            else: 
+                return self.eventsPerLumi[lumiNumber] < rhs.eventsPerLumi.get(lumiNumber)
+        # if same run number, same lumi sections list, 
+        # same events in each lumi section:
+        # then the runs are equal and __lt__ should return false
+        return False
 
     def __le__(self, other):
         return self.__lt__(other) or self.__eq__(other)

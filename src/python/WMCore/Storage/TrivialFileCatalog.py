@@ -35,7 +35,7 @@ import os
 import re
 
 from urllib.parse import urlsplit
-from xml.dom.minidom import Element
+from xml.dom.minidom import Document
 
 from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 
@@ -142,15 +142,17 @@ class TrivialFileCatalog(dict):
         """
 
         def _getElementForMappingEntry(entry, mappingStyle):
-            e = Element(mappingStyle)
+            xmlDocTmp = Document()
+            element = xmlDocTmp.createElement(mappingStyle)
             for k, v in viewitems(entry):
                 # ignore empty, None or compiled regexp items into output
                 if not v or (k == "path-match-expr"):
                     continue
-                e.setAttribute(k, str(v))
-            return e
+                element.setAttribute(k, str(v))
+            return element
 
-        root = Element("storage-mapping")  # root element name
+        xmlDoc = Document()
+        root = xmlDoc.createElement("storage-mapping")  # root element name
         for mappingStyle, mappings in viewitems(self):
             for mapping in mappings:
                 mapElem = _getElementForMappingEntry(mapping, mappingStyle)

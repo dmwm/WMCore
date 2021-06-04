@@ -61,7 +61,7 @@ def xmlFileToNode(reportFile):
 
     """
     node = Node("JobReports", {})
-    expat_parse(open(reportFile, 'r'),
+    expat_parse(open(reportFile, 'rb'),
                 build(node))
     return node
 
@@ -76,7 +76,9 @@ def expat_parse(f, target):
     parser = xml.parsers.expat.ParserCreate()
     #parser.buffer_size = 65536
     parser.buffer_text = True
-    parser.returns_unicode = False
+
+    # a leftover from the py2py3 migration - TO BE REMOVED
+    # parser.returns_unicode = False
     parser.StartElementHandler = \
        lambda name,attrs: target.send(('start',(name,attrs)))
     parser.EndElementHandler = \

@@ -8,14 +8,12 @@ Unit tests for the DBFormatter class
 """
 from __future__ import print_function
 
-from builtins import str
 import threading
 import unittest
 
-from nose.plugins.attrib import attr
+from builtins import str
 
 from WMCore.Database.DBFormatter import DBFormatter
-from WMCore.Database.Transaction import Transaction
 from WMQuality.TestInit import TestInit
 
 
@@ -32,65 +30,57 @@ class DBFormatterTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        self.testInit.setSchema()
-
-        myThread = threading.currentThread()
-        if myThread.dialect == 'MySQL':
-            myThread.create = """
-create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
-
-        myThread.insert = """
-insert into test (bind1, bind2) values (:bind1, :bind2) """
-        myThread.insert_binds = \
-            [{'bind1': 'value1aà', 'bind2': u'value2aà'},
-             {'bind1': 'value1b', 'bind2': 'value2b'},
-             {'bind1': 'value1c', 'bind2': 'value2d'}]
-        myThread.select = "select * from test"
-
-        myThread = threading.currentThread()
-        myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.processData(myThread.create)
-        myThread.transaction.processData(myThread.insert, myThread.insert_binds)
-        myThread.transaction.commit()
-
-        return
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.testInit.setSchema(customModules=["WMQuality.TestDB"],
+                                useDefault=False)
+        self.selectSQL = "SELECT * FROM test_tableb"
 
     def tearDown(self):
         """
         Delete the databases
         """
-        myThread = threading.currentThread()
-        myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.processData("drop table test")
-        myThread.transaction.commit()
         self.testInit.clearDatabase()
 
-    @attr("integration")
+    def stuffDB(self):
+        """Populate one of the test tables"""
+        insertSQL = "INSERT INTO test_tableb (column1, column2, column3) values (:bind1, :bind2, :bind3)"
+        insertBinds = [{'bind1': u'value1a', 'bind2': 1, 'bind3': u'value2a'},
+                       {'bind1': 'value1b', 'bind2': 2, 'bind3': 'value2b'},
+                       {'bind1': b'value1c', 'bind2': 3, 'bind3': b'value2d'}]
+
+        myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, insertBinds)
+
     def testBFormatting(self):
         """
         Test various formats
         """
+        # fill the database with some initial data
+        self.stuffDB()
+
         myThread = threading.currentThread()
         dbformatter = DBFormatter(myThread.logger, myThread.dbi)
-        myThread.transaction.begin()
 
-        result = myThread.transaction.processData(myThread.select)
+        result = myThread.dbi.processData(self.selectSQL)
         output = dbformatter.format(result)
-        self.assertEqual(output, [['value1a', 'value2a'], \
-                                  ['value1b', 'value2b'], ['value1c', 'value2d']])
-        result = myThread.transaction.processData(myThread.select)
+        self.assertEqual(output, [['value1a', 1, 'value2a'],
+                                  ['value1b', 2, 'value2b'],
+                                  ['value1c', 3, 'value2d']])
+
+        result = myThread.dbi.processData(self.selectSQL)
         output = dbformatter.formatOne(result)
         print('test1 ' + str(output))
-        self.assertEqual(output, ['value1a', 'value2a'])
-        result = myThread.transaction.processData(myThread.select)
+        self.assertEqual(output, ['value1a', 1, 'value2a'])
+
+        result = myThread.dbi.processData(self.selectSQL)
         output = dbformatter.formatDict(result)
-        self.assertEqual(output, [{'bind2': 'value2a', 'bind1': 'value1a'}, \
-                                  {'bind2': 'value2b', 'bind1': 'value1b'}, \
-                                  {'bind2': 'value2d', 'bind1': 'value1c'}])
-        result = myThread.transaction.processData(myThread.select)
+        self.assertEqual(output, [{'column3': 'value2a', 'column2': 1, 'column1': 'value1a'},
+                                  {'column3': 'value2b', 'column2': 2, 'column1': 'value1b'},
+                                  {'column3': 'value2d', 'column2': 3, 'column1': 'value1c'}])
+
+        result = myThread.dbi.processData(self.selectSQL)
         output = dbformatter.formatOneDict(result)
-        self.assertEqual(output, {'bind2': 'value2a', 'bind1': 'value1a'})
+        self.assertEqual(output, {'column3': 'value2a', 'column2': 1, 'column1': 'value1a'})
 
 
 if __name__ == "__main__":

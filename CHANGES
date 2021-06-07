@@ -1,3 +1,16 @@
+1.4.9.pre6 to 1.4.9.pre7:
+  - fix globalQueue initialization in WorkQueueReqMgrInterface_t (Alan Malta Rodrigues) #10576
+  - Fix Rucio-related unit tests (Alan Malta Rodrigues) #10576
+  - Open parsed file in bytes. (Todor Ivanov) #10571
+  - two more python3 unstable unit tests (Alan Malta Rodrigues) #10574
+  - Fix DBFormatter unit test (Alan Malta Rodrigues) #10574
+  - Re-execute REST/Main with the correct python version (Alan Malta Rodrigues) #10573
+  - [py2py3] fix unittests from #10012 - src (Dario Mapelli) #10562
+  - [py2py3] assertItemsEqual as alias for assertCountEqual - test (Dario Mapelli) #10563
+  - Ramp up Rucio Client vesion (Todor Ivanov) #10567
+  - List of unstable python3 unit tests (Alan Malta Rodrigues) #10565 
+
+
 1.4.9.pre5 to 1.4.9.pre6:
   - [py2py3] fix unittests from #10011 - src (Dario Mapelli) #10561
   - [py2py3] fix unittests from #9818 - src (Dario Mapelli) #10522

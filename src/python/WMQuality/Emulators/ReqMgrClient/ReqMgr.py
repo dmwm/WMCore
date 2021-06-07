@@ -92,3 +92,23 @@ class ReqMgr(dict):
     def getTeam(self):
         """Give a fake team name"""
         return ["The A-Team", "some other bloke"]
+
+    def getRequestByStatus(self, statusList, detail=True):
+        # FIXME: this method needs to be fixed accordingly
+        if statusList == 'staged':
+            specName = "ReRecoTest_v%sEmulator" % self.count
+            specUrl =self.specGenerator.createReRecoSpec(specName, "file",
+                                                         self.splitter,
+                                                         assignKwargs={'SiteWhitelist': ['T2_XX_SiteA']})
+            self.names.append(specName)
+            self.status[specName] = 'staged'
+            #specName = "FakeProductionSpec_%s" % self.count
+            #specUrl =self.specGenerator.createProductionSpec(specName, "file")
+            #specName = "FakeProcessingSpec_%s" % self.count
+            #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
+
+            self.count += 1
+            # returns list of list(rquest name, spec url)
+            return [[specName, specUrl],]
+        else:
+            return []

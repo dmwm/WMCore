@@ -83,12 +83,14 @@ class MSOutputTemplateTest(unittest.TestCase):
                                'DiskDestination': "",
                                'TapeDestination': "",
                                'DiskRuleID': "",
-                               'TapeRuleID': ""}],
-                "TransferStatus": "pending"
+                               'TapeRuleID': "",
+                               'DBSStatus': ""}],
+                "TransferStatus": "pending",
+                "DBSUpdateStatus": False
                 }
 
     outputMapKeys = ["Campaign", "Copies", "Dataset", "DatasetSize", "DiskDestination",
-                     "DiskRuleID", "TapeDestination", "TapeRuleID"]
+                     "DiskRuleID", "TapeDestination", "TapeRuleID", "DBSStatus"]
 
     def setUp(self):
         if PY3:
@@ -104,6 +106,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
+        self.assertEqual(msOutDoc["DBSUpdateStatus"], False)
         self.assertEqual(msOutDoc["Campaign"], self.taskchainSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.taskchainSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.taskchainSpec["RequestName"])
@@ -124,6 +127,7 @@ class MSOutputTemplateTest(unittest.TestCase):
             self.assertEqual(msOutDoc["OutputMap"][idx]["DiskRuleID"], "")
             self.assertEqual(msOutDoc["OutputMap"][idx]["TapeDestination"], "")
             self.assertEqual(msOutDoc["OutputMap"][idx]["TapeRuleID"], "")
+            self.assertEqual(msOutDoc["OutputMap"][idx]["DBSStatus"], "")
 
     def testStepChainSpec(self):
         """
@@ -135,6 +139,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
+        self.assertEqual(msOutDoc["DBSUpdateStatus"], False)
         self.assertEqual(msOutDoc["Campaign"], self.stepchainSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.stepchainSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.stepchainSpec["RequestName"])
@@ -161,6 +166,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertIsNone(msOutDoc["LastUpdate"])
         self.assertFalse(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
+        self.assertEqual(msOutDoc["DBSUpdateStatus"], False)
         self.assertEqual(msOutDoc["Campaign"], self.rerecoSpec["Campaign"])
         self.assertEqual(msOutDoc["OutputDatasets"], self.rerecoSpec["OutputDatasets"])
         self.assertEqual(msOutDoc["RequestName"], self.rerecoSpec["RequestName"])
@@ -182,6 +188,7 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertFalse(msOutDoc["IsRelVal"])
 
         self.assertEqual(msOutDoc["TransferStatus"], "pending")
+        self.assertEqual(msOutDoc["DBSUpdateStatus"], False)
         self.assertEqual(msOutDoc["CreationTime"], self.mongoDoc["CreationTime"])
         self.assertEqual(msOutDoc["LastUpdate"], self.mongoDoc["LastUpdate"])
 
@@ -196,10 +203,11 @@ class MSOutputTemplateTest(unittest.TestCase):
         self.assertTrue(msOutDoc["OutputMap"][0]["DatasetSize"] in [123, 456])
 
         newDoc = deepcopy(self.mongoDoc)
-        newDoc.update({"IsRelVal": True, "TransferStatus": "done", "LastUpdate": 333})
+        newDoc.update({"IsRelVal": True, "TransferStatus": "done", "LastUpdate": 333, "DBSUpdateStatus": True})
         msOutDoc = MSOutputTemplate(newDoc, producerDoc=False)
         self.assertTrue(msOutDoc["IsRelVal"])
         self.assertEqual(msOutDoc["TransferStatus"], "done")
+        self.assertEqual(msOutDoc["DBSUpdateStatus"], True)
         self.assertEqual(msOutDoc["LastUpdate"], 333)
 
     def testSetters(self):

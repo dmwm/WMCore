@@ -25,6 +25,7 @@ from WMCore.Database.MongoDB import MongoDB
 from WMCore.MicroService.MSOutput.MSOutputTemplate import MSOutputTemplate
 from WMCore.WMException import WMException
 from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
+from WMCore.Services.DBS.DBS3Writer import DBS3Writer
 
 
 class MSOutputException(WMException):
@@ -107,6 +108,9 @@ class MSOutput(MSCore):
         self.tapeStatus = dict()
         for endpoint, quota in viewitems(self.msConfig['tapePledges']):
             self.tapeStatus[endpoint] = dict(quota=quota, usage=0, remaining=0)
+
+        self.dbs3Writer = DBS3Writer(url=self.msConfig["dbsReadUrl"],
+                                     writeUrl=self.msConfig["dbsWriteUrl"])
 
         msOutIndex = IndexModel('RequestName', unique=True)
         msOutDBConfig = {
@@ -247,6 +251,44 @@ class MSOutput(MSCore):
             msg += "Error: {}".format(str(ex))
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
+
+    def setDBSStatus(self, workflow):
+        """
+        The function to set the DBS status of outputs as VALID
+        :param workflow: a MSOutputTemplate object workflow
+        :return: the MSOutputTemplate object itself (with the necessary updates in place)
+        """
+        if not isinstance(workflow, MSOutputTemplate):
+            msg = "Unsupported type object '{}' for workflows! ".format(type(workflow))
+            msg += "It needs to be of type: MSOutputTemplate"
+            raise UnsupportedError(msg)
+
+        # if anything fail along the way, set it back to False
+        dbsUpdateStatus = True
+        for dMap in workflow['OutputMap']:
+
+            res = self.dbs3Writer.setDBSStatus(dataset=dMap["Dataset"],
+                                               status=self.msConfig['dbsStatus']["valid"])
+
+            if res:
+                dMap["DBSStatus"] = self.msConfig['dbsStatus']["valid"]
+            else:
+                # There is at least one dataset whose dbs status update is unsuccessful
+                dbsUpdateStatus = False
+
+        # Finally, update the MSOutput template document with either partial or
+        # complete dbs statuses
+        self.docKeyUpdate(workflow, OutputMap=workflow['OutputMap'])
+        workflow.updateTime()
+        if dbsUpdateStatus:
+            self.logger.info("All the DBS status updates succeeded for: %s. Marking it as 'done'",
+                             workflow['RequestName'])
+            self.docKeyUpdate(workflow, DBSUpdateStatus=True)
+        else:
+            self.logger.info("DBS status updates partially successful for: %s. Keeping it 'pending'",
+                             workflow['RequestName'])
+
+        return workflow
 
     def makeSubscriptions(self, workflow):
         """
@@ -448,28 +490,32 @@ class MSOutput(MSCore):
         #    Done: To build it through a pipe
         #    Done: To write back the updated document to MonogoDB
         msPipelineRelVal = Pipeline(name="MSOutputConsumer PipelineRelVal",
-                                    funcLine=[Functor(self.makeSubscriptions),
+                                    funcLine=[Functor(self.setDBSStatus),
+                                              Functor(self.makeSubscriptions),
                                               Functor(self.makeTapeSubscriptions),
                                               Functor(self.docUploader,
                                                       update=True,
                                                       keys=['LastUpdate',
                                                             'TransferStatus',
+                                                            'DBSUpdateStatus',
                                                             'OutputMap']),
                                               Functor(self.docDump, pipeLine='PipelineRelVal'),
                                               Functor(self.docCleaner)])
         msPipelineNonRelVal = Pipeline(name="MSOutputConsumer PipelineNonRelVal",
-                                       funcLine=[Functor(self.makeSubscriptions),
+                                       funcLine=[Functor(self.setDBSStatus),
+                                                 Functor(self.makeSubscriptions),
                                                  Functor(self.makeTapeSubscriptions),
                                                  Functor(self.docUploader,
                                                          update=True,
                                                          keys=['LastUpdate',
                                                                'TransferStatus',
+                                                               'DBSUpdateStatus',
                                                                'OutputMap']),
                                                  Functor(self.docDump, pipeLine='PipelineNonRelVal'),
                                                  Functor(self.docCleaner)])
 
         wfCounterTotal = 0
-        mQueryDict = {'TransferStatus': 'pending'}
+        mQueryDict = { "$or": [ { "TransferStatus": "pending" }, { "DBSUpdateStatus": False } ] }
         pipeCollections = [(msPipelineRelVal, self.msOutRelValColl),
                            (msPipelineNonRelVal, self.msOutNonRelValColl)]
         for pipeColl in pipeCollections:

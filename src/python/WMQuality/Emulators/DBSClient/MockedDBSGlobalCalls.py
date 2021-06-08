@@ -84,6 +84,15 @@ calls = [['listDataTiers'],
           {'block_name': '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0'}],
          ['listBlockParents',
           {'block_name': '/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'}],
+         ['listDatasets',
+          {'dataset_access_type': '*',
+           'dataset': '/ggXToJPsiJPsi_JPsiToMuMu_M6p2_JPCZeroMinusPlus_TuneCP5_13TeV-pythia8-JHUGen/RunIIFall17pLHE-93X_mc2017_realistic_v3-v2/LHE',
+           'detail': True}],
+         ['listDatasets',
+          {'dataset_access_type': '*',
+           'dataset': '/DYToEE_M-50_NNPDF31_TuneCP5_14TeV-powheg-pythia8/Run3Summer19DRPremix-BACKFILL_2024Scenario_106X_mcRun3_2024_realistic_v4-v6/GEN-SIM-RAW',
+           'detail': True}],
+
 
          # Exception throwing calls
 

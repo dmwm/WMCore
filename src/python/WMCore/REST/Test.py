@@ -61,7 +61,7 @@ def fake_authz_key_file(delete=True):
     :returns: Instance of :class:`~.NamedTemporaryFile`, whose *data*
       attribute contains the HMAC signing binary key."""
     t = NamedTemporaryFile(delete=delete)
-    with open("/dev/urandom") as fd:
+    with open("/dev/urandom", "rb") as fd:
         t.data = fd.read(20)
     t.write(t.data)
     t.seek(0)

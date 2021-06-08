@@ -6,7 +6,6 @@ CouchService_t.py
 Created by Dave Evans on 2010-10-04.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
-
 from builtins import range
 import unittest
 import random
@@ -50,9 +49,6 @@ class CouchService_t(unittest.TestCase):
 
         Populate the ACDC records
         """
-        svc = CouchService(url=self.testInit.couchUrl,
-                           database=self.testInit.couchDbName)
-
         testCollectionA = CouchCollection(database=self.testInit.couchDbName,
                                           url=self.testInit.couchUrl,
                                           name="Thunderstruck")
@@ -81,7 +77,7 @@ class CouchService_t(unittest.TestCase):
         testFilesetD = CouchFileset(database=self.testInit.couchDbName,
                                     url=self.testInit.couchUrl,
                                     name="TestFilesetD")
-        testCollectionC.addFileset(testFilesetD)
+        testCollectionD.addFileset(testFilesetD)
 
         testFiles = []
         for i in range(5):
@@ -94,8 +90,10 @@ class CouchService_t(unittest.TestCase):
         testFilesetB.add(testFiles)
         time.sleep(1)
         testFilesetC.add(testFiles)
-        time.sleep(2)
+        time.sleep(1)
         testFilesetD.add(testFiles)
+        # Alan: unsure why to return this specific collection
+        return testCollectionD
 
     def testListCollectionsFilesets(self):
         """
@@ -103,57 +101,16 @@ class CouchService_t(unittest.TestCase):
 
         Verify that collections and filesets in ACDC can be listed.
         """
+        testCollection = self.populateCouchDB()
+
         svc = CouchService(url=self.testInit.couchUrl,
                            database=self.testInit.couchDbName)
 
-        testCollectionA = CouchCollection(database=self.testInit.couchDbName,
-                                          url=self.testInit.couchUrl,
-                                          name="Thunderstruck")
-        testCollectionB = CouchCollection(database=self.testInit.couchDbName,
-                                          url=self.testInit.couchUrl,
-                                          name="Struckthunder")
-        testCollectionC = CouchCollection(database=self.testInit.couchDbName,
-                                          url=self.testInit.couchUrl,
-                                          name="Thunderstruck")
-        testCollectionD = CouchCollection(database=self.testInit.couchDbName,
-                                          url=self.testInit.couchUrl,
-                                          name="Thunderstruck")
-
-        testFilesetA = CouchFileset(database=self.testInit.couchDbName,
-                                    url=self.testInit.couchUrl,
-                                    name="TestFilesetA")
-        testCollectionA.addFileset(testFilesetA)
-        testFilesetB = CouchFileset(database=self.testInit.couchDbName,
-                                    url=self.testInit.couchUrl,
-                                    name="TestFilesetB")
-        testCollectionB.addFileset(testFilesetB)
-        testFilesetC = CouchFileset(database=self.testInit.couchDbName,
-                                    url=self.testInit.couchUrl,
-                                    name="TestFilesetC")
-        testCollectionC.addFileset(testFilesetC)
-        testFilesetD = CouchFileset(database=self.testInit.couchDbName,
-                                    url=self.testInit.couchUrl,
-                                    name="TestFilesetD")
-        testCollectionC.addFileset(testFilesetD)
-
-        testFiles = []
-        for i in range(5):
-            testFile = File(lfn=makeUUID(), size=random.randint(1024, 4096),
-                            events=random.randint(1024, 4096))
-            testFiles.append(testFile)
-
-        testFilesetA.add(testFiles)
-        testFilesetB.add(testFiles)
-        testFilesetC.add(testFiles)
-        testFilesetD.add(testFiles)
-
         goldenFilesetNames = ["TestFilesetA", "TestFilesetC", "TestFilesetD"]
-        for fileset in svc.listFilesets(testCollectionD):
-            self.assertTrue(fileset["name"] in goldenFilesetNames,
-                            "Error: Missing fileset.")
+        for fileset in svc.listFilesets(testCollection):
+            self.assertTrue(fileset["name"] in goldenFilesetNames, "Error: Missing fileset.")
             goldenFilesetNames.remove(fileset["name"])
-        self.assertEqual(len(goldenFilesetNames), 0,
-                         "Error: Missing filesets.")
+        self.assertEqual(len(goldenFilesetNames), 0, "Error: Missing filesets.")
 
         return
 
@@ -173,10 +130,8 @@ class CouchService_t(unittest.TestCase):
         results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime})
         self.assertEqual(len(results["rows"]), 4)
         results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime - 2})
-        self.assertEqual(len(results["rows"]), 3)
-        results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime - 3})
         self.assertEqual(len(results["rows"]), 2)
-        results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime - 4})
+        results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime - 3})
         self.assertEqual(len(results["rows"]), 1)
         results = database.loadView("ACDC", "byTimestamp", {"endkey": currentTime - 5})
         self.assertEqual(len(results["rows"]), 0)
@@ -196,15 +151,20 @@ class CouchService_t(unittest.TestCase):
                            database=self.testInit.couchDbName)
         database = CouchServer(self.testInit.couchUrl).connectDatabase(self.testInit.couchDbName)
 
-        results = database.loadView("ACDC", "byCollectionName", keys=["Thunderstruck"])
+        results = database.loadView("ACDC", "byCollectionName", keys=["Thunderstruck"],
+                                    options={"reduce": False})
         self.assertTrue(len(results["rows"]) > 0)
         svc.removeFilesetsByCollectionName("Thunderstruck")
-        results = database.loadView("ACDC", "byCollectionName", keys=["Thunderstruck"])
+        results = database.loadView("ACDC", "byCollectionName", keys=["Thunderstruck"],
+                                    options={"reduce": False})
         self.assertEqual(len(results["rows"]), 0)
-        results = database.loadView("ACDC", "byCollectionName", keys=["Struckthunder"])
+
+        results = database.loadView("ACDC", "byCollectionName", keys=["Struckthunder"],
+                                    options={"reduce": False})
         self.assertTrue(len(results["rows"]) > 0)
         svc.removeFilesetsByCollectionName("Struckthunder")
-        results = database.loadView("ACDC", "byCollectionName", keys=["Struckthunder"])
+        results = database.loadView("ACDC", "byCollectionName", keys=["Struckthunder"],
+                                    options={"reduce": False})
         self.assertEqual(len(results["rows"]), 0)
         return
 

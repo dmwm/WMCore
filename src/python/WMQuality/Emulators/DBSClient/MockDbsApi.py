@@ -132,5 +132,5 @@ class MockDbsApi(object):
             else:
                 return mockData[self.url][signature]
         except KeyError:
-            raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
-                           (self.item, args, kwargs, self.url))
+            raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s) (Signature: %s)" %
+                           (self.item, args, kwargs, self.url, signature))

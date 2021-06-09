@@ -57,9 +57,10 @@ import json
 import logging
 import os
 import time
-from io import BytesIO
+from io import BytesIO, StringIO
 from http.client import HTTPException
 
+from Utils.PythonVersion import PY3
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
 
@@ -177,7 +178,7 @@ class Service(dict):
         """
         # if not caching to disk return StringIO object
         if not self['cachepath'] or not cachefile:
-            return BytesIO()
+            return StringIO() if PY3 else BytesIO()
 
         inputdata = inputdata or {}
         if inputdata:

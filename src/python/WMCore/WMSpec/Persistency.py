@@ -43,7 +43,7 @@ class PersistencyHelper(object):
         Save data to a file
         Saved format is defined depending on the extension
         """
-        with open(filename, 'w') as handle:
+        with open(filename, 'wb') as handle:
             # TODO: use different encoding scheme for different extension
             # extension = filename.split(".")[-1].lower()
             pickle.dump(self.data, handle)

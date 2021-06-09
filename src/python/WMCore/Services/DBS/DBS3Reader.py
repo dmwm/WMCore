@@ -10,7 +10,7 @@ from __future__ import print_function, division
 from builtins import object, str, bytes
 from future.utils import viewitems
 
-from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicode
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional
 
 import logging
 from collections import defaultdict

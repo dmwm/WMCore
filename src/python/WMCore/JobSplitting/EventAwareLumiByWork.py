@@ -15,6 +15,8 @@ class to simplify the code
 
 from __future__ import (division, print_function)
 
+import operator
+
 from future.utils import viewitems
 
 import logging
@@ -130,7 +132,8 @@ class EventAwareLumiByWork(JobFactory):
                 self.populateFilesFromWMBS(filesAtLocation)
             lumisByFile, eventsByLumi = self.fileLumiMaps(filesAtLocation=filesAtLocation, getParents=getParents,
                                                           lumiMask=lumiMask)
-            for f in filesAtLocation:
+            # sort files by name, to have a more reproducible job creation
+            for f in sorted(filesAtLocation, key=operator.itemgetter('lfn')):
                 lfn = f['lfn']
                 if lfn not in lumisByFile:
                     continue  # There are no lumis of interest in the file

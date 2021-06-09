@@ -58,10 +58,12 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     conn.connect()
     conn.request(verb, uri, data, headers)
     response = conn.getresponse()
-
     data = response.read()
     conn.close()
     cType = response.getheader('content-type').split(';')[0]
+    # data returned could be something a json like: b'"foo"', so we need to properly load it
+    #if '/json' in accept:
+    #    data = json.loads(data)
     return data, response.status, cType, response
 
 
@@ -73,7 +75,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType=None
 
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
     for key, value in viewitems(output):
-        msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
+        msg = 'Got a return %s != %s (got %s, type %s) (expected %s, type %s)' \
               % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
         assert keyMap[key] == value, msg
 

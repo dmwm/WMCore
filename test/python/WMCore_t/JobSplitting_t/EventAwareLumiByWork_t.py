@@ -368,7 +368,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
-        self.assertEqual(len(jobs), 7)
+        self.assertEqual(len(jobs), 6)
         # Make sure each job has one run
         for job in jobs:
             self.assertEqual(len(job['mask'].getRunAndLumis()), 1)

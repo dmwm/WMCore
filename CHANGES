@@ -1,3 +1,14 @@
+1.4.9.pre7 to 1.4.9.pre8:
+  - [py2py3] fix unittests from #10295 - src (Dario Mapelli) #10581
+  - remove EventAwareLumiByWork_t unit tests from the py3 unstable list (Alan Malta Rodrigues) #10583
+  - Sort files by name in EventAwareLumiByWork; fix slice 7 unit tests (Alan Malta Rodrigues) #10583
+  - [py2py3] fix unittests from #10117 - src (Dario Mapelli) #10579
+  - added one item to and sorted list of py3 unstable unittests (Dario Mapelli) #10575
+  - [py2py3] fix unittests from #10057, improving REST_t/Simple_t - src (Dario Mapelli) #10575
+  - Fix Py3 unit tests for slice 6, CouchService_t (Alan Malta Rodrigues) #10578
+  - Fix unittest from dmwm#10529, Proxy_t (Erik Gough) 
+
+
 1.4.9.pre6 to 1.4.9.pre7:
   - fix globalQueue initialization in WorkQueueReqMgrInterface_t (Alan Malta Rodrigues) #10576
   - Fix Rucio-related unit tests (Alan Malta Rodrigues) #10576

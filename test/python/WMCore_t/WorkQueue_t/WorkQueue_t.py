@@ -822,25 +822,31 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # queue work, globally for block, pass down, report back -> complete
         totalSpec = 1
-        dummyTotalBlocks = totalSpec * NBLOCKS_HICOMM
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
             self.globalQueue.queueWork(dqmWorkload.specUrl())
+        # now we have elements inserted in workqueue
+        self.assertEqual(len(self.globalQueue.status(status='Available')), totalSpec)
+        # this should be a continuous processing of the spec, so no changes
         self.globalQueue.processInboundWork()
         self.assertEqual(totalSpec, len(self.globalQueue))
+        self.assertEqual(len(self.globalQueue.status(status='Available')), totalSpec)
 
         # pull to local
         # self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}), totalSpec)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status='Available')), totalSpec)
+        self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.updateLocationInfo()
         work = self.localQueue.getWork({'T2_XX_SiteA': 1000}, {})
-        self.assertEqual(len(work), 0)
+        self.assertEqual(len(work), 1)
+        self.assertEqual(len(self.localQueue.status(status='Running')), totalSpec)
+        self.assertEqual(len(self.globalQueue.status(status='Acquired')), totalSpec)
         self.localQueue.doneWork([str(x.id) for x in work])
         self.assertEqual(len(self.localQueue.status(status='Done')), totalSpec)
         syncQueues(self.localQueue)
-        # elements are not deleted untill request status is changed
+        # elements are not deleted until request status is changed
         self.assertEqual(len(self.localQueue.status(status='Done')), totalSpec)
         self.assertEqual(len(self.globalQueue.status(status='Done')), totalSpec)
 

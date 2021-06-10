@@ -1057,7 +1057,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         arguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments.update(REQUEST_INPUT)
+        arguments.update(deepcopy(REQUEST_INPUT))
         arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
@@ -1088,7 +1088,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         testArguments = TaskChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST_INPUT)
+        testArguments.update(deepcopy(REQUEST_INPUT))
         testArguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         testArguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
@@ -2297,7 +2297,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         arguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments.update(REQUEST_INPUT)
+        arguments.update(deepcopy(REQUEST_INPUT))
         arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
         arguments['Task2']['KeepOutput'] = False

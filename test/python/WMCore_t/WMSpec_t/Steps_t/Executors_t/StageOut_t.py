@@ -329,22 +329,34 @@ class otherStageOutTexst(unittest.TestCase):
         if hasattr(myThread, "factory"):
             myThread.factory = {}
 
-    @attr('integration')
     def testCPBackendStageOutAgainstReportNew(self):
         myReport = Report()
-        myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
+        reportPath = os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl')
+        myReport.unpersist(reportPath)
         myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
+        myReport.persist(reportPath)
         executor = StageOutExecutor.StageOut()
         executor.initialise(self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         self.stepdata.override.newStageOut = True
         executor.step = self.stepdata
-        executor.execute()
-        self.assertTrue(os.path.exists(os.path.join(self.testDir, 'hosts')))
-        self.assertTrue(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
+        # It should fail with:
+        # AssertionError: LFN candidate: hosts doesn't match any of the following regular expressions:
+        with self.assertRaises(AssertionError):
+            executor.execute()
 
-    @attr('integration')
+        # now fix those output file names to pass the Lexicon check, and execute it again
+        myReport.unpersist(reportPath)
+        # cmsRun1.output.FEVT.files.file0.lfn = 'hosts'
+        # cmsRun1.output.ALCARECOStreamCombined.files.file0.lfn = '/test1/hosts'
+        myReport.data.cmsRun1.output.FEVT.files.file0.lfn = "/store/mc/acqera/pd/FEVT/procstr/abc123.root"
+        myReport.data.cmsRun1.output.ALCARECOStreamCombined.files.file0.lfn = "/store/mc/acqera/pd/ALCARECO/procstr/abc123.root"
+        myReport.persist(reportPath)
+        executor.execute()
+
+        self.assertTrue(os.path.exists(os.path.join(self.testDir, "store", "mc", "acqera", "pd", "FEVT")))
+        self.assertTrue(os.path.exists(os.path.join(self.testDir, "store", "mc", "acqera", "pd", "ALCARECO")))
+
     def testCPBackendStageOutAgainstReportFailedStepNew(self):
         myReport = Report()
         myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
@@ -360,23 +372,36 @@ class otherStageOutTexst(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
         return
 
-    @attr('integration')
     def testCPBackendStageOutAgainstReportOld(self):
 
         myReport = Report()
-        myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
+        reportPath = os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl')
+        myReport.unpersist(reportPath)
         myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))
+        # print("myReport.data.cmsRun1: {}, dir: {}".format(myReport.data.cmsRun1, dir(myReport.data.cmsRun1)))
+        myReport.persist(reportPath)
         executor = StageOutExecutor.StageOut()
         executor.initialise(self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
+        # It should fail with:
+        # AssertionError: LFN candidate: hosts doesn't match any of the following regular expressions:
+        with self.assertRaises(AssertionError):
+            executor.execute()
+
+        # now fix those output file names to pass the Lexicon check, and execute it again
+        myReport.unpersist(reportPath)
+        # cmsRun1.output.FEVT.files.file0.lfn = 'hosts'
+        # cmsRun1.output.ALCARECOStreamCombined.files.file0.lfn = '/test1/hosts'
+        myReport.data.cmsRun1.output.FEVT.files.file0.lfn = "/store/mc/acqera/pd/FEVT/procstr/abc123.root"
+        myReport.data.cmsRun1.output.ALCARECOStreamCombined.files.file0.lfn = "/store/mc/acqera/pd/ALCARECO/procstr/abc123.root"
+        myReport.persist(reportPath)
         executor.execute()
-        self.assertTrue(os.path.exists(os.path.join(self.testDir, 'hosts')))
-        self.assertTrue(os.path.exists(os.path.join(self.testDir, 'test1', 'hosts')))
+
+        self.assertTrue(os.path.exists(os.path.join(self.testDir, "store", "mc", "acqera", "pd", "FEVT")))
+        self.assertTrue(os.path.exists(os.path.join(self.testDir, "store", "mc", "acqera", "pd", "ALCARECO")))
         return
 
-    @attr('integration')
     def testCPBackendStageOutAgainstReportFailedStepOld(self):
         myReport = Report()
         myReport.unpersist(os.path.join(self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1', 'Report.pkl'))

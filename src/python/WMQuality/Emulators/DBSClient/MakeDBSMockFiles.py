@@ -33,11 +33,12 @@ INSTANCES = ((endpoint00, 'DBSMockData.json', calls00, datasets00),
 for endpoint, outFile, calls, datasets in INSTANCES:
     lookup = {}
     outFilename = os.path.join(getTestBase(), '..', 'data', 'Mock', outFile)
-    try:
-        with open(outFilename, 'r') as mockData:
-            lookup = json.load(mockData)
-    except IOError:
-        pass
+    ## Instead of updating on top of the previous file, just go with a new one
+    #try:
+    #    with open(outFilename, 'r') as mockData:
+    #        lookup = json.load(mockData)
+    #except IOError:
+    #    pass
 
     dbs = DBSReader(endpoint)
     realDBS = dbs.dbs

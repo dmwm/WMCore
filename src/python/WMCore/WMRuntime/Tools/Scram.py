@@ -35,6 +35,8 @@ import subprocess
 import sys
 
 from PSetTweaks.WMTweak import readAdValues
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional, decodeBytesToUnicodeConditional
 
 ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
 
@@ -168,7 +170,7 @@ def testWriter(func, *args):
 #  //
 # // Interceptable function to push commands to the subshell, used to
 # //  enable test mode.
-procWriter = lambda s, l: s.stdin.write(l)
+procWriter = lambda s, l: s.stdin.write(encodeUnicodeToBytesConditional(l, condition=PY3))
 
 
 class Scram(object):
@@ -297,6 +299,8 @@ class Scram(object):
         self.procWriter(proc, "eval `%s ru -sh`\n" % self.command)
 
         self.stdout, self.stderr = proc.communicate()
+        self.stdout = decodeBytesToUnicodeConditional(self.stdout, condition=PY3)
+        self.stderr = decodeBytesToUnicodeConditional(self.stderr, condition=PY3)
         if proc.returncode == 0:
             for l in self.stdout.split(";\n"):
                 if l.strip() == "":

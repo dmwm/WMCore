@@ -8,6 +8,10 @@
 from builtins import map, object
 
 from future import standard_library
+
+from Utils.PythonVersion import PY2
+from Utils.Utilities import encodeUnicodeToBytes
+
 standard_library.install_aliases()
 
 import logging
@@ -162,8 +166,9 @@ class SandboxCreator(object):
 
             # Add a dummy module for zipimport testing
             (handle, dummyModulePath) = tempfile.mkstemp()
-            os.write(handle, "#!/usr/bin/env python\n")
-            os.write(handle, "print('ZIPIMPORTTESTOK')\n")
+            # Python3 mkstemp file descriptors expects bytes-object
+            os.write(handle, encodeUnicodeToBytes("#!/usr/bin/env python\n"))
+            os.write(handle, encodeUnicodeToBytes("print('ZIPIMPORTTESTOK')\n"))
             os.close(handle)
             zipFile.write(filename=dummyModulePath, arcname='WMCore/ZipImportTestModule.py')
 

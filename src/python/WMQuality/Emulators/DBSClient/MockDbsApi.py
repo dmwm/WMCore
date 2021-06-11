@@ -16,7 +16,7 @@ from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.WMBase import getTestBase
 
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from Utils.PythonVersion import PY2
 
 # Read in the data just once so that we don't have to do it for every test (in __init__)
@@ -66,7 +66,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [str(lfn)]})
+                origArgs.update({'logical_file_name': [lfn]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -89,7 +89,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [str(lfn)]})
+                origArgs.update({'logical_file_name': [lfn]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -114,14 +114,15 @@ class MockDbsApi(object):
         :param kwargs: named arguments it was called with
         :return: the dictionary that DBS would have returned
         """
-
         if self.url not in mockData:
             raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
 
         if kwargs:
-            if PY2:
-                for k in kwargs:
-                    kwargs[k] = encodeUnicodeToBytes(kwargs[k])
+            for k in kwargs:
+                if isinstance(kwargs[k], (list, tuple)):
+                    kwargs[k] = [encodeUnicodeToBytesConditional(item, condition=PY2) for item in kwargs[k]]
+                else:
+                    kwargs[k] = encodeUnicodeToBytesConditional(kwargs[k], condition=PY2)
             signature = '%s:%s' % (self.item, sorted(viewitems(kwargs)))
         else:
             signature = self.item

@@ -32,13 +32,12 @@ from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
-    """Function to return status of wmbs subscriptions
     """
-    action = DAOFactory(package='WMBS',
-                        logger=logger,
-                        dbinterface=dbi)('Monitoring.SubscriptionStatus')
-    return action.execute(conn=conn,
-                          transaction=transaction)
+    Function to return status of wmbs subscriptions
+    """
+    daoFactory = DAOFactory(package='WMCore.WMBS', logger=logger, dbinterface=dbi)
+    action = daoFactory(classname='Monitoring.SubscriptionStatus')
+    return action.execute(conn=conn, transaction=transaction)
 
 
 class WorkQueueWMBSException(WMException):

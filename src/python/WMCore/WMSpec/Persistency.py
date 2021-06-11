@@ -74,11 +74,8 @@ class PersistencyHelper(object):
             # use own request class so we get authentication if needed
             from WMCore.Services.Requests import Requests
             request = Requests(filename)
-            data = request.makeRequest('', incoming_headers={"Accept": "*/*"})
+            data = request.makeRequest('', incoming_headers={"Accept": "*/*"}, decoder=False)
             self.data = pickle.loads(data[0])
-
-        # TODO: use different encoding scheme for different extension
-        # extension = filename.split(".")[-1].lower()
 
         return
 

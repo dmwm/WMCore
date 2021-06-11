@@ -300,13 +300,13 @@ class Requests(dict):
     def decodeResult(self, result, decoder):
         """
         Decode the http/pycurl request result
+        NOTE: if decoder is provided with a False value, then it means no
+        decoding is applied on the results at all
         """
         if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
         elif decoder is not False:
             result = self.decode(result)
-        if PY3:
-            result = decodeBytesToUnicode(result)
         return result
 
     def encode(self, data):
@@ -319,6 +319,8 @@ class Requests(dict):
         """
         decode data to some appropriate format, for now make it a string...
         """
+        if PY3:
+            return decodeBytesToUnicode(data)
         return data.__str__()
 
     def cachePath(self, given_path, service_name):

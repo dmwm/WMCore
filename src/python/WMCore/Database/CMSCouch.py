@@ -10,7 +10,7 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function, division
 from builtins import str as newstr, bytes as newbytes, object
-from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes, decodeBytesToUnicodeConditional
 from Utils.PythonVersion import PY3
 
 from future import standard_library
@@ -42,6 +42,9 @@ def check_server_url(srvurl):
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
         raise ValueError('You must include http(s):// in your servers address')
+
+
+PY3_STR_DECODER = lambda x: decodeBytesToUnicodeConditional(x, condition=PY3)
 
 
 class Document(dict):
@@ -353,11 +356,11 @@ class Database(CouchDBRequests):
             updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
                         (self.name, design, update_func, doc_id, urllib.parse.urlencode(fields))
 
-            return self.put(uri=updateUri, decode=False)
+            return self.put(uri=updateUri, decode=PY3_STR_DECODER)
         else:
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
                         (self.name, design, update_func, doc_id)
-            return self.put(uri=updateUri, data=fields, decode=False)
+            return self.put(uri=updateUri, data=fields, decode=PY3_STR_DECODER)
 
     def updateBulkDocuments(self, doc_ids, paramsToUpdate, updateLimits=1000):
 
@@ -410,7 +413,7 @@ class Database(CouchDBRequests):
         doc_id = urllib.parse.quote_plus(doc_id)
 
         updateUri = '/%s/%s' % (self.name, doc_id)
-        return self.put(uri=updateUri, data=fields, decode=False)
+        return self.put(uri=updateUri, data=fields, decode=PY3_STR_DECODER)
 
     def documentExists(self, id, rev=None):
         """
@@ -570,15 +573,15 @@ class Database(CouchDBRequests):
                 data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
                                    (self.name, design, list, view, data), {'keys': keys},
-                                   decode=False)
+                                   decode=PY3_STR_DECODER)
             else:
                 retval = self.post('/%s/_design/%s/_list/%s/%s' % \
                                    (self.name, design, list, view), {'keys': keys},
-                                   decode=False)
+                                   decode=PY3_STR_DECODER)
         else:
             retval = self.get('/%s/_design/%s/_list/%s/%s' % \
                               (self.name, design, list, view), encodedOptions,
-                              decode=False)
+                              decode=PY3_STR_DECODER)
 
         return retval
 
@@ -662,7 +665,7 @@ class Database(CouchDBRequests):
         Retrieve an attachment for a couch document.
         """
         url = "/%s/%s/%s" % (self.name, id, name)
-        attachment = self.get(url, None, encode=False, decode=False)
+        attachment = self.get(url, None, encode=False, decode=PY3_STR_DECODER)
 
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,

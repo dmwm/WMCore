@@ -394,7 +394,7 @@ class StdBase(object):
         eventStreams = self.eventStreams
         if 'Multicore' in taskConf and taskConf['Multicore'] > 0:
             multicore = taskConf['Multicore']
-        if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
+        if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
 
@@ -1051,7 +1051,7 @@ class StdBase(object):
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
@@ -1098,7 +1098,7 @@ class StdBase(object):
                      "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
                      "Memory": {"type": float, "validate": lambda x: x > 0},
                      "Multicore": {"type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"null": True, "default": 0, "type": int, "validate": lambda x: x >= 0},
 
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
@@ -1180,6 +1180,7 @@ class StdBase(object):
                      'ConfigCacheID': {'optional': False, 'type': str},
                      'DataPileup': {'default': None, 'null': False, 'optional': True, 'type': str,
                                     'validate': dataset},
+                     # for task/step level, the default EventStreams value (0) comes from the top level
                      'EventStreams': {'null': True, 'type': int, 'validate': lambda x: x >= 0},
                      'EventsPerJob': {'null': True, 'type': int, 'validate': lambda x: x > 0},
                      'EventsPerLumi': {'default': None, 'null': True, 'optional': True, 'type': int,

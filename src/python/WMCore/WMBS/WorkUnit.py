@@ -33,7 +33,7 @@ class WorkUnit(WMBSBase, DSWorkUnit):
         If id is given, check with id or check with taskid, fileid, run/lumi
         """
 
-        if self['id'] > 0:
+        if self['id'] and self['id'] > 0:
             action = self.daofactory(classname='WorkUnit.ExistsByID')
             result = action.execute(wuid=self['id'], conn=self.getDBConn(), transaction=self.existingTransaction())
         elif self['taskid'] and self['fileid'] and self['run_lumi']:
@@ -59,7 +59,7 @@ class WorkUnit(WMBSBase, DSWorkUnit):
         Load any meta data that is associated with a WorkUnit.
         """
 
-        if self['id'] > 0:
+        if self['id'] and self['id'] > 0:
             action = self.daofactory(classname="WorkUnit.GetByID")
             result = action.execute(self['id'], conn=self.getDBConn(), transaction=self.existingTransaction())
         elif self['taskid'] and self['fileid'] and self['run_lumi']:

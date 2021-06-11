@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 from builtins import str, bytes, object
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytes
 from future.utils import viewitems
 
 import hashlib
@@ -435,7 +437,7 @@ class DigestETag(object):
     def update(self, val):
         """Process response data `val`."""
         if self.digest:
-            self.digest.update(val)
+            self.digest.update(encodeUnicodeToBytes(val))
 
     def value(self):
         """Return ETag header value for current input."""
@@ -476,14 +478,14 @@ def _stream_compress_deflate(reply, compress_level, max_chunk):
         pending.append(chunk)
         npending += len(chunk)
         if npending >= max_chunk:
-            part = z.compress("".join(pending)) + z.flush(zlib.Z_FULL_FLUSH)
+            part = z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FULL_FLUSH)
             pending = []
             npending = 0
             yield part
 
     # Crank the compressor one more time for remaining output.
     if npending:
-        yield z.compress("".join(pending)) + z.flush(zlib.Z_FINISH)
+        yield z.compress(encodeUnicodeToBytes("".join(pending))) + z.flush(zlib.Z_FINISH)
 
 # : Stream compression methods.
 _stream_compressor = {
@@ -612,6 +614,8 @@ def stream_maybe_etag(size_limit, etag, reply):
 
     # OK, respond with the buffered reply as a plain string.
     res.headers['Content-Length'] = size
-    result = "".join(result)
+    # TODO investigate why `result` is a list of bytes strings in py3
+    # The current solution seems to work in both py2 and py3
+    result = b"".join(result) if PY3 else "".join(result)
     assert len(result) == size
     return result

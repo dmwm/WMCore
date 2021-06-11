@@ -233,8 +233,8 @@ class SetupCMSSWPset(ScriptInterface):
             cmd += " --allow_failed_tweaks"
         self.scramRun(cmd)
 
-        if cleanupTweak is True:
-            psetTweak = PSetTweak()
+        if cleanupTweak:
+            psetTweak.clear()
 
         return
 
@@ -748,8 +748,20 @@ class SetupCMSSWPset(ScriptInterface):
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
+            modName = mod.getInternalName()
+
+            if funcName == 'merge':
+                # Do not use both Merged output label unless useErrorDataset is False
+                # Do not use both MergedError output label unless useErrorDataset is True 
+                useErrorDataset = getattr(self.jobBag, "useErrorDataset", False)
+
+                if useErrorDataset and modName != 'MergedError':
+                    continue
+                if not useErrorDataset and modName == 'MergedError':
+                    continue
+
             makeOutputTweak(mod, self.job, self.tweak)
-        self.applyPsetTweak(self.tweak, cleanupTweak=True)
+        self.applyPsetTweak(self.tweak, allowFailedTweaks=True, cleanupTweak=True)
 
         # revlimiter for testing
         if getattr(self.step.data.application.command, "oneEventMode", False):

@@ -357,6 +357,15 @@ class ConfigSection(object):
         comps = self._internal_settings
         return list(comps)
 
+    def getInternalName(self):
+        """
+        _getInternalName_
+
+        Return the internal name
+
+        """
+        return self._internal_name
+
 
 class Configuration(object):
     # pylint: disable=protected-access

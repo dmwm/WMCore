@@ -321,7 +321,7 @@ class StepChainWorkloadFactory(StdBase):
             eventStreams = self.eventStreams
             if taskConf['Multicore'] > 0:
                 multicore = taskConf['Multicore']
-            if taskConf.get('EventStreams') > 0:
+            if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
                 eventStreams = taskConf['EventStreams']
 
             currentCmsswStepHelper.setNumberOfCores(multicore, eventStreams)

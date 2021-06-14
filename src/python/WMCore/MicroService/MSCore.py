@@ -16,7 +16,7 @@ from WMCore.Services.Rucio.Rucio import Rucio
 class MSCore(object):
     """
     This class provides core functionality for
-    MSTransferor, MSMonitor, MSOutput. MSRuleCleaner classes.
+    MSTransferor, MSMonitor, MSOutput, MSRuleCleaner, MSUnmerged classes.
     """
 
     def __init__(self, msConfig, **kwargs):

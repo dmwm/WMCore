@@ -18,6 +18,7 @@ from copy import deepcopy
 from hashlib import md5
 
 from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
@@ -1733,6 +1734,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
         expFsets[0] = topFilesetName
         # returns a tuple of id, name, open and last_update
@@ -1755,6 +1757,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
         expFsets.append(topFilesetName)
         # returns a tuple of id, name, open and last_update
@@ -2064,6 +2067,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
         expFsets[0] = topFilesetName
         # returns a tuple of id, name, open and last_update
@@ -2086,6 +2090,7 @@ class StepChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GENSIM-%s' % md5(maskString).hexdigest()
         expFsets.append(topFilesetName)
         # returns a tuple of id, name, open and last_update

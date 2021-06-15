@@ -6,6 +6,9 @@ from __future__ import print_function
 from future.utils import viewitems, viewvalues
 
 from hashlib import md5
+
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.Lexicon import procdataset
 from WMCore.REST.Auth import authz_match
 from WMCore.ReqMgr.Auth import getWritePermission
@@ -275,7 +278,7 @@ def _validateDatatier(datatier, dbsUrl, expiration=3600):
     Provided a list of datatiers extracted from the outputDatasets, checks
     whether they all exist in DBS.
     """
-    cacheName = "dataTierList_" + md5(dbsUrl).hexdigest()
+    cacheName = "dataTierList_" + md5(encodeUnicodeToBytesConditional(dbsUrl, condition=PY3)).hexdigest()
     if not GenericDataCache.cacheExists(cacheName):
         mc = MemoryCacheStruct(expiration, getDataTiers, kwargs={'dbsUrl': dbsUrl})
         GenericDataCache.registerCache(cacheName, mc)

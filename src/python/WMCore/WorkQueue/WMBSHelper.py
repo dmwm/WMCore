@@ -12,6 +12,8 @@ import logging
 import threading
 from collections import defaultdict
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
@@ -225,6 +227,7 @@ class WMBSHelper(WMConnectionBase):
             if self.mask:
                 from hashlib import md5
                 mask_string = ",".join(["%s=%s" % (x, self.mask[x]) for x in sorted(self.mask)])
+                mask_string = encodeUnicodeToBytesConditional(mask_string, condition=PY3)
                 filesetName += "-%s" % md5(mask_string).hexdigest()
         else:
             filesetName = topLevelFilesetName

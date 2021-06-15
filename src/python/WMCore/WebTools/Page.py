@@ -3,7 +3,7 @@
 Some generic base classes for building web pages with.
 """
 
-from builtins import str
+from builtins import str, bytes
 
 import hashlib
 import json
@@ -20,6 +20,8 @@ from Cheetah.Template import Template
 from cherrypy import log as cplog
 from cherrypy import request
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WMFactory import WMFactory
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
@@ -378,7 +380,10 @@ def runDas(self, func, data, expires):
 
     keyhash = hashlib.md5()
 
-    keyhash.update(str(results))
+    if not isinstance(results, (str, bytes)):
+        keyhash.update(encodeUnicodeToBytesConditional(str(results), condition=PY3))
+    else:
+        keyhash.update(encodeUnicodeToBytesConditional(results, condition=PY3))
     res_checksum = keyhash.hexdigest()
     dasdata = {'application': '%s.%s' % (self.config.application, func.__name__),
                'request_timestamp': start_time,

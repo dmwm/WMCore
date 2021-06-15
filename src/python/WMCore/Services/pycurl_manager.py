@@ -291,8 +291,8 @@ class RequestHandler(object):
                 data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
-            msg = 'url=%s, code=%s, reason=%s, headers=%s' \
-                  % (url, header.status, header.reason, header.header)
+            msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
+                  % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)

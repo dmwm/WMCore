@@ -327,7 +327,7 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(reqInfo.get(prop="AcquisitionEra"), ["ACQERA"])
         # NOTE: inner task properties have precedence over the top level ones.
         self.assertEqual(reqInfo.get(prop="ProcessingVersion"), [2])
-        self.assertEqual(reqInfo.get(prop="BlockWhitelist"), ["A", "B"])
+        self.assertItemsEqual(reqInfo.get(prop="BlockWhitelist"), ["A", "B"])
         self.assertItemsEqual(reqInfo.get(prop="ScramArch"), ['slc6_amd64_gcc481',
                                                               'slc6_amd64_gcc493', 'slc7_amd64_gcc630'])
 

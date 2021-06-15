@@ -17,6 +17,7 @@ from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
 from Utils.PythonVersion import PY2
+from Utils.Utilities import encodeUnicodeToBytesConditional
 
 PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
@@ -37,18 +38,6 @@ try:
         MOCK_DATA = json.load(jsonObj)
 except IOError:
     MOCK_DATA = {}
-
-
-def _unicode(data):
-    """
-    Temporary workaround for problem with how unicode strings are represented
-    by unicode (as u"hello worls") and future.types.newstr (as "hello world")
-    https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
-    """
-    if PY2:
-        return unicode(data)
-    else:
-        return str(data)
 
 
 class MockRucioApi(object):
@@ -95,11 +84,12 @@ class MockRucioApi(object):
             :return: the dictionary that DBS would have returned
             """
             logging.info("%s: Calling mock genericLookup", self.__class__.__name__)
-            for key, value in listitems(kwargs):
-                # json dumps/loads converts strings to unicode strings, do the same with kwargs
-                if isinstance(value, str):
-                    kwargs[key] = _unicode(value)
             if kwargs:
+                for k in kwargs:
+                    if isinstance(kwargs[k], (list, tuple)):
+                        kwargs[k] = [encodeUnicodeToBytesConditional(x, condition=PY2) for x in kwargs[k]]
+                    else:
+                        kwargs[k] = encodeUnicodeToBytesConditional(kwargs[k], condition=PY2)
                 signature = '%s:%s' % (item, sorted(kwargs.items()))
             else:
                 signature = item

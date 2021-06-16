@@ -2,12 +2,11 @@ from __future__ import print_function
 
 from builtins import str, bytes, object
 from Utils.PythonVersion import PY3
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 from future.utils import viewitems
 
 import hashlib
 import json
-import types
 import xml.sax.saxutils
 import zlib
 from traceback import format_exc
@@ -616,6 +615,8 @@ def stream_maybe_etag(size_limit, etag, reply):
     res.headers['Content-Length'] = size
     # TODO investigate why `result` is a list of bytes strings in py3
     # The current solution seems to work in both py2 and py3
-    result = b"".join(result) if PY3 else "".join(result)
-    assert len(result) == size
-    return result
+    resp = b"" if PY3 else ""
+    for item in result:
+        resp += encodeUnicodeToBytesConditional(item, condition=PY3)
+    assert len(resp) == size
+    return resp

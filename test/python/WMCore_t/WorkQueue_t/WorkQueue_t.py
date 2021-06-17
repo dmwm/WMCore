@@ -497,16 +497,16 @@ class WorkQueueTest(WorkQueueTestCase):
         processedBlocks += len(work)
         for element in work:
             processedFiles += element["NumOfFilesAdded"]
-        self.assertEqual(processedBlocks, 17)
-        self.assertEqual(processedFiles, 22)
+        self.assertEqual(processedBlocks, 9)
+        self.assertEqual(processedFiles, 14)
 
         # Get the rest the of work available at site B
         work = self.queue.getWork({'T2_XX_SiteB': 1000}, {})
         processedBlocks += len(work)
         for element in work:
             processedFiles += element["NumOfFilesAdded"]
-        self.assertEqual(processedBlocks, 17 + 19)
-        self.assertEqual(processedFiles, 22 + 35)
+        self.assertEqual(processedBlocks, 31)
+        self.assertEqual(processedFiles, 52)
 
         # Make sure no work left for B or C
         work = self.queue.getWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteC': 1000}, {})
@@ -543,7 +543,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # T2_XX_SiteB can run most blocks
         work = self.queue.getWork({'T2_XX_SiteB': 1000}, {})
-        self.assertEqual(len(work), 17 + 19)
+        self.assertEqual(len(work), 31)
 
     def testWhiteList(self):
         """
@@ -563,7 +563,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Site B can run
         work = self.queue.getWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteAA': 1000}, {})
-        self.assertEqual(len(work), 17 + 19)
+        self.assertEqual(len(work), 31)
 
     def testQueueChaining(self):
         """
@@ -1423,8 +1423,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # Now pull the new work to the local queue
         self.localQueue.pullWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteC': 1000})
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue), 35)
-        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 35 - 1)
+        self.assertEqual(len(self.localQueue), 30)
+        self.assertEqual(len(self.globalQueue), NBLOCKS_HICOMM - 30 - 1)
 
         # FIXME: for some reason, it tries to reinsert all those elements again
         # however, if we call it again, it won't retry anything

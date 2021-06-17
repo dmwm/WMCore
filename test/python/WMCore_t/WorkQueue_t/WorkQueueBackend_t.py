@@ -2,11 +2,13 @@
 """
     CouchWorkQueueElement unit tests
 """
-
 import unittest
+
 import time
+
+from Utils.PythonVersion import PY3
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
+from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend, sortAvailableElements
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 
@@ -36,6 +38,8 @@ class WorkQueueBackendTest(unittest.TestCase):
                                         parentQueue='%s/%s' % (self.testInit.couchUrl, 'wq_backend_test_parent'))
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """
@@ -108,6 +112,23 @@ class WorkQueueBackendTest(unittest.TestCase):
         # check no duplicates and no conflicts
         self.assertEqual(len(self.backend.db.allDocs()['rows']), 4)  # design doc + workflow + 2 elements
         self.assertEqual(self.backend.db.loadView('WorkQueue', 'conflicts')['total_rows'], 0)
+
+    def testSortAvailableElements(self):
+        """Test logic used elemets sorting, in the fuction `sortAvailableElements`"""
+        expected = [{'CreationTime': 2.4, 'Jobs': 2, 'Priority': 200},
+                    {'CreationTime': 4.3, 'Jobs': 3, 'Priority': 200},
+                    {'CreationTime': 1.5, 'Jobs': 5, 'Priority': 100},
+                    {'CreationTime': 3.1, 'Jobs': 1, 'Priority': 100},
+                    {'CreationTime': 5.2, 'Jobs': 4, 'Priority': 100}]
+
+        elemList = [{'CreationTime': 3.1, 'Jobs': 1, 'Priority': 100},
+                    {'CreationTime': 2.4, 'Jobs': 2, 'Priority': 200},
+                    {'CreationTime': 4.3, 'Jobs': 3, 'Priority': 200},
+                    {'CreationTime': 5.2, 'Jobs': 4, 'Priority': 100},
+                    {'CreationTime': 1.5, 'Jobs': 5, 'Priority': 100}]
+        sortAvailableElements(elemList)
+        self.assertEqual(len(elemList), 5)
+        self.assertItemsEqual(elemList, expected)
 
 
 if __name__ == '__main__':

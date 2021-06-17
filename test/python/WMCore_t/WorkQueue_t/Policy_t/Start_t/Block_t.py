@@ -440,7 +440,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             for unit in units:
                 pileupData = unit["PileupData"]
                 self.assertEqual(len(pileupData), 1)
-                self.assertItemsEqual(listvalues(pileupData)[0], ['T2_XX_SiteA', 'T2_XX_SiteB'])
+                self.assertItemsEqual(listvalues(pileupData)[0], ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return
 
     def testWithMaskedBlocks(self):

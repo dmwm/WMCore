@@ -200,6 +200,15 @@ class RunTest(unittest.TestCase):
         s.add(run9)
         s.add(run10)
         s.add(run11)
+        self.assertEqual(run7, run8)
+        self.assertNotEqual(run7, run9)
+        self.assertNotEqual(run7, run10)
+
+    def testNewHash(self):
+        run1 = Run(1, 1, 2, 3)
+        self.assertEqual(hash(run1), 79038151938585768)
+        run666 = Run(666, [(1, 111), (3, 33), (2, 22)])
+        self.assertEqual(hash(run666), 21721583371131476)
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ Interface to WorkQueue persistent storage
 """
 
 from builtins import object
+
 from future.utils import viewitems
 
 import json
@@ -34,6 +35,19 @@ def formatReply(answer, *items):
                 result.append(item)
                 break
     return result, errors
+
+
+def sortAvailableElements(elementsList):
+    """
+    Given a list of workqueue elements dictionary, this function will
+    sort them in place, first by their creation time; secondly by their
+    priority. In other words, higher priority and older requests will
+    be first in the list
+    :param elementsList: a list of elements dictionary
+    :return: nothing, list is updated in place
+    """
+    elementsList.sort(key=lambda element: element['CreationTime'])
+    elementsList.sort(key=lambda element: element['Priority'], reverse=True)
 
 
 class WorkQueueBackend(object):
@@ -360,8 +374,7 @@ class WorkQueueBackend(object):
         for item in result:
             element = CouchWorkQueueElement.fromDocument(self.db, item)
             sortedElements.append(element)
-        sortedElements.sort(key=lambda element: element['CreationTime'])
-        sortedElements.sort(key=lambda element: element['Priority'], reverse=True)
+        sortAvailableElements(sortedElements)
 
         for element in sortedElements:
             commonSites = possibleSites(element)
@@ -476,8 +489,7 @@ class WorkQueueBackend(object):
                     self.logger.info(msg, element['RequestName'], element._id)
                 else:
                     sortedElements.append(element)
-            sortedElements.sort(key=lambda element: element['CreationTime'])
-            sortedElements.sort(key=lambda element: element['Priority'], reverse=True)
+            sortAvailableElements(sortedElements)
 
             for element in sortedElements:
                 if numElems <= 0:

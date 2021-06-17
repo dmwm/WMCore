@@ -57,10 +57,10 @@ class SandboxCreator_t(unittest.TestCase):
         # Test that zipimport works on the dummy module that SandboxCreator inserts
         output = subprocess.check_output(['python', '-m', 'WMCore.ZipImportTestModule'],
                                          env={'PYTHONPATH': os.path.join(extractDir, 'WMCore.zip')})
-        self.assertIn('ZIPIMPORTTESTOK', output)
+        self.assertIn(b'ZIPIMPORTTESTOK', output)
 
         # make sure the pickled file is the same
-        pickleHandle = open( extractDir + "/WMSandbox/WMWorkload.pkl")
+        pickleHandle = open( extractDir + "/WMSandbox/WMWorkload.pkl", "rb")
         pickledWorkload = pickle.load( pickleHandle )
         self.assertEqual( workload.data, pickledWorkload )
         self.assertEqual( pickledWorkload.sandbox, boxpath )

@@ -70,7 +70,7 @@ class Document(dict):
         # https://issues.apache.org/jira/browse/COUCHDB-1141
         deletedDict = {'_id': self['_id'], '_rev': self['_rev'], '_deleted': True}
         self.update(deletedDict)
-        for key in self.keys():
+        for key in list(self.keys()):
             if key not in deletedDict:
                 del self[key]
 

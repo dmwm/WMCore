@@ -31,4 +31,6 @@ WMCore_t.WMBS_t.JobSplitting_t.EventBased_t.EventBasedTest:test100EventMultipleS
 WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testSiteWhiteBlacklist
 WMCore_t.WMBS_t.JobSplitting_t.RunBased_t.EventBasedTest:testMultipleRunsCombine
 WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testLocationSplit
+WMCore_t.WMSpec_t.StdSpecs_t.Express_t.ExpressTest:testFilesets
 WMCore_t.WMSpec_t.StdSpecs_t.ReReco_t.ReRecoTest:testFilesets 
+WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testPileupData

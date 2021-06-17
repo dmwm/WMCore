@@ -91,7 +91,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         if psetPath is None:
             psetPath = self.testDir
-        with open(os.path.join(psetPath, "PSet.pkl")) as f:
+        with open(os.path.join(psetPath, "PSet.pkl"), "rb") as f:
             pset = Unpickler(f).load()
 
         os.chdir(currentPath)

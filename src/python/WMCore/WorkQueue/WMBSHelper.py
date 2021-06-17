@@ -365,7 +365,7 @@ class WMBSHelper(WMConnectionBase):
         if not locations:
             msg = 'No locations to inject Monte Carlo work to, unable to proceed'
             raise WorkQueueWMBSException(msg)
-        mcFakeFileName = ("MCFakeFile-%s" % self.topLevelFileset.name).encode('ascii', 'ignore')
+        mcFakeFileName = "MCFakeFile-%s" % self.topLevelFileset.name
         wmbsFile = File(lfn=mcFakeFileName,
                         first_event=self.mask['FirstEvent'],
                         last_event=self.mask['LastEvent'],

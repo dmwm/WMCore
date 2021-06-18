@@ -117,8 +117,8 @@ class Scram_t(unittest.TestCase):
         try:
             os.chdir(self.testDir)
             with tempfile.NamedTemporaryFile() as tf:
-                tf.write('GLIDEIN_REQUIRED_OS = "rhel6" \n')
-                tf.write('Memory = 2048\n')
+                tf.write(b'GLIDEIN_REQUIRED_OS = "rhel6" \n')
+                tf.write(b'Memory = 2048\n')
                 tf.flush()
                 with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
                     self.assertEqual(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
@@ -129,8 +129,8 @@ class Scram_t(unittest.TestCase):
                                       'slc6_blah_blah')
                     self.assertEqual(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
             with tempfile.NamedTemporaryFile() as tf:
-                tf.write('GLIDEIN_REQUIRED_OS = "rhel7" \n')
-                tf.write('Memory = 2048\n')
+                tf.write(b'GLIDEIN_REQUIRED_OS = "rhel7" \n')
+                tf.write(b'Memory = 2048\n')
                 tf.flush()
                 with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
                     self.assertEqual(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')

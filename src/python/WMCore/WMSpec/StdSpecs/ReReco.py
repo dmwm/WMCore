@@ -59,7 +59,8 @@ class ReRecoWorkloadFactory(DataProcessing):
                                               stepType=cmsswStepType)
         self.addLogCollectTask(procTask)
 
-        for outputModuleName in outputMods:
+        # no real need to sort it, but we better have the same order between Py2/Py3
+        for outputModuleName in sorted(list(outputMods)):
             # Only merge the desired outputs
             if outputModuleName not in self.transientModules:
                 self.addMergeTask(procTask, self.procJobSplitAlgo, outputModuleName)

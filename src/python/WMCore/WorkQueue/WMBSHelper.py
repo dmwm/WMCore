@@ -291,6 +291,7 @@ class WMBSHelper(WMConnectionBase):
                             alternativeFilesetClose=alternativeFilesetClose,
                             priority=self.wmSpec.priority())
         workflow.create()
+
         subscription = Subscription(fileset=fileset, workflow=workflow,
                                     split_algo=task.jobSplittingAlgorithm(),
                                     type=task.getPrimarySubType())
@@ -312,7 +313,7 @@ class WMBSHelper(WMConnectionBase):
         outputModules = task.getOutputModulesForTask()
         ignoredOutputModules = task.getIgnoredOutputModulesForTask()
         for outputModule in outputModules:
-            for outputModuleName in outputModule.listSections_():
+            for outputModuleName in sorted(outputModule.listSections_()):
                 if outputModuleName in ignoredOutputModules:
                     msg = "%s has %s as IgnoredOutputModule, skipping fileset creation."
                     logging.info(msg, task.getPathName(), outputModuleName)

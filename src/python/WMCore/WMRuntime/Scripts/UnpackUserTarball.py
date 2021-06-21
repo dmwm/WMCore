@@ -6,10 +6,14 @@ Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
 from future import standard_library
+
+from Utils.Utilities import encodeUnicodeToBytes
+
 standard_library.install_aliases()
 
 import logging
 import os
+import hashlib
 import re
 import shutil
 import subprocess
@@ -35,7 +39,8 @@ def setHttpProxy(url):
 
     proxyList = re.findall('\(proxyurl=([\w\d\.\-\:\/]+)\)', output)
     if 'loadbalance=proxies' in output:
-        proxy = proxyList[hash(url) % len(proxyList)]
+        urlHash = int(hashlib.sha1(encodeUnicodeToBytes(url)).hexdigest()[:15], 16)
+        proxy = proxyList[urlHash % len(proxyList)]
     else:
         proxy = proxyList[0]
     os.environ['http_proxy'] = proxy

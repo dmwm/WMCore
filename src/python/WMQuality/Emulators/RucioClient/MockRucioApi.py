@@ -4,19 +4,19 @@
 Version of WMCore/Services/Rucio intended to be used with mock or unittest.mock
 """
 from __future__ import print_function, division
-from future.utils import listitems
 # from builtins import object # avoid importing this, it beraks things
 
 import json
 import logging
 import os
+import hashlib
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
 from WMCore.Services.Rucio.Rucio import WMRucioException, WMRucioDIDNotFoundException
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
 
-from Utils.PythonVersion import PY2
+from Utils.PythonVersion import PY2, PY3
 from Utils.Utilities import encodeUnicodeToBytesConditional
 
 PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
@@ -58,9 +58,12 @@ class MockRucioApi(object):
         :return: a fake list of sites where the data is
         """
         logging.info("%s: Calling mock sitesByBlock", self.__class__.__name__)
-        if hash(block) % 3 == 0:
+        block = encodeUnicodeToBytesConditional(block, condition=PY3)
+        # this algorithm gives same results in both python versions
+        blockHash = int(hashlib.sha1(block).hexdigest()[:8], 16)
+        if blockHash % 3 == 0:
             sites = ['T2_XX_SiteA']
-        elif hash(block) % 3 == 1:
+        elif blockHash % 3 == 1:
             sites = ['T2_XX_SiteA', 'T2_XX_SiteB']
         else:
             sites = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']

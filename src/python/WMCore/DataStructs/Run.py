@@ -7,9 +7,12 @@ container representing a run, and its constituent lumi sections and event counts
 """
 
 from __future__ import print_function
-
 from future.utils import viewitems, listitems
 
+import hashlib
+from builtins import str as newstr, bytes as newbytes
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional, encodeUnicodeToBytes
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -142,10 +145,25 @@ class Run(WMObject):
     def __hash__(self):
         """
         Calculate the value of the hash
+
+        NOTE: Python2 maxint is:
+        > python -c 'import sys; print(sys.maxint)'
+        9223372036854775807
+        so we cannot use the full range of the hexadecimal hash code because
+        it could cause an integer overflow. This is the maximum slice/value we
+        can safely use:
+        > int(15 * "f", base=16)
+        1152921504606846975
         """
-        value = self.run.__hash__()
-        value += hash(frozenset(listitems(self.eventsPerLumi)))  # Hash that represents the dictionary
-        return value
+        if isinstance(self.run, (newstr, newbytes)):
+            value = encodeUnicodeToBytesConditional(self.run, condition=PY3)
+        else:
+            value = encodeUnicodeToBytesConditional(str(self.run), condition=PY3)
+        hashValue = hashlib.sha1(value)
+        # Generate immutable sorted list of lumis
+        frozenEvents = str(sorted(listitems(self.eventsPerLumi), key=lambda x: x[0]))
+        hashValue.update(encodeUnicodeToBytes(frozenEvents))
+        return int(hashValue.hexdigest()[:15], 16)
 
     @property
     def lumis(self):

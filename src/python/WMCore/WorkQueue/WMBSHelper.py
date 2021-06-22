@@ -267,15 +267,18 @@ class WMBSHelper(WMConnectionBase):
 
         return
 
-    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False):
+    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False,
+                                   createSandbox=True):
         """
         __createSubscriptionsInWMBS_
 
         Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
+        :param createSandbox: boolean flag to skip (re-)creation of the workload sandbox
         """
         # create runtime sandbox for workflow
-        self.createSandbox()
+        if createSandbox:
+            self.createSandbox()
 
         # FIXME: Let workflow put in values if spec is missing them
         workflow = Workflow(spec=self.wmSpec.specUrl(), owner=self.wmSpec.getOwner()["name"],
@@ -336,7 +339,8 @@ class WMBSHelper(WMConnectionBase):
                             if primaryDataset is not None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
-                        self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
+                        self._createSubscriptionsInWMBS(childTask, outputFileset,
+                                                        alternativeFilesetClose, createSandbox=False)
 
                 if mergedOutputFileset is None:
                     workflow.addOutput(outputModuleName + dataTier, outputFileset,

@@ -8,6 +8,8 @@ import unittest
 
 from nose.plugins.attrib import attr
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.CRIC.CRIC import CRIC
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -26,6 +28,8 @@ class CRICTest(EmulatedUnitTestCase):
         """
         super(CRICTest, self).setUp()
         self.myCRIC = CRIC()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testConfig(self):
         """

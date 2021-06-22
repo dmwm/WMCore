@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: ISO-8859-1 -*-
-'''n
+"""
 Created on Aug 6, 2009
 
 @author: meloam
-'''
-
+"""
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
@@ -120,7 +119,7 @@ class testRepeatCalls(RESTBaseUnitTest):
             time.sleep(i)
             print('test %s starting at %s' % (i, time.time()))
             try:
-                result = req.get('/', incoming_headers={'Cache-Control': 'no-cache'}, decode=False)
+                result = req.get('/', incoming_headers={'Cache-Control': 'no-cache'}, decode=True)
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
             except HTTPException as he:
@@ -154,11 +153,11 @@ class testRepeatCalls(RESTBaseUnitTest):
         idict = {'req_cache_path': self.cache_path, 'pycurl': 1}
         req = Requests.Requests(self.urlbase, idict)
         headers = {'Cache-Control': 'no-cache'}
-        self.assertRaises(pycurl.error, req.get, '/', incoming_headers=headers, decode=False)
+        self.assertRaises(pycurl.error, req.get, '/', incoming_headers=headers, decode=True)
 
         # now restart server and hope we can connect
         self.rt.start(blocking=False)
-        result = req.get('/', incoming_headers=headers, decode=False)
+        result = req.get('/', incoming_headers=headers, decode=True)
         self.assertEqual(result[3], False)
         self.assertEqual(result[1], 200)
 
@@ -181,7 +180,7 @@ class testJSONRequests(unittest.TestCase):
     def roundTripLax(self, data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
-        datakeys = data.keys()
+        datakeys = list(data.keys())
 
         for k in decoded.keys():
             assert k in datakeys
@@ -296,7 +295,7 @@ class TestRequests(unittest.TestCase):
         if not isinstance(json.loads(out[0]), dict):
             msg = 'wrong data type'
             raise Exception(msg)
-        out = req.makeRequest('/auth/trouble', decoder=False)
+        out = req.makeRequest('/auth/trouble', decoder=True)
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
         self.assertNotEqual(out[0].find('certificate is a proxy'), -1)
@@ -312,7 +311,7 @@ class TestRequests(unittest.TestCase):
     def testSecureNoAuth_with_pycurl(self):
         """https with no client authentication"""
         req = Requests.Requests('https://cmsweb.cern.ch', {'pycurl': 1})
-        out = req.makeRequest('', decoder=False)
+        out = req.makeRequest('', decoder=True)
         self.assertEqual(out[1], 200)
         # we should get an html page in response
         self.assertNotEqual(out[0].find('html'), -1)
@@ -341,17 +340,16 @@ class TestRequests(unittest.TestCase):
         os.environ.pop('X509_USER_CERT', None)
         os.environ.pop('X509_USER_KEY', None)
         req = Requests.Requests('https://cmsweb.cern.ch:443', {'pycurl': 1})
-        out = req.makeRequest('/auth/trouble', decoder=False)
+        out = req.makeRequest('/auth/trouble', decoder=True)
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
 
     def testNoCache(self):
         """Cache disabled"""
         req = Requests.Requests('https://cmssdt.cern.ch/SDT/', {'cachepath': None})
-        out = req.makeRequest('/', decoder=False)
+        out = req.makeRequest('/', decoder=True)
         self.assertEqual(out[3], False)
         self.assertTrue('html' in out[0])
-
 
 if __name__ == "__main__":
     unittest.main()

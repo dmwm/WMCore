@@ -64,14 +64,14 @@ class PortForwardTests(unittest.TestCase):
         self.urlResultList = []
         for url in self.urlTestList:
             self.urlResultList.append(requesHandler.request(url))
-        self.assertItemsEqual(self.urlResultList, self.urlExpectedtList)
+        self.assertListEqual(self.urlResultList, self.urlExpectedtList)
 
     def testCallClass(self):
         portForwarder = PortForward(8443)
         self.urlResultList = []
         for url in self.urlTestList:
             self.urlResultList.append(portForwarder(url))
-        self.assertItemsEqual(self.urlResultList, self.urlExpectedtList)
+        self.assertListEqual(self.urlResultList, self.urlExpectedtList)
 
 
 if __name__ == '__main__':

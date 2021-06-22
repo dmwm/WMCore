@@ -8,9 +8,14 @@ General Exception class for Prod modules
 
 from future.utils import viewitems
 
-import exceptions
+try:
+    import exceptions
+except ImportError:
+    import builtins as exceptions
+
 import inspect
 import logging
+
 
 class ProdException(exceptions.Exception):
     """

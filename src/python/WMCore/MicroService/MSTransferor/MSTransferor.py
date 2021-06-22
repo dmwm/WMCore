@@ -746,18 +746,21 @@ class MSTransferor(MSCore):
         """
         # Warn about data transfer subscriptions going above some threshold
         if aboveWarningThreshold:
-            alertName = "ms-transferor: Transfer over threshold: {}".format(transferId)
+            alertName = "{}: input data transfer over threshold: {}".format(self.alertServiceName,
+                                                                            wflowName)
             alertSeverity = "high"
             alertSummary = "[MS] Large pending data transfer under request id: {}".format(transferId)
-            alertDescription = "Workflow: {}\nhas a large amount of ".format(wflowName)
-            alertDescription += "data subscribed: {} TB,\n".format(teraBytes(dataSize))
+            alertDescription = "Workflow: {} has a large amount of ".format(wflowName)
+            alertDescription += "data subscribed: {} TB, ".format(teraBytes(dataSize))
             alertDescription += "for {} data: {}.""".format(dataIn['type'], dataIn['name'])
 
             try:
-                self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
+                # alert to expiry in an hour from now
+                self.alertManagerApi.sendAlert(alertName, alertSeverity, alertSummary, alertDescription,
+                                               self.alertServiceName, endSecs=1 * 60 * 60)
             except Exception as ex:
                 self.logger.exception("Failed to send alert to %s. Error: %s", self.alertManagerUrl, str(ex))
-            self.logger.info(alertDescription)
+            self.logger.warning(alertDescription)
 
     def _getValidSites(self, wflow, dataIn):
         """

@@ -57,7 +57,7 @@ from io import BytesIO
 import http.client
 from urllib.parse import urlencode
 
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
 from Utils.PortForward import portForward, PortForward
 
 
@@ -76,6 +76,8 @@ class ResponseHeader(object):
         startRegex = r"^HTTP/\d.\d \d{3}"
         continueRegex = r"^HTTP/\d.\d 100"  # Continue: client should continue its request
         replaceRegex = r"^HTTP/\d.\d"
+
+        response = decodeBytesToUnicode(response)
 
         for row in response.split('\r'):
             row = row.replace('\n', '')
@@ -289,8 +291,8 @@ class RequestHandler(object):
                 data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
-            msg = 'url=%s, code=%s, reason=%s, headers=%s' \
-                  % (url, header.status, header.reason, header.header)
+            msg = 'url=%s, code=%s, reason=%s, headers=%s, result=%s' \
+                  % (url, header.status, header.reason, header.header, data)
             exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)

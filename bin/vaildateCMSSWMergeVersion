@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 from __future__ import (division, print_function)
 
+from builtins import range, str, bytes
+from future.utils import viewitems
+
 from pprint import pprint
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -20,10 +23,10 @@ print("List of tasks which merge task has different cmssw versions than processi
 print("NOVERSION could mean it is defined in workflow level not task level. so not necessary error case")
 print("Request Name | status | task name | correct cmssw vereion | current merge cmssw version")
 for item in r:
-    for req, reqInfo in item.iteritems():
+    for req, reqInfo in viewitems(item):
         cmssw = reqInfo.get("CMSSWVersion", [])
         status = reqInfo.get("RequestStatus", [])
-        if not isinstance(cmssw, basestring) and len(cmssw) > 1:
+        if not isinstance(cmssw, (str, bytes)) and len(cmssw) > 1:
             # print req
             # pprint(reqInfo)
             helper.loadSpecFromCouch(reqdb_url, req)

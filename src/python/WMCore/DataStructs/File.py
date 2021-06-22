@@ -5,7 +5,7 @@ _File_
 Data object that contains details for a single file
 
 """
-from past.builtins import basestring
+from builtins import str, bytes
 __all__ = []
 
 from WMCore.DataStructs.Run import Run
@@ -16,6 +16,11 @@ class File(WMObject, dict):
     """
     _File_
     Data object that contains details for a single file
+
+    TODO 
+    - use the decorator `from functools import total_ordering` after
+      dropping support for python 2.6
+    - then, drop __ne__, __le__, __gt__, __ge__
     """
 
     def __init__(self, lfn="", size=0, events=0, checksums=None,
@@ -87,15 +92,6 @@ class File(WMObject, dict):
         if pnn:
             self['locations'] = self['locations'] | set(self.makelist(pnn))
 
-    def __cmp__(self, rhs):
-        """
-        Sort files in run number and lumi section order
-        """
-        # if self['run'] == rhs['run']:
-        #    return cmp(self['lumi'], rhs['lumi'])
-
-        return self.__eq__(rhs)
-
     def __eq__(self, rhs):
         """
         File is equal if it has the same name
@@ -103,7 +99,7 @@ class File(WMObject, dict):
         eq = False
         if isinstance(rhs, type(self)):
             eq = self['lfn'] == rhs['lfn']
-        elif isinstance(rhs, basestring):
+        elif isinstance(rhs, (str, bytes)):
             eq = self['lfn'] == rhs
         return eq
 
@@ -113,6 +109,27 @@ class File(WMObject, dict):
     def __hash__(self):
         thisHash = self['lfn'].__hash__()
         return thisHash
+
+    def __lt__(self, rhs):
+        """
+        Sort files based on lexicographical ordering of the value connected
+        to the 'lfn' key
+        """
+        eq = False
+        if isinstance(rhs, type(self)):
+            eq = self['lfn'] < rhs['lfn']
+        elif isinstance(rhs, (str, bytes)):
+            eq = self['lfn'] < rhs
+        return eq
+
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+    def __gt__(self, other):
+        return not self.__le__(other)
+
+    def __ge__(self, other):
+        return not self.__lt__(other)
 
     def json(self, thunker=None):
         """
@@ -134,7 +151,7 @@ class File(WMObject, dict):
                     "parents": []}
 
         for parent in self["parents"]:
-            if isinstance(parent, basestring):
+            if isinstance(parent, (str, bytes)):
                 # Then for some reason, we're passing strings
                 # Done specifically for ErrorHandler
                 fileDict['parents'].append(parent)

@@ -9,13 +9,14 @@ from future.utils import viewitems
 
 import datetime
 import os
+import hashlib
 import shutil
 import time
 import logging
 from json import JSONEncoder
 import WMCore.WMSpec.WMStep as WMStep
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.Rucio.Rucio import Rucio
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 
@@ -35,7 +36,7 @@ class PileupFetcher(FetcherInterface):
         super(PileupFetcher, self).__init__()
         # FIXME: find a way to pass the Rucio account name to this fetcher module
         self.rucioAcct = "wmcore_transferor"
-        self.rucio = Rucio(self.rucioAcct)
+        self.rucio = None
 
     def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
@@ -78,6 +79,8 @@ class PileupFetcher(FetcherInterface):
         :param blockDict: dictionary with DBS summary info
         :return: update blockDict in place
         """
+        # initialize Rucio here to avoid this authentication on T0-WMAgent
+        self.rucio = Rucio(self.rucioAcct)
         blockReplicas = self.rucio.getPileupLockedAndAvailable(dset, account=self.rucioAcct)
         for blockName, blockLocation in viewitems(blockReplicas):
             try:
@@ -90,10 +93,10 @@ class PileupFetcher(FetcherInterface):
         fileName = ""
         for pileupType in stepHelper.data.pileup.listSections_():
             datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
-            fileName += ("_").join(datasets)
+            fileName += "_".join(datasets)
         # TODO cache is not very effective if the dataset combination is different between workflow
-        # here is possibility of hash value collision
-        cacheFile = "%s/pileupconf-%s.json" % (self.cacheDirectory(), hash(fileName))
+        cacheHash = hashlib.sha1(encodeUnicodeToBytes(fileName)).hexdigest()
+        cacheFile = "%s/pileupconf-%s.json" % (self.cacheDirectory(), cacheHash)
         return cacheFile
 
     def _getStepFilePath(self, stepHelper):

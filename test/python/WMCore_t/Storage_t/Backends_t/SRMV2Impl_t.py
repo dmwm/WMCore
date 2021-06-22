@@ -58,16 +58,14 @@ class SRMV2ImplTest(unittest.TestCase):
     @mock.patch('WMCore.Storage.Backends.SRMV2Impl.SRMV2Impl.run')
     def testCreateOutputDirectory_exitCode(self, mock_run):
         mock_run.return_value = (1, "test")
-        self.assertRaises(RuntimeError("ERROR creating directory, test"),
-                          self.SRMV2Impl.createOutputDirectory("/folder/test/test2/test3/test4/test5"))
+        self.assertIsNone(self.SRMV2Impl.createOutputDirectory("/folder/test/test2/test3/test4/test5"))
         calls = [call("srmls -recursion_depth=0 -retry_num=1 /folder/test/test2/test3/test4")]
         mock_run.assert_has_calls(calls)
 
     @mock.patch('WMCore.Storage.Backends.SRMV2Impl.SRMV2Impl.run')
     def testCreateOutputDirectory_exitCode2(self, mock_run):
         mock_run.side_effect = [(0, "SRM_FAILURE test"), (0, "SRM_FAILURE test"), (1, "test")]
-        self.assertRaises(RuntimeError("ERROR creating directory, test"),
-                          self.SRMV2Impl.createOutputDirectory("folder/test1/test2/test3/test4/test5/test6/test7"))
+        self.assertIsNone(self.SRMV2Impl.createOutputDirectory("folder/test1/test2/test3/test4/test5/test6/test7"))
         calls = [call("srmls -recursion_depth=0 -retry_num=1 folder/test1/test2/test3/test4/test5/test6"),
                  call("srmls -recursion_depth=0 -retry_num=1 folder/test1/test2/test3/test4/test5"),
                  call("srmmkdir -retry_num=0 folder/test1/test2/test3/test4/test5/test6")]

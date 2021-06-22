@@ -18,6 +18,8 @@ from hashlib import sha1
 
 from WMCore.Credential.Credential import Credential
 from WMCore.WMException import WMException
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicode
 
 
 def execute_command(command, logger, timeout, redirect=True):
@@ -50,6 +52,8 @@ def execute_command(command, logger, timeout, redirect=True):
         time.sleep(0.1)
 
     stdout, stderr = proc.communicate()
+    stdout = decodeBytesToUnicode(stdout) if PY3 else stdout
+    stderr = decodeBytesToUnicode(stderr) if PY3 else stderr
     rc = proc.returncode
 
     logger.debug('Executing : \n command : %s\n output : %s\n error: %s\n retcode : %s' % (command, stdout, stderr, rc))

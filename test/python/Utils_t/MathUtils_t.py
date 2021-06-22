@@ -32,3 +32,7 @@ class MathUtilsTest(unittest.TestCase):
 
         self.assertRaises(ValueError, quantize, 1, [50])
         self.assertRaises(ValueError, quantize, 1, {50})
+
+
+if __name__ == "__main__":
+    unittest.main()

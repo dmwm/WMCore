@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+from builtins import str as newstr, bytes as newbytes
+
 import atexit
 import hashlib
 import os
@@ -203,7 +205,7 @@ if can_nose:
                 print("Failed to collect TestCase IDs")
                 return retval
 
-            idhandle = open(".noseids", "r")
+            idhandle = open(".noseids", "rb")
             testIds = pickle.load(idhandle)['ids']
             idhandle.close()
 
@@ -214,7 +216,7 @@ if can_nose:
             # divide it up
             totalCases = len(testIds)
             myIds = []
-            for testID in testIds.keys():
+            for testID in testIds:
                 if int(testID) >= int(self.testMinimumIndex) and int(testID) <= int(self.testMaximumIndex):
                     # generate a stable ID for sorting
                     if int(self.testCurrentSlice) < int(self.testTotalSlices):  # testCurrentSlice is 0-indexed
@@ -223,6 +225,8 @@ if can_nose:
                                 print('%s needs own slice' % testIds[testID][1])
                                 continue
                             testName = "%s%s" % (testIds[testID][1], testIds[testID][2])
+                            if isinstance(testName, newstr):
+                                testName = testName.encode("utf-8")
                             testHash = hashlib.md5(testName).hexdigest()
                             hashSnip = testHash[:7]
                             hashInt = int(hashSnip, 16)

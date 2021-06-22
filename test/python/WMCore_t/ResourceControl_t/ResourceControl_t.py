@@ -13,6 +13,8 @@ import sys
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Agent.Configuration import Configuration
 from WMCore.BossAir.RunJob import RunJob
 from WMCore.DAOFactory import DAOFactory
@@ -678,7 +680,10 @@ class ResourceControlTest(EmulatedUnitTestCase):
         resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
-        cmdline = [resControlPath, "--add-Test"]
+        if PY3:
+            cmdline = ["python3", resControlPath, "--add-Test"]
+        else:
+            cmdline = [resControlPath, "--add-Test"]
         retval = subprocess.Popen(cmdline,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT,

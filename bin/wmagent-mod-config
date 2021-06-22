@@ -12,6 +12,7 @@ https://github.com/dmwm/deployment/blob/master/asyncstageout/manage#L246
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
+from future.utils import viewitems
 
 import getopt
 import imp
@@ -80,7 +81,7 @@ def modifyConfiguration(config, **args):
         "working_dir": [("General", "workDir")],
     }
 
-    for k, v in args.items():
+    for k, v in viewitems(args):
         parameters = mapping.get(k, [])
         for p in parameters:
             if hasattr(config, p[0]):

@@ -1,12 +1,12 @@
 from __future__ import print_function
 
+from builtins import range
 import os
 import random
 import time
 from argparse import ArgumentParser
 
 from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
@@ -39,11 +39,7 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
         basePath = couchAppRoot()
     print("Installing %s into %s" % (couchAppName, couchDBName))
 
-    couchServer = CouchServer(couchUrl)
-    couchappConfig = Config()
-
-    couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
-                 "%s/%s" % (couchUrl, couchDBName))
+    couchapppush("%s/%s" % (basePath, couchAppName), "%s/%s" % (couchUrl, couchDBName))
     return
 
 
@@ -140,7 +136,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     }
     """
     docs = []
-    for i in xrange(number):
+    for i in range(number):
         doc = {"_id": "test_workflow_%s" % i,
                "inputdataset": "/Photon/Run2011A-v1/RAW",
                "group": "cmsdataops",
@@ -192,8 +188,8 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
     """
     current_time = int(time.time())
     docs = []
-    for cycle in xrange(iterations):
-        for i in xrange(number):
+    for cycle in range(iterations):
+        for i in range(number):
             doc = {"status": {"inWMBS": 12,
                               "submitted": {"retry": 2, "running": 2, "pending": 2, "first": 2},
                               "failure": {"exception": 2, "create": 2, "submit": 2},
@@ -273,7 +269,7 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
                   'jobfailed', 'createcooloff', 'submitcooloff', 'jobcooloff', 'success',
                   'exhausted', 'killed']
 
-    for i in xrange(number):
+    for i in range(number):
         status = statusList[random.randint(0, len(statusList) - 1)]
         errmsgs = {}
         if status.find("failed"):

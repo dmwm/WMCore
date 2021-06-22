@@ -16,6 +16,8 @@ import threading
 import time
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
 
@@ -91,6 +93,9 @@ class JobCreatorTest(EmulatedUnitTestCase):
         self.componentName = 'JobCreator'
         self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 

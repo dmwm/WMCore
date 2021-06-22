@@ -9,6 +9,8 @@ import os
 import threading
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
@@ -77,7 +79,8 @@ class DQMHarvestTests(EmulatedUnitTestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):

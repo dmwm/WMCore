@@ -7,14 +7,18 @@ from builtins import str
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.MicroService.Tools.PycurlRucio import (getRucioToken, parseNewLineJson,
                                                    getPileupContainerSizesRucio, listReplicationRules,
-                                                   getBlocksAndSizeRucio)
+                                                   getBlocksAndSizeRucio, stringDateToEpoch)
 
-CONT1 = "/Pseudoscalar2HDM_MonoZLL_mScan_mH-500_ma-300/DMWM_Test-TC_PreMix_Agent122_Validation_Alanv1-v11/MINIAODSIM"
-CONT2 = "/RelValH125GGgluonfusion_14/Integ_Test-SC_LumiMask_PhEDEx_HG2004_Val_Privv19-v11/NANOAODSIM"
-CONT3 = "/RelValH125GGgluonfusion_13/CMSSW_8_1_0-RecoFullPU_2017PU_TaskChain_PUMCRecyc_Agent114_Validation_TEST_Alan_v18-v11/DQMIO"
-CONT4 = "/DMSimp_MonoZLL_NLO_Vector_TuneCP3_GQ0p25_GDM1p0_MY1-500_MXd-1/RunIIFall17NanoAODv4-PU2017_12Apr2018_Nano14Dec2018_102X_mc2017_realistic_v6-v1/NANOAODSIM"
+CONT1 = "/NoBPTX/Run2018D-12Nov2019_UL2018-v1/MINIAOD"
+CONT2 = "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO"
+CONT3 = "/RelValTTbar_14TeV/CMSSW_11_2_0_pre8-112X_mcRun3_2024_realistic_v10_forTrk-v1/GEN-SIM"
+# Pileup container
+PU_CONT = "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX"
+PU_CONT_BLK = "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX#00287791-198c-4000-aafa-a796878d51bb"
 
 
 class PycurlRucioTests(unittest.TestCase):
@@ -26,8 +30,10 @@ class PycurlRucioTests(unittest.TestCase):
         self.rucioAuthUrl = "https://cmsrucio-auth-int.cern.ch"
         self.rucioAccount = "wma_test"
         self.rucioScope = "cms"
-        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
+        #self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         self.badDID = "/wrong/did/name"
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testParseNewLineJson(self):
         """
@@ -45,16 +51,18 @@ class PycurlRucioTests(unittest.TestCase):
         Test the getPileupContainerSizesRucio function, which fetches the container
         total bytes.
         """
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
+        # Test 1: no DIDs provided as input
         resp = getPileupContainerSizesRucio([], self.rucioUrl,
                                             self.rucioToken, scope=self.rucioScope)
         self.assertEqual(resp, {})
 
-        containers = [CONT1, CONT2, self.badDID]
+        # Test 2: multiple valid/invalid DIDs provided as input
+        containers = [CONT1, PU_CONT, self.badDID]
         resp = getPileupContainerSizesRucio(containers, self.rucioUrl,
                                             self.rucioToken, scope=self.rucioScope)
         self.assertTrue(len(resp) == 3)
-        self.assertTrue(CONT2 in resp)
-        self.assertTrue(resp[CONT1] > 0)
+        self.assertTrue(resp[PU_CONT] > 0)
         self.assertIsNone(resp[self.badDID])
 
     def testListReplicationRules(self):
@@ -62,6 +70,7 @@ class PycurlRucioTests(unittest.TestCase):
         Test the listReplicationRules function, which fetches the container
         rules a return a list of RSEs key'ed by the container name.
         """
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
         resp = listReplicationRules([], self.rucioAccount, grouping="A",
                                     rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
         self.assertEqual(resp, {})
@@ -70,12 +79,12 @@ class PycurlRucioTests(unittest.TestCase):
             listReplicationRules(["blah"], self.rucioAccount, grouping="Not valid!!!",
                                  rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
 
-        containers = [CONT2, CONT3, self.badDID]
+        containers = [PU_CONT, CONT2, self.badDID]
         resp = listReplicationRules(containers, self.rucioAccount, grouping="A",
                                     rucioUrl=self.rucioUrl, rucioToken=self.rucioToken, scope=self.rucioScope)
         self.assertTrue(len(resp) == 3)
-        self.assertTrue(CONT2 in resp)
-        self.assertTrue(isinstance(resp[CONT3], list))
+        self.assertTrue(PU_CONT in resp)
+        self.assertTrue(isinstance(resp[CONT2], list))
         self.assertEqual(resp[self.badDID], [])
 
     def testGetBlocksAndSizeRucio(self):
@@ -83,17 +92,27 @@ class PycurlRucioTests(unittest.TestCase):
         Test the getBlocksAndSizeRucio function, which fetches all the blocks
         (in a container) and their sizes.
         """
-        BLOCK = "/DMSimp_MonoZLL_NLO_Vector_TuneCP3_GQ0p25_GDM1p0_MY1-500_MXd-1/RunIIFall17NanoAODv4-PU2017_12Apr2018_Nano14Dec2018_102X_mc2017_realistic_v6-v1/NANOAODSIM#048c25e9-38bb-496d-86f7-405ffd3d3fd8"
+        self.rucioToken, self.tokenValidity = getRucioToken(self.rucioAuthUrl, self.rucioAccount)
+        # Test 1: no DIDs provided as input
         resp = getBlocksAndSizeRucio([], self.rucioUrl, self.rucioToken, self.rucioScope)
         self.assertEqual(resp, {})
-
-        containers = [CONT2, CONT4, self.badDID]
+        # Test 2: multiple valid/invalid DIDs provided as input
+        containers = [PU_CONT, CONT3, self.badDID]
         resp = getBlocksAndSizeRucio(containers, self.rucioUrl, self.rucioToken, self.rucioScope)
         self.assertTrue(len(resp) == 3)
-        self.assertTrue(CONT2 in resp)
-        self.assertTrue(len(resp[CONT4]) > 3)
-        self.assertItemsEqual(list(resp[CONT4][BLOCK]), ["blockSize", "locations"])
+        self.assertTrue(resp[PU_CONT][PU_CONT_BLK]['blockSize'] > 0)
+        self.assertTrue(isinstance(resp[PU_CONT][PU_CONT_BLK]['locations'], list))
+        self.assertTrue(len(resp[CONT3]) > 0)
         self.assertIsNone(resp[self.badDID])
+
+    def testStringDateToEpoch(self):
+        """
+        Test the stringDateToEpoch function
+        """
+        dateString = 'Thu, 29 Apr 2021 13:15:42 UTC'
+        self.assertEqual(1619694942, stringDateToEpoch(dateString))
+        dateString = 'Thu, 1 Jan 1970 01:00:00 UTC'
+        self.assertEqual(0, stringDateToEpoch(dateString))
 
 
 if __name__ == '__main__':

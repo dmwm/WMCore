@@ -357,7 +357,7 @@ class Workflow(object):
             return [thisChunk], [thisChunkSize]
 
         # create a descendant list of blocks according to their sizes
-        sortedPrimary = sorted(viewitems(self.getPrimaryBlocks()), key=operator.itemgetter(1), reverse=True)
+        sortedPrimary = sorted(viewitems(self.getPrimaryBlocks()), key=lambda item: item[1]['blockSize'], reverse=True)
         if len(sortedPrimary) < numChunks:
             msg = "There are less blocks than chunks to create. "
             msg += "Reducing numChunks from %d to %d" % (numChunks, len(sortedPrimary))

@@ -39,6 +39,7 @@ from cherrypy.lib import profiler
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
 from Utils.Utilities import lowerCmsHeaders
+from Utils.PythonVersion import PY2
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"
@@ -434,7 +435,7 @@ class RESTDaemon(RESTMain):
             self.run()
         except Exception as e:
             error = True
-            if sys.version_info[0] == 2:
+            if PY2:
                 trace = BytesIO()
             else:
                 trace = StringIO()
@@ -511,7 +512,10 @@ def main():
     # when infrequently accessed server redirects output to 'rotatelogs'.
     if 'PYTHONUNBUFFERED' not in os.environ:
         os.environ['PYTHONUNBUFFERED'] = "1"
-        os.execvp("python", ["python"] + sys.argv)
+        if PY2:
+            os.execvp("python", ["python"] + sys.argv)
+        else:
+            os.execvp("python3", ["python3"] + sys.argv)
 
     opt = ArgumentParser(usage=__doc__)
     opt.add_argument("-q", "--quiet", action="store_true", dest="quiet", default=False,

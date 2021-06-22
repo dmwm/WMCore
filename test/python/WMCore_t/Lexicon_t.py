@@ -845,6 +845,10 @@ class LexiconTest(unittest.TestCase):
         self.assertEqual(result, 'T2_US_Florida')
 
     def testGetIterMatchObjectOnRegex(self):
+        logPath = os.path.join(getTestBase(), "WMCore_t/test_empty.log")
+        for mo in getIterMatchObjectOnRegexp(logPath, WMEXCEPTION_REGEXP):
+            pass
+
         count = 0
         ecount = 0
         logPath = os.path.join(getTestBase(), "WMCore_t/test_condor.log")

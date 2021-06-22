@@ -6,13 +6,14 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-from builtins import str, bytes, zip, range
+from builtins import str, zip, range
 
 import datetime
 import time
 import types
 
 from WMCore.DataStructs.WMObject import WMObject
+from Utils.PythonVersion import PY2
 
 
 class DBFormatter(WMObject):
@@ -77,7 +78,7 @@ class DBFormatter(WMObject):
                 entry = {}
                 for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if isinstance(i[index], str):
+                    if isinstance(i[index], str) and PY2:
                         entry[str(descriptions[index].lower())] = i[index].encode("utf-8")
                     else:
                         entry[str(descriptions[index].lower())] = i[index]

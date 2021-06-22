@@ -26,6 +26,7 @@ from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 
 
@@ -330,6 +331,40 @@ class WMTaskHelper(TreeHelper):
         master = BuildMaster(workingDir)
         master(self)
         return
+
+    def addEnvironmentVariables(self, envDict):
+        """
+        _addEnvironmentVariables_
+
+        add a key = value style setting to the environment for this task and all
+        its children
+        """
+        for key, value in viewitems(envDict):
+            setattr(self.data.environment, key, value)
+        for task in self.childTaskIterator():
+            task.addEnvironmentVariables(envDict)
+        return
+
+    def setOverrideCatalog(self, tfcFile):
+        """
+        _setOverrideCatalog_
+
+        Used for setting overrideCatalog option for each step in the task.
+        """
+        for step in self.steps().nodeIterator():
+            step = CoreHelper(step)
+            step.setOverrideCatalog(tfcFile)
+        for task in self.childTaskIterator():
+            task.setOverrideCatalog(tfcFile)
+        return
+
+    def getEnvironmentVariables(self):
+        """
+        _getEnvironmentVariables_
+
+        Retrieve a dictionary with all environment variables defined for this task
+        """
+        return self.data.environment.dictionary_()
 
     def setupEnvironment(self):
         """
@@ -1792,6 +1827,7 @@ class WMTask(ConfigSectionTree):
         self.section_("input")
         self.section_("notifications")
         self.section_("subscriptions")
+        self.section_("environment")
         self.notifications.targets = []
         self.input.sandbox = None
         self.input.section_("splitting")

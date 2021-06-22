@@ -36,7 +36,7 @@ class JobPackage(WMObject, dict):
 
         Pickle this object and save it to disk.
         """
-        with open(fileName, 'w') as fileHandle:
+        with open(fileName, 'wb') as fileHandle:
             pickle.dump(self, fileHandle, -1)
         return
 
@@ -47,7 +47,7 @@ class JobPackage(WMObject, dict):
         Load a pickled JobPackage object.
         """
         self.clear()
-        with open(fileName, 'r') as fileHandle:
+        with open(fileName, 'rb') as fileHandle:
             loadedJobPackage = pickle.load(fileHandle)
         self.update(loadedJobPackage)
         return

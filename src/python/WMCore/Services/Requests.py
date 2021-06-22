@@ -12,9 +12,6 @@ from __future__ import division, print_function
 from future import standard_library
 standard_library.install_aliases()
 
-from future import standard_library
-standard_library.install_aliases()
-
 from builtins import str, bytes, object
 from future.utils import viewvalues
 
@@ -24,7 +21,6 @@ import os
 import shutil
 import socket
 import stat
-import sys
 import tempfile
 import traceback
 import types
@@ -35,6 +31,8 @@ from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from Utils.CertTools import getKeyCertFromEnv, getCAPathFromEnv
+from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.PythonVersion import PY3
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -302,6 +300,8 @@ class Requests(dict):
     def decodeResult(self, result, decoder):
         """
         Decode the http/pycurl request result
+        NOTE: if decoder is provided with a False value, then it means no
+        decoding is applied on the results at all
         """
         if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
@@ -319,6 +319,8 @@ class Requests(dict):
         """
         decode data to some appropriate format, for now make it a string...
         """
+        if PY3:
+            return decodeBytesToUnicode(data)
         return data.__str__()
 
     def cachePath(self, given_path, service_name):
@@ -410,8 +412,16 @@ class Requests(dict):
 
     def addBasicAuth(self, username, password):
         """Add basic auth headers to request"""
-        auth_string = "Basic %s" % base64.encodestring('%s:%s' % (
+        ## TODO: base64.encodestring is deprecated
+        # https://docs.python.org/3.8/library/base64.html#base64.encodestring
+        # change to base64.encodebytes after we drop python2
+        username = encodeUnicodeToBytes(username)
+        password = encodeUnicodeToBytes(password)
+        encodedauth = base64.encodestring(b'%s:%s' % (
             username, password)).strip()
+        if PY3:
+            encodedauth = decodeBytesToUnicode(encodedauth)
+        auth_string = "Basic %s" % encodedauth
         self.additionalHeaders["Authorization"] = auth_string
 
     def getKeyCert(self):
@@ -559,6 +569,8 @@ class JSONRequests(Requests):
         if data:
             decoder = JSONDecoder()
             thunker = JSONThunker()
+            if PY3:
+                data = decodeBytesToUnicode(data)
             data = decoder.decode(data)
             unthunked = thunker.unthunk(data)
             return unthunked

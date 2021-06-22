@@ -20,6 +20,9 @@ import unittest
 from copy import deepcopy
 from hashlib import md5
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -453,7 +456,8 @@ class TaskChainTests(EmulatedUnitTestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):
@@ -1054,7 +1058,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         arguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments.update(REQUEST_INPUT)
+        arguments.update(deepcopy(REQUEST_INPUT))
         arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
@@ -1085,7 +1089,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         testArguments = TaskChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST_INPUT)
+        testArguments.update(deepcopy(REQUEST_INPUT))
         testArguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         testArguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
 
@@ -1661,47 +1665,47 @@ class TaskChainTests(EmulatedUnitTestCase):
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-logArchive',
                     '/TestWorkload/GenSim/unmerged-logArchive']
         subMaps = ['FILESET_DEFINED_DURING_RUNTIME',
-                   (5,
+                   (6,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-logArchive',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/LogCollectForDigiHLT_new',
                     'MinFileBased',
                     'LogCollect'),
-                   (4,
+                   (5,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new/DigiHLT_newCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (8,
+                   (10,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI/merged-logArchive',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI/DigiHLT_refwriteRAWDIGIMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (10,
+                   (11,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-logArchive',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/LogCollectForDigiHLT_ref',
                     'MinFileBased',
                     'LogCollect'),
-                   (9,
+                   (8,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (7,
+                   (9,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref/DigiHLT_refMergewriteRAWDIGI',
                     'WMBSMergeBySize',
                     'Merge'),
-                   (11,
+                   (12,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-logArchive',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/GenSimwriteGENSIMMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (3,
+                   (4,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-MergedGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_new',
                     'LumiBased',
                     'Processing'),
-                   (6,
+                   (7,
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/merged-MergedGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM/DigiHLT_ref',
                     'EventBased',
@@ -1711,12 +1715,12 @@ class TaskChainTests(EmulatedUnitTestCase):
                     '/TestWorkload/GenSim/LogCollectForGenSim',
                     'MinFileBased',
                     'LogCollect'),
-                   (12,
+                   (2,
                     '/TestWorkload/GenSim/unmerged-writeGENSIMGEN-SIM',
                     '/TestWorkload/GenSim/GenSimCleanupUnmergedwriteGENSIM',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (2,
+                   (3,
                     '/TestWorkload/GenSim/unmerged-writeGENSIMGEN-SIM',
                     '/TestWorkload/GenSim/GenSimMergewriteGENSIM',
                     'ParentlessMergeBySize',
@@ -1745,6 +1749,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GenSim-%s' % md5(maskString).hexdigest()
         expFsets[0] = topFilesetName
         # returns a tuple of id, name, open and last_update
@@ -1767,6 +1772,7 @@ class TaskChainTests(EmulatedUnitTestCase):
 
         # same function as in WMBSHelper, otherwise we cannot know which fileset name is
         maskString = ",".join(["%s=%s" % (x, myMask[x]) for x in sorted(myMask)])
+        maskString = encodeUnicodeToBytesConditional(maskString, condition=PY3)
         topFilesetName = 'TestWorkload-GenSim-%s' % md5(maskString).hexdigest()
         expFsets.append(topFilesetName)
         # returns a tuple of id, name, open and last_update
@@ -1863,147 +1869,147 @@ class TaskChainTests(EmulatedUnitTestCase):
             '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-MergedRAW-DEBUG-DIGI',
             '/TestWorkload/DigiHLT/unmerged-logArchive',
             '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI']
-        subMaps = [(33,
+        subMaps = [(4,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI/DigiHLTwriteRAWDEBUGDIGIMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (30,
+                   (34,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/DigiHLTwriteRAWDIGIMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (3,
+                   (7,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/merged-MergedRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco',
                     'EventAwareLumiBased',
                     'Processing'),
-                   (18,
+                   (13,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1/ALCARecowriteALCA1MergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (21,
+                   (16,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2/ALCARecowriteALCA2MergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (23,
+                   (17,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/LogCollectForALCAReco',
                     'MinFileBased',
                     'LogCollect'),
-                   (19,
+                   (11,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoCleanupUnmergedwriteALCA1',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (17,
+                   (12,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA1ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA1',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (22,
+                   (14,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoCleanupUnmergedwriteALCA2',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (20,
+                   (15,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/unmerged-writeALCA2ALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco/ALCARecoMergewriteALCA2',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (24,
+                   (18,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/RecowriteALCAMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (16,
+                   (10,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/merged-MergedALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco',
                     'EventAwareLumiBased',
                     'Processing'),
-                   (27,
+                   (21,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD/RecowriteAODMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (13,
+                   (32,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/RecowriteRECOMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (5,
+                   (24,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/merged-MergedRECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims',
                     'EventAwareLumiBased',
                     'Processing'),
-                   (7,
+                   (27,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1/SkimswriteSkim1MergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (10,
+                   (30,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2/merged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2/SkimswriteSkim2MergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (12,
+                   (31,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/LogCollectForSkims',
                     'MinFileBased',
                     'LogCollect'),
-                   (8,
+                   (25,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsCleanupUnmergedwriteSkim1',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (6,
+                   (26,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim1RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim1',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (11,
+                   (28,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsCleanupUnmergedwriteSkim2',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (9,
+                   (29,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/unmerged-writeSkim2RECO-AOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO/Skims/SkimsMergewriteSkim2',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (29,
+                   (33,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-logArchive',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/LogCollectForReco',
                     'MinFileBased',
                     'LogCollect'),
-                   (25,
+                   (8,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCAALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteALCA',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (15,
+                   (9,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeALCAALCARECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (28,
+                   (19,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAODAOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteAOD',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (26,
+                   (20,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeAODAOD',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteAOD',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (14,
+                   (22,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECORECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoCleanupUnmergedwriteRECO',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (4,
+                   (23,
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/unmerged-writeRECORECO',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteRECO',
                     'ParentlessMergeBySize',
@@ -2013,22 +2019,22 @@ class TaskChainTests(EmulatedUnitTestCase):
                     '/TestWorkload/DigiHLT/LogCollectForDigiHLT',
                     'MinFileBased',
                     'LogCollect'),
-                   (34,
+                   (2,
                     '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTCleanupUnmergedwriteRAWDEBUGDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (32,
+                   (3,
                     '/TestWorkload/DigiHLT/unmerged-writeRAWDEBUGDIGIRAW-DEBUG-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDEBUGDIGI',
                     'ParentlessMergeBySize',
                     'Merge'),
-                   (31,
+                   (5,
                     '/TestWorkload/DigiHLT/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTCleanupUnmergedwriteRAWDIGI',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (2,
+                   (6,
                     '/TestWorkload/DigiHLT/unmerged-writeRAWDIGIRAW-DIGI',
                     '/TestWorkload/DigiHLT/DigiHLTMergewriteRAWDIGI',
                     'ParentlessMergeBySize',
@@ -2294,7 +2300,7 @@ class TaskChainTests(EmulatedUnitTestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
 
         arguments = TaskChainWorkloadFactory.getTestArguments()
-        arguments.update(REQUEST_INPUT)
+        arguments.update(deepcopy(REQUEST_INPUT))
         arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
         arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
         arguments['Task2']['KeepOutput'] = False

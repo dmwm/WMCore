@@ -14,8 +14,6 @@ from builtins import str
 from future.utils import viewvalues
 
 import io
-import logging
-import mmap
 import re
 
 from urllib.parse import urlparse, urlunparse
@@ -841,7 +839,7 @@ def getIterMatchObjectOnRegexp(filePath, regexp):
             for m in re.finditer(regexp, mm):
                 yield m
             mm.close()
-
+            
 def regexp():
     """
     Dump all regexp expression used in Lexicon

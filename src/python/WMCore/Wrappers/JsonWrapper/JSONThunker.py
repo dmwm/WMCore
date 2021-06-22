@@ -2,9 +2,11 @@ from __future__ import print_function
 
 from builtins import str, bytes, int
 from future.utils import viewitems
+from Utils.PythonVersion import PY2
 
 import sys
 import types
+
 
 class _EmptyClass(object):
     pass
@@ -264,7 +266,7 @@ class JSONThunker(object):
         """
         _unthunk - does the actual work for unthunk
         """
-        if type(jsondata) is str:
+        if PY2 and type(jsondata) is str:
             return jsondata.encode("utf-8")
         if type(jsondata) is dict:
             if 'thunker_encoded_json' in jsondata:

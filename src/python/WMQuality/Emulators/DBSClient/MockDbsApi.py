@@ -11,12 +11,13 @@ from future.utils import viewitems
 import copy
 import json
 import os
-import sys
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.WMBase import getTestBase
 
+from Utils.Utilities import encodeUnicodeToBytesConditional
+from Utils.PythonVersion import PY2
 
 # Read in the data just once so that we don't have to do it for every test (in __init__)
 
@@ -37,17 +38,6 @@ except IOError:
 
 mockData['https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
 mockData['https://cmsweb-prod.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
-
-def _unicode(data):
-    """
-    Temporary workaround for problem with how unicode strings are represented
-    by unicode (as u"hello worls") and future.types.newstr (as "hello world")
-    https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
-    """
-    if sys.version_info[0] == 2:
-        return unicode(data)
-    else:
-        return str(data)
 
 class MockDbsApi(object):
     def __init__(self, url):
@@ -76,7 +66,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [_unicode(lfn)]})
+                origArgs.update({'logical_file_name': [lfn]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -99,7 +89,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [_unicode(lfn)]})
+                origArgs.update({'logical_file_name': [lfn]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -124,11 +114,15 @@ class MockDbsApi(object):
         :param kwargs: named arguments it was called with
         :return: the dictionary that DBS would have returned
         """
-
         if self.url not in mockData:
             raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
 
         if kwargs:
+            for k in kwargs:
+                if isinstance(kwargs[k], (list, tuple)):
+                    kwargs[k] = [encodeUnicodeToBytesConditional(item, condition=PY2) for item in kwargs[k]]
+                else:
+                    kwargs[k] = encodeUnicodeToBytesConditional(kwargs[k], condition=PY2)
             signature = '%s:%s' % (self.item, sorted(viewitems(kwargs)))
         else:
             signature = self.item
@@ -139,5 +133,5 @@ class MockDbsApi(object):
             else:
                 return mockData[self.url][signature]
         except KeyError:
-            raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
-                           (self.item, args, kwargs, self.url))
+            raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s) (Signature: %s)" %
+                           (self.item, args, kwargs, self.url, signature))

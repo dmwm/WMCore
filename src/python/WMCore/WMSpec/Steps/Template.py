@@ -62,6 +62,21 @@ class CoreHelper(WMStepHelper):
         """
         return self.data.environment
 
+    def setOverrideCatalog(self, overrideCatalog):
+        """
+        _setOverrideCatalog_
+        set the override catalog needed at least at CERN to use production castor pools
+        """
+        if overrideCatalog is not None:
+            self.data.application.overrideCatalog = overrideCatalog
+
+    def getOverrideCatalog(self):
+        """
+        _getOverrideCatalog_
+        return the TFC specified in overrideCatalog.
+        """
+        return getattr(self.data.application, "overrideCatalog", None)
+
     def addDirectory(self, dirName):
         """
         _addDirectory_

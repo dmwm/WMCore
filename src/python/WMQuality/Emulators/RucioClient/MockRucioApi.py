@@ -4,18 +4,20 @@
 Version of WMCore/Services/Rucio intended to be used with mock or unittest.mock
 """
 from __future__ import print_function, division
-from future.utils import listitems
 # from builtins import object # avoid importing this, it beraks things
 
 import json
 import logging
 import os
-import sys
+import hashlib
 
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
 from WMCore.Services.Rucio.Rucio import WMRucioException, WMRucioDIDNotFoundException
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
+
+from Utils.PythonVersion import PY2, PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 
 PROD_DBS = 'https://cmsweb-prod.cern.ch/dbs/prod/global/DBSReader'
 
@@ -38,18 +40,6 @@ except IOError:
     MOCK_DATA = {}
 
 
-def _unicode(data):
-    """
-    Temporary workaround for problem with how unicode strings are represented
-    by unicode (as u"hello worls") and future.types.newstr (as "hello world")
-    https://github.com/dmwm/WMCore/pull/10299#issuecomment-781600773
-    """
-    if sys.version_info[0] == 2:
-        return unicode(data)
-    else:
-        return str(data)
-
-
 class MockRucioApi(object):
     """
     Version of WMCore/Services/Rucio intended to be used with mock or unittest.mock
@@ -68,9 +58,12 @@ class MockRucioApi(object):
         :return: a fake list of sites where the data is
         """
         logging.info("%s: Calling mock sitesByBlock", self.__class__.__name__)
-        if hash(block) % 3 == 0:
+        block = encodeUnicodeToBytesConditional(block, condition=PY3)
+        # this algorithm gives same results in both python versions
+        blockHash = int(hashlib.sha1(block).hexdigest()[:8], 16)
+        if blockHash % 3 == 0:
             sites = ['T2_XX_SiteA']
-        elif hash(block) % 3 == 1:
+        elif blockHash % 3 == 1:
             sites = ['T2_XX_SiteA', 'T2_XX_SiteB']
         else:
             sites = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
@@ -94,11 +87,12 @@ class MockRucioApi(object):
             :return: the dictionary that DBS would have returned
             """
             logging.info("%s: Calling mock genericLookup", self.__class__.__name__)
-            for key, value in listitems(kwargs):
-                # json dumps/loads converts strings to unicode strings, do the same with kwargs
-                if isinstance(value, str):
-                    kwargs[key] = _unicode(value)
             if kwargs:
+                for k in kwargs:
+                    if isinstance(kwargs[k], (list, tuple)):
+                        kwargs[k] = [encodeUnicodeToBytesConditional(x, condition=PY2) for x in kwargs[k]]
+                    else:
+                        kwargs[k] = encodeUnicodeToBytesConditional(kwargs[k], condition=PY2)
                 signature = '%s:%s' % (item, sorted(kwargs.items()))
             else:
                 signature = item

@@ -12,6 +12,8 @@ import threading
 import unittest
 from copy import deepcopy
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -67,7 +69,8 @@ class RepackTests(unittest.TestCase):
         self.listTasksByWorkflow = self.daoFactory(classname="Workflow.LoadFromName")
         self.listFilesets = self.daoFactory(classname="Fileset.List")
         self.listSubsMapping = self.daoFactory(classname="Subscriptions.ListSubsAndFilesetsFromWorkflow")
-
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
         return
 
     def tearDown(self):
@@ -315,12 +318,12 @@ class RepackTests(unittest.TestCase):
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/unmerged-logArchive']
-        subMaps = [(3,
+        subMaps = [(4,
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW/Repackwrite_PrimaryDataset1_RAWMergeLogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (6,
+                   (7,
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/merged-logArchive',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW/Repackwrite_PrimaryDataset2_RAWMergeLogCollect',
                     'MinFileBased',
@@ -330,22 +333,22 @@ class RepackTests(unittest.TestCase):
                     '/TestWorkload/Repack/LogCollect',
                     'MinFileBased',
                     'LogCollect'),
-                   (4,
+                   (2,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset1_RAW',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (2,
+                   (3,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset1_RAWRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset1_RAW',
                     'RepackMerge',
                     'Merge'),
-                   (7,
+                   (5,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackCleanupUnmergedwrite_PrimaryDataset2_RAW',
                     'SiblingProcessingBased',
                     'Cleanup'),
-                   (5,
+                   (6,
                     '/TestWorkload/Repack/unmerged-write_PrimaryDataset2_RAWRAW',
                     '/TestWorkload/Repack/RepackMergewrite_PrimaryDataset2_RAW',
                     'RepackMerge',

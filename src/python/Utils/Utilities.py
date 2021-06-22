@@ -15,7 +15,6 @@ import sys
 from types import ModuleType, FunctionType
 from gc import get_referents
 
-
 def lowerCmsHeaders(headers):
     """
     Lower CMS headers in provided header's dict. The WMCore Authentication
@@ -136,6 +135,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     truncate message until zip/encoded version
     is within the limits allowed.
     """
+    message = encodeUnicodeToBytes(message)
     encodedStr = zlib.compress(message, compressLevel)
     encodedStr = base64.b64encode(encodedStr)
     if len(encodedStr) < maxLen or maxLen == -1:
@@ -146,6 +146,7 @@ def zipEncodeStr(message, maxLen=5120, compressLevel=9, steps=100, truncateIndic
     # Estimate new length for message zip/encoded version
     # to be less than maxLen.
     # Also, append truncate indicator to message.
+    truncateIndicator = encodeUnicodeToBytes(truncateIndicator)
     strLen = int((maxLen - len(truncateIndicator)) / compressRate)
     message = message[:strLen] + truncateIndicator
 
@@ -223,6 +224,26 @@ def decodeBytesToUnicode(value, errors="strict"):
         return value.decode("utf-8", errors)
     return value
 
+def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
+    """
+    if *condition*, then call decodeBytesToUnicode(*value*, *errors*),
+    else return *value*
+    
+    This may be useful when we want to conditionally apply decodeBytesToUnicode,
+    maintaining brevity.
+
+    Parameters
+    ----------
+    value : any
+        passed to decodeBytesToUnicode
+    errors: str
+        passed to decodeBytesToUnicode
+    condition: boolean of object with attribute __bool__()
+        if True, then we run decodeBytesToUnicode. Usually PY2/PY3
+    """
+    if condition:
+        return decodeBytesToUnicode(value, errors)
+    return value
 
 def encodeUnicodeToBytes(value, errors="strict"):
     """
@@ -249,4 +270,25 @@ def encodeUnicodeToBytes(value, errors="strict"):
     """
     if isinstance(value, str):
         return value.encode("utf-8", errors)
+    return value
+
+def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
+    """
+    if *condition*, then call encodeUnicodeToBytes(*value*, *errors*),
+    else return *value*
+    
+    This may be useful when we want to conditionally apply encodeUnicodeToBytes,
+    maintaining brevity.
+
+    Parameters
+    ----------
+    value : any
+        passed to encodeUnicodeToBytes
+    errors: str
+        passed to encodeUnicodeToBytes
+    condition: boolean of object with attribute __bool__()
+        if True, then we run encodeUnicodeToBytes. Usually PY2/PY3
+    """
+    if condition:
+        return encodeUnicodeToBytes(value, errors)
     return value

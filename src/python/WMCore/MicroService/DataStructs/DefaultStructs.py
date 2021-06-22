@@ -76,3 +76,15 @@ RULECLEANER_REPORT = dict(thread_id="",
                           failed_container_rules_deleted=0,
                           success_request_transition=0,
                           failed_request_transition=0)
+
+# summary metrics for the MSUnmerged thread
+# (also available through the `info` REST API)
+UNMERGED_REPORT = dict(thread_id="",
+                       start_time=0,
+                       end_time=0,
+                       execution_time=0,
+                       error="",
+                       total_num_rses=0,
+                       total_num_files=0,
+                       num_rses_cleaned=0,
+                       num_files_deleted=0)

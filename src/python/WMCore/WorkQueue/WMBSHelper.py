@@ -12,6 +12,8 @@ import logging
 import threading
 from collections import defaultdict
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
@@ -32,13 +34,12 @@ from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
-    """Function to return status of wmbs subscriptions
     """
-    action = DAOFactory(package='WMBS',
-                        logger=logger,
-                        dbinterface=dbi)('Monitoring.SubscriptionStatus')
-    return action.execute(conn=conn,
-                          transaction=transaction)
+    Function to return status of wmbs subscriptions
+    """
+    daoFactory = DAOFactory(package='WMCore.WMBS', logger=logger, dbinterface=dbi)
+    action = daoFactory(classname='Monitoring.SubscriptionStatus')
+    return action.execute(conn=conn, transaction=transaction)
 
 
 class WorkQueueWMBSException(WMException):
@@ -226,6 +227,7 @@ class WMBSHelper(WMConnectionBase):
             if self.mask:
                 from hashlib import md5
                 mask_string = ",".join(["%s=%s" % (x, self.mask[x]) for x in sorted(self.mask)])
+                mask_string = encodeUnicodeToBytesConditional(mask_string, condition=PY3)
                 filesetName += "-%s" % md5(mask_string).hexdigest()
         else:
             filesetName = topLevelFilesetName
@@ -265,15 +267,18 @@ class WMBSHelper(WMConnectionBase):
 
         return
 
-    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False):
+    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False,
+                                   createSandbox=True):
         """
         __createSubscriptionsInWMBS_
 
         Create subscriptions in WMBS for all the tasks in the spec.  This
         includes filesets, workflows and the output map for each task.
+        :param createSandbox: boolean flag to skip (re-)creation of the workload sandbox
         """
         # create runtime sandbox for workflow
-        self.createSandbox()
+        if createSandbox:
+            self.createSandbox()
 
         # FIXME: Let workflow put in values if spec is missing them
         workflow = Workflow(spec=self.wmSpec.specUrl(), owner=self.wmSpec.getOwner()["name"],
@@ -286,6 +291,7 @@ class WMBSHelper(WMConnectionBase):
                             alternativeFilesetClose=alternativeFilesetClose,
                             priority=self.wmSpec.priority())
         workflow.create()
+
         subscription = Subscription(fileset=fileset, workflow=workflow,
                                     split_algo=task.jobSplittingAlgorithm(),
                                     type=task.getPrimarySubType())
@@ -307,7 +313,7 @@ class WMBSHelper(WMConnectionBase):
         outputModules = task.getOutputModulesForTask()
         ignoredOutputModules = task.getIgnoredOutputModulesForTask()
         for outputModule in outputModules:
-            for outputModuleName in outputModule.listSections_():
+            for outputModuleName in sorted(outputModule.listSections_()):
                 if outputModuleName in ignoredOutputModules:
                     msg = "%s has %s as IgnoredOutputModule, skipping fileset creation."
                     logging.info(msg, task.getPathName(), outputModuleName)
@@ -334,7 +340,8 @@ class WMBSHelper(WMConnectionBase):
                             if primaryDataset is not None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
-                        self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
+                        self._createSubscriptionsInWMBS(childTask, outputFileset,
+                                                        alternativeFilesetClose, createSandbox=False)
 
                 if mergedOutputFileset is None:
                     workflow.addOutput(outputModuleName + dataTier, outputFileset,
@@ -363,7 +370,7 @@ class WMBSHelper(WMConnectionBase):
         if not locations:
             msg = 'No locations to inject Monte Carlo work to, unable to proceed'
             raise WorkQueueWMBSException(msg)
-        mcFakeFileName = ("MCFakeFile-%s" % self.topLevelFileset.name).encode('ascii', 'ignore')
+        mcFakeFileName = "MCFakeFile-%s" % self.topLevelFileset.name
         wmbsFile = File(lfn=mcFakeFileName,
                         first_event=self.mask['FirstEvent'],
                         last_event=self.mask['LastEvent'],

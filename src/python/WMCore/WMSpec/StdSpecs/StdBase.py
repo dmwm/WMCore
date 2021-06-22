@@ -12,12 +12,10 @@ import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -396,7 +394,7 @@ class StdBase(object):
         eventStreams = self.eventStreams
         if 'Multicore' in taskConf and taskConf['Multicore'] > 0:
             multicore = taskConf['Multicore']
-        if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
+        if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
 
@@ -1053,7 +1051,7 @@ class StdBase(object):
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"type": int, "default": 0, "validate": lambda x: x >= 0, "null": True},
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
@@ -1100,7 +1098,7 @@ class StdBase(object):
                      "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
                      "Memory": {"type": float, "validate": lambda x: x > 0},
                      "Multicore": {"type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "EventStreams": {"null": True, "default": 0, "type": int, "validate": lambda x: x >= 0},
 
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
@@ -1182,6 +1180,7 @@ class StdBase(object):
                      'ConfigCacheID': {'optional': False, 'type': str},
                      'DataPileup': {'default': None, 'null': False, 'optional': True, 'type': str,
                                     'validate': dataset},
+                     # for task/step level, the default EventStreams value (0) comes from the top level
                      'EventStreams': {'null': True, 'type': int, 'validate': lambda x: x >= 0},
                      'EventsPerJob': {'null': True, 'type': int, 'validate': lambda x: x > 0},
                      'EventsPerLumi': {'default': None, 'null': True, 'optional': True, 'type': int,

@@ -1,0 +1,126 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": {
+            "DigiPU_2021PU": "AcquisitionEra-OVERRIDE-ME", 
+            "GenSimFull": "AcquisitionEra-OVERRIDE-ME", 
+            "RecoPU_2021PU": "AcquisitionEra-OVERRIDE-ME"
+        }, 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "Override": {
+            "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+        }, 
+        "ProcessingString": {
+            "DigiPU_2021PU": "ProcessingString-OVERRIDE-ME", 
+            "GenSimFull": "ProcessingString-OVERRIDE-ME", 
+            "RecoPU_2021PU": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "DEFAULT_AcqEra", 
+        "CMSSWVersion": "CMSSW_11_3_0_pre2_PY3", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": {
+            "CheckList": "TaskChain python3 workflow; TaskChain PU from scratch; TaskChain mc harvesting", 
+            "WorkFlowDesc": ["TaskChain python3 workflow without input, with PU; Task1 200EpJ/2LpJ; Task2 5LpJ",
+                             "Task3 4LpJ; drop DIGI output; Task1/2/3 with 6/7/8 CPUs, 2/3/4 Streams, diff RAM"]
+        }, 
+        "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "e7b57c02d21317e8837dd8868c09f8fb", 
+        "DQMHarvestUnit": "byRun", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "EnableHarvesting": true, 
+        "GlobalTag": "113X_mcRun3_2021_realistic_v2", 
+        "IncludeParents": false, 
+        "Memory": 3000, 
+        "Multicore": 1, 
+        "PrepID": "TEST-CMSSW_11_3_0_pre2_PY3__FullSim_PY3_TESTbyCA-TTbar_14TeV-00002", 
+        "ProcessingString": "DEFAULT_ProcStr", 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "ScramArch": [
+            "slc7_amd64_gcc900"
+        ], 
+        "SizePerEvent": 1, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_11_3_0_pre2_PY3", 
+            "CMSSWVersion": "CMSSW_11_3_0_pre2_PY3", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "e7b57c02d21317e8837dd8868c09b813", 
+            "EventStreams": 2, 
+            "EventsPerJob": 200, 
+            "EventsPerLumi": 100, 
+            "GlobalTag": "113X_mcRun3_2021_realistic_v2", 
+            "KeepOutput": true, 
+            "Memory": 1500,
+            "Multicore": 6,
+            "PrimaryDataset": "RelValTTbar_14TeV", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "RequestNumEvents": 5000,
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased", 
+            "TaskName": "GenSimFull"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_11_3_0_pre2_PY3", 
+            "CMSSWVersion": "CMSSW_11_3_0_pre2_PY3", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "e7b57c02d21317e8837dd8868c09c267", 
+            "EventStreams": 3, 
+            "GlobalTag": "113X_mcRun3_2021_realistic_v2", 
+            "InputFromOutputModule": "FEVTDEBUGoutput", 
+            "InputTask": "GenSimFull", 
+            "KeepOutput": true, 
+            "LumisPerJob": 5,
+            "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_3_0_pre5-113X_mcRun3_2021_realistic_v7-v1/GEN-SIM", 
+            "Memory": 7000,
+            "Multicore": 7,
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DigiPU_2021PU"
+        }, 
+        "Task3": {
+            "AcquisitionEra": "CMSSW_11_3_0_pre2_PY3", 
+            "CMSSWVersion": "CMSSW_11_3_0_pre2_PY3", 
+            "Campaign": "RelVal_Generic_Campaign",
+            "ConfigCacheID": "e7b57c02d21317e8837dd8868c09e3b9", 
+            "EventStreams": 4, 
+            "GlobalTag": "113X_mcRun3_2021_realistic_v2", 
+            "InputFromOutputModule": "FEVTDEBUGHLToutput", 
+            "InputTask": "DigiPU_2021PU", 
+            "KeepOutput": true, 
+            "LumisPerJob": 4,
+            "MCPileup": "/RelValMinBias_14TeV/CMSSW_11_3_0_pre5-113X_mcRun3_2021_realistic_v7-v1/GEN-SIM", 
+            "Memory": 12000, 
+            "Multicore": 8, 
+            "ProcessingString": "Task3_WMCore_TEST", 
+            "ScramArch": [
+                "slc7_amd64_gcc900"
+            ], 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "RecoPU_2021PU"
+        }, 
+        "TaskChain": 3, 
+        "TimePerEvent": 1
+    }
+}

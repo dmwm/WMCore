@@ -13,6 +13,8 @@ import threading
 import unittest
 from collections import Counter
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
@@ -62,6 +64,9 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         # dummy workflow
         self.testWorkflow = Workflow(spec="spec.xml", owner="dmwm", name="testWorkflow", task="Test")
         self.testWorkflow.create()
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
         return
 
@@ -477,7 +482,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
-        self.assertEqual(len(jobs), 7)
+        self.assertEqual(len(jobs), 6)
         # Make sure each job has one run
         for job in jobs:
             self.assertEqual(len(job['mask'].getRunAndLumis()), 1)
@@ -557,7 +562,7 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
         for i in range(3):
-            num = jobs[i]['mask']['runAndLumis'].keys()[0]
+            num = list(jobs[i]['mask']['runAndLumis'])[0]
             self.assertTrue(jobs[i]['failedOnCreation'])
             error = 'File /this/is/file%s has a single lumi %s, in run %s' % (num, num, num)
             error += ' with too many events 1000 and it woud take 12000 sec to run'
@@ -869,13 +874,8 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         self.assertEqual(len(jobs), 2)
         self.assertEqual(len(jobs[0]['input_files']), 3)
         self.assertEqual(len(jobs[1]['input_files']), 1)
-        try:
-            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[0, 1], [2, 3], [4, 4]]})
-            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[5, 5]]})
-        except AssertionError:
-            # weird order
-            self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[0, 0], [2, 5]]})
-            self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[1, 1]]})
+        self.assertItemsEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[0, 4]]})
+        self.assertItemsEqual(jobs[1]['mask'].getRunAndLumis(), {1: [[5, 5]]})
 
         return
 

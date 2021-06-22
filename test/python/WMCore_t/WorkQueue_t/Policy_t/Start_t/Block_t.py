@@ -10,6 +10,8 @@ import unittest
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
@@ -45,6 +47,8 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def setUp(self):
         super(BlockTestCase, self).setUp()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         super(BlockTestCase, self).tearDown()
@@ -436,7 +440,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             for unit in units:
                 pileupData = unit["PileupData"]
                 self.assertEqual(len(pileupData), 1)
-                self.assertItemsEqual(listvalues(pileupData)[0], ['T2_XX_SiteA', 'T2_XX_SiteB'])
+                self.assertItemsEqual(listvalues(pileupData)[0], ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return
 
     def testWithMaskedBlocks(self):

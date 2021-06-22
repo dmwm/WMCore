@@ -11,6 +11,9 @@ from builtins import str as newstr, bytes, int
 from future.utils import viewitems
 
 from future import standard_library
+
+from Utils.PythonVersion import PY3
+
 standard_library.install_aliases()
 
 # system modules
@@ -22,7 +25,7 @@ import cherrypy
 from urllib.error import URLError
 
 # WMCore Modules
-from Utils.Utilities import encodeUnicodeToBytes
+from Utils.Utilities import encodeUnicodeToBytes, encodeUnicodeToBytesConditional
 
 
 def tstamp():
@@ -32,7 +35,7 @@ def tstamp():
 def gen_color(val):
     "Generate unique color code for given string value"
     keyhash = hashlib.md5()
-    keyhash.update(val)
+    keyhash.update(encodeUnicodeToBytesConditional(val, condition=PY3))
     col = '#%s' % keyhash.hexdigest()[:6]
     return col
 
@@ -162,8 +165,7 @@ def genid(kwds):
     else:
         data = str(kwds)  # it is fine both in py2 and in py3
     keyhash = hashlib.md5()
-    data = encodeUnicodeToBytes(data)  # if data is not unicode, then it is not changed
-    keyhash.update(data)
+    keyhash.update(encodeUnicodeToBytesConditional(data, condition=PY3))
     return keyhash.hexdigest()
 
 def checkarg(kwds, arg):

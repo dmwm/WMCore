@@ -9,12 +9,16 @@ import unittest
 from time import sleep
 
 from Utils.MemoryCache import MemoryCache, MemoryCacheException
-
+from Utils.PythonVersion import PY3
 
 class MemoryCacheTest(unittest.TestCase):
     """
     unittest for MemoryCache functions
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testBasics(self):
         cache = MemoryCache(1, [])
@@ -74,3 +78,7 @@ class MemoryCacheTest(unittest.TestCase):
         self.assertItemsEqual(cache.getCache(), set())
         cache.setCache({"item1", "item2"})
         self.assertRaises(TypeError, cache.setCache, ["item3"])
+
+
+if __name__ == "__main__":
+    unittest.main()

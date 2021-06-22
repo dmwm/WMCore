@@ -8,6 +8,9 @@ from future.utils import viewitems, viewvalues
 
 from hashlib import md5
 
+from Utils.Utilities import encodeUnicodeToBytesConditional
+from Utils.PythonVersion import PY3
+
 STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
           'Done', 'Failed', 'CancelRequested', 'Canceled')
 
@@ -150,18 +153,18 @@ class WorkQueueElement(dict):
         # Assume md5 is good enough for now
         myhash = md5()
         spacer = ';'  # character not present in any field
-        myhash.update(self['RequestName'] + spacer)
+        myhash.update(encodeUnicodeToBytesConditional(self['RequestName'] + spacer, condition=PY3))
         # Task will be None in global inbox
-        myhash.update(repr(self['TaskName']) + spacer)
-        myhash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
+        myhash.update(encodeUnicodeToBytesConditional(repr(self['TaskName']) + spacer, condition=PY3))
+        myhash.update(encodeUnicodeToBytesConditional(",".join(sorted(self['Inputs'].keys())) + spacer, condition=PY3))
         # Check repr is reproducible - should be
         if self['Mask']:
-            myhash.update(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['Mask'])]) + spacer)
+            myhash.update(encodeUnicodeToBytesConditional(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['Mask'])]) + spacer, condition=PY3))
         else:
-            myhash.update("None" + spacer)
+            myhash.update(encodeUnicodeToBytesConditional("None" + spacer, condition=PY3))
         # Check ACDC is deterministic and all params relevant
-        myhash.update(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['ACDC'])]) + spacer)
-        myhash.update(repr(self['Dbs']) + spacer)
+        myhash.update(encodeUnicodeToBytesConditional(",".join(["%s=%s" % (x, y) for x, y in viewitems(self['ACDC'])]) + spacer, condition=PY3))
+        myhash.update(encodeUnicodeToBytesConditional(repr(self['Dbs']) + spacer, condition=PY3))
         self._id = myhash.hexdigest()
         return self._id
 

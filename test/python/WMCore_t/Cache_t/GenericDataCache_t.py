@@ -7,15 +7,23 @@ from __future__ import print_function, division
 
 import unittest
 import time
+
+from Utils.PythonVersion import PY3
+
 from WMCore.Cache.GenericDataCache import GenericDataCache, CacheExistException, \
                           CacheWithWrongStructException, MemoryCacheStruct
 
+from Utils.PythonVersion import PY3
 
 class Foo(object):
     pass
 
 
 class GenericDataCacheTest(unittest.TestCase):
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testBasic(self):
         """
@@ -58,7 +66,7 @@ class GenericDataCacheTest(unittest.TestCase):
         mc2 = MemoryCacheStruct(0, lambda x: x, {}, kwargs={'x': {'one':1, 'two':2}})
         self.assertEqual(mc2.data, {})
         after = mc2.getData()
-        self.assertItemsEqual(after.keys(), ['one', 'two'])
+        self.assertCountEqual(after.keys(), ['one', 'two']) if PY3 else self.assertItemsEqual(after.keys(), ['one', 'two'])
 
         return
 

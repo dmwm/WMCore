@@ -10,7 +10,7 @@ from __future__ import print_function, division
 from builtins import object, str, bytes
 from future.utils import viewitems
 
-from Utils.Utilities import encodeUnicodeToBytes, decodeBytesToUnicode
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional
 
 import logging
 from collections import defaultdict
@@ -21,6 +21,7 @@ from dbs.exceptions.dbsClientException import dbsClientException
 from retry import retry
 
 from Utils.IteratorTools import grouper
+from Utils.PythonVersion import PY2
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 
 
@@ -42,7 +43,7 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    formatFunc = lambda x: encodeUnicodeToBytes(x) if stringify else x
+    formatFunc = lambda x: encodeUnicodeToBytesConditional(x, condition=PY2 and stringify)
     for name, newname in viewitems(mapping):
         if name in data:
             data[newname] = formatFunc(data[name])

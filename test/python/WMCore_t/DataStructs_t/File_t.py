@@ -12,6 +12,8 @@ Unittest for the WMCore.DataStructs.File class
 
 import unittest
 
+from Utils.PythonVersion import PY3
+
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
@@ -21,6 +23,10 @@ class FileTest(unittest.TestCase):
     _FileTest_
 
     """
+
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testDefinition(self):
         """
@@ -77,6 +83,42 @@ class FileTest(unittest.TestCase):
         testFile.addRun(testRun)
 
         assert testRun in testFile['runs'], "Run not added properly to run in File.addRun()"
+
+        return
+
+    def testComparison(self):
+        """
+        testComparison
+
+        tests that File.__eq__() works properly
+        ACHTUNG! File.__eq__() focuses only on self['lfn'], 
+                 it does not check for any other key/property
+        """
+
+        testFile1 = File(lfn="lfn")
+        testFile1_bis = File(lfn="lfn")
+        self.assertEqual(testFile1, testFile1_bis)
+        self.assertTrue(testFile1 == testFile1_bis)
+        self.assertTrue(testFile1 is testFile1)
+        self.assertTrue(testFile1 is not testFile1_bis)
+        self.assertEqual(testFile1, "lfn")
+        self.assertTrue(testFile1 == "lfn")
+        self.assertEqual("lfn", testFile1)
+        self.assertTrue("lfn" == testFile1)
+
+        testFile2 = File(lfn="lfn-2")
+        self.assertNotEqual(testFile1, testFile2)
+        self.assertTrue(testFile1 != testFile2)
+        self.assertNotEqual(testFile1, "lfn-2")
+        self.assertTrue(testFile1 != "lfn-2")
+        self.assertNotEqual("lfn-2", testFile1)
+        self.assertTrue("lfn-2" != testFile1)
+
+        # The following two comparisons work in py2 (File.File inherits __cmp__ 
+        # from dict), but in py3 fail with
+        # TypeError: '<' not supported between instances of 'dict' and 'dict'
+        # self.assertFalse(testFile1 > testFile2)
+        # self.assertTrue(testFile1 < testFile2)
 
         return
 

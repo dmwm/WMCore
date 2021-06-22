@@ -8,6 +8,7 @@ import unittest
 
 import PSetTweaks.WMTweak as WMTweaks
 from PSetTweaks.WMTweak import WMTweakMaskError
+from PSetTweaks.PSetTweak import PSetTweak
 
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Job import Job
@@ -40,7 +41,8 @@ class WMTweakTest(unittest.TestCase):
         job["input_files"] = [{"lfn": "bogusFile", "parents": []}]
         job["mask"] = Mask()
 
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertFalse(hasattr(tweak.process.source, "skipEvents"),
                          "Error: There should be no skipEvents tweak.")
@@ -48,11 +50,12 @@ class WMTweakTest(unittest.TestCase):
                          "Error: There should be no firstEvent tweak.")
 
         job["mask"]["FirstEvent"] = 0
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "skipEvents"),
                         "Error: There should be a skipEvents tweak.")
-        self.assertEqual(tweak.process.source.skipEvents, 0,
+        self.assertEqual(tweak.process.source.skipEvents, 'customTypeCms.untracked.uint32(0)',
                          "Error: The skipEvents tweak should be 0.")
         return
 
@@ -67,18 +70,19 @@ class WMTweakTest(unittest.TestCase):
         job["input_files"] = [{"lfn": "bogusFile", "parents": []}]
         job["mask"] = Mask()
 
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertFalse(hasattr(tweak.process.source, "firstRun"),
                          "Error: There should be no firstRun tweak.")
 
         job["mask"]["FirstRun"] = 93
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "firstRun"),
                         "Error: There should be a firstRun tweak.")
-        self.assertEqual(tweak.process.source.firstRun, 93,
-                         "Error: The skipEvents tweak should be 0.")
+        self.assertEqual(tweak.process.source.firstRun, 'customTypeCms.untracked.uint32(93)',
+                         "Error: The firstRun tweak should be 93.")
         return
 
     def testFirstEventMC(self):
@@ -96,18 +100,20 @@ class WMTweakTest(unittest.TestCase):
         job["mask"]["FirstLumi"] = 200
 
         try:
-            tweak = WMTweaks.makeJobTweak(job)
+            tweak = PSetTweak()
+            WMTweaks.makeJobTweak(job, tweak)
             self.assertRaises(WMTweakMaskError,  WMTweaks.makeJobTweak, job)
         except WMTweakMaskError:
             pass
 
         job["mask"]["FirstEvent"] = 100
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
         self.assertFalse(hasattr(tweak.process.source, "skipEvents"),
                         "Error: There should be no skipEvents tweak, it's MC.")
         self.assertTrue(hasattr(tweak.process.source, "firstEvent"),
                         "Error: There should be a first event tweak")
-        self.assertEqual(tweak.process.source.firstEvent, 100,
+        self.assertEqual(tweak.process.source.firstEvent, 'customTypeCms.untracked.uint32(100)',
                          "Error: The firstEvent tweak should be 100.")
         return
 
@@ -125,25 +131,28 @@ class WMTweakTest(unittest.TestCase):
         job["mask"]["FirstEvent"] = 100
 
         try:
-            tweak = WMTweaks.makeJobTweak(job)
+            tweak = PSetTweak()
+            WMTweaks.makeJobTweak(job, tweak)
             self.assertRaises(WMTweakMaskError,  WMTweaks.makeJobTweak, job)
         except WMTweakMaskError:
             pass
 
         job["mask"]["FirstLumi"] = 200
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak =  PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "firstLuminosityBlock"),
                         "Error: There should be a first lumi tweak")
-        self.assertEqual(tweak.process.source.firstLuminosityBlock, 200,
-                       "Error: The first luminosity block should be 5")
+        self.assertEqual(tweak.process.source.firstLuminosityBlock, 'customTypeCms.untracked.uint32(200)',
+                       "Error: The first luminosity block should be 200")
 
         job["mask"]["FirstLumi"] = 10
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "firstLuminosityBlock"),
                         "Error: There should be a first lumi tweak")
-        self.assertEqual(tweak.process.source.firstLuminosityBlock, 10,
+        self.assertEqual(tweak.process.source.firstLuminosityBlock, 'customTypeCms.untracked.uint32(10)',
                        "Error: The first luminosity block should be 10")
 
     def testFirstRunMC(self):
@@ -159,19 +168,21 @@ class WMTweakTest(unittest.TestCase):
         job["mask"]["FirstEvent"] = 100
         job["counter"] = 5
 
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "firstRun"),
                         "Error: There should be a first run tweak")
-        self.assertEqual(tweak.process.source.firstRun, 1,
+        self.assertEqual(tweak.process.source.firstRun, 'customTypeCms.untracked.uint32(1)',
                        "Error: The first run should be 1")
 
         job["mask"]["FirstRun"] = 5
-        tweak = WMTweaks.makeJobTweak(job)
+        tweak = PSetTweak()
+        WMTweaks.makeJobTweak(job, tweak)
 
         self.assertTrue(hasattr(tweak.process.source, "firstRun"),
                         "Error: There should be a first run tweak")
-        self.assertEqual(tweak.process.source.firstRun, 5,
-                       "Error: The first run should be 1")
+        self.assertEqual(tweak.process.source.firstRun, 'customTypeCms.untracked.uint32(5)',
+                       "Error: The first run should be 5")
 if __name__ == '__main__':
     unittest.main()

@@ -18,12 +18,37 @@ import time
 import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
 import WMCore.FwkJobReport.Report as Report
 from WMCore.WMException import WMException
-from WMCore.WMRuntime.Monitors.DashboardMonitor import getStepPID
 from WMCore.WMRuntime.Monitors.WMRuntimeMonitor import WMRuntimeMonitor
 from WMCore.WMSpec.Steps.Executor import getStepSpace
 from WMCore.WMSpec.WMStep import WMStepHelper
 
 getStepName = lambda step: WMStepHelper(step).name()
+
+
+def getStepPID(stepSpace, stepName):
+    """
+    _getStepPID_
+
+    Find the PID for a step given its stepSpace from the file
+    """
+    currDir = stepSpace.location
+    pidFile = os.path.join(currDir, 'process.id')
+    if not os.path.isfile(pidFile):
+        msg = "Could not find process ID file for step %s" % stepName
+        logging.error(msg)
+        return None
+
+    with open(pidFile,'r') as filehandle:
+        output = filehandle.read()
+
+    try:
+        stepPID = int(output)
+    except ValueError:
+        msg = "Couldn't find a number"
+        logging.error(msg)
+        return None
+
+    return stepPID
 
 
 def average(numbers):

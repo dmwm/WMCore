@@ -126,6 +126,29 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setTaskEnvironmentVariables(self, envDict):
+        """
+        _setTaskEnvironmentVariables_
+
+        Used for setting environment variables for each task in a request.
+        """
+        if not isinstance(envDict, dict):
+            return
+
+        for task in self.taskIterator():
+            task.addEnvironmentVariables(envDict)
+        return
+
+    def setOverrideCatalog(self, tfcFile):
+        """
+        _setOverrideCatalog_
+
+        Used for setting overrideCatalog option for each step in the workload.
+        """
+        for task in self.taskIterator():
+            task.setOverrideCatalog(tfcFile)
+        return
+
     def setStepMapping(self, mapping):
         """
         _setStepMapping_

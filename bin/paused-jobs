@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from builtins import input, object
+
 import os
 import re
 import sys
@@ -14,7 +16,7 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMInit import connectToDB
 
 
-class PausedTool:
+class PausedTool(object):
     def __init__(self):
         # Connecting to DB
         myThread = threading.currentThread()
@@ -97,7 +99,7 @@ class PausedTool:
                 if self.jobId == str(jobID):
                     matchedJobs.append(jobID)
         else:
-            matchedJobs = jobs.keys()
+            matchedJobs = list(jobs)
 
         if not matchedJobs:
             return []
@@ -160,7 +162,7 @@ class PausedTool:
         if self.action == "resume":
             self.resumeJobs(jobs)
         elif self.action == "fail":
-            confirm = input("Are you sure you want to fail %d jobs? Type 'Y' or 'N' (type quotes too!) :\n" % len(jobs))
+            confirm = eval(input("Are you sure you want to fail %d jobs? Type 'Y' or 'N' (type quotes too!) :\n" % len(jobs)))
             if confirm == "Y":
                 print("Failing the jobs...")
                 self.failJobs(jobs)

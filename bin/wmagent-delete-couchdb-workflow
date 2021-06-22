@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from builtins import input
+
 import os
 import sys
 from argparse import ArgumentParser
@@ -51,7 +53,7 @@ def deleteWorkflowFromCouch(workflowName, jobsdatabase, fwjrdatabase):
 
 if __name__ == "__main__":
     print("Warning: This is irreversible. ")
-    answer = input("Are you sure you want to delete workflows? Type 'Y' or 'N' (type quotes too!): ")
+    answer = eval(input("Are you sure you want to delete workflows? Type 'Y' or 'N' (type quotes too!): "))
     if answer != "Y":
         print("Aborting... no changes were made.")
         sys.exit(1)

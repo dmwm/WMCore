@@ -18,6 +18,8 @@ import subprocess
 
 from nose.plugins.attrib import attr
 from WMCore.Credential.Proxy import Proxy
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicode
 
 # You may have to set these environment variables to run in a local environment
 
@@ -67,6 +69,7 @@ class ProxyTest(unittest.TestCase):
             return None
 
         stdout, _ = vomsProxyInfoCall.communicate()
+        stdout = decodeBytesToUnicode(stdout) if PY3 else stdout
         return stdout[0:-1]
 
     def getUserAttributes(self):
@@ -81,6 +84,7 @@ class ProxyTest(unittest.TestCase):
             return None
 
         stdout, _ = vomsProxyInfoCall.communicate()
+        stdout = decodeBytesToUnicode(stdout) if PY3 else stdout
         return stdout[0:-1]
 
     @attr("integration")

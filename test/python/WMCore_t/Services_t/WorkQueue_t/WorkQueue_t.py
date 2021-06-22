@@ -3,6 +3,8 @@ from __future__ import print_function, division
 import unittest
 import time
 
+from Utils.PythonVersion import PY3
+
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
@@ -49,6 +51,9 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.queueParams['rucioAccount'] = "wma_test"
         self.queueParams['rucioAuthUrl'] = "http://cmsrucio-int.cern.ch"
         self.queueParams['rucioUrl'] = "https://cmsrucio-auth-int.cern.ch"
+
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """

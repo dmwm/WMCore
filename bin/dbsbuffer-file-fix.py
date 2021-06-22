@@ -2,6 +2,8 @@
 """
 from __future__ import print_function
 
+from future.utils import listvalues
+
 import logging
 import os
 import sys
@@ -36,7 +38,7 @@ def fixDBSmissingFileAssoc():
     print("trimed %s lenth" % len(result))
     insertSQL = """INSERT INTO dbsbuffer_file_location (filename, location)
                VALUES (:fileid, :seid)"""
-    done = formatter.dbi.processData(insertSQL, result.values())
+    done = formatter.dbi.processData(insertSQL, listvalues(result))
     print("inserted %s" % done)
 
 if __name__ == '__main__':

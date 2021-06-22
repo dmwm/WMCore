@@ -36,6 +36,7 @@ from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
 from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
 from WMCore.MicroService.MSOutput.MSOutput import MSOutput
 from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
+from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged
 from WMCore.MicroService.TaskManager import start_new_thread
 
 
@@ -44,6 +45,16 @@ def daemon(func, reqStatus, interval, logger):
     while True:
         try:
             func(reqStatus)
+        except Exception as exc:
+            logger.exception("MS daemon error: %s", str(exc))
+        sleep(interval)
+
+
+def daemonOpt(func, interval, logger):
+    "Daemon to perform given function action for all request in our store"
+    while True:
+        try:
+            func()
         except Exception as exc:
             logger.exception("MS daemon error: %s", str(exc))
         sleep(interval)
@@ -71,6 +82,7 @@ class MSManager(object):
         self.statusMon = {}
         self.statusOutput = {}
         self.statusRuleCleaner = {}
+        self.statusUnmerged = {}
 
         # initialize transferor module
         if 'transferor' in self.services:
@@ -133,6 +145,16 @@ class MSManager(object):
                                                        self.msConfig['interval'],
                                                        self.logger))
             self.logger.info("--- Running %s thread %s", thname, self.ruleCleanerThread.running())
+
+        # initialize unmerged module
+        if 'unmerged' in self.services:
+            self.msUnmerged = MSUnmerged(self.msConfig, logger=self.logger)
+            thname = 'MSUnmerged'
+            self.unmergedThread = start_new_thread(thname, daemonOpt,
+                                                   (self.unmerged,
+                                                    self.msConfig['interval'],
+                                                    self.logger))
+            self.logger.info("--- Running %s thread %s", thname, self.unmergedThread.running())
 
     def _parseConfig(self, config):
         """
@@ -228,6 +250,21 @@ class MSManager(object):
         self.updateTimeUTC(res, startTime, endTime)
         self.logger.info("Total ruleCleaner execution time: %d secs", res['execution_time'])
         self.statusRuleCleaner = res
+
+    def unmerged(self):
+        """
+        MSManager unmerged function.
+        It cleans the Unmerged area of the CMS LFN Namespace
+        For references see
+        https://github.com/dmwm/WMCore/wiki/ReqMgr2-MicroService-Unmerged
+        """
+        startTime = datetime.utcnow()
+        self.logger.info("Starting the unmerged thread...")
+        res = self.msUnmerged.execute()
+        endTime = datetime.utcnow()
+        self.updateTimeUTC(res, startTime, endTime)
+        self.logger.info("Total Unmerged execution time: %d secs", res['execution_time'])
+        self.statusUnmerged = res
 
     def stop(self):
         "Stop MSManager"

@@ -12,16 +12,18 @@ import os
 from nose.plugins.attrib import attr
 from rucio.client import Client as testClient
 
+from Utils.PythonVersion import PY3
+
 from WMCore.Services.Rucio import Rucio
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-DSET = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD"
-BLOCK = "/SingleElectron/Run2017F-17Nov2017-v1/MINIAOD#f924e248-e029-11e7-aa2a-02163e01b396"
-FILE = "/store/data/Run2017F/SingleElectron/MINIAOD/17Nov2017-v1/60000/EC3CEF3E-48E0-E711-A48D-0025905B85FC.root"
-# pileup container with 10 blocks
-PUDSET = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM"
-PUBLOCK = "/WPhi_2e_M-10_H_TuneCP5_madgraph-pythia8/RunIIAutumn18NanoAODv6-Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/NANOAODSIM#7f525c30-932f-4f79-963f-0198af37db74"
-
+# production/testbed container with 2 blocks
+DSET = "/ZeroBias/Run2016B-UL16_ver2_forHarvestOnly-v1/DQMIO"
+BLOCK = "/ZeroBias/Run2016B-UL16_ver2_forHarvestOnly-v1/DQMIO#0d25a8ce-ea25-422c-bf86-a37174e7f6a3"
+FILE = "/store/data/Run2016B/ZeroBias/DQMIO/UL16_ver2_forHarvestOnly-v1/230000/0C743F08-12F0-D44D-BC39-A740F1F6D623.root"
+# production/testbed pileup container with hundreds of blocks (only a few in testbed though)
+PUDSET = "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX"
+PUBLOCK = "/Neutrino_E-10_gun/RunIISummer20ULPrePremix-UL16_106X_mcRun2_asymptotic_v13-v1/PREMIX#004d5f64-f280-4bad-b88b-4b6e52ea040d"
 # production container with 4 blocks
 DSET2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM"
 BLOCK2 = "/Mustar_MuG_L10000_M-3750_TuneCP2_13TeV-pythia8/RunIIFall17NanoAODv6-PU2017_12Apr2018_Nano25Oct2019_102X_mc2017_realistic_v7-v1/NANOAODSIM#50aecec1-d5a8-4756-9ee4-f93995c5b524"
@@ -42,6 +44,7 @@ class RucioTest(EmulatedUnitTestCase):
         super(RucioTest, self).__init__(methodName=methodName, mockCRIC=False)
 
         self.acct = "wma_test"
+        self.acct_transf = "wmcore_transferor"
 
         # HACK: do not verify the SSL certificate because docker images
         # do not contain the CA certificate bundle
@@ -74,12 +77,24 @@ class RucioTest(EmulatedUnitTestCase):
                                  auth_type=self.defaultArgs['auth_type'],
                                  creds=self.defaultArgs['creds'],
                                  timeout=self.defaultArgs['timeout'])
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def tearDown(self):
         """
         Nothing to be done for this case
         """
         pass
+
+    def createProductionRucio(self, account=None):
+        """Create an object pointing to the Rucio Production instance"""
+        # NOTE: do your best to avoid testing against production!!!
+        newParams = {"auth_type": "x509", "ca_cert": False, "timeout": 50}
+        prodRucio = Rucio.Rucio(account,
+                                hostUrl='http://cms-rucio.cern.ch',
+                                authUrl='https://cms-rucio-auth.cern.ch',
+                                configDict=newParams)
+        return prodRucio
 
     def testConfig(self):
         """
@@ -144,11 +159,13 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test whether we can fetch the data quota for a given rucio account
         """
-        res = self.client.get_local_account_limits(self.acct)
-        res2 = self.myRucio.getAccountLimits(self.acct)
-        self.assertTrue(len(res) > 10)
-        self.assertTrue(len(res2) > 10)
-        self.assertEqual(res["T1_US_FNAL_Disk"], res2["T1_US_FNAL_Disk"])
+        res = self.client.get_local_account_limits(self.acct_transf)
+        res2 = self.myRucio.getAccountLimits(self.acct_transf)
+        # {'T2_CH_CERN': 10000000000000, 'T2_US_Purdue': 5000000000000, 'T1_US_FNAL_Disk': 10000000000000}
+        self.assertTrue(len(res) >= 3)
+        self.assertTrue(len(res2) >= 3)
+        for rse in ('T1_US_FNAL_Disk', 'T2_CH_CERN', 'T2_US_Purdue'):
+            self.assertEqual(res[rse], res2[rse])
 
         # test an account that we have no access to
         res = self.myRucio.getAccountLimits("wma_prod")
@@ -211,49 +228,42 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test `getPFN` method
         """
-        ### FIXME: Integration server instance sometimes responds with an xrootd PFN instead of gsiftp...
-        cernTestDefaultPrefix = "gsiftp://eoscmsftp.cern.ch:2811/eos/cms/store/test/rucio/int/cms/"
-        cernTestDefaultPrefix2 = "root://eoscms.cern.ch:1094//eos/cms/store/test/rucio/int/cms/"
+        ### New endpoint for Rucio Int
+        cernTestbedPrefix = 'gsiftp://eoscmsftp.cern.ch:2811/eos/cms/store/test/rucio/int'
 
         testLfn = "/store"
-        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=testLfn)
+        resp = self.myRucio.getPFN(site="T2_CH_CERN", lfns=testLfn)
         # self.assertEqual(resp[testLfn], cernTestDefaultPrefix + testLfn)
-        self.assertTrue(resp[testLfn] == cernTestDefaultPrefix + testLfn or
-                        resp[testLfn] == cernTestDefaultPrefix2 + testLfn)
+        self.assertEqual(resp[testLfn], cernTestbedPrefix + testLfn)
 
         # we do not rely on the following check with lfns=""
         # but since it currently works, it will be nice that it keeps working when
         # site TFCs will be replaced by prefixes and this may the only. Beware that currently
         # it only works for a subset of sites, as it relies on the specifics of their TFC.
-        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns="")
-        # self.assertItemsEqual(resp, {u'': cernTestDefaultPrefix})
-        self.assertTrue(resp == {u'': cernTestDefaultPrefix} or
-                        resp == {u'': cernTestDefaultPrefix2})
+        resp = self.myRucio.getPFN(site="T2_CH_CERN", lfns="")
+        self.assertEqual(resp, {'': cernTestbedPrefix + "/"})
 
         # possible additional tests (from Stefano)
         lfn1 = '/store/afile'
         lfn2 = '/store/mc/afile'
-        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=lfn1)
+        resp = self.myRucio.getPFN(site="T2_CH_CERN", lfns=lfn1)
         # self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
-        self.assertTrue(resp[lfn1] == cernTestDefaultPrefix + lfn1 or
-                        resp[lfn1] == cernTestDefaultPrefix2 + lfn1)
+        self.assertEqual(resp[lfn1], cernTestbedPrefix + lfn1)
 
         # test with a list of LFN's
-        resp = self.myRucio.getPFN(site="T2_CH_CERN_Test", lfns=[lfn1, lfn2])
+        resp = self.myRucio.getPFN(site="T2_CH_CERN", lfns=[lfn1, lfn2])
         self.assertEqual(len(resp), 2)
         # self.assertEqual(resp[lfn1], cernTestDefaultPrefix + lfn1)
-        self.assertTrue(resp[lfn1] == cernTestDefaultPrefix + lfn1 or
-                        resp[lfn1] == cernTestDefaultPrefix2 + lfn1)
+        self.assertEqual(resp[lfn1], cernTestbedPrefix + lfn1)
         # self.assertEqual(resp[lfn2], cernTestDefaultPrefix + lfn2)
-        self.assertTrue(resp[lfn2] == cernTestDefaultPrefix + lfn2 or
-                        resp[lfn2] == cernTestDefaultPrefix2 + lfn2)
+        self.assertEqual(resp[lfn2], cernTestbedPrefix + lfn2)
 
         # test different protocols
-        resp = self.myRucio.getPFN(site="T2_US_Nebraska_Test", lfns=lfn1, protocol='gsiftp')
+        resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='gsiftp')
         self.assertEqual(resp[lfn1],
-                         "gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/test/rucio/int/cms/" + lfn1)
-        resp = self.myRucio.getPFN(site="T2_US_Nebraska_Test", lfns=lfn1, protocol='davs')
-        self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int/cms/" + lfn1)
+                         "gsiftp://red-gridftp.unl.edu:2811/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/test/rucio/int" + lfn1)
+        #resp = self.myRucio.getPFN(site="T2_US_Nebraska", lfns=lfn1, protocol='xrootd')
+        #self.assertEqual(resp[lfn1], "davs://xrootd-local.unl.edu:1094/store/test/rucio/int" + lfn1)
 
     @attr('integration')
     def testProdGetPFN(self):
@@ -261,11 +271,7 @@ class RucioTest(EmulatedUnitTestCase):
         Test `getPFN` method using the production server, hence set
         as an integration test not to be executed by jenkins
         """
-        newParams = {"auth_type": "x509", "ca_cert": False, "timeout": 50}
-        prodRucio = Rucio.Rucio("wmcore_transferor",
-                                hostUrl='http://cms-rucio.cern.ch',
-                                authUrl='https://cms-rucio-auth.cern.ch',
-                                configDict=newParams)
+        prodRucio = self.createProductionRucio("wmcore_transferor")
         # simplest call (from Alan)
         cernTestDefaultPrefix = "gsiftp://eoscmsftp.cern.ch:2811/eos/cms"
         testLfn = "/store"
@@ -301,12 +307,12 @@ class RucioTest(EmulatedUnitTestCase):
         """
         # listing blocks for a dataset
         res = self.myRucio.listContent(DSET)
-        self.assertTrue(len(res) > 10)
+        self.assertTrue(len(res) >= 2)
         self.assertEqual(res[0]["type"], "DATASET")
 
         # listing files for a block
         res = self.myRucio.listContent(BLOCK)
-        self.assertTrue(len(res) > 10)
+        self.assertTrue(len(res) > 5)
         self.assertEqual(res[0]["type"], "FILE")
 
         res = self.myRucio.listContent("/Primary/ProcStr-v1/tier")
@@ -324,14 +330,7 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test `listDataRules` method with data from production
         """
-        newParams = {"host": 'http://cms-rucio.cern.ch',
-                     "auth_host": 'https://cms-rucio-auth.cern.ch',
-                     "auth_type": "x509", "account": "wmcore_transferor",
-                     "ca_cert": False, "timeout": 50}
-        prodRucio = Rucio.Rucio(newParams['account'],
-                                hostUrl=newParams['host'],
-                                authUrl=newParams['auth_host'],
-                                configDict=newParams)
+        prodRucio = self.createProductionRucio("wmcore_transferor")
 
         resp = prodRucio.listDataRules(name=DSET2, account="transfer_ops")
         self.assertEqual(len(resp), 5)
@@ -354,7 +353,7 @@ class RucioTest(EmulatedUnitTestCase):
         self.assertItemsEqual(res, {})
 
         # Properly formatted rule, rule manually created
-        res = self.myRucio.getRule("1d6ea1d916d5492e81b1bb30ed4aebc1")
+        res = self.myRucio.getRule("eb4448a33f8f4c3e8d162be42e7a2eb1")
         self.assertTrue(res)
 
     def testMetaDataValidation(self):
@@ -400,14 +399,16 @@ class RucioTest(EmulatedUnitTestCase):
         Test the `evaluateRSEExpression` method
         """
         for i in range(2):
-            res = self.myRucio.evaluateRSEExpression("T1_US_FNAL_Tape", useCache=False)
-            self.assertItemsEqual(res, ["T1_US_FNAL_Tape"])
-        self.myRucio.evaluateRSEExpression("T1_US_FNAL_Tape", useCache=True)
+            res = self.myRucio.evaluateRSEExpression("tier=1", useCache=False)
+            self.assertTrue(len(res) > 1)
+            self.assertTrue("T1_US_FNAL_Disk" in res)
+        self.myRucio.evaluateRSEExpression("tier=1", useCache=True)
 
     def testPickRSE(self):
         """
         Test the `pickRSE` method
         """
+        print(self.myRucio.cli.list_rse_attributes("T1_US_FNAL_Disk"))
         resp = self.myRucio.pickRSE(rseExpression="ddm_quota>0", rseAttribute="ddm_quota")
         self.assertTrue(len(resp) == 2)
         self.assertTrue(resp[1] is True or resp[1] is False)
@@ -416,9 +417,10 @@ class RucioTest(EmulatedUnitTestCase):
         """
         Test the `pickRSE` method
         """
-        resp = self.myRucio.requiresApproval("T1_UK_RAL_Tape_Test")
+        # NOTE: these are sort of test RSEs in Rucio Int
+        resp = self.myRucio.requiresApproval("T1_US_FNAL_Tape_Input")
         self.assertTrue(resp)
-        resp = self.myRucio.requiresApproval("T1_FR_CCIN2P3_Tape_Test")
+        resp = self.myRucio.requiresApproval("T1_IT_CNAF_Tape_Input")
         self.assertFalse(resp)
 
     def testIsTapeRSE(self):
@@ -448,21 +450,14 @@ class RucioTest(EmulatedUnitTestCase):
         Test `getPileupLockedAndAvailable` method
         """
         # as much as I dislike it, we need to use the production instance...
-        newParams = {"host": 'http://cms-rucio.cern.ch',
-                     "auth_host": 'https://cms-rucio-auth.cern.ch',
-                     "auth_type": "x509", "account": "wmcore_transferor",
-                     "ca_cert": False, "timeout": 5}
-        prodRucio = Rucio.Rucio(newParams['account'],
-                                hostUrl=newParams['host'],
-                                authUrl=newParams['auth_host'],
-                                configDict=newParams)
+        prodRucio = self.createProductionRucio("wmcore_transferor")
         resp = prodRucio.getPileupLockedAndAvailable(PUDSET, "transfer_ops")
         # this dataset contains 10 blocks
-        self.assertEqual(len(resp), 10)
+        self.assertTrue(len(resp) > 100)
         self.assertTrue(PUBLOCK in resp)
         # with more than 10 block replicas in the grid
         for block, rses in viewitems(resp):
-            self.assertTrue(len(rses) > 5)
+            self.assertTrue(len(rses) >= 2)
 
     @attr('integration')  # jenkins cannot access this rucio account
     def testGetDataLockedAndAvailable(self):
@@ -470,19 +465,13 @@ class RucioTest(EmulatedUnitTestCase):
         Test `getDataLockedAndAvailable` method
         """
         # as much as I dislike it, we need to use the production instance...
-        newParams = {"host": 'http://cms-rucio.cern.ch',
-                     "auth_host": 'https://cms-rucio-auth.cern.ch',
-                     "auth_type": "x509", "account": "wmcore_transferor",
-                     "ca_cert": False, "timeout": 50}
-        prodRucio = Rucio.Rucio(newParams['account'],
-                                hostUrl=newParams['host'],
-                                authUrl=newParams['auth_host'],
-                                configDict=newParams)
+        prodRucio = self.createProductionRucio("wmcore_transferor")
 
         # This is a very heavy check, with ~25k blocks
-        PUDSET = "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW"
+        # PUDSET = "/Neutrino_E-10_gun/RunIISpring15PrePremix-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v2-v2/GEN-SIM-DIGI-RAW"
+        expectedRses = ['T2_CH_CERN', 'T1_US_FNAL_Disk', 'T1_UK_RAL_Disk', 'T1_UK_RAL_Tape']
         resp = prodRucio.getDataLockedAndAvailable(name=PUDSET)
-        self.assertItemsEqual(resp, ['T1_US_FNAL_Disk'])
+        self.assertItemsEqual(resp, expectedRses)
 
         # matches rules for this container and transfer_ops account, returns an union of the blocks RSEs
         resp = prodRucio.getDataLockedAndAvailable(name=DSET2, account="transfer_ops")

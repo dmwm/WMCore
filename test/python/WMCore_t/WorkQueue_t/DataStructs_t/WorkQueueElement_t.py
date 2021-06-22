@@ -7,6 +7,7 @@ from builtins import range
 import unittest
 import itertools
 
+from Utils.PythonVersion import PY3
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement, possibleSites
 
 RequestNames = ['test', 'test2', '', 'abcdefg']
@@ -24,6 +25,10 @@ Acdcs = [{}, {'Something': 'Somewhat'}]
 
 
 class WorkQueueElementTest(unittest.TestCase):
+    def setUp(self):
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
     def testId(self):
         """Id calculated correctly"""
         ele = WorkQueueElement(RequestName='test')
@@ -189,8 +194,7 @@ class WorkQueueElementTest(unittest.TestCase):
         """
         # test element ala MonteCarlo
         ele = WorkQueueElement(SiteWhitelist=["T1_IT_CNAF", "T2_DE_DESY"])
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
-
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset but no location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": []}
         self.assertEqual(possibleSites(ele), [])
@@ -234,25 +238,25 @@ class WorkQueueElementTest(unittest.TestCase):
         # test element with InputDataset and no location, but input flag on
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": []}
         ele['NoInputUpdate'] = True
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and one match, but input flag on
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_IT_CNAF", "T2_CH_CERN"]}
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and one match, but pu flag on
         ele['NoInputUpdate'] = False
         ele['NoPileupUpdate'] = True
         self.assertEqual(possibleSites(ele), ["T1_IT_CNAF"])
         # test element with InputDataset and one match, but both flags on
         ele['NoInputUpdate'] = True
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
 
         # test element with InputDataset and ParentData and no location, but both flags on
         ele['ParentFlag'] = True
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": []}
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and ParentData and no location, but input flag on
         ele['NoPileupUpdate'] = False
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and ParentData and no location, but pileup flag on
         ele['NoInputUpdate'] = False
         ele['NoPileupUpdate'] = True
@@ -265,7 +269,7 @@ class WorkQueueElementTest(unittest.TestCase):
         self.assertEqual(possibleSites(ele), ["T2_DE_DESY"])
         # test element with InputDataset, PileupData and ParentData with no location, but both flags on
         ele['NoInputUpdate'] = True
-        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertItemsEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset, PileupData and ParentData with no location, but input flag on
         ele['NoPileupUpdate'] = False
         self.assertEqual(possibleSites(ele), [])

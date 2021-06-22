@@ -133,7 +133,7 @@ def fixElementConflicts(*elements):
                     # take larger locations list
                     if merged_value[key][item] < ele[key].get(item, []):
                         merged_value[key][item] = ele[key][item]
-            elif ele[key] > merged_value[key]:
+            elif ele[key] is not None and ele[key] > merged_value[key]:
                 merged_value[key] = ele[key]
             updated.add(key)
         # once losing element has been merged - queue for deletion

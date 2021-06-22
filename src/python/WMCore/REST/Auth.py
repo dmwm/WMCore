@@ -6,7 +6,8 @@ import hashlib
 import hmac
 import re
 
-from Utils.Utilities import lowerCmsHeaders
+from Utils.Utilities import lowerCmsHeaders, encodeUnicodeToBytes
+from Utils.PythonVersion import PY3
 
 def get_user_info():
     "Helper function to return user based information of the request"
@@ -45,7 +46,7 @@ def user_info_from_headers(key, verbose=False):
             if hk.startswith("cms-authn"):
                 val = headers[hk]
                 if hk in ("cms-authn-name", "cms-authn-dn"):
-                    val = str(val, "utf-8")
+                    val = str(val) if PY3 else str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
                 user['roles'][hkname] = {'site': set(), 'group': set()}
@@ -54,7 +55,11 @@ def user_info_from_headers(key, verbose=False):
                     user['roles'][hkname][site_or_group].add(name)
 
     # Check HMAC over authn/z headers with server key. If differs, reject.
-    cksum = hmac.new(key, prefix + "#" + suffix, hashlib.sha1).hexdigest()
+    msg = prefix + "#" + suffix
+    if PY3:
+        key = encodeUnicodeToBytes(key)
+        msg = encodeUnicodeToBytes(msg)
+    cksum = hmac.new(key, msg, hashlib.sha1).hexdigest()
     if cksum != headers["cms-authn-hmac"]:
         log("ERROR: authz hmac mismatch, %s vs. %s" % (cksum, headers["cms-authn-hmac"]))
         raise cherrypy.HTTPError(403, "You are not allowed to access this resource.")
@@ -79,9 +84,9 @@ def authz_match(role=None, group=None, site=None, verbose=False):
     log = cherrypy.log
 
     # If role, group or site are strings, convert to list first.
-    role = (role and isinstance(role, bytes) and [role]) or role
-    group = (group and isinstance(group, bytes) and [group]) or group
-    site = (site and isinstance(site, bytes) and [site]) or site
+    role = (role and isinstance(role, (str, bytes)) and [role]) or role
+    group = (group and isinstance(group, (str, bytes)) and [group]) or group
+    site = (site and isinstance(site, (str, bytes)) and [site]) or site
 
     # Reformat all items into canonical format.
     role = role and list(map(authz_canonical, role))

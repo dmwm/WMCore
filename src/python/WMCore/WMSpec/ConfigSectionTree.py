@@ -64,7 +64,8 @@ def listFirstGenChildNodes(topNode):
 
     Return a list of the first generator child nodes.
     """
-    return topNode.tree.childNames
+    # no real need to sort it, but we better have the same order between Py2/Py3
+    return sorted(list(topNode.tree.childNames))
 
 def nodeMap(node):
     """

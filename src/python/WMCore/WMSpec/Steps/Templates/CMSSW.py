@@ -157,7 +157,7 @@ class CMSSWStepHelper(CoreHelper):
             [setattr(self.data.application.configuration.arguments, k, v) for k, v in viewitems(args)]
         except Exception:
             pass
-        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=WMCORE_PICKLE_PROTOCOL)
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=1)
         return
 
     def cmsswSetup(self, cmsswVersion, **options):

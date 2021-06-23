@@ -8,6 +8,7 @@ Verify that the caching of jobs and white/black lists works correctly.
 import os
 import pickle
 import unittest
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -143,7 +144,7 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             newJobA.create(testGroupA)
 
             jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
-            pickle.dump(newJobA, jobHandle)
+            pickle.dump(newJobA, jobHandle, protocol=WMCORE_PICKLE_PROTOCOL)
             jobHandle.close()
 
             stateChanger.propagate([newJobA], "created", "new")
@@ -161,7 +162,7 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             newJobB.create(testGroupB)
 
             jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
-            pickle.dump(newJobB, jobHandle)
+            pickle.dump(newJobB, jobHandle, protocol=WMCORE_PICKLE_PROTOCOL)
             jobHandle.close()
 
             stateChanger.propagate([newJobB], "created", "new")

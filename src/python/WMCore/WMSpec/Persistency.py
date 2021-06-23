@@ -9,6 +9,7 @@ Placeholder for ideas at present....
 
 """
 from __future__ import print_function
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 
 from future.moves.urllib.parse import urlparse
 from future.moves.urllib.request import urlopen, Request
@@ -46,7 +47,7 @@ class PersistencyHelper(object):
         with open(filename, 'wb') as handle:
             # TODO: use different encoding scheme for different extension
             # extension = filename.split(".")[-1].lower()
-            pickle.dump(self.data, handle)
+            pickle.dump(self.data, handle, protocol=WMCORE_PICKLE_PROTOCOL)
         return
 
     def load(self, filename):
@@ -99,7 +100,7 @@ class PersistencyHelper(object):
             rev = doc['_rev']
 
         # specuriwrev = specuri + '?rev=%s' % rev
-        workloadString = pickle.dumps(self.data)
+        workloadString = pickle.dumps(self.data, protocol=WMCORE_PICKLE_PROTOCOL)
         # result = database.put(specuriwrev, workloadString, contentType='application/text')
         retval = database.addAttachment(name, rev, workloadString, 'spec')
         if retval.get('ok', False) is not True:

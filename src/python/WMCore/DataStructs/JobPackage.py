@@ -10,6 +10,7 @@ try:
 except ImportError:
     import pickle
 
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -37,7 +38,7 @@ class JobPackage(WMObject, dict):
         Pickle this object and save it to disk.
         """
         with open(fileName, 'wb') as fileHandle:
-            pickle.dump(self, fileHandle, -1)
+            pickle.dump(self, fileHandle, protocol=WMCORE_PICKLE_PROTOCOL)
         return
 
     def load(self, fileName):

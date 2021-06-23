@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 
 from builtins import str, object
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 
 from future.utils import viewitems
 
@@ -73,7 +74,7 @@ class AuthenticatedSubprocess(object):
             if a is None and b is None and c is None:
                 if self.pickleOut:
                     oo = OutputObj("OK", self.outputObj)
-                    self.wpipe.write(pickle.dumps(oo))
+                    self.wpipe.write(pickle.dumps(oo, protocol=WMCORE_PICKLE_PROTOCOL))
                 else:
                     self.wpipe.write("OK")
                 self.wpipe.close()
@@ -84,7 +85,7 @@ class AuthenticatedSubprocess(object):
                       (a, b, c, tracebackString)
                 if self.pickleOut:
                     oo = OutputObj(msg, self.outputObj)
-                    self.wpipe.write(pickle.dumps(oo))
+                    self.wpipe.write(pickle.dumps(oo, protocol=WMCORE_PICKLE_PROTOCOL))
                 else:
                     self.wpipe.write(msg)
                 self.wpipe.close()

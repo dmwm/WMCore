@@ -7,6 +7,7 @@ independent python structure
 
 """
 
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 from future import standard_library
 standard_library.install_aliases()
 
@@ -368,7 +369,7 @@ class PSetTweak(object):
                 handle.write(self.jsonise())
         if formatting == "pickle":
             with open(filename, "w") as handle:
-                pickle.dump(self, handle)
+                pickle.dump(self, handle, protocol=WMCORE_PICKLE_PROTOCOL)
         if formatting == "simplejson":
             with open(filename, "w") as handle:
                 handle.write(self.simplejsonise())

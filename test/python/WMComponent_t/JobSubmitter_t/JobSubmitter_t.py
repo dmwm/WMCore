@@ -16,7 +16,7 @@ import threading
 import time
 import unittest
 
-from Utils.PythonVersion import PY3
+from Utils.PythonVersion import PY3, WMCORE_PICKLE_PROTOCOL
 
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 from nose.plugins.attrib import attr
@@ -233,7 +233,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             testJob.save()
             jobGroup.add(testJob)
             output = open(os.path.join(jobCache, 'job.pkl'), 'w')
-            pickle.dump(testJob, output)
+            pickle.dump(testJob, output, protocol=WMCORE_PICKLE_PROTOCOL)
             output.close()
 
         return testJob, testFile

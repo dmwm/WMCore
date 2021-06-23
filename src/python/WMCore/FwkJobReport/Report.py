@@ -16,7 +16,7 @@ import sys
 import time
 import traceback
 
-from Utils.PythonVersion import PY3
+from Utils.PythonVersion import PY3, WMCORE_PICKLE_PROTOCOL
 from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytes
 from WMCore.Configuration import ConfigSection
 from WMCore.DataStructs.File import File
@@ -381,10 +381,10 @@ class Report(object):
         """
         if PY3:
             with open(filename, 'wb') as handle:
-                pickle.dump(encodeUnicodeToBytes(self.data), handle)
+                pickle.dump(encodeUnicodeToBytes(self.data), handle, protocol=WMCORE_PICKLE_PROTOCOL)
         else:
             with open(filename, 'w') as handle:
-                pickle.dump(self.data, handle)
+                pickle.dump(self.data, handle, protocol=WMCORE_PICKLE_PROTOCOL)
         return
 
     def unpersist(self, filename, reportname=None):

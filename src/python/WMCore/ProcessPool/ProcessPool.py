@@ -20,7 +20,7 @@ try:
 except ImportError:
     import pickle
 
-from Utils.PythonVersion import PY3
+from Utils.PythonVersion import PY3, WMCORE_PICKLE_PROTOCOL
 
 from logging.handlers import RotatingFileHandler
 
@@ -113,7 +113,7 @@ class ProcessPool(object):
             msg = "Something's in the way of the ProcessPool config: %s" % self.configPath
             logging.error(msg)
         with open(self.configPath, 'wb') as f:
-            pickle.dump(config, f)
+            pickle.dump(config, f, protocol=WMCORE_PICKLE_PROTOCOL)
 
         # Set up ZMQ
         try:

@@ -9,6 +9,7 @@ from builtins import range
 
 import os
 import logging
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from datetime import datetime
 from datetime import timedelta
@@ -39,7 +40,7 @@ def processWorker(myinput, tmp):
                     lcreport.task = "/" + taskName + "/Production/LogCollect"
                     with open(outfile, 'w') as f:
                         logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
-                        pickle.dump(lcreport, f)
+                        pickle.dump(lcreport, f, protocol=WMCORE_PICKLE_PROTOCOL)
                     continue
                 else:
                     msg = "Parameter lcFakeReport is mandatory if you are using logCollect jobs"
@@ -64,7 +65,7 @@ def processWorker(myinput, tmp):
             #pickle the report again
             with open(outfile, 'w') as f:
                 logging.debug('Process worker is dumping the report to ' + f.name)
-                pickle.dump(report, f)
+                pickle.dump(report, f, protocol=WMCORE_PICKLE_PROTOCOL)
     except Exception as ex:
         logging.exception(ex)
 

@@ -18,6 +18,7 @@ import logging
 import random
 import threading
 import time
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 try:
     import cPickle as pickle
 except ImportError:
@@ -146,7 +147,7 @@ class ThreadPool(Queue):
         self.lock.acquire()
         args = {'event': str(key), \
                 'component' : self.component.config.Agent.componentName, \
-                'payload' : base64.encodestring(pickle.dumps(parameters)), \
+                'payload' : base64.encodestring(pickle.dumps(parameters, protocol=WMCORE_PICKLE_PROTOCOL)), \
                 'thread_pool_id' : self.threadPoolId}
         myThread = threading.currentThread()
         myThread.transaction.begin()

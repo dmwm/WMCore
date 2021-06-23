@@ -10,6 +10,7 @@ import os.path
 import subprocess
 import threading
 import unittest
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 
 try:
     import cPickle as pickle
@@ -316,7 +317,7 @@ class BossAirTest(unittest.TestCase):
             testJob.save()
             jobGroup.add(testJob)
             output = open(os.path.join(jobCache, 'job.pkl'), 'w')
-            pickle.dump(testJob, output)
+            pickle.dump(testJob, output, protocol=WMCORE_PICKLE_PROTOCOL)
             output.close()
 
         return testJob, testFile

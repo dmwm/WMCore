@@ -7,6 +7,7 @@ Template for a CMSSW Step
 """
 
 import pickle
+from Utils.PythonVersion import WMCORE_PICKLE_PROTOCOL
 
 from future.utils import viewitems
 
@@ -156,7 +157,7 @@ class CMSSWStepHelper(CoreHelper):
             [setattr(self.data.application.configuration.arguments, k, v) for k, v in viewitems(args)]
         except Exception:
             pass
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=WMCORE_PICKLE_PROTOCOL)
         return
 
     def cmsswSetup(self, cmsswVersion, **options):
@@ -209,7 +210,7 @@ class CMSSWStepHelper(CoreHelper):
         if hasattr(self.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.data.application.configuration.pickledarguments)
         args['globalTag'] = globalTag
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=WMCORE_PICKLE_PROTOCOL)
 
         return
 
@@ -238,7 +239,7 @@ class CMSSWStepHelper(CoreHelper):
         if hasattr(self.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.data.application.configuration.pickledarguments)
         args['datasetName'] = datasetName
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=WMCORE_PICKLE_PROTOCOL)
 
         return
 

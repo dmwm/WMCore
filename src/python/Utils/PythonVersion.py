@@ -9,4 +9,4 @@ import sys
 PY3 = sys.version_info[0] == 3
 PY2 = sys.version_info[0] == 2
 
-WMCORE_PICKLE_PROTOCOL = 2
+WMCORE_PICKLE_PROTOCOL = 1

@@ -158,7 +158,7 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
     job['allowOpportunistic'] = allowOpportunistic
 
     with open(os.path.join(cacheDir, 'job.pkl'), 'w') as output:
-        pickle.dump(job, output, protocol=WMCORE_PICKLE_PROTOCOL)
+        pickle.dump(job, output, protocol=2)
 
     return
 

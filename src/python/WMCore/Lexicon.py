@@ -838,7 +838,7 @@ def getIterMatchObjectOnRegexp(filePath, regexp):
     "provides iter matching object"
     with io.open(filePath, 'r', encoding='utf8', errors='ignore') as f:
         for m in re.finditer(regexp, f.read()):
-            yield 
+            yield m
 
 def regexp_json():
     """

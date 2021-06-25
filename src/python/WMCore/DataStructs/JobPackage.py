@@ -38,7 +38,7 @@ class JobPackage(WMObject, dict):
         Pickle this object and save it to disk.
         """
         with open(fileName, 'wb') as fileHandle:
-            pickle.dump(self, fileHandle, protocol=WMCORE_PICKLE_PROTOCOL)
+            pickle.dump(self, fileHandle, protocol=2)
         return
 
     def load(self, fileName):

@@ -840,7 +840,7 @@ def getIterMatchObjectOnRegexp(filePath, regexp):
         for m in re.finditer(regexp, f.read()):
             yield m
 
-def regexp_json():
+def dump_regexp(fname=None):
     """
     Return all regexp expression used in Lexicon. The format of lexicon JSON is the following:
     [
@@ -853,41 +853,66 @@ def regexp_json():
     blockLength = 4 + PRIMARY_DS['maxLength'] + PROCESSED_DS['maxLength'] + BLOCK_STR['maxLength']
     datasetLength = 3 + PRIMARY_DS['maxLength'] + PROCESSED_DS['maxLength']
     rdict = [
-        {"name": "logical_file_name", "regexp": [r'{}'.format(i) for i in lfn("", True)], "length": lfnLength},
-        {"name": "block_name", "regexp": [r'{}'.format(i) for i in block("", True)], "length": blockLength},
-        {"name": "dataset", "regexp": [r'{}'.format(i) for i in dataset("", True)], "length": datasetLength},
-        {"name": "processed_ds_name", "regexp": [r'{}'.format(i) for i in procdataset("", True)], "length": -1},
-        {"name": "user", "regexp": [r'{}'.format(i) for i in DBSUser("", True)], "length": -1},
-        {"name": "search_block", "regexp": [r'{}'.format(i) for i in searchblock("", True)], "length": -1},
-        {"name": "search_dataset", "regexp": [r'{}'.format(i) for i in searchdataset("", True)], "length": -1},
-        {"name": "searchstr", "regexp": [r'{}'.format(i) for i in searchstr("", True)], "length": -1},
-        {"name": "namestr", "regexp": [r'{}'.format(i) for i in namestr("", True)], "length": -1},
-        {"name": "site_tier", "regexp": [r'{}'.format(i) for i in sitetier("", True)], "length": TIER['maxLength']},
-        {"name": "job_range", "regexp": [r'{}'.format(i) for i in jobrange("", True)], "length": -1},
-        {"name": "cms_name", "regexp": [r'{}'.format(i) for i in cmsname("", True)], "length": -1},
-        {"name": "country_code", "regexp": [r'{}'.format(i) for i in countrycode("", True)], "length": -1},
-        {"name": "identifier", "regexp": [r'{}'.format(i) for i in identifier("", True)], "length": -1},
-        {"name": "global_tag", "regexp": [r'{}'.format(i) for i in globalTag("", True)], "length": -1},
-        {"name": "publish_dataset_name", "regexp": [r'{}'.format(i) for i in publishdatasetname("", True)], "length": -1},
-        {"name": "user_processed_dataset", "regexp": [r'{}'.format(i) for i in userprocdataset("", True)], "length": -1},
-        {"name": "physics_group", "regexp": [r'{}'.format(i) for i in physicsgroup("", True)], "length": -1},
-        {"name": "processed_ds_name", "regexp": [r'{}'.format(i) for i in procversion("", True)], "length": PROCESSED_DS['maxLength']},
-        {"name": "processed_string", "regexp": [r'{}'.format(i) for i in procstring("", True)], "length": -1},
-        {"name": "processed_string_t0", "regexp": [r'{}'.format(i) for i in procstringT0("", True)], "length": -1},
-        {"name": "acquisition_name", "regexp": [r'{}'.format(i) for i in acqname("", True)], "length": -1},
-        {"name": "campaign", "regexp": [r'{}'.format(i) for i in campaign("", True)], "length": -1},
-        {"name": "primary_ds_name", "regexp": [r'{}'.format(i) for i in primdataset("", True)], "length": PRIMARY_DS['maxLength']},
-        {"name": "task_step_name", "regexp": [r'{}'.format(i) for i in taskStepName("", True)], "length": TASK_STEP_NAME['maxLength']},
-        {"name": "hn_name", "regexp": [r'{}'.format(i) for i in hnName("", True)], "length": -1},
-        {"name": "lfn_base", "regexp": [r'{}'.format(i) for i in lfnBase("", True)], "length": -1},
-        {"name": "user_lfn", "regexp": [r'{}'.format(i) for i in userLfn("", True)], "length": -1},
-        {"name": "cmssw_version", "regexp": [r'{}'.format(i) for i in cmsswversion("", True)], "length": -1},
-        {"name": "request_name", "regexp": [r'{}'.format(i) for i in requestName("", True)], "length": -1},
-        {"name": "couch_url", "regexp": [r'{}'.format(i) for i in couchurl("", True)], "length": -1},
-        {"name": "activity", "regexp": [r'{}'.format(i) for i in activity("", True)], "length": -1},
-        {"name": "primary_ds_type", "regexp": [r'{}'.format(i) for i in primaryDatasetType("", True)], "length": -1},
+        {"name": "logical_file_name", "patterns": [r'{}'.format(i) for i in lfn("", True)], "length": lfnLength},
+        {"name": "block_name", "patterns": [r'{}'.format(i) for i in block("", True)], "length": blockLength},
+        {"name": "dataset", "patterns": [r'{}'.format(i) for i in dataset("", True)], "length": datasetLength},
+        {"name": "processed_ds_name", "patterns": [r'{}'.format(i) for i in procdataset("", True)], "length": -1},
+        {"name": "user", "patterns": [r'{}'.format(i) for i in DBSUser("", True)], "length": -1},
+        {"name": "search_block", "patterns": [r'{}'.format(i) for i in searchblock("", True)], "length": -1},
+        {"name": "search_dataset", "patterns": [r'{}'.format(i) for i in searchdataset("", True)], "length": -1},
+        {"name": "searchstr", "patterns": [r'{}'.format(i) for i in searchstr("", True)], "length": -1},
+        {"name": "namestr", "patterns": [r'{}'.format(i) for i in namestr("", True)], "length": -1},
+        {"name": "site_tier", "patterns": [r'{}'.format(i) for i in sitetier("", True)], "length": TIER['maxLength']},
+        {"name": "job_range", "patterns": [r'{}'.format(i) for i in jobrange("", True)], "length": -1},
+        {"name": "cms_name", "patterns": [r'{}'.format(i) for i in cmsname("", True)], "length": -1},
+        {"name": "country_code", "patterns": [r'{}'.format(i) for i in countrycode("", True)], "length": -1},
+        {"name": "identifier", "patterns": [r'{}'.format(i) for i in identifier("", True)], "length": -1},
+        {"name": "global_tag", "patterns": [r'{}'.format(i) for i in globalTag("", True)], "length": -1},
+        {"name": "publish_dataset_name", "patterns": [r'{}'.format(i) for i in publishdatasetname("", True)], "length": -1},
+        {"name": "user_processed_dataset", "patterns": [r'{}'.format(i) for i in userprocdataset("", True)], "length": -1},
+        {"name": "physics_group", "patterns": [r'{}'.format(i) for i in physicsgroup("", True)], "length": -1},
+        {"name": "processed_ds_name", "patterns": [r'{}'.format(i) for i in procversion("", True)], "length": PROCESSED_DS['maxLength']},
+        {"name": "processed_string", "patterns": [r'{}'.format(i) for i in procstring("", True)], "length": -1},
+        {"name": "processed_string_t0", "patterns": [r'{}'.format(i) for i in procstringT0("", True)], "length": -1},
+        {"name": "acquisition_name", "patterns": [r'{}'.format(i) for i in acqname("", True)], "length": -1},
+        {"name": "campaign", "patterns": [r'{}'.format(i) for i in campaign("", True)], "length": -1},
+        {"name": "primary_ds_name", "patterns": [r'{}'.format(i) for i in primdataset("", True)], "length": PRIMARY_DS['maxLength']},
+        {"name": "task_step_name", "patterns": [r'{}'.format(i) for i in taskStepName("", True)], "length": TASK_STEP_NAME['maxLength']},
+        {"name": "hn_name", "patterns": [r'{}'.format(i) for i in hnName("", True)], "length": -1},
+        {"name": "lfn_base", "patterns": [r'{}'.format(i) for i in lfnBase("", True)], "length": -1},
+        {"name": "user_lfn", "patterns": [r'{}'.format(i) for i in userLfn("", True)], "length": -1},
+        {"name": "cmssw_version", "patterns": [r'{}'.format(i) for i in cmsswversion("", True)], "length": -1},
+        {"name": "request_name", "patterns": [r'{}'.format(i) for i in requestName("", True)], "length": -1},
+        {"name": "couch_url", "patterns": [r'{}'.format(i) for i in couchurl("", True)], "length": -1},
+        {"name": "activity", "patterns": [r'{}'.format(i) for i in activity("", True)], "length": -1},
+        {"name": "primary_ds_type", "patterns": [r'{}'.format(i) for i in primaryDatasetType("", True)], "length": -1},
     ]
+    # if we are given output file name we'll dump json to it
+    if fname:
+        with open(fname, 'w') as ostream:
+            ostream.write(json.dumps(rdict))
+        return
+    # otherwise we'll return json to upstream
     return json.dumps(rdict)
 
+def load_regexp(fname, convert_to_dict=False):
+    """
+    Load regexp Lexicon file. It is reverse function to dump_regexp.
+    It either return patterns Lexicon list, see dump_regexp data-format, or
+    convert it to dictionaries. One dictionary contains keys and patterns,
+    while another keys and lengths.
+    """
+    data = []
+    with open(fname, 'r') as istream:
+        data = json.load(istream)
+    if not convert_to_dict:
+        return data
+    rdict = {}
+    ldict = {}
+    for item in data:
+        rdict[item['name']] = item['patterns']
+        ldict[item['name']] = item['length']
+    return rdict, ldict
+
 if __name__ == '__main__':
-    print(regexp_json())
+    print(dump_regexp())

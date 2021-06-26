@@ -50,11 +50,11 @@ def daemon(func, reqStatus, interval, logger):
         sleep(interval)
 
 
-def daemonOpt(func, interval, logger):
+def daemonOpt(func, interval, logger, *args, **kwargs):
     "Daemon to perform given function action for all request in our store"
     while True:
         try:
-            func()
+            func(*args, **kwargs)
         except Exception as exc:
             logger.exception("MS daemon error: %s", str(exc))
         sleep(interval)
@@ -251,7 +251,7 @@ class MSManager(object):
         self.logger.info("Total ruleCleaner execution time: %d secs", res['execution_time'])
         self.statusRuleCleaner = res
 
-    def unmerged(self):
+    def unmerged(self, *args, **kwargs):
         """
         MSManager unmerged function.
         It cleans the Unmerged area of the CMS LFN Namespace

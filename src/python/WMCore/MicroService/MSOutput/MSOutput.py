@@ -540,6 +540,7 @@ class MSOutput(MSCore):
         for request in viewvalues(requestRecords):
             if request['RequestName'] in self.requestNamesCached:
                 # if it's cached, then it's already in MongoDB, no need to redo this thing!
+                self.logger.info("Workflow %s already in the cache to be consumed", request['RequestName'])
                 continue
             counter += 1
             try:
@@ -840,7 +841,7 @@ class MSOutput(MSCore):
         # Skipping documents avoiding index unique property (documents having the
         # same value for the indexed key as an already uploaded document)
         try:
-            dbColl.insert_one(msOutDoc)
+            resp = dbColl.insert_one(msOutDoc)
         except errors.DuplicateKeyError:
             # DONE:
             #    Here we may wish to double check and make document update, so
@@ -851,6 +852,7 @@ class MSOutput(MSCore):
             #    which have been already worked on - we will loose the information
             #    that have been stored in the MonggDB - so always use 'update'
             #    with the proper set of keys to be updated
+            msg = "Workflow {} has already been inserted into MongoDB".format(msOutDoc['RequestName'])
             if not keys:
                 keys = []
 
@@ -868,6 +870,11 @@ class MSOutput(MSCore):
                     {'_id': msOutDoc['_id']},
                     {'$set': msOutDoc},
                     return_document=ReturnDocument.AFTER)
+            if update:
+                msg += " and its TransferStatus is {}".format(msOutDoc['TransferStatus'])
+                self.logger.warning(msg)
+        else:
+            self.logger.info("Document %s insertion response: %s", msOutDoc['RequestName'], resp)
         return msOutDoc
 
     def getDocsFromMongo(self, mQueryDict, dbColl, limit=1000):

@@ -112,10 +112,10 @@ class WMStatsServer(Service):
         :param includeInputDataset:
         :return: dict of {child_dataset_name: parent_dataset_name}
         """
-        filter = {"RequestType": requestType, "ParentageResolved": parentageResolved}
+        queryFilter = {"RequestType": requestType, "ParentageResolved": parentageResolved}
         mask = ["ChainParentageMap"]
 
-        results = self.getFilteredActiveData(filter, mask)
+        results = self.getFilteredActiveData(queryFilter, mask)
         childParentMap = {}
         for info in results:
             if info["ChainParentageMap"]:
@@ -124,3 +124,11 @@ class WMStatsServer(Service):
                         for childDS in childParentDS["ChildDsets"]:
                             childParentMap[childDS] = childParentDS["ParentDset"]
         return childParentMap
+
+    def getProtectedLFNs(self):
+        """
+        A method to be used for fetching a list of all protected lfns from WMStatServer
+        :returns: A list of lfns
+        """
+        callname = 'protectedlfns'
+        return self._getResult(callname, verb="GET")

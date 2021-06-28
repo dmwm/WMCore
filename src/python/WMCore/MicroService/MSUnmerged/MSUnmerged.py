@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 File       : MSUnmerged.py
 
@@ -12,23 +14,38 @@ RSE basis.
 from __future__ import division, print_function
 
 from pprint import pformat
+from datetime import datetime
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
 from WMCore.MicroService.MSCore import MSCore
 from WMCore.MicroService.MSUnmerged.MSUnmergedRSE import MSUnmergedRSE
+from WMCore.Services.RucioConMon.RucioConMon import RucioConMon
+from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 # from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
+
+import random
 
 
 class MSUnmergedException(WMException):
     """
     General Exception Class for MSUnmerged Module in WMCore MicroServices
     """
-    def __init__(self, message):
-        self.myMessage = "MSUnmergedException: %s" % message
-        super(MSUnmergedException, self).__init__(self.myMessage)
+    def __init__(self, message=""):
+        self.message = "MSUnmergedException: %s" % message
+        super(MSUnmergedException, self).__init__(self.message)
+
+
+class MSUnmergedPlineExit(MSUnmergedException):
+    """
+    An Exception Class for MSUnmerged to signal an expected pipeline exit condition
+    This one should not produce any back trace dump.
+    """
+    def __init__(self, message=""):
+        self.message = "MSUnmergedPlineExit: %s" % message
+        super(MSUnmergedPlineExit, self).__init__(self.message)
 
 
 class MSUnmerged(MSCore):
@@ -50,17 +67,33 @@ class MSUnmerged(MSCore):
         # self.msConfig.setdefault('limitTiersPerInstance', ['T1', 'T2', 'T3'])
         # self.msConfig.setdefault("rucioAccount", "FIXME_RUCIO_ACCT")
         self.msConfig.setdefault("rseExpr", "*")
+        self.msConfig.setdefault("rucioConMon", "https://cmsweb-testbed.cern.ch/rucioconmon/")
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
 
+        # Instantiating the Rucio Consistency Monitor Client
+        self.rucioConMon = RucioConMon(self.msConfig['rucioConMon'], logger=self.logger)
+
+        self.wmstatsSvc = WMStatsServer(self.msConfig['wmstatsUrl'], logger=self.logger)
+
         # Building all the Pipelines:
         pName = 'plineUnmerged'
         self.plineUnmerged = Pipeline(name=pName,
-                                      funcLine=[Functor(self.cleanFiles)])
+                                      funcLine=[Functor(self.updateRSETimestamps, start=True, end=False),
+                                                Functor(self.consRecordAge),
+                                                Functor(self.getUnmergedFiles),
+                                                Functor(self.filterUnmergedFiles),
+                                                Functor(self.cleanRSE),
+                                                Functor(self.updateRSECounters, pName),
+                                                Functor(self.updateRSETimestamps, start=False, end=True),
+                                                Functor(self.purgeRseObj, dumpRSE=True)])
         # Initialization of the deleted files counters:
         self.rseCounters = {}
         self.plineCounters = {}
+        self.rseTimestamps = {}
+        self.rseConsStats = {}
+        self.protectedLFNs = []
 
     def execute(self):
         """
@@ -70,11 +103,13 @@ class MSUnmerged(MSCore):
         # start threads in MSManager which should call this method
         summary = dict(UNMERGED_REPORT)
 
-        self.resetCounters()
+        # refresh statistics on every poling cycle
+        self.rseConsStats = self.rucioConMon.getRSEStats()
+        self.protectedLFNs = self.wmstatsSvc.getProtectedLFNs()
 
         try:
             rseList = self.getRSEList()
-            self.updateReportDict(summary, "total_num_rses", len(rseList))
+            random.shuffle(rseList)
             msg = "  retrieved %s RSEs. " % len(rseList)
             msg += "Service set to process up to %s RSEs per instance." % self.msConfig["limitRSEsPerInstance"]
             self.logger.info(msg)
@@ -115,33 +150,27 @@ class MSUnmerged(MSCore):
                             number of RSEs cleaned
                             number of files deleted
         """
-        totalNumRses = 0
-        totalNumFiles = 0
-        numRsesCleaned = 0
-        numFilesDeleted = 0
 
-        # Call the workflow dispatcher:
-        for rse in rseList:
+        pline = self.plineUnmerged
+        self.resetCounters(plineName=pline.name)
+        self.plineCounters[pline.name]['totalNumRses'] = len(rseList)
+
+        for rseName in rseList:
             try:
-                rse = MSUnmergedRSE(rse)
-                self.plineUnmerged.run(rse)
-                msg = "\n----------------------------------------------------------"
-                msg += "\nMSUnmergedRSE: %s"
-                msg += "\n----------------------------------------------------------"
-                self.logger.debug(msg, pformat(rse))
-                totalNumRses += 1
-                if rse['isClean']:
-                    numRsesCleaned += 1
-                totalNumFiles += rse['counters']['totalNumFiles']
-                numFilesDeleted += rse['counters']['numFilesDeleted']
-            except Exception as ex:
-                msg = "%s: General error from pipeline. RSE: %s. Error:  \n%s. "
+                pline.run(MSUnmergedRSE(rseName))
+            except MSUnmergedPlineExit as ex:
+                msg = "%s: Run on RSE: %s was interrupted due to: %s. "
                 msg += "\nWill retry again in the next cycle."
-                self.logger.exception(msg, self.plineUnmerged.name, rse['rse'], str(ex))
+                self.logger.exception(msg, pline.name, rseName, ex.message)
                 continue
-        return totalNumRses, totalNumFiles, numRsesCleaned, numFilesDeleted
+            except Exception as ex:
+                msg = "%s: General error from pipeline. RSE: %s. Error:  \n%s."
+                msg += "\nWill retry again in the next cycle."
+                self.logger.exception(msg, pline.name, rseName, str(ex))
+                continue
+        return self.plineCounters[pline.name]['totalNumRses'], self.plineCounters[pline.name]['totalNumFiles'], self.plineCounters[pline.name]['rsesCleaned'], self.plineCounters[pline.name]['deletedSuccess']
 
-    def cleanFiles(self, rse):
+    def cleanRSE(self, rse):
         """
         The method to implement the actual deletion of files for an RSE.
         :param rse: MSUnmergedRSE object to be cleaned
@@ -173,20 +202,146 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    Bool: True if all files found have been deleted, False otherwise
         """
-        return rse['counters']['totalNumFiles'] == rse['counters']['numFilesDeleted']
+        return rse['counters']['totalNumFiles'] == rse['counters']['deletedSuccess']
 
-    def resetCounters(self):
+    def consRecordAge(self, rse):
         """
-        A simple function for zeroing the deleted files counters.
+        A method to heck the duration of the consistency record for the RSE
+        :param rse: The RSE to be checked
+        :return:    rse
+        """
+        rseName = rse['name']
+        isConsDone = self.rseConsStats[rseName]['status'] == 'done'
+        isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
+        if isConsDone and isConsNewer:
+            return rse
+        else:
+            msg = "Old consistency record for RSE: %s. Skipping it in the current run."
+            self.logger.info(msg, rseName)
+            raise MSUnmergedPlineExit()
+
+    def getUnmergedFiles(self, rse):
+        """
+        Fetches all the records of unmerged files per RSE from Rucio Consistency Monitor
+        and puts the list in the rse obj.
+        :param rse: The RSE to work on
+        :return:    rse
+        """
+        rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
+        return rse
+
+    def filterUnmergedFiles(self, rse):
+        """
+        This method is applying set compliment operation to the set of unmerged
+        files per RSE in order to exclude the protected LFNs.
+        :param rse: The RSE to work on
+        :return:    rse
+        """
+        return rse
+
+    def purgeRseObj(self, rse, dumpRSE=False):
+        """
+        Cleaning all the records in an RSE object. The final method to be used
+        before an RSE exits a pipeline.
+        :param rse: The RSE to be checked
+        :return:    rse
+        """
+        if dumpRSE:
+            msg = "\n----------------------------------------------------------"
+            msg += "\nMSUnmergedRSE: %s"
+            msg += "\n----------------------------------------------------------"
+            self.logger.debug(msg, pformat(rse))
+        rse.clear()
+        return rse
+
+    def updateRSETimestamps(self, rse, start=True, end=True):
+        """
+        Update/Upload all timestamps for the rse object into the MSUnmerged
+        service counters
+        :param rse:   The RSE to work on
+        :return:      rse
+        """
+        rseName = rse['name']
+        currTime = datetime.now().timestamp()
+
+        if rseName not in self.rseTimestamps:
+            self.rseTimestamps[rseName] = {'prevStartTime': 0.0,
+                                           'startTime': 0.0,
+                                           'prevEndtime': 0.0,
+                                           'endTime': 0.0}
+        if start:
+            self.rseTimestamps[rseName]['prevStartTime'] = self.rseTimestamps[rseName]['startTime']
+            self.rseTimestamps[rseName]['startTime'] = currTime
+        if end:
+            self.rseTimestamps[rseName]['prevEndtime'] = self.rseTimestamps[rseName]['endTime']
+            self.rseTimestamps[rseName]['endtime'] = currTime
+        return rse
+
+    def updateRSECounters(self, rse, pName):
+        """
+        Update/Upload all counters from the rse object into the MSUnmerged
+        service counters
+        :param rse:   The RSE to work on
+        :param pName: The pipeline name whose counters to be updated
+        :return:      rse
+        """
+        rseName = rse['name']
+        self.resetCounters(rseName=rseName)
+        self.rseCounters[rseName]['totalNumFiles'] = rse['counters']['totalNumFiles']
+        self.rseCounters[rseName]['deletedSuccess'] = rse['counters']['deletedSuccess']
+        self.rseCounters[rseName]['deletedFail'] = rse['counters']['deletedFail']
+
+        self.plineCounters[pName]['totalNumFiles'] += rse['counters']['totalNumFiles']
+        self.plineCounters[pName]['deletedSuccess'] += rse['counters']['deletedSuccess']
+        self.plineCounters[pName]['deletedFail'] += rse['counters']['deletedFail']
+        self.plineCounters[pName]['rsesProcessed'] += 1
+        if rse['isClean']:
+            self.plineCounters[pName]['rsesCleaned'] += 1
+
+        return rse
+
+    def resetCounters(self, rseName=None, plineName=None):
+        """
+        A simple function for zeroing the service counters.
+        :param rseName:   RSE Name whose counters to be zeroed
+        :param plineName: The Pline Name whose counters to be zeroed
         """
 
-        for rse in self.rseCounters:
-            self.rseCounters[rse]['deletedSuccess'] = 0
-            self.rseCounters[rse]['deletedFail'] = 0
+        # Resetting Just the RSE Counters
+        if rseName is not None:
+            if rseName not in self.rseCounters:
+                self.rseCounters[rseName] = {}
+            self.rseCounters[rseName]['totalNumFiles'] = 0
+            self.rseCounters[rseName]['deletedSuccess'] = 0
+            self.rseCounters[rseName]['deletedFail'] = 0
+            return
 
-        for pline in self.plineCounters:
-            self.plineCounters[pline.name]['deletedSuccess'] = 0
-            self.plineCounters[pline.name]['deletedFail'] = 0
+        # Resetting Just the pline counters
+        if plineName is not None:
+            if plineName not in self.plineCounters:
+                self.plineCounters[plineName] = {}
+            self.plineCounters[plineName]['totalNumFiles'] = 0
+            self.plineCounters[plineName]['deletedSuccess'] = 0
+            self.plineCounters[plineName]['deletedFail'] = 0
+            self.plineCounters[plineName]['totalNumRses'] = 0
+            self.plineCounters[plineName]['rsesProcessed'] = 0
+            self.plineCounters[plineName]['rsesCleaned'] = 0
+            return
+
+        # Resetting all counters
+        for rseName in self.rseCounters:
+            self.rseCounters[rseName]['totalNumFiles'] = 0
+            self.rseCounters[rseName]['deletedSuccess'] = 0
+            self.rseCounters[rseName]['deletedFail'] = 0
+
+        for plineName in self.plineCounters:
+            self.plineCounters[plineName]['totalNumFiles'] = 0
+            self.plineCounters[plineName]['deletedSuccess'] = 0
+            self.plineCounters[plineName]['deletedFail'] = 0
+            self.plineCounters[plineName]['totalNumRses'] = 0
+            self.plineCounters[plineName]['rsesProcessed'] = 0
+            self.plineCounters[plineName]['rsesCleaned'] = 0
+        return
 
     def getRSEList(self):
         """

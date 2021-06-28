@@ -27,7 +27,7 @@ import os
 import sys
 import time
 from logging.handlers import RotatingFileHandler
-from xml.dom.minidom import Document, Element
+from xml.dom.minidom import Document
 
 # File mode creation mask of the daemon.
 UMASK = 0o022
@@ -91,37 +91,36 @@ def daemonize(stdout='/dev/null', stderr=None, stdin='/dev/null',
         # the parent, so we give the child complete control over permissions.
         os.umask(UMASK)
 
-        daemon = Element("Daemon")
-        processId = Element("ProcessID")
+        xmlDoc = Document()
+        daemon = xmlDoc.createElement("Daemon")
+        processId = xmlDoc.createElement("ProcessID")
         processId.setAttribute("Value", str(os.getpid()))
         daemon.appendChild(processId)
 
-        parentProcessId = Element("ParentProcessID")
+        parentProcessId = xmlDoc.createElement("ParentProcessID")
         parentProcessId.setAttribute("Value", str(os.getppid()))
         daemon.appendChild(parentProcessId)
 
-        processGroupId = Element("ProcessGroupID")
+        processGroupId = xmlDoc.createElement("ProcessGroupID")
         processGroupId.setAttribute("Value", str(os.getpgrp()))
         daemon.appendChild(processGroupId)
 
-        userId = Element("UserID")
+        userId = xmlDoc.createElement("UserID")
         userId.setAttribute("Value", str(os.getuid()))
         daemon.appendChild(userId)
 
-        effectiveUserId = Element("EffectiveUserID")
+        effectiveUserId = xmlDoc.createElement("EffectiveUserID")
         effectiveUserId.setAttribute("Value", str(os.geteuid()))
         daemon.appendChild(effectiveUserId)
 
-        groupId = Element("GroupID")
+        groupId = xmlDoc.createElement("GroupID")
         groupId.setAttribute("Value", str(os.getgid()))
         daemon.appendChild(groupId)
 
-        effectiveGroupId = Element("EffectiveGroupID")
+        effectiveGroupId = xmlDoc.createElement("EffectiveGroupID")
         effectiveGroupId.setAttribute("Value", str(os.getegid()))
         daemon.appendChild(effectiveGroupId)
 
-        dom = Document()
-        dom.appendChild(daemon)
         with open("Daemon.xml", "w") as props:
             props.write(daemon.toprettyxml())
 

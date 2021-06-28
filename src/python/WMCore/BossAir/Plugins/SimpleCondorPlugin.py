@@ -551,9 +551,8 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_CMSPileups'] = classad.quote(str(cmsPileups))
             else:
                 ad['My.DESIRED_CMSPileups'] = undefined
-            # HighIO and repack jobs
+            # HighIO
             ad['My.Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
-            ad['My.RequestRepackslots'] = str(1 if job['task_type'] == 'Repack' else 0)
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60

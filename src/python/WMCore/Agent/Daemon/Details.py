@@ -19,6 +19,9 @@ import time
 # FIXME: needs to be replaced with persistent backend.
 from xml.dom.minidom import parse
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytesConditional
+
 
 def run(command):
     proc = subprocess.Popen(
@@ -28,7 +31,7 @@ def run(command):
         stdin=subprocess.PIPE,
         )
 
-    proc.stdin.write(command)
+    proc.stdin.write(encodeUnicodeToBytesConditional(command, condition=PY3))
     stdout, stderr = proc.communicate()
     rc = proc.returncode
 

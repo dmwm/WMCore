@@ -93,7 +93,8 @@ def diskUse():
     """
     diskPercent = []
     df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
-    output = df.communicate()[0].split("\n")
+    output = df.communicate()[0]
+    output = decodeBytesToUnicode(output).split("\n")
     for x in output:
         split = x.split()
         if split != [] and split[0] != 'Filesystem':
@@ -107,7 +108,8 @@ def numberCouchProcess():
     This returns the number of couch process
     """
     ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
-    process = ps.communicate()[0].count('couchjs')
+    process = ps.communicate()[0]
+    process = decodeBytesToUnicode(process).count('couchjs')
 
     return process
 

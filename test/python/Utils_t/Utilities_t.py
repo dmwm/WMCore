@@ -11,7 +11,7 @@ import unittest
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes
+    encodeUnicodeToBytes, diskUse, numberCouchProcess
 
 
 class UtilitiesTests(unittest.TestCase):
@@ -166,6 +166,23 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         cls2 = TestClass2()
         print(getSize(cls2)) # py2: 426, py3: 205
         self.assertTrue(getSize(cls2) > 200)
+
+    def testDiskUse(self):
+        """
+        Test the `diskUse` function.
+        """
+        data = diskUse()
+        # assuming nodes will always have at least 3 partitions/mount points
+        self.assertTrue(len(data) > 2)
+
+    def testNumberCouchProcess(self):
+        """
+        Test the `numberCouchProcess` function.
+        """
+        data = numberCouchProcess()
+        # there should be at least one process, but who knows...
+        self.assertTrue(data >= 0)
+
 
 if __name__ == '__main__':
     unittest.main()

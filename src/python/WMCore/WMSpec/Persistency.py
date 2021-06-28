@@ -46,7 +46,8 @@ class PersistencyHelper(object):
         with open(filename, 'wb') as handle:
             # TODO: use different encoding scheme for different extension
             # extension = filename.split(".")[-1].lower()
-            pickle.dump(self.data, handle)
+            # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+            pickle.dump(self.data, handle, protocol=0)
         return
 
     def load(self, filename):
@@ -99,7 +100,8 @@ class PersistencyHelper(object):
             rev = doc['_rev']
 
         # specuriwrev = specuri + '?rev=%s' % rev
-        workloadString = pickle.dumps(self.data)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        workloadString = pickle.dumps(self.data, protocol=0)
         # result = database.put(specuriwrev, workloadString, contentType='application/text')
         retval = database.addAttachment(name, rev, workloadString, 'spec')
         if retval.get('ok', False) is not True:

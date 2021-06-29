@@ -315,7 +315,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 badJobs[71104].append(newJob)
                 continue
             try:
-                with open(pickledJobPath, 'r') as jobHandle:
+                with open(pickledJobPath, 'rb') as jobHandle:
                     loadedJob = pickle.load(jobHandle)
             except Exception as ex:
                 logging.warning("Failed to load job pickle object %s", pickledJobPath)

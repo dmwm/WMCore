@@ -155,7 +155,7 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
     job['inputPileup'] = inputPileup
     job['allowOpportunistic'] = allowOpportunistic
 
-    with open(os.path.join(cacheDir, 'job.pkl'), 'w') as output:
+    with open(os.path.join(cacheDir, 'job.pkl'), 'wb') as output:
         pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
 
     return

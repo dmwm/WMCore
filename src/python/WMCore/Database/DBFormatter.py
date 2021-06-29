@@ -6,14 +6,15 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-from builtins import str, zip, range
+from builtins import str, bytes, zip, range
 
 import datetime
 import time
 import types
 
+from Utils.Utilities import decodeBytesToUnicodeConditional
 from WMCore.DataStructs.WMObject import WMObject
-from Utils.PythonVersion import PY2
+from Utils.PythonVersion import PY3
 
 
 class DBFormatter(WMObject):
@@ -78,10 +79,14 @@ class DBFormatter(WMObject):
                 entry = {}
                 for index in range(0, len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if isinstance(i[index], str) and PY2:
-                        entry[str(descriptions[index].lower())] = i[index].encode("utf-8")
+                    if isinstance(descriptions[index], (str, bytes)):
+                        keyName = decodeBytesToUnicodeConditional(descriptions[index], condition=PY3)
                     else:
-                        entry[str(descriptions[index].lower())] = i[index]
+                        keyName = descriptions[index]
+                    if isinstance(i[index], (str, bytes)):
+                        entry[keyName.lower()] = decodeBytesToUnicodeConditional(i[index], condition=PY3)
+                    else:
+                        entry[keyName.lower()] = i[index]
 
                 dictOut.append(entry)
 
@@ -99,8 +104,8 @@ class DBFormatter(WMObject):
             descriptions = r.keys
             for i in r.fetchall():
                 for index in range(0, len(descriptions)):
-                    if isinstance(i[index], str):
-                        listOut.append(i[index].encode("utf-8"))
+                    if isinstance(i[index], (str, bytes)):
+                        listOut.append(decodeBytesToUnicodeConditional(i[index], condition=PY3))
                     else:
                         listOut.append(i[index])
             r.close()

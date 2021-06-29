@@ -156,7 +156,8 @@ class CMSSWStepHelper(CoreHelper):
             [setattr(self.data.application.configuration.arguments, k, v) for k, v in viewitems(args)]
         except Exception:
             pass
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
         return
 
     def cmsswSetup(self, cmsswVersion, **options):
@@ -209,7 +210,8 @@ class CMSSWStepHelper(CoreHelper):
         if hasattr(self.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.data.application.configuration.pickledarguments)
         args['globalTag'] = globalTag
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
 
         return
 
@@ -238,7 +240,8 @@ class CMSSWStepHelper(CoreHelper):
         if hasattr(self.data.application.configuration, "pickledarguments"):
             args = pickle.loads(self.data.application.configuration.pickledarguments)
         args['datasetName'] = datasetName
-        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+        # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
+        self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
 
         return
 

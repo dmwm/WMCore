@@ -62,7 +62,7 @@ def processWorker(myinput, tmp):
             report.task = "/" + taskName + "/Production"
 
             #pickle the report again
-            with open(outfile, 'w') as f:
+            with open(outfile, 'wb') as f:
                 logging.debug('Process worker is dumping the report to ' + f.name)
                 pickle.dump(report, f)
     except Exception as ex:

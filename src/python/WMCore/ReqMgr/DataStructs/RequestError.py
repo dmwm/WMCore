@@ -5,9 +5,11 @@ class InvalidStateTransition(RESTError):
     http_code = 400
     app_code = 1101
 
-    def __init__(self, current_state, new_state):
+    def __init__(self, requestName, currentState, newState):
         RESTError.__init__(self)
-        self.message = "InvalidStatus Transition: %s to %s" % (current_state, new_state)
+        self.message = "Invalid status transition for request: %s, from '%s' to '%s'" % (requestName,
+                                                                                         currentState,
+                                                                                         newState)
 
 class InvalidSpecParameterValue(RESTError):
     "The specified object is invalid."

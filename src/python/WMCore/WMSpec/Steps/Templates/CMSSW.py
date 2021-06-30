@@ -10,6 +10,7 @@ import pickle
 
 from future.utils import viewitems
 
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 from WMCore.WMSpec.Steps.Template import CoreHelper, Template
 
@@ -208,7 +209,7 @@ class CMSSWStepHelper(CoreHelper):
 
         args = {}
         if hasattr(self.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.data.application.configuration.pickledarguments)
+            args = pickle.loads(encodeUnicodeToBytes(self.data.application.configuration.pickledarguments))
         args['globalTag'] = globalTag
         # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
         self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)
@@ -225,7 +226,8 @@ class CMSSWStepHelper(CoreHelper):
             if hasattr(self.data.application.configuration.arguments, "globalTag"):
                 return self.data.application.configuration.arguments.globalTag
 
-        return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']
+        pickledArgs = encodeUnicodeToBytes(self.data.application.configuration.pickledarguments)
+        return pickle.loads(pickledArgs)['globalTag']
 
     def setDatasetName(self, datasetName):
         """
@@ -238,7 +240,7 @@ class CMSSWStepHelper(CoreHelper):
 
         args = {}
         if hasattr(self.data.application.configuration, "pickledarguments"):
-            args = pickle.loads(self.data.application.configuration.pickledarguments)
+            args = pickle.loads(encodeUnicodeToBytes(self.data.application.configuration.pickledarguments))
         args['datasetName'] = datasetName
         # FIXME: once both central services and WMAgent are in Py3, we can remove protocol=0
         self.data.application.configuration.pickledarguments = pickle.dumps(args, protocol=0)

@@ -207,7 +207,7 @@ def validate_state_transition(reqmgr_db_service, request_name, new_state):
     for request in viewvalues(requests):
         current_state = request["RequestStatus"]
     if not check_allowed_transition(current_state, new_state):
-        raise InvalidStateTransition(current_state, new_state)
+        raise InvalidStateTransition(request_name, current_state, new_state)
     return
 
 

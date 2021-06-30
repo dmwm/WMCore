@@ -1,3 +1,9 @@
+1.5.0.pre5 to 1.5.0.pre6:
+  - Print request name in the InvalidStateTransition exception (Alan Malta Rodrigues) #10649
+  - Encode CMSSW picklearguments to bytes before loading it (Alan Malta Rodrigues) #10648
+  - Keep buffering enabled when creating a component daemon (Alan Malta Rodrigues) #10645
+
+
 1.5.0.pre4 to 1.5.0.pre5:
   - [py2py3] Fix AgentStatusWatcher subprocess.Popen calls (Alan Malta Rodrigues) #10635
   - DBFormatter formatDict/formatList to native string instead of bytes (Alan Malta Rodrigues) #10639

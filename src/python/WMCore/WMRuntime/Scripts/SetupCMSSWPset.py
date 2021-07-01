@@ -16,7 +16,7 @@ import socket
 import re
 
 import FWCore.ParameterSet.Config as cms
-
+from Utils.Utilities import encodeUnicodeToBytes
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import applyTweak, makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -353,14 +353,14 @@ class SetupCMSSWPset(ScriptInterface):
         # first, create an instance of TrivialFileCatalog to override
         tfc = TrivialFileCatalog()
         # check the jobs input files
-        inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
-                                        self.step.data.input.inputOutputModule))
+        inputFile = "../%s/%s.root" % (self.step.data.input.inputStepName,
+                                       self.step.data.input.inputOutputModule)
         tfc.addMapping("direct", inputFile, inputFile, mapping_type="lfn-to-pfn")
         tfc.addMapping("direct", inputFile, inputFile, mapping_type="pfn-to-lfn")
 
         fixupFileNames(self.process)
         fixupMaxEvents(self.process)
-        self.process.source.fileNames.setValue([inputFile])
+        self.process.source.fileNames.setValue([encodeUnicodeToBytes(inputFile)])
         self.process.maxEvents.input.setValue(-1)
 
         tfcName = "override_catalog.xml"
@@ -559,7 +559,7 @@ class SetupCMSSWPset(ScriptInterface):
                     datasetName = datasetName.rsplit('/', 1)
                     datasetName[0] += runLimits
                     datasetName = "/".join(datasetName)
-                self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
+                self.process.dqmSaver.workflow = cms.untracked.string(encodeUnicodeToBytes(datasetName))
         return
 
     def handleLHEInput(self):
@@ -638,7 +638,7 @@ class SetupCMSSWPset(ScriptInterface):
         if isCMSSWSupported(self.getCmsswVersion(), "CMSSW_7_6_0"):
             self.logger.info("Tag chirp updates from CMSSW with step %s", self.step.data._internal_name)
             self.process.add_(cms.Service("CondorStatusService",
-                                          tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
+                                          tag=cms.untracked.string("_%s_" % encodeUnicodeToBytes(self.step.data._internal_name))))
 
         return
 

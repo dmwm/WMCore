@@ -16,6 +16,7 @@ import htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -538,7 +539,7 @@ class SimpleCondorPlugin(BasePlugin):
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['My.DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
+                ad['My.DESIRED_CMSDataset'] = classad.quote(encodeUnicodeToBytes(job['inputDataset']))
             else:
                 ad['My.DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
@@ -603,9 +604,9 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
+            ad['My.REQUIRED_OS'] = classad.quote(encodeUnicodeToBytes(requiredOSes))
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
+            ad['My.CMSSW_Versions'] = classad.quote(encodeUnicodeToBytes(cmsswVersions))
      
             jobParameters.append(ad)    
              

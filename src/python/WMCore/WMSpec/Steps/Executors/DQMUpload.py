@@ -19,6 +19,7 @@ from gzip import GzipFile
 from hashlib import md5
 from mimetypes import guess_type
 
+from Utils.Utilities import encodeUnicodeToBytes
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.HTTPS.HTTPSAuthHandler import HTTPSAuthHandler
 from WMCore.WMSpec.Steps.Executor import Executor
@@ -244,7 +245,7 @@ class DQMUpload(Executor):
         opener.add_handler(handler)
 
         # setup the request object
-        datareq = urllib2.Request(url + '/data/put')
+        datareq = urllib2.Request(encodeUnicodeToBytes(url) + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
         self.marshall(args, {'file': filename}, datareq)

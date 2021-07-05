@@ -8,6 +8,7 @@ CMS Workload Management system
 
 from __future__ import division, print_function, absolute_import
 from future import standard_library
+standard_library.install_aliases()
 
 from urllib.parse import urlencode
 
@@ -15,7 +16,6 @@ import json
 import logging
 
 from WMCore.Services.Service import Service
-standard_library.install_aliases()
 
 
 class RucioConMon(Service):

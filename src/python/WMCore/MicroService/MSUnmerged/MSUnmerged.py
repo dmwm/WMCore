@@ -168,7 +168,10 @@ class MSUnmerged(MSCore):
                 msg += "\nWill retry again in the next cycle."
                 self.logger.exception(msg, pline.name, rseName, str(ex))
                 continue
-        return self.plineCounters[pline.name]['totalNumRses'], self.plineCounters[pline.name]['totalNumFiles'], self.plineCounters[pline.name]['rsesCleaned'], self.plineCounters[pline.name]['deletedSuccess']
+        return self.plineCounters[pline.name]['totalNumRses'], \
+            self.plineCounters[pline.name]['totalNumFiles'], \
+            self.plineCounters[pline.name]['rsesCleaned'], \
+            self.plineCounters[pline.name]['deletedSuccess']
 
     def cleanRSE(self, rse):
         """

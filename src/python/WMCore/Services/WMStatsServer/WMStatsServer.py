@@ -99,7 +99,7 @@ class WMStatsServer(Service):
         :type outputMask: list
         :returns:  list of dict or which passes the input condition and only result on outputMask
         """
-        inputCondition.update({'mask':outputMask})
+        inputCondition.update({'mask': outputMask})
         query = self._createQuery(inputCondition)
         callname = 'filtered_requests?%s' % query
         return self._getResult(callname, verb="GET")

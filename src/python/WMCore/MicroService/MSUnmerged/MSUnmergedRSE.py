@@ -19,16 +19,16 @@ class MSUnmergedRSE(dict):
             "name": rseName,
             "delInterface": "",
             "isClean": False,
-            "counters": {"totalNumFiles" : 0,
-                         "numFilesDeleted" : 0},
+            "counters": {"totalNumFiles": 0,
+                         "deletedSuccess": 0,
+                         "deletedFail": 0},
             "files": {"allUnmerged": [],
                       "toDelete": [],
                       "protected": [],
                       "deletedSuccess": [],
                       "deletedFail": []},
-            "dirs":  {"allUnmerged": [],
-                      "protected": [],
-                      "nonEmpty": [],
-                      "empty": []}
-        }
+            "dirs": {"allUnmerged": [],
+                     "protected": [],
+                     "nonEmpty": [],
+                     "empty": []}}
         self.update(myDoc)

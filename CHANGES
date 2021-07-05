@@ -1,3 +1,7 @@
+1.4.7.patch4 to 1.4.7.patch5:
+  - Adjust couchapp push command to match CMSCouchapp (Alan Malta Rodrigues) #10664
+
+
 1.4.7.patch3 to 1.4.7.patch4:
   - WMAgent 1.4.7 patch for workflow specs made in python3 (Alan Malta Rodrigues) #10644
   - Encode DQM Gui url to bytes - wmagent branch only (Alan Malta Rodrigues) #10651

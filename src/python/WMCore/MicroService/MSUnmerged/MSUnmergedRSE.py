@@ -27,8 +27,8 @@ class MSUnmergedRSE(dict):
                       "protected": [],
                       "deletedSuccess": [],
                       "deletedFail": []},
-            "dirs":  {"allUnmerged": [],
-                      "protected": [],
-                      "nonEmpty": [],
-                      "empty": []}}
+            "dirs": {"allUnmerged": [],
+                     "protected": [],
+                     "nonEmpty": [],
+                     "empty": []}}
         self.update(myDoc)

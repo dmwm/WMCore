@@ -19,7 +19,6 @@ import os
 import urllib.parse
 
 from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 from WMCore.Database.CMSCouch import CouchServer
 
 from WMQuality.TestInit import TestInit
@@ -40,7 +39,6 @@ class CouchAppTestHarness(object):
         if self.couchUrl.endswith('/'):
             raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
-        self.couchappConfig = Config()
 
 
     def create(self, dropExistingDb=True):
@@ -63,7 +61,7 @@ class CouchAppTestHarness(object):
         push a list of couchapps to the database
         """
         for couchappdir in  couchappdirs:
-            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.parse.quote_plus(self.dbName)))
+            couchapppush(couchappdir, "%s/%s" % (self.couchUrl, urllib.parse.quote_plus(self.dbName)))
 
 
 class TestInitCouchApp(TestInit):

@@ -6,7 +6,6 @@ import time
 from argparse import ArgumentParser
 
 from couchapp.commands import push as couchapppush
-from couchapp.config import Config
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
@@ -39,11 +38,7 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath=None):
         basePath = couchAppRoot()
     print("Installing %s into %s" % (couchAppName, couchDBName))
 
-    couchServer = CouchServer(couchUrl)
-    couchappConfig = Config()
-
-    couchapppush(couchappConfig, "%s/%s" % (basePath, couchAppName),
-                 "%s/%s" % (couchUrl, couchDBName))
+    couchapppush("%s/%s" % (basePath, couchAppName), "%s/%s" % (couchUrl, couchDBName))
     return
 
 

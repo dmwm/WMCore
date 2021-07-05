@@ -120,7 +120,9 @@ def request_attr(doc, attrs=None):
                 if isinstance(tval, list):
                     while len(tval) < 9:
                         tval.append(0)
-                    gmt = time.gmtime(time.mktime(tval))
+                    # we do not know if dayling savings time was in effect or not
+                    tval[-1] = -1
+                    gmt = time.gmtime(time.mktime(tuple(tval)))
                     rdict[key] = time.strftime("%Y-%m-%d %H:%M:%S GMT", gmt)
                 else:
                     rdict[key] = tval

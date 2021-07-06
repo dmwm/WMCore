@@ -27,6 +27,9 @@ from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
 
 import random
+import re
+import os
+# from memory_profiler import profile
 
 
 class MSUnmergedException(WMException):
@@ -54,6 +57,7 @@ class MSUnmerged(MSCore):
     the CMS LFN Namespace.
     """
 
+    # @profile
     def __init__(self, msConfig, logger=None):
         """
         Runs the basic setup and initialization for the MSUnmerged module
@@ -68,6 +72,7 @@ class MSUnmerged(MSCore):
         # self.msConfig.setdefault("rucioAccount", "FIXME_RUCIO_ACCT")
         self.msConfig.setdefault("rseExpr", "*")
         self.msConfig.setdefault("rucioConMon", "https://cmsweb-testbed.cern.ch/rucioconmon/")
+        self.msConfig.setdefault("enableRealMode", False)
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
@@ -95,6 +100,10 @@ class MSUnmerged(MSCore):
         self.rseConsStats = {}
         self.protectedLFNs = []
 
+        # The basic /store/unmerged regular expression:
+        self.regStoreUnmerged = re.compile("^/store/unmerged/.*$")
+
+    # @profile
     def execute(self):
         """
         Executes the whole MSUnmerged logic
@@ -105,7 +114,8 @@ class MSUnmerged(MSCore):
 
         # refresh statistics on every poling cycle
         self.rseConsStats = self.rucioConMon.getRSEStats()
-        self.protectedLFNs = self.wmstatsSvc.getProtectedLFNs()
+        self.protectedLFNs = set(self.wmstatsSvc.getProtectedLFNs())
+        # self.logger.debug("protectedLFNs: %s", pformat(self.protectedLFNs))
 
         try:
             rseList = self.getRSEList()
@@ -120,8 +130,8 @@ class MSUnmerged(MSCore):
 
         try:
             totalNumRses, totalNumFiles, numRsesCleaned, numFilesDeleted = self._execute(rseList)
-            msg = "\nTotal number of processed RSEs: %s."
-            msg += "\nTotal number of files to be deleted: %s."
+            msg = "\nTotal number of RSEs processed: %s."
+            msg += "\nTotal number of files fetched from RucioConMon: %s."
             msg += "\nNumber of RSEs cleaned: %s."
             msg += "\nNumber of files deleted: %s."
             self.logger.info(msg,
@@ -140,6 +150,7 @@ class MSUnmerged(MSCore):
 
         return summary
 
+    # @profile
     def _execute(self, rseList):
         """
         Executes the MSUnmerged pipelines
@@ -179,6 +190,7 @@ class MSUnmerged(MSCore):
         :param rse: MSUnmergedRSE object to be cleaned
         :return:    The MSUnmergedRSE object
         """
+        # if self.msConfig['enableRealMode']:
         try:
             # for fileUnmerged in rse['files']['toDelete']:
             #     try:
@@ -205,7 +217,7 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    Bool: True if all files found have been deleted, False otherwise
         """
-        return rse['counters']['totalNumFiles'] == rse['counters']['deletedSuccess']
+        return rse['counters']['toDelete'] == rse['counters']['deletedSuccess']
 
     def consRecordAge(self, rse):
         """
@@ -221,18 +233,68 @@ class MSUnmerged(MSCore):
         else:
             msg = "Old consistency record for RSE: %s. Skipping it in the current run."
             self.logger.info(msg, rseName)
-            raise MSUnmergedPlineExit()
+            raise MSUnmergedPlineExit(msg)
 
+    # @profile
     def getUnmergedFiles(self, rse):
         """
         Fetches all the records of unmerged files per RSE from Rucio Consistency Monitor
-        and puts the list in the rse obj.
+        and cuts everything to a certain level in the path and puts the list in the rse obj.
+
+        Path example:
+        /store/unmerged/Run2016B/JetHT/MINIAOD/ver2_HIPM_UL2016_MiniAODv2-v2/140000/388E3DEF-9F15-D04C-B582-7DD036D9DD33.root
+
+        Where:
+        /store/unmerged/                       - root unmerged area
+        /Run2016B                              - acquisition era
+        /JetHT                                 - primary dataset
+        /MINIAOD                               - data tier
+        /ver2_HIPM_UL2016_MiniAODv2-v2         - processing string + processing version
+        /140000/388E3DEF-...-7DD036D9DD33.root - to be cut off
+
         :param rse: The RSE to work on
         :return:    rse
         """
-        rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
+        allUnmerged = self.rucioConMon.getRSEUnmerged(rse['name'])
+        while allUnmerged:
+            filePath = allUnmerged.pop()
+            rse['counters']['totalNumFiles'] += 1
+            # Check if what we start with is under /store/unmerged/*
+            if self.regStoreUnmerged.match(filePath):
+                # Cut the path to the deepest level known to WMStats protected LFNs
+                filePath = self._cutPath(filePath)
+                # Check if what is left is still under /store/unmerged/*
+                if self.regStoreUnmerged.match(filePath):
+                    # Add it to the set of allUnmerged
+                    rse['files']['allUnmerged'].add(filePath)
         return rse
 
+    def _cutPath(self, filePath):
+        """
+        Cuts a file path to the deepest level known to WMStats protected LFNs
+        :param filePath:   The full (absolute) file path together with the file name
+        :return finalPath: The final path cut the to correct level
+        """
+        # Split the initial filePath into chunks and fill it into a dictionary
+        # containing only directory names and the root of the path e.g.
+        # ['/', 'store', 'unmerged', 'RunIISummer20UL17SIM', ...]
+        newPath = []
+        root = filePath
+        while True:
+            root, tail = os.path.split(root)
+            if tail:
+                newPath.append(tail)
+            else:
+                newPath.append(root)
+                break
+        newPath.reverse()
+        # Cut/slice the path to the level/element required.
+        newPath = newPath[:7]
+        # Build the path out of all that is found up to the deepest level in the LFN tree
+        finalPath = os.path.join(*newPath)
+        return finalPath
+
+    # @profile
     def filterUnmergedFiles(self, rse):
         """
         This method is applying set compliment operation to the set of unmerged
@@ -240,8 +302,19 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
+        rse['files']['toDelete'] = rse['files']['allUnmerged'] - self.protectedLFNs
+        rse['files']['protected'] = rse['files']['allUnmerged'] & self.protectedLFNs
+
+        # The following check may seem redundant, but better stay safe than sorry
+        if not (rse['files']['toDelete'] | rse['files']['protected']) == rse['files']['allUnmerged']:
+            rse['counters']['toDelete'] = -1
+            msg = "Incorrect set check while trying to estimate the final set for deletion."
+            raise MSUnmergedPlineExit(msg)
+
+        rse['counters']['toDelete'] = len(rse['files']['toDelete'])
         return rse
 
+    # @profile
     def purgeRseObj(self, rse, dumpRSE=False):
         """
         Cleaning all the records in an RSE object. The final method to be used
@@ -346,6 +419,7 @@ class MSUnmerged(MSCore):
             self.plineCounters[plineName]['rsesCleaned'] = 0
         return
 
+    # @profile
     def getRSEList(self):
         """
         Queries Rucio for the proper RSE list to iterate through.
@@ -356,4 +430,5 @@ class MSUnmerged(MSCore):
         except Exception as ex:
             msg = "Unknown exception while trying to fetch the initial list of RSEs to work on. Err: %s"
             self.logger.exception(msg, str(ex))
+            rseList = []
         return rseList

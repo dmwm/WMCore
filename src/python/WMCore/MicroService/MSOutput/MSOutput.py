@@ -707,6 +707,9 @@ class MSOutput(MSCore):
         :param isRelVal: boolean flag identifying if dataset belongs to a RelVal request
         :return: True if the dataset is allowed to pass, False otherwise
         """
+        # Bypass every configuration for RelVals, keep everything on disk
+        if isRelVal:
+            return True
         dataTier = dataItem['Dataset'].split('/')[-1]
         if dataTier in self.msConfig['excludeDataTier']:
             self.logger.warning("Skipping dataset: %s because it's excluded in the MS configuration",

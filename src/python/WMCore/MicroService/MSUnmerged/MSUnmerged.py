@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 File       : MSUnmerged.py
 
@@ -16,6 +15,10 @@ from __future__ import division, print_function
 from pprint import pformat
 from datetime import datetime
 
+import random
+import re
+import os
+
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
 from WMCore.MicroService.MSCore import MSCore
@@ -26,9 +29,6 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
 
-import random
-import re
-import os
 # from memory_profiler import profile
 
 
@@ -275,6 +275,12 @@ class MSUnmerged(MSCore):
         :param filePath:   The full (absolute) file path together with the file name
         :return finalPath: The final path cut the to correct level
         """
+        # pylint: disable=E1120
+        # This is a known issue when when passing an unpacked list to a method expecting
+        # at least one variable. In this case the signature of the method breaking the
+        # rule is:
+        # os.path.join(*newPath) != os.path.join(a, *p)
+
         # Split the initial filePath into chunks and fill it into a dictionary
         # containing only directory names and the root of the path e.g.
         # ['/', 'store', 'unmerged', 'RunIISummer20UL17SIM', ...]

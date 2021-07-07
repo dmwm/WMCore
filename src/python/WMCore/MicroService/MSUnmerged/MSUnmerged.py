@@ -13,7 +13,7 @@ RSE basis.
 from __future__ import division, print_function
 
 from pprint import pformat
-from datetime import datetime
+from time import time
 
 import random
 import re
@@ -344,7 +344,7 @@ class MSUnmerged(MSCore):
         :return:      rse
         """
         rseName = rse['name']
-        currTime = datetime.now().timestamp()
+        currTime = time()
 
         if rseName not in self.rseTimestamps:
             self.rseTimestamps[rseName] = {'prevStartTime': 0.0,

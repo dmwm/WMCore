@@ -402,7 +402,6 @@ class MSUnmerged(MSCore):
         """
         rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
         for filePath in rse['files']['allUnmerged']:
-            # filePath = allUnmerged.pop()
             rse['counters']['totalNumFiles'] += 1
             # Check if what we start with is under /store/unmerged/*
             if self.regStoreUnmergedLfn.match(filePath):

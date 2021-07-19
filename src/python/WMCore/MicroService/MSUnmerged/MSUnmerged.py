@@ -312,18 +312,18 @@ class MSUnmerged(MSCore):
         for dirEntry in ctx.listdir(baseDirPfn):
             if dirEntry in ['.', '..']:
                 continue
-            self.logger.debug("Purging dirEntry: %s:\n" % dirEntry)
+            self.logger.debug("Purging dirEntry: %s:\n", dirEntry)
             dirEntryPfn = baseDirPfn + dirEntry
             try:
                 entryStat = ctx.stat(dirEntryPfn)
             except gfal2.GError:
                 e = sys.exc_info()[1]
                 if e.code == errno.ENOENT:
-                    self.logger.error("MISSING dirEntry: %s" % dirEntryPfn)
+                    self.logger.error("MISSING dirEntry: %s", dirEntryPfn)
                     successList.append(False)
                     return all(successList)
                 else:
-                    self.logger.error("FAILED dirEntry: %s" % dirEntryPfn)
+                    self.logger.error("FAILED dirEntry: %s", dirEntryPfn)
                     raise
             if stat.S_ISDIR(entryStat.st_mode):
                 successList.append(self._purgeTree(ctx, dirEntryPfn))
@@ -335,13 +335,13 @@ class MSUnmerged(MSCore):
                 successList.append(True)
             else:
                 successList.append(False)
-            self.logger.debug("RMDIR baseDir: %s" % baseDirPfn)
+            self.logger.debug("RMDIR baseDir: %s", baseDirPfn)
         except gfal2.GError:
             e = sys.exc_info()[1]
             if e.code == errno.ENOENT:
-                self.logger.error("MISSING baseDir: %s" % baseDirPfn)
+                self.logger.error("MISSING baseDir: %s", baseDirPfn)
             else:
-                self.logger.error("FAILED basedir: %s" % baseDirPfn)
+                self.logger.error("FAILED basedir: %s", baseDirPfn)
                 raise
         return all(successList)
 

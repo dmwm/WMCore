@@ -8,6 +8,7 @@ import json
 # system modules
 import os
 import unittest
+import unittest.mock as mock
 
 # WMCore modules
 from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged, MSUnmergedRSE
@@ -82,6 +83,7 @@ class MSUnmergedTest(unittest.TestCase):
                          'interval': 28800,
                          'limitRSEsPerInstance': 200,
                          'limitTiersPerInstance': ['T1', 'T2', 'T3'],
+                         'limitFilesPerRSE': -1,
                          'manager': 'WMCore.MicroService.MSManager.MSManager',
                          'object': 'WMCore.MicroService.Service.RestApiHub.RestApiHub',
                          'reqmgr2Url': 'https://cmsweb-testbed.cern.ch/reqmgr2',
@@ -134,37 +136,36 @@ class MSUnmergedTest(unittest.TestCase):
         # self.msUnmerged.plineUnmerged.run(rse)
         expectedRSE = {'counters': {'deletedFail': 0,
                                     'deletedSuccess': 0,
-                                    'toDelete': 6,
+                                    'dirsToDelete': 6,
+                                    'dirsToDeleteAll': 6,
+                                    'filesToDelete': 21811,
                                     'totalNumFiles': 11938},
-                       'delInterface': '',
-                       'dirs': {'allUnmerged': [], 'empty': [], 'nonEmpty': [], 'protected': []},
-                       'files': {'allUnmerged': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2',
-                                                 '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1',
-                                                 '/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1',
-                                                 '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi1160_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
-                                                 '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi680_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
-                                                 '/store/unmerged/RunIISummer20UL16HLTAPV/QCD_Pt-20To30_MuEnrichedPt5_TuneCP5_13TeV_pythia8/GEN-SIM-RAW/80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1',
-                                                 '/store/unmerged/RunIISummer20UL16SIMAPV/ZJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/GEN-SIM/106X_mcRun2_asymptotic_preVFP_v8-v1',
-                                                 '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu',
-                                                 '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util',
-                                                 '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu',
-                                                 '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util'},
+                       'dirs': {'allUnmerged': set(),
+                                'empty': [],
+                                'protected': {'/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1',
+                                              '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi1160_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
+                                              '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi680_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
+                                              '/store/unmerged/RunIISummer20UL16HLTAPV/QCD_Pt-20To30_MuEnrichedPt5_TuneCP5_13TeV_pythia8/GEN-SIM-RAW/80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1',
+                                              '/store/unmerged/RunIISummer20UL16SIMAPV/ZJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/GEN-SIM/106X_mcRun2_asymptotic_preVFP_v8-v1'},
+                                'toDelete': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2',
+                                             '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1',
+                                             '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu',
+                                             '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util',
+                                             '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu',
+                                             '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util'}},
+                       'files': {'allUnmerged': mock.ANY,
                                  'deletedFail': [],
                                  'deletedSuccess': [],
-                                 'protected': {'/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1',
-                                               '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi1160_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
-                                               '/store/unmerged/RunIIFall17DRPremix/Suu_Diquark_S4000_chi680_TuneCP2_13TeV-madgraph-pythia8/AODSIM/PU2017_94X_mc2017_realistic_v11-v1',
-                                               '/store/unmerged/RunIISummer20UL16HLTAPV/QCD_Pt-20To30_MuEnrichedPt5_TuneCP5_13TeV_pythia8/GEN-SIM-RAW/80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1',
-                                               '/store/unmerged/RunIISummer20UL16SIMAPV/ZJetsToQQ_HT-400to600_TuneCP5_13TeV-madgraphMLM-pythia8/GEN-SIM/106X_mcRun2_asymptotic_preVFP_v8-v1'},
-                                 'toDelete': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2',
-                                              '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1',
-                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu',
-                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util',
-                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu',
-                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util'}},
+                                 'protected': {},
+                                 'toDelete': {'/store/unmerged/Phase2HLTTDRSummer20ReRECOMiniAOD/DYToLL_M-50_TuneCP5_14TeV-pythia8/FEVT/FlatPU0To200_pilot_111X_mcRun4_realistic_T15_v1-v2': mock.ANY,
+                                              '/store/unmerged/Run2016G/DoubleEG/MINIAOD/UL2016_MiniAODv2-v1': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cms-lvs-gridftp.hep.wisc.edu/lcg-util': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu': mock.ANY,
+                                              '/store/unmerged/SAM/testSRM/SAM-cmssrm.hep.wisc.edu/lcg-util': mock.ANY}},
                        'isClean': False,
-                       'name': 'T2_US_Wisconsin'}
-
+                       'name': 'T2_US_Wisconsin',
+                       'pfnPrefix': None}
         self.assertDictEqual(rse, expectedRSE)
 
     def testCutPath(self):

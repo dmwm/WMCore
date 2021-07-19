@@ -13,11 +13,16 @@ RSE basis.
 from __future__ import division, print_function
 
 from pprint import pformat
+from IPython.lib.pretty import pretty
 from time import time
 
 import random
 import re
 import os
+import sys
+import errno
+import stat
+import gfal2
 
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
@@ -67,12 +72,12 @@ class MSUnmerged(MSCore):
 
         self.msConfig.setdefault("verbose", True)
         self.msConfig.setdefault("interval", 60)
-        # self.msConfig.setdefault('limitRSEsPerInstance', 100)
-        # self.msConfig.setdefault('limitTiersPerInstance', ['T1', 'T2', 'T3'])
-        # self.msConfig.setdefault("rucioAccount", "FIXME_RUCIO_ACCT")
+        self.msConfig.setdefault("limitFilesPerRSE", 200)
+        self.msConfig.setdefault("skipRSEs", [])
         self.msConfig.setdefault("rseExpr", "*")
         self.msConfig.setdefault("rucioConMon", "https://cmsweb-testbed.cern.ch/rucioconmon/")
         self.msConfig.setdefault("enableRealMode", False)
+        self.msConfig.setdefault("dumpRSE", False)
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
@@ -89,10 +94,11 @@ class MSUnmerged(MSCore):
                                                 Functor(self.consRecordAge),
                                                 Functor(self.getUnmergedFiles),
                                                 Functor(self.filterUnmergedFiles),
+                                                Functor(self.getPfn),
                                                 Functor(self.cleanRSE),
                                                 Functor(self.updateRSECounters, pName),
                                                 Functor(self.updateRSETimestamps, start=False, end=True),
-                                                Functor(self.purgeRseObj, dumpRSE=True)])
+                                                Functor(self.purgeRseObj, dumpRSE=self.msConfig['dumpRSE'])])
         # Initialization of the deleted files counters:
         self.rseCounters = {}
         self.plineCounters = {}
@@ -101,7 +107,8 @@ class MSUnmerged(MSCore):
         self.protectedLFNs = []
 
         # The basic /store/unmerged regular expression:
-        self.regStoreUnmerged = re.compile("^/store/unmerged/.*$")
+        self.regStoreUnmergedLfn = re.compile("^/store/unmerged/.*$")
+        self.regStoreUnmergedPfn = re.compile("^.+/store/unmerged/.*$")
 
     # @profile
     def execute(self):
@@ -113,9 +120,34 @@ class MSUnmerged(MSCore):
         summary = dict(UNMERGED_REPORT)
 
         # refresh statistics on every poling cycle
-        self.rseConsStats = self.rucioConMon.getRSEStats()
-        self.protectedLFNs = set(self.wmstatsSvc.getProtectedLFNs())
-        # self.logger.debug("protectedLFNs: %s", pformat(self.protectedLFNs))
+
+        try:
+            self.rseConsStats = self.rucioConMon.getRSEStats()
+            # self.logger.debug("RucioConMon Stats: %s", pformat(self.rseConsStats))
+            self.protectedLFNs = set(self.wmstatsSvc.getProtectedLFNs())
+            # self.logger.debug("protectedLFNs: %s", pformat(self.protectedLFNs))
+
+            if not self.protectedLFNs:
+                msg = "Could not fetch list with protectedLFNs from WMStatServer. "
+                msg += "Skipping the current run."
+                msg += "\nTotal number of RSEs processed: %s."
+                msg += "\nTotal number of files fetched from RucioConMon: %s."
+                msg += "\nNumber of RSEs cleaned: %s."
+                msg += "\nNumber of files deleted: %s."
+                self.logger.info(msg,
+                                 0,
+                                 0,
+                                 0,
+                                 0)
+                self.updateReportDict(summary, "total_num_rses", 0)
+                self.updateReportDict(summary, "total_num_files", 0)
+                self.updateReportDict(summary, "num_rses_cleaned", 0)
+                self.updateReportDict(summary, "num_files_deleted", 0)
+                return summary
+        except Exception as ex:
+            msg = "Unknown exception while running MSUnmerged thread Error: %s"
+            self.logger.exception(msg, str(ex))
+            self.updateReportDict(summary, "error", msg)
 
         try:
             rseList = self.getRSEList()
@@ -168,7 +200,13 @@ class MSUnmerged(MSCore):
 
         for rseName in rseList:
             try:
-                pline.run(MSUnmergedRSE(rseName))
+                if rseName not in self.msConfig['skipRSEs']:
+                    pline.run(MSUnmergedRSE(rseName))
+                else:
+                    msg = "%s: Run on RSE: %s is skipped due to a restriction set in msConfig. "
+                    msg += "Will NOT retry until the RSE is removed from 'skipRSEs' list."
+                    self.logger.info(msg, pline.name, rseName)
+                    continue
             except MSUnmergedPlineExit as ex:
                 msg = "%s: Run on RSE: %s was interrupted due to: %s. "
                 msg += "\nWill retry again in the next cycle."
@@ -184,31 +222,128 @@ class MSUnmerged(MSCore):
             self.plineCounters[pline.name]['rsesCleaned'], \
             self.plineCounters[pline.name]['deletedSuccess']
 
+    # @profile
     def cleanRSE(self, rse):
         """
         The method to implement the actual deletion of files for an RSE.
         :param rse: MSUnmergedRSE object to be cleaned
         :return:    The MSUnmergedRSE object
         """
-        # if self.msConfig['enableRealMode']:
+
+        # Create the gfal2 context object:
         try:
-            # for fileUnmerged in rse['files']['toDelete']:
-            #     try:
-            #         self.gfalCommand(rse['delInterface'], fileUnmerged)
-            #         rse['counters']['numFilesDeleted'] += 1
-            #         rse['files']['deletedSuccess'].append(fileUnmerged)
-            #     except Exception as ex:
-            #         rse['files']['deletedFail'].append(fileUnmerged)
-            #         msg = "Error while trying to delete file: %s for RSE: %s"
-            #         msg += "Will retry in the next cycle. Err: %s"
-            #         self.logger.debug(msg, fileUnmerged, rse['name'], str(ex))
-            rse['isClean'] = self._checkClean(rse)
+            ctx = gfal2.creat_context()
+            gfal2.set_verbose(gfal2.verbose_level.debug)
         except Exception as ex:
-            msg = "Error while cleaning RSE: %s"
-            msg += "Will retry in the next cycle. Err: %s"
-            self.logger.debug(msg, rse['name'], str(ex))
+            msg = "RSE: %s, Failed to create gfal2 Context object. Skipping it in the current run."
+            self.logger.info(msg, rse['name'])
+            raise MSUnmergedPlineExit(msg)
+
+        # Start cleaning one directory at a time:
+        for dirLfn, fileLfnGen in rse['files']['toDelete'].items():
+            if self.msConfig['limitFilesPerRSE'] < 0 or \
+               rse['counters']['filesToDelete'] < self.msConfig['limitFilesPerRSE']:
+
+                # First increment the dir counter:
+                rse['counters']['dirsToDelete'] += 1
+
+                # Now we consume the rse['files']['toDelete'][dirLfn] generator
+                # upon that no values will be left in it. In case we need it again
+                # we will have to recreate the filter as we did in self.filterUnmergedFiles()
+                pfnList = []
+                if not rse['pfnPrefix']:
+                    # Fall back to calling Rucio on a per directory basis for
+                    # resolving the lfn to pfn mapping
+                    dirPfn = self.rucio.getPFN(rse['name'], dirLfn, operation='delete')[dirLfn]
+                    for fileLfn in fileLfnGen:
+                        fileLfnSuffix = fileLfn.split(dirLfn)[1]
+                        filePfn = dirPfn + fileLfnSuffix
+                        pfnList.append(filePfn)
+                else:
+                    # Proceed with assembling the full filePfn out of the rse['pfnPrefix'] and the fileLfn
+                    dirPfn = rse['pfnPrefix'] + dirLfn
+                    for fileLfn in fileLfnGen:
+                        filePfn = rse['pfnPrefix'] + fileLfn
+                        pfnList.append(filePfn)
+
+                rse['counters']['filesToDelete'] += len(pfnList)
+                msg = "\nRSE: %s Currently DELETING: %s."
+                msg += "\nFull PFN list: \n%s"
+                self.logger.debug(msg, rse['name'], dirLfn, pformat(pfnList))
+
+                if self.msConfig['enableRealMode']:
+                    try:
+                        # execute the actual deletion in bulk - full list of files per directory
+                        delResult = []
+                        delResult = ctx.unlink(pfnList)
+
+                        # Count all the successfully deleted files (if a deletion was
+                        # successful a value of None is put in the delResult list):
+                        deletedSuccess = [pfnStatus for pfnStatus in delResult if pfnStatus is None]
+                        self.logger.debug("RSE: %s, Dir: %s, deletedSuccess: %s",
+                                          rse['name'], dirLfn, deletedSuccess)
+                        rse['counters']['deletedSuccess'] += len(deletedSuccess)
+
+                        # Now clean the whole branch
+                        purgeSuccess = self._purgeTree(ctx, dirPfn)
+                        if not purgeSuccess:
+                            msg = "RSE: %s Failed to purge nonEmpty directory: %s"
+                            self.logger.error(msg, rse['name'], dirPfn)
+                    except Exception as ex:
+                        msg = "Error while cleaning RSE: %s"
+                        msg += "Will retry in the next cycle. Err: %s"
+                        self.logger.debug(msg, rse['name'], str(ex))
+        rse['isClean'] = self._checkClean(rse)
 
         return rse
+
+    def _purgeTree(self, ctx, baseDirPfn):
+        """
+        A method to be used for purging the tree bellow a specific branch.
+        It deletes every empty directory bellow that branch + the origin at the end.
+        :param ctx:  The gfal2 context object
+        :return:     Bool: True if it managed to purge everything, False otherwise
+        """
+        successList = []
+
+        if baseDirPfn[-1] != '/':
+            baseDirPfn += '/'
+
+        for dirEntry in ctx.listdir(baseDirPfn):
+            if dirEntry in ['.', '..']:
+                continue
+            self.logger.debug("Purging dirEntry: %s:\n", dirEntry)
+            dirEntryPfn = baseDirPfn + dirEntry
+            try:
+                entryStat = ctx.stat(dirEntryPfn)
+            except gfal2.GError:
+                e = sys.exc_info()[1]
+                if e.code == errno.ENOENT:
+                    self.logger.error("MISSING dirEntry: %s", dirEntryPfn)
+                    successList.append(False)
+                    return all(successList)
+                else:
+                    self.logger.error("FAILED dirEntry: %s", dirEntryPfn)
+                    raise
+            if stat.S_ISDIR(entryStat.st_mode):
+                successList.append(self._purgeTree(ctx, dirEntryPfn))
+
+        try:
+            success = ctx.rmdir(baseDirPfn)
+            # for gfal2 rmdir() exit status of 0 is success
+            if success == 0:
+                successList.append(True)
+            else:
+                successList.append(False)
+            self.logger.debug("RMDIR baseDir: %s", baseDirPfn)
+        except gfal2.GError:
+            e = sys.exc_info()[1]
+            if e.code == errno.ENOENT:
+                self.logger.error("MISSING baseDir: %s", baseDirPfn)
+            else:
+                self.logger.error("FAILED basedir: %s", baseDirPfn)
+                raise
+        return all(successList)
 
     def _checkClean(self, rse):
         """
@@ -217,23 +352,33 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    Bool: True if all files found have been deleted, False otherwise
         """
-        return rse['counters']['toDelete'] == rse['counters']['deletedSuccess']
+        return rse['counters']['filesToDelete'] == rse['counters']['deletedSuccess']
 
     def consRecordAge(self, rse):
         """
         A method to heck the duration of the consistency record for the RSE
         :param rse: The RSE to be checked
-        :return:    rse
+        :return:    rse or raises MSUnmergedPlineExit
         """
         rseName = rse['name']
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
         isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
-        if isConsDone and isConsNewer:
-            return rse
-        else:
-            msg = "Old consistency record for RSE: %s. Skipping it in the current run."
+        isRootFailed = self.rseConsStats[rseName]['root_failed']
+
+        if not isConsNewer:
+            msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. Skipping it in the current run."
             self.logger.info(msg, rseName)
             raise MSUnmergedPlineExit(msg)
+        if not isConsDone:
+            msg = "RSE: %s In non-final state in Rucio Consistency Monitor. Skipping it in the current run."
+            self.logger.info(msg, rseName)
+            raise MSUnmergedPlineExit(msg)
+        if isRootFailed:
+            msg = "RSE: %s With failed root in Rucio Consistency Monitor. Skipping it in the current run."
+            self.logger.info(msg, rseName)
+            raise MSUnmergedPlineExit(msg)
+
+        return rse
 
     # @profile
     def getUnmergedFiles(self, rse):
@@ -255,18 +400,17 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
-        allUnmerged = self.rucioConMon.getRSEUnmerged(rse['name'])
-        while allUnmerged:
-            filePath = allUnmerged.pop()
+        rse['files']['allUnmerged'] = self.rucioConMon.getRSEUnmerged(rse['name'])
+        for filePath in rse['files']['allUnmerged']:
             rse['counters']['totalNumFiles'] += 1
             # Check if what we start with is under /store/unmerged/*
-            if self.regStoreUnmerged.match(filePath):
+            if self.regStoreUnmergedLfn.match(filePath):
                 # Cut the path to the deepest level known to WMStats protected LFNs
-                filePath = self._cutPath(filePath)
+                dirPath = self._cutPath(filePath)
                 # Check if what is left is still under /store/unmerged/*
-                if self.regStoreUnmerged.match(filePath):
+                if self.regStoreUnmergedLfn.match(dirPath):
                     # Add it to the set of allUnmerged
-                    rse['files']['allUnmerged'].add(filePath)
+                    rse['dirs']['allUnmerged'].add(dirPath)
         return rse
 
     def _cutPath(self, filePath):
@@ -308,16 +452,60 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to work on
         :return:    rse
         """
-        rse['files']['toDelete'] = rse['files']['allUnmerged'] - self.protectedLFNs
-        rse['files']['protected'] = rse['files']['allUnmerged'] & self.protectedLFNs
+        rse['dirs']['toDelete'] = rse['dirs']['allUnmerged'] - self.protectedLFNs
+        rse['dirs']['protected'] = rse['dirs']['allUnmerged'] & self.protectedLFNs
 
         # The following check may seem redundant, but better stay safe than sorry
-        if not (rse['files']['toDelete'] | rse['files']['protected']) == rse['files']['allUnmerged']:
+        if not (rse['dirs']['toDelete'] | rse['dirs']['protected']) == rse['dirs']['allUnmerged']:
             rse['counters']['toDelete'] = -1
             msg = "Incorrect set check while trying to estimate the final set for deletion."
             raise MSUnmergedPlineExit(msg)
 
-        rse['counters']['toDelete'] = len(rse['files']['toDelete'])
+        # Get rid of 'allUnmerged' directories
+        rse['dirs']['allUnmerged'].clear()
+
+        # NOTE: Here we may want to filter out all protected files from allUnmerged and leave just those
+        #       eligible for deletion. This will minimize the iteration time of the filters
+        #       from toDelete later on.
+        # while rse['files']['allUnmerged'
+
+        # Now create the filters for rse['files']['toDelete'] - those should be pure generators
+        # A simple generator:
+        def genFunc(pattern, iterable):
+            for i in iterable:
+                if i.startswith(pattern):
+                    yield i
+
+        # Populate the filters:
+        for dirName in rse['dirs']['toDelete']:
+            rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+
+        # Update the counters:
+        rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])
+        return rse
+
+    def getPfn(self, rse):
+        """
+        A method for fetching the common Pfn (method + hostname + global path)
+        for the RSE. It uses Rucio client method lfns2pfns for one of the LFNs
+        already recorded in the RSE in order to resolve the lfn to pfn mapping
+        and then tries to parse the resultant pfn and cut off the lfn part.
+        :param rse: The RSE to be checked
+        :return:    rse or raises MSUnmergedPlineExit
+        """
+        # NOTE:  pfnPrefix here is considered the full part of the pfn up to the
+        #        beginning of the lfn part rather than just the protocol prefix
+        if rse['files']['allUnmerged']:
+            lfn = next(iter(rse['files']['allUnmerged']))
+            pfnDict = self.rucio.getPFN(rse['name'], lfn, operation='delete')
+            pfnFull = pfnDict[lfn]
+            if self.regStoreUnmergedPfn.match(pfnFull):
+                pfnPrefix = pfnFull.split('/store/unmerged/')[0]
+                rse['pfnPrefix'] = pfnPrefix
+            else:
+                msg = "Could not establish the correct pfn Prefix for RSE: %s. " % rse['name']
+                msg += "Will fall back to calling Rucio on a directory basis for lfn to pfn resolution."
+                self.logger.warning(msg)
         return rse
 
     # @profile
@@ -328,11 +516,13 @@ class MSUnmerged(MSCore):
         :param rse: The RSE to be checked
         :return:    rse
         """
+        msg = "\n----------------------------------------------------------"
+        msg += "\nMSUnmergedRSE: %s"
+        msg += "\n----------------------------------------------------------"
         if dumpRSE:
-            msg = "\n----------------------------------------------------------"
-            msg += "\nMSUnmergedRSE: %s"
-            msg += "\n----------------------------------------------------------"
             self.logger.debug(msg, pformat(rse))
+        else:
+            self.logger.debug(msg, pretty(rse, max_seq_length=6))
         rse.clear()
         return rse
 

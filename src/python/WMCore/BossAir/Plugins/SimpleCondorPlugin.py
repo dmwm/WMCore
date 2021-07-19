@@ -490,6 +490,27 @@ class SimpleCondorPlugin(BasePlugin):
         return
 
 
+    def getCondorArchRequirement(self,scram_arch):
+      """
+      _getCondorArchRequirement_
+
+      Returns the proper architecture (as in X86_64, ppc64le, ....) to be inserted in the Condor ClassAd, if the default needs to be overriden. In this version, multi ARCH is not supported. 
+      Hence it assumes the ARCH of the first SCRAM_ARCH is sufficient and will not change later
+
+      """
+      requirementstring = None
+      if (scram_arch is not None) and(len(scram_arch) > 0):
+		(opsys, arch, version) = scram_arch[0].split('_')
+                if (arch == "amd64"):
+                     requirementstring = '(TARGET.Arch == "X86_64")'
+                if (arch == "ppc64le"):
+                     requirementstring = '(TARGET.Arch == "ppc64le")' 
+                if (arch == "aarch64"):
+                     requirementstring = '(TARGET.Arch == "AARCH64")' # to be checked if it is ok capitalize (or does it matter??) 
+
+      return requirementstring
+
+    
     def getJobParameters(self, jobList):
         """
         _getJobParameters_
@@ -605,7 +626,16 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
             cmsswVersions = ','.join(job.get('swVersion'))
             ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
-     
+
+            # set the correct Requirements for ARCH (only if not set before --- effects on CMS@HOME? It would simply not be able torun on anything but X86_64 ...
+
+            if (ad.get('Requirements') == ''):
+              scram_arch = job.get('scramArch')
+              requirementstring = self.getCondorArchRequirement (scram_arch)
+              if requirementstring != None:
+                ad['Requirements'] = requirementstring
+                logging.info("Setting CONDOR Arch Requirements  to %s", ad['Requirements'])
+
             jobParameters.append(ad)    
              
         return jobParameters

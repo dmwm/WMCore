@@ -122,11 +122,19 @@ echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ======
 
 echo "======== WMAgent COMP Python bootstrap starting at $(TZ=GMT date) ========"
 # First, decide which COMP ScramArch to use based on the required OS
+myarch=`uname -m`
+if [ "$myarch" == "x86_64" ]
+then
+    myarch="amd64"
+fi
+
+
+
 if [ "$REQUIRED_OS" = "rhel7" ];
 then
-    WMA_SCRAM_ARCH=slc7_amd64_gcc630
+    WMA_SCRAM_ARCH=slc7_${myarch}_gcc630
 else
-    WMA_SCRAM_ARCH=slc6_amd64_gcc493
+    WMA_SCRAM_ARCH=slc6_${myarch}_gcc493
 fi
 echo "Job requires OS: $REQUIRED_OS, thus setting ScramArch to: $WMA_SCRAM_ARCH"
 
@@ -154,7 +162,7 @@ pythonCommand="python"${pythonMajorVersion}
 echo "WMAgent bootstrap: latest python release is: $latestPythonVersion"
 source "$prefix/$latestPythonVersion/$suffix"
 source "$compPythonPath/py2-future/$PY_FUTURE_VERSION/$suffix"
-
+echo "Using Python: $pythonCommand"
 command -v $pythonCommand > /dev/null
 rc=$?
 if [[ $rc != 0 ]]

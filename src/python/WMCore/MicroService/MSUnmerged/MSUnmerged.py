@@ -13,7 +13,6 @@ RSE basis.
 from __future__ import division, print_function
 
 from pprint import pformat
-from IPython.lib.pretty import pretty
 from time import time
 
 import random
@@ -33,6 +32,7 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 # from WMCore.Services.AlertManager.AlertManagerAPI import AlertManagerAPI
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
+from Utils.TwPrint import twFormat
 
 # from memory_profiler import profile
 
@@ -517,12 +517,12 @@ class MSUnmerged(MSCore):
         :return:    rse
         """
         msg = "\n----------------------------------------------------------"
-        msg += "\nMSUnmergedRSE: %s"
+        msg += "\nMSUnmergedRSE: \n%s"
         msg += "\n----------------------------------------------------------"
         if dumpRSE:
             self.logger.debug(msg, pformat(rse))
         else:
-            self.logger.debug(msg, pretty(rse, max_seq_length=6))
+            self.logger.debug(msg, twFormat(rse, maxLength=6))
         rse.clear()
         return rse
 

@@ -6,5 +6,5 @@ Core libraries for Workload Management Packages
 
 """
 
-__version__ = '1.5.0.cmsweb1'
+__version__ = '1.5.1.pre1'
 __all__ = []

@@ -1,3 +1,21 @@
+1.5.0 to 1.5.1.pre1:
+  - Substitute pretty function from IPython. (Todor Ivanov) #10679
+  - Add IPython dependency for reqmgr2ms. (Todor Ivanov) #10677
+  - Fix review comments. (Todor Ivanov) #10671
+  - pylint fixes (Todor Ivanov) #10671
+  - Unit tests (Todor Ivanov) #10671
+  - Add lfn2pfn resolve logic. (Todor Ivanov) #10671
+  - Shift from datetime to time (Todor Ivanov) #10666
+  - Unit tests (Todor Ivanov) #10666
+  - Add logic for cutting the path depth as provided by RucioConMon (Todor Ivanov) #10666
+  - Fix broken variable reference in TestMonitor (Alan Malta Rodrigues) #10665
+  - pylint fixes (Todor Ivanov) 
+  - pylint fixes (Todor Ivanov) 
+  - Add RucioConMon API to WMCore.Services. (Todor Ivanov) 
+  - 1.5.0.cmsweb1 (Alan Malta Rodrigues) 
+  - Fix object type passed to time.mktime (Alan Malta Rodrigues) 
+
+
 1.5.0 to 1.5.0.cmsweb1:
   - Fix object type passed to time.mktime (Alan Malta Rodrigues) #10663 
 

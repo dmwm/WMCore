@@ -87,32 +87,18 @@ class XRDCPImpl(StageOutImpl):
             xrdcpExec = "xrdcp-old"
 
         # check if xrdcp(-old) and xrdfs are in path
-        # fallback to xrootd 4.0.4 from COMP externals if not
         xrootdInPath = False
         if any(os.access(os.path.join(path, xrdcpExec), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
             if any(os.access(os.path.join(path, "xrdfs"), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
                 xrootdInPath = True
 
+        # if not check if OSG cvmfs repo is available
+        #   this likely only works on RHEL7 x86-64 (and compatible) OS, but this represent most of our resources
+        #   and this is a fallback (i.e. stageout would fail if we don't try something)
         if not xrootdInPath:
-            # COMP software can be in many place, check all of them
-            cmsSoftDir = os.environ.get("VO_CMS_SW_DIR", None)
-            if not cmsSoftDir:
-                cmsSoftDir = os.environ.get("OSG_APP", None)
-                if cmsSoftDir:
-                    cmsSoftDir = os.path.join(cmsSoftDir, "cmssoft/cms")
-                else:
-                    cmsSoftDir = os.environ.get("CVMFS", None)
-
-            if cmsSoftDir:
-
-                initFiles = []
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/xrootd/4.0.4-comp/etc/profile.d/init.sh"))
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/libevent/2.0.22/etc/profile.d/init.sh"))
-                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/gcc/4.9.3/etc/profile.d/init.sh"))
-
-                if all(os.path.isfile(initFile) for initFile in initFiles):
-                    for initFile in initFiles:
-                        copyCommand += "source %s\n" % initFile
+            initFile = "/cvmfs/oasis.opensciencegrid.org/osg-software/osg-wn-client/current/el7-x86_64/setup.sh"
+            if os.path.isfile(initFile):
+                copyCommand += "source %s\n" % initFile
 
         if args.wma_disablewriterecovery:
             copyCommand += "env XRD_WRITERECOVERY=0 "

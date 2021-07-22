@@ -1,3 +1,7 @@
+1.5.1.pre1 to 1.5.1.pre2:
+  - Limit PFNList entries logged (Todor Ivanov) #10685
+
+
 1.5.0 to 1.5.1.pre1:
   - Substitute pretty function from IPython. (Todor Ivanov) #10679
   - Add IPython dependency for reqmgr2ms. (Todor Ivanov) #10677

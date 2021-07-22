@@ -78,6 +78,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("rucioConMon", "https://cmsweb-testbed.cern.ch/rucioconmon/")
         self.msConfig.setdefault("enableRealMode", False)
         self.msConfig.setdefault("dumpRSE", False)
+        self.msConfig.setdefault("gfalLogLevel", 'normal')
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
@@ -233,7 +234,7 @@ class MSUnmerged(MSCore):
         # Create the gfal2 context object:
         try:
             ctx = gfal2.creat_context()
-            gfal2.set_verbose(gfal2.verbose_level.debug)
+            gfal2.set_verbose(gfal2.verbose_level.names[self.msConfig['gfalLogLevel']])
         except Exception as ex:
             msg = "RSE: %s, Failed to create gfal2 Context object. Skipping it in the current run."
             self.logger.info(msg, rse['name'])
@@ -267,9 +268,9 @@ class MSUnmerged(MSCore):
                         pfnList.append(filePfn)
 
                 rse['counters']['filesToDelete'] += len(pfnList)
-                msg = "\nRSE: %s Currently DELETING: %s."
-                msg += "\nFull PFN list: \n%s"
-                self.logger.debug(msg, rse['name'], dirLfn, pformat(pfnList))
+                msg = "\nRSE: %s \nDELETING: %s."
+                msg += "\nPFN list with: %s entries: \n%s"
+                self.logger.debug(msg, rse['name'], dirLfn, len(pfnList), twFormat(pfnList, maxLength=4))
 
                 if self.msConfig['enableRealMode']:
                     try:
@@ -285,6 +286,7 @@ class MSUnmerged(MSCore):
                         rse['counters']['deletedSuccess'] += len(deletedSuccess)
 
                         # Now clean the whole branch
+                        self.logger.debug("Purging dirEntry: %s:\n", dirPfn)
                         purgeSuccess = self._purgeTree(ctx, dirPfn)
                         if not purgeSuccess:
                             msg = "RSE: %s Failed to purge nonEmpty directory: %s"
@@ -312,7 +314,6 @@ class MSUnmerged(MSCore):
         for dirEntry in ctx.listdir(baseDirPfn):
             if dirEntry in ['.', '..']:
                 continue
-            self.logger.debug("Purging dirEntry: %s:\n", dirEntry)
             dirEntryPfn = baseDirPfn + dirEntry
             try:
                 entryStat = ctx.stat(dirEntryPfn)
@@ -335,7 +336,7 @@ class MSUnmerged(MSCore):
                 successList.append(True)
             else:
                 successList.append(False)
-            self.logger.debug("RMDIR baseDir: %s", baseDirPfn)
+            self.logger.debug("RM baseDir: %s", baseDirPfn)
         except gfal2.GError:
             e = sys.exc_info()[1]
             if e.code == errno.ENOENT:

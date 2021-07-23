@@ -100,7 +100,7 @@ class RucioConMon(Service):
         #       in the future.
         if not zipped:
             uri = "WM/files?rse=%s&format=json" % rseName
-            rseUnmerged = self._getResult(uri, callname='unmerged')
+            rseUnmerged = self._getResult(uri, callname=rseName)
             return rseUnmerged
         else:
             pass

@@ -1,3 +1,7 @@
+1.5.1.pre2 to 1.5.1.pre3:
+  - Fix RucioConMon.rseUnmerged cache name && Log full list of RSEs. (Todor Ivanov) #10689
+
+
 1.5.1.pre1 to 1.5.1.pre2:
   - Limit PFNList entries logged (Todor Ivanov) #10685
 

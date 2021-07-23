@@ -152,10 +152,10 @@ class MSUnmerged(MSCore):
 
         try:
             rseList = self.getRSEList()
+            msg = "Retrieved list of %s RSEs: %s "
+            msg += "Service set to process up to %s RSEs per instance."
+            self.logger.info(msg, len(rseList), pformat(rseList), self.msConfig["limitRSEsPerInstance"])
             random.shuffle(rseList)
-            msg = "  retrieved %s RSEs. " % len(rseList)
-            msg += "Service set to process up to %s RSEs per instance." % self.msConfig["limitRSEsPerInstance"]
-            self.logger.info(msg)
         except Exception as err:  # general error
             msg = "Unknown exception while trying to estimate the final RSEs to work on. Error: %s", str(err)
             self.logger.exception(msg)

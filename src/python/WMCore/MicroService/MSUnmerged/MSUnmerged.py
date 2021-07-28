@@ -209,13 +209,13 @@ class MSUnmerged(MSCore):
                     self.logger.info(msg, pline.name, rseName)
                     continue
             except MSUnmergedPlineExit as ex:
-                msg = "%s: Run on RSE: %s was interrupted due to: %s. "
-                msg += "\nWill retry again in the next cycle."
-                self.logger.exception(msg, pline.name, rseName, ex.message)
+                msg = "%s: Run on RSE: %s was interrupted due to: %s "
+                msg += "Will retry again in the next cycle."
+                self.logger.warning(msg, pline.name, rseName, ex.message)
                 continue
             except Exception as ex:
-                msg = "%s: General error from pipeline. RSE: %s. Error:  \n%s."
-                msg += "\nWill retry again in the next cycle."
+                msg = "%s: General error from pipeline. RSE: %s. Error: %s "
+                msg += "Will retry again in the next cycle."
                 self.logger.exception(msg, pline.name, rseName, str(ex))
                 continue
         return self.plineCounters[pline.name]['totalNumRses'], \
@@ -236,8 +236,9 @@ class MSUnmerged(MSCore):
             ctx = gfal2.creat_context()
             gfal2.set_verbose(gfal2.verbose_level.names[self.msConfig['gfalLogLevel']])
         except Exception as ex:
-            msg = "RSE: %s, Failed to create gfal2 Context object. Skipping it in the current run."
-            self.logger.info(msg, rse['name'])
+            msg = "RSE: %s, Failed to create gfal2 Context object. " % rse['name']
+            msg += "Skipping it in the current run."
+            self.logger.exception(msg)
             raise MSUnmergedPlineExit(msg)
 
         # Start cleaning one directory at a time:
@@ -292,9 +293,9 @@ class MSUnmerged(MSCore):
                             msg = "RSE: %s Failed to purge nonEmpty directory: %s"
                             self.logger.error(msg, rse['name'], dirPfn)
                     except Exception as ex:
-                        msg = "Error while cleaning RSE: %s"
+                        msg = "Error while cleaning RSE: %s. "
                         msg += "Will retry in the next cycle. Err: %s"
-                        self.logger.debug(msg, rse['name'], str(ex))
+                        self.logger.warning(msg, rse['name'], str(ex))
         rse['isClean'] = self._checkClean(rse)
 
         return rse
@@ -362,21 +363,31 @@ class MSUnmerged(MSCore):
         :return:    rse or raises MSUnmergedPlineExit
         """
         rseName = rse['name']
+
+        if rseName not in self.rseConsStats:
+            msg = "RSE: %s Missing in stats records at Rucio Consistency Monitor. " % rseName
+            msg += "Skipping it in the current run."
+            self.logger.warning(msg)
+            raise MSUnmergedPlineExit(msg)
+
         isConsDone = self.rseConsStats[rseName]['status'] == 'done'
         isConsNewer = self.rseConsStats[rseName]['end_time'] > self.rseTimestamps[rseName]['prevStartTime']
         isRootFailed = self.rseConsStats[rseName]['root_failed']
 
         if not isConsNewer:
-            msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. Skipping it in the current run."
-            self.logger.info(msg, rseName)
+            msg = "RSE: %s With old consistency record in Rucio Consistency Monitor. " % rseName
+            msg += "Skipping it in the current run."
+            self.logger.info(msg)
             raise MSUnmergedPlineExit(msg)
         if not isConsDone:
-            msg = "RSE: %s In non-final state in Rucio Consistency Monitor. Skipping it in the current run."
-            self.logger.info(msg, rseName)
+            msg = "RSE: %s In non-final state in Rucio Consistency Monitor. " % rseName
+            msg += "Skipping it in the current run."
+            self.logger.warning(msg)
             raise MSUnmergedPlineExit(msg)
         if isRootFailed:
-            msg = "RSE: %s With failed root in Rucio Consistency Monitor. Skipping it in the current run."
-            self.logger.info(msg, rseName)
+            msg = "RSE: %s With failed root in Rucio Consistency Monitor. " % rseName
+            msg += "Skipping it in the current run."
+            self.logger.warning(msg)
             raise MSUnmergedPlineExit(msg)
 
         return rse
@@ -492,7 +503,7 @@ class MSUnmerged(MSCore):
         already recorded in the RSE in order to resolve the lfn to pfn mapping
         and then tries to parse the resultant pfn and cut off the lfn part.
         :param rse: The RSE to be checked
-        :return:    rse or raises MSUnmergedPlineExit
+        :return:    rse
         """
         # NOTE:  pfnPrefix here is considered the full part of the pfn up to the
         #        beginning of the lfn part rather than just the protocol prefix

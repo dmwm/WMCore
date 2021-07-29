@@ -79,6 +79,8 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("enableRealMode", False)
         self.msConfig.setdefault("dumpRSE", False)
         self.msConfig.setdefault("gfalLogLevel", 'normal')
+        self.msConfig.setdefault("dirFilterIncl", [])
+        self.msConfig.setdefault("dirFilterExcl", [])
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
@@ -488,9 +490,30 @@ class MSUnmerged(MSCore):
                 if i.startswith(pattern):
                     yield i
 
+        # NOTE: If the 'dirFilterIncl' is non empty then the cleaning process will
+        #       be enclosed only in this part of the tree and will ignore anything
+        #       from /store/unmerged/ which does not belong to the included filter
+        # NOTE: 'dirFilterExcl' is always applied.
+
+        # Merge the additional filters into a final set to be applied:
+        dirFilterIncl = set(self.msConfig['dirFilterIncl'])
+        dirFilterExcl = set(self.msConfig['dirFilterExcl'])
+        dirFilterAll = dirFilterIncl - dirFilterExcl
+
         # Populate the filters:
         for dirName in rse['dirs']['toDelete']:
-            rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+            # apply additional filters:
+            if dirFilterAll:
+                for dirFilter in dirFilterAll:
+                    if dirName.startswith(dirFilter):
+                        rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+            else:
+                if dirFilterExcl:
+                    for dirFilter in dirFilterExcl:
+                        if not dirName.startswith(dirFilter):
+                            rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+                else:
+                    rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
 
         # Update the counters:
         rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])

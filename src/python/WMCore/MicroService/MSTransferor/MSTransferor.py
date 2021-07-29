@@ -80,6 +80,8 @@ class MSTransferor(MSCore):
         # Send warning messages for any data transfer above this threshold.
         # Set to negative to ignore.
         self.msConfig.setdefault("warningTransferThreshold", 100. * (1000 ** 4))  # 100TB
+        # weight expression for the input replication rules
+        self.msConfig.setdefault("rucioRuleWeight", 'ddm_quota')
 
         quotaAccount = self.msConfig["rucioAccount"]
 
@@ -670,20 +672,21 @@ class MSTransferor(MSCore):
         subLevel = "ALL" if subLevel == "container" else "DATASET"
         dids = blocks if blocks else [dataIn['name']]
 
-        rule = {'copies': 1,
-                'activity': 'Production Input',
-                'lifetime': self.msConfig['rulesLifetime'],
-                'account': self.msConfig['rucioAccount'],
-                'grouping': subLevel,
-                'meta': {'workflow_group': wflow.getWorkflowGroup()},
-                'comment': 'WMCore MSTransferor input data placement'}
+        ruleAttrs = {'copies': 1,
+                     'activity': 'Production Input',
+                     'lifetime': self.msConfig['rulesLifetime'],
+                     'account': self.msConfig['rucioAccount'],
+                     'grouping': subLevel,
+                     'weight': self.msConfig['rucioRuleWeight'],
+                     'meta': {'workflow_group': wflow.getWorkflowGroup()},
+                     'comment': 'WMCore MSTransferor input data placement'}
 
         if wflow.getParentDataset():
             # then we need to make sure the child and its parent blocks end up in the same RSE
             rseExpr = nodes[nodeIdx]
             msg = "Primary data placement with parent blocks, putting all in the same RSE: {}".format(rseExpr)
             self.logger.info(msg)
-        elif rule['grouping'] == "ALL":
+        elif ruleAttrs['grouping'] == "ALL":
             # this means we are placing the whole container under the same RSE.
             # Ask Rucio which RSE we should use, provided a list of them
             rseExpr = "|".join(nodes)
@@ -712,7 +715,7 @@ class MSTransferor(MSCore):
             self.logger.info("Creating rule for workflow %s with %d DIDs in container %s, RSEs: %s, grouping: %s",
                              wflow.getName(), len(dids), dataIn['name'], rseExpr, subLevel)
             try:
-                res = self.rucio.createReplicationRule(dids, rseExpr, **rule)
+                res = self.rucio.createReplicationRule(dids, rseExpr, **ruleAttrs)
             except Exception as exc:
                 msg = "Hit a bad exception while creating replication rules for DID: %s. Error: %s"
                 self.logger.error(msg, dids, str(exc))
@@ -731,7 +734,7 @@ class MSTransferor(MSCore):
                     success = False
         else:
             msg = "DRY-RUN: making Rucio rule for workflow: %s, dids: %s, rse: %s, kwargs: %s"
-            self.logger.info(msg, wflow.getName(), dids, rseExpr, rule)
+            self.logger.info(msg, wflow.getName(), dids, rseExpr, ruleAttrs)
         return success, transferId
 
     def notifyLargeData(self, aboveWarningThreshold, transferId, wflowName, dataSize, dataIn):

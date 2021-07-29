@@ -32,11 +32,6 @@ from collections import deque
 
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
-from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
-from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
-from WMCore.MicroService.MSOutput.MSOutput import MSOutput
-from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
-from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged
 from WMCore.MicroService.TaskManager import start_new_thread
 
 
@@ -86,6 +81,7 @@ class MSManager(object):
 
         # initialize transferor module
         if 'transferor' in self.services:
+            from WMCore.MicroService.MSTransferor.MSTransferor import MSTransferor
             self.msTransferor = MSTransferor(self.msConfig, logger=self.logger)
             thname = 'MSTransferor'
             self.transfThread = start_new_thread(thname, daemon,
@@ -97,6 +93,7 @@ class MSManager(object):
 
         # initialize monitoring module
         if 'monitor' in self.services:
+            from WMCore.MicroService.MSMonitor.MSMonitor import MSMonitor
             self.msMonitor = MSMonitor(self.msConfig, logger=self.logger)
             thname = 'MSMonitor'
             self.monitThread = start_new_thread(thname, daemon,
@@ -108,6 +105,7 @@ class MSManager(object):
 
         # initialize output module
         if 'output' in self.services:
+            from WMCore.MicroService.MSOutput.MSOutput import MSOutput
             reqStatus = ['closed-out', 'announced']
             # thread safe cache to keep the last X requests processed in MSOutput
             requestNamesCached = deque(maxlen=self.msConfig.get("cacheRequestSize", 10000))
@@ -136,6 +134,7 @@ class MSManager(object):
 
         # initialize rule cleaner module
         if 'ruleCleaner' in self.services:
+            from WMCore.MicroService.MSRuleCleaner.MSRuleCleaner import MSRuleCleaner
             reqStatus = ['announced', 'aborted-completed', 'rejected']
             self.msRuleCleaner = MSRuleCleaner(self.msConfig, logger=self.logger)
             thname = 'MSRuleCleaner'
@@ -148,6 +147,7 @@ class MSManager(object):
 
         # initialize unmerged module
         if 'unmerged' in self.services:
+            from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged
             self.msUnmerged = MSUnmerged(self.msConfig, logger=self.logger)
             thname = 'MSUnmerged'
             self.unmergedThread = start_new_thread(thname, daemonOpt,

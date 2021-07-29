@@ -1,3 +1,11 @@
+1.5.1.pre3 to 1.5.1.pre4:
+  - Import micro services on demand in MSManager. (Todor Ivanov) #10698
+  - Provide a configurable weight value for MSTransferor Rucio rules (Alan Malta Rodrigues) #10696
+  - Performance improvements for WorkQueueManagerCleaner thread (Alan Malta Rodrigues) #10695
+  - Fix unnecessary traceback dumps. (Todor Ivanov) #10691
+  - Keep all relval output datatiers on disk by bypassing all MSOutput configurations (haozturk) #10669
+
+
 1.5.1.pre2 to 1.5.1.pre3:
   - Fix RucioConMon.rseUnmerged cache name && Log full list of RSEs. (Todor Ivanov) #10689
 

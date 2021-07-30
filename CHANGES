@@ -1,3 +1,9 @@
+1.5.1.pre4 to 1.5.1.pre5:
+  - Fix error message reported via MSUnmerged/MSRuleCleaner REST API (Alan Malta Rodrigues) #10700
+  - MSUnmerged: support detail and rse_type in the RESTful APIs (Alan Malta Rodrigues) #10700
+  - MSOutput: do not fail workflow if there are containers unknown to Rucio (Alan Malta Rodrigues) #10699
+
+
 1.5.1.pre3 to 1.5.1.pre4:
   - Import micro services on demand in MSManager. (Todor Ivanov) #10698
   - Provide a configurable weight value for MSTransferor Rucio rules (Alan Malta Rodrigues) #10696

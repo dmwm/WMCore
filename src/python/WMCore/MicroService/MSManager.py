@@ -288,16 +288,28 @@ class MSManager(object):
         if 'ruleCleaner' in self.services and hasattr(self, 'ruleCleanerThread'):
             self.ruleCleanerThread.stop()
             status = self.ruleCleanerThread.running()
+        # stop MSUnmerged thread
+        if 'unmerged' in self.services and hasattr(self, 'unmergedThread'):
+            self.unmergedThread.stop()
+            status = self.unmergedThread.running()
         return status
 
-    def info(self, reqName=None):
+    def info(self, reqName=None, **kwargs):
         """
         Return transfer information for a given request
         :param reqName: request name
+        :param kwargs: other arguments that can be provided for different
+            microservices. Examples:
+            rse_type: string with the type of the RSEs to fetch (MSUnmerged)
+                      Meaningful values at the moment are: "t1", "t2t3" and "t2t3us"
         :return: data transfer information for this request
         """
-        data = {"request": reqName, "transferDoc": None}
+        if 'ruleCleaner' in self.services or 'unmerged' in self.services:
+            data = {}
+        else:
+            data = {"request": reqName, "transferDoc": None}
         if reqName:
+            transferDoc = None
             # obtain the transfer information for a given request records from couchdb for given request
             if 'monitor' in self.services:
                 transferDoc = self.msMonitor.reqmgrAux.getTransferInfo(reqName)
@@ -308,18 +320,26 @@ class MSManager(object):
             if transferDoc:
                 # it's always a single document in Couch
                 data['transferDoc'] = transferDoc[0]
+
+        if 'unmerged' in self.services:
+            if kwargs.get("rse_type"):
+                data = {"rse_type": kwargs.get("rse_type")}
         return data
 
     def delete(self, request):
         "Delete request in backend"
         pass
 
-    def status(self, detail):
+    def status(self, detail, **kwargs):
         """
         Return the current status of a MicroService and a summary
         of its last execution activity.
         :param detail: boolean used to retrieve some extra information
           regarding the service
+        :param kwargs: other arguments that can be provided for different
+            microservices. Examples:
+            rse_type: string with the type of the RSEs to fetch (MSUnmerged)
+                      Meaningful values at the moment are: "t1", "t2t3" and "t2t3us"
         :return: a dictionary
         """
         data = {"status": "OK"}
@@ -331,6 +351,11 @@ class MSManager(object):
             data.update(self.statusOutput)
         elif detail and 'ruleCleaner' in self.services:
             data.update(self.statusRuleCleaner)
+        elif 'unmerged' in self.services:
+            if kwargs.get("rse_type"):
+                data.update({"rse_type": kwargs.get("rse_type")})
+            if detail:
+                data.update(self.statusUnmerged)
         return data
 
     def updateTimeUTC(self, reportDict, startT, endT):

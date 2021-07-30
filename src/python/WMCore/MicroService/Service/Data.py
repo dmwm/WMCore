@@ -90,12 +90,10 @@ class Data(with_metaclass(Singleton, RESTEntity, object)):
                'microservice': self.mgr.__class__.__name__}
 
         if kwds.get('API') == "status":
-            detail = kwds.get("detail", True)
-            if detail not in (True, "true", "True", "TRUE"):
-                detail = False
-            res.update(self.mgr.status(detail))
+            detail = True if kwds.pop("detail", True) in (True, "true", "True", "TRUE") else False
+            res.update(self.mgr.status(detail, **kwds))
         elif kwds.get('API') == "info":
-            res.update(self.mgr.info(kwds.get("request")))
+            res.update(self.mgr.info(kwds.pop("request", None), **kwds))
         return results(res)
 
     @restcall(formats=[('application/json', JSONFormat())])

@@ -509,9 +509,11 @@ class MSUnmerged(MSCore):
                         rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
             else:
                 if dirFilterExcl:
+                    dirFilterExclMatch = []
                     for dirFilter in dirFilterExcl:
-                        if not dirName.startswith(dirFilter):
-                            rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+                        dirFilterExclMatch.append(dirName.startswith(dirFilter))
+                    if not any(dirFilterExclMatch):
+                        rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
                 else:
                     rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
 

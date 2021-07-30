@@ -24,15 +24,21 @@ class ServiceManager(object):
         self.config = config
         self.appname = 'test'  # keep it since it is used by XMLFormat(self.app.appname))
 
-    def status(self, serviceName=None):
+    def status(self, serviceName=None, **kwargs):
         "Return current status about our service"
         print("### CALL status API with service name %s" % serviceName)
-        return {'status': "OK", "api": "status"}
+        data = {'status': "OK", "api": "status"}
+        if kwargs:
+            data.update(kwargs)
+        return data
 
-    def info(self, reqName):
+    def info(self, reqName, **kwargs):
         "Return current status about our service"
         print("### CALL info API with request name %s" % reqName)
-        return {'status': "OK", "api": "info"}
+        data = {'status': "OK", "api": "info"}
+        if kwargs:
+            data.update(kwargs)
+        return data
 
 
 class MicroServiceTest(unittest.TestCase):

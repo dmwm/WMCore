@@ -146,8 +146,8 @@ class MSUnmerged(MSCore):
                 self.updateReportDict(summary, "num_files_deleted", 0)
                 return summary
         except Exception as ex:
-            msg = "Unknown exception while running MSUnmerged thread Error: %s"
-            self.logger.exception(msg, str(ex))
+            msg = "Unknown exception while running MSUnmerged thread Error: {}".format(str(ex))
+            self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
         try:
@@ -177,8 +177,8 @@ class MSUnmerged(MSCore):
             self.updateReportDict(summary, "num_rses_cleaned", numRsesCleaned)
             self.updateReportDict(summary, "num_files_deleted", numFilesDeleted)
         except Exception as ex:
-            msg = "Unknown exception while running MSUnmerged thread Error: %s"
-            self.logger.exception(msg, str(ex))
+            msg = "Unknown exception while running MSUnmerged thread Error: {}".format(str(ex))
+            self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
         return summary

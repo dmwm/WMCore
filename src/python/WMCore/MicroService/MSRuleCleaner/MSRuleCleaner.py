@@ -224,8 +224,8 @@ class MSRuleCleaner(MSCore):
             self.updateReportDict(summary, "normal_archived_num_requests", normalArchivedNumRequests)
             self.updateReportDict(summary, "force_archived_num_requests", forceArchivedNumRequests)
         except Exception as ex:
-            msg = "Unknown exception while running MSRuleCleaner thread Error: %s"
-            self.logger.exception(msg, str(ex))
+            msg = "Unknown exception while running MSRuleCleaner thread Error: {}".format(str(ex))
+            self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)
 
         return summary

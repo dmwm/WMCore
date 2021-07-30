@@ -613,6 +613,7 @@ class MSOutput(MSCore):
         """
         self.logger.info("Producing MongoDB record for workflow: %s", msOutDoc["RequestName"])
         updatedOutputMap = []
+        notFoundDIDs = []
         for dataItem in msOutDoc['OutputMap']:
             if msOutDoc['RequestType'] == "Resubmission":
                 # make sure not to subscribe the same datasets multiple times, even
@@ -621,7 +622,17 @@ class MSOutput(MSCore):
                 updatedOutputMap.append(dataItem)
                 continue
             ### Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
-            bytesSize = self._getDatasetSize(dataItem['Dataset'])
+            try:
+                bytesSize = self._getDatasetSize(dataItem['Dataset'])
+            except KeyError as exc:
+                # then this container is unknown to Rucio, bypass and make an alert
+                # Error is already reported in the Rucio module, do not spam here!
+                dataItem['DatasetSize'] = 0
+                dataItem['Copies'] = 0
+                updatedOutputMap.append(dataItem)
+                notFoundDIDs.append(dataItem['Dataset'])
+                continue
+
             dataItem['DatasetSize'] = bytesSize
 
             if not self.canDatasetGoToDisk(dataItem, msOutDoc['IsRelVal']):
@@ -661,20 +672,25 @@ class MSOutput(MSCore):
                     updatedOutputMap.append(dataItem)
                     continue
             else:
-                # FIXME:
-                #    Here we need to use the already created campaignMap for
-                #    building the destinationOutputMap for nonRelVal workflows.
-                #    For the time being it is a fallback to all T1_* and all T2_*.
-                #    Once we migrate to Rucio we should change those defaults to
-                #    whatever is the format in Rucio (eg. referring a subscription
-                #    rule like: "store it at a good site" or "Store in the USA" etc.)
-
                 # NOTE: This default rseExpression should target all T1_*_Disk and T2_*
                 # sites, where the first part is a Union of those Tiers and the second
                 # part is a general constraint for those to be real entries (not `Test`
                 # or `Temp`) and we also target only Disk endpoints
                 dataItem['DiskDestination'] = '(tier=2|tier=1)&cms_type=real&rse_type=DISK'
             updatedOutputMap.append(dataItem)
+
+        # if there were containers not found in Rucio, create an email alert
+        if notFoundDIDs:
+            # send alert via AlertManager API
+            alertName = "ms-output: output containers not found for workflow: {}".format(msOutDoc["RequestName"])
+            alertSeverity = "high"
+            alertSummary = "[MSOutput] Workflow '{}' has output datasets unknown to Rucio".format(msOutDoc["RequestName"])
+            alertDescription = "Dataset(s): {} cannot be found in Rucio. ".format(notFoundDIDs)
+            alertDescription += "Thus, we are skipping these datasets from the final output "
+            alertDescription += "data placement, such that this workflow can get archived."
+            self.logger.warning(alertDescription)
+            if self.msConfig["sendNotification"]:
+                self.alertManagerAPI.sendAlert(alertName, alertSeverity, alertSummary, alertDescription, self.alertServiceName)
 
         try:
             msOutDoc.updateDoc({"OutputMap": updatedOutputMap}, throw=True)

@@ -5,12 +5,13 @@ Unit tests for MicorService/MSUnmerged/MSUnmerged.py module
 from __future__ import division, print_function
 
 import json
-# system modules
 import os
 import unittest
-import unittest.mock as mock
 
-# WMCore modules
+from future.utils import viewkeys
+from mock import mock
+
+from Utils.PythonVersion import PY3
 from WMCore.MicroService.MSUnmerged.MSUnmerged import MSUnmerged, MSUnmergedRSE
 from WMCore.Services.Rucio import Rucio
 
@@ -51,6 +52,32 @@ class RucioConMonEmul(object):
         In reality it returns it from a file.
         """
         return self.rseUnmergedDump
+
+
+def getBasicRSEData():
+    """Provide a very basic rse directory structure"""
+    lfns = ["/store/unmerged/alan/prod/2021/1/12/log0.tar",
+            "/store/unmerged/logs/prod/2018/1/12/log1.tar",
+            "/store/unmerged/logs/prod/2019/1/12/log2.tar",
+            "/store/unmerged/logs/prod/2020/1/12/log3.tar",
+            "/store/unmerged/logs/prod/2021/1/12/log4.tar",
+            "/store/unmerged/logs/prod/2022/1/12/log5.tar",
+            "/store/unmerged/data/prod/2018/1/12/log6.tar",
+            "/store/unmerged/data/prod/2019/1/12/log7.tar",
+            "/store/unmerged/express/prod/2020/1/12/log8.tar",
+            "/store/unmerged/express/prod/2020/1/12/log9.tar",
+            "/store/unmerged/alan/prod/2022/1/12/log10.tar"]
+    rse = {"counters": {"dirsToDeleteAll": 0},
+           "dirs": {"allUnmerged": set(),
+                    "toDelete": {},
+                    "protected": []},
+           "files": {"allUnmerged": set(lfns),
+                     "toDelete": {},
+                     "protected": []}
+           }
+    for fName in rse['files']['allUnmerged']:
+        rse['dirs']['allUnmerged'].add(fName.rsplit("/", 1)[0])
+    return rse
 
 
 class WMStatsServerEmul(object):
@@ -94,7 +121,10 @@ class MSUnmergedTest(unittest.TestCase):
                          'rucioConMon': 'https://cmsweb-testbed.cern.ch/rucioconmon',
                          'services': ['unmerged'],
                          'verbose': True,
-                         'wmstatsUrl': 'https://cmsweb-testbed.cern.ch/wmstatsserver'}
+                         'wmstatsUrl': 'https://cmsweb-testbed.cern.ch/wmstatsserver',
+                         'dirFilterIncl': [],
+                         'dirFilterExcl': [],
+                         'emulateGfal2': True}
 
         self.creds = {"client_cert": os.getenv("X509_USER_CERT", "Unknown"),
                       "client_key": os.getenv("X509_USER_KEY", "Unknown")}
@@ -117,6 +147,8 @@ class MSUnmergedTest(unittest.TestCase):
                                             configDict=self.rucioConfigDict)
 
         super(MSUnmergedTest, self).setUp()
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
 
     def testPlineUnmerged(self):
         # Test plineMSUnmerged:
@@ -180,3 +212,57 @@ class MSUnmergedTest(unittest.TestCase):
         filePath = '/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1/00001/2A335139-C39F-F94C-9D06-D0D32296C62E.root'
         expectedFilePath = '/store/unmerged/RunIIAutumn18FSPremix/PMSSM_set_1_prompt_1_TuneCP2_13TeV-pythia8/AODSIM/GridpackScan_102X_upgrade2018_realistic_v15-v1'
         self.assertEqual(self.msUnmerged._cutPath(filePath), expectedFilePath)
+
+    def testFilterInclDirectories(self):
+        "Test MSUnmerged with including directories filter"
+        toDeleteDict = {"/store/unmerged/data/prod/2018/1/12": ["/store/unmerged/data/prod/2018/1/12/log6.tar"],
+                        "/store/unmerged/express/prod/2020/1/12": ["/store/unmerged/express/prod/2020/1/12/log8.tar",
+                                                                   "/store/unmerged/express/prod/2020/1/12/log9.tar"]}
+        rseData = getBasicRSEData()
+
+        self.msUnmerged.msConfig['dirFilterIncl'] = ["/store/unmerged/data/prod/2018/",
+                                                     "/store/unmerged/express"]
+        self.msUnmerged.protectedLFNs = set()
+        filterData = self.msUnmerged.filterUnmergedFiles(rseData)
+        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 2)
+        self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
+        self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/data/prod/2018/1/12']),
+                              toDeleteDict['/store/unmerged/data/prod/2018/1/12'])
+        self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/express/prod/2020/1/12']),
+                              toDeleteDict['/store/unmerged/express/prod/2020/1/12'])
+
+    def testFilterExclDirectories(self):
+        "Test MSUnmerged with excluding directories filter"
+        toDeleteDict = {"/store/unmerged/data/prod/2018/1/12": ["/store/unmerged/data/prod/2018/1/12/log6.tar"],
+                        "/store/unmerged/express/prod/2020/1/12": ["/store/unmerged/express/prod/2020/1/12/log8.tar",
+                                                                   "/store/unmerged/express/prod/2020/1/12/log9.tar"]}
+        rseData = getBasicRSEData()
+
+        self.msUnmerged.msConfig['dirFilterExcl'] = ["/store/unmerged/logs",
+                                                     "/store/unmerged/data/prod/2019",
+                                                     "/store/unmerged/alan/prod"]
+        self.msUnmerged.protectedLFNs = set()
+        filterData = self.msUnmerged.filterUnmergedFiles(rseData)
+        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 2)
+        self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
+        self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/data/prod/2018/1/12']),
+                              toDeleteDict['/store/unmerged/data/prod/2018/1/12'])
+        self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/express/prod/2020/1/12']),
+                              toDeleteDict['/store/unmerged/express/prod/2020/1/12'])
+
+    def testFilterInclExclDirectories(self):
+        "Test MSUnmerged with including and excluding directories filter"
+        toDeleteDict = {"/store/unmerged/express/prod/2020/1/12": ["/store/unmerged/express/prod/2020/1/12/log8.tar",
+                                                                   "/store/unmerged/express/prod/2020/1/12/log9.tar"]}
+        rseData = getBasicRSEData()
+        self.msUnmerged.msConfig['dirFilterIncl'] = ["/store/unmerged/data/prod/2018/",
+                                                     "/store/unmerged/express"]
+        self.msUnmerged.msConfig['dirFilterExcl'] = ["/store/unmerged/logs",
+                                                     "/store/unmerged/data/prod",
+                                                     "/store/unmerged/alan/prod"]
+        self.msUnmerged.protectedLFNs = set()
+        filterData = self.msUnmerged.filterUnmergedFiles(rseData)
+        self.assertEqual(filterData['counters']['dirsToDeleteAll'], 1)
+        self.assertItemsEqual(viewkeys(filterData['files']['toDelete']), viewkeys(toDeleteDict))
+        self.assertItemsEqual(list(filterData['files']['toDelete']['/store/unmerged/express/prod/2020/1/12']),
+                              toDeleteDict['/store/unmerged/express/prod/2020/1/12'])

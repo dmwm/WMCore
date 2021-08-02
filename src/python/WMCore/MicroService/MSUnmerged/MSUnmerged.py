@@ -21,8 +21,12 @@ import os
 import sys
 import errno
 import stat
-import gfal2
-
+try:
+    import gfal2
+except ImportError:
+    # in case we do not have gfal2 installed
+    print("FAILED to import gfal2. Use it only in emulateGfal2=True mode!!!")
+    gfal2 = None
 # WMCore modules
 from WMCore.MicroService.DataStructs.DefaultStructs import UNMERGED_REPORT
 from WMCore.MicroService.MSCore import MSCore
@@ -56,6 +60,20 @@ class MSUnmergedPlineExit(MSUnmergedException):
         super(MSUnmergedPlineExit, self).__init__(self.message)
 
 
+def createGfal2Context(logLevel="normal", emulate=False):
+    """
+    Create a gfal2 context object
+    :param logLevel: string with the gfal2 log level
+    :param emulate: boolean to be used by unit tests
+    :return: the gfal2 context object
+    """
+    if emulate:
+        return None
+    ctx = gfal2.creat_context()
+    gfal2.set_verbose(gfal2.verbose_level.names[logLevel])
+    return ctx
+
+
 class MSUnmerged(MSCore):
     """
     MSUnmerged.py class provides the logic for cleaning the unmerged area of
@@ -81,6 +99,12 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("gfalLogLevel", 'normal')
         self.msConfig.setdefault("dirFilterIncl", [])
         self.msConfig.setdefault("dirFilterExcl", [])
+        self.msConfig.setdefault("emulateGfal2", False)
+        if self.msConfig['emulateGfal2'] is False and gfal2 is None:
+            msg = "Failed to import gfal2 library while it's not "
+            msg += "set to emulate it. Crashing the service!"
+            raise ImportError(msg)
+
         # TODO: Add 'alertManagerUrl' to msConfig'
         # self.alertServiceName = "ms-unmerged"
         # self.alertManagerAPI = AlertManagerAPI(self.msConfig.get("alertManagerUrl", None), logger=logger)
@@ -235,8 +259,7 @@ class MSUnmerged(MSCore):
 
         # Create the gfal2 context object:
         try:
-            ctx = gfal2.creat_context()
-            gfal2.set_verbose(gfal2.verbose_level.names[self.msConfig['gfalLogLevel']])
+            ctx = createGfal2Context(self.msConfig['gfalLogLevel'], self.msConfig['emulateGfal2'])
         except Exception as ex:
             msg = "RSE: %s, Failed to create gfal2 Context object. " % rse['name']
             msg += "Skipping it in the current run."
@@ -498,24 +521,33 @@ class MSUnmerged(MSCore):
         # Merge the additional filters into a final set to be applied:
         dirFilterIncl = set(self.msConfig['dirFilterIncl'])
         dirFilterExcl = set(self.msConfig['dirFilterExcl'])
-        dirFilterAll = dirFilterIncl - dirFilterExcl
 
-        # Populate the filters:
+        # Update directory/files with no service filters
+        if not dirFilterIncl and not dirFilterExcl:
+            for dirName in rse['dirs']['toDelete']:
+                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+            rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])
+            return rse
+
+        # If we are here, then there are service filters...
         for dirName in rse['dirs']['toDelete']:
-            # apply additional filters:
-            if dirFilterAll:
-                for dirFilter in dirFilterAll:
-                    if dirName.startswith(dirFilter):
-                        rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-            else:
-                if dirFilterExcl:
-                    dirFilterExclMatch = []
-                    for dirFilter in dirFilterExcl:
-                        dirFilterExclMatch.append(dirName.startswith(dirFilter))
-                    if not any(dirFilterExclMatch):
-                        rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
-                else:
+            # apply exclusion filter
+            dirFilterExclMatch = []
+            for pathExcl in dirFilterExcl:
+                dirFilterExclMatch.append(dirName.startswith(pathExcl))
+            if any(dirFilterExclMatch):
+                # then it matched one of the exclusion paths
+                continue
+            if not dirFilterIncl:
+                # there is no inclusion filter, simply add this directory/files
+                rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+                continue
+
+            # apply inclusion filter
+            for pathIncl in dirFilterIncl:
+                if dirName.startswith(pathIncl):
                     rse['files']['toDelete'][dirName] = genFunc(dirName, rse['files']['allUnmerged'])
+                    break
 
         # Update the counters:
         rse['counters']['dirsToDeleteAll'] = len(rse['files']['toDelete'])

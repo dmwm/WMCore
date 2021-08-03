@@ -232,7 +232,7 @@ class JobSubmitterTest(EmulatedUnitTestCase):
             testJob['cache_dir'] = jobCache
             testJob.save()
             jobGroup.add(testJob)
-            output = open(os.path.join(jobCache, 'job.pkl'), 'w')
+            output = open(os.path.join(jobCache, 'job.pkl'), 'wb')
             pickle.dump(testJob, output)
             output.close()
 

@@ -142,7 +142,7 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             newJobA["type"] = "Processing"
             newJobA.create(testGroupA)
 
-            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
+            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "wb")
             pickle.dump(newJobA, jobHandle)
             jobHandle.close()
 
@@ -160,7 +160,7 @@ class JobSubmitterCachingTest(EmulatedUnitTestCase):
             newJobB["type"] = "Processing"
             newJobB.create(testGroupB)
 
-            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "w")
+            jobHandle = open(os.path.join(jobCacheDir, "job.pkl"), "wb")
             pickle.dump(newJobB, jobHandle)
             jobHandle.close()
 

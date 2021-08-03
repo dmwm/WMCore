@@ -8,6 +8,7 @@ from __future__ import division
 
 import time
 import threading
+from functools import cmp_to_key
 
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
@@ -78,7 +79,7 @@ class ParentlessMergeBySize(JobFactory):
             self.newGroup()
 
         self.newJob(name = self.getJobName())
-        mergeFiles.sort(fileCompare)
+        mergeFiles.sort(key=cmp_to_key(fileCompare))
 
         jobSize = 0
         largestFile = 0
@@ -123,7 +124,7 @@ class ParentlessMergeBySize(JobFactory):
         mergeJobFiles    = []
         earliestInsert   = 999999999999999
 
-        mergeableFiles.sort(fileCompare)
+        mergeableFiles.sort(key=cmp_to_key(fileCompare))
 
         for mergeableFile in mergeableFiles:
             if mergeableFile["file_size"] > self.maxMergeSize or \

@@ -93,7 +93,6 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("limitFilesPerRSE", 200)
         self.msConfig.setdefault("skipRSEs", [])
         self.msConfig.setdefault("rseExpr", "*")
-        self.msConfig.setdefault("rucioConMon", "https://cmsweb-testbed.cern.ch/rucioconmon/")
         self.msConfig.setdefault("enableRealMode", False)
         self.msConfig.setdefault("dumpRSE", False)
         self.msConfig.setdefault("gfalLogLevel", 'normal')

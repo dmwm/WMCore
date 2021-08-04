@@ -797,11 +797,11 @@ class MSOutput(MSCore):
 
     def canDatasetGoToTape(self, dataItem, workflow):
         """
-        This function evaluates whether a dataset can be passed to the
+        This function evaluates whether a container can be passed to the
         Data Management system, considering the following configurations:
-          1) list of blacklisted tiers in the MicroService configuration
-          2) list of white listed tiers bypassing the Unified configuration
-          3) list of black and white listed tiers in the Unified config
+          1) list of tiers banned in the MicroService configuration
+          2) list of tiers allowed to bypass the Unified configuration
+          3) list of allowed and banned tiers in the Unified config
         :param dataItem: output map dictionary present in the MongoDB record
         :param workflow: MSOutputTemplate object retrieved from MongoDB
         :return: True if the dataset is allowed to pass, False otherwise
@@ -815,6 +815,9 @@ class MSOutput(MSCore):
             return False
         if workflow['RequestType'] == "Resubmission":
             # their parent/original workflow will take care of all the data placement
+            return False
+        if int(dataItem['DatasetSize']) == 0:
+            # container hasn't been produced in the workflow
             return False
 
         if dataItem['TapeRuleID']:

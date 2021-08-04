@@ -287,7 +287,7 @@ class JobCreatorTest(EmulatedUnitTestCase):
         jobDir = os.listdir(groupDirectory)[0]
         jobFile = os.path.join(groupDirectory, jobDir, 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
-        f = open(jobFile, 'r')
+        f = open(jobFile, 'rb')
         job = pickle.load(f)
         f.close()
 

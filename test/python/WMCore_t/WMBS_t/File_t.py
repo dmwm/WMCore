@@ -468,28 +468,40 @@ class FileTest(unittest.TestCase):
         Create a file and add a couple locations.  Load the file from the
         database to make sure that the locations were set correctly.
         """
-        testFileA = File(lfn="/this/is/a/lfn", size=1024, events=10,
+        testFile = File(lfn="/this/is/a/lfn1", size=1024, events=10,
+                         checksums={'cksum': 1}, locations="T2_CH_CERN")
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN"]))
+        testFile.setLocation(u"T1_US_FNAL_Disk")
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+
+        testFile = File(lfn="/this/is/a/lfn2", size=1024, events=10,
+                         checksums={'cksum': 1}, locations=u"T2_CH_CERN")
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN"]))
+        testFile.setLocation(b"T1_US_FNAL_Disk")
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN", b"T1_US_FNAL_Disk"]))
+
+        testFile = File(lfn="/this/is/a/lfn3", size=1024, events=10,
+                         checksums={'cksum': 1}, locations=set(["T2_CH_CERN"]))
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN"]))
+        testFile.setLocation("T1_US_FNAL_Disk")
+        self.assertItemsEqual(testFile["newlocations"], set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+
+        testFileA = File(lfn="/this/is/a/lfn4", size=1024, events=10,
                          checksums={'cksum': 1})
+        self.assertItemsEqual(testFileA["newlocations"], set([]))
         testFileA.addRun(Run(1, *[45]))
         testFileA.create()
-
-        testFileA.setLocation(["T1_US_FNAL_Disk", "T2_CH_CERN"])
+        testFileA.setLocation(["T1_US_FNAL_Disk", "T2_CH_CERN"], immediateSave=False)
+        self.assertItemsEqual(testFileA["newlocations"], set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileA.setLocation(["T1_US_FNAL_Disk", "T2_CH_CERN"], immediateSave=True)
+        # newlocations is cleared when they are persisted in the database
+        self.assertItemsEqual(testFileA["newlocations"], set([]))
         testFileA.setLocation(["bunkT1_US_FNAL_Disk", "bunkT2_CH_CERN"],
                               immediateSave=False)
 
         testFileB = File(id=testFileA["id"])
         testFileB.loadData()
-
-        goldenLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
-
-        for location in testFileB["locations"]:
-            assert location in goldenLocations, \
-                "ERROR: Unknown file location"
-            goldenLocations.remove(location)
-
-        assert len(goldenLocations) == 0, \
-            "ERROR: Some locations are missing"
-        return
+        self.assertItemsEqual(testFileB["locations"], set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
 
     def testSetLocationTransaction(self):
         """

@@ -8,7 +8,14 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 import os
+from Utils.PythonVersion import PY3
 from WMCore.Configuration import Configuration
+
+# job wrapper script
+if PY3:
+    submitScript = "etc/submit_py3.sh"
+else:
+    submitScript = "etc/submit.sh"
 
 # The following parameters may need to be changed.
 serverHostName = "HOSTNAME OF WMAGENT MACHINE"
@@ -193,7 +200,7 @@ config.JobSubmitter.maxJobsPerPoll = 1000
 config.JobSubmitter.maxJobsToCache = 50000
 config.JobSubmitter.cacheRefreshSize = 30000  # set -1 if cache need to refresh all the time.
 config.JobSubmitter.skipRefreshCount = 20  # (If above the threshold meet, cache will updates every 20 polling cycle) 120 * 20 = 40 minutes
-config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
+config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], submitScript)
 config.JobSubmitter.extraMemoryPerCore = 500  # in MB
 config.JobSubmitter.drainGraceTime = 2 * 24 * 60 * 60  # in seconds
 

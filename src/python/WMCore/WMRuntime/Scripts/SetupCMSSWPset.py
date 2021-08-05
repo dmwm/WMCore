@@ -218,6 +218,15 @@ class SetupCMSSWPset(ScriptInterface):
         return
 
     def applyPsetTweak(self, psetTweak, skipIfSet=False, allowFailedTweaks=False, name='', cleanupTweak=False):
+        """
+        _applyPsetTweak_
+        Apply a tweak to a pset process.
+        Options:
+          skipIfSet: Do not apply a tweak to a parameter that has a value set already.
+          allowFailedTweaks: If the tweak of a parameter fails, do not abort and continue tweaking the rest.
+          name: Extra string to add to the name of the json file that will be createed.
+          cleanupTweak: Reset pset tweak object after applying all tweaks. Mostly used after using self.tweak
+        """
         procScript = "edm_pset_tweak.py"
         psetTweakJson = os.path.join(self.stepSpace.location, "PSetTweak%s.json" % name)
         psetTweak.persist(psetTweakJson, formatting='simplejson')
@@ -234,7 +243,7 @@ class SetupCMSSWPset(ScriptInterface):
         self.scramRun(cmd)
 
         if cleanupTweak:
-            psetTweak.clear()
+            psetTweak.reset()
 
         return
 
@@ -761,6 +770,8 @@ class SetupCMSSWPset(ScriptInterface):
                     continue
 
             makeOutputTweak(mod, self.job, self.tweak)
+        # allow failed tweaks in this case, to replicate the previous implementation, where it would ignore 
+        # and continue if it found an output module that  doesn't exist and don't want in the pset like: process.Sqlite
         self.applyPsetTweak(self.tweak, allowFailedTweaks=True, cleanupTweak=True)
 
         # revlimiter for testing

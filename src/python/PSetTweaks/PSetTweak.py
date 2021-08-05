@@ -421,11 +421,11 @@ class PSetTweak(object):
             for param, value in viewitems(jsoniser.parameters):
                 self.addParameter(param , value)
 
-    def clear(self):
+    def reset(self):
         """
-        _clear_
+        _reset_
 
-        Clear pset holder process
+        Reset pset holder process
 
         """
         del self.process

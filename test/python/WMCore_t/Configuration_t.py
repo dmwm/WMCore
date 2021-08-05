@@ -327,5 +327,15 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
 
 
+    def testI_testGetInternalName(self):
+        """
+        Test we properly retrieve the internal name of the configuration object
+
+        """
+        config = ConfigSection("config")
+        name = config.getInternalName()
+        self.assertEqual(name, "config")
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -13,7 +13,7 @@
 # for running the test check the tutorial, https://github.com/dmwm/WMCore/wiki/Setup-wmcore-unittest
 ###
 DMWM_ARCH=slc7_amd64_gcc630
-VERSION=$(curl -s "http://cmsrep.cern.ch/cgi-bin/repos/comp/$DMWM_ARCH?C=M;O=D" | grep -oP "(?<=>cms\+wmagentpy3-dev\+).*(?=-1-1)" | head -1)
+VERSION=$(curl -s "http://cmsrep.cern.ch/cgi-bin/repos/comp.amaltaro/$DMWM_ARCH?C=M;O=D" | grep -oP "(?<=>cms\+wmagentpy3-dev\+).*(?=-1-1)" | head -1)
 
 REPOSITORY=dmwm
 BRANCH=

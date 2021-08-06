@@ -13,7 +13,7 @@
 # for running the test check the tutorial, https://github.com/dmwm/WMCore/wiki/Setup-wmcore-unittest
 ###
 DMWM_ARCH=slc7_amd64_gcc630
-VERSION=$(curl -s "http://cmsrep.cern.ch/cgi-bin/repos/comp/$DMWM_ARCH?C=M;O=D" | grep -oP "(?<=>cms\+wmagent-dev\+).*(?=-1-1)" | head -1)
+VERSION=$(curl -s "http://cmsrep.cern.ch/cgi-bin/repos/comp.amaltaro/$DMWM_ARCH?C=M;O=D" | grep -oP "(?<=>cms\+wmagent-dev\+).*(?=-1-1)" | head -1)
 
 REPOSITORY=dmwm
 BRANCH=
@@ -26,7 +26,15 @@ deploy_agent() {
     curl -s https://raw.githubusercontent.com/dmwm/WMCore/master/test/deploy/env_unittest.sh > env_unittest.sh
     curl -s https://raw.githubusercontent.com/dmwm/WMCore/master/test/deploy/WMAgent_unittest.secrets > WMAgent_unittest.secrets
     source ./init.sh
-    $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=comp -t $1 -A $DMWM_ARCH -s 'prep sw post' $INSTALL_DIR admin/devtools wmagent
+    for step in prep sw post; do
+        echo -e "\n*** Deploying WMAgent: running $step step ***"
+        $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=comp -t $1 -A $DMWM_ARCH -s $step $INSTALL_DIR admin/devtools wmagent
+        if [ $? -ne 0 ]; then
+            ls $INSTALL_DIR
+            cat $INSTALL_DIR/.deploy/*-$step.log
+            exit 1
+        fi
+    done
 }
 
 setup_test_src() {

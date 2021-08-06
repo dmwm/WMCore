@@ -1,3 +1,16 @@
+1.5.1 to 1.5.2.pre1:
+  - PY3: Create job package with pickle protocol=4 for Python3 agents (Alan Malta Rodrigues) #10731
+  - Load workload pickle object during runtime in binary mode (Alan Malta Rodrigues) #10729
+  - Revert CouchDB replication port forward (Alan Malta Rodrigues) #10727
+  - [py2py3] #10371 check - fix JobCreator_t.py - test (Dario Mapelli) #10724
+  - Encode a few job classads from unicode to bytes (Alan Malta Rodrigues) #10711
+  - [py2py3] Properly deal with strings location in the File module (Alan Malta Rodrigues) #10723
+  - [py2py3] #10349 - JobSubmitter_t and JobSubmitterCaching_t - test (Dario Mapelli) #10608
+  - MSOutput: skip inexistent containers in the Tape data placement (Alan Malta Rodrigues) #10717
+  - MSUnmerged: make rucioConMon parameter mandatory (Alan Malta Rodrigues) #10715
+  - Temporarily stop staging out log tarball to CASTOR (Alan Malta Rodrigues) #10712
+
+
 1.5.1.pre6 to 1.5.1:
 
 

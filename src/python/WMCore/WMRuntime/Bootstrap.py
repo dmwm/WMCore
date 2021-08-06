@@ -168,7 +168,7 @@ def loadWorkload():
     """
     sandboxLoc = locateWMSandbox()
     workloadPcl = "%s/WMWorkload.pkl" % sandboxLoc
-    with open(workloadPcl, 'r') as handle:
+    with open(workloadPcl, 'rb') as handle:
         wmWorkload = pickle.load(handle)
 
     return WMWorkloadHelper(wmWorkload)

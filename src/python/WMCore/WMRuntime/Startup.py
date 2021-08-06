@@ -21,6 +21,8 @@ if __name__ == '__main__':
     # WMAgent log has to be written to the pilot area in order to be transferred back
     Bootstrap.setupLogging(os.path.join(os.getcwd(), '../'))
     logging.info("Process id: %s\tCurrent working directory: %s", os.getpid(), os.getcwd())
+    logging.info("Python version: %s", sys.version)
+    logging.info("Python path: %s", sys.path)
 
     logging.info("Loading job definition")
     job = Bootstrap.loadJobDefinition()

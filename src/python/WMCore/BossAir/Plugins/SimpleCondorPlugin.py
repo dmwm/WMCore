@@ -16,6 +16,8 @@ import htcondor
 
 from Utils import FileTools
 from Utils.IteratorTools import grouper
+from Utils.PythonVersion import PY2
+from Utils.Utilities import encodeUnicodeToBytesConditional
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -503,7 +505,7 @@ class SimpleCondorPlugin(BasePlugin):
         for job in jobList:
             ad = {}
 
-            ad['initial_Dir'] = job['cache_dir']
+            ad['initial_Dir'] = encodeUnicodeToBytesConditional(job['cache_dir'], condition=PY2)
             ad['transfer_input_files'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
                                                    'JobPackage.pkl', self.unpacker)
             ad['Arguments'] = "%s %i %s" % (os.path.basename(job['sandbox']), job['id'], job["retry_count"])
@@ -524,21 +526,21 @@ class SimpleCondorPlugin(BasePlugin):
             sites = ','.join(sorted(job.get('potentialSites')))
             ad['My.ExtDESIRED_Sites'] = classad.quote(str(sites))
             ad['My.CMS_JobRetryCount'] = str(job['retry_count'])
-            ad['My.WMAgent_RequestName'] = classad.quote(job['request_name'])
+            ad['My.WMAgent_RequestName'] = classad.quote(encodeUnicodeToBytesConditional(job['request_name'], condition=PY2))
             match = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-").match(job['request_name'])
             if match:
                 ad['My.CMSGroups'] = classad.quote(match.groups()[0])
             else:
                 ad['My.CMSGroups'] = undefined
             ad['My.WMAgent_JobID'] = str(job['jobid'])
-            ad['My.WMAgent_SubTaskName'] = classad.quote(job['task_name'])
-            ad['My.CMS_JobType'] = classad.quote(job['task_type'])
+            ad['My.WMAgent_SubTaskName'] = classad.quote(encodeUnicodeToBytesConditional(job['task_name'], condition=PY2))
+            ad['My.CMS_JobType'] = classad.quote(encodeUnicodeToBytesConditional(job['task_type'], condition=PY2))
             ad['My.CMS_Type'] = classad.quote(activityToType(job['activity']))
      
             # Handling for AWS, cloud and opportunistic resources
             ad['My.AllowOpportunistic'] = str(job.get('allowOpportunistic', False))
             if job.get('inputDataset'):
-                ad['My.DESIRED_CMSDataset'] = classad.quote(job['inputDataset'])
+                ad['My.DESIRED_CMSDataset'] = classad.quote(encodeUnicodeToBytesConditional(job['inputDataset'], condition=PY2))
             else:
                 ad['My.DESIRED_CMSDataset'] = undefined
             if job.get('inputDatasetLocations'):
@@ -602,9 +604,9 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs
             requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
-            ad['My.REQUIRED_OS'] = classad.quote(requiredOSes)
+            ad['My.REQUIRED_OS'] = classad.quote(encodeUnicodeToBytesConditional(requiredOSes, condition=PY2))
             cmsswVersions = ','.join(job.get('swVersion'))
-            ad['My.CMSSW_Versions'] = classad.quote(cmsswVersions)
+            ad['My.CMSSW_Versions'] = classad.quote(encodeUnicodeToBytesConditional(cmsswVersions, condition=PY2))
      
             jobParameters.append(ad)    
              
@@ -648,5 +650,5 @@ class SimpleCondorPlugin(BasePlugin):
         sub['My.CMS_SubmissionTool'] = classad.quote("WMAgent")
 
         jobParameters = self.getJobParameters(jobList)
-       
+
         return sub, jobParameters

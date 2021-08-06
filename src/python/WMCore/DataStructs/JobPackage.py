@@ -4,12 +4,11 @@ _JobPackage_
 
 Data structure for storing and retreiving multiple job objects.
 """
-
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
+from Utils.PythonVersion import HIGHEST_PICKLE_PROTOCOL
 from WMCore.DataStructs.WMObject import WMObject
 
 
@@ -37,7 +36,7 @@ class JobPackage(WMObject, dict):
         Pickle this object and save it to disk.
         """
         with open(fileName, 'wb') as fileHandle:
-            pickle.dump(self, fileHandle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(self, fileHandle, protocol=HIGHEST_PICKLE_PROTOCOL)
         return
 
     def load(self, fileName):

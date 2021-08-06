@@ -12,12 +12,14 @@ import os
 import os.path
 import threading
 
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
 from Utils.Timers import timeFunction
+from Utils.PythonVersion import HIGHEST_PICKLE_PROTOCOL
 from Utils.MathUtils import quantize
 from WMComponent.JobCreator.CreateWorkArea import CreateWorkArea
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -156,7 +158,7 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
     job['allowOpportunistic'] = allowOpportunistic
 
     with open(os.path.join(cacheDir, 'job.pkl'), 'wb') as output:
-        pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(job, output, HIGHEST_PICKLE_PROTOCOL)
 
     return
 

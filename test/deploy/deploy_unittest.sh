@@ -18,6 +18,7 @@ VERSION=$(curl -s "http://cmsrep.cern.ch/cgi-bin/repos/comp.amaltaro/$DMWM_ARCH?
 REPOSITORY=dmwm
 BRANCH=
 UPDATE=false
+COMP=comp.amaltaro
 
 deploy_agent() {
 
@@ -28,7 +29,7 @@ deploy_agent() {
     source ./init.sh
     for step in prep sw post; do
         echo -e "\n*** Deploying WMAgent: running $step step ***"
-        $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=comp -t $1 -A $DMWM_ARCH -s $step $INSTALL_DIR admin/devtools wmagent
+        $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=$COMP -t $1 -A $DMWM_ARCH -s $step $INSTALL_DIR admin/devtools wmagent
         if [ $? -ne 0 ]; then
             ls $INSTALL_DIR
             cat $INSTALL_DIR/.deploy/*-$step.log

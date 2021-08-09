@@ -464,6 +464,7 @@ class RucioInjectorPoller(BaseWorkerThread):
                     rseName = rseName.replace("cms_type=real", "cms_type=test")
             else:
                 # then it's a T0 container placement
+                ruleKwargs['priority'] = 4
                 if self.testRSEs:
                     rseName = "%s_Test" % rseName
                 #Checking whether we need to ask for rule approval

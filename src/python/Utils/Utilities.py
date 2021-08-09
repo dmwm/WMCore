@@ -2,18 +2,20 @@
 
 from __future__ import division, print_function
 from future.utils import viewitems
-
 from builtins import str, bytes
 from past.builtins import basestring
 
-import subprocess
+import base64
 import os
 import re
-import zlib
-import base64
+import subprocess
 import sys
-from types import ModuleType, FunctionType
 from gc import get_referents
+from types import ModuleType, FunctionType
+
+import zlib
+
+
 
 def lowerCmsHeaders(headers):
     """
@@ -21,13 +23,14 @@ def lowerCmsHeaders(headers):
     code check only cms headers in lower case, e.g. cms-xxx-yyy.
     """
     lheaders = {}
-    for hkey, hval in viewitems(headers): # perform lower-case
+    for hkey, hval in viewitems(headers):  # perform lower-case
         # lower header keys since we check lower-case in headers
         if hkey.startswith('Cms-') or hkey.startswith('CMS-'):
             lheaders[hkey.lower()] = hval
         else:
             lheaders[hkey] = hval
     return lheaders
+
 
 def makeList(stringList):
     """
@@ -45,6 +48,22 @@ def makeList(stringList):
             return []
         return [str(tok.strip(' \'"')) for tok in toks]
     raise ValueError("Can't convert to list %s" % stringList)
+
+
+def multiKeySorting(iterObj, orderedKeys):
+    """
+    This function can be used to sort an iterable object of
+    dictionary objects by using multiple key names
+    :param iterObj: iterable object (list, set, tuple)
+    :param orderedKeys: a list of ordered key names of the dict object
+    :return: nothing, iterable object is updated in place
+    """
+    if not orderedKeys:
+        raise RuntimeError("No key names passed to the iterMultiKeySorting function")
+    if not isinstance(iterObj, (list, set)):
+        raise RuntimeError("Passed a wrong data type for orderedKeys in the iterMultiKeySorting function")
+    for keyName in orderedKeys:
+        iterObj.sort(key=lambda item: item[keyName])
 
 
 def makeNonEmptyList(stringList):
@@ -180,7 +199,7 @@ def getSize(obj):
     BLACKLIST = type, ModuleType, FunctionType
 
     if isinstance(obj, BLACKLIST):
-        raise TypeError('getSize() does not take argument of type: '+ str(type(obj)))
+        raise TypeError('getSize() does not take argument of type: ' + str(type(obj)))
     seen_ids = set()
     size = 0
     objects = [obj]
@@ -226,6 +245,7 @@ def decodeBytesToUnicode(value, errors="strict"):
         return value.decode("utf-8", errors)
     return value
 
+
 def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
     """
     if *condition*, then call decodeBytesToUnicode(*value*, *errors*),
@@ -246,6 +266,7 @@ def decodeBytesToUnicodeConditional(value, errors="ignore", condition=True):
     if condition:
         return decodeBytesToUnicode(value, errors)
     return value
+
 
 def encodeUnicodeToBytes(value, errors="strict"):
     """
@@ -273,6 +294,7 @@ def encodeUnicodeToBytes(value, errors="strict"):
     if isinstance(value, str):
         return value.encode("utf-8", errors)
     return value
+
 
 def encodeUnicodeToBytesConditional(value, errors="ignore", condition=True):
     """

@@ -8,31 +8,13 @@ from __future__ import division
 
 import time
 import threading
-
+from Utils.Utilities import multiKeySorting
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.JobFactory import JobFactory
 
-def fileCompare(a, b):
-    """
-    _fileCompare_
-
-    Compare two files based on their "file_first_event" attribute.
-    """
-    if a["file_run"] > b["file_run"]:
-        return 1
-    elif a["file_run"] == b["file_run"]:
-        if a["file_lumi"] > b["file_lumi"]:
-            return 1
-        elif a["file_lumi"] == b["file_lumi"]:
-            if a["file_first_event"] > b["file_first_event"]:
-                return 1
-            if a["file_first_event"] == b["file_first_event"]:
-                return 0
-
-    return -1
 
 class ParentlessMergeBySize(JobFactory):
     def defineFileGroups(self, mergeableFiles):
@@ -78,7 +60,7 @@ class ParentlessMergeBySize(JobFactory):
             self.newGroup()
 
         self.newJob(name = self.getJobName())
-        mergeFiles.sort(fileCompare)
+        multiKeySorting(mergeFiles, orderedKeys=["file_run", "file_lumi", "file_first_event"])
 
         jobSize = 0
         largestFile = 0
@@ -123,7 +105,7 @@ class ParentlessMergeBySize(JobFactory):
         mergeJobFiles    = []
         earliestInsert   = 999999999999999
 
-        mergeableFiles.sort(fileCompare)
+        multiKeySorting(mergeableFiles, orderedKeys=["file_run", "file_lumi", "file_first_event"])
 
         for mergeableFile in mergeableFiles:
             if mergeableFile["file_size"] > self.maxMergeSize or \

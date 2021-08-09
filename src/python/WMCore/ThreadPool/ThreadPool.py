@@ -18,6 +18,7 @@ import logging
 import random
 import threading
 import time
+from Utils.Utilities import encodeUnicodeToBytes
 try:
     import cPickle as pickle
 except ImportError:
@@ -25,6 +26,8 @@ except ImportError:
 
 from WMCore.ThreadPool.WorkQueue import ThreadPool as Queue
 from WMCore.WMFactory import WMFactory
+
+from Utils.PythonVersion import PY3
 
 class ThreadPool(Queue):
     """
@@ -144,9 +147,10 @@ class ThreadPool(Queue):
 
         """
         self.lock.acquire()
-        args = {'event': str(key), \
-                'component' : self.component.config.Agent.componentName, \
-                'payload' : base64.encodestring(pickle.dumps(parameters)), \
+        base64_encoder = base64.encodebytes if PY3 else base64.encodestring
+        args = {'event': str(key),
+                'component' : self.component.config.Agent.componentName,
+                'payload' : base64_encoder(encodeUnicodeToBytes(pickle.dumps(parameters))),
                 'thread_pool_id' : self.threadPoolId}
         myThread = threading.currentThread()
         myThread.transaction.begin()

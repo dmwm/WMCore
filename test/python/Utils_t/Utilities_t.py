@@ -5,19 +5,33 @@ Unittests for Utilities functions
 
 from __future__ import division, print_function
 
+import copy
 from builtins import object
 import os
 import unittest
 
+from Utils.PythonVersion import PY3
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, \
     safeStr, rootUrlJoin, zipEncodeStr, lowerCmsHeaders, getSize, \
-    encodeUnicodeToBytes, diskUse, numberCouchProcess
+    encodeUnicodeToBytes, diskUse, numberCouchProcess, multiKeySorting
 
 
 class UtilitiesTests(unittest.TestCase):
     """
     unittest for Utilities functions
     """
+    def setUp(self):
+        """
+        Setup unit tests
+        """
+        if PY3:
+            self.assertItemsEqual = self.assertCountEqual
+
+    def tearDown(self):
+        """
+        Cleanup unit tests
+        """
+        pass
 
     def testMakeList(self):
         """
@@ -182,6 +196,46 @@ cms::Exception caught in CMS.EventProcessor and rethrown
         data = numberCouchProcess()
         # there should be at least one process, but who knows...
         self.assertTrue(data >= 0)
+
+    def testMultiKeySorting(self):
+        """
+        Test the `multiKeySorting` function.
+        """
+        # Test wrong iterable object
+        with self.assertRaises(RuntimeError):
+            multiKeySorting("can't be string", orderedKeys=['key1', 'key2'])
+        with self.assertRaises(RuntimeError):
+            multiKeySorting({'key1': 'blah1', 'key2': 'blah2'}, orderedKeys=['key1', 'key2'])
+        # Test wrong list of ordered keys
+        with self.assertRaises(RuntimeError):
+            multiKeySorting([1, 2, 3], orderedKeys=None)
+        with self.assertRaises(RuntimeError):
+            multiKeySorting([1, 2, 3], orderedKeys=[])
+
+        # NOTE: this test is based on the needs of the ParentlessMergeBySize,
+        # even though the same logic should work for anything else in WMCore
+        originalFiles = [{'file_lfn': 'fileB', 'file_first_event': 501, 'file_lumi': 6, 'file_run': 1},
+                         {'file_lfn': 'fileA', 'file_first_event': 1, 'file_lumi': 1, 'file_run': 1},
+                         {'file_lfn': 'fileC', 'file_first_event': 1501, 'file_lumi': 16, 'file_run': 1},
+                         {'file_lfn': 'fileE', 'file_first_event': 5001, 'file_lumi': 51, 'file_run': 1},
+                         {'file_lfn': 'fileD', 'file_first_event': 2001, 'file_lumi': 21, 'file_run': 1}]
+        orderKeys = ["file_run", "file_lumi", "file_first_event"]
+        expectedLumiOrder = [1, 6, 16, 21, 51]  # based on file_lumi
+        expectedEventOrder = [1, 501, 1501, 2001, 5001]  # based on file_lumi
+
+        # first test on "file_lumi"
+        mergeFiles = copy.deepcopy(originalFiles)
+        multiKeySorting(mergeFiles, orderedKeys=orderKeys)
+        results = [item['file_lumi'] for item in mergeFiles]
+        self.assertItemsEqual(results, expectedLumiOrder)
+
+        # now we test on "file_first_event", by having an equal 'file_lumi' value
+        mergeFiles = copy.deepcopy(originalFiles)
+        for item in mergeFiles:
+            item['file_lumi'] = 1
+        multiKeySorting(mergeFiles, orderedKeys=orderKeys)
+        results = [item['file_first_event'] for item in mergeFiles]
+        self.assertItemsEqual(results, expectedEventOrder)
 
 
 if __name__ == '__main__':

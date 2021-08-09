@@ -27,8 +27,5 @@ WMCore_t.MicroService_t.MSRuleCleaner_t.MSRuleCleanerWflow_t.MSRuleCleanerWflowT
 WMCore_t.Services_t.LogDB_t.LogDB_t.LogDBTest:test_heartbeat
 WMCore_t.Services_t.Requests_t.testRepeatCalls:testRecoveryFromConnRefused_with_pycur
 WMCore_t.Services_t.Requests_t.testRepeatCalls:test10Calls
-WMCore_t.WMBS_t.JobSplitting_t.EventBased_t.EventBasedTest:test100EventMultipleSite
-WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testSiteWhiteBlacklist
 WMCore_t.WMBS_t.JobSplitting_t.RunBased_t.EventBasedTest:testMultipleRunsCombine
-WMCore_t.WMBS_t.JobSplitting_t.FileBased_t.FileBasedTest:testLocationSplit
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testPileupData

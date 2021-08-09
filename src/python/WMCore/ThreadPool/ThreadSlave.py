@@ -32,6 +32,9 @@ except ImportError:
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
+from Utils.PythonVersion import PY3
+from Utils.Utilities import encodeUnicodeToBytes
+
 class ThreadSlave(object):
     """
     __ThreadSlave__
@@ -173,7 +176,8 @@ class ThreadSlave(object):
         # we commit here because if the component crashes this is where
         # if will look for lost threads (the ones that are in the process state
         myThread.transaction.commit()
-        return (result[1], pickle.loads(base64.decodestring(result[2])))
+        base64_decoder = base64.decodebytes if PY3 else base64.decodestring
+        return (result[1], pickle.loads(base64_decoder(encodeUnicodeToBytes(result[2]))))
 
     def removeWork(self):
         """

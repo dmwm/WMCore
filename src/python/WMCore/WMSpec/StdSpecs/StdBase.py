@@ -1143,6 +1143,8 @@ class StdBase(object):
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
                                               "validate": lambda x: x.lower() in PhEDEx_VALID_SUBSCRIPTION_PRIORITIES},
                      "DeleteFromSource": {"default": False, "type": strToBool},
+                     # Rucio rules subscription information
+                     "DatasetLifetimeDisk": {"type": int, "validate": lambda x: x > 0 }, #used by T0
                      # merge settings
                      "UnmergedLFNBase": {"assign_optional": True},
                      "MergedLFNBase": {"assign_optional": True},

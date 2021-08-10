@@ -990,7 +990,7 @@ class WMTaskHelper(TreeHelper):
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
-                                   dataTier=None, deleteFromSource=False):
+                                   dataTier=None, deleteFromSource=False, dataset_lifetime=None):
         """
         _setSubscriptionsInformation_
 
@@ -1050,6 +1050,7 @@ class WMTaskHelper(TreeHelper):
             outputSection.nonCustodialGroup = nonCustodialGroup
             outputSection.priority = priority
             outputSection.deleteFromSource = deleteFromSource
+            outputSection.dataset_lifetime = dataset_lifetime
 
         return
 
@@ -1082,6 +1083,7 @@ class WMTaskHelper(TreeHelper):
                                        "NonCustodialSites": outputSection.nonCustodialSites,
                                        "AutoApproveSites": outputSection.autoApproveSites,
                                        "Priority": outputSection.priority,
+                                       "DatasetLifetimeDisk": outputSection.dataset_lifetime,
                                        # These might not be present in all specs
                                        "CustodialGroup": getattr(outputSection, "custodialGroup", "DataOps"),
                                        "NonCustodialGroup": getattr(outputSection, "nonCustodialGroup",

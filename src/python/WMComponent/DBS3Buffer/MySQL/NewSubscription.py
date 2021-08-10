@@ -19,8 +19,8 @@ class NewSubscription(DBFormatter):
     """
 
     sql = """INSERT IGNORE INTO dbsbuffer_dataset_subscription
-            (dataset_id, site, custodial, auto_approve, move, priority, subscribed, phedex_group, delete_blocks)
-            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :phedex_group, :delete_blocks)
+            (dataset_id, site, custodial, auto_approve, move, priority, subscribed, phedex_group, delete_blocks, dataset_lifetime)
+            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :phedex_group, :delete_blocks, :dataset_lifetime)
           """
 
     def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
@@ -47,6 +47,7 @@ class NewSubscription(DBFormatter):
                           'move': isMove,
                           'priority': subscriptionInfo['Priority'],
                           'phedex_group': phedex_group,
+                          'dataset_lifetime': subscriptionInfo['DatasetLifetimeDisk'],
                           'delete_blocks': delete_blocks})
         return binds
 

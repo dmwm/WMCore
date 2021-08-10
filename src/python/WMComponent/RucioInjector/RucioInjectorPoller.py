@@ -436,6 +436,7 @@ class RucioInjectorPoller(BaseWorkerThread):
         for subInfo in unsubscribedDatasets:
             rseName = subInfo['site'].replace("_MSS", "_Tape")
             container = subInfo['path']
+            lifetime = subInfo['dataset_lifetime']
             # Skip central production Tape rules
             if not self.isT0agent and rseName.endswith("_Tape"):
                 logging.info("Bypassing Production container Tape data placement for container: %s and RSE: %s",
@@ -465,6 +466,9 @@ class RucioInjectorPoller(BaseWorkerThread):
             else:
                 # then it's a T0 container placement
                 ruleKwargs['priority'] = 4
+                if not rseName.endswith("_Tape"):
+                    #Assign lifetime to container rules shipping to Disk sites
+                    ruleKwargs['lifetime'] = lifetime
                 if self.testRSEs:
                     rseName = "%s_Test" % rseName
                 #Checking whether we need to ask for rule approval

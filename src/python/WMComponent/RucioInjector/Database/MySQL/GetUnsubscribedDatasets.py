@@ -23,7 +23,8 @@ class GetUnsubscribedDatasets(DBFormatter):
                              dbsbuffer_dataset_subscription.auto_approve,
                              dbsbuffer_dataset_subscription.move,
                              dbsbuffer_dataset_subscription.priority,
-                             dbsbuffer_dataset_subscription.phedex_group
+                             dbsbuffer_dataset_subscription.phedex_group,
+                             dbsbuffer_dataset_subscription.dataset_lifetime
                FROM dbsbuffer_dataset_subscription
                INNER JOIN dbsbuffer_dataset ON
                    dbsbuffer_dataset.id = dbsbuffer_dataset_subscription.dataset_id
@@ -54,6 +55,7 @@ class GetUnsubscribedDatasets(DBFormatter):
                 else:
                     entry[key] = 'n'
             entry['priority'] = entry['priority'].lower()
+
         return result
 
     def execute(self, conn=None, transaction=False):

@@ -1483,7 +1483,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
                                    useSkim=False, isSkim=False,
-                                   dataTier=None, deleteFromSource=False):
+                                   dataTier=None, deleteFromSource=False, datasetLifetime=None):
         """
         _setSubscriptionInformation_
 
@@ -1510,7 +1510,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
-                                            dataTier, deleteFromSource)
+                                            dataTier, deleteFromSource, datasetLifetime)
             self.setSubscriptionInformation(task,
                                             custodialSites, nonCustodialSites,
                                             autoApproveSites,
@@ -1518,7 +1518,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
                                             useSkim, isSkim,
-                                            dataTier, deleteFromSource)
+                                            dataTier, deleteFromSource, datasetLifetime)
 
         return
 
@@ -1573,6 +1573,7 @@ class WMWorkloadHelper(PersistencyHelper):
                     subInfo[dataset]["NonCustodialGroup"] = solveGroupConflicts(
                         taskSubInfo[dataset]["NonCustodialGroup"],
                         subInfo[dataset]["NonCustodialGroup"])
+                    subInfo[dataset]["DatasetLifetimeDisk"] = solveGroupConflicts(taskSubInfo[dataset]["DatasetLifetimeDisk"], subInfo[dataset]["DatasetLifetimeDisk"])
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
                 subInfo[dataset]["CustodialSites"] = list(

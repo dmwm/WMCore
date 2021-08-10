@@ -188,7 +188,7 @@ class RESTFrontPage(object):
         if instances:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
                          for k, v in viewitems(instances())]
-            instances.sort(lambda a, b: a["order"] - b["order"])
+            instances.sort(key=lambda x: x["order"])
             self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
         self._preamble += ";\n%s" % (preamble or "")

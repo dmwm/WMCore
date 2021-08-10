@@ -218,6 +218,15 @@ class SetupCMSSWPset(ScriptInterface):
         return
 
     def applyPsetTweak(self, psetTweak, skipIfSet=False, allowFailedTweaks=False, name='', cleanupTweak=False):
+        """
+        _applyPsetTweak_
+        Apply a tweak to a pset process.
+        Options:
+          skipIfSet: Do not apply a tweak to a parameter that has a value set already.
+          allowFailedTweaks: If the tweak of a parameter fails, do not abort and continue tweaking the rest.
+          name: Extra string to add to the name of the json file that will be createed.
+          cleanupTweak: Reset pset tweak object after applying all tweaks. Mostly used after using self.tweak
+        """
         procScript = "edm_pset_tweak.py"
         psetTweakJson = os.path.join(self.stepSpace.location, "PSetTweak%s.json" % name)
         psetTweak.persist(psetTweakJson, formatting='simplejson')
@@ -233,8 +242,8 @@ class SetupCMSSWPset(ScriptInterface):
             cmd += " --allow_failed_tweaks"
         self.scramRun(cmd)
 
-        if cleanupTweak is True:
-            psetTweak = PSetTweak()
+        if cleanupTweak:
+            psetTweak.reset()
 
         return
 
@@ -748,8 +757,22 @@ class SetupCMSSWPset(ScriptInterface):
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)
+            modName = mod.getInternalName()
+
+            if funcName == 'merge':
+                # Do not use both Merged output label unless useErrorDataset is False
+                # Do not use both MergedError output label unless useErrorDataset is True 
+                useErrorDataset = getattr(self.jobBag, "useErrorDataset", False)
+
+                if useErrorDataset and modName != 'MergedError':
+                    continue
+                if not useErrorDataset and modName == 'MergedError':
+                    continue
+
             makeOutputTweak(mod, self.job, self.tweak)
-        self.applyPsetTweak(self.tweak, cleanupTweak=True)
+        # allow failed tweaks in this case, to replicate the previous implementation, where it would ignore 
+        # and continue if it found an output module that  doesn't exist and don't want in the pset like: process.Sqlite
+        self.applyPsetTweak(self.tweak, allowFailedTweaks=True, cleanupTweak=True)
 
         # revlimiter for testing
         if getattr(self.step.data.application.command, "oneEventMode", False):

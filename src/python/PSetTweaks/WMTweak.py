@@ -516,7 +516,7 @@ def makeOutputTweak(outMod, job, result):
 
     """
     # output filenames
-    modName = str(getattr(outMod, "_internal_name"))
+    modName = outMod.getInternalName()
     logging.info("modName = %s", modName)
     fileName = "%s.root" % modName
 

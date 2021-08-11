@@ -51,10 +51,13 @@ class CMSSW(Executor):
         """
         Set return code.
         """
-        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returnCode)
+        currentReturnCode = self.getCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode')
+        if currentReturnCode is None or currentReturnCode == 0:
+            self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returnCode)
         self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returnCode)
         if returnMessage and returnCode != 0:
-            self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_Exception_Message', returnMessage, compress=True)
+            if currentReturnCode is None or currentReturnCode == 0:
+                self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_Exception_Message', returnMessage, compress=True)
             self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_Exception_Message' % self.stepName, returnMessage, compress=True)
         self.step.execution.exitStatus = returnCode
 

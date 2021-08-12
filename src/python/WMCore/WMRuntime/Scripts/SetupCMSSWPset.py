@@ -672,10 +672,9 @@ class SetupCMSSWPset(ScriptInterface):
         self.scram = self.createScramEnv()
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
+        funcName = getattr(self.step.data.application.configuration, "function", None)
         if scenario is not None and scenario != "":
-            self.logger.info("DEBUG: I'm in scenario")
             self.logger.info("Setting up job scenario/process")
-            funcName = getattr(self.step.data.application.configuration, "function", None)
             if getattr(self.step.data.application.configuration, "pickledarguments", None) is not None:
                 funcArgs = pickle.loads(self.step.data.application.configuration.pickledarguments)
             else:

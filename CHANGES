@@ -1,3 +1,16 @@
+1.5.2.pre1 to 1.5.2.pre2:
+  - PY3: Pass byte string to subprocess.stdin in Scram runtime (Alan Malta Rodrigues) #10736
+  - Provide standard/unicode string to the PSet handlePileup method (Alan Malta Rodrigues) #10740
+  - Decode byte string to unicode for json.dumps (Alan Malta Rodrigues) #10740
+  - Define funcName variable in the right place (Alan Malta Rodrigues) #10744
+  - Create unit test for ConfigSecion.getInternalName() (Kenyi Hurtado) #10593
+  - Fix issue with merge process and output labels (Merged and MergedError) (Kenyi Hurtado) #10593
+  - Implement py3 sorting for JobSplitting (Erik Gough) #10720
+  - [py2py3] modernize use of mylist.sort() in REST/Server.py (Dario Mapelli) #10743
+  - [py2py3] modernize use of pickle.load/dump - src (Dario Mapelli) #10742 
+  - Created new job wrapper script for Python3 environment (Alan Malta Rodrigues) #10726
+
+
 1.5.1 to 1.5.2.pre1:
   - PY3: Create job package with pickle protocol=4 for Python3 agents (Alan Malta Rodrigues) #10731
   - Load workload pickle object during runtime in binary mode (Alan Malta Rodrigues) #10729

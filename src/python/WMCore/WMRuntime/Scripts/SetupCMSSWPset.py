@@ -15,6 +15,7 @@ import socket
 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import  makeJobTweak, makeOutputTweak, makeTaskTweak, resizeResources
+from Utils.Utilities import decodeBytesToUnicode
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
@@ -133,10 +134,12 @@ class SetupCMSSWPset(ScriptInterface):
             funcArgs['scenario'] = scenario
 
         try:
-            with open(funcArgsJson, 'wb') as f:
+            with open(funcArgsJson, 'w') as f:
                 json.dump(funcArgs, f)
         except Exception as ex:
-            self.logger.exception("Error writing out process funcArgs json")
+            msg = "Error writing out process funcArgs json."
+            msg += "Type: {} and content: {}".format(type(funcArgs), funcArgs)
+            self.logger.exception(msg)
             raise ex
 
         cmd = "%s --output_pkl %s --funcname %s --funcargs %s" % (
@@ -404,6 +407,7 @@ class SetupCMSSWPset(ScriptInterface):
         fileList = []
         eventsAvailable = 0
         for pileupType in self.step.data.pileup.listSections_():
+            pileupType = decodeBytesToUnicode(pileupType)
             useAAA = True if getattr(self.jobBag, 'trustPUSitelists', False) else False
             self.logger.info("Pileup set to read data remotely: %s", useAAA)
             for blockName in sorted(pileupDict[pileupType].keys()):
@@ -411,12 +415,13 @@ class SetupCMSSWPset(ScriptInterface):
                 if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
                     eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                     for fileLFN in blockDict["FileList"]:
-                        fileList.append(str(fileLFN))
+                        fileList.append(decodeBytesToUnicode(fileLFN))
             newPileupDict[pileupType] = {"eventsAvailable": eventsAvailable, "FileList": fileList}
         newJsonPileupConfig = os.path.join(self.stepSpace.location, "CMSSWPileupConfig.json")
         self.logger.info("Generating json for CMSSW pileup script")
         try:
-            with open(newJsonPileupConfig, 'wb') as f:
+            # If it's a python2 unicode, cmssw_handle_pileup will cast it to str
+            with open(newJsonPileupConfig, 'w') as f:
                 json.dump(newPileupDict, f)
         except Exception as ex:
             self.logger.exception("Error writing out process filelist json:")

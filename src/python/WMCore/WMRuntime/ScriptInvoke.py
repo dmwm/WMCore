@@ -59,7 +59,7 @@ class ScriptInvoke(object):
         self.task = Bootstrap.loadTask(self.job)
 
         stepSpaceMod = __import__(self.stepModule,
-                                  globals(), locals(), ['stepSpace'], -1)
+                                  globals(), locals(), ['stepSpace'], 0)
 
         self.stepSpace = stepSpaceMod.stepSpace
 

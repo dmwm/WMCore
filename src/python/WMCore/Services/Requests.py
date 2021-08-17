@@ -464,6 +464,8 @@ class Requests(dict):
     def uploadFile(self, fileName, url, fieldName='file1', params=[], verb='POST'):
         """
         Upload a file with curl streaming it directly from disk
+
+        :rtype: bytes (both py2 and py3)
         """
         ckey, cert = self.getKeyCert()
         capath = self.getCAPath()

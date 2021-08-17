@@ -20,9 +20,10 @@ from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
-        self.supporttypes = {'application/xml': self.xml,
+        self.supporttypes = {
+                    'text/json': self.json,
+                    'application/xml': self.xml,
                    'application/atom+xml': self.atom,
-                   'text/json': self.json,
                    'text/x-json': self.json,
                    'application/json': self.json,
                    'text/html': self.to_string,

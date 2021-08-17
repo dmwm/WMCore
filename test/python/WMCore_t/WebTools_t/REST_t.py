@@ -360,7 +360,7 @@ class RESTTest(RESTBaseUnitTest):
         # 2 positional args (e.g. url/arg1/arg2)
         url = self.urlbase + 'listTypeArgs?aList=1'
         response = makeRequest(url=url)
-        assert response[1] == 200 and response[0] == "[1]", \
+        assert response[1] == 200 and response[0] == b"[1]", \
                  'list args failed: ' +\
                  '. Got a return code != 200 (got %s)' % response[1] +\
                  '. Returned data: %s' % response[0]
@@ -369,7 +369,7 @@ class RESTTest(RESTBaseUnitTest):
         # 2 values with the same keywords (e.g. url/arg1/arg2)
         url = self.urlbase + 'listTypeArgs?aList=1&aList=2'
         response = makeRequest(url=url)
-        assert response[1] == 200 and response[0] == "[1, 2]", \
+        assert response[1] == 200 and response[0] == b"[1, 2]", \
                  'list args failed: ' +\
                  '. Got a return code != 200 (got %s)' % response[1] +\
                  '. Returned data: %s' % response[0]

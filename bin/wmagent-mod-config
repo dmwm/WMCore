@@ -260,6 +260,9 @@ def modifyConfiguration(config, **args):
         config.RucioInjector.rucioAccount = args["rucio_account"]
         config.RucioInjector.rucioUrl = args["rucio_host"]
         config.RucioInjector.rucioAuthUrl = args["rucio_auth"]
+        # define a different expression for container rule replication in testbed
+        if "-int.cern.ch" in args["rucio_host"]:
+            config.RucioInjector.containerDiskRuleRSEExpr = "(tier=2|tier=1)&cms_type=int&rse_type=DISK"
 
     # custom AgentStatusWatcher
     if hasattr(config, "AgentStatusWatcher"):

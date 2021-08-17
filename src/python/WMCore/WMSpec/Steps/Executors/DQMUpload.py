@@ -12,12 +12,29 @@ from future.utils import viewitems
 import logging
 import os
 import sys
-import urllib2
 from io import BytesIO
 from functools import reduce
 from gzip import GzipFile
 from hashlib import md5
 from mimetypes import guess_type
+
+try:
+    # python2
+    import urllib2
+    HTTPError = urllib2.HTTPError
+    OpenerDirector = urllib2.OpenerDirector
+    Request = urllib2.Request
+    ProxyHandler = urllib2.ProxyHandler
+except:
+    # python3
+    import urllib.request
+    HTTPError = urllib.error.HTTPError
+    OpenerDirector = urllib.request.OpenerDirector
+    Request = urllib.request.Request
+    ProxyHandler = urllib.request.ProxyHandler
+
+from Utils.Utilities import decodeBytesToUnicode, encodeUnicodeToBytesConditional, encodeUnicodeToBytes
+from Utils.PythonVersion import PY3, PY2
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.HTTPS.HTTPSAuthHandler import HTTPSAuthHandler
@@ -138,7 +155,7 @@ class DQMUpload(Executor):
             return m
 
         with open(filename, 'rb') as fd:
-            contents = iter(lambda: fd.read(blockSize), '')
+            contents = iter(lambda: fd.read(blockSize), b'')
             m = reduce(upd, contents, md5())
 
         args['checksum'] = 'md5:%s' % m.hexdigest()
@@ -164,7 +181,7 @@ class DQMUpload(Executor):
                 else:
                     msg = 'HTTP upload finished succesfully with response:\n' + msg
                     logging.info(msg)
-        except urllib2.HTTPError as ex:
+        except HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += '  Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
             msg += '  Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
@@ -191,23 +208,35 @@ class DQMUpload(Executor):
         multi-part/form-data. We don't actually need to know what we are
         uploading here, so just claim it's all text/plain.
         """
-        boundary = '----------=_DQM_FILE_BOUNDARY_=-----------'
-        (body, crlf) = ('', '\r\n')
+        boundary = b'----------=_DQM_FILE_BOUNDARY_=-----------'
+        (body, crlf) = (b'', b'\r\n')
         for (key, value) in viewitems(args):
-            payload = str(value)
-            body += '--' + boundary + crlf
-            body += ('Content-Disposition: form-data; name="%s"' % key) + crlf
+            logging.debug("encode value - %s, %s", type(value), value)
+            if PY2:
+                payload = str(value)
+            elif PY3:
+                payload = value
+                if not isinstance(payload, bytes):
+                    payload = str(payload)
+                payload = encodeUnicodeToBytes(payload)
+                key = encodeUnicodeToBytes(key)
+            logging.debug("encode payload - %s, %s", type(payload), payload)
+            body += b'--' + boundary + crlf
+            body += (b'Content-Disposition: form-data; name="%s"' % key) + crlf
             body += crlf + payload + crlf
         for (key, filename) in viewitems(files):
-            body += '--' + boundary + crlf
-            body += ('Content-Disposition: form-data; name="%s"; filename="%s"'
-                     % (key, os.path.basename(filename))) + crlf
-            body += ('Content-Type: %s' % self.filetype(filename)) + crlf
-            body += ('Content-Length: %d' % os.path.getsize(filename)) + crlf
-            with open(filename, "r") as fd:
+            body += b'--' + boundary + crlf
+            key = encodeUnicodeToBytesConditional(key, condition=PY3)
+            filepath = encodeUnicodeToBytesConditional(os.path.basename(filename), condition=PY3)
+            body += (b'Content-Disposition: form-data; name="%s"; filename="%s"'
+                     % (key, filepath)) + crlf
+            body += (b'Content-Type: %s' % encodeUnicodeToBytes(self.filetype(filename))) + crlf
+            body += (b'Content-Length: %d' % os.path.getsize(filename)) + crlf
+            logging.debug("encode body (without binary file) -%s, %s", type(body), body)
+            with open(filename, "rb") as fd:
                 body += crlf + fd.read() + crlf
-            body += '--' + boundary + '--' + crlf + crlf
-        return ('multipart/form-data; boundary=' + boundary, body)
+            body += b'--' + boundary + b'--' + crlf + crlf
+        return (b'multipart/form-data; boundary=' + boundary, body)
 
     def marshall(self, args, files, request):
         """
@@ -217,9 +246,12 @@ class DQMUpload(Executor):
         of the CGI script.
         """
         (contentType, body) = self.encode(args, files)
-        request.add_header('Content-Type', contentType)
-        request.add_header('Content-Length', str(len(body)))
-        request.add_data(body)
+        request.add_header(b'Content-Type', contentType)
+        if PY2:
+            request.add_header('Content-Length', str(len(body)))
+            request.add_data(body)
+        elif PY3:
+            request.data = body
         return
 
     def upload(self, url, args, filename):
@@ -240,11 +272,12 @@ class DQMUpload(Executor):
         logging.info(msg)
 
         handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
-        opener = urllib2.OpenerDirector()
+        opener = OpenerDirector()
         opener.add_handler(handler)
 
         # setup the request object
-        datareq = urllib2.Request(url + '/data/put')
+        url = decodeBytesToUnicode(url) if PY3 else encodeUnicodeToBytes(url)
+        datareq = Request(url + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
         self.marshall(args, {'file': filename}, datareq)
@@ -252,7 +285,7 @@ class DQMUpload(Executor):
         if 'https://' in url:
             result = opener.open(datareq)
         else:
-            opener.add_handler(urllib2.ProxyHandler({}))
+            opener.add_handler(ProxyHandler({}))
             result = opener.open(datareq)
 
         data = result.read()

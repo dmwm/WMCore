@@ -1,3 +1,12 @@
+1.5.2.pre2 to 1.5.2.pre3:
+  - Define cms_type=int for rucio rules created against Rucio Int (Alan Malta Rodrigues) #10756
+  - [py2py3] modernize DQMUpload.py (Dario Mapelli) #9934
+  - [py2py3] fix Services_t/pycurlFileUpload_t and WebTools/REST_t - src (Dario Mapelli) #10650
+  - Convert a WorkQueueManagerCleaner log info to debug (Alan Malta Rodrigues) #10755
+  - Cast performance values to float in MathAlgos (Alan Malta Rodrigues) #10750
+  - Add new attribute for T0 Container rules (Jhonatan Amado) #10738
+
+
 1.5.2.pre1 to 1.5.2.pre2:
   - PY3: Pass byte string to subprocess.stdin in Scram runtime (Alan Malta Rodrigues) #10736
   - Provide standard/unicode string to the PSet handlePileup method (Alan Malta Rodrigues) #10740

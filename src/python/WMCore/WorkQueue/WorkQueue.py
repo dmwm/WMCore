@@ -719,7 +719,7 @@ class WorkQueue(WorkQueueBase):
                                          **filters)
 
         if wmbsInfo:
-            self.logger.info("Syncing element statuses with WMBS for workflow: %s", filters.get("RequestName"))
+            self.logger.debug("Syncing element statuses with WMBS for workflow: %s", filters.get("RequestName"))
             for item in items:
                 for wmbs in wmbsInfo:
                     if item['SubscriptionId'] == wmbs['subscription_id']:

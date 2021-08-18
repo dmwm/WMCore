@@ -599,7 +599,7 @@ class SimpleCondorPlugin(BasePlugin):
             ad['My.WMCore_ResizeJob'] = str(job.get('resizeJob', False))
             taskPriority = int(job.get('taskPriority', 1))
             priority = int(job.get('wf_priority', 0))
-            ad['My.JobPrio'] = str(int(priority + taskPriority * 1))
+            ad['My.JobPrio'] = str(int(priority + taskPriority * self.maxTaskPriority))
             ad['My.PostJobPrio1'] = str(int(-1 * len(job.get('potentialSites', []))))
             ad['My.PostJobPrio2'] = str(int(-1 * job['task_id']))
             # Add OS requirements for jobs

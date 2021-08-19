@@ -39,7 +39,6 @@
         "RequestPriority": 999999, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "DQMHarvest", 
-        "Requestor": "amaltaro",
         "RunWhitelist": [277932, 277981, 278017, 278193],
         "ScramArch": "slc6_amd64_gcc530", 
         "SizePerEvent": 1600, 

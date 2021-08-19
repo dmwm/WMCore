@@ -54,8 +54,7 @@
         "RequestPriority": 600000, 
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "TaskChain", 
-        "Requestor": "amaltaro", 
-        "ScramArch": "slc6_amd64_gcc530", 
+        "ScramArch": "slc6_amd64_gcc530",
         "SizePerEvent": 1234, 
         "SubRequestType": "RelVal", 
         "Task1": {

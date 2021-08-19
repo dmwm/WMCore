@@ -31,6 +31,8 @@
         "EnableHarvesting": true, 
         "GlobalTag": "80X_dataRun2_SPECIALHIGHPUFILL_v0",
         "Group": "DATAOPS",
+        "RequiresGPU": "required",
+        "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\"]}",
         "IncludeParents": false, 
         "InputDataset": "/HLTPhysicsIsolatedBunch/Run2016H-v1/RAW", 
         "Memory": 12000,

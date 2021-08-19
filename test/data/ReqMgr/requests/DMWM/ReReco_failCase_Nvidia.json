@@ -35,6 +35,8 @@
         "EventsPerJob": 2215, 
         "FilesPerJob": 1, 
         "GlobalTag": "102X_dataRun2_Sep2018Rereco_v1", 
+        "RequiresGPU": "optional",
+        "GPUParams": "{\"GPUMemoryMB\": 123, \"CUDARuntime\": \"11.2\", \"CUDACapabilities\": [\"11.2\", \"11.3\"]}",
         "IncludeParents": false, 
         "InputDataset": "/DoubleMuon/Run2018A-v1/RAW", 
         "LumisPerJob": 8, 

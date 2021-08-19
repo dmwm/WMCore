@@ -10,16 +10,17 @@ The data format used in lexicon.json is the following:
 
 .. doctest::
     [
-    {
-      "name": str,
-      "patterns": [ str, str, ...],
-      "length": int.
-      "functions": [
-           {"name": str, "indexes": [ int, int, ..],
-       ]
-    },
-    ...
-    }
+        {
+          "name": str,
+          "patterns": [ str, str, ...],
+          "length": int.
+          "functions": [
+               {"name": str, "indexes": [ int, int, ..],
+           ]
+        },
+        ...
+        }
+    ]
 
 where `name` represents regexp attribute, like dataset, block, etc.
 The patterns lists contains regular expressions. The functions list contains

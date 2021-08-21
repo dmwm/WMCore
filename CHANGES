@@ -1,3 +1,10 @@
+1.5.2.pre3 to 1.5.2.pre4:
+  - [py2py3] More job runtime places to encode pickledarguments to bytes (Alan Malta Rodrigues) #10766
+  - Split initial data fethig steps && Return from handled exceptions. (Todor Ivanov) #10762
+  - [py2py3] modernize scripts that rely on urllib (Dario Mapelli) #10754
+  - Fix job priority at submission time, taking into account  maxTaskPriority, as it was originally. (Kenyi Hurtado) #10760
+
+
 1.5.2.pre2 to 1.5.2.pre3:
   - Define cms_type=int for rucio rules created against Rucio Int (Alan Malta Rodrigues) #10756
   - [py2py3] modernize DQMUpload.py (Dario Mapelli) #9934

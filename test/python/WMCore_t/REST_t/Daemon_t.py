@@ -1,4 +1,7 @@
+# python-future
 from __future__ import print_function
+from builtins import range
+
 # system modules
 import cherrypy
 from multiprocessing import Process
@@ -36,7 +39,7 @@ class Task(Thread):
         """Get the daemon status. Returns dictionary of time stamps of the
         the last hundred times this thread last did 'work'."""
         with self._cv:
-            return dict((k, v) for k, v in self._status.iteritems())
+            return dict((k, v) for k, v in self._status.items())
 
     def stop(self):
         """Tell the task thread to quit."""
@@ -89,7 +92,7 @@ class TaskAPI(RESTApi):
     def __init__(self, app, config, mount):
         RESTApi.__init__(self, app, config, mount)
         print("AMR mounting RESTApi app: %s, config: %s, mount: %s" % (app, config, mount))
-        tasks = [Task() for _ in xrange(0, 10)]
+        tasks = [Task() for _ in range(0, 10)]
         self._add({ "status": Status(app, self, config, mount, tasks) })
         print("AMR done mounting the 'status' API")
 
@@ -112,7 +115,7 @@ class TaskTest(webtest.WebCase):
         print("AMR headers: %s" % h)
         print(self.getPage("/test", headers=h))
         print(self.getPage("/test/status", headers=h))
-        for _ in xrange(0, 10):
+        for _ in range(0, 10):
             self.getPage("/test/status", headers=h)
             print(self.bodyY)
             time.sleep(.3)

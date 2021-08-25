@@ -160,6 +160,7 @@ class MSTransferor(MSCore):
             msg += "Service set to process up to %s requests per cycle." % self.msConfig["limitRequestsPerCycle"]
             self.logger.info(msg)
         except Exception as err:  # general error
+            requestRecords = []
             msg = "Unknown exception while fetching requests from ReqMgr2. Error: %s", str(err)
             self.logger.exception(msg)
             self.updateReportDict(summary, "error", msg)

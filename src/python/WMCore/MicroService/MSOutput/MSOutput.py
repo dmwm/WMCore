@@ -7,9 +7,10 @@ the Output data placement in WMCore MicroServices.
 
 # futures
 from __future__ import division, print_function
-from future.utils import viewitems, viewvalues
+from future.utils import viewitems
 
 # system modules
+import time
 from pymongo import IndexModel, ReturnDocument, errors
 from pprint import pformat
 from threading import current_thread
@@ -66,7 +67,7 @@ class MSOutput(MSCore):
     in MicroServices.
     """
 
-    def __init__(self, msConfig, mode, reqCache, logger=None):
+    def __init__(self, msConfig, mode, logger=None):
         """
         Runs the basic setup and initialization for the MSOutput module
         :microConfig: microservice configuration
@@ -91,6 +92,8 @@ class MSOutput(MSCore):
         self.msConfig.setdefault("rucioTapeExpression", 'rse_type=TAPE\cms_type=test')
         self.msConfig.setdefault("mongoDBUrl", 'mongodb://localhost')
         self.msConfig.setdefault("mongoDBPort", 8230)
+        # fetch documents created in the last 6 months (default value)
+        self.msConfig.setdefault("mongoDocsCreatedSecs", 6 * 30 * 24 * 60 * 60)
         self.msConfig.setdefault("sendNotification", False)
         self.uConfig = {}
         # service name used to route alerts via AlertManager
@@ -101,8 +104,6 @@ class MSOutput(MSCore):
         self.uConfig = {}
         self.campaigns = {}
         self.psn2pnnMap = {}
-        # cache to store request names shared between the Producer and Consumer threads
-        self.requestNamesCached = reqCache
 
         self.tapeStatus = dict()
         for endpoint, quota in viewitems(self.msConfig['tapePledges']):
@@ -123,7 +124,6 @@ class MSOutput(MSCore):
         self.msOutRelValColl = self.msOutDB['msOutRelValColl']
         self.msOutNonRelValColl = self.msOutDB['msOutNonRelValColl']
 
-
     @retry(tries=3, delay=2, jitter=2)
     def updateCaches(self):
         """
@@ -131,7 +131,6 @@ class MSOutput(MSCore):
         * unified configuration
         """
         self.logger.info("%s: Updating local cache information.", self.currThreadIdent)
-        self.logger.info("%s: Request names cache size: %s", self.currThreadIdent, len(self.requestNamesCached))
 
         self.uConfig = self.unifiedConfig()
         campaigns = self.reqmgrAux.getCampaignConfig("ALL_DOCS")
@@ -199,6 +198,14 @@ class MSOutput(MSCore):
         self.logger.info(msg)
 
         try:
+            mongoDocNames = self.getRecentDocNamesFromMongo()
+        except Exception as err:  # general error
+            mongoDocNames = []
+            msg = "{}: Unknown exception while fetching documents from MongoDB. ".format(self.currThreadIdent)
+            msg += "Error: {}".format(str(err))
+            self.logger.exception(msg)
+
+        try:
             requestRecords = {}
             for status in reqStatus:
                 requestRecords.update(self.getRequestRecords(status))
@@ -207,8 +214,20 @@ class MSOutput(MSCore):
             msg += "Error: {}".format(str(err))
             self.logger.exception(msg)
 
+        # filter out documents already produced
+        finalRequests = []
+        for reqName, reqData in viewitems(requestRecords):
+            if reqName in mongoDocNames:
+                self.logger.info("Mongo document already created for %s, skipping it.", reqName)
+            else:
+                finalRequests.append(reqData)
+        msg = "Retrieved {} recent docs from MongoDB, ".format(len(mongoDocNames))
+        msg += "{} requests from ReqMgr2, and {} are new requests to be processed.".format(len(requestRecords),
+                                                                                           len(finalRequests))
+        self.logger.info(msg)
+
         try:
-            total_num_requests = self.msOutputProducer(requestRecords)
+            total_num_requests = self.msOutputProducer(finalRequests)
             msg = "{}: Total {} requests processed from the streamer. ".format(self.currThreadIdent,
                                                                                total_num_requests)
             self.logger.info(msg)
@@ -482,8 +501,6 @@ class MSOutput(MSCore):
                 #    To redefine those exceptions as MSoutputExceptions and
                 #    start using those here so we do not mix with general errors
                 try:
-                    # If it's in MongoDB, it can get into our in-memory cache
-                    self.requestNamesCached.append(docOut['RequestName'])
                     pipeLine.run(docOut)
                 except (KeyError, TypeError) as ex:
                     msg = "%s Possibly malformed record in MongoDB. Err: %s. " % (pipeLineName, str(ex))
@@ -537,10 +554,7 @@ class MSOutput(MSCore):
         # TODO:
         #    To generate the object from within the Function scope see above.
         counter = 0
-        for request in viewvalues(requestRecords):
-            if request['RequestName'] in self.requestNamesCached:
-                # if it's cached, then it's already in MongoDB, no need to redo this thing!
-                continue
+        for request in requestRecords:
             counter += 1
             try:
                 pipeLineName = msPipeline.getPipelineName()
@@ -621,7 +635,7 @@ class MSOutput(MSCore):
                 dataItem['Copies'] = 0
                 updatedOutputMap.append(dataItem)
                 continue
-            ### Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
+            # Fetch the dataset size, even if it does not go to Disk (it might go to Tape)
             try:
                 bytesSize = self._getDatasetSize(dataItem['Dataset'])
             except KeyError as exc:
@@ -891,6 +905,24 @@ class MSOutput(MSCore):
                     {'$set': msOutDoc},
                     return_document=ReturnDocument.AFTER)
         return msOutDoc
+
+    def getRecentDocNamesFromMongo(self):
+        """
+        Fetch a list of workflow names already inserted into MongoDB.
+        :param dbColl: connection object to the database/collection
+        :return: a flat list of workflow names
+        """
+        recordList = []
+        # query for documents created after this timestamp
+        createdAfter = int(time.time()) - self.msConfig['mongoDocsCreatedSecs']
+        thisQuery = {"CreationTime": {"$gte": createdAfter}}
+        projectionFields = {"RequestName": 1, "_id": 0}
+        for dbColl in [self.msOutNonRelValColl, self.msOutRelValColl]:
+            self.logger.info("Querying %s for docs created after timestamp: %s", dbColl.name, createdAfter)
+            for mongoDoc in dbColl.find(thisQuery, projectionFields):
+                recordList.append(mongoDoc["RequestName"])
+        self.logger.info("Retrieved a total of %s recent requests from MongoDB", len(recordList))
+        return recordList
 
     def getDocsFromMongo(self, mQueryDict, dbColl, limit=1000):
         """

@@ -815,7 +815,7 @@ class SetupCMSSWPset(ScriptInterface):
         # limit run time if desired
         if hasattr(self.step.data.application.configuration, "maxSecondsUntilRampdown"):
             self.tweak.addParameter("process.maxSecondsUntilRampdown.input",
-                "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s)" % self.step.data.application.configuration.maxSecondsUntilRampdown)
+                "customTypeCms.untracked.PSet(input=cms.untracked.int32(%s))" % self.step.data.application.configuration.maxSecondsUntilRampdown)
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application, 'overrideCatalog'):

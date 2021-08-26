@@ -5,6 +5,8 @@ _FixedDelay_t_
 Fixed delay job splitting.
 """
 
+from __future__ import division
+
 import unittest
 import os
 import threading

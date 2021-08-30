@@ -1,3 +1,14 @@
+1.5.2 to 1.5.3.pre1:
+  - Define pylint message template in the pylintrc file (Alan Malta Rodrigues) #10776
+  - MSOutput: only produce documents for workflows not yet in the database (Alan Malta Rodrigues) #10773
+  - Update WM_Schematic. (Todor Ivanov) #10777
+  - fix unittest pycurl_manager_t.PyCurlManager:testHeadRequest (Dario Mapelli) #10772
+  - Fix missing parenthesis (Kenyi Hurtado) #10771
+  - [py2py3] modernization of leftover files - src (Dario Mapelli) #10768
+  - Fix undefined variable in MSTransferor (Alan Malta Rodrigues) #10769
+  - Update deploy-wmagent script to latest production tag: 1.5.2 (Alan Malta Rodrigues) #10767
+
+
 1.5.2.pre4 to 1.5.2:
 
 

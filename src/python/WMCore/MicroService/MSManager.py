@@ -28,7 +28,6 @@ from __future__ import division, print_function
 from builtins import object
 from time import sleep
 from datetime import datetime
-from collections import deque
 
 # WMCore modules
 from WMCore.MicroService.Tools.Common import getMSLogger
@@ -107,12 +106,9 @@ class MSManager(object):
         if 'output' in self.services:
             from WMCore.MicroService.MSOutput.MSOutput import MSOutput
             reqStatus = ['closed-out', 'announced']
-            # thread safe cache to keep the last X requests processed in MSOutput
-            requestNamesCached = deque(maxlen=self.msConfig.get("cacheRequestSize", 10000))
 
             thname = 'MSOutputConsumer'
-            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname,
-                                             reqCache=requestNamesCached, logger=self.logger)
+            self.msOutputConsumer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             # set the consumer to run twice faster than the producer
             consumerInterval = self.msConfig['interval'] // 2
             self.outputConsumerThread = start_new_thread(thname, daemon,
@@ -123,8 +119,7 @@ class MSManager(object):
             self.logger.info("=== Running %s thread %s", thname, self.outputConsumerThread.running())
 
             thname = 'MSOutputProducer'
-            self.msOutputProducer = MSOutput(self.msConfig, mode=thname,
-                                             reqCache=requestNamesCached, logger=self.logger)
+            self.msOutputProducer = MSOutput(self.msConfig, mode=thname, logger=self.logger)
             self.outputProducerThread = start_new_thread(thname, daemon,
                                                          (self.outputProducer,
                                                           reqStatus,

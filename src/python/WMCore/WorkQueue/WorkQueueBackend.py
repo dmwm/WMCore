@@ -174,7 +174,7 @@ class WorkQueueBackend(object):
             else:
                 newUnitsInserted.append(unit)
             unit.save()
-            unit._couch.commit(all_or_nothing=True)
+            unit._couch.commit()
 
         return newUnitsInserted
 

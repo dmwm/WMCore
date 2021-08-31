@@ -283,10 +283,9 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(answer[0]['ok'], True)
         self.assertEqual(answer[1]['error'], 'conflict')
 
-        # all_or_nothing mode ignores conflicts
         self.db.queue(Document(id = "2", inputDict = doc))
         self.db.queue(Document(id = "2", inputDict = {'foo':1234, 'bar':456}))
-        answer = self.db.commit(all_or_nothing = True)
+        answer = self.db.commit()
         self.assertEqual(2, len(answer))
         self.assertEqual(answer[0].get('error'), None)
         self.assertEqual(answer[0].get('error'), None)

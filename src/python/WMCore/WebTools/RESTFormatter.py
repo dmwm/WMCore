@@ -8,7 +8,7 @@ appropriate format and sets the CherryPy header appropriately.
 Could add YAML via http://pyyaml.org/
 """
 
-from builtins import str, bytes
+from builtins import str
 
 import json
 from types import GeneratorType
@@ -17,6 +17,9 @@ from cherrypy import response, HTTPError, request
 
 from WMCore.WebTools.Page import TemplatedPage, _setCherryPyHeaders
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+
+from Utils.Utilities import decodeBytesToUnicodeConditional
+from Utils.PythonVersion import PY3
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
@@ -66,16 +69,21 @@ class RESTFormatter(TemplatedPage):
                                 path = request.path_info)
 
     def to_string(self, data):
+        """
+        Since json.dumps returns unicode in py3 and bytes in py2 (it behaves
+        returning "native str" in both versions), then we do the same with all
+        the data that is not GeneratorType, dict nor list by calling str(data)
+        Moreover, we need to properly decode bytes.
+
+        :returns: "native str" (unicode in py3, bytes in py2)
+        """
         if isinstance(data, GeneratorType):
             return self.json(data)
         if isinstance(data, dict) or isinstance(data, list):
             return json.dumps(data)
-        # Do not be misguided by the function name, this must return bytes, 
-        # otherwise the unit test
-        # testSupportedFormat (WMCore_t.WebTools_t.RESTFormat_t.RESTFormatTest)
-        # fails with "ValueError: Page handlers MUST return bytes. 
-        # Use tools.encode if you wish to return unicode."
-        return bytes(str(data), "utf-8")
+        if not isinstance(data, bytes):
+            return str(data)
+        return decodeBytesToUnicodeConditional(data, condition=PY3)
 
     def format(self, data, datatype, expires):
         response_data = ''

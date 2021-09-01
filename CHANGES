@@ -1,3 +1,7 @@
+1.5.1 to 1.5.1.cmsweb1:
+  - Fix spec validation for Multicore/Memory/Streams/TpE (Alan Malta Rodrigues) #10783
+
+
 1.5.1.pre6 to 1.5.1:
 
 

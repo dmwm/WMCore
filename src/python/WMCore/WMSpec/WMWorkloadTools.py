@@ -9,7 +9,7 @@ Created on Jun 13, 2013
 @author: dballest
 """
 from builtins import str, bytes
-from future.utils import viewitems
+from future.utils import viewitems, viewvalues
 
 import json
 import re
@@ -19,6 +19,42 @@ from Utils.Utilities import makeList
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDEx_VALID_SUBSCRIPTION_PRIORITIES
+
+
+def checkMemCore(paramInfo, minValue=1):
+    """
+    Spec validation function for the Memory/Multicore parameters
+    :param memInfo: memory provided by the user (can be an int/float/dict)
+    :param minValue: base value to be used to validate user's values
+    :return: True if validation is successful, raise an exception otherwise
+    """
+    try:
+        if isinstance(paramInfo, dict):
+            for value in viewvalues(paramInfo):
+                assert value >= minValue
+        else:
+            assert paramInfo >= minValue
+    except Exception:
+        return False
+    return True
+
+
+def checkEventStreams(streamsInfo):
+    """
+    Spec validation function for the EventStreams parameter
+    :param streamsInfo: event streams provided by the user (can be either int or a dict)
+    :return: True if validation is successful, raise an exception otherwise
+    """
+    return checkMemCore(streamsInfo, 0)
+
+
+def checkTimePerEvent(tpEvtInfo):
+    """
+    Spec validation function for the TimePerEvent parameter
+    :param tpEvtInfo: time per event provided by the user (can be either float or a dict)
+    :return: True if validation is successful, raise an exception otherwise
+    """
+    return checkMemCore(tpEvtInfo, 0)
 
 
 def makeLumiList(lumiDict):
@@ -114,7 +150,8 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     for arg, argDef in viewitems(argumentDefinition):
         optional = argDef.get(optionKey, True)
         if not optional and arg not in arguments:
-            msg = "Argument '%s' is mandatory! Its definition is:\n%s" % (arg, inspect.getsource(argDef))
+            msg = "Argument '{}' is mandatory and must be provided by the user.".format(arg)
+            msg += " Its definition is: {}".format(argDef)
             raise WMSpecFactoryException(msg)
         # specific case when user GUI returns empty string for optional arguments
         elif arg not in arguments:

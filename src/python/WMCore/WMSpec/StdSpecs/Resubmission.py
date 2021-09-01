@@ -5,12 +5,12 @@ _Resubmission_
 Resubmission module, this creates truncated workflows
 with limited input for error recovery.
 """
-
 from Utils.Utilities import makeList
 from WMCore.Lexicon import couchurl, identifier, cmsname, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import (loadSpecClassByType, validateArgumentsCreate,
+                                           checkMemCore, checkEventStreams, checkTimePerEvent)
 
 
 class ResubmissionWorkloadFactory(StdBase):
@@ -41,13 +41,21 @@ class ResubmissionWorkloadFactory(StdBase):
         # override a couple of parameters, if provided by user
         if 'RequestPriority' in arguments:
             helper.setPriority(arguments["RequestPriority"])
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
+        if arguments['OriginalRequestType'] == 'TaskChain':
+            # Meaning: only call the setter method if values are in a dict format
+            if isinstance(arguments['Memory'], dict):
+                helper.setMemory(arguments['Memory'])
+                helper.setupPerformanceMonitoring(softTimeout=arguments.get("SoftTimeout"),
+                                                  gracePeriod=arguments.get("GracePeriod"))
+            if isinstance(arguments['Multicore'], dict):
+                helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
+            if isinstance(arguments.get('TimePerEvent'), dict):
+                helper.setTimePerEvent(arguments.get("TimePerEvent"))
+        else:
             helper.setMemory(arguments['Memory'])
             helper.setupPerformanceMonitoring(softTimeout=arguments.get("SoftTimeout"),
                                               gracePeriod=arguments.get("GracePeriod"))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
             helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
             helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
         return helper
@@ -74,7 +82,13 @@ class ResubmissionWorkloadFactory(StdBase):
                     "SiteWhitelist": {"default": [], "type": makeList,
                                       "validate": lambda x: all([cmsname(y) for y in x])},
                     # it can be Chained or MC requests, so lets make it optional
-                    "InputDataset": {"optional": True, "validate": dataset, "null": True}}
+                    "InputDataset": {"optional": True, "validate": dataset, "null": True},
+                    ### Override StdBase parameter definition
+                    "TimePerEvent": {"default": None, "type": float, "null": True, "validate": checkTimePerEvent},
+                    "Memory": {"default": None, "type": float, "null": True, "validate": checkMemCore},
+                    "Multicore": {"default": None, "type": int, "null": True, "validate": checkMemCore},
+                    "EventStreams": {"default": None, "type": int, "null": True, "validate": checkEventStreams}
+                    }
 
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

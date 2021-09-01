@@ -21,7 +21,8 @@ from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import primdataset, taskStepName
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsCreate, parsePileupConfig,
+                                           checkMemCore, checkEventStreams, checkTimePerEvent)
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 # simple utils for data mining the request dictionary
@@ -482,6 +483,11 @@ class StepChainWorkloadFactory(StdBase):
                     "FirstLumi": {"default": 1, "type": int, "validate": lambda x: x > 0,
                                   "null": False},
                     "ParentageResolved": {"default": False, "type": strToBool, "null": False},
+                    ### Override StdBase parameter definition
+                    "TimePerEvent": {"default": 12.0, "type": float, "validate": checkTimePerEvent},
+                    "Memory": {"default": 2300.0, "type": float, "validate": checkMemCore},
+                    "Multicore": {"default": 1, "type": int, "validate": checkMemCore},
+                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams}
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -517,6 +523,10 @@ class StepChainWorkloadFactory(StdBase):
         baseArgs = StdBase.getWorkloadAssignArgs()
         specArgs = {
             "ChainParentageMap": {"default": {}, "type": dict},
+            ### Override StdBase assignment parameter definition
+            "Memory": {"type": float, "validate": checkMemCore},
+            "Multicore": {"type": int, "validate": checkMemCore},
+            "EventStreams": {"type": int, "validate": checkEventStreams},
         }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

@@ -157,7 +157,8 @@ def validate_resubmission_create_args(request_args, config, reqmgr_db_service, *
 
     specClass = loadSpecClassByType(request_args["RequestType"])
     spec = specClass()
-    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
+    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"],
+                                                cloned_args, request_args)
 
     return workload, cloned_args
 

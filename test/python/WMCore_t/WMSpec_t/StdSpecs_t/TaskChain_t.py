@@ -2309,6 +2309,29 @@ class TaskChainTests(EmulatedUnitTestCase):
         with self.assertRaises(WMSpecFactoryException):
             factory.factoryWorkloadConstruction("PullingTheChain", arguments)
 
+    def testResourcesOverride(self):
+        """
+        Test override of resource requirements during workflow assignment
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        arguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments.update(deepcopy(REQUEST_INPUT))
+        arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
+        arguments['Task2']['ConfigCacheID'] = processorDocs['Reco']
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        ### Now assign this workflow
+        assignDict = {"SiteWhitelist": ["T2_US_Nebraska"], "Team": "The-A-Team",
+                      "MergedLFNBase": "/store/data",
+                      "UnmergedLFNBase": "/store/unmerged",
+                      "TimePerEvent": {"DIGI": 1.5, "RECO": 2.5},
+                      "Memory": {"DIGI": 123, "RECO": 456},
+                      "Multicore": {"DIGI": 11, "RECO": 12},
+                      "EventStreams": {"DIGI": 21, "RECO": 22},
+                      }
+        testWorkload.updateArguments(assignDict)
 
 if __name__ == '__main__':
     unittest.main()

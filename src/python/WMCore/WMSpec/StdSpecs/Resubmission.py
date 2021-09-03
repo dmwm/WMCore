@@ -5,12 +5,12 @@ _Resubmission_
 Resubmission module, this creates truncated workflows
 with limited input for error recovery.
 """
-
 from Utils.Utilities import makeList
 from WMCore.Lexicon import couchurl, identifier, cmsname, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import (loadSpecClassByType, validateArgumentsCreate,
+                                           checkMemCore, checkEventStreams, checkTimePerEvent)
 
 
 class ResubmissionWorkloadFactory(StdBase):
@@ -41,14 +41,9 @@ class ResubmissionWorkloadFactory(StdBase):
         # override a couple of parameters, if provided by user
         if 'RequestPriority' in arguments:
             helper.setPriority(arguments["RequestPriority"])
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Memory'], dict):
-            helper.setMemory(arguments['Memory'])
-            helper.setupPerformanceMonitoring(softTimeout=arguments.get("SoftTimeout"),
-                                              gracePeriod=arguments.get("GracePeriod"))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments['Multicore'], dict):
-            helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
-        if arguments['OriginalRequestType'] != 'TaskChain' or isinstance(arguments.get('TimePerEvent'), dict):
-            helper.setTimePerEvent(arguments.get("TimePerEvent"))
+        helper.setMemory(arguments['Memory'])
+        helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
+        helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
         return helper
 
@@ -56,6 +51,20 @@ class ResubmissionWorkloadFactory(StdBase):
         StdBase.__call__(self, workloadName, arguments)
         self.originalRequestName = self.initialTaskPath.split('/')[1]
         return self.buildWorkload(arguments)
+
+    def factoryWorkloadConstruction(self, workloadName, arguments, userArgs=None):
+        """
+        Resubmission factory override of the master StdBase factory.
+        Builds the entire workload, with specific features to Resubmission
+        requests, and also performs a sub-set of the standard validation.
+        """
+        userArgs = userArgs or {}
+        self.fixupArguments(arguments, userArgs)
+        self.validateSchema(schema=arguments)
+        workload = self.__call__(workloadName, arguments)
+        self.validateWorkload(workload)
+
+        return workload
 
     @staticmethod
     def getWorkloadCreateArgs():
@@ -74,25 +83,44 @@ class ResubmissionWorkloadFactory(StdBase):
                     "SiteWhitelist": {"default": [], "type": makeList,
                                       "validate": lambda x: all([cmsname(y) for y in x])},
                     # it can be Chained or MC requests, so lets make it optional
-                    "InputDataset": {"optional": True, "validate": dataset, "null": True}}
+                    "InputDataset": {"optional": True, "validate": dataset, "null": True},
+                    ### Override StdBase parameter definition
+                    "TimePerEvent": {"default": None, "type": float, "null": True, "validate": checkTimePerEvent},
+                    "Memory": {"default": None, "type": float, "null": True, "validate": checkMemCore},
+                    "Multicore": {"default": None, "type": int, "null": True, "validate": checkMemCore},
+                    "EventStreams": {"default": None, "type": int, "null": True, "validate": checkEventStreams}
+                    }
 
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
+
+    def fixupArguments(self, arguments, userArgs):
+        """
+        This method will ensure that:
+         * if the user provided some specific arguments, it will be passed down the chain
+         * otherwise, the same argument from the original/parent workflow will be dumped
+        The only arguments to be tweaked like that are:
+            TimePerEvent, Memory, Multicore, EventStreams
+        :param arguments: full set of arguments from creation+assignment definitions
+        :param userArgs: solely the key/value pair values provided by the client
+        :return: nothing, updates are made in place
+        """
+        specialArgs = ("TimePerEvent", "Memory", "Multicore", "EventStreams")
+        argsDefinition = self.getWorkloadCreateArgs()
+        for arg in specialArgs:
+            if arg not in userArgs:
+                arguments[arg] = argsDefinition[arg]["default"]
+            else:
+                arguments[arg] = userArgs[arg]
 
     def validateSchema(self, schema):
         """
         Since we skip the master validation for Resubmission specs, we better have
         some specific validation
         """
-        #TODO: for the legacy code if ACDC is created before the updated. remove in next release (Mar 2018)
-        if schema.get('OriginalRequestType') == 'Resubmission':
-            # we cannot validate such schema
-            return
-
         if schema.get("ResubmissionCount", 1) > 1:
             # we cannot validate such schema
             return
-
         # load assignment + creation + resubmission creation args definition
         argumentDefinition = self.getWorkloadAssignArgs()
         parentSpecClass = loadSpecClassByType(schema['OriginalRequestType'])

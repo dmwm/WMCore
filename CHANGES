@@ -1,3 +1,7 @@
+1.5.1.cmsweb1 to 1.5.1.cmsweb2:
+  - Override factoryWorkloadConstruction in the Resubmission spec (Alan Malta Rodrigues) #10787
+
+
 1.5.1 to 1.5.1.cmsweb1:
   - Fix spec validation for Multicore/Memory/Streams/TpE (Alan Malta Rodrigues) #10783
 

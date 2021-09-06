@@ -1098,7 +1098,7 @@ class StdBase(object):
                      "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
                      "Memory": {"type": float, "validate": lambda x: x > 0},
                      "Multicore": {"type": int, "validate": lambda x: x > 0},
-                     "EventStreams": {"null": True, "default": 0, "type": int, "validate": lambda x: x >= 0},
+                     "EventStreams": {"null": True, "type": int, "validate": lambda x: x >= 0},
 
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
@@ -1296,25 +1296,20 @@ class StdBase(object):
             else:
                 schema[arg] = workloadDefinition[arg]['default']
 
+        taskStep = {'ConfigCacheID': 'FAKE',
+                    'PrimaryDataset': 'FAKE',
+                    'EventsPerJob': 100,
+                    'GlobalTag': 'GT_DP_V1',
+                    'RequestNumEvents': 1000000,
+                    'Seeding': 'AutomaticSeeding',
+                    'SplittingAlgo': 'EventBased'}
         if schema['RequestType'] == 'TaskChain':
-            schema['Task1'] = {'ConfigCacheID': 'FAKE',
-                               'PrimaryDataset': 'FAKE',
-                               'EventsPerJob': 100,
-                               'GlobalTag': 'GT_DP_V1',
-                               'RequestNumEvents': 1000000,
-                               'Seeding': 'AutomaticSeeding',
-                               'SplittingAlgo': 'EventBased',
-                               'TaskName': 'Task1Name_Test',
-                               'TimePerEvent': 123}
+            schema['Task1'] = taskStep
+            schema['Task1'].update({'TaskName': 'Task1Name_Test',
+                                    'TimePerEvent': 123})
         elif schema['RequestType'] == 'StepChain':
-            schema['Step1'] = {'ConfigCacheID': 'FAKE',
-                               'PrimaryDataset': 'FAKE',
-                               'EventsPerJob': 100,
-                               'GlobalTag': 'GT_DP_V1',
-                               'RequestNumEvents': 1000000,
-                               'Seeding': 'AutomaticSeeding',
-                               'SplittingAlgo': 'EventBased',
-                               'StepName': 'Step1Name_Test'}
+            schema['Step1'] = taskStep
+            schema['Step1'].update({'StepName': 'Step1Name_Test'})
 
         return schema
 

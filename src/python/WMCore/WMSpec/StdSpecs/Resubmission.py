@@ -39,11 +39,15 @@ class ResubmissionWorkloadFactory(StdBase):
         helper.ignoreOutputModules(self.ignoredOutputModules)
 
         # override a couple of parameters, if provided by user
-        if 'RequestPriority' in arguments:
+        # Note that if it was provided by the user, then it's already part of the arguments too
+        if "RequestPriority" in self.userArgs:
             helper.setPriority(arguments["RequestPriority"])
-        helper.setMemory(arguments['Memory'])
-        helper.setCoresAndStreams(arguments['Multicore'], arguments.get("EventStreams", 0))
-        helper.setTimePerEvent(arguments.get("TimePerEvent"))
+        if "Memory" in self.userArgs:
+            helper.setMemory(arguments["Memory"])
+        if "Multicore" in self.userArgs or "EventStreams" in self.userArgs:
+            helper.setCoresAndStreams(arguments["Multicore"], arguments.get("EventStreams", 0))
+        if "TimePerEvent" in self.userArgs:
+            helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
         return helper
 
@@ -57,13 +61,16 @@ class ResubmissionWorkloadFactory(StdBase):
         Resubmission factory override of the master StdBase factory.
         Builds the entire workload, with specific features to Resubmission
         requests, and also performs a sub-set of the standard validation.
+        :param workloadName: string with the name of the workload
+        :param arguments: dictionary with all the relevant create/assign parameters
+        :param userArgs: dictionary with user specific parameters
+        :return: the workload object
         """
-        userArgs = userArgs or {}
-        self.fixupArguments(arguments, userArgs)
+        self.userArgs = userArgs or {}
+        self.fixupArguments(arguments)
         self.validateSchema(schema=arguments)
         workload = self.__call__(workloadName, arguments)
         self.validateWorkload(workload)
-
         return workload
 
     @staticmethod
@@ -94,7 +101,7 @@ class ResubmissionWorkloadFactory(StdBase):
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 
-    def fixupArguments(self, arguments, userArgs):
+    def fixupArguments(self, arguments):
         """
         This method will ensure that:
          * if the user provided some specific arguments, it will be passed down the chain
@@ -102,16 +109,38 @@ class ResubmissionWorkloadFactory(StdBase):
         The only arguments to be tweaked like that are:
             TimePerEvent, Memory, Multicore, EventStreams
         :param arguments: full set of arguments from creation+assignment definitions
-        :param userArgs: solely the key/value pair values provided by the client
         :return: nothing, updates are made in place
         """
+        if arguments["OriginalRequestType"] == "ReReco":
+            # top level arguments are already correct
+            return
+
         specialArgs = ("TimePerEvent", "Memory", "Multicore", "EventStreams")
         argsDefinition = self.getWorkloadCreateArgs()
         for arg in specialArgs:
-            if arg not in userArgs:
-                arguments[arg] = argsDefinition[arg]["default"]
+            if arg in self.userArgs:
+                arguments[arg] = self.userArgs[arg]
+                # these should not be persisted under the Step dictionary
+                if arg in ("TimePerEvent", "Memory") and arguments["OriginalRequestType"] == "StepChain":
+                    continue
+            elif arg in ("TimePerEvent", "Memory") and arguments["OriginalRequestType"] == "StepChain":
+                # there is only the top level argument, reuse it
+                continue
             else:
-                arguments[arg] = userArgs[arg]
+                arguments[arg] = argsDefinition[arg]["default"]
+                continue
+            # now update the inner values as well
+            specType = "Step" if arguments["OriginalRequestType"] == "StepChain" else "Task"
+            for innerIdx in range(1, arguments.get("{}Chain".format(specType), 0) + 1):
+                # innerKey is meant to be: Task1 or Step1, Task2 or Step2 ...
+                innerKey = "{}{}".format(specType, innerIdx)
+                # the value of either TaskName or StepName
+                innerName = arguments[innerKey]["{}Name".format(specType)]
+                # value to be defined inside the Task/Step
+                if isinstance(self.userArgs[arg], dict):
+                    arguments[innerKey][arg] = self.userArgs[arg][innerName]
+                else:
+                    arguments[innerKey][arg] = self.userArgs[arg]
 
     def validateSchema(self, schema):
         """
@@ -131,3 +160,12 @@ class ResubmissionWorkloadFactory(StdBase):
             validateArgumentsCreate(schema, argumentDefinition)
         except Exception as ex:
             self.raiseValidationException(str(ex))
+
+        # and some extra validation based on the parent workflow
+        if schema['OriginalRequestType'] != "TaskChain":
+            for param in ("TimePerEvent", "Memory"):
+                if isinstance(schema.get(param), dict):
+                    msg = "ACDC for parent spec of type: {} ".format(schema['OriginalRequestType'])
+                    msg += "cannot have parameter: {} defined as a dictionary: {}".format(param,
+                                                                                          schema[param])
+                    self.raiseValidationException(msg)

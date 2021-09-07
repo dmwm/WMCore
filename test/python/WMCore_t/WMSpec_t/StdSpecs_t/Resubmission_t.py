@@ -370,11 +370,12 @@ class ResubmissionTests(EmulatedUnitTestCase):
                 perfParams = taskObj.jobSplittingParameters()['performance']
                 print("Task: {}, type: {}, perf: {}".format(taskObj.name(), taskObj.taskType(), perfParams))
                 if taskObj.taskType() in ('Production', 'Processing'):
-                    for step in ('cmsRun1', 'cmsRun2'):
-                        stepHelper = taskObj.getStepHelper(step)
-                        # FIXME: these 2 lines below are wrong, see GH issue #10791
-                        self.assertEqual(stepHelper.getNumberOfCores(), acdcArgs["Multicore"]["RecoPU_2021PU"])
-                        self.assertEqual(stepHelper.getNumberOfStreams(), acdcArgs["EventStreams"]["RecoPU_2021PU"])
+                    stepHelper = taskObj.getStepHelper("cmsRun1")
+                    self.assertEqual(stepHelper.getNumberOfCores(), acdcArgs["Multicore"]["RecoPU_2021PU"])
+                    self.assertEqual(stepHelper.getNumberOfStreams(), acdcArgs["EventStreams"]["RecoPU_2021PU"])
+                    stepHelper = taskObj.getStepHelper("cmsRun2")
+                    self.assertEqual(stepHelper.getNumberOfCores(), acdcArgs["Multicore"]["Nano_2021PU"])
+                    self.assertEqual(stepHelper.getNumberOfStreams(), acdcArgs["EventStreams"]["Nano_2021PU"])
                     for step in ('stageOut1', 'logArch1'):
                         stepHelper = taskObj.getStepHelper(step)
                         self.assertEqual(stepHelper.getNumberOfCores(), 1)
@@ -436,7 +437,6 @@ class ResubmissionTests(EmulatedUnitTestCase):
                 if taskObj.taskType() in ('Production', 'Processing'):
                     for step in ('cmsRun1', 'cmsRun2'):
                         stepHelper = taskObj.getStepHelper(step)
-                        # FIXME: these 2 lines below are wrong, see GH issue #10791
                         self.assertEqual(stepHelper.getNumberOfCores(), acdcArgs["Multicore"])
                         self.assertEqual(stepHelper.getNumberOfStreams(), acdcArgs["EventStreams"])
                     for step in ('stageOut1', 'logArch1'):

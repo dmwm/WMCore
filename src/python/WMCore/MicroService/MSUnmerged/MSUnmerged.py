@@ -37,6 +37,7 @@ from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 from WMCore.WMException import WMException
 from Utils.Pipeline import Pipeline, Functor
 from Utils.TwPrint import twFormat
+from Utils.IteratorTools import grouper
 
 # from memory_profiler import profile
 
@@ -99,6 +100,7 @@ class MSUnmerged(MSCore):
         self.msConfig.setdefault("dirFilterIncl", [])
         self.msConfig.setdefault("dirFilterExcl", [])
         self.msConfig.setdefault("emulateGfal2", False)
+        self.msConfig.setdefault("filesToDeleteSliceSize", 100)
         if self.msConfig['emulateGfal2'] is False and gfal2 is None:
             msg = "Failed to import gfal2 library while it's not "
             msg += "set to emulate it. Crashing the service!"
@@ -303,15 +305,17 @@ class MSUnmerged(MSCore):
                 if self.msConfig['enableRealMode']:
                     try:
                         # execute the actual deletion in bulk - full list of files per directory
-                        delResult = []
-                        delResult = ctx.unlink(pfnList)
 
-                        # Count all the successfully deleted files (if a deletion was
-                        # successful a value of None is put in the delResult list):
-                        deletedSuccess = [pfnStatus for pfnStatus in delResult if pfnStatus is None]
+                        deletedSuccess = 0
+                        for pfnSlice in list(grouper(pfnList, self.msConfig["filesToDeleteSliceSize"])):
+                            delResult = ctx.unlink(pfnSlice)
+                            # Count all the successfully deleted files (if a deletion was
+                            # successful a value of None is put in the delResult list):
+                            deletedSuccess += sum([1 for pfnStatus in delResult if pfnStatus is None])
+
                         self.logger.debug("RSE: %s, Dir: %s, deletedSuccess: %s",
                                           rse['name'], dirLfn, deletedSuccess)
-                        rse['counters']['deletedSuccess'] += len(deletedSuccess)
+                        rse['counters']['deletedSuccess'] = deletedSuccess
 
                         # Now clean the whole branch
                         self.logger.debug("Purging dirEntry: %s:\n", dirPfn)

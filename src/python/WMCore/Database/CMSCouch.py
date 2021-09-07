@@ -152,10 +152,16 @@ class CouchDBRequests(JSONRequests):
             raise CouchNotFoundError(reason, data, result)
         elif status == 405:
             raise CouchNotAllowedError(reason, data, result)
+        elif status == 406:
+            raise CouchNotAcceptableError(reason, data, result)
         elif status == 409:
             raise CouchConflictError(reason, data, result)
         elif status == 412:
             raise CouchPreconditionFailedError(reason, data, result)
+        elif status == 416:
+            raise CouchRequestedRangeNotSatisfiableError(reason, data, result)
+        elif status == 417:
+            raise CouchExpectationFailedError(reason, data, result)
         elif status == 500:
             raise CouchInternalServerError(reason, data, result)
         elif status in [502, 503, 504]:
@@ -1098,17 +1104,30 @@ class CouchNotAllowedError(CouchError):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotAllowedError"
 
+class CouchNotAcceptableError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchNotAcceptableError"
 
 class CouchConflictError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
 
-
 class CouchPreconditionFailedError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchPreconditionFailedError"
+
+class CouchExpectationFailedError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchExpectationFailedError"
+
+class CouchRequestedRangeNotSatisfiableError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchRequestedRangeNotSatisfiableError"
 
 
 class CouchInternalServerError(CouchError):

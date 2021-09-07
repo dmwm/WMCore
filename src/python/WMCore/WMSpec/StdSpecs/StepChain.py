@@ -484,8 +484,8 @@ class StepChainWorkloadFactory(StdBase):
                                   "null": False},
                     "ParentageResolved": {"default": False, "type": strToBool, "null": False},
                     ### Override StdBase parameter definition
-                    "TimePerEvent": {"default": 12.0, "type": float, "validate": checkTimePerEvent},
-                    "Memory": {"default": 2300.0, "type": float, "validate": checkMemCore},
+                    "TimePerEvent": {"default": 12.0, "type": float, "validate": lambda x: x > 0},
+                    "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                     "Multicore": {"default": 1, "type": int, "validate": checkMemCore},
                     "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams}
                    }

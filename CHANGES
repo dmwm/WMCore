@@ -1,3 +1,10 @@
+1.5.3.pre1 to 1.5.3.pre2:
+  - Override factoryWorkloadConstruction in the Resubmission spec (Alan Malta Rodrigues) #10781
+  - CouchDB 3: Add new Error HTTP Status Codes to CMSCouch.py (phenomax) #10785
+  - Fix spec validation for Multicore/Memory/Streams/TpE (Alan Malta Rodrigues) #10781
+  - RESTFormatter.to_string returns 'native str' (Dario Mapelli) #10753
+
+
 1.5.2 to 1.5.3.pre1:
   - Define pylint message template in the pylintrc file (Alan Malta Rodrigues) #10776
   - MSOutput: only produce documents for workflows not yet in the database (Alan Malta Rodrigues) #10773

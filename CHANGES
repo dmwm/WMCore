@@ -1,3 +1,10 @@
+1.5.3.pre2 to 1.5.3.pre3:
+  - Delete file lists in slices. (Todor Ivanov) #10792
+  - Fix Multicore/EventStreams override in Resubmission of StepChains (Alan Malta Rodrigues) #10795
+  - Update Python3 requirements list with Sphinx and Jinja2 (Alan Malta Rodrigues) #10794
+  - Keep Resubmission spec and json data consistent (Alan Malta Rodrigues) #10789
+
+
 1.5.3.pre1 to 1.5.3.pre2:
   - Override factoryWorkloadConstruction in the Resubmission spec (Alan Malta Rodrigues) #10781
   - CouchDB 3: Add new Error HTTP Status Codes to CMSCouch.py (phenomax) #10785

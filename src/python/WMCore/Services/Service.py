@@ -294,11 +294,22 @@ class Service(dict):
                     cachefile.write(data)
                     cachefile.seek(0, 0)  # return to beginning of file
                 else:
-                    with open(cachefile, 'w') as f:
-                        if isinstance(data, dict) or isinstance(data, list):
-                            f.write(json.dumps(data))
-                        else:
-                            f.write(data)
+                    # Ensure that the path for /tmp file is created before
+                    # creating the file
+                    pathfile=cachefile.split("/")
+                    pathfile="/"+"/".join(pathfile[1:-1])
+                    if not os.path.exists(pathfile):
+                        os.makedirs(pathfile, exist_ok=True)
+                    try:
+                        # Raise excpetion if file/path is not created
+                        with open(cachefile, 'w') as f:
+                            if isinstance(data, dict) or isinstance(data, list):
+                                f.write(json.dumps(data))
+                            else:
+                                f.write(data)
+                    except EnvironmentError as EnvError:
+                        msg = ' raised a %s when accessed' % EnvError.__repr__()
+                        self['logger'].error(msg)
 
 
         except (IOError, HttpLib2Error, HTTPException) as he:

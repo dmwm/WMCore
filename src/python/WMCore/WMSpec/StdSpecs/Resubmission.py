@@ -45,7 +45,7 @@ class ResubmissionWorkloadFactory(StdBase):
         if "Memory" in self.userArgs:
             helper.setMemory(arguments["Memory"])
         if "Multicore" in self.userArgs or "EventStreams" in self.userArgs:
-            helper.setCoresAndStreams(arguments["Multicore"], arguments.get("EventStreams", 0))
+            self.setCoresAndStreams(helper, arguments)
         if "TimePerEvent" in self.userArgs:
             helper.setTimePerEvent(arguments.get("TimePerEvent"))
 
@@ -141,6 +141,48 @@ class ResubmissionWorkloadFactory(StdBase):
                     arguments[innerKey][arg] = self.userArgs[arg][innerName]
                 else:
                     arguments[innerKey][arg] = self.userArgs[arg]
+
+    def setCoresAndStreams(self, workloadHelper, inputArgs):
+        """
+        Set helper for the Multicore and EventStreams parameters, which
+        need to be dealt with in a different way depending on the parent
+        spec type
+        :param workloadHelper: WMWorkload object
+        :param inputArgs: dictionary with the Resubmission input args
+        """
+        # simple and easy way to update it
+        if not isinstance(inputArgs["Multicore"], dict):
+            workloadHelper.setCoresAndStreams(inputArgs["Multicore"], inputArgs.get("EventStreams", 0))
+        # still a simple way to update it
+        elif inputArgs['OriginalRequestType'] == "TaskChain":
+            workloadHelper.setCoresAndStreams(inputArgs["Multicore"], inputArgs.get("EventStreams", 0))
+        # check if it's a StepChain then based on its steps mapping
+        elif workloadHelper.getStepMapping():
+            # map is supposed to be in the format of:
+            # {'RecoPU_2021PU': ('Step1', 'cmsRun1'), 'Nano_2021PU': ('Step2', 'cmsRun2')}
+            stepChainMap = workloadHelper.getStepMapping()
+            # we need to create an easier map now
+            coresByCmsRun = {}
+            evtStreamsByCmsRun = {}
+            for stepName in stepChainMap:
+                cores = inputArgs["Multicore"][stepName]
+                coresByCmsRun[stepChainMap[stepName][1]] = cores
+                if inputArgs["EventStreams"] and isinstance(inputArgs["EventStreams"], dict):
+                    streams = inputArgs["EventStreams"][stepName]
+                elif inputArgs["EventStreams"]:
+                    streams = inputArgs["EventStreams"]
+                else:
+                    streams = 0
+                evtStreamsByCmsRun[stepChainMap[stepName][1]] = streams
+
+            # Now iterate through the tasks and update it from within the steps
+            for task in workloadHelper.taskIterator():
+                if task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+                    continue
+                for cmsRunName in coresByCmsRun:
+                    stepHelper = task.getStepHelper(cmsRunName)
+                    stepHelper.setNumberOfCores(coresByCmsRun[cmsRunName],
+                                                evtStreamsByCmsRun[cmsRunName])
 
     def validateSchema(self, schema):
         """

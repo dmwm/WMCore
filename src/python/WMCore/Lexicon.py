@@ -10,11 +10,12 @@ from __future__ import print_function, division
 
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str
-from future.utils import viewvalues
+from builtins import str, bytes
+from future.utils import viewvalues, viewkeys
 
 import io
 import re
+import json
 
 from urllib.parse import urlparse, urlunparse
 
@@ -708,6 +709,103 @@ def activity(candidate):
     if candidate in dashboardActivities:
         return True
     raise AssertionError("Invalid dashboard activity: %s should 'test'" % candidate)
+
+
+def gpuParameters(candidate):
+    """
+    Validate the spec "GPUParams" argument, which is a JSON encoded object, thus:
+    * an encoded None object (like 'null')
+    * an encoded dictionary with the following parameters:
+      * mandatory: GPUMemoryMB (int), CUDARuntime (str), CUDACapabilities (list of str)
+      * optional: GPUName (str), CUDADriverVersion (str), CUDARuntimeVersion (str)
+    :param candidate: a JSON encoded data to be validated
+    :return: True if validation succeeded, False or exception otherwise
+    """
+    mandatoryArgs = set(["GPUMemoryMB", "CUDARuntime", "CUDACapabilities"])
+    optionalArgs = set(["GPUName", "CUDADriverVersion", "CUDARuntimeVersion"])
+    try:
+        data = json.loads(candidate)
+    except Exception:
+        raise AssertionError("GPUParams is not a valid JSON object")
+        # once python2 code is deprecated, this is the way to raise only the last exception
+        # raise AssertionError("GPUParams is not a valid JSON object") from None
+    if data is None:
+        return True
+    if not isinstance(data, dict):
+        raise AssertionError("GPUParams is not a dictionary encoded as JSON object")
+
+    paramSet = set(viewkeys(data))
+    # is every mandatory argument also in the provided args?
+    if not mandatoryArgs <= paramSet:
+        msg = "GPUParams does not contain all the mandatory arguments. "
+        msg +="Mandatory args: {}, while args provided are: {}".format(mandatoryArgs, paramSet)
+        raise AssertionError(msg)
+    # are there unknown arguments in the data provided?
+    unknownArgs = paramSet - mandatoryArgs - optionalArgs
+    if unknownArgs:
+        msg = "GPUParams contains arguments that are not supported. Args provided: {}, ".format(paramSet)
+        msg +="while mandatory args are: {} and optional args are: {}".format(mandatoryArgs, optionalArgs)
+        raise AssertionError(msg)
+    return _gpuInternalParameters(data)
+
+
+CUDA_VERSION_REGEX = {"re": r"^\d+\.\d+(\.\d+)?$", "maxLength": 100}
+def _gpuInternalParameters(candidate):
+    """
+    NOTE: this function is supposed to be called only from gpuParameters, which already
+    does the high level validation.
+    List of **required** parameters is:
+      * `GPUMemoryMB`: integer with the amount of memory, in Megabytes (MB). Validate as `> 0`. E.g.: 8000
+      * `CUDACapabilities`: a list of short strings (<= 100 chars). Validation should ensure at least one item
+        in the list and matching this regex: `r"^\d+.\d$"`. E.g.: ["7.5", "8.0"]
+      * `CUDARuntime`: a short string (<=100 chars) with the runtime version.
+        Validated against this regex: `r"^\d+.\d+$"`. E.g.: "11.2"
+    List of **optional** parameters is:
+      * `GPUName`: a string with the GPU name. Validate against `<= 100 chars`. E.g. "Tesla T4", "Quadro RTX 6000";
+      * `CUDADriverVersion`: a string with the CUDA driver version.
+        Validated against this regex: `r"^\d+.\d+\d+$"`E.g. "460.32.03"
+      * `CUDARuntimeVersion`: a string with the CUDA runtime version.
+        Validated against this regex: `r"^\d+.\d+\d+$"`E.g. "11.2.152"
+
+    This function validates all the internal key/value pairs provided for the GPUParams
+    argument, mostly against their own regular expressions.
+    :param candidate: the JSON object already decoded (thus, str or dict)
+    :return: True if validation succeeded, False or exception otherwise
+    """
+    # Generic regular expression for CUDA runtime/driver version
+    # It matches either something like "11.2", or "11.2.231"
+    # GPUMemoryMB validation
+    if not isinstance(candidate["GPUMemoryMB"], int) or not candidate["GPUMemoryMB"] > 0:
+        raise AssertionError("Mandatory GPUParams.GPUMemoryMB must be an integer and greater than 0")
+    # CUDACapabilities validation
+    if not isinstance(candidate["CUDACapabilities"], (list, set)) or not candidate["CUDACapabilities"]:
+        raise AssertionError("Mandatory GPUParams.CUDACapabilities must be a non-empty list")
+    for cudaCapabItem in candidate["CUDACapabilities"]:
+        if not isinstance(cudaCapabItem, (str, bytes)):
+            raise AssertionError("Mandatory GPUParams.CUDACapabilities must be a list of strings")
+        check(CUDA_VERSION_REGEX["re"], cudaCapabItem, CUDA_VERSION_REGEX["maxLength"])
+    # CUDARuntime validation
+    if not isinstance(candidate["CUDARuntime"], (str, bytes)) or\
+            not check(CUDA_VERSION_REGEX["re"], candidate["CUDARuntime"], CUDA_VERSION_REGEX["maxLength"]):
+        raise AssertionError("Mandatory GPUParams.CUDARuntime must be a string and shorter than 100 chars")
+
+    ### And now, validate the optional arguments
+    # GPUName validation
+    if "GPUName" in candidate:
+        if not isinstance(candidate["GPUName"], (str, bytes)):
+            raise AssertionError("Optional GPUParams.GPUName must be a string")
+        check(r".*", candidate["GPUName"], 100)
+    # CUDADriverVersion validation
+    if "CUDADriverVersion" in candidate:
+        if not isinstance(candidate["CUDADriverVersion"], (str, bytes)):
+            raise AssertionError("Optional GPUParams.CUDADriverVersion must be a string")
+        check(CUDA_VERSION_REGEX["re"], candidate["CUDADriverVersion"], CUDA_VERSION_REGEX["maxLength"])
+    # CUDARuntimeVersion validation
+    if "CUDARuntimeVersion" in candidate:
+        if not isinstance(candidate["CUDARuntimeVersion"], (str, bytes)):
+            raise AssertionError("Optional GPUParams.CUDARuntimeVersion must be a string")
+        check(CUDA_VERSION_REGEX["re"], candidate["CUDARuntimeVersion"], CUDA_VERSION_REGEX["maxLength"])
+    return True
 
 
 def getStringsBetween(start, end, source):

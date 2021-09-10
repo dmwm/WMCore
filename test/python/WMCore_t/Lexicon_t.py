@@ -8,8 +8,11 @@ General test of Lexicon
 
 import unittest
 import os
+import json
+
 from WMCore.WMBase import getTestBase
 from WMCore.Lexicon import *
+from WMCore.Lexicon import _gpuInternalParameters
 
 
 class LexiconTest(unittest.TestCase):
@@ -894,6 +897,131 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, taskStepName, "_Task_testName")
         self.assertRaises(AssertionError, taskStepName, "Task@testName")
         self.assertRaises(AssertionError, taskStepName, "t" * 51)
+
+    def testGpuParameters(self):
+        """
+        Test the 'GPUParams' spec parameter via 'gpuParameters' function
+        """
+        # unsupported values or incomplete information
+        self.assertRaises(AssertionError, gpuParameters, "")
+        self.assertRaises(AssertionError, gpuParameters, {})
+        self.assertRaises(AssertionError, gpuParameters, json.dumps(""))
+        self.assertRaises(AssertionError, gpuParameters, json.dumps([]))
+        self.assertRaises(AssertionError, gpuParameters, json.dumps(1))
+        self.assertRaises(AssertionError, gpuParameters, json.dumps({}))
+        # one mandatory missing
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2"}
+        self.assertRaises(AssertionError, gpuParameters, json.dumps(data))
+        # one unknown argument missing
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2", "CUDACapabilities": ["11.2"], "BAD_KEY": 123}
+        self.assertRaises(AssertionError, gpuParameters, json.dumps(data))
+        # only optional arguments, regardless of their values
+        data = {"GPUName": "NVidia 970M GTX", "CUDADriverVersion": "11.2", "CUDARuntimeVersion": 123}
+        self.assertRaises(AssertionError, gpuParameters, json.dumps(data))
+
+        # valid and well supported cases
+        self.assertTrue(gpuParameters(json.dumps(None)))
+        # all mandatory arguments
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2", "CUDACapabilities": ["11.2"]}
+        self.assertTrue(gpuParameters(json.dumps(data)))
+        # all mandatory arguments plus one optional argument
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2", "CUDACapabilities": ["11.2"],
+                "GPUName": "Nvidia"}
+        self.assertTrue(gpuParameters(json.dumps(data)))
+        # all mandatory arguments plus two optional argument
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2", "CUDACapabilities": ["11.2"],
+                "GPUName": "Nvidia", "CUDADriverVersion": "11.2"}
+        self.assertTrue(gpuParameters(json.dumps(data)))
+        # all mandatory and all optional arguments
+        data = {"GPUMemoryMB": 123, "CUDARuntime": "11.2", "CUDACapabilities": ["11.2"],
+                "GPUName": "Nvidia", "CUDADriverVersion": "11.2", "CUDARuntimeVersion": "11.2.03"}
+        self.assertTrue(gpuParameters(json.dumps(data)))
+
+    def testGpuInternalParameters(self):
+        """
+        Test the inner key/value pairs of 'GPUParams' spec parameter,
+        via '_gpuInternalParameters' private function
+        """
+        # test "GPUMemoryMB" validation
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": "123"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": [123]})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 100.5})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 0})
+        # now pass "GPUMemoryMB", but fail "CUDACapabilities"
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 1, "CUDACapabilities": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 1, "CUDACapabilities": "123"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 1, "CUDACapabilities": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 1, "CUDACapabilities": []})
+        self.assertRaises(AssertionError, _gpuInternalParameters, {"GPUMemoryMB": 1, "CUDACapabilities": ["1.2", 1.2]})
+        # now pass "GPUMemoryMB" and "CUDACapabilities", but fail "CUDARuntime"
+        self.assertRaises(AssertionError, _gpuInternalParameters,
+                          {"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"], "CUDARuntime": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters,
+                          {"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"], "CUDARuntime": [123]})
+        self.assertRaises(AssertionError, _gpuInternalParameters,
+                          {"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"], "CUDARuntime": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters,
+                          {"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"], "CUDARuntime": "123"})
+        # now test valid values for all 3 mandatory arguments: GPUMemoryMB, CUDACapabilities, CUDARuntime
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"], "CUDARuntime": "2.3"}))
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2", "2.3", "2.3.4"],
+                                                "CUDARuntime": "2.3"}))
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2", "2.3", "2.3.4"],
+                                                "CUDARuntime": "2.3.4"}))
+
+        goodParams = {"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2"], "CUDARuntime": "2.3.4"}
+        # test "GPUName" validation
+        goodParams.update({"GPUName": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"GPUName": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"GPUName": []})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"GPUName": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"GPUName": 101*"a"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        # now pass "GPUName", and test "CUDADriverVersion" parameter
+        goodParams = {"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2"], "CUDARuntime": "2.3.4",
+                      "GPUName": "123"}
+        goodParams.update({"CUDADriverVersion": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDADriverVersion": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDADriverVersion": []})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDADriverVersion": "123"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDADriverVersion": "1.2.3.4"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDADriverVersion": 101*"1"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        # now pass "GPUName" and "CUDADriverVersion", and test "CUDARuntimeVersion" parameter
+        goodParams = {"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2"], "CUDARuntime": "2.3.4",
+                      "GPUName": "123", "CUDADriverVersion": "1.2.3"}
+        goodParams.update({"CUDARuntimeVersion": 123})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDARuntimeVersion": None})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDARuntimeVersion": []})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDARuntimeVersion": "123"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDARuntimeVersion": "1.2.3.4"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+        goodParams.update({"CUDARuntimeVersion": 101*"1"})
+        self.assertRaises(AssertionError, _gpuInternalParameters, goodParams)
+
+        # finally, test good values for mandatory + optional parameters
+        # now test valid values for all 3 mandatory arguments: GPUMemoryMB, CUDACapabilities, CUDARuntime
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 1, "CUDACapabilities": ["1.2"],
+                                                "CUDARuntime": "2.3", "GPUName": "123",
+                                                "CUDADriverVersion": "1.2.3", "CUDARuntimeVersion": "1.2.03"}))
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2", "2.3", "2.3.4"],
+                                                "CUDARuntime": "2.3"}))
+        self.assertTrue(_gpuInternalParameters({"GPUMemoryMB": 12345, "CUDACapabilities": ["1.2", "2.3", "2.3.4"],
+                                                "CUDARuntime": "2.3.4"}))
 
 
 if __name__ == "__main__":

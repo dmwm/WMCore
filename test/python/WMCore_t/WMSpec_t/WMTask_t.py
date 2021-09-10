@@ -4,6 +4,7 @@ _WMTask_t_
 
 Unit tests for the WMTask class.
 """
+import json
 
 from future.utils import viewitems
 
@@ -768,6 +769,65 @@ class WMTaskTest(unittest.TestCase):
                          ["slc7_amd64_gcc123", "slc7_amd64_gcc223", "slc7_amd64_gcc123"])
 
         return
+
+    def testGPUTaskSettings(self):
+        """
+        Test whether we can properly set/get GPU settings for the
+        tasks and its inner steps
+        """
+        task1 = makeWMTask("Taskname_1")
+        task1.setTaskType("Production")
+        task1Cmssw = task1.makeStep("cmsRun1")
+        task1Cmssw.setStepType("CMSSW")
+        taskCmsswStageOut = task1Cmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+        task1.applyTemplates()
+
+        task2 = task1.addTask("Taskname_2")
+        task1.setTaskType("Processing")
+        task2Cmssw = task2.makeStep("cmsRun1")
+        task2Cmssw.setStepType("CMSSW")
+        taskCmsswStageOut = task2Cmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+        task2.applyTemplates()
+
+        task1CmsswHelper = task1Cmssw.getTypeHelper()
+        task2CmsswHelper = task2Cmssw.getTypeHelper()
+        for stepHelper in (task1CmsswHelper, task2CmsswHelper):
+            self.assertEqual(stepHelper.getGPURequired(), "forbidden")
+            self.assertIsNone(stepHelper.getGPURequirements())
+        task1StageOutHelper = taskCmsswStageOut.getTypeHelper()
+        task1LogArchHelper = taskCmsswLogArch.getTypeHelper()
+        # AttributeError: 'ConfigSection' object has no attribute 'gpu'
+        with self.assertRaises(AttributeError):
+            self.assertEqual(task1StageOutHelper.getGPURequired(), "forbidden")
+        with self.assertRaises(AttributeError):
+            self.assertEqual(task1LogArchHelper.getGPURequired(), "forbidden")
+
+        ### Now set a single value for both tasks
+        gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
+        task1.setTaskGPUSettings("required", json.dumps(gpuParams))
+        for stepHelper in (task1CmsswHelper, task2CmsswHelper):
+            self.assertEqual(stepHelper.getGPURequired(), "required")
+            self.assertItemsEqual(stepHelper.getGPURequirements(), gpuParams)
+
+        ### Now set it differently for each task
+        gpuRequired = {"Taskname_1": "optional", "Taskname_2": "forbidden"}
+        gpuParams = {"Taskname_1": {"GPUMemoryMB": 1234,
+                                    "CUDARuntime": "11.2.3",
+                                    "CUDACapabilities": ["7.5", "8.0"]},
+                     "Taskname_2": {"GPUMemoryMB": 456,
+                                    "CUDARuntime": "2.3",
+                                    "CUDACapabilities": ["8.0"]}}
+        task1.setTaskGPUSettings(gpuRequired, json.dumps(gpuParams))
+        self.assertEqual(task1CmsswHelper.getGPURequired(), gpuRequired["Taskname_1"])
+        self.assertItemsEqual(task1CmsswHelper.getGPURequirements(), gpuParams["Taskname_1"])
+        self.assertEqual(task2CmsswHelper.getGPURequired(), gpuRequired["Taskname_2"])
+        self.assertItemsEqual(task2CmsswHelper.getGPURequirements(), gpuParams["Taskname_2"])
 
 
 if __name__ == '__main__':

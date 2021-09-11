@@ -142,7 +142,7 @@ class StdBase(object):
         import subprocess
 
         p = subprocess.Popen("/cvmfs/cms.cern.ch/common/cmsos", stdout=subprocess.PIPE, shell=True)
-        cmsos = p.communicate()[0].strip()
+        cmsos = p.communicate()[0].decode('utf-8').strip()
 
         scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
         if not scramBaseDirs:
@@ -154,12 +154,13 @@ class StdBase(object):
         command += "cd %s\n" % scramBaseDirs[0]
         command += "eval `scramv1 runtime -sh`\n"
 
-        command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        command += """python3 -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
         command += """dataTier = getSkimDataTier("%s")\n""" % skim
-        command += """if dataTier:\n\tprint dataTier.value()'"""
+        command += """if dataTier:\n\tprint (dataTier.value())'"""
 
+        logging.info("command= %s" % command)
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-        dataTier = p.communicate()[0].strip()
+        dataTier = p.communicate()[0].decode('utf-8').strip()
 
         if dataTier == "None":
             dataTier = None

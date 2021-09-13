@@ -851,6 +851,31 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
+    def setGPUSettings(self, requiresGPU, gpuParams, initialTask=None):
+        """
+        Setter method for the workload GPU parameters.
+        It's responsible for setting whether GPUs are required or not; and
+        which GPU parameters to be used for that. This is done for every
+        task of this spec.
+        :param requiresGPU: string defining whether GPUs are needed. For TaskChains, it
+            could be a dictionary key'ed by the taskname.
+        :param gpuParams: GPU settings. A JSON encoded object, from either a None object
+            or a dictionary. For TaskChains, it could be a dictionary key'ed by the taskname
+        :param initialTask: parent task object
+        """
+        if not requiresGPU:
+            return
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setTaskGPUSettings(requiresGPU, gpuParams)
+            self.setGPUSettings(requiresGPU, gpuParams, task)
+        return
+
     def setMemory(self, memory, initialTask=None):
         """
         _setMemory_

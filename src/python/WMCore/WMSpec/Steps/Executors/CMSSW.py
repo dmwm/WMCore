@@ -133,12 +133,19 @@ class CMSSW(Executor):
 
         scramArch = getSingleScramArch(scramArch)
 
-        multicoreSettings = self.step.application.multicore
         try:
+            multicoreSettings = self.step.application.multicore
             logging.info("CMSSW configured for %s cores and %s event streams",
                          multicoreSettings.numberOfCores, multicoreSettings.eventStreams)
         except AttributeError:
             logging.info("No value set for multicore numberOfCores or eventStreams")
+
+        try:
+            gpuSettings = self.step.application.gpu
+            logging.info("CMSSW configured for GPU required: %s, with these settings: %s",
+                         gpuSettings.gpuRequired, gpuSettings.gpuRequirements)
+        except AttributeError:
+            logging.info("No value set for GPU gpuRequired and/or gpuRequirements")
 
         logging.info("Executing CMSSW step")
 

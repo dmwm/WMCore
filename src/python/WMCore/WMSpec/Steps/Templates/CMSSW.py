@@ -400,6 +400,14 @@ class CMSSWStepHelper(CoreHelper):
         """
         return self.data.application.multicore.eventStreams
 
+    def setGPUSettings(self, requiresGPU, gpuParams):
+        """
+        Set whether this CMSSW step should require GPUs and if so, which
+        setup should be allowed and/or used
+        """
+        self.data.application.gpu.gpuRequired = requiresGPU
+        self.data.application.gpu.gpuRequirements = gpuParams
+
 
 class CMSSW(Template):
     """
@@ -465,6 +473,11 @@ class CMSSW(Template):
         step.application.section_("multicore")
         step.application.multicore.numberOfCores = 1
         step.application.multicore.eventStreams = 0
+
+        # support for GPU in CMSSW (using defaults from StdBase)
+        step.application.section_("gpu")
+        step.application.gpu.gpuRequired = "forbidden"
+        step.application.gpu.gpuRequirements = None
 
     def helper(self, step):
         """

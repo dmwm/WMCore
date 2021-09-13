@@ -186,8 +186,22 @@ enableCherrypy()
     read x && [[ $x =~ (n|N) ]] && exit 1
     echo  "..."
 
-    sed -i "s/or HOST.startswith(\"vocms0117\"):/or HOST.startswith(\"vocms0117\") or HOST.startswith(\"$vmName\"):/g" cfg/{reqmgr2,reqmon,workqueue}/config.py
-    grep 'HOST.startswith("vocms0117").*'  cfg/{reqmgr2,reqmon,workqueue}/config.py
+    sed -i "s/HOST.startswith(\"vocms0117\")/HOST.startswith(\"vocms0117\") or HOST.startswith(\"$vmName\")/g" cfg/{reqmgr2,reqmon,workqueue}/config.py
+    grep "HOST.startswith(\"$vmName\").*"  cfg/{reqmgr2,reqmon,workqueue}/config.py
+}
+
+swithToRucioProd()
+{
+    # enable cherrypy threads
+    echo
+    echo "======================================================="
+    echo "Switch to Rucio production instance"
+    echo -n "Should we switch to prod? [n]: "
+    read x && [[ $x =~ (yes|Yes|YES|y|Y) ]] ||  { echo "Continue using Rucio integration instance"; return ;}
+    echo  "Switching to rucio prod instance ..."
+
+    sed -i "s/BASE_URL.*==.*\"https:\/\/cmsweb\.cern\.ch\"/BASE_URL == \"https:\/\/cmsweb\.cern\.ch\" or BASE_URL.startswith(\"https:\/\/$vmName\")/g" cfg/reqmgr2ms/config-transferor.py cfg/reqmgr2ms/config-monitor.py cfg/workqueue/config.py
+    grep "BASE_URL.startswith(\"https://$vmName\").*"  cfg/{reqmgr2,reqmgr2ms,workqueue}/*config*.py
 }
 
 patchDep()
@@ -310,8 +324,9 @@ main()
     initSetup
     cleanVM
     cloneDep
-    enableCherrypy
     patchDep
+    enableCherrypy
+    swithToRucioProd
     serviceDeployment
     updateCert
     patchService

@@ -7,9 +7,11 @@ Created on Jun 14, 2013
 """
 from __future__ import print_function
 
+import json
 import unittest
 
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 
 class StdBaseTest(unittest.TestCase):
@@ -75,7 +77,25 @@ class StdBaseTest(unittest.TestCase):
         self.assertEqual((15000, 100), StdBase.calcEvtsPerJobLumi(None, 100, 1, requestedEvents=15000))
         self.assertEqual((15000, 15000), StdBase.calcEvtsPerJobLumi(None, None, 1, requestedEvents=15000))
 
-        return
+    def testValidateGPUSettings(self):
+        """
+        Test the 'validateGPUSettings' StdBase method.
+        """
+        with self.assertRaises(WMSpecFactoryException):
+            StdBase.validateGPUSettings({"RequiresGPU": "optional"})
+        with self.assertRaises(WMSpecFactoryException):
+            StdBase.validateGPUSettings({"RequiresGPU": "required"})
+        with self.assertRaises(WMSpecFactoryException):
+            StdBase.validateGPUSettings({"RequiresGPU": "optional", "GPUParams": json.dumps("")})
+        with self.assertRaises(WMSpecFactoryException):
+            StdBase.validateGPUSettings({"RequiresGPU": "required", "GPUParams": json.dumps(None)})
+
+        # now input that passes the validation
+        self.assertTrue(StdBase.validateGPUSettings({"RequiresGPU": "forbidden"}))
+        self.assertTrue(StdBase.validateGPUSettings({"RequiresGPU": "optional",
+                                                     "GPUParams": json.dumps("blah")}))
+        self.assertTrue(StdBase.validateGPUSettings({"RequiresGPU": "required",
+                                                     "GPUParams": json.dumps({"Key1": "value1"})}))
 
 
 if __name__ == "__main__":

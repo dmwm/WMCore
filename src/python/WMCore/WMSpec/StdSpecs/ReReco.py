@@ -256,6 +256,8 @@ class ReRecoWorkloadFactory(DataProcessing):
                 instanceArguments[realArg] = skimArguments[argument]
             try:
                 validateArgumentsCreate(skimSchema, instanceArguments)
+                # Validate GPU-related spec parameters
+                DataProcessing.validateGPUSettings(schema)
             except Exception as ex:
                 self.raiseValidationException(str(ex))
 
@@ -276,10 +278,3 @@ class ReRecoWorkloadFactory(DataProcessing):
             if diffSet:
                 self.raiseValidationException(
                     msg="A transient output module was specified but no skim was defined for it")
-
-        # Validate GPU-related spec parameters
-        if schema["RequiresGPU"] in ("optional", "required"):
-            if not json.loads(schema["GPUParams"]):
-                msg = "Request is set with RequiresGPU={}, ".format(schema["RequiresGPU"])
-                msg += "but GPUParams schema is not provided or correct."
-                self.raiseValidationException(msg)

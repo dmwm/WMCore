@@ -84,11 +84,13 @@ Example initial processing task
  },
 """
 from __future__ import division
+
+import json
 from builtins import range, object
 from future.utils import viewitems
 
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import primdataset, taskStepName
+from WMCore.Lexicon import primdataset, taskStepName, gpuParameters
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsCreate, parsePileupConfig,
                                            checkMemCore, checkEventStreams, checkTimePerEvent)
@@ -625,7 +627,11 @@ class TaskChainWorkloadFactory(StdBase):
                     "TimePerEvent": {"default": 12.0, "type": float, "validate": checkTimePerEvent},
                     "Memory": {"default": 2300.0, "type": float, "validate": checkMemCore},
                     "Multicore": {"default": 1, "type": int, "validate": checkMemCore},
-                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams}
+                    "EventStreams": {"type": int, "null": True, "default": 0, "validate": checkEventStreams},
+                    # no need for workload-level defaults, if task-level default is provided
+                    "RequiresGPU": {"default": None, "null": True,
+                                    "validate": lambda x: x in ("forbidden", "optional", "required")},
+                    "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
                     }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -727,6 +733,11 @@ class TaskChainWorkloadFactory(StdBase):
                 if task['InputFromOutputModule'] in inputTransientModules:
                     inputTransientModules.remove(task['InputFromOutputModule'])
 
+        try:
+            StdBase.validateGPUSettings(schema)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
+
         for task in transientMapping:
             if transientMapping[task]:
                 msg = "A transient module is not processed by a subsequent task.\n"
@@ -742,10 +753,11 @@ class TaskChainWorkloadFactory(StdBase):
         """
         try:
             validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
+            # Validate GPU-related spec parameters
+            StdBase.validateGPUSettings(taskConf)
         except WMSpecFactoryException:
             # just re-raise it to keep the error message clear
             raise
         except Exception as ex:
             self.raiseValidationException(str(ex))
 
-        return

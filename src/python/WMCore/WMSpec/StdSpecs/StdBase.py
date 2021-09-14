@@ -1217,6 +1217,9 @@ class StdBase(object):
                      'Memory': {'default': None, 'null': True, 'type': float, 'validate': lambda x: x > 0},
                      'Multicore': {'default': 0, 'type': int, 'validate': lambda x: x > 0},
                      'PrepID': {'default': None, 'null': True, 'optional': True, 'type': str},
+                     "RequiresGPU": {"default": "forbidden",
+                                     "validate": lambda x: x in ("forbidden", "optional", "required")},
+                     "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
                      'PrimaryDataset': {'null': True, 'validate': primdataset, 'attr': 'inputPrimaryDataset'},
                      'ProcessingString': {'optional': True, 'validate': procstring},
                      'ProcessingVersion': {'type': int, 'validate': procversion},
@@ -1359,3 +1362,23 @@ class StdBase(object):
             else:
                 schema[arg] = workloadDefinition[arg]['default']
         return schema
+
+    @staticmethod
+    def validateGPUSettings(schemaData):
+        """
+        Method to check whether GPU settings have been provided for
+        a workflow (or tasks/step) that requires GPUs (or has it set
+        to optional).
+        :param schemaData: workflow or task/step dictionary
+        :return: nothing if validation is successful, otherwise raises an exception
+        """
+        if schemaData.get("RequiresGPU") in ("optional", "required"):
+            try:
+                msg = "Request is set with RequiresGPU={}, ".format(schemaData["RequiresGPU"])
+                if not json.loads(schemaData["GPUParams"]):
+                    msg += "but GPUParams argument is empty and/or incorrect."
+                    raise WMSpecFactoryException(msg)
+            except KeyError:
+                msg += "but GPUParams argument has not been provided."
+                raise WMSpecFactoryException(msg)
+        return True

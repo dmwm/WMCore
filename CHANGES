@@ -1,3 +1,9 @@
+1.5.3.pre3 to 1.5.3.pre4:
+  - Add support to GPUs in TaskChain spec (Alan Malta Rodrigues) #10805
+  - GPU getters/setters implemented for Workload/Task/Step/CMSSW (Alan Malta Rodrigues) #10799
+  - Support GPU parameters at StdBase; validation functions implemented (Alan Malta Rodrigues) #10799
+
+
 1.5.3.pre2 to 1.5.3.pre3:
   - Delete file lists in slices. (Todor Ivanov) #10792
   - Fix Multicore/EventStreams override in Resubmission of StepChains (Alan Malta Rodrigues) #10795

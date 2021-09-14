@@ -4,6 +4,7 @@ _WMWorkload_t_
 
 Unittest for WMWorkload class
 """
+import json
 
 from future.utils import viewitems
 
@@ -2195,6 +2196,39 @@ class WMWorkloadTest(unittest.TestCase):
                               }
 
         self.assertEqual(simpleFormatOutput, simpleFormat)
+
+    def testGPUSettings(self):
+        """Test GPU settings at the workload level"""
+        testWorkload = self.makeTestWorkload()[0]
+        for taskName in testWorkload.listAllTaskNames():
+            task = testWorkload.getTaskByName(taskName)
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                    self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                else:
+                    self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
+
+        gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
+        testWorkload.setGPUSettings("required", json.dumps(gpuParams))
+
+        for taskName in testWorkload.listAllTaskNames():
+            task = testWorkload.getTaskByName(taskName)
+            print("Task name: {}, task type: {}".format(taskName, task.taskType()))
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                print("  Step name: {}, step type: {}".format(stepName, stepHelper.stepType()))
+                if task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "forbidden")
+                    self.assertIsNone(stepHelper.data.application.gpu.gpuRequirements)
+                    continue
+                if stepHelper.stepType() == "CMSSW":
+                    print(stepHelper.data.application.gpu)
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequired, "required")
+                    self.assertEqual(stepHelper.data.application.gpu.gpuRequirements, gpuParams)
+                else:
+                    self.assertFalse(hasattr(stepHelper.data.application, "gpu"))
 
 
 if __name__ == '__main__':

@@ -65,6 +65,22 @@ class WMStepHelper(TreeHelper):
         except Exception:
             return 0
 
+    def getGPURequired(self):
+        """
+        Return whether GPU is required or not for this step object
+        """
+        if hasattr(self.data.application.gpu, "gpuRequired"):
+            return self.data.application.gpu.gpuRequired
+        return None
+
+    def getGPURequirements(self):
+        """
+        Return the GPU requirements for this step object
+        """
+        if hasattr(self.data.application.gpu, "gpuRequirements"):
+            return self.data.application.gpu.gpuRequirements
+        return None
+
     def addStep(self, stepName):
         """
         _addStep_

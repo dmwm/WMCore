@@ -9,10 +9,10 @@ from future.utils import viewitems
 from builtins import range, object
 
 import logging
-
+import json
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
+from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset, gpuParameters
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
@@ -397,6 +397,16 @@ class StdBase(object):
         if taskConf.get("EventStreams") is not None and taskConf['EventStreams'] >= 0:
             eventStreams = taskConf['EventStreams']
         procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
+
+        gpuRequired = self.requiresGPU
+        if taskConf.get('RequiresGPU', None):
+            gpuRequired = taskConf['RequiresGPU']
+        # Note that GPUParams has already been validated
+        if "GPUParams" in taskConf and json.loads(taskConf['GPUParams']):
+            gpuParams = json.loads(taskConf['GPUParams'])
+        else:
+            gpuParams = json.loads(self.gPUParams)
+        procTaskCmsswHelper.setGPUSettings(gpuRequired, gpuParams)
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
@@ -1034,6 +1044,10 @@ class StdBase(object):
                      "RobustMerge": {"default": True, "type": strToBool},
                      "Comments": {"default": ""},
                      "SubRequestType": {"default": ""},  # used only(?) for RelVals
+                     "RequiresGPU": {"default": "forbidden",
+                                     "validate": lambda x: x in ("forbidden", "optional", "required")},
+                     "GPUParams": {"default": json.dumps(None), "validate": gpuParameters},
+
 
                      # FIXME (Alan on 27/Mar/017): maybe used by T0 during creation???
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,

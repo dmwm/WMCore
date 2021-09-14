@@ -9,7 +9,7 @@ set of jobs.
 
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
-
+import json
 from builtins import map, zip, str as newstr, bytes
 from future.utils import viewitems
 
@@ -1465,6 +1465,42 @@ class WMTaskHelper(TreeHelper):
 
         for task in self.childTaskIterator():
             task.setNumberOfCores(cores, nStreams)
+
+        return
+
+    def setTaskGPUSettings(self, requiresGPU, gpuParams):
+        """
+        Setter method for the GPU settings, applied to this Task object and
+        all underneath CMSSW type step object.
+        :param requiresGPU: string defining whether GPUs are needed. For TaskChains, it
+            could be a dictionary key'ed by the taskname.
+        :param gpuParams: GPU settings. A JSON encoded object, from either a None object
+            or a dictionary. For TaskChains, it could be a dictionary key'ed by the taskname
+        :return: nothing, the workload spec is updated in place.
+        """
+        # these job types shall not have these settings
+        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            return
+
+        # default values come from StdBase
+        if isinstance(requiresGPU, dict):
+            thisTaskGPU = requiresGPU.get(self.name(), "forbidden")
+        else:
+            thisTaskGPU = requiresGPU
+
+        decodedGpuParams = json.loads(gpuParams)
+        if self.name() in decodedGpuParams:
+            thisTaskGPUParams = decodedGpuParams[self.name()]
+        else:
+            thisTaskGPUParams = decodedGpuParams
+
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            if stepHelper.stepType() == "CMSSW":
+                stepHelper.setGPUSettings(thisTaskGPU, thisTaskGPUParams)
+
+        for task in self.childTaskIterator():
+            task.setTaskGPUSettings(requiresGPU, gpuParams)
 
         return
 

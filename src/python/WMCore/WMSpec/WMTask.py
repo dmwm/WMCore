@@ -1468,6 +1468,18 @@ class WMTaskHelper(TreeHelper):
 
         return
 
+    def getNumberOfCores(self):
+        """
+        Retrieves the number of cores for this task.
+        If it's a multi-step task, it returns only the greatest value
+        :return: an integer with the number of cores required by this task
+        """
+        maxCores = 1
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStep(stepName)
+            maxCores = max(maxCores, stepHelper.getNumberOfCores())
+        return maxCores
+
     def setTaskGPUSettings(self, requiresGPU, gpuParams):
         """
         Setter method for the GPU settings, applied to this Task object and
@@ -1503,6 +1515,45 @@ class WMTaskHelper(TreeHelper):
             task.setTaskGPUSettings(requiresGPU, gpuParams)
 
         return
+
+    def getRequiresGPU(self):
+        """
+        Return whether this task is supposed to use GPUs or not.
+        If it's a multi-step task, decision follows this order:
+          1. "required"
+          2. "optional"
+          3. "forbidden"
+        :return: a string (default to "forbidden")
+        """
+        requiresGPU = set(["forbidden"])
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStep(stepName)
+            if stepHelper.stepType() == "CMSSW" and stepHelper.getGPURequired():
+                requiresGPU.add(stepHelper.getGPURequired())
+
+        # now decide what value has higher weight
+        if len(requiresGPU) == 1:
+            return requiresGPU.pop()
+        elif "required" in requiresGPU:
+            return "required"
+        elif "optional" in requiresGPU:
+            return "optional"
+        else:
+            return "forbidden"
+
+    def getGPURequirements(self):
+        """
+        Return the GPU requirements for this task.
+        If it's a multi-step task, the first step with a meaningful
+        dictionary value will be returned
+        :return: a dictionary with the GPU requirements for this task
+        """
+        gpuRequirements = {}
+        for stepName in sorted(self.listAllStepNames()):
+            stepHelper = self.getStep(stepName)
+            if stepHelper.stepType() == "CMSSW" and stepHelper.getGPURequirements():
+                return stepHelper.getGPURequirements()
+        return gpuRequirements
 
     def _getStepValue(self, keyDict, defaultValue):
         """

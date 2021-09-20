@@ -689,18 +689,18 @@ class BossAirAPI(WMConnectionBase):
 
         return results
 
-    def updateJobInformation(self, workflow, task, **kwargs):
+    def updateJobInformation(self, workflow, **kwargs):
         """
         _updateJobInformation_
 
-        Update the information of jobs in a particular workflow and task,
+        Update the information of jobs in a particular workflow,
         the data will be updated according the keyword arguments which
         will be interpreted by the individual plugins accordingly.
         """
         for plugin in self.plugins:
             try:
                 pluginInst = self.plugins[plugin]
-                pluginInst.updateJobInformation(workflow, task, **kwargs)
+                pluginInst.updateJobInformation(workflow, **kwargs)
             except WMException:
                 raise
             except Exception as ex:

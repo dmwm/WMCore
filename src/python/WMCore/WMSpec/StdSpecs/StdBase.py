@@ -10,6 +10,9 @@ from builtins import range, object
 
 import logging
 import json
+
+from Utils.PythonVersion import PY3
+from Utils.Utilities import decodeBytesToUnicodeConditional
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset, gpuParameters
@@ -142,7 +145,8 @@ class StdBase(object):
         import subprocess
 
         p = subprocess.Popen("/cvmfs/cms.cern.ch/common/cmsos", stdout=subprocess.PIPE, shell=True)
-        cmsos = p.communicate()[0].strip()
+        cmsos = p.communicate()[0]
+        cmsos = decodeBytesToUnicodeConditional(cmsos, condition=PY3).strip()
 
         scramBaseDirs = glob.glob("/cvmfs/cms.cern.ch/%s*/cms/cmssw/%s" % (cmsos, cmsswVersion))
         if not scramBaseDirs:
@@ -154,12 +158,17 @@ class StdBase(object):
         command += "cd %s\n" % scramBaseDirs[0]
         command += "eval `scramv1 runtime -sh`\n"
 
-        command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        if PY3:
+            command += """python3 -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+        else:
+            command += """python -c 'from Configuration.StandardSequences.Skims_cff import getSkimDataTier\n"""
+
         command += """dataTier = getSkimDataTier("%s")\n""" % skim
-        command += """if dataTier:\n\tprint dataTier.value()'"""
+        command += """if dataTier:\n\tprint(dataTier.value())'"""
 
         p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-        dataTier = p.communicate()[0].strip()
+        dataTier = p.communicate()[0]
+        dataTier = decodeBytesToUnicodeConditional(dataTier, condition=PY3).strip()
 
         if dataTier == "None":
             dataTier = None

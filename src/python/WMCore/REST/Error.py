@@ -1,4 +1,4 @@
-from builtins import str
+from builtins import str as newstr
 import random, cherrypy
 
 class RESTError(Exception):
@@ -258,11 +258,11 @@ def report_rest_error(err, trace, throw):
                      % (err.http_code, err.app_code, err.message,
                         getattr(err.errobj, "__module__", "__builtins__"),
                         err.errobj.__class__.__name__,
-                        err.errid, err.instance, str(err.errobj).rstrip(),
+                        err.errid, err.instance, newstr(err.errobj).rstrip(),
                         sql, binds, kwbinds, offset))
         for line in err.trace.rstrip().split("\n"): cherrypy.log("  " + line)
-        cherrypy.response.headers["X-REST-Status"] = str(err.app_code)
-        cherrypy.response.headers["X-Error-HTTP"] = str(err.http_code)
+        cherrypy.response.headers["X-REST-Status"] = newstr(err.app_code)
+        cherrypy.response.headers["X-Error-HTTP"] = newstr(err.http_code)
         cherrypy.response.headers["X-Error-ID"] = err.errid
         report_error_header("X-Error-Detail", err.message)
         report_error_header("X-Error-Info", err.info)
@@ -274,15 +274,15 @@ def report_rest_error(err, trace, throw):
                             err.errid, err.message,
                             getattr(err.errobj, "__module__", "__builtins__"),
                             err.errobj.__class__.__name__,
-                            str(err.errobj).rstrip()))
+                            newstr(err.errobj).rstrip()))
             trace = err.trace
         else:
             cherrypy.log("SERVER REST ERROR %s.%s %s (%s)"
                          % (err.__module__, err.__class__.__name__,
                             err.errid, err.message))
         for line in trace.rstrip().split("\n"): cherrypy.log("  " + line)
-        cherrypy.response.headers["X-REST-Status"] = str(err.app_code)
-        cherrypy.response.headers["X-Error-HTTP"] = str(err.http_code)
+        cherrypy.response.headers["X-REST-Status"] = newstr(err.app_code)
+        cherrypy.response.headers["X-Error-HTTP"] = newstr(err.http_code)
         cherrypy.response.headers["X-Error-ID"] = err.errid
         report_error_header("X-Error-Detail", err.message)
         report_error_header("X-Error-Info", err.info)
@@ -291,10 +291,10 @@ def report_rest_error(err, trace, throw):
         errid = "%032x" % random.randrange(1 << 128)
         cherrypy.log("SERVER HTTP ERROR %s.%s %s (%s)"
                      % (err.__module__, err.__class__.__name__,
-                        errid, str(err).rstrip()))
+                        errid, newstr(err).rstrip()))
         for line in trace.rstrip().split("\n"): cherrypy.log("  " + line)
-        cherrypy.response.headers["X-REST-Status"] = str(200)
-        cherrypy.response.headers["X-Error-HTTP"] = str(err.status)
+        cherrypy.response.headers["X-REST-Status"] = newstr(200)
+        cherrypy.response.headers["X-Error-HTTP"] = newstr(err.status)
         cherrypy.response.headers["X-Error-ID"] = errid
         report_error_header("X-Error-Detail", err._message)
         if throw: raise err
@@ -303,7 +303,7 @@ def report_rest_error(err, trace, throw):
         cherrypy.log("SERVER OTHER ERROR %s.%s %s (%s)"
                      % (getattr(err, "__module__", "__builtins__"),
                         err.__class__.__name__,
-                        errid, str(err).rstrip()))
+                        errid, newstr(err).rstrip()))
         for line in trace.rstrip().split("\n"): cherrypy.log("  " + line)
         cherrypy.response.headers["X-REST-Status"] = 400
         cherrypy.response.headers["X-Error-HTTP"] = 500

@@ -537,10 +537,10 @@ def _etag_tail(head, tail, etag):
     Sets ETag header at the end to value of `etag` if it's defined and
     yields a value."""
     for chunk in head:
-        yield chunk
+        yield encodeUnicodeToBytes(chunk)
 
     for chunk in tail:
-        yield chunk
+        yield encodeUnicodeToBytes(chunk)
 
     etagval = (etag and etag.value())
     if etagval:

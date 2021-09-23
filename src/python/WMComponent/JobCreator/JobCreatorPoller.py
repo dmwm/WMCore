@@ -126,7 +126,8 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
             owner=None, ownerDN=None, ownerGroup='', ownerRole='',
             scramArch=None, swVersion=None, agentNumber=0, numberOfCores=1,
             inputDataset=None, inputDatasetLocations=None, inputPileup=None,
-            allowOpportunistic=False, agentName=''):
+            allowOpportunistic=False, agentName='', requiresGPU='forbidden',
+            gpuRequirements=None):
     """
     _saveJob_
 
@@ -156,6 +157,8 @@ def saveJob(job, workflow, sandbox, wmTask=None, jobNumber=0,
     job['inputDatasetLocations'] = inputDatasetLocations
     job['inputPileup'] = inputPileup
     job['allowOpportunistic'] = allowOpportunistic
+    job['requiresGPU'] = requiresGPU
+    job['gpuRequirements'] = gpuRequirements
 
     with open(os.path.join(cacheDir, 'job.pkl'), 'wb') as output:
         pickle.dump(job, output, HIGHEST_PICKLE_PROTOCOL)
@@ -190,6 +193,8 @@ def creatorProcess(work, jobCacheDir):
         inputPileup = work.get('inputPileup', None)
         allowOpportunistic = work.get('allowOpportunistic', False)
         agentName = work.get('agentName', '')
+        requiresGPU = work.get('requiresGPU', 'forbidden')
+        gpuRequirements = work.get('gpuRequirements', None)
 
         if ownerDN is None:
             ownerDN = owner
@@ -230,7 +235,9 @@ def creatorProcess(work, jobCacheDir):
                     inputDatasetLocations=inputDatasetLocations,
                     inputPileup=inputPileup,
                     allowOpportunistic=allowOpportunistic,
-                    agentName=agentName)
+                    agentName=agentName,
+                    requiresGPU=requiresGPU,
+                    gpuRequirements=gpuRequirements)
 
     except Exception as ex:
         msg = "Exception in processing wmbsJobGroup %i\n. Error: %s" % (wmbsJobGroup.id, str(ex))
@@ -576,18 +583,16 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
-                               'numberOfCores': 1,
+                               'numberOfCores': wmTask.getNumberOfCores(),
+                               'requiresGPU': wmTask.getRequiresGPU(),
+                               'gpuRequirements': wmTask.getGPURequirements(),
                                'inputDataset': wmTask.getInputDatasetPath(),
-                               'inputPileup': wmTask.getInputPileupDatasets()}
-                try:
-                    maxCores = 1
-                    stepNames = wmTask.listAllStepNames()
-                    for stepName in stepNames:
-                        sh = wmTask.getStep(stepName)
-                        maxCores = max(maxCores, sh.getNumberOfCores())
-                    processDict.update({'numberOfCores': maxCores})
-                except AttributeError:
-                    logging.info("Failed to read multicore settings from task %s", wmTask.getPathName())
+                               'inputPileup': wmTask.getInputPileupDatasets(),
+                               'swVersion': wmTask.getSwVersion(allSteps=True),
+                               'scramArch': wmTask.getScramArch(),
+                               'agentNumber': self.agentNumber,
+                               'agentName': self.agentName,
+                               'allowOpportunistic': allowOpport}
 
                 tempSubscription = Subscription(id=wmbsSubscription['id'])
 
@@ -604,13 +609,8 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict = {}
                     tempDict.update(processDict)
                     tempDict['jobGroup'] = wmbsJobGroup
-                    tempDict['swVersion'] = wmTask.getSwVersion(allSteps=True)
-                    tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
-                    tempDict['agentNumber'] = self.agentNumber
-                    tempDict['agentName'] = self.agentName
                     tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
-                    tempDict['allowOpportunistic'] = allowOpport
 
                     jobGroup = creatorProcess(work=tempDict,
                                               jobCacheDir=self.jobCacheDir)

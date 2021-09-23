@@ -555,6 +555,18 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['My.DESIRED_CMSPileups'] = undefined
             # HighIO
             ad['My.Requestioslots'] = str(1 if job['task_type'] in ["Merge", "Cleanup", "LogCollect"] else 0)
+            # GPU resource handling
+            # while we do not support a third option for RequiresGPU, make a binary decision
+            ad['My.RequiresGPU'] = "1" if job['requiresGPU'] == "required" else "0"
+            if job.get('gpuRequirements', None):
+                ad['My.GPUMemoryMB'] = str(job['gpuRequirements']['GPUMemoryMB'])
+                cudaCapabilities = ','.join(sorted(job['gpuRequirements']['CUDACapabilities']))
+                ad['My.CUDACapability'] = classad.quote(str(cudaCapabilities))
+                ad['My.CUDARuntime'] = classad.quote(job['gpuRequirements']['CUDARuntime'])
+            else:
+                ad['My.GPUMemoryMB'] = undefined
+                ad['My.CUDACapability'] = undefined
+                ad['My.CUDARuntime'] = undefined
             # Performance and resource estimates (including JDL magic tweaks)
             origCores = job.get('numberOfCores', 1)
             estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60

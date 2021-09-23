@@ -66,6 +66,8 @@ class RunJob(dict):
         self.setdefault('inputPileup', None)
         self.setdefault('allowOpportunistic', False)
         self.setdefault('activity', None)
+        self.setdefault('requiresGPU', 'forbidden')
+        self.setdefault('gpuRequirements', None)
 
         return
 

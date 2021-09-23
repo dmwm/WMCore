@@ -27,6 +27,43 @@ class WMTaskTest(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def createMultiTaskObject(self):
+        """
+        Creates a multi task object in the following structure:
+        Task1:
+            cmsRun1
+            stageOut1
+            logArch1
+            Task2:
+                cmsRun1
+                cmsRun2
+                stageOut1
+                logArch1
+        :return: a task helper object for the first task
+        """
+        task1 = makeWMTask("Taskname_1")
+        task1.setTaskType("Production")
+        task1Cmssw = task1.makeStep("cmsRun1")
+        task1Cmssw.setStepType("CMSSW")
+        taskCmsswStageOut = task1Cmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+        task1.applyTemplates()
+
+        task2 = task1.addTask("Taskname_2")
+        task1.setTaskType("Processing")
+        task2ParentCmssw = task2.makeStep("cmsRun1")
+        task2ParentCmssw.setStepType("CMSSW")
+        task2Cmssw = task2ParentCmssw.addTopStep("cmsRun2")
+        task2Cmssw.setStepType("CMSSW")
+        taskCmsswStageOut = task2Cmssw.addStep("stageOut1")
+        taskCmsswStageOut.setStepType("StageOut")
+        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
+        taskCmsswLogArch.setStepType("LogArchive")
+        task2.applyTemplates()
+        return task1
+
     def testInstantiation(self):
         """
         _testInstantiation_
@@ -770,50 +807,77 @@ class WMTaskTest(unittest.TestCase):
 
         return
 
+    def testMulticoreSettings(self):
+        """
+        Test whether we can properly set/get Multicore settings for the
+        tasks and its inner steps
+        """
+        task1 = self.createMultiTaskObject()
+        for taskObj in task1.taskIterator():
+            # task level check
+            self.assertEqual(taskObj.getNumberOfCores(), 1)
+            # step level check
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStep(stepName)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+
+        ### Now set a single value for both tasks
+        task1.setNumberOfCores(4, 2)
+        for taskObj in task1.taskIterator():
+            # task level check
+            self.assertEqual(taskObj.getNumberOfCores(), 4)
+
+        ### Now set it differently for each task
+        cores = {"Taskname_1": 4, "Taskname_2": 8}
+        task1.setNumberOfCores(cores, 2)
+        for taskObj in task1.taskIterator():
+            # task level check
+            taskName = taskObj.name()
+            self.assertEqual(taskObj.getNumberOfCores(), cores[taskName])
+
+        ### Lastly, set different steps with different number of cores
+        # set GPU only for the second task, thus only child task
+        cores = {"cmsRun1": 4, "cmsRun2": 8}
+        for taskObj in task1.childTaskIterator():
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW" and stepHelper.name() == "cmsRun1":
+                    stepHelper.setNumberOfCores(cores["cmsRun1"], 2)
+                elif stepHelper.stepType() == "CMSSW" and stepHelper.name() == "cmsRun2":
+                    stepHelper.setNumberOfCores(cores["cmsRun2"], 2)
+
+        for taskObj in task1.childTaskIterator():
+            # task level should report the max of them
+            self.assertEqual(taskObj.getNumberOfCores(), 8)
+
     def testGPUTaskSettings(self):
         """
         Test whether we can properly set/get GPU settings for the
         tasks and its inner steps
         """
-        task1 = makeWMTask("Taskname_1")
-        task1.setTaskType("Production")
-        task1Cmssw = task1.makeStep("cmsRun1")
-        task1Cmssw.setStepType("CMSSW")
-        taskCmsswStageOut = task1Cmssw.addStep("stageOut1")
-        taskCmsswStageOut.setStepType("StageOut")
-        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
-        taskCmsswLogArch.setStepType("LogArchive")
-        task1.applyTemplates()
-
-        task2 = task1.addTask("Taskname_2")
-        task1.setTaskType("Processing")
-        task2Cmssw = task2.makeStep("cmsRun1")
-        task2Cmssw.setStepType("CMSSW")
-        taskCmsswStageOut = task2Cmssw.addStep("stageOut1")
-        taskCmsswStageOut.setStepType("StageOut")
-        taskCmsswLogArch = taskCmsswStageOut.addStep("logArch1")
-        taskCmsswLogArch.setStepType("LogArchive")
-        task2.applyTemplates()
-
-        task1CmsswHelper = task1Cmssw.getTypeHelper()
-        task2CmsswHelper = task2Cmssw.getTypeHelper()
-        for stepHelper in (task1CmsswHelper, task2CmsswHelper):
-            self.assertEqual(stepHelper.getGPURequired(), "forbidden")
-            self.assertIsNone(stepHelper.getGPURequirements())
-        task1StageOutHelper = taskCmsswStageOut.getTypeHelper()
-        task1LogArchHelper = taskCmsswLogArch.getTypeHelper()
-        # AttributeError: 'ConfigSection' object has no attribute 'gpu'
-        with self.assertRaises(AttributeError):
-            self.assertEqual(task1StageOutHelper.getGPURequired(), "forbidden")
-        with self.assertRaises(AttributeError):
-            self.assertEqual(task1LogArchHelper.getGPURequired(), "forbidden")
+        task1 = self.createMultiTaskObject()
+        for taskObj in task1.taskIterator():
+            # task level check
+            self.assertEqual(taskObj.getRequiresGPU(), "forbidden")
+            self.assertEqual(taskObj.getGPURequirements(), {})
+            # step level check
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStep(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    self.assertEqual(stepHelper.getGPURequired(), "forbidden")
+                    self.assertIsNone(stepHelper.getGPURequirements())
+                else:
+                    # AttributeError: 'ConfigSection' object has no attribute 'gpu'
+                    with self.assertRaises(AttributeError):
+                        stepHelper.getGPURequired()
 
         ### Now set a single value for both tasks
         gpuParams = {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3", "CUDACapabilities": ["7.5", "8.0"]}
         task1.setTaskGPUSettings("required", json.dumps(gpuParams))
-        for stepHelper in (task1CmsswHelper, task2CmsswHelper):
-            self.assertEqual(stepHelper.getGPURequired(), "required")
-            self.assertItemsEqual(stepHelper.getGPURequirements(), gpuParams)
+        for taskObj in task1.taskIterator():
+            # task level check
+            self.assertEqual(taskObj.getRequiresGPU(), "required")
+            self.assertItemsEqual(taskObj.getGPURequirements(), gpuParams)
 
         ### Now set it differently for each task
         gpuRequired = {"Taskname_1": "optional", "Taskname_2": "forbidden"}
@@ -824,10 +888,38 @@ class WMTaskTest(unittest.TestCase):
                                     "CUDARuntime": "2.3",
                                     "CUDACapabilities": ["8.0"]}}
         task1.setTaskGPUSettings(gpuRequired, json.dumps(gpuParams))
-        self.assertEqual(task1CmsswHelper.getGPURequired(), gpuRequired["Taskname_1"])
-        self.assertItemsEqual(task1CmsswHelper.getGPURequirements(), gpuParams["Taskname_1"])
-        self.assertEqual(task2CmsswHelper.getGPURequired(), gpuRequired["Taskname_2"])
-        self.assertItemsEqual(task2CmsswHelper.getGPURequirements(), gpuParams["Taskname_2"])
+        for taskObj in task1.taskIterator():
+            # task level check
+            taskName = taskObj.name()
+            self.assertEqual(taskObj.getRequiresGPU(), gpuRequired[taskName])
+            self.assertItemsEqual(taskObj.getGPURequirements(), gpuParams[taskName])
+
+    def testGPUTaskSettingsMultiStep(self):
+        """
+        Test whether we can properly set/get GPU settings for a
+        task with multiple cmsRun steps
+        """
+        task1 = self.createMultiTaskObject()
+        for taskObj in task1.childTaskIterator():
+            self.assertEqual(taskObj.getRequiresGPU(), "forbidden")
+            self.assertEqual(taskObj.getGPURequirements(), {})
+
+        gpuRequired = {"cmsRun1": "optional", "cmsRun2": "forbidden"}
+        gpuParams = {"cmsRun1": {"GPUMemoryMB": 1234, "CUDARuntime": "11.2.3",
+                                 "CUDACapabilities": ["7.5", "8.0"]},
+                     "cmsRun2": {"GPUMemoryMB": 456, "CUDARuntime": "2.3", "CUDACapabilities": ["8.0"]}}
+        # set GPU only for the second task, thus only child task
+        for taskObj in task1.childTaskIterator():
+            for stepName in taskObj.listAllStepNames():
+                stepHelper = taskObj.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW" and stepHelper.name() == "cmsRun1":
+                    stepHelper.setGPUSettings(gpuRequired["cmsRun1"], gpuParams["cmsRun1"])
+                elif stepHelper.stepType() == "CMSSW" and stepHelper.name() == "cmsRun2":
+                    stepHelper.setGPUSettings(gpuRequired["cmsRun2"], gpuParams["cmsRun2"])
+
+        for taskObj in task1.childTaskIterator():
+            self.assertEqual(taskObj.getRequiresGPU(), "optional")
+            self.assertItemsEqual(taskObj.getGPURequirements(), gpuParams["cmsRun1"])
 
 
 if __name__ == '__main__':

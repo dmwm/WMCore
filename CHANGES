@@ -1,3 +1,9 @@
+1.5.2 to 1.5.2.patch1:
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved (Alan Malta Rodrigues) #10818
+  - PhysicsSkim issue (Jhonatan Amado) #10816
+  - JobAccountant workaround for StepChain jobs with duplicate files - wmagent branch (Alan Malta Rodrigues) #10774
+
+
 1.5.2.pre4 to 1.5.2:
 
 

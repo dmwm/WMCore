@@ -396,6 +396,11 @@ class ErrorHandlerPoller(BaseWorkerThread):
         """
         logging.debug("Running error handling algorithm")
         self.setupComponentParam()
+        if not self.maxRetries:
+            msg = "Component failed to retrieve agent configuration from central ReqMgr Aux DB."
+            msg += " Skipping this cycle."
+            logging.error(msg)
+            return
 
         try:
             myThread = threading.currentThread()

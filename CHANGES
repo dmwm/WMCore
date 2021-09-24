@@ -1,3 +1,11 @@
+1.5.3 to 1.5.4.pre1:
+  - [py2py3] modernize WMCore_t/REST_t/Api_t.py (Dario Mapelli) #10757
+  - Propagate GPU requirements to job creation and submission (Alan Malta Rodrigues) #10811
+  - Skip ErrorHandler cycle if agent configuration fails to be retrieved (Alan Malta Rodrigues) #10817
+  - PhysicsSkim issue (Jhonatan Amado) #10809
+  - Add a step to change rucio instance during deployment. (Todor Ivanov) #10803
+
+
 1.5.3.pre4 to 1.5.3:
 
 
